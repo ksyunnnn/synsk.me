@@ -4,7 +4,13 @@ import { DocumentHead, Link } from '@builder.io/qwik-city';
 export default component$(() => {
   return (
     <main>
-      <div class="about">by <Link href="https://twitter.com/ksyunnnn">@ksyunnnn</Link></div>
+      <div class="about">
+        <p>Nice to meet you 👋</p>
+        {"by "}
+      <Link href="https://twitter.com/ksyunnnn">@ksyunnnn</Link>
+
+      <p>see <Link href='https://github.com/ksyunnnn/synsk.me'>Github</Link></p>
+      </div>
     </main>
   );
 });
