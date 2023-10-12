@@ -9,7 +9,7 @@ const Page = () => {
         </h1>
 
         <h1 className="lg:text-[3vh] font-light leading-[1.28571429em] tracking-[16px]">
-          小橋俊介/こばしゅん{`₍₍⁽⁽ `}
+          小橋俊介/こばしゅん
         </h1>
       </div>
     </main>
