@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     description: 'SYUNSUKE KOBASHI / 小橋俊介 / こばしゅん',
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'synsk.me',
     description: 'SYUNSUKE KOBASHI / 小橋俊介 / こばしゅん',
     creator: '@ksyunnnn',
