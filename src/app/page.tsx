@@ -6,7 +6,7 @@ const LINKEDIN_URL = 'https://www.linkedin.com/in/synsk';
 
 const Page = () => {
   return (
-    <main className="py-16 sm:py-[18vh] px-[4vw]">
+    <main className="pt-16 pb-32 sm:pt-[18vh] sm:pb-[18vh] px-[4vw]">
       <div className="container m-auto">
         <div>
           <div className="py-4">
@@ -52,7 +52,7 @@ const Page = () => {
             <Link
               href={LINKEDIN_URL}
               target="_blank"
-              className="text-sm border p-4 rounded-md flex justify-between hover:border-black focus:border-black"
+              className="text-sm border p-4 rounded-md flex justify-between bg-white hover:border-black focus:border-black"
             >
               <span>
                 Please contact me in <span className="font-bold">LinkedIn</span>
