@@ -22,15 +22,12 @@ const Page = () => {
 
         <div className="max-w-3xl py-6">
           <p>
-            I am an experienced full-stack web developer from Japan who has been mainly focusing on
+            I am an experienced full-stack web developer from Japan. I have been mainly focusing on
             UI, Design System, TypeScript, Nextjs, JavaScript and cloud-based development tools
             (like a Supabase, Firebase) to develop the products.
           </p>
-          <p> I am web developer based in Tokyo since 2016. </p>
-          <p>
-            I currently live in the southern suburbs of Sydney. I am looking for a job making use of
-            my experience.
-          </p>
+          <p>I have been working as a web developer in Tokyo since 2016.</p>
+          <p>I currently live in Sydney and I am looking for a job making use of my experience.</p>
         </div>
 
         <div className="py-6">
@@ -42,7 +39,11 @@ const Page = () => {
             <span className="mr-2 text-6xl font-bold">Hire me!</span>
             <span className="hidden sm:inline">
               Please contact me in{' '}
-              <Link href={LINKEDIN_URL} target="_blank">
+              <Link
+                href={LINKEDIN_URL}
+                target="_blank"
+                className="underline hover:opacity-80 focus:opacity-80"
+              >
                 LinkedIn
               </Link>
               .
