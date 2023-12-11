@@ -10,3 +10,7 @@ body {
   color: #303030;
   background-color: #fff;
 }
+
+p {
+  padding: 0.25rem 0;
+}
