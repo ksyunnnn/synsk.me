@@ -38,7 +38,7 @@ const Page = () => {
           <p>
             <span className="mr-2 text-6xl font-bold">Hire me!</span>
             <span className="hidden sm:inline">
-              Please contact me in{' '}
+              Please contact me on{' '}
               <Link
                 href={LINKEDIN_URL}
                 target="_blank"
@@ -56,7 +56,7 @@ const Page = () => {
               className="text-sm border p-4 rounded-md flex justify-between bg-white hover:border-black focus:border-black"
             >
               <span>
-                Please contact me in <span className="font-bold">LinkedIn</span>
+                Please contact me on <span className="font-bold">LinkedIn</span>
               </span>
               <span>→</span>
             </Link>
