@@ -24,7 +24,7 @@ const Page = () => {
           <p>
             I am an experienced full-stack web developer from Japan. I have been mainly focusing on
             UI, Design System, TypeScript, Nextjs, JavaScript and cloud-based development tools
-            (like a Supabase, Firebase) to develop the products.
+            (like Supabase, Firebase) to develop the products.
           </p>
           <p>I have been working as a web developer in Tokyo since 2016.</p>
           <p>I currently live in Sydney and I am looking for a job making use of my experience.</p>
