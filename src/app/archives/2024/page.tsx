@@ -1,6 +1,11 @@
 import Image from 'next/image';
-import GlassesIcon from './asset/glasses.svg';
+import GlassesIcon from '@/app/asset/glasses.svg';
 import Link from 'next/link';
+import { createMetadata } from '@/libs/createMetadata';
+
+export const metadata = createMetadata({
+  title: '2024年のデザイン / 2024 Website Design',
+});
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/synsk';
 
