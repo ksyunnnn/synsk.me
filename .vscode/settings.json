@@ -1,13 +1,9 @@
 {
-    "editor.formatOnSave": true,
-    "prettier.enable": true,
-    "editor.defaultFormatter": "esbenp.prettier-vscode",
-    "editor.codeActionsOnSave": {
-      "source.fixAll.eslint": true
-    },
-    "javascript.suggestionActions.enabled": false, // @see https://zenn.dev/ksyunnnn/scraps/565e39e128f920#comment-18cfe480cbf13c
-    "[dotenv]": {
-      "editor.defaultFormatter": "foxundermoon.shell-format"
-    }
-  }
-  
+  "editor.formatOnSave": true,
+  "prettier.enable": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "javascript.suggestionActions.enabled": false // @see https://zenn.dev/ksyunnnn/scraps/565e39e128f920#comment-18cfe480cbf13c
+}
