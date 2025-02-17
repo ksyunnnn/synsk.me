@@ -1,13 +1,8 @@
 import Image from 'next/image';
 import GlassesIcon from '@/app/asset/glasses.svg';
 import Link from 'next/link';
-import { createMetadata } from '@/lib/createMetadata';
-
-import './page.css';
-
-export const metadata = createMetadata({
-  title: '2024年のデザイン / 2024 Website Design',
-});
+import { Crane } from '@/icon';
+import { metadata } from './archives/2024/page';
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/synsk';
 
@@ -27,14 +22,9 @@ const Page = () => {
           </div>
         </div>
 
-        <div className="max-w-3xl py-6">
-          <p>
-            I am an experienced full-stack web developer from Japan. I have been mainly focusing on
-            UI, Design System, TypeScript, Nextjs, JavaScript and cloud-based development tools
-            (like Supabase, Firebase) to develop the products.
-          </p>
-          <p>I have been working as a web developer in Tokyo since 2016.</p>
-          <p>I currently live in Sydney and I am looking for a job making use of my experience.</p>
+        <div className="max-w-3xl py-20 flex items-center">
+          工事中...
+          <Crane className="h-8 w-8 animate-bounce mx-2" />
         </div>
 
         <div className="py-6">
@@ -43,7 +33,6 @@ const Page = () => {
 
         <div>
           <p>
-            <span className="mr-2 text-6xl font-bold">Hire me!</span>
             <span className="hidden sm:inline">
               Please contact me on{' '}
               <Link
@@ -68,6 +57,18 @@ const Page = () => {
               <span>→</span>
             </Link>
           </div>
+        </div>
+
+        <div className="py-20">
+          <h2 className="text-lg">Website Archives</h2>
+          <ul className="py-4">
+            <li>
+              <span className="mx-2">-</span>
+              <Link href="/archives/2024" className="underline">
+                {metadata.title?.toString().replace(' | synsk.me', '')}
+              </Link>
+            </li>
+          </ul>
         </div>
       </div>
     </main>

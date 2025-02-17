@@ -1,7 +1,7 @@
 // Analytics.tsx
 'use client';
 
-import { GA_MEASUREMENT_ID, pageview } from '@/libs/gtm';
+import { GA_MEASUREMENT_ID, pageview } from '@/lib/gtm';
 import { usePathname, useSearchParams } from 'next/navigation';
 import Script from 'next/script';
 import { useEffect } from 'react';
