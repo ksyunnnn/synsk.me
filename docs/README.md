@@ -8,6 +8,13 @@ synsk.me プロジェクトのドキュメントハブです。
 |----------|-------------|
 | [VISION.md](./VISION.md) | プロダクトのビジョン（Working Backwards形式） |
 | [PRINCIPLES.md](./PRINCIPLES.md) | 意思決定の原則 |
+| [ROADMAP.md](./ROADMAP.md) | プロジェクトの進行状況と次のステップ |
+
+## Research
+
+| Directory | Description |
+|-----------|-------------|
+| [research/tweets-insight/](./research/tweets-insight/) | Twitter分析によるペルソナ・来歴調査 |
 
 ## Guidelines
 
@@ -24,6 +31,9 @@ VISION.md
   ↓
 PRINCIPLES.md
   │ "判断に迷ったとき、何を優先するか"
+  ↓
+ROADMAP.md ←── research/
+  │ "今どこにいて、次に何をするか"    "ペルソナ分析・来歴調査"
   ↓
 ┌─────────────────────────────────────┐
 │                                     │
