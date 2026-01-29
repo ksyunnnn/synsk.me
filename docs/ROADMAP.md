@@ -62,8 +62,8 @@ Preview で確認・実験・調整
 | PRINCIPLES.md（Design） | ✅ | 余白・息づき・対話 |
 | 発信コンテンツ分析 | ✅ | docs/research/tweets-insight/, content-analysis/ |
 | Design Tokens（グレースケール） | ✅ | Neutral Gray で構造を固める |
-| Design Tokens（タイポグラフィ） | ⏳ | フォントサイズ・行間 |
-| Design Tokens（スペーシング） | ⏳ | 余白のスケール |
+| Design Tokens（タイポグラフィ） | ✅ | Source Sans 3 + Noto Sans JP, Light 300 |
+| Design Tokens（スペーシング） | ✅ | 8px ベース（xs/sm/md/lg/xl） |
 
 ### Phase 2: デザイン & 実装（反復）
 
@@ -86,8 +86,41 @@ Preview で確認・実験・調整
 
 ## 次のアクション
 
+### Pencil (Design as Code) 検証 ⏳
+
+**目的**: Figma ⇔ React連携問題をPencilで解決できるか検証し、ブログ記事化
+
+**方針決定済み**:
+- `design/foundations.pen` を作成（`docs/design/foundations.md` の進化版）
+- 説明テキスト + 視覚的例示を1ファイルに統合
+- 検証成功すれば .pen を Design の Source of Truth に
+
+**実験計画**:
+1. Design Tokens 可視化（色・Typography）
+2. Spacing 策定（視覚的に探索）
+3. コンポーネント作成（Figma→React問題の核心検証）
+
+**進捗**:
+1. [x] `design/foundations.pen` を Pencil で作成
+2. [x] Colors セクション（説明 + カラースウォッチ）
+3. [x] Typography セクション追加
+4. [x] Spacing セクション追加（使用例フレーム含む）
+5. [x] Article Design サンプル作成
+6. [ ] コンポーネント作成（Figma→React核心検証）
+
+**Design Tokens 設定値（確定済み）**:
+```
+Colors: background, foreground, muted, muted-foreground, border（Light/Dark対応）
+Typography: Source Sans 3 + Noto Sans JP, Light 300, 18px, line-height 1.8
+Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
+```
+
+---
+
+### 通常フロー（Pencil検証後）
+
 1. ~~Design Tokens（グレースケール）の確定~~ ✅
-2. Design Tokens（タイポグラフィ）の策定
+2. ~~Design Tokens（タイポグラフィ）の策定~~ ✅
 3. Design Tokens（スペーシング）の策定
 4. `feature/redesign` ブランチを作成
 5. Phase 2 開始

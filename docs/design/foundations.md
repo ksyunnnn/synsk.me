@@ -158,17 +158,50 @@ fontFamily: {
 
 ### Design Intent
 
-[TODO: スペーシングに関する設計意図]
+**呼吸するレイアウト**: 8px ベースのスケールで、要素間に適切な余白を確保する。
+
+PRINCIPLES.md との関連:
+- **余白 over 密度**: 大きめのスペーシング（lg, xl）を積極的に使い、視覚的な余裕を生む
+- **息づき over 装飾**: 余白自体がデザイン要素。詰め込まずに呼吸させる
 
 ### Scale
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `xs` | [TODO] | [TODO] |
-| `sm` | [TODO] | [TODO] |
-| `md` | [TODO] | [TODO] |
-| `lg` | [TODO] | [TODO] |
-| `xl` | [TODO] | [TODO] |
+| `xs` | 8px | インライン要素間、アイコンとテキスト |
+| `sm` | 16px | コンポーネント内パディング |
+| `md` | 24px | カード内余白、フォーム要素間 |
+| `lg` | 48px | セクション間、大きなグループ分け |
+| `xl` | 96px | ページセクション間、ヒーロー領域 |
+
+**特徴**:
+- 8px ベース（8, 16, 24, 48, 96）で倍数関係を維持
+- lg（48px）以上を積極的に使用することで「余白 over 密度」を体現
+- Tailwind の spacing scale と互換性あり（2, 4, 6, 12, 24）
+
+### Implementation
+
+```css
+/* src/app/globals.css */
+:root {
+  --spacing-xs: 8px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 48px;
+  --spacing-xl: 96px;
+}
+```
+
+```typescript
+// tailwind.config.ts
+spacing: {
+  'xs': '8px',
+  'sm': '16px',
+  'md': '24px',
+  'lg': '48px',
+  'xl': '96px',
+}
+```
 
 ---
 
@@ -192,3 +225,4 @@ fontFamily: {
 | 2026-01-27 | 0.1.0 | 初期構造作成 |
 | 2026-01-27 | 0.2.0 | グレースケール（Neutral Gray）確定、モノクロファーストアプローチ明記 |
 | 2026-01-29 | 0.3.0 | Typography 確定: Source Sans 3 + Noto Sans JP, Light 300 ベース |
+| 2026-01-29 | 0.4.0 | Spacing 確定: 8px ベース（xs/sm/md/lg/xl） |
