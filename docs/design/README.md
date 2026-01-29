@@ -26,7 +26,10 @@ Components（どう）            ← 将来追加
 
 | Document | Description | Status |
 |----------|-------------|--------|
-| [foundations.md](./foundations.md) | 色・フォント・スペース | TODO |
+| [foundations.md](./foundations.md) | 色・フォント・スペース | ✅ Colors, Typography / TODO Spacing |
+| [reference-kbkbkb.md](./reference-kbkbkb.md) | UI参考サイト分析（kbkbkb.co） | ✅ |
+| [typography-comparison.html](./typography-comparison.html) | タイポグラフィ比較（ブラウザで開く） | ✅ |
+| [font-pairing-comparison.html](./font-pairing-comparison.html) | フォントペアリング比較（ブラウザで開く） | ✅ |
 | components.md | コンポーネント規約 | 将来追加 |
 
 ---

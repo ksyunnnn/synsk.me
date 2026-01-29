@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Font Pairing Comparison | synsk.me</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300;400;500;700&family=Inter:wght@300;400;500;700&family=Source+Sans+3:wght@300;400;500;600;700&family=Work+Sans:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&family=BIZ+UDGothic:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: system-ui, sans-serif;
+      background: hsl(0, 0%, 98%);
+      color: hsl(0, 0%, 8%);
+      line-height: 1.6;
+    }
+
+    .header {
+      padding: 32px;
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+      background: white;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: hsl(0, 0%, 45%);
+    }
+
+    .principles {
+      padding: 24px 32px;
+      background: hsl(0, 0%, 96%);
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+      font-size: 14px;
+    }
+
+    .principles strong { color: hsl(0, 0%, 20%); }
+
+    .principles ul {
+      margin: 12px 0 0 20px;
+      line-height: 1.8;
+    }
+
+    .section {
+      padding: 48px 32px;
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+    }
+
+    .section-title {
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: hsl(0, 0%, 45%);
+      margin-bottom: 32px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 1200px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: white;
+      border: 1px solid hsl(0, 0%, 88%);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .card.highlight {
+      border-color: hsl(0, 0%, 50%);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .card-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid hsl(0, 0%, 92%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-header h3 {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    .card-header .badge {
+      background: hsl(0, 0%, 20%);
+      color: white;
+      padding: 3px 10px;
+      border-radius: 4px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .card-header .spec {
+      font-size: 11px;
+      font-family: monospace;
+      color: hsl(0, 0%, 55%);
+    }
+
+    .card-body {
+      padding: 32px;
+    }
+
+    .demo-title {
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 16px;
+      line-height: 1.4;
+    }
+
+    .demo-body {
+      font-size: 16px;
+      line-height: 1.8;
+      margin-bottom: 16px;
+    }
+
+    .demo-meta {
+      font-size: 13px;
+      color: hsl(0, 0%, 50%);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .demo-light {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid hsl(0, 0%, 92%);
+    }
+
+    .demo-light-title {
+      font-size: 36px;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .demo-light-sub {
+      font-size: 12px;
+      color: hsl(0, 0%, 55%);
+    }
+
+    .eval-table {
+      width: 100%;
+      font-size: 12px;
+      margin-top: 24px;
+      border-collapse: collapse;
+    }
+
+    .eval-table td {
+      padding: 10px 0;
+      border-bottom: 1px solid hsl(0, 0%, 92%);
+    }
+
+    .eval-table td:first-child {
+      color: hsl(0, 0%, 50%);
+    }
+
+    .eval-table td:last-child {
+      text-align: right;
+    }
+
+    .eval-table tr:last-child td {
+      border-bottom: none;
+    }
+
+    .notes {
+      margin-top: 16px;
+      padding: 12px 16px;
+      background: hsl(0, 0%, 96%);
+      border-radius: 4px;
+      font-size: 13px;
+      color: hsl(0, 0%, 45%);
+    }
+
+    .notes strong {
+      color: hsl(0, 0%, 25%);
+    }
+
+    /* Comparison Reference */
+    .reference {
+      padding: 24px 32px;
+      background: hsl(0, 0%, 94%);
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+    }
+
+    .reference-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: hsl(0, 0%, 50%);
+      margin-bottom: 16px;
+    }
+
+    .reference-grid {
+      display: flex;
+      gap: 32px;
+      flex-wrap: wrap;
+    }
+
+    .reference-item {
+      font-size: 18px;
+      line-height: 1.6;
+    }
+
+    .reference-label {
+      font-size: 11px;
+      color: hsl(0, 0%, 55%);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Font Pairing Comparison</h1>
+    <p>Lato 以外の英語フォント × 日本語フォント | PRINCIPLES.md 照合</p>
+  </div>
+
+  <div class="principles">
+    <strong>Design Principles との照合基準:</strong>
+    <ul>
+      <li><strong>余白 over 密度</strong>: 文字が主張しすぎない、軽やかなウェイト</li>
+      <li><strong>息づき over 装飾</strong>: 静かで控えめ、派手すぎない</li>
+      <li><strong>対話 over 展示</strong>: 親しみやすく、読みやすい</li>
+    </ul>
+  </div>
+
+  <!-- Reference: Current (Lato) -->
+  <div class="reference">
+    <div class="reference-title">Reference（現行 Lato + BIZ UDGothic）</div>
+    <div class="reference-grid">
+      <div class="reference-item" style="font-family: 'Lato', 'BIZ UDGothic', sans-serif;">
+        <span>Next.js App RouterでFaviconを動的に生成する</span>
+        <div class="reference-label">Lato + BIZ UDGothic (400)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 1: Primary Candidates -->
+  <div class="section">
+    <div class="section-title">Primary Candidates（主要候補）</div>
+    <div class="grid">
+
+      <!-- Inter + Noto Sans JP -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Inter + Noto Sans JP</h3>
+            <div class="spec">font-family: 'Inter', 'Noto Sans JP'</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'Inter', 'Noto Sans JP', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">Light 300 での見出し表現</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>△ x-height 高く、やや密に感じる</td></tr>
+            <tr><td>息づき over 装飾</td><td>△ モダンすぎる印象</td></tr>
+            <tr><td>対話 over 展示</td><td>○ 視認性は高い</td></tr>
+          </table>
+          <div class="notes">Vercel/Next.js のデフォルト。モダンだが「静けさ」より「クリーンさ」が前面に出る。</div>
+        </div>
+      </div>
+
+      <!-- Source Sans 3 + Noto Sans JP -->
+      <div class="card highlight">
+        <div class="card-header">
+          <div>
+            <h3>Source Sans 3 + Noto Sans JP</h3>
+            <div class="spec">font-family: 'Source Sans 3', 'Noto Sans JP'</div>
+          </div>
+          <span class="badge">Recommended</span>
+        </div>
+        <div class="card-body" style="font-family: 'Source Sans 3', 'Noto Sans JP', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">Light 300 での見出し表現</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>◎ 適度な太さ、詰まりすぎない</td></tr>
+            <tr><td>息づき over 装飾</td><td>◎ 控えめで静か</td></tr>
+            <tr><td>対話 over 展示</td><td>◎ 親しみやすく読みやすい</td></tr>
+          </table>
+          <div class="notes"><strong>Adobe製でNoto Sansと同系統。</strong>ウェイトバランスが自然。Light 300 対応で「息づき」表現可能。</div>
+        </div>
+      </div>
+
+      <!-- Work Sans + Noto Sans JP -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Work Sans + Noto Sans JP</h3>
+            <div class="spec">font-family: 'Work Sans', 'Noto Sans JP'</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'Work Sans', 'Noto Sans JP', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">Light 300 での見出し表現</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>○ やや太めだが許容範囲</td></tr>
+            <tr><td>息づき over 装飾</td><td>○ 親しみやすい</td></tr>
+            <tr><td>対話 over 展示</td><td>◎ フレンドリーな印象</td></tr>
+          </table>
+          <div class="notes">Google Fonts で人気。親しみやすさがあるが、やや「カジュアル」寄り。</div>
+        </div>
+      </div>
+
+      <!-- DM Sans + Noto Sans JP -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>DM Sans + Noto Sans JP</h3>
+            <div class="spec">font-family: 'DM Sans', 'Noto Sans JP'</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'DM Sans', 'Noto Sans JP', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">Light 300 での見出し表現</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>○ 幾何学的で整っている</td></tr>
+            <tr><td>息づき over 装飾</td><td>△ やや「デザイン」を感じる</td></tr>
+            <tr><td>対話 over 展示</td><td>○ モダンで読みやすい</td></tr>
+          </table>
+          <div class="notes">幾何学的なジオメトリック・サンセリフ。洗練されているが「静けさ」より「デザイン感」が出る。</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Section 2: With BIZ UDGothic -->
+  <div class="section">
+    <div class="section-title">With BIZ UDGothic（UDフォント組み合わせ）</div>
+    <div class="grid">
+
+      <!-- Source Sans 3 + BIZ UDGothic -->
+      <div class="card highlight">
+        <div class="card-header">
+          <div>
+            <h3>Source Sans 3 + BIZ UDGothic</h3>
+            <div class="spec">font-family: 'Source Sans 3', 'BIZ UDGothic'</div>
+          </div>
+          <span class="badge">Alternative</span>
+        </div>
+        <div class="card-body" style="font-family: 'Source Sans 3', 'BIZ UDGothic', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">※ BIZ UDGothic は Light 300 非対応</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>◎ ウェイトバランス良好</td></tr>
+            <tr><td>息づき over 装飾</td><td>○ Light 非対応が惜しい</td></tr>
+            <tr><td>対話 over 展示</td><td>◎ UDで最高の読みやすさ</td></tr>
+          </table>
+          <div class="notes"><strong>UDフォントの読みやすさ × Source Sans の調和。</strong>Light が使えないが、Regular でも十分軽やか。</div>
+        </div>
+      </div>
+
+      <!-- Work Sans + BIZ UDGothic -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Work Sans + BIZ UDGothic</h3>
+            <div class="spec">font-family: 'Work Sans', 'BIZ UDGothic'</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'Work Sans', 'BIZ UDGothic', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">※ BIZ UDGothic は Light 300 非対応</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>○ やや太めのバランス</td></tr>
+            <tr><td>息づき over 装飾</td><td>○ Light 非対応が惜しい</td></tr>
+            <tr><td>対話 over 展示</td><td>◎ 親しみやすい + 読みやすい</td></tr>
+          </table>
+          <div class="notes">Work Sans の親しみやすさ + UDの読みやすさ。「対話」重視なら有力候補。</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Section 3: Outfit (Bonus) -->
+  <div class="section">
+    <div class="section-title">Bonus: Outfit（現代的な選択肢）</div>
+    <div class="grid">
+
+      <!-- Outfit + Noto Sans JP -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Outfit + Noto Sans JP</h3>
+            <div class="spec">font-family: 'Outfit', 'Noto Sans JP'</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'Outfit', 'Noto Sans JP', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">Light 300 での見出し表現</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>○ すっきりしている</td></tr>
+            <tr><td>息づき over 装飾</td><td>△ やや「トレンド感」がある</td></tr>
+            <tr><td>対話 over 展示</td><td>○ 現代的で読みやすい</td></tr>
+          </table>
+          <div class="notes">2020年代の新しいフォント。洗練されているが「トレンド」を感じる分、普遍性に欠ける可能性。</div>
+        </div>
+      </div>
+
+      <!-- Lato Reference -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <h3>Lato + BIZ UDGothic（参考）</h3>
+            <div class="spec">font-family: 'Lato', 'BIZ UDGothic'</div>
+          </div>
+          <span class="badge" style="background: hsl(0,0%,60%);">Current</span>
+        </div>
+        <div class="card-body" style="font-family: 'Lato', 'BIZ UDGothic', sans-serif;">
+          <p class="demo-title">Next.js App RouterでFaviconを動的に生成する</p>
+          <p class="demo-body">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p class="demo-meta">TypeScript / React / Supabase</p>
+
+          <div class="demo-light">
+            <p class="demo-light-title">余白と対話</p>
+            <p class="demo-light-sub">※ BIZ UDGothic は Light 300 非対応</p>
+          </div>
+
+          <table class="eval-table">
+            <tr><td>余白 over 密度</td><td>◎ ウェイトバランス良好</td></tr>
+            <tr><td>息づき over 装飾</td><td>◎ 控えめで静か</td></tr>
+            <tr><td>対話 over 展示</td><td>◎ UDで読みやすい</td></tr>
+          </table>
+          <div class="notes">現行の推奨。比較用に掲載。</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Section: kbkbkb.co Style -->
+  <div class="section" style="background: hsl(0, 0%, 4%); color: white;">
+    <div class="section-title" style="color: hsl(0, 0%, 50%);">kbkbkb.co Style（Light 300 ベース）- 参考サイトの雰囲気を再現</div>
+
+    <p style="color: hsl(0, 0%, 60%); font-size: 14px; margin-bottom: 32px;">
+      kbkbkb.co の特徴: <strong style="color: hsl(0, 0%, 80%);">Light ウェイト × 広い行間 × 大きめ本文</strong><br>
+      本文も font-weight: 300 を使用し、文字が「囁く」ような軽やかさを再現
+    </p>
+
+    <div class="grid">
+
+      <!-- Lato Light + Noto Sans JP Light -->
+      <div class="card" style="background: hsl(0, 0%, 8%); border-color: hsl(0, 0%, 20%);">
+        <div class="card-header" style="border-color: hsl(0, 0%, 15%);">
+          <div>
+            <h3 style="color: white;">Lato Light + Noto Sans JP Light</h3>
+            <div class="spec" style="color: hsl(0, 0%, 50%);">font-weight: 300 / line-height: 1.8</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'Lato', 'Noto Sans JP', sans-serif; font-weight: 300; line-height: 1.8; font-size: 18px;">
+          <p style="margin-bottom: 24px;">初めてのARグラス。<br>「XREAL ONE」は、現実の世界に映像を重ねて表示できるメガネ型ディスプレイです。</p>
+          <p style="margin-bottom: 24px;">最初は少し目が疲れましたが、今ではすっかり慣れてきて、大迫力の映像を快適に楽しめるようになりました。</p>
+          <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: hsl(0, 0%, 50%);">TypeScript / React / Supabase</p>
+        </div>
+      </div>
+
+      <!-- Source Sans 3 Light + Noto Sans JP Light -->
+      <div class="card highlight" style="background: hsl(0, 0%, 8%); border-color: hsl(0, 0%, 40%);">
+        <div class="card-header" style="border-color: hsl(0, 0%, 15%);">
+          <div>
+            <h3 style="color: white;">Source Sans 3 Light + Noto Sans JP Light</h3>
+            <div class="spec" style="color: hsl(0, 0%, 50%);">font-weight: 300 / line-height: 1.8</div>
+          </div>
+          <span class="badge">Closest</span>
+        </div>
+        <div class="card-body" style="font-family: 'Source Sans 3', 'Noto Sans JP', sans-serif; font-weight: 300; line-height: 1.8; font-size: 18px;">
+          <p style="margin-bottom: 24px;">初めてのARグラス。<br>「XREAL ONE」は、現実の世界に映像を重ねて表示できるメガネ型ディスプレイです。</p>
+          <p style="margin-bottom: 24px;">最初は少し目が疲れましたが、今ではすっかり慣れてきて、大迫力の映像を快適に楽しめるようになりました。</p>
+          <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: hsl(0, 0%, 50%);">TypeScript / React / Supabase</p>
+        </div>
+      </div>
+
+      <!-- Work Sans Light + Noto Sans JP Light -->
+      <div class="card" style="background: hsl(0, 0%, 8%); border-color: hsl(0, 0%, 20%);">
+        <div class="card-header" style="border-color: hsl(0, 0%, 15%);">
+          <div>
+            <h3 style="color: white;">Work Sans Light + Noto Sans JP Light</h3>
+            <div class="spec" style="color: hsl(0, 0%, 50%);">font-weight: 300 / line-height: 1.8</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'Work Sans', 'Noto Sans JP', sans-serif; font-weight: 300; line-height: 1.8; font-size: 18px;">
+          <p style="margin-bottom: 24px;">初めてのARグラス。<br>「XREAL ONE」は、現実の世界に映像を重ねて表示できるメガネ型ディスプレイです。</p>
+          <p style="margin-bottom: 24px;">最初は少し目が疲れましたが、今ではすっかり慣れてきて、大迫力の映像を快適に楽しめるようになりました。</p>
+          <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: hsl(0, 0%, 50%);">TypeScript / React / Supabase</p>
+        </div>
+      </div>
+
+      <!-- Inter Light + Noto Sans JP Light -->
+      <div class="card" style="background: hsl(0, 0%, 8%); border-color: hsl(0, 0%, 20%);">
+        <div class="card-header" style="border-color: hsl(0, 0%, 15%);">
+          <div>
+            <h3 style="color: white;">Inter Light + Noto Sans JP Light</h3>
+            <div class="spec" style="color: hsl(0, 0%, 50%);">font-weight: 300 / line-height: 1.8</div>
+          </div>
+        </div>
+        <div class="card-body" style="font-family: 'Inter', 'Noto Sans JP', sans-serif; font-weight: 300; line-height: 1.8; font-size: 18px;">
+          <p style="margin-bottom: 24px;">初めてのARグラス。<br>「XREAL ONE」は、現実の世界に映像を重ねて表示できるメガネ型ディスプレイです。</p>
+          <p style="margin-bottom: 24px;">最初は少し目が疲れましたが、今ではすっかり慣れてきて、大迫力の映像を快適に楽しめるようになりました。</p>
+          <p style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: hsl(0, 0%, 50%);">TypeScript / React / Supabase</p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="notes" style="background: hsl(0, 0%, 12%); color: hsl(0, 0%, 60%); margin-top: 32px; max-width: 800px;">
+      <strong style="color: hsl(0, 0%, 80%);">kbkbkb.co の再現ポイント:</strong><br>
+      - font-weight: <strong style="color: white;">300</strong>（本文も Light）<br>
+      - font-size: <strong style="color: white;">18-20px</strong>（大きめ）<br>
+      - line-height: <strong style="color: white;">1.8</strong>（広い行間）<br>
+      - letter-spacing: <strong style="color: white;">0.1em</strong>（ラベル/ナビ用）<br>
+      - text-transform: <strong style="color: white;">uppercase</strong>（英語ラベル）
+    </div>
+  </div>
+
+  <!-- Summary -->
+  <div class="section" style="background: white;">
+    <div class="section-title">Summary（まとめ）</div>
+    <table style="width: 100%; max-width: 800px; border-collapse: collapse; font-size: 14px;">
+      <thead>
+        <tr style="border-bottom: 2px solid hsl(0,0%,20%);">
+          <th style="text-align: left; padding: 12px 0;">組み合わせ</th>
+          <th style="text-align: center; padding: 12px 8px;">余白</th>
+          <th style="text-align: center; padding: 12px 8px;">息づき</th>
+          <th style="text-align: center; padding: 12px 8px;">対話</th>
+          <th style="text-align: center; padding: 12px 8px;">Light</th>
+          <th style="text-align: left; padding: 12px 0;">備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-bottom: 1px solid hsl(0,0%,88%); background: hsl(0,0%,96%);">
+          <td style="padding: 12px 0;"><strong>Source Sans 3 + Noto Sans JP</strong></td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">✓</td>
+          <td style="padding: 12px 0; color: hsl(0,0%,45%);">推奨</td>
+        </tr>
+        <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+          <td style="padding: 12px 0;">Source Sans 3 + BIZ UDGothic</td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">○</td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">-</td>
+          <td style="padding: 12px 0; color: hsl(0,0%,45%);">UD重視</td>
+        </tr>
+        <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+          <td style="padding: 12px 0;">Work Sans + Noto Sans JP</td>
+          <td style="text-align: center;">○</td>
+          <td style="text-align: center;">○</td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">✓</td>
+          <td style="padding: 12px 0; color: hsl(0,0%,45%);">対話重視</td>
+        </tr>
+        <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+          <td style="padding: 12px 0;">Inter + Noto Sans JP</td>
+          <td style="text-align: center;">△</td>
+          <td style="text-align: center;">△</td>
+          <td style="text-align: center;">○</td>
+          <td style="text-align: center;">✓</td>
+          <td style="padding: 12px 0; color: hsl(0,0%,45%);">モダン過ぎ</td>
+        </tr>
+        <tr style="border-bottom: 1px solid hsl(0,0%,88%); background: hsl(0,0%,98%);">
+          <td style="padding: 12px 0;"><em>Lato + BIZ UDGothic（現行）</em></td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">◎</td>
+          <td style="text-align: center;">-</td>
+          <td style="padding: 12px 0; color: hsl(0,0%,45%);">参考</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="notes" style="max-width: 800px; margin-top: 32px;">
+      <strong>提案（kbkbkb.co スタイルを踏まえて）:</strong><br><br>
+
+      <strong style="font-size: 16px;">Source Sans 3 + Noto Sans JP（Light 300 ベース）</strong><br><br>
+
+      - kbkbkb.co の「囁くような軽やかさ」を再現するには <strong>Light 300</strong> が必須<br>
+      - Source Sans 3 は Noto Sans JP と同系統でウェイトバランスが自然<br>
+      - 本文 font-weight: 300 / font-size: 18px / line-height: 1.8<br>
+      - ラベル/ナビは uppercase + letter-spacing: 0.1em<br><br>
+
+      <strong>BIZ UDGothic は Light 非対応のため、kbkbkb.co スタイルには不向き。</strong>
+    </div>
+  </div>
+
+</body>
+</html>

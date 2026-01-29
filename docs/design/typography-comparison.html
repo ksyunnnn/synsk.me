@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Typography Comparison | synsk.me Design Tokens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;500;700&family=Inter:wght@100;300;400;500;700&family=Source+Sans+3:wght@300;400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@100;300;400;500;700&family=BIZ+UDGothic:wght@400;700&family=M+PLUS+1p:wght@100;300;400;500;700&family=Zen+Kaku+Gothic+New:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Lato', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: hsl(0, 0%, 98%);
+      color: hsl(0, 0%, 8%);
+    }
+
+    /* Header */
+    .header {
+      padding: 32px;
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+      background: white;
+    }
+
+    .header h1 {
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: hsl(0, 0%, 45%);
+    }
+
+    /* Navigation */
+    .nav-toc {
+      padding: 16px 32px;
+      background: hsl(0, 0%, 96%);
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+      font-size: 13px;
+    }
+
+    .nav-toc a {
+      color: hsl(0, 0%, 45%);
+      text-decoration: none;
+    }
+
+    .nav-toc a:hover {
+      color: hsl(0, 0%, 20%);
+    }
+
+    /* Section */
+    .section {
+      padding: 48px 32px;
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+    }
+
+    .section-title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: hsl(0, 0%, 45%);
+      margin-bottom: 24px;
+    }
+
+    /* Comparison Grid */
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+
+    .comparison-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 1400px) {
+      .comparison-grid-4 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 1200px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 800px) {
+      .comparison-grid-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .option {
+      background: white;
+      border: 1px solid hsl(0, 0%, 88%);
+      border-radius: 8px;
+      padding: 32px;
+    }
+
+    .option.recommended {
+      border-color: hsl(0, 0%, 60%);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .option-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: hsl(0, 0%, 45%);
+      margin-bottom: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .option-label .badge {
+      background: hsl(0, 0%, 20%);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+    }
+
+    .option h3 {
+      font-size: 20px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .option .spec {
+      font-size: 13px;
+      color: hsl(0, 0%, 45%);
+      margin-bottom: 24px;
+      font-family: monospace;
+    }
+
+    /* ===========================
+       SECTION 1: Font Size
+       =========================== */
+
+    .font-size-demo {
+      padding: 24px;
+      background: hsl(0, 0%, 98%);
+      border-radius: 4px;
+      margin-bottom: 16px;
+      line-height: 1.8;
+    }
+
+    .fs-16 .font-size-demo { font-size: 16px; }
+    .fs-18 .font-size-demo { font-size: 18px; }
+    .fs-20 .font-size-demo { font-size: 20px; }
+
+    .font-size-demo p + p {
+      margin-top: 1.5em;
+    }
+
+    .char-count {
+      font-size: 11px;
+      color: hsl(0, 0%, 60%);
+      margin-top: 16px;
+      font-family: monospace;
+    }
+
+    /* ===========================
+       SECTION 2: Japanese Fonts
+       =========================== */
+
+    .jp-font-demo {
+      padding: 24px;
+      background: hsl(0, 0%, 98%);
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    .jp-noto .jp-font-demo { font-family: 'Noto Sans JP', sans-serif; }
+    .jp-biz .jp-font-demo { font-family: 'BIZ UDGothic', sans-serif; }
+    .jp-mplus .jp-font-demo { font-family: 'M PLUS 1p', sans-serif; }
+    .jp-zen .jp-font-demo { font-family: 'Zen Kaku Gothic New', sans-serif; }
+
+    .jp-font-demo p + p {
+      margin-top: 1.5em;
+    }
+
+    .font-weights {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid hsl(0, 0%, 88%);
+    }
+
+    .font-weight-sample {
+      font-size: 14px;
+    }
+
+    .jp-noto .fw-100 { font-family: 'Noto Sans JP', sans-serif; font-weight: 100; }
+    .jp-noto .fw-300 { font-family: 'Noto Sans JP', sans-serif; font-weight: 300; }
+    .jp-noto .fw-400 { font-family: 'Noto Sans JP', sans-serif; font-weight: 400; }
+    .jp-noto .fw-700 { font-family: 'Noto Sans JP', sans-serif; font-weight: 700; }
+
+    .jp-biz .fw-400 { font-family: 'BIZ UDGothic', sans-serif; font-weight: 400; }
+    .jp-biz .fw-700 { font-family: 'BIZ UDGothic', sans-serif; font-weight: 700; }
+
+    .jp-mplus .fw-100 { font-family: 'M PLUS 1p', sans-serif; font-weight: 100; }
+    .jp-mplus .fw-300 { font-family: 'M PLUS 1p', sans-serif; font-weight: 300; }
+    .jp-mplus .fw-400 { font-family: 'M PLUS 1p', sans-serif; font-weight: 400; }
+    .jp-mplus .fw-700 { font-family: 'M PLUS 1p', sans-serif; font-weight: 700; }
+
+    .jp-zen .fw-300 { font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 300; }
+    .jp-zen .fw-400 { font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 400; }
+    .jp-zen .fw-700 { font-family: 'Zen Kaku Gothic New', sans-serif; font-weight: 700; }
+
+    /* ===========================
+       SECTION 3: Line Height
+       =========================== */
+
+    .line-height-demo {
+      padding: 24px;
+      background: hsl(0, 0%, 98%);
+      border-radius: 4px;
+      margin-bottom: 16px;
+    }
+
+    .lh-tight .line-height-demo { line-height: 1.5; }
+    .lh-relaxed .line-height-demo { line-height: 1.65; }
+    .lh-loose .line-height-demo { line-height: 1.8; }
+
+    .line-height-demo p {
+      font-size: 16px;
+    }
+
+    .line-height-demo p + p {
+      margin-top: 1em;
+    }
+
+    /* ===========================
+       SECTION 4: Heading Weight
+       =========================== */
+
+    .heading-demo {
+      margin-bottom: 24px;
+    }
+
+    .hw-regular .heading-demo h2 { font-weight: 400; }
+    .hw-light .heading-demo h2 { font-weight: 300; }
+    .hw-thin .heading-demo h2 { font-weight: 100; }
+
+    .heading-demo h2 {
+      font-size: 48px;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .heading-demo .subhead {
+      font-size: 14px;
+      color: hsl(0, 0%, 45%);
+    }
+
+    /* ===========================
+       SECTION 5: Letter Spacing
+       =========================== */
+
+    .spacing-demo {
+      margin-bottom: 16px;
+    }
+
+    .ls-standard .nav-demo { letter-spacing: 0; }
+    .ls-wide .nav-demo { letter-spacing: 0.08em; }
+    .ls-extra .nav-demo { letter-spacing: 0.15em; }
+
+    .nav-demo {
+      display: flex;
+      gap: 24px;
+      font-size: 13px;
+      text-transform: uppercase;
+      padding: 16px 0;
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+      margin-bottom: 24px;
+    }
+
+    .nav-demo span {
+      cursor: pointer;
+    }
+
+    .nav-demo span:hover {
+      color: hsl(0, 0%, 45%);
+    }
+
+    .label-demo {
+      display: inline-block;
+      font-size: 11px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border: 1px solid hsl(0, 0%, 88%);
+      border-radius: 4px;
+      margin-right: 8px;
+    }
+
+    .ls-standard .label-demo { letter-spacing: 0; }
+    .ls-wide .label-demo { letter-spacing: 0.08em; }
+    .ls-extra .label-demo { letter-spacing: 0.15em; }
+
+    /* ===========================
+       SECTION 6: Type Scale
+       =========================== */
+
+    .scale-demo {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .scale-item {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .scale-item .token {
+      font-size: 11px;
+      font-family: monospace;
+      color: hsl(0, 0%, 45%);
+      width: 80px;
+      flex-shrink: 0;
+    }
+
+    /* Scale A: Major Third (1.25) */
+    .scale-a .h1 { font-size: 39px; font-weight: 300; }
+    .scale-a .h2 { font-size: 31px; font-weight: 300; }
+    .scale-a .h3 { font-size: 25px; font-weight: 400; }
+    .scale-a .body { font-size: 16px; font-weight: 400; }
+    .scale-a .small { font-size: 13px; font-weight: 400; color: hsl(0, 0%, 45%); }
+
+    /* Scale B: Perfect Fourth (1.333) */
+    .scale-b .h1 { font-size: 47px; font-weight: 300; }
+    .scale-b .h2 { font-size: 35px; font-weight: 300; }
+    .scale-b .h3 { font-size: 26px; font-weight: 400; }
+    .scale-b .body { font-size: 16px; font-weight: 400; }
+    .scale-b .small { font-size: 12px; font-weight: 400; color: hsl(0, 0%, 45%); }
+
+    /* Scale C: Minor Third (1.2) - More subtle */
+    .scale-c .h1 { font-size: 33px; font-weight: 300; }
+    .scale-c .h2 { font-size: 28px; font-weight: 300; }
+    .scale-c .h3 { font-size: 23px; font-weight: 400; }
+    .scale-c .body { font-size: 16px; font-weight: 400; }
+    .scale-c .small { font-size: 13px; font-weight: 400; color: hsl(0, 0%, 45%); }
+
+    /* ===========================
+       SECTION 7: Full Preview
+       =========================== */
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 24px;
+    }
+
+    @media (max-width: 1000px) {
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .preview {
+      background: white;
+      border: 1px solid hsl(0, 0%, 88%);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .preview.recommended {
+      border-color: hsl(0, 0%, 60%);
+    }
+
+    .preview-header {
+      padding: 16px 24px;
+      border-bottom: 1px solid hsl(0, 0%, 88%);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .preview-header .title {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: hsl(0, 0%, 45%);
+    }
+
+    .preview-body {
+      padding: 48px;
+    }
+
+    /* Preview A: Standard */
+    .preview-a .preview-body {
+      line-height: 1.5;
+      font-family: 'Lato', 'Noto Sans JP', sans-serif;
+    }
+    .preview-a .preview-body h2 {
+      font-size: 32px;
+      font-weight: 400;
+      margin-bottom: 16px;
+    }
+    .preview-a .preview-body .nav {
+      font-size: 13px;
+      letter-spacing: 0;
+      margin-bottom: 32px;
+    }
+    .preview-a .preview-body p {
+      font-size: 16px;
+    }
+
+    /* Preview B: Recommended (kbkbkb-inspired) */
+    .preview-b .preview-body {
+      line-height: 1.8;
+      font-family: 'Lato', 'Noto Sans JP', sans-serif;
+    }
+    .preview-b .preview-body h2 {
+      font-size: 32px;
+      font-weight: 300;
+      letter-spacing: -0.01em;
+      margin-bottom: 24px;
+    }
+    .preview-b .preview-body .nav {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 40px;
+      color: hsl(0, 0%, 45%);
+    }
+    .preview-b .preview-body p {
+      font-size: 18px;
+    }
+
+    .preview-body .nav {
+      display: flex;
+      gap: 24px;
+    }
+
+    .preview-body p {
+      margin-bottom: 1.5em;
+    }
+
+    .preview-body p:last-child {
+      margin-bottom: 0;
+    }
+
+    .preview-body .muted {
+      color: hsl(0, 0%, 45%);
+      font-size: 14px;
+    }
+
+    /* Notes */
+    .notes {
+      margin-top: 24px;
+      padding: 16px;
+      background: hsl(0, 0%, 96%);
+      border-radius: 4px;
+      font-size: 13px;
+      color: hsl(0, 0%, 45%);
+    }
+
+    .notes strong {
+      color: hsl(0, 0%, 20%);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Typography Comparison</h1>
+    <p>synsk.me Design Tokens - PRINCIPLES.md「余白 over 密度」「息づき over 装飾」を体現するタイポグラフィ</p>
+  </div>
+
+  <nav class="nav-toc">
+    <a href="#font-size">1. Font Size</a>
+    <a href="#japanese-font">2. Japanese Font</a>
+    <a href="#weight-tuning">2.5. Weight Tuning</a>
+    <a href="#english-font">2.6. English Font</a>
+    <a href="#line-height">3. Line Height</a>
+    <a href="#heading-weight">4. Heading Weight</a>
+    <a href="#letter-spacing">5. Letter Spacing</a>
+    <a href="#type-scale">6. Type Scale</a>
+    <a href="#full-preview">7. Full Preview</a>
+  </nav>
+
+  <!-- Section 1: Font Size -->
+  <div class="section" id="font-size">
+    <div class="section-title">1. Font Size（本文サイズ）- 実際のコンテンツで比較</div>
+    <div class="comparison-grid">
+      <div class="option fs-16">
+        <div class="option-label">Option A</div>
+        <h3>Standard</h3>
+        <div class="spec">font-size: 16px（ブラウザデフォルト）</div>
+        <div class="font-size-demo">
+          <p class="work-title" style="font-weight: 500; margin-bottom: 8px;">ReactコンポーネントのasをTypeScriptで実装する</p>
+          <p>Reactコンポーネントで動的にタグを変更できる「as」propの実装方法。<code style="background: hsl(0,0%,92%); padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">keyof JSX.IntrinsicElements</code>と<code style="background: hsl(0,0%,92%); padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">React.ComponentType</code>を組み合わせて型安全を実現。validateDOMNestingの警告にも対応。</p>
+        </div>
+        <div class="char-count">↑ 1行あたり約40文字（幅による）</div>
+        <div class="notes">標準的。情報量を多く表示できる。ブログ記事向き。</div>
+      </div>
+
+      <div class="option fs-18 recommended">
+        <div class="option-label">
+          Option B
+          <span class="badge">Recommended</span>
+        </div>
+        <h3>Comfortable</h3>
+        <div class="spec">font-size: 18px</div>
+        <div class="font-size-demo">
+          <p class="work-title" style="font-weight: 500; margin-bottom: 8px;">ReactコンポーネントのasをTypeScriptで実装する</p>
+          <p>Reactコンポーネントで動的にタグを変更できる「as」propの実装方法。<code style="background: hsl(0,0%,92%); padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">keyof JSX.IntrinsicElements</code>と<code style="background: hsl(0,0%,92%); padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">React.ComponentType</code>を組み合わせて型安全を実現。validateDOMNestingの警告にも対応。</p>
+        </div>
+        <div class="char-count">↑ 1行あたり約35文字</div>
+        <div class="notes"><strong>「余白 over 密度」のバランス。</strong>読みやすく、かつ情報量も確保。</div>
+      </div>
+
+      <div class="option fs-20">
+        <div class="option-label">Option C</div>
+        <h3>Statement</h3>
+        <div class="spec">font-size: 20px（kbkbkb.co スタイル）</div>
+        <div class="font-size-demo">
+          <p class="work-title" style="font-weight: 500; margin-bottom: 8px;">ReactコンポーネントのasをTypeScriptで実装する</p>
+          <p>Reactコンポーネントで動的にタグを変更できる「as」propの実装方法。<code style="background: hsl(0,0%,92%); padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">keyof JSX.IntrinsicElements</code>と<code style="background: hsl(0,0%,92%); padding: 2px 6px; border-radius: 3px; font-size: 0.9em;">React.ComponentType</code>を組み合わせて型安全を実現。validateDOMNestingの警告にも対応。</p>
+        </div>
+        <div class="char-count">↑ 1行あたり約30文字</div>
+        <div class="notes">ステートメント向き。文章量が少ない場合に効果的。kbkbkb.co の印象に近い。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Japanese Fonts -->
+  <div class="section" id="japanese-font">
+    <div class="section-title">2. Japanese Font（日本語フォント）- Lato（英語）との組み合わせ</div>
+    <div class="comparison-grid-4">
+      <div class="option jp-noto recommended">
+        <div class="option-label">
+          Option A
+          <span class="badge">Recommended</span>
+        </div>
+        <h3>Lato + Noto Sans JP</h3>
+        <div class="spec">font-family: 'Lato', 'Noto Sans JP', sans-serif</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'Noto Sans JP', sans-serif;">
+          <p style="font-weight: 500; margin-bottom: 12px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p>ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作し、リアルタイムに更新される。</p>
+          <p style="margin-top: 16px; font-size: 14px; color: hsl(0, 0%, 45%);">TypeScript / React / Supabase</p>
+        </div>
+        <div class="font-weights">
+          <span class="font-weight-sample fw-100">Thin 100</span>
+          <span class="font-weight-sample fw-300">Light 300</span>
+          <span class="font-weight-sample fw-400">Regular 400</span>
+          <span class="font-weight-sample fw-700">Bold 700</span>
+        </div>
+        <div class="notes"><strong>Lato と相性良好。</strong>Light 300 が使え、「息づき」を表現可能。最も汎用的。</div>
+      </div>
+
+      <div class="option jp-biz">
+        <div class="option-label">Option B</div>
+        <h3>Lato + BIZ UDGothic</h3>
+        <div class="spec">font-family: 'Lato', 'BIZ UDGothic', sans-serif</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'BIZ UDGothic', sans-serif;">
+          <p style="font-weight: 500; margin-bottom: 12px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p>ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作し、リアルタイムに更新される。</p>
+          <p style="margin-top: 16px; font-size: 14px; color: hsl(0, 0%, 45%);">TypeScript / React / Supabase</p>
+        </div>
+        <div class="font-weights">
+          <span class="font-weight-sample fw-400">Regular 400</span>
+          <span class="font-weight-sample fw-700">Bold 700</span>
+        </div>
+        <div class="notes">可読性重視のUDフォント。ウェイトが少ない（400/700のみ）。アクセシビリティ優先の場合に。</div>
+      </div>
+
+      <div class="option jp-mplus">
+        <div class="option-label">Option C</div>
+        <h3>Lato + M PLUS 1p</h3>
+        <div class="spec">font-family: 'Lato', 'M PLUS 1p', sans-serif</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'M PLUS 1p', sans-serif;">
+          <p style="font-weight: 500; margin-bottom: 12px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p>ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作し、リアルタイムに更新される。</p>
+          <p style="margin-top: 16px; font-size: 14px; color: hsl(0, 0%, 45%);">TypeScript / React / Supabase</p>
+        </div>
+        <div class="font-weights">
+          <span class="font-weight-sample fw-100">Thin 100</span>
+          <span class="font-weight-sample fw-300">Light 300</span>
+          <span class="font-weight-sample fw-400">Regular 400</span>
+          <span class="font-weight-sample fw-700">Bold 700</span>
+        </div>
+        <div class="notes">やや丸みがあり、親しみやすい印象。Lato のシャープさと対比が生まれる。</div>
+      </div>
+
+      <div class="option jp-zen">
+        <div class="option-label">Option D</div>
+        <h3>Lato + Zen Kaku Gothic New</h3>
+        <div class="spec">font-family: 'Lato', 'Zen Kaku Gothic New', sans-serif</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'Zen Kaku Gothic New', sans-serif;">
+          <p style="font-weight: 500; margin-bottom: 12px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p>ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作し、リアルタイムに更新される。</p>
+          <p style="margin-top: 16px; font-size: 14px; color: hsl(0, 0%, 45%);">TypeScript / React / Supabase</p>
+        </div>
+        <div class="font-weights">
+          <span class="font-weight-sample fw-300">Light 300</span>
+          <span class="font-weight-sample fw-400">Regular 400</span>
+          <span class="font-weight-sample fw-700">Bold 700</span>
+        </div>
+        <div class="notes">現代的なゴシック体。Noto Sans JP より個性がある。「静かさ」と「モダンさ」のバランス。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2.5: Weight Tuning -->
+  <div class="section" id="weight-tuning">
+    <div class="section-title">2.5. Weight Tuning（ウェイト調整）- 日本語フォントのウェイトを下げて調整</div>
+    <p style="color: hsl(0, 0%, 45%); font-size: 14px; margin-bottom: 24px;">
+      <strong>問題</strong>: Lato 500 と日本語フォント 500 の「光学的ウェイト」が一致しない<br>
+      <strong>解決策</strong>: 日本語フォントのウェイトを下げる（例: タイトルで Lato 500 + 日本語 400）
+    </p>
+    <div class="comparison-grid">
+      <div class="option">
+        <div class="option-label">Before（現状）</div>
+        <h3>Lato 500 + Noto Sans JP 500</h3>
+        <div class="spec">両方 font-weight: 500</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'Noto Sans JP', sans-serif;">
+          <p style="font-weight: 500; margin-bottom: 12px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p style="font-weight: 400;">ImageResponse APIとOpen-Meteo APIを組み合わせて実装。</p>
+        </div>
+        <div class="notes">日本語が太く見える（光学的ウェイト不一致）</div>
+      </div>
+
+      <div class="option recommended">
+        <div class="option-label">
+          After（調整後）
+          <span class="badge">Test</span>
+        </div>
+        <h3>Lato 500 + Noto Sans JP 400</h3>
+        <div class="spec">英語 500 / 日本語 400（ウェイト差をつける）</div>
+        <div class="jp-font-demo">
+          <p style="font-family: 'Lato', sans-serif; font-weight: 500; margin-bottom: 12px;"><span style="font-family: 'Lato', sans-serif;">Next.js App Router</span><span style="font-family: 'Noto Sans JP', sans-serif; font-weight: 400;">で</span><span style="font-family: 'Lato', sans-serif;">Favicon</span><span style="font-family: 'Noto Sans JP', sans-serif; font-weight: 400;">を動的に生成する</span></p>
+          <p style="font-family: 'Lato', 'Noto Sans JP', sans-serif; font-weight: 400;">ImageResponse APIとOpen-Meteo APIを組み合わせて実装。</p>
+        </div>
+        <div class="notes"><strong>CSS で実現困難</strong>: font-family の fallback では言語別ウェイト指定不可</div>
+      </div>
+
+      <div class="option recommended">
+        <div class="option-label">
+          Alternative
+          <span class="badge">Practical</span>
+        </div>
+        <h3>Lato 400 + Noto Sans JP 400</h3>
+        <div class="spec">タイトルも font-weight: 400 で統一</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'Noto Sans JP', sans-serif;">
+          <p style="font-weight: 400; margin-bottom: 12px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p style="font-weight: 400;">ImageResponse APIとOpen-Meteo APIを組み合わせて実装。</p>
+        </div>
+        <div class="notes"><strong>実装が容易</strong>: タイトルはサイズ差で区別（太さに頼らない）</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2.6: Final Candidates (Weight Adjusted) -->
+  <div class="section" id="english-font">
+    <div class="section-title">2.6. Final Candidates（最終候補）- ウェイト調整済み × PRINCIPLES.md 照合</div>
+
+    <div style="background: hsl(0, 0%, 96%); padding: 20px; border-radius: 8px; margin-bottom: 32px; font-size: 14px;">
+      <strong>Design Principles との照合基準:</strong>
+      <ul style="margin: 12px 0 0 20px; line-height: 1.8;">
+        <li><strong>余白 over 密度</strong>: 文字が主張しすぎない、軽やかなウェイト</li>
+        <li><strong>息づき over 装飾</strong>: 静かで控えめ、派手すぎない</li>
+        <li><strong>対話 over 展示</strong>: 親しみやすく、読みやすい</li>
+      </ul>
+    </div>
+
+    <div class="comparison-grid">
+      <!-- Candidate A -->
+      <div class="option recommended">
+        <div class="option-label">
+          Candidate A
+          <span class="badge">Recommended</span>
+        </div>
+        <h3>Lato + BIZ UDGothic</h3>
+        <div class="spec">タイトル: 400 / 本文: 400</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'BIZ UDGothic', sans-serif;">
+          <p style="font-weight: 400; font-size: 22px; margin-bottom: 16px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p style="font-weight: 400;">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p style="margin-top: 16px; font-size: 14px; color: hsl(0, 0%, 45%);">TypeScript / React / Supabase</p>
+        </div>
+        <table style="width: 100%; font-size: 12px; margin-top: 16px; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">余白 over 密度</td>
+            <td style="padding: 8px 0; text-align: right;">◎ ウェイトバランス良好</td>
+          </tr>
+          <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">息づき over 装飾</td>
+            <td style="padding: 8px 0; text-align: right;">◎ 控えめで静か</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">対話 over 展示</td>
+            <td style="padding: 8px 0; text-align: right;">◎ UDで読みやすい</td>
+          </tr>
+        </table>
+        <div class="notes"><strong>Light 300 非対応</strong>だが、ウェイト調整不要で実装容易。UDフォントの読みやすさ。</div>
+      </div>
+
+      <!-- Candidate B -->
+      <div class="option">
+        <div class="option-label">Candidate B</div>
+        <h3>Lato + Noto Sans JP</h3>
+        <div class="spec">タイトル: 400 / 本文: 400（ウェイト統一）</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'Noto Sans JP', sans-serif;">
+          <p style="font-weight: 400; font-size: 22px; margin-bottom: 16px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p style="font-weight: 400;">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p style="margin-top: 16px; font-size: 14px; color: hsl(0, 0%, 45%);">TypeScript / React / Supabase</p>
+        </div>
+        <table style="width: 100%; font-size: 12px; margin-top: 16px; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">余白 over 密度</td>
+            <td style="padding: 8px 0; text-align: right;">○ 400統一で軽やか</td>
+          </tr>
+          <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">息づき over 装飾</td>
+            <td style="padding: 8px 0; text-align: right;">◎ Light 300 対応</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">対話 over 展示</td>
+            <td style="padding: 8px 0; text-align: right;">○ 汎用的</td>
+          </tr>
+        </table>
+        <div class="notes"><strong>Light 300 対応</strong>で「息づき」表現の幅が広がる。最も汎用的な選択肢。</div>
+      </div>
+
+      <!-- Candidate C -->
+      <div class="option">
+        <div class="option-label">Candidate C</div>
+        <h3>Source Sans 3 + Noto Sans JP</h3>
+        <div class="spec">タイトル: 400 / 本文: 400</div>
+        <div class="jp-font-demo" style="font-family: 'Source Sans 3', 'Noto Sans JP', sans-serif;">
+          <p style="font-weight: 400; font-size: 22px; margin-bottom: 16px;">Next.js App RouterでFaviconを動的に生成する</p>
+          <p style="font-weight: 400;">ImageResponse APIとOpen-Meteo APIを組み合わせて、天気コードを絵文字で表示するFaviconを実装。Edge Runtimeで動作。</p>
+          <p style="margin-top: 16px; font-size: 14px; color: hsl(0, 0%, 45%);">TypeScript / React / Supabase</p>
+        </div>
+        <table style="width: 100%; font-size: 12px; margin-top: 16px; border-collapse: collapse;">
+          <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">余白 over 密度</td>
+            <td style="padding: 8px 0; text-align: right;">○ やや太め</td>
+          </tr>
+          <tr style="border-bottom: 1px solid hsl(0,0%,88%);">
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">息づき over 装飾</td>
+            <td style="padding: 8px 0; text-align: right;">○ 控えめ</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; color: hsl(0,0%,45%);">対話 over 展示</td>
+            <td style="padding: 8px 0; text-align: right;">○ 同系統で調和</td>
+          </tr>
+        </table>
+        <div class="notes">Adobe製でNoto Sansと同系統。ウェイトバランスが自然に揃いやすい。</div>
+      </div>
+    </div>
+
+    <!-- Light Weight Comparison -->
+    <h4 style="margin-top: 48px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; color: hsl(0,0%,45%); margin-bottom: 24px;">Light 300 での比較（息づき表現用）</h4>
+    <div class="comparison-grid">
+      <div class="option">
+        <div class="option-label">Lato + BIZ UDGothic</div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'BIZ UDGothic', sans-serif;">
+          <p style="font-weight: 300; font-size: 32px; letter-spacing: -0.01em;">余白と対話</p>
+          <p style="font-weight: 400; font-size: 14px; color: hsl(0,0%,45%); margin-top: 8px;">※ BIZ UDGothic は 300 非対応 → 400 にフォールバック</p>
+        </div>
+      </div>
+
+      <div class="option recommended">
+        <div class="option-label">
+          Lato + Noto Sans JP
+          <span class="badge">Light対応</span>
+        </div>
+        <div class="jp-font-demo" style="font-family: 'Lato', 'Noto Sans JP', sans-serif;">
+          <p style="font-weight: 300; font-size: 32px; letter-spacing: -0.01em;">余白と対話</p>
+          <p style="font-weight: 400; font-size: 14px; color: hsl(0,0%,45%); margin-top: 8px;">Light 300 で「息づき」を表現可能</p>
+        </div>
+      </div>
+
+      <div class="option">
+        <div class="option-label">Source Sans 3 + Noto Sans JP</div>
+        <div class="jp-font-demo" style="font-family: 'Source Sans 3', 'Noto Sans JP', sans-serif;">
+          <p style="font-weight: 300; font-size: 32px; letter-spacing: -0.01em;">余白と対話</p>
+          <p style="font-weight: 400; font-size: 14px; color: hsl(0,0%,45%); margin-top: 8px;">Light 300 対応、やや太め</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Line Height -->
+  <div class="section" id="line-height">
+    <div class="section-title">3. Line Height（行間）</div>
+    <div class="comparison-grid">
+      <div class="option lh-tight">
+        <div class="option-label">Option A</div>
+        <h3>Tight</h3>
+        <div class="spec">line-height: 1.5</div>
+        <div class="line-height-demo">
+          <p>この世界に存在できる時間は限られている。その間に何もなさぬまま過ごせば、時は流れ、自分自身も消え去り、再び機会が巡ることはないだろう。</p>
+          <p>自らの時間を確保し、本当に価値あることを学ばねばならない。</p>
+        </div>
+        <div class="notes">標準的な行間。情報密度が高い。</div>
+      </div>
+
+      <div class="option lh-relaxed">
+        <div class="option-label">Option B</div>
+        <h3>Relaxed</h3>
+        <div class="spec">line-height: 1.65</div>
+        <div class="line-height-demo">
+          <p>この世界に存在できる時間は限られている。その間に何もなさぬまま過ごせば、時は流れ、自分自身も消え去り、再び機会が巡ることはないだろう。</p>
+          <p>自らの時間を確保し、本当に価値あることを学ばねばならない。</p>
+        </div>
+        <div class="notes">バランス型。読みやすく、余白も確保。</div>
+      </div>
+
+      <div class="option lh-loose recommended">
+        <div class="option-label">
+          Option C
+          <span class="badge">Recommended</span>
+        </div>
+        <h3>Loose</h3>
+        <div class="spec">line-height: 1.8 (kbkbkb.co: 1.7-1.8)</div>
+        <div class="line-height-demo">
+          <p>この世界に存在できる時間は限られている。その間に何もなさぬまま過ごせば、時は流れ、自分自身も消え去り、再び機会が巡ることはないだろう。</p>
+          <p>自らの時間を確保し、本当に価値あることを学ばねばならない。</p>
+        </div>
+        <div class="notes"><strong>「余白 over 密度」を体現。</strong>呼吸感があり、長文でも疲れにくい。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4: Heading Weight -->
+  <div class="section" id="heading-weight">
+    <div class="section-title">4. Heading Weight（見出しの太さ）</div>
+    <div class="comparison-grid">
+      <div class="option hw-regular">
+        <div class="option-label">Option A</div>
+        <h3>Regular</h3>
+        <div class="spec">font-weight: 400</div>
+        <div class="heading-demo">
+          <h2>余白と対話</h2>
+          <p class="subhead">標準的な重さ。安定感がある。</p>
+        </div>
+      </div>
+
+      <div class="option hw-light recommended">
+        <div class="option-label">
+          Option B
+          <span class="badge">Recommended</span>
+        </div>
+        <h3>Light</h3>
+        <div class="spec">font-weight: 300 (kbkbkb.co style)</div>
+        <div class="heading-demo">
+          <h2>余白と対話</h2>
+          <p class="subhead"><strong>「息づき over 装飾」を体現。</strong>静かで上品な印象。</p>
+        </div>
+      </div>
+
+      <div class="option hw-thin">
+        <div class="option-label">Option C</div>
+        <h3>Thin</h3>
+        <div class="spec">font-weight: 100</div>
+        <div class="heading-demo">
+          <h2>余白と対話</h2>
+          <p class="subhead">極細。繊細だが可読性に注意が必要。</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5: Letter Spacing -->
+  <div class="section" id="letter-spacing">
+    <div class="section-title">5. Letter Spacing（文字間隔）- ナビ/ラベル用</div>
+    <div class="comparison-grid">
+      <div class="option ls-standard">
+        <div class="option-label">Option A</div>
+        <h3>Standard</h3>
+        <div class="spec">letter-spacing: 0</div>
+        <div class="spacing-demo">
+          <nav class="nav-demo">
+            <span>HOME</span>
+            <span>ABOUT</span>
+            <span>WORKS</span>
+          </nav>
+          <span class="label-demo">Frontend</span>
+          <span class="label-demo">Design</span>
+        </div>
+        <div class="notes">詰まった印象。情報密度が高い。</div>
+      </div>
+
+      <div class="option ls-wide recommended">
+        <div class="option-label">
+          Option B
+          <span class="badge">Recommended</span>
+        </div>
+        <h3>Wide</h3>
+        <div class="spec">letter-spacing: 0.08em (kbkbkb.co style)</div>
+        <div class="spacing-demo">
+          <nav class="nav-demo">
+            <span>HOME</span>
+            <span>ABOUT</span>
+            <span>WORKS</span>
+          </nav>
+          <span class="label-demo">Frontend</span>
+          <span class="label-demo">Design</span>
+        </div>
+        <div class="notes"><strong>余白感と静かな存在感のバランス。</strong></div>
+      </div>
+
+      <div class="option ls-extra">
+        <div class="option-label">Option C</div>
+        <h3>Extra Wide</h3>
+        <div class="spec">letter-spacing: 0.15em</div>
+        <div class="spacing-demo">
+          <nav class="nav-demo">
+            <span>HOME</span>
+            <span>ABOUT</span>
+            <span>WORKS</span>
+          </nav>
+          <span class="label-demo">Frontend</span>
+          <span class="label-demo">Design</span>
+        </div>
+        <div class="notes">非常に広い。ラグジュアリー感が出るが、読みづらくなる可能性。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6: Type Scale -->
+  <div class="section" id="type-scale">
+    <div class="section-title">6. Type Scale（サイズ階層）</div>
+    <div class="comparison-grid">
+      <div class="option scale-a">
+        <div class="option-label">Option A</div>
+        <h3>Major Third (1.25)</h3>
+        <div class="spec">base: 16px, ratio: 1.25</div>
+        <div class="scale-demo">
+          <div class="scale-item"><span class="token">h1</span><span class="h1">見出し1</span></div>
+          <div class="scale-item"><span class="token">h2</span><span class="h2">見出し2</span></div>
+          <div class="scale-item"><span class="token">h3</span><span class="h3">見出し3</span></div>
+          <div class="scale-item"><span class="token">body</span><span class="body">本文テキスト</span></div>
+          <div class="scale-item"><span class="token">small</span><span class="small">補足テキスト</span></div>
+        </div>
+        <div class="notes">控えめな階層差。穏やかな印象。</div>
+      </div>
+
+      <div class="option scale-b">
+        <div class="option-label">Option B</div>
+        <h3>Perfect Fourth (1.333)</h3>
+        <div class="spec">base: 16px, ratio: 1.333</div>
+        <div class="scale-demo">
+          <div class="scale-item"><span class="token">h1</span><span class="h1">見出し1</span></div>
+          <div class="scale-item"><span class="token">h2</span><span class="h2">見出し2</span></div>
+          <div class="scale-item"><span class="token">h3</span><span class="h3">見出し3</span></div>
+          <div class="scale-item"><span class="token">body</span><span class="body">本文テキスト</span></div>
+          <div class="scale-item"><span class="token">small</span><span class="small">補足テキスト</span></div>
+        </div>
+        <div class="notes">標準的な階層差。明確なヒエラルキー。</div>
+      </div>
+
+      <div class="option scale-c recommended">
+        <div class="option-label">
+          Option C
+          <span class="badge">Recommended</span>
+        </div>
+        <h3>Minor Third (1.2)</h3>
+        <div class="spec">base: 16px, ratio: 1.2</div>
+        <div class="scale-demo">
+          <div class="scale-item"><span class="token">h1</span><span class="h1">見出し1</span></div>
+          <div class="scale-item"><span class="token">h2</span><span class="h2">見出し2</span></div>
+          <div class="scale-item"><span class="token">h3</span><span class="h3">見出し3</span></div>
+          <div class="scale-item"><span class="token">body</span><span class="body">本文テキスト</span></div>
+          <div class="scale-item"><span class="token">small</span><span class="small">補足テキスト</span></div>
+        </div>
+        <div class="notes"><strong>「息づき over 装飾」。</strong>主張しすぎない、静かな階層。</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7: Full Preview -->
+  <div class="section" id="full-preview">
+    <div class="section-title">7. Full Preview（総合比較）</div>
+    <div class="preview-grid">
+      <div class="preview preview-a">
+        <div class="preview-header">
+          <span class="title">Standard (16px / line-height 1.5)</span>
+        </div>
+        <div class="preview-body">
+          <div class="nav">
+            <span>Home</span>
+            <span>About</span>
+            <span>Works</span>
+          </div>
+          <h2>一緒に奏でて、形にする</h2>
+          <p>対話を通じて、あなたの中にあるものを形にします。軽率に誘ってください。</p>
+          <p>この世界に存在できる時間は限られている。その間に何もなさぬまま過ごせば、時は流れ、自分自身も消え去り、再び機会が巡ることはないだろう。</p>
+          <p class="muted">Frontend Developer / Designer / Sendai, Japan</p>
+        </div>
+      </div>
+
+      <div class="preview preview-b recommended">
+        <div class="preview-header">
+          <span class="title">Recommended (18px / line-height 1.8)</span>
+          <span class="badge" style="background: hsl(0, 0%, 20%); color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px;">Recommended</span>
+        </div>
+        <div class="preview-body">
+          <div class="nav">
+            <span>HOME</span>
+            <span>ABOUT</span>
+            <span>WORKS</span>
+          </div>
+          <h2>一緒に奏でて、形にする</h2>
+          <p>対話を通じて、あなたの中にあるものを形にします。軽率に誘ってください。</p>
+          <p>この世界に存在できる時間は限られている。その間に何もなさぬまま過ごせば、時は流れ、自分自身も消え去り、再び機会が巡ることはないだろう。</p>
+          <p class="muted">FRONTEND DEVELOPER / DESIGNER / SENDAI, JAPAN</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="notes" style="margin-top: 32px;">
+      <strong>Recommended の特徴:</strong><br>
+      - font-size: 18px（本文）<br>
+      - line-height: 1.8（広い行間で呼吸感）<br>
+      - font-weight: 300（見出しに Light ウェイト）<br>
+      - letter-spacing: 0.1em（ナビ/ラベルに広めの文字間）<br>
+      - text-transform: uppercase（ナビ/ラベルは大文字）<br>
+      - Japanese Font: Noto Sans JP（Lato との相性、Light 対応）<br>
+      - Type Scale: Minor Third 1.2（控えめな階層差）<br><br>
+      <strong>PRINCIPLES.md との対応:</strong><br>
+      - 「余白 over 密度」→ 18px 本文、広い行間、広い letter-spacing<br>
+      - 「息づき over 装飾」→ Light ウェイト、控えめな Type Scale<br>
+      - 「対話 over 展示」→ 押し付けがましくない、静かな存在感
+    </div>
+  </div>
+</body>
+</html>
