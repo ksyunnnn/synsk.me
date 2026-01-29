@@ -36,3 +36,6 @@ next-env.d.ts
 
 # temporary docs
 docs/.tmp/
+
+# raw data (screenshots, exports, etc.)
+/raw_data/
