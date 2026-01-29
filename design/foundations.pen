@@ -1,0 +1,280 @@
+{
+  "version": "1.0",
+  "themes": {
+    "mode": ["light", "dark"]
+  },
+  "variables": {
+    "background": {
+      "type": "color",
+      "value": [
+        {"value": "#FFFFFF", "theme": {"mode": "light"}},
+        {"value": "#0A0A0A", "theme": {"mode": "dark"}}
+      ]
+    },
+    "foreground": {
+      "type": "color",
+      "value": [
+        {"value": "#0A0A0A", "theme": {"mode": "light"}},
+        {"value": "#FAFAFA", "theme": {"mode": "dark"}}
+      ]
+    },
+    "muted": {
+      "type": "color",
+      "value": [
+        {"value": "#F5F5F5", "theme": {"mode": "light"}},
+        {"value": "#262626", "theme": {"mode": "dark"}}
+      ]
+    },
+    "muted-foreground": {
+      "type": "color",
+      "value": [
+        {"value": "#737373", "theme": {"mode": "light"}},
+        {"value": "#A3A3A3", "theme": {"mode": "dark"}}
+      ]
+    },
+    "border": {
+      "type": "color",
+      "value": [
+        {"value": "#E5E5E5", "theme": {"mode": "light"}},
+        {"value": "#262626", "theme": {"mode": "dark"}}
+      ]
+    },
+    "font-primary": {
+      "type": "string",
+      "value": "Source Sans 3, Noto Sans JP, sans-serif"
+    },
+    "font-weight-base": {
+      "type": "number",
+      "value": 300
+    },
+    "font-size-body": {
+      "type": "number",
+      "value": 18
+    },
+    "line-height-body": {
+      "type": "number",
+      "value": 1.8
+    }
+  },
+  "children": [
+    {
+      "type": "frame",
+      "id": "7Em8x",
+      "name": "Foundations",
+      "x": 0,
+      "y": 0,
+      "width": 800,
+      "height": "fit_content(800)",
+      "fill": "$background",
+      "layout": "vertical",
+      "gap": 40,
+      "padding": 40,
+      "children": [
+        {
+          "type": "text",
+          "id": "aHUiC",
+          "name": "titleText",
+          "content": "synsk.me Design Foundations",
+          "fill": "$foreground",
+          "fontFamily": "Inter",
+          "fontSize": 32,
+          "fontWeight": "300"
+        },
+        {
+          "type": "frame",
+          "id": "HLS3U",
+          "name": "Colors",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "4Ztc7",
+              "name": "colorsTitle",
+              "content": "COLORS",
+              "fill": "$muted-foreground",
+              "fontFamily": "Inter",
+              "fontSize": 12,
+              "letterSpacing": 0.1
+            },
+            {
+              "type": "text",
+              "id": "7eZVH",
+              "name": "colorsDesc",
+              "content": "モノクロファースト: 色に頼らない情報設計を行う。Neutral Grayを採用。",
+              "fill": "$muted-foreground",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal",
+              "textGrowth": "fixed-width",
+              "width": 720
+            },
+            {
+              "type": "frame",
+              "id": "fajQs",
+              "name": "colorPalette",
+              "width": "fill_container",
+              "layout": "horizontal",
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "wl0qJ",
+                  "name": "bgSwatch",
+                  "width": 120,
+                  "height": 80,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "3EbLc",
+                      "name": "bgColor",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$background",
+                      "cornerRadius": 8,
+                      "stroke": {"fill": "$border", "thickness": 1}
+                    },
+                    {
+                      "type": "text",
+                      "id": "eTWl2",
+                      "name": "bgLabel",
+                      "content": "background",
+                      "fill": "$muted-foreground",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "skDur",
+                  "name": "fgSwatch",
+                  "width": 120,
+                  "height": 80,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "yzb6m",
+                      "name": "fgColor",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$foreground",
+                      "cornerRadius": 8
+                    },
+                    {
+                      "type": "text",
+                      "id": "r8xOO",
+                      "name": "fgLabel",
+                      "content": "foreground",
+                      "fill": "$muted-foreground",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "vdQuf",
+                  "name": "mutedSwatch",
+                  "width": 120,
+                  "height": 80,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "iOwwV",
+                      "name": "mutedColor",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$muted",
+                      "cornerRadius": 8,
+                      "stroke": {"fill": "$border", "thickness": 1}
+                    },
+                    {
+                      "type": "text",
+                      "id": "9u6Op",
+                      "name": "mutedLabel",
+                      "content": "muted",
+                      "fill": "$muted-foreground",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "xEACM",
+                  "name": "mutedFgSwatch",
+                  "width": 120,
+                  "height": 80,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "rF7nn",
+                      "name": "mutedFgColor",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$muted-foreground",
+                      "cornerRadius": 8
+                    },
+                    {
+                      "type": "text",
+                      "id": "c6dSb",
+                      "name": "mutedFgLabel",
+                      "content": "muted-foreground",
+                      "fill": "$muted-foreground",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "o3iLM",
+                  "name": "borderSwatch",
+                  "width": 120,
+                  "height": 80,
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "gwESC",
+                      "name": "borderColor",
+                      "width": "fill_container",
+                      "height": 48,
+                      "fill": "$border",
+                      "cornerRadius": 8
+                    },
+                    {
+                      "type": "text",
+                      "id": "7KSON",
+                      "name": "borderLabel",
+                      "content": "border",
+                      "fill": "$muted-foreground",
+                      "fontFamily": "Inter",
+                      "fontSize": 12,
+                      "fontWeight": "normal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
