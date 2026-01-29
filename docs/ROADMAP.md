@@ -60,7 +60,7 @@ Preview で確認・実験・調整
 | VISION.md | ✅ | Working Backwards形式 |
 | PRINCIPLES.md（Core） | ✅ | 余白・実験・おもしろさ |
 | PRINCIPLES.md（Design） | ✅ | 余白・息づき・対話 |
-| ペルソナ分析 | ✅ | docs/research/tweets-insight/ |
+| 発信コンテンツ分析 | ✅ | docs/research/tweets-insight/, content-analysis/ |
 | Design Tokens（グレースケール） | ✅ | Neutral Gray で構造を固める |
 | Design Tokens（タイポグラフィ） | ⏳ | フォントサイズ・行間 |
 | Design Tokens（スペーシング） | ⏳ | 余白のスケール |
