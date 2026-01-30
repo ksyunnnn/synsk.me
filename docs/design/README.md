@@ -28,6 +28,7 @@ Components（どう）            ← 将来追加
 |----------|-------------|--------|
 | [foundations.md](./foundations.md) | 色・フォント・スペース | ✅ Colors, Typography, Spacing |
 | [reference-kbkbkb.md](./reference-kbkbkb.md) | UI参考サイト分析（kbkbkb.co） | ✅ |
+| [pencil-mcp-guide.md](./pencil-mcp-guide.md) | Pencil MCP 運用ガイド | ✅ |
 | [typography-comparison.html](./typography-comparison.html) | タイポグラフィ比較（ブラウザで開く） | ✅ |
 | [font-pairing-comparison.html](./font-pairing-comparison.html) | フォントペアリング比較（ブラウザで開く） | ✅ |
 | components.md | コンポーネント規約 | 将来追加 |
