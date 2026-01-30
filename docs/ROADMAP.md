@@ -115,13 +115,18 @@ Typography: Source Sans 3 + Noto Sans JP, Light 300, 18px, line-height 1.8
 Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 ```
 
+**トークン同期方針（決定済み）**:
+- Pencil `get_variables` API で .pen からトークン抽出可能（検証済み）
+- 同期スクリプト作成は Phase 2 実装フェーズで必要に応じて対応
+- 現時点では foundations.md をマスターとして手動同期で運用
+
 ---
 
 ### 通常フロー（Pencil検証後）
 
 1. ~~Design Tokens（グレースケール）の確定~~ ✅
 2. ~~Design Tokens（タイポグラフィ）の策定~~ ✅
-3. Design Tokens（スペーシング）の策定
+3. ~~Design Tokens（スペーシング）の策定~~ ✅
 4. `feature/redesign` ブランチを作成
 5. Phase 2 開始
 

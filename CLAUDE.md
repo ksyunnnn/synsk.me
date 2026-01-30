@@ -29,7 +29,7 @@ npm run lint
 - **Framework**: Next.js 15 (App Router)
 - **言語**: TypeScript
 - **スタイリング**: Tailwind CSS + CSS-in-JS
-- **フォント**: Lato (Google Fonts)
+- **フォント**: Source Sans 3 + Noto Sans JP (Google Fonts) ※リデザイン後
 - **アイコン**: Phosphor Icons, Lucide React, FontAwesome
 - **アナリティクス**: Google Tag Manager
 
