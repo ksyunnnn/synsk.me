@@ -88,6 +88,7 @@
               "content": "対話から形にする実績",
               "fontFamily": "Source Sans 3",
               "fontSize": 12,
+              "fontWeight": "normal",
               "letterSpacing": 1
             },
             {
@@ -108,7 +109,8 @@
                   "fill": "$foreground",
                   "content": "MoquMoquCOM",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 18
+                  "fontSize": 18,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -268,7 +270,8 @@
                   "fill": "$foreground",
                   "content": "連絡する",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -320,6 +323,7 @@
               "content": "React / TypeScript / Design System",
               "fontFamily": "Source Sans 3",
               "fontSize": 14,
+              "fontWeight": "normal",
               "letterSpacing": 1
             }
           ]
@@ -363,6 +367,7 @@
               "content": "専門領域",
               "fontFamily": "Source Sans 3",
               "fontSize": 12,
+              "fontWeight": "normal",
               "letterSpacing": 1
             },
             {
@@ -390,7 +395,8 @@
                       "fill": "$foreground",
                       "content": "TypeScript",
                       "fontFamily": "Source Sans 3",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -412,7 +418,8 @@
                       "fill": "$foreground",
                       "content": "React",
                       "fontFamily": "Source Sans 3",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -434,7 +441,8 @@
                       "fill": "$foreground",
                       "content": "Next.js",
                       "fontFamily": "Source Sans 3",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     }
                   ]
                 }
@@ -458,6 +466,7 @@
               "content": "プロダクト",
               "fontFamily": "Source Sans 3",
               "fontSize": 12,
+              "fontWeight": "normal",
               "letterSpacing": 1
             },
             {
@@ -481,7 +490,8 @@
                   "fill": "$foreground",
                   "content": "KeepBoard",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 16
+                  "fontSize": 16,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -516,7 +526,8 @@
                   "fill": "$foreground",
                   "content": "Favicon天気表示",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 16
+                  "fontSize": 16,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -596,7 +607,8 @@
                   "fill": "$foreground",
                   "content": "連絡する",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -681,6 +693,7 @@
               "content": "10年の軌跡",
               "fontFamily": "Source Sans 3",
               "fontSize": 12,
+              "fontWeight": "normal",
               "letterSpacing": 1
             },
             {
@@ -697,7 +710,8 @@
                   "fill": "$muted-foreground",
                   "content": "2016",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -727,7 +741,8 @@
                   "fill": "$muted-foreground",
                   "content": "2017",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -757,7 +772,8 @@
                   "fill": "$muted-foreground",
                   "content": "2021",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -787,7 +803,8 @@
                   "fill": "$muted-foreground",
                   "content": "2023",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -817,7 +834,8 @@
                   "fill": "$foreground",
                   "content": "2025",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 },
                 {
                   "type": "text",
@@ -828,7 +846,8 @@
                   "width": "fill_container",
                   "content": "synsk.me 構築、等身大の発信へ",
                   "fontFamily": "Noto Sans JP",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -875,7 +894,8 @@
                   "fill": "$foreground",
                   "content": "連絡する",
                   "fontFamily": "Source Sans 3",
-                  "fontSize": 13
+                  "fontSize": 13,
+                  "fontWeight": "normal"
                 }
               ]
             }
@@ -885,176 +905,53 @@
     },
     {
       "type": "frame",
-      "id": "ExIoP",
+      "id": "PkOqU",
       "x": 0,
-      "y": 1060,
-      "name": "CTA Variants（控えめ案）",
-      "fill": "$muted",
-      "gap": 60,
-      "padding": 40,
+      "y": -430,
+      "name": "📋 Purpose",
+      "width": 600,
+      "fill": "#FFFBEB",
+      "cornerRadius": 8,
+      "stroke": {
+        "thickness": 1,
+        "fill": "#F59E0B"
+      },
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 24,
       "children": [
         {
-          "type": "frame",
-          "id": "NcGig",
-          "name": "案1: テキストリンク",
-          "width": 300,
-          "fill": "$background",
-          "cornerRadius": 8,
-          "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
-          "children": [
-            {
-              "type": "text",
-              "id": "spdGK",
-              "name": "cta1Label",
-              "fill": "$muted-foreground",
-              "content": "案1: テキストリンク",
-              "fontFamily": "Source Sans 3",
-              "fontSize": 11,
-              "letterSpacing": 1
-            },
-            {
-              "type": "text",
-              "id": "MzyNG",
-              "name": "cta1Link",
-              "fill": "$foreground",
-              "content": "話してみる →",
-              "fontFamily": "Source Sans 3",
-              "fontSize": 16
-            },
-            {
-              "type": "text",
-              "id": "3clBP",
-              "name": "cta1Note",
-              "fill": "$muted-foreground",
-              "content": "要件がなくても大丈夫です",
-              "fontFamily": "Noto Sans JP",
-              "fontSize": 11,
-              "fontWeight": "300"
-            }
-          ]
+          "type": "text",
+          "id": "2Zn9P",
+          "name": "noteTitle",
+          "fill": "#92400E",
+          "content": "Purpose: コンテンツパターンの探索",
+          "fontFamily": "Source Sans 3",
+          "fontSize": 16,
+          "fontWeight": "600"
         },
         {
-          "type": "frame",
-          "id": "bCZJb",
-          "name": "案2: ボーダーのみ",
-          "width": 300,
-          "fill": "$background",
-          "cornerRadius": 8,
-          "layout": "vertical",
-          "gap": 24,
-          "padding": 32,
-          "children": [
-            {
-              "type": "text",
-              "id": "brhbM",
-              "name": "cta2Label",
-              "fill": "$muted-foreground",
-              "content": "案2: ボーダーのみ",
-              "fontFamily": "Source Sans 3",
-              "fontSize": 11,
-              "letterSpacing": 1
-            },
-            {
-              "type": "frame",
-              "id": "nPw5B",
-              "name": "cta2Btn",
-              "width": "fill_container",
-              "cornerRadius": 4,
-              "stroke": {
-                "thickness": 1,
-                "fill": "$border"
-              },
-              "padding": [
-                14,
-                20
-              ],
-              "justifyContent": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "deOGd",
-                  "name": "cta2Text",
-                  "fill": "$foreground",
-                  "content": "話してみる",
-                  "fontFamily": "Noto Sans JP",
-                  "fontSize": 14,
-                  "fontWeight": "300"
-                }
-              ]
-            },
-            {
-              "type": "text",
-              "id": "eElJ6",
-              "name": "cta2Note",
-              "fill": "$muted-foreground",
-              "content": "要件がなくても大丈夫です",
-              "fontFamily": "Noto Sans JP",
-              "fontSize": 11,
-              "fontWeight": "300"
-            }
-          ]
+          "type": "text",
+          "id": "KJI4I",
+          "name": "noteBody",
+          "fill": "#78350F",
+          "textGrowth": "fixed-width",
+          "width": "fill_container",
+          "content": "Phase 1.5「サイト要件定義」のコンテンツ要件を検討するため、\n3つの方向性を比較するデザイン。\n\n• Pattern A: 対話重視型 — コミュニティ実績中心、技術は控えめ\n• Pattern B: 技術×対話型 — 技術力も見せつつ対話への導線\n• Pattern C: ストーリー型 — 10年の軌跡で人となりを伝える\n\nCTAは案3（フッター的配置）で統一。\n「説得しようとしない」原則に沿った控えめな導線。",
+          "lineHeight": 1.8,
+          "fontFamily": "Noto Sans JP",
+          "fontSize": 13,
+          "fontWeight": "300"
         },
         {
-          "type": "frame",
-          "id": "P9gBu",
-          "name": "案3: フッター的",
-          "width": 300,
-          "fill": "$background",
-          "cornerRadius": 8,
-          "layout": "vertical",
-          "gap": 16,
-          "padding": 32,
-          "children": [
-            {
-              "type": "text",
-              "id": "PamkF",
-              "name": "cta3Label",
-              "fill": "$muted-foreground",
-              "content": "案3: フッター的配置",
-              "fontFamily": "Source Sans 3",
-              "fontSize": 11,
-              "letterSpacing": 1
-            },
-            {
-              "type": "rectangle",
-              "id": "4dVhS",
-              "name": "cta3Divider",
-              "fill": "$border",
-              "width": "fill_container",
-              "height": 1
-            },
-            {
-              "type": "frame",
-              "id": "8s56K",
-              "name": "cta3Content",
-              "width": "fill_container",
-              "justifyContent": "space_between",
-              "alignItems": "center",
-              "children": [
-                {
-                  "type": "text",
-                  "id": "LCXy7",
-                  "name": "cta3Text",
-                  "fill": "$muted-foreground",
-                  "content": "一緒に何かを始めたい方へ",
-                  "fontFamily": "Noto Sans JP",
-                  "fontSize": 12,
-                  "fontWeight": "300"
-                },
-                {
-                  "type": "text",
-                  "id": "sfsnp",
-                  "name": "cta3Link",
-                  "fill": "$foreground",
-                  "content": "連絡する",
-                  "fontFamily": "Source Sans 3",
-                  "fontSize": 13
-                }
-              ]
-            }
-          ]
+          "type": "text",
+          "id": "wawiM",
+          "name": "noteRef",
+          "fill": "#B45309",
+          "content": "関連: docs/ROADMAP.md, docs/PRINCIPLES.md",
+          "fontFamily": "Source Sans 3",
+          "fontSize": 11,
+          "fontWeight": "normal"
         }
       ]
     }
