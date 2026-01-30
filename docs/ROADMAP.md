@@ -62,7 +62,7 @@ Preview で確認・実験・調整
 | PRINCIPLES.md（Design） | ✅ | 余白・息づき・対話 |
 | 発信コンテンツ分析 | ✅ | docs/research/tweets-insight/, content-analysis/ |
 | Design Tokens（グレースケール） | ✅ | Neutral Gray で構造を固める |
-| Design Tokens（タイポグラフィ） | ✅ | Source Sans 3 + Noto Sans JP, Light 300 |
+| Design Tokens（タイポグラフィ） | ✅ | 暫定、実装検証で調整（Source Sans 3 + Noto Sans JP, Light 300） |
 | Design Tokens（スペーシング） | ✅ | 8px ベース（xs/sm/md/lg/xl） |
 
 ### Phase 1.5: サイト要件定義
