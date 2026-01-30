@@ -1,0 +1,1092 @@
+{
+  "version": "2.6",
+  "children": [
+    {
+      "type": "frame",
+      "id": "NxofR",
+      "x": 0,
+      "y": 0,
+      "name": "Pattern A: 対話重視型",
+      "width": 390,
+      "fill": "$background",
+      "layout": "vertical",
+      "gap": 48,
+      "padding": [
+        48,
+        24
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "zxyTP",
+          "name": "Hero",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "XHarG",
+              "name": "headlineA",
+              "fill": "$foreground",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "一緒に奏でて、\nあなたの中にあるものを\n形にする",
+              "lineHeight": 1.5,
+              "fontFamily": "Source Sans 3",
+              "fontSize": 28,
+              "fontWeight": "300"
+            },
+            {
+              "type": "text",
+              "id": "f5Pjl",
+              "name": "sublineA",
+              "fill": "$muted-foreground",
+              "content": "対話から始める、共創のパートナー",
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 14,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "MSyGT",
+          "name": "Profile",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "259vT",
+              "name": "profileTextA",
+              "fill": "$foreground",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "要件が固まっていなくても、一緒に考えることから始められます。",
+              "lineHeight": 1.8,
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 14,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "h2uFn",
+          "name": "Community",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "U9FLo",
+              "name": "communityLabelA",
+              "fill": "$muted-foreground",
+              "content": "対話から形にする実績",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 12,
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "GJSjL",
+              "name": "communityCardA",
+              "width": "fill_container",
+              "fill": "$muted",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 8,
+              "padding": 20,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "RG9VA",
+                  "name": "communityNameA",
+                  "fill": "$foreground",
+                  "content": "MoquMoquCOM",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 18
+                },
+                {
+                  "type": "text",
+                  "id": "KxUEs",
+                  "name": "communityDescA",
+                  "fill": "$muted-foreground",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "テーマを絞らないもくもく会。23回開催、延べ418人が参加。",
+                  "lineHeight": 1.6,
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 13,
+                  "fontWeight": "300"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "k9Pik",
+          "name": "Stats",
+          "width": "fill_container",
+          "gap": 16,
+          "justifyContent": "space_between",
+          "children": [
+            {
+              "type": "frame",
+              "id": "PqION",
+              "name": "stat1A",
+              "layout": "vertical",
+              "gap": 4,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "syodm",
+                  "name": "stat1NumA",
+                  "fill": "$foreground",
+                  "content": "102",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 32,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "Lzrsi",
+                  "name": "stat1LabelA",
+                  "fill": "$muted-foreground",
+                  "content": "記事",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 11,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "LelG4",
+              "name": "stat2A",
+              "layout": "vertical",
+              "gap": 4,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "DNc18",
+                  "name": "stat2NumA",
+                  "fill": "$foreground",
+                  "content": "25+",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 32,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "4XBuO",
+                  "name": "stat2LabelA",
+                  "fill": "$muted-foreground",
+                  "content": "イベント主催",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 11,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "32OOC",
+              "name": "stat3A",
+              "layout": "vertical",
+              "gap": 4,
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "980Ug",
+                  "name": "stat3NumA",
+                  "fill": "$foreground",
+                  "content": "12",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 32,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "f8sBE",
+                  "name": "stat3LabelA",
+                  "fill": "$muted-foreground",
+                  "content": "年",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 11,
+                  "fontWeight": "300"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "VyBuK",
+          "name": "CTA",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "GktvC",
+              "name": "ctaDivA",
+              "fill": "$border",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "wUaUl",
+              "name": "ctaRowA",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "qkOGO",
+                  "name": "ctaTextA",
+                  "fill": "$muted-foreground",
+                  "content": "一緒に何かを始めたい方へ",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "9mGf5",
+                  "name": "ctaLinkA",
+                  "fill": "$foreground",
+                  "content": "連絡する",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 13
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "FRt6W",
+      "x": 440,
+      "y": 0,
+      "name": "Pattern B: 技術×対話型",
+      "width": 390,
+      "fill": "$background",
+      "layout": "vertical",
+      "gap": 48,
+      "padding": [
+        48,
+        24
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "6OBbi",
+          "name": "Hero",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "uO8Cu",
+              "name": "headlineB",
+              "fill": "$foreground",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "技術とデザインで、\nまだ形になっていないものを\n一緒に形にする",
+              "lineHeight": 1.5,
+              "fontFamily": "Source Sans 3",
+              "fontSize": 28,
+              "fontWeight": "300"
+            },
+            {
+              "type": "text",
+              "id": "HwRkh",
+              "name": "sublineB",
+              "fill": "$muted-foreground",
+              "content": "React / TypeScript / Design System",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 14,
+              "letterSpacing": 1
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Lf41E",
+          "name": "Profile",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "QLAQe",
+              "name": "profileTextB",
+              "fill": "$foreground",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "10年以上のプロダクト開発経験。React/TypeScript専門のフロントエンドエンジニアで、Design Systemにも強い。",
+              "lineHeight": 1.8,
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 14,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "L2ip3",
+          "name": "Tech Stack",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "Ts3QH",
+              "name": "techLabelB",
+              "fill": "$muted-foreground",
+              "content": "専門領域",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 12,
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "UMYcT",
+              "name": "techTagsB",
+              "width": "fill_container",
+              "gap": 8,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "FiMSQ",
+                  "name": "tag1B",
+                  "fill": "$muted",
+                  "cornerRadius": 4,
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "mEZrq",
+                      "name": "tag1TextB",
+                      "fill": "$foreground",
+                      "content": "TypeScript",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "hHMmm",
+                  "name": "tag2B",
+                  "fill": "$muted",
+                  "cornerRadius": 4,
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "qrKNj",
+                      "name": "tag2TextB",
+                      "fill": "$foreground",
+                      "content": "React",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "id": "USr7q",
+                  "name": "tag3B",
+                  "fill": "$muted",
+                  "cornerRadius": 4,
+                  "padding": [
+                    6,
+                    12
+                  ],
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "KCmBD",
+                      "name": "tag3TextB",
+                      "fill": "$foreground",
+                      "content": "Next.js",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "gAbwa",
+          "name": "Works",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "2o9kR",
+              "name": "worksLabelB",
+              "fill": "$muted-foreground",
+              "content": "プロダクト",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 12,
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "gHWNJ",
+              "name": "work1B",
+              "width": "fill_container",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "$border"
+              },
+              "layout": "vertical",
+              "gap": 6,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "wWChH",
+                  "name": "work1NameB",
+                  "fill": "$foreground",
+                  "content": "KeepBoard",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16
+                },
+                {
+                  "type": "text",
+                  "id": "BYT5P",
+                  "name": "work1DescB",
+                  "fill": "$muted-foreground",
+                  "content": "クリップボードメモアプリ",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "rqu61",
+              "name": "work2B",
+              "width": "fill_container",
+              "cornerRadius": 8,
+              "stroke": {
+                "thickness": 1,
+                "fill": "$border"
+              },
+              "layout": "vertical",
+              "gap": 6,
+              "padding": 16,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "l3QAD",
+                  "name": "work2NameB",
+                  "fill": "$foreground",
+                  "content": "Favicon天気表示",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16
+                },
+                {
+                  "type": "text",
+                  "id": "vGxDj",
+                  "name": "work2DescB",
+                  "fill": "$muted-foreground",
+                  "content": "Faviconで天気を動的表示",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Rg52w",
+          "name": "Community",
+          "width": "fill_container",
+          "fill": "$muted",
+          "cornerRadius": 8,
+          "gap": 8,
+          "padding": 16,
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "xlZgn",
+              "name": "communityTextB",
+              "fill": "$muted-foreground",
+              "content": "コミュニティ運営 25回+ / 418人",
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 12,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "Q4hSw",
+          "name": "CTA",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "AgeNm",
+              "name": "ctaDivB",
+              "fill": "$border",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "LVDkN",
+              "name": "ctaRowB",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "w3yPJ",
+                  "name": "ctaTextB",
+                  "fill": "$muted-foreground",
+                  "content": "一緒に何かを始めたい方へ",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "L9AZn",
+                  "name": "ctaLinkB",
+                  "fill": "$foreground",
+                  "content": "連絡する",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 13
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "7Tqfk",
+      "x": 880,
+      "y": 0,
+      "name": "Pattern C: ストーリー型",
+      "width": 390,
+      "fill": "$background",
+      "layout": "vertical",
+      "gap": 48,
+      "padding": [
+        48,
+        24
+      ],
+      "children": [
+        {
+          "type": "frame",
+          "id": "XIm6W",
+          "name": "Hero",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "zFBe9",
+              "name": "headlineC",
+              "fill": "$foreground",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "非エンジニアから\nフロントエンド専門家へ。\n対話とコードで\n思考を形にする。",
+              "lineHeight": 1.5,
+              "fontFamily": "Source Sans 3",
+              "fontSize": 26,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "SnjmA",
+          "name": "Profile",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 12,
+          "children": [
+            {
+              "type": "text",
+              "id": "QnLBb",
+              "name": "profileTextC",
+              "fill": "$foreground",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "2016年に非エンジニアからキャリアチェンジ。React/TypeScriptを軸としたフロントエンド開発を専門とし、Design Systemの設計・実装にも強みを持つ。",
+              "lineHeight": 1.8,
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 13,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "eBvwt",
+          "name": "Timeline",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "j6YZy",
+              "name": "timelineLabelC",
+              "fill": "$muted-foreground",
+              "content": "10年の軌跡",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 12,
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "WcYXd",
+              "name": "phase1C",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "hTVHX",
+                  "name": "phase1YearC",
+                  "fill": "$muted-foreground",
+                  "content": "2016",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 12
+                },
+                {
+                  "type": "text",
+                  "id": "QqSQQ",
+                  "name": "phase1TextC",
+                  "fill": "$foreground",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "キャリアチェンジ、React学習開始",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "fCSzJ",
+              "name": "phase2C",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "UCtIA",
+                  "name": "phase2YearC",
+                  "fill": "$muted-foreground",
+                  "content": "2017",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 12
+                },
+                {
+                  "type": "text",
+                  "id": "ZNIoF",
+                  "name": "phase2TextC",
+                  "fill": "$foreground",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "MoquMoquCOM立ち上げ、デブサミ登壇",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "HhKUI",
+              "name": "phase3C",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "V09Dq",
+                  "name": "phase3YearC",
+                  "fill": "$muted-foreground",
+                  "content": "2021",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 12
+                },
+                {
+                  "type": "text",
+                  "id": "0pekK",
+                  "name": "phase3TextC",
+                  "fill": "$foreground",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "TypeScript深化、テックリード経験",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "3JgJ3",
+              "name": "phase4C",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "uUlBy",
+                  "name": "phase4YearC",
+                  "fill": "$muted-foreground",
+                  "content": "2023",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 12
+                },
+                {
+                  "type": "text",
+                  "id": "LrwiG",
+                  "name": "phase4TextC",
+                  "fill": "$foreground",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "オーストラリアワーホリ、海外挑戦",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "n3lJ9",
+              "name": "phase5C",
+              "width": "fill_container",
+              "gap": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "oy8on",
+                  "name": "phase5YearC",
+                  "fill": "$foreground",
+                  "content": "2025",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 12
+                },
+                {
+                  "type": "text",
+                  "id": "L6RgQ",
+                  "name": "phase5TextC",
+                  "fill": "$foreground",
+                  "textGrowth": "fixed-width",
+                  "width": "fill_container",
+                  "content": "synsk.me 構築、等身大の発信へ",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "jmYy7",
+          "name": "CTA",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "rectangle",
+              "id": "Q82xn",
+              "name": "ctaDivC",
+              "fill": "$border",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "O5947",
+              "name": "ctaRowC",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "uI9Wv",
+                  "name": "ctaTextC",
+                  "fill": "$muted-foreground",
+                  "content": "一緒に何かを始めたい方へ",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "povvz",
+                  "name": "ctaLinkC",
+                  "fill": "$foreground",
+                  "content": "連絡する",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 13
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "ExIoP",
+      "x": 0,
+      "y": 1060,
+      "name": "CTA Variants（控えめ案）",
+      "fill": "$muted",
+      "gap": 60,
+      "padding": 40,
+      "children": [
+        {
+          "type": "frame",
+          "id": "NcGig",
+          "name": "案1: テキストリンク",
+          "width": 300,
+          "fill": "$background",
+          "cornerRadius": 8,
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 32,
+          "children": [
+            {
+              "type": "text",
+              "id": "spdGK",
+              "name": "cta1Label",
+              "fill": "$muted-foreground",
+              "content": "案1: テキストリンク",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 11,
+              "letterSpacing": 1
+            },
+            {
+              "type": "text",
+              "id": "MzyNG",
+              "name": "cta1Link",
+              "fill": "$foreground",
+              "content": "話してみる →",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 16
+            },
+            {
+              "type": "text",
+              "id": "3clBP",
+              "name": "cta1Note",
+              "fill": "$muted-foreground",
+              "content": "要件がなくても大丈夫です",
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 11,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "bCZJb",
+          "name": "案2: ボーダーのみ",
+          "width": 300,
+          "fill": "$background",
+          "cornerRadius": 8,
+          "layout": "vertical",
+          "gap": 24,
+          "padding": 32,
+          "children": [
+            {
+              "type": "text",
+              "id": "brhbM",
+              "name": "cta2Label",
+              "fill": "$muted-foreground",
+              "content": "案2: ボーダーのみ",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 11,
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "nPw5B",
+              "name": "cta2Btn",
+              "width": "fill_container",
+              "cornerRadius": 4,
+              "stroke": {
+                "thickness": 1,
+                "fill": "$border"
+              },
+              "padding": [
+                14,
+                20
+              ],
+              "justifyContent": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "deOGd",
+                  "name": "cta2Text",
+                  "fill": "$foreground",
+                  "content": "話してみる",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 14,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "text",
+              "id": "eElJ6",
+              "name": "cta2Note",
+              "fill": "$muted-foreground",
+              "content": "要件がなくても大丈夫です",
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 11,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "P9gBu",
+          "name": "案3: フッター的",
+          "width": 300,
+          "fill": "$background",
+          "cornerRadius": 8,
+          "layout": "vertical",
+          "gap": 16,
+          "padding": 32,
+          "children": [
+            {
+              "type": "text",
+              "id": "PamkF",
+              "name": "cta3Label",
+              "fill": "$muted-foreground",
+              "content": "案3: フッター的配置",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 11,
+              "letterSpacing": 1
+            },
+            {
+              "type": "rectangle",
+              "id": "4dVhS",
+              "name": "cta3Divider",
+              "fill": "$border",
+              "width": "fill_container",
+              "height": 1
+            },
+            {
+              "type": "frame",
+              "id": "8s56K",
+              "name": "cta3Content",
+              "width": "fill_container",
+              "justifyContent": "space_between",
+              "alignItems": "center",
+              "children": [
+                {
+                  "type": "text",
+                  "id": "LCXy7",
+                  "name": "cta3Text",
+                  "fill": "$muted-foreground",
+                  "content": "一緒に何かを始めたい方へ",
+                  "fontFamily": "Noto Sans JP",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "sfsnp",
+                  "name": "cta3Link",
+                  "fill": "$foreground",
+                  "content": "連絡する",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 13
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variables": {
+    "background": {
+      "type": "color",
+      "value": "#FAFAFA"
+    },
+    "background-dark": {
+      "type": "color",
+      "value": "#0A0A0A"
+    },
+    "border": {
+      "type": "color",
+      "value": "#E5E5E5"
+    },
+    "foreground": {
+      "type": "color",
+      "value": "#0A0A0A"
+    },
+    "foreground-dark": {
+      "type": "color",
+      "value": "#FAFAFA"
+    },
+    "muted": {
+      "type": "color",
+      "value": "#F5F5F5"
+    },
+    "muted-foreground": {
+      "type": "color",
+      "value": "#737373"
+    }
+  }
+}
