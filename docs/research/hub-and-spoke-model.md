@@ -9,20 +9,18 @@
 ### モデル構造
 
 ```
-                    ┌─────────────────┐
-                    │    synsk.me     │
-                    │     (Hub)       │
-                    │    + DuckDB     │
-                    └────────┬────────┘
-                             │
-        ┌────────────────────┼────────────────────┐
-        │          │         │         │          │
-   ┌────▼────┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐ ┌───▼───┐
-   │  Zenn   │ │GitHub │ │Qiita  │ │dev.to │ │Medium │
-   │  (RSS)  │ │ (API) │ │ (API) │ │ (API) │ │ (RSS) │
-   └─────────┘ └───────┘ └───────┘ └───────┘ └───────┘
-
-   Webhook ✗   Webhook ✓   ✗          ✗         ✗
+                         ┌─────────────────┐
+                         │    synsk.me     │
+                         │     (Hub)       │
+                         │    + DuckDB     │
+                         └────────┬────────┘
+                                  │
+     ┌──────────┬─────────┬───────┼───────┬─────────┬──────────┐
+     │          │         │       │       │         │          │
+┌────▼────┐ ┌───▼───┐ ┌───▼───┐ ┌─▼─┐ ┌───▼───┐ ┌───▼───┐ ┌───▼────┐
+│  Zenn   │ │GitHub │ │Qiita  │ │...│ │Spotify│ │Twitter│ │internal│
+│  (RSS)  │ │ (API) │ │ (API) │ │   │ │ (API) │ │(embed)│ │ (手動) │
+└─────────┘ └───────┘ └───────┘ └───┘ └───────┘ └───────┘ └────────┘
 ```
 
 ### 設計方針
@@ -168,9 +166,54 @@ const res = await fetch(
 
 ---
 
+#### 6. Spotify
+
+| 項目 | 内容 |
+|------|------|
+| ユーザー名 | `synsk` |
+| 取得方法 | Spotify Web API |
+| Webhook | ❌ 非対応 |
+| レート制限 | あり（認証必須） |
+
+**API エンドポイント**: `https://api.spotify.com/v1/users/{user_id}/playlists`
+
+**取得可能データ**:
+- プレイリスト名、URL、説明
+- トラック数、フォロワー数
+- 公開/非公開フラグ
+
+**更新戦略**: ISR（週1回程度）
+
+**DisplayCategory**: `misc`
+
+---
+
+#### 7. Twitter / X
+
+| 項目 | 内容 |
+|------|------|
+| ユーザー名 | `@ksyunnnn` |
+| 取得方法 | 埋め込み（手動選択） |
+| Webhook | ❌ |
+| レート制限 | API は有料化のため埋め込みで対応 |
+
+**取得方法**:
+- catnose.me 方式: リリース告知などの特定ツイートを手動で選択し埋め込み
+- oEmbed API で埋め込みコード取得
+
+**取得可能データ**:
+- ツイート本文、URL、投稿日
+- いいね数、RT数（埋め込み経由）
+
+**更新戦略**: 手動（重要な投稿のみ選択）
+
+**DisplayCategory**: `writing` または `works`（内容による、手動上書き）
+
+---
+
 ### Tier 3: RSS のみ（定期取得）
 
-#### 6. Medium
+#### 8. Medium
 
 | 項目 | 内容 |
 |------|------|
@@ -185,7 +228,7 @@ const res = await fetch(
 
 ---
 
-### Tier 4: 静的リンクのみ
+### Tier 4: 静的リンク / 手動入力
 
 以下のプラットフォームは API/RSS が利用不可または制限があるため、手動でリンク集として管理。
 
@@ -196,6 +239,23 @@ const res = await fetch(
 | Speaker Deck | `speakerdeck.com/ksyunnnn` | oEmbed のみ |
 | TECHPLAY | 各イベントページ | API なし |
 | Stack Overflow | プロフィールURL | 制限あり |
+
+---
+
+### Tier 5: サイト固有コンテンツ（internal）
+
+synsk.me 内でのみ公開するコンテンツ。
+
+| コンテンツ種別 | 例 | ActivityType |
+|---------------|-----|--------------|
+| notes | サイト固有の記事、リリースノート | `article` |
+| プロフィール | 経歴、実績の詳細 | - （別構造） |
+| リリース告知 | プロダクト公開のお知らせ | `article` + `works` |
+
+**特徴**:
+- 完全手動入力
+- DisplayCategory は手動で設定
+- catnose.me の `/notes` に相当
 
 ---
 
@@ -225,6 +285,8 @@ synsk.me/
 
 ### 統一データ型
 
+> **詳細設計**: [content-model-design.md](./content-model-design.md) を参照
+
 ```typescript
 // lib/fetchers/types.ts
 export type Platform =
@@ -233,25 +295,41 @@ export type Platform =
   | 'qiita'
   | 'devto'
   | 'medium'
+  | 'connpass'
   | 'codesandbox'
-  | 'speakerdeck';
+  | 'speakerdeck'
+  | 'techplay'
+  | 'spotify'      // 追加: プレイリスト
+  | 'twitter'      // 追加: 投稿埋め込み
+  | 'internal';    // 追加: サイト固有コンテンツ
 
 export type ActivityType =
   | 'article'
   | 'repository'
-  | 'commit'
   | 'event'
-  | 'talk';
+  | 'talk'
+  | 'sandbox'
+  | 'post'         // 追加: SNS投稿
+  | 'playlist'     // 追加: プレイリスト
+  | 'misc';
+
+export type DisplayCategory =
+  | 'works'        // 作ったもの
+  | 'writing'      // 記事、思考
+  | 'activity'     // イベント、登壇
+  | 'misc';        // その他
 
 export interface Activity {
   id: string;
   platform: Platform;
   type: ActivityType;
+  displayCategory: DisplayCategory;  // 表示用カテゴリ（手動上書き可能）
   title: string;
   url: string;
   publishedAt: Date;
   description?: string;
-  metadata?: Record<string, unknown>;
+  metadata: PlatformMetadata;        // プラットフォーム固有データ
+  fetchStatus: 'success' | 'partial' | 'failed';
 }
 ```
 
@@ -431,5 +509,7 @@ or
 ---
 
 *作成日: 2026-01-31*
+*更新日: 2026-01-31*
 *ステータス: 方針決定済み（実装はフェーズ 1.5 以降）*
 *関連 ADR: [ADR-0002](../adr/0002-hub-and-spoke-data-architecture.md)*
+*関連設計: [content-model-design.md](./content-model-design.md)*
