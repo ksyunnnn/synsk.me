@@ -135,6 +135,11 @@ Jobs to be Done: 「訪問者はこのサイトを"雇って"何を達成した�
 - [ ] コンタクト方法（フォーム / SNSリンク / 両方）
 - [ ] 外部コンテンツへのリンク（Zenn, GitHub 等）
 
+**検討中**:
+- [ ] Hub-and-Spoke モデル（外部プラットフォームからリアルタイムデータ取得）
+  - 詳細: [hub-and-spoke-model.md](./research/hub-and-spoke-model.md)
+  - ADR: [ADR-0002](./adr/0002-hub-and-spoke-data-architecture.md)
+
 #### 1-3. 情報設計
 
 | 決定事項 | 選択肢 | 決定 |
@@ -201,3 +206,4 @@ Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 | 2026-01-27 | モノクロファーストアプローチを追加、Design Tokensタスクを分解 |
 | 2026-01-30 | Phase 1.5「サイト要件定義」追加、Working Backwards に基づく決定フロー明確化 |
 | 2026-01-30 | foundations.pen 再構築（Dark Mode、Type Scale、Variables 追加） |
+| 2026-01-31 | Hub-and-Spoke モデル検討事項を追加（ADR-0002） |

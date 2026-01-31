@@ -25,7 +25,8 @@ ADR（Architecture Decision Record）は、アーキテクチャ上の重要な�
 
 | Number | Title | Status | Date |
 |--------|-------|--------|------|
-| [0001](./0001-product-vision.md) | Product Vision and Principles | [TODO] | [TODO] |
+| [0001](./0001-product-vision.md) | Product Vision and Principles | proposed | 2025-01-23 |
+| [0002](./0002-hub-and-spoke-data-architecture.md) | Hub-and-Spoke Data Architecture | proposed | 2026-01-31 |
 
 ---
 
