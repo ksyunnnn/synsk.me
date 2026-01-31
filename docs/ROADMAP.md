@@ -73,7 +73,8 @@ Preview で確認・実験・調整
 |--------|------|------|
 | コンテンツ要件 | ⏳ | 何を載せるか（実績、プロフィール等） |
 | 機能要件 | ⏳ | 何ができるようにするか（コンタクト方法等） |
-| 情報設計 | ⏳ | ページ構成、ナビゲーション、優先順位 |
+| 情報設計 | 🔄 | **Changelog型タイムライン**を採用（[catnose分析](./research/catnose-design-analysis.md)参照） |
+| デザインパターン探索 | ✅ | exploration-content-patterns.pen に9パターン作成、原則準拠版（Changelog C）決定 |
 
 ### Phase 2: デザイン & 実装（反復）
 
@@ -195,6 +196,7 @@ Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 - [VISION.md](./VISION.md) - synsk.meが何であるべきか
 - [PRINCIPLES.md](./PRINCIPLES.md) - 判断基準
 - [Design Foundations](./design/foundations.md) - デザイントークン
+- [catnose.me デザイン分析](./research/catnose-design-analysis.md) - Changelog型パターンの参考調査
 
 ---
 
@@ -207,3 +209,4 @@ Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 | 2026-01-30 | Phase 1.5「サイト要件定義」追加、Working Backwards に基づく決定フロー明確化 |
 | 2026-01-30 | foundations.pen 再構築（Dark Mode、Type Scale、Variables 追加） |
 | 2026-01-31 | Hub-and-Spoke モデル検討事項を追加（ADR-0002） |
+| 2026-01-31 | Phase 1.5 進捗更新: Changelog型タイムライン採用、catnose分析追加 |

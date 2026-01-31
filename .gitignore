@@ -39,3 +39,6 @@ docs/.tmp/
 
 # raw data (screenshots, exports, etc.)
 /raw_data/
+
+# Playwright MCP screenshots
+.playwright-mcp/
