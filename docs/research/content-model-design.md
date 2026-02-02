@@ -242,46 +242,169 @@ type PlatformMetadata =
 
 ---
 
-## 経歴と実績
+## 経歴・実績・Activity の関係（決定済み）
 
-Activity とは別のデータ構造として扱う。
+### 設計方針: C（分離モデル）
 
-### 経歴と実績の違い
+3つのエンティティを分離し、**Activity → Project → Career** の参照方向で設計する。
 
-| 観点 | 経歴（Career） | 実績（Achievement） |
-|------|---------------|-------------------|
-| **性質** | 「どこで働いたか」 | 「何を作ったか/貢献したか」 |
-| **内容** | 会社名、期間、役職 | プロジェクト名、成果、技術 |
-| **関係** | 「箱」 | 「中身」 |
-| **更新頻度** | 転職時のみ | プロジェクト完了ごと |
-| **Activity との関係** | 直接関係なし | Activity が証拠となる |
+```
+Career（職歴）
+  ↑ career_id
+Project（実績）
+  ↑ project_id
+Activity（成果物）
+```
 
-### データ構造案（TODO: 詳細設計）
+### 決定の経緯
+
+| 検討したモデル | 説明 | 採否 |
+|---------------|------|------|
+| A. 参照モデル | Project が Activity を参照（relatedActivityIds） | ❌ クエリが複雑 |
+| B. 統合モデル | Project も Activity の一種（type="project"） | ❌ 型安全性が低い |
+| **C. 分離モデル** | Activity が Project を参照（project_id） | ✅ 採用 |
+
+### 採用理由
+
+1. **型安全性**: 各エンティティの属性が明示的に定義される
+2. **クエリのシンプルさ**: 単純な JOIN で取得可能
+3. **職務経歴書出力に適している**: Career → Project → Activity の階層が自然
+4. **原則との整合**: 「余白 over 完成形」— 後から構造を変えやすい
+
+### 表示方法
+
+- **デフォルト**: フラット表示（時系列で Activity を並べる）
+- **Project の表現**: ラベル/タグとして表示（クリックで詳細）
+- **Project 自体はタイムラインに表示しない**（Activity のみ）
+
+### 3エンティティの役割
+
+| エンティティ | 役割 | 例 |
+|-------------|------|-----|
+| **Career** | 「どこで働いたか」 | 独立/フリーランス (2023/10〜現在) |
+| **Project** | 「何を作ったか」 | 地域空き家推定システム |
+| **Activity** | 「成果物/証拠」 | GitHub リポジトリ、Zenn 記事 |
+
+### データ構造
 
 ```typescript
 // 経歴
 interface Career {
   id: string;
   company: string;
+  employmentType: 'employee' | 'freelance' | 'intern';
   role: string;
   startDate: Date;
   endDate?: Date;  // null = 現在
   description?: string;
+  skills?: string[];
   url?: string;
 }
 
-// 実績
-interface Achievement {
+// 実績（プロジェクト）
+interface Project {
   id: string;
+  careerId?: string;  // Career への参照（nullable: 個人開発など）
   title: string;
-  description: string;
-  date: Date;
-  careerId?: string;  // 経歴への参照
+  client?: string;        // 元のクライアント名（非公開）
+  clientPublic?: string;  // 公開用の名前（業界名でぼかす）
+  role: string;
+  startDate: Date;
+  endDate?: Date;
+  description?: string;
+  highlights?: string[];  // ポイント（箇条書き）
   skills?: string[];
   url?: string;
-  relatedActivityIds?: string[];  // Activity への参照
+  isHighlighted?: boolean;
+}
+
+// Activity（従来の定義 + project_id を追加）
+interface Activity {
+  id: string;
+  projectId?: string;  // Project への参照（nullable: 独立した Activity）
+
+  // ... 既存の属性は変更なし
+  type: ActivityType;
+  title: string;
+  url: string;
+  publishedAt: Date;
+  // ...
 }
 ```
+
+### DuckDB での実装（次のステップ）
+
+```sql
+-- Career テーブル
+CREATE TABLE career (
+  id VARCHAR PRIMARY KEY,
+  company VARCHAR NOT NULL,
+  employment_type VARCHAR,
+  role VARCHAR,
+  start_date DATE,
+  end_date DATE,
+  description TEXT,
+  skills VARCHAR[],
+  url VARCHAR
+);
+
+-- Project テーブル
+CREATE TABLE project (
+  id VARCHAR PRIMARY KEY,
+  career_id VARCHAR REFERENCES career(id),
+  title VARCHAR NOT NULL,
+  client VARCHAR,
+  client_public VARCHAR,
+  role VARCHAR,
+  start_date DATE,
+  end_date DATE,
+  description TEXT,
+  highlights VARCHAR[],
+  skills VARCHAR[],
+  url VARCHAR,
+  is_highlighted BOOLEAN DEFAULT false
+);
+
+-- Activity テーブル
+CREATE TABLE activity (
+  id VARCHAR PRIMARY KEY,
+  project_id VARCHAR REFERENCES project(id),
+  type VARCHAR NOT NULL,
+  title VARCHAR NOT NULL,
+  url VARCHAR,
+  published_at DATE,
+  description TEXT,
+  display_category VARCHAR,
+  metadata JSON,
+  fetched_at TIMESTAMP,
+  fetch_status VARCHAR
+);
+```
+
+### 関連データ
+
+- [resume-raw.md](../../raw_data/resume-raw.md) - 職務経歴データ（非公開、raw_data/）
+
+---
+
+## 決定済み事項
+
+### データモデル
+
+- **C（分離モデル）** を採用: Career + Project + Activity の3テーブル構成
+- 参照方向: Activity → Project → Career
+- DB: DuckDB
+
+### 表示方法
+
+- フラット表示（時系列）をデフォルト
+- Project はラベル/タグとして表現
+- 「対話 over 展示」原則に基づき、訪問者が探索する余地を残す
+
+### 公開設定
+
+- 雇用関係のクライアント: 会社名を公開
+- 業務委託のクライアント: 業界名でぼかす（`client` vs `clientPublic`）
 
 ---
 
@@ -289,33 +412,29 @@ interface Achievement {
 
 ### 手動メタの属性
 
-現在の案:
-- `isFeatured`: おすすめフラグ
-- `category`: 任意のカテゴリ
-- `comment`: ハイライトコメント
-
-追加検討:
-- `sortOrder`: 表示順の制御
+Activity に付与する手動メタ:
+- `isFeatured`: おすすめフラグ → **Project の `isHighlighted` で代替可能か検討**
 - `isHidden`: 非表示フラグ
-- `relatedIds`: 関連コンテンツへの参照
+- `sortOrder`: 表示順の制御（必要に応じて）
 
 ### Profile 構造
 
 Activity を参照する形でスキル・強みを表現する構造。
 
-### DuckDB スキーマ
+### 個人開発・活動の扱い
 
-テーブル設計の詳細。
+- 個人開発（D1〜D6）: Project として扱う（career_id = null）
+- 活動（A1〜A5）: 別テーブル or Project の一種として扱うか検討
 
 ---
 
 ## 次回の継続ポイント
 
-1. 手動メタの属性を決定
-2. 経歴・実績（Career / Achievement）の詳細設計
-3. Profile 構造の設計
-4. DuckDB スキーマの設計
-5. 実装の進め方を決定
+1. ~~経歴・実績（Career / Project）の詳細設計~~ ✅ 決定済み
+2. DuckDB スキーマの実装（テーブル作成、初期データ投入）
+3. 個人開発・活動の扱いを決定
+4. Profile 構造の設計
+5. 実装の進め方を決定（データ投入 → クエリ検証 → フロントエンド）
 
 ---
 
@@ -335,4 +454,5 @@ Activity を参照する形でスキル・強みを表現する構造。
 ---
 
 *作成日: 2026-01-31*
-*ステータス: 設計中*
+*更新日: 2026-02-02*
+*ステータス: データモデル決定済み、DuckDB スキーマ実装待ち*

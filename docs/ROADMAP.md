@@ -71,7 +71,7 @@ Preview で確認・実験・調整
 
 | タスク | 状態 | 備考 |
 |--------|------|------|
-| コンテンツ要件 | 🔄 | Content Model 設計中（[content-model-design.md](./research/content-model-design.md)） |
+| コンテンツ要件 | 🔄 | Content Model 設計中（[content-model-design.md](./research/content-model-design.md)、データモデル決定済み [ADR-0003](./adr/0003-content-data-model.md)） |
 | 機能要件 | ⏳ | 何ができるようにするか（コンタクト方法等） |
 | 情報設計 | 🔄 | **Changelog型タイムライン**を採用（[catnose分析](./research/catnose-design-analysis.md)参照） |
 | デザインパターン探索 | ✅ | exploration-content-patterns.pen に9パターン作成、原則準拠版（Changelog C）決定 |
@@ -213,3 +213,4 @@ Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 | 2026-01-31 | Hub-and-Spoke モデル検討事項を追加（ADR-0002） |
 | 2026-01-31 | Phase 1.5 進捗更新: Changelog型タイムライン採用、catnose分析追加 |
 | 2026-01-31 | Content Model 設計開始、hub-and-spoke-model に Spotify/Twitter/internal 追加 |
+| 2026-02-02 | データモデル決定（C: 分離モデル）、ADR-0003 追加 |
