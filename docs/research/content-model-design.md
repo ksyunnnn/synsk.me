@@ -43,9 +43,9 @@ interface Activity {
   // 表示カテゴリ（デフォルト自動設定、手動上書き可能）
   displayCategory: DisplayCategory;
 
-  // 手動付与メタ（TODO: 詳細設計）
+  // 手動付与メタ
   isFeatured?: boolean;
-  category?: string;
+  tags?: string[];      // 内部分析・将来の可視化用（訪問者UIには非表示）
   comment?: string;
 
   // 取得ステータス
@@ -66,7 +66,7 @@ type ActivityType =
   | 'repository'   // リポジトリ（GitHub）
   | 'event'        // イベント（connpass, TECHPLAY）
   | 'talk'         // 登壇（Speaker Deck）
-  | 'sandbox'      // コードサンプル（Codesandbox）
+  | 'sandbox'      // コードサンプル（CodeSandbox, CodePen）
   | 'post'         // SNS投稿（Twitter）
   | 'playlist'     // プレイリスト（Spotify）
   | 'misc';        // その他
@@ -94,6 +94,7 @@ type Platform =
   | 'speakerdeck'
   | 'techplay'
   | 'codesandbox'
+  | 'codepen'
 
   // サイト固有
   | 'internal';
@@ -375,6 +376,7 @@ CREATE TABLE activity (
   published_at DATE,
   description TEXT,
   display_category VARCHAR,
+  tags VARCHAR[],           -- 内部分析・将来の可視化用
   metadata JSON,
   fetched_at TIMESTAMP,
   fetch_status VARCHAR
@@ -401,10 +403,95 @@ CREATE TABLE activity (
 - Project はラベル/タグとして表現
 - 「対話 over 展示」原則に基づき、訪問者が探索する余地を残す
 
+### Timeline デザイン（決定済み）
+
+**Timeline B: Verb + Platform** を採用。
+
+**表示形式**: `{Verb} {Type} on {Platform} · {Time}`
+
+| ActivityType | 動詞 | 例 |
+|--------------|------|-----|
+| article | Published | `Published an article on Zenn · 5 days ago` |
+| repository | Published | `Published a project on GitHub · 1 week ago` |
+| event | Hosted / Spoke at / Joined | `Hosted an event on Connpass · 01-15` |
+| talk | Gave | `Gave a talk on SpeakerDeck · 2025-12-02` |
+| sandbox | Shared | `Shared a sandbox on CodeSandbox` / `Shared a pen on CodePen` |
+| playlist | Shared | `Shared a playlist on Spotify` |
+| post | Posted | `Posted on Twitter · 2 hours ago` |
+| note (internal) | Wrote | `Wrote a note · 3 days ago` |
+
+**動詞の設計方針**: 自然な表現（方針C）
+- 「対話 over 展示」: 訪問者に語りかける自然な言葉遣い
+- 「息づき over 装飾」: 文脈ごとに最適な動詞を選ぶ
+- 機械的な統一より、人間らしい表現を優先
+
+**event の役割分け**:
+| 役割 | 動詞 | 用途 |
+|------|------|------|
+| 主催 | Hosted | 自分が主催したイベント |
+| 登壇 | Spoke at | イベント内で登壇した場合 |
+| 参加 | Joined | 参加者として出席 |
+
+**時間表示ルール**:
+- 1ヶ月未満: 相対時間（`5 days ago`, `2 weeks ago`）
+- 1ヶ月以上 & 同年: MM-DD（`01-02`）
+- 1ヶ月以上 & 別年: YYYY-MM-DD（`2025-12-02`）
+
+**年グルーピング**: 年ラベル（`2026`, `2025`）でセクション分け
+
+### Platform アイコン（決定済み）
+
+**方針**: Platform アイコン優先、なければフォールバック
+
+| Platform | アイコンソース | 備考 |
+|----------|---------------|------|
+| GitHub | Simple Icons | ✓ |
+| Zenn | Simple Icons | ✓ |
+| Qiita | Simple Icons | ✓ |
+| dev.to | Simple Icons | ✓ |
+| Medium | Simple Icons | ✓ |
+| SpeakerDeck | Simple Icons | ✓ |
+| Spotify | Simple Icons | ✓ |
+| X | Simple Icons | ✓ |
+| CodeSandbox | Simple Icons | ✓ |
+| Connpass | **Fallback** | Simple Icons になし |
+| TECHPLAY | **Fallback** | Simple Icons になし |
+| CodePen | **Fallback** | 公式ロゴ取得困難 |
+| internal | なし | Platform 表示なし |
+
+**フォールバックアイコン**: `Planet` (Phosphor Icons) ※実装時に取得
+- 「未知のプラットフォーム」を示唆するユーモア
+- 「おもしろさ over 安全圏」原則に沿う
+- Pencil での表示は保留（実装時に Phosphor から直接使用）
+
+**UIアイコンライブラリ**: Phosphor Icons に統一
+- 既存コードで使用中（追加コストなし）
+- ウェイト（Light/Regular等）は実装時に検討
+
 ### 公開設定
 
 - 雇用関係のクライアント: 会社名を公開
 - 業務委託のクライアント: 業界名でぼかす（`client` vs `clientPublic`）
+
+### 手動タグ（tags）
+
+**決定**: `tags?: string[]` として実装。
+
+**用途**:
+- 内部分析・データ可視化用（トピック推移、技術スタック変遷など）
+- 訪問者向けUIには**表示しない**（「余白 over 密度」原則）
+
+**分類の役割分担**:
+
+| フィールド | 用途 | 表示 |
+|-----------|------|------|
+| `displayCategory` | 訪問者向けの表示分類（4種類） | ◯ |
+| `tags` | 内部分析・将来の可視化用 | ✕ |
+
+**採用理由**:
+- 「対話 over 展示」: 訪問者との対話にはシンプルな分類で十分
+- 「余白 over 完成形」: 将来の可視化のための余白としてデータを持つ
+- 12年分のコンテンツを俯瞰・分析する「自分自身との対話」を可能にする
 
 ---
 
@@ -416,6 +503,7 @@ Activity に付与する手動メタ:
 - `isFeatured`: おすすめフラグ → **Project の `isHighlighted` で代替可能か検討**
 - `isHidden`: 非表示フラグ
 - `sortOrder`: 表示順の制御（必要に応じて）
+- ~~`tags`~~: ✅ 決定済み（上記参照）
 
 ### Profile 構造
 
@@ -455,4 +543,4 @@ Activity を参照する形でスキル・強みを表現する構造。
 
 *作成日: 2026-01-31*
 *更新日: 2026-02-02*
-*ステータス: データモデル決定済み、DuckDB スキーマ実装待ち*
+*ステータス: データモデル決定済み、Timeline デザイン決定済み、tags 設計決定済み、Platform アイコン決定済み、DuckDB スキーマ実装待ち*

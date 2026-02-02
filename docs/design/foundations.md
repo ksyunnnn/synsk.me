@@ -205,6 +205,51 @@ spacing: {
 
 ---
 
+## Icons
+
+### Design Intent
+
+**控えめな視覚的補助**: アイコンは情報を補完し、視認性を高めるために使用する。主役にはならない。
+
+PRINCIPLES.md との関連:
+- **余白 over 密度**: アイコンを多用しない。必要な箇所にのみ配置
+- **息づき over 装飾**: 装飾目的のアイコンは使わない
+- **おもしろさ over 安全圏**: フォールバックアイコン（Planet）でユーモアを加える
+
+### Icon Libraries
+
+| 用途 | ライブラリ | 備考 |
+|------|-----------|------|
+| UI アイコン | Phosphor Icons | ウェイトは実装時に検討 |
+| Platform アイコン | Simple Icons | 公式ロゴ |
+| フォールバック | Phosphor Icons `Planet` | 公式ロゴがない Platform 用 |
+
+### Platform Icons
+
+`design/assets/icons/` に SVG として保存:
+
+| Platform | ファイル |
+|----------|---------|
+| GitHub | github.svg |
+| Zenn | zenn.svg |
+| Qiita | qiita.svg |
+| dev.to | devto.svg |
+| Medium | medium.svg |
+| SpeakerDeck | speakerdeck.svg |
+| Spotify | spotify.svg |
+| X | x.svg |
+| CodeSandbox | codesandbox.svg |
+
+**フォールバック対象**: Connpass, TECHPLAY, CodePen → `Planet`
+
+### Implementation
+
+[Phase 2 で実装時に詳細化]
+
+参照: [ADR-0004: アイコンシステム](../adr/0004-icon-system.md)
+
+---
+
 ## Responsive Breakpoints
 
 現在の設定（`src/app/globals.css` より）:
@@ -226,3 +271,4 @@ spacing: {
 | 2026-01-27 | 0.2.0 | グレースケール（Neutral Gray）確定、モノクロファーストアプローチ明記 |
 | 2026-01-29 | 0.3.0 | Typography 確定: Source Sans 3 + Noto Sans JP, Light 300 ベース |
 | 2026-01-29 | 0.4.0 | Spacing 確定: 8px ベース（xs/sm/md/lg/xl） |
+| 2026-02-02 | 0.5.0 | Icons 追加: Phosphor Icons + Simple Icons（Platform）、ADR-0004 |
