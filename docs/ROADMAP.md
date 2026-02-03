@@ -79,10 +79,33 @@ Preview で確認・実験・調整
 
 ### Phase 2: デザイン & 実装（反復）
 
+> 詳細タスクは [GitHub Issues](https://github.com/syunsukekobashi/synsk.me/issues) で管理
+
+#### Timeline コンポーネント
+
+| タスク | 状態 | Issue | 備考 |
+|--------|------|-------|------|
+| ArticleEntry | ⏳ | [#5](https://github.com/ksyunnnn/synsk.me/issues/5) | デザイン確定済み（Pattern B: Inline Platform） |
+| PlaylistSection | ⏳ | [#6](https://github.com/ksyunnnn/synsk.me/issues/6) | カード型 or リスト型を検討中 |
+| RepositoryEntry | ⏳ | [#8](https://github.com/ksyunnnn/synsk.me/issues/8) | GitHub、Article と同様の構造予定 |
+| EventEntry | ⏳ | [#9](https://github.com/ksyunnnn/synsk.me/issues/9) | Connpass, TECHPLAY |
+| TalkEntry | ⏳ | [#10](https://github.com/ksyunnnn/synsk.me/issues/10) | SpeakerDeck |
+| SandboxEntry | ⏳ | [#11](https://github.com/ksyunnnn/synsk.me/issues/11) | CodeSandbox, CodePen |
+| PostEntry | ⏳ | [#12](https://github.com/ksyunnnn/synsk.me/issues/12) | X (Twitter) |
+| Timeline 統合 | ⏳ | - | 年グルーピング、全体レイアウト |
+
+#### データ基盤
+
+| タスク | 状態 | Issue | 備考 |
+|--------|------|-------|------|
+| SpotifyMetadata 型更新 | ⏳ | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | oEmbed 対応（[検証ログ](./research/spotify-api-verification.md)） |
+| oEmbed fetcher 実装 | ⏳ | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | ビルド時取得 |
+| 手動登録データファイル | ⏳ | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | プレイリストURL管理 |
+
+#### その他
+
 | タスク | 状態 | 備考 |
 |--------|------|------|
-| ビジュアルデザイン | ⏳ | モノクロで実装 |
-| コンポーネント実装 | ⏳ | Pencil → React 検証含む |
 | アニメーション/インタラクション | ⏳ | 息づき over 装飾 |
 | カラートークン検証 | ⏳ | 最後に色味を検討 |
 
@@ -217,3 +240,4 @@ Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 | 2026-02-02 | データモデル決定（C: 分離モデル）、ADR-0003 追加 |
 | 2026-02-02 | Timeline デザイン決定: **Timeline B: Verb + Platform** 採用 |
 | 2026-02-02 | アイコンシステム決定: Phosphor Icons + Simple Icons、ADR-0004 追加 |
+| 2026-02-03 | Phase 2 詳細化、GitHub Issues 連携（#5, #6, #7） |

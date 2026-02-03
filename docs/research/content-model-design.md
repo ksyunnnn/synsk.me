@@ -208,10 +208,12 @@ interface CodesandboxMetadata {
 
 interface SpotifyMetadata {
   platform: 'spotify';
-  trackCount?: number;
-  followerCount?: number;
-  isPublic?: boolean;
-  collaborative?: boolean;
+  // oEmbed API から取得可能（Web API は新規アプリ作成停止中）
+  // 詳細: docs/research/spotify-api-verification.md
+  thumbnailUrl?: string;    // カバーアート
+  embedUrl?: string;        // 埋め込み用URL
+  // 以下は oEmbed では取得不可、手動登録時に任意で設定
+  description?: string;
 }
 
 interface TwitterMetadata {
@@ -468,6 +470,21 @@ CREATE TABLE activity (
 - 既存コードで使用中（追加コストなし）
 - ウェイト（Light/Regular等）は実装時に検討
 
+### Article Entry デザイン（決定済み）
+
+**Pattern B: Inline Platform** を採用。
+
+```
+Published an article on [icon] Zenn · 5 days ago
+TypeScriptのユニオン型からプロパティを除外する方法
+```
+
+**構造**:
+- メタ行: 動詞 + "on" + Platform アイコン（12px）+ Platform名 + 時間
+- タイトル行: 記事タイトル（16px）
+
+**デザインファイル**: `design/exploration-content-patterns.pen` > "Article: B vs C Comparison"
+
 ### 公開設定
 
 - 雇用関係のクライアント: 会社名を公開
@@ -496,6 +513,17 @@ CREATE TABLE activity (
 ---
 
 ## 未決定事項
+
+### Playlist Entry デザイン
+
+**検討中の案**:
+
+| 案 | 説明 | 備考 |
+|----|------|------|
+| A. カード型 | サムネイル + タイトル + by synsk（横並び） | Spotify UI を参考 |
+| B. リスト型 | Article と同じ構造 | 統一感あり |
+
+**デザインファイル**: `design/exploration-content-patterns.pen` > "Playlist Card: Light Theme"
 
 ### 手動メタの属性
 
@@ -542,5 +570,5 @@ Activity を参照する形でスキル・強みを表現する構造。
 ---
 
 *作成日: 2026-01-31*
-*更新日: 2026-02-02*
-*ステータス: データモデル決定済み、Timeline デザイン決定済み、tags 設計決定済み、Platform アイコン決定済み、DuckDB スキーマ実装待ち*
+*更新日: 2026-02-03*
+*ステータス: データモデル決定済み、Timeline デザイン決定済み、Article Entry デザイン決定済み、SpotifyMetadata oEmbed対応、Playlist デザイン検討中*

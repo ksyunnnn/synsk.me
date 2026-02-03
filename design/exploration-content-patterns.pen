@@ -10359,6 +10359,1674 @@
           ]
         }
       ]
+    },
+    {
+      "type": "frame",
+      "id": "UxNUo",
+      "x": 1800,
+      "y": 10737,
+      "name": "Article Type: Icon Patterns",
+      "width": 900,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 48,
+      "padding": 48,
+      "children": [
+        {
+          "type": "text",
+          "id": "xsh2O",
+          "name": "sectionHeader",
+          "fill": "#0A0A0A",
+          "content": "Article Type: アイコン配置パターン",
+          "fontFamily": "Source Sans 3",
+          "fontSize": 20,
+          "fontWeight": "300"
+        },
+        {
+          "type": "text",
+          "id": "06zQI",
+          "name": "sectionDesc",
+          "fill": "#737373",
+          "content": "Zenn 記事を例にアイコン配置の3パターンを比較",
+          "fontFamily": "Source Sans 3",
+          "fontSize": 14,
+          "fontWeight": "300"
+        },
+        {
+          "type": "frame",
+          "id": "6vTi9",
+          "name": "Pattern A: Leading Icon",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "tkqmf",
+              "name": "patternALabel",
+              "fill": "#737373",
+              "content": "A. Leading Icon（メタ行の先頭）",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 12,
+              "fontWeight": "300",
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "OMddZ",
+              "name": "entryA",
+              "width": "fill_container",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": [
+                16,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "y5dBx",
+                  "name": "metaRowA",
+                  "gap": 8,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "c0sLI",
+                      "name": "iconA",
+                      "width": 16,
+                      "height": 16,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "oATpE",
+                          "x": 0.00038990937173366547,
+                          "y": 0.228962704539299,
+                          "geometry": "M0.26361 23.54204l4.984 0c0.25936-0.00581 0.49979-0.13703 0.645-0.352l13.721-22.545c0.176-0.293-0.029-0.645-0.381-0.645l-4.72 0c-0.23082-0.00251-0.44453 0.12142-0.557 0.323l-13.926 22.809c-0.088 0.176 0.029 0.41 0.234 0.41m17.181-0.352l6.479-10.408c0.09418-0.14802 0.0995-0.3358 0.01386-0.48892-0.08565-0.15312-0.24843-0.24686-0.42386-0.24408l-4.691 0c-0.17712-0.00172-0.34293 0.08684-0.44 0.235l-6.655 10.643c-0.176 0.264 0.029 0.616 0.352 0.616l4.779 0c0.24646 0.00296 0.4734-0.13374 0.586-0.353",
+                          "fill": "#0A0A0A",
+                          "width": 23.998164320364594,
+                          "height": 23.543082430958748
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "ZrGvu",
+                      "name": "metaTextA",
+                      "fill": "#737373",
+                      "content": "Published an article · 5 days ago",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "94Df6",
+                  "name": "titleA",
+                  "fill": "#0A0A0A",
+                  "content": "TypeScriptのユニオン型からプロパティを除外する方法",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 18,
+                  "fontWeight": "300"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "qKE93",
+          "name": "Pattern B: Inline Platform",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "U0Fhs",
+              "name": "patternBLabel",
+              "fill": "#737373",
+              "content": "B. Inline Platform（Platform 部分にアイコン）",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 12,
+              "fontWeight": "300",
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "KusDN",
+              "name": "entryB",
+              "width": "fill_container",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": [
+                16,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "cqolH",
+                  "name": "metaRowB",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gRFrI",
+                      "name": "metaB1",
+                      "fill": "#737373",
+                      "content": "Published an article on",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 1
+                    },
+                    {
+                      "type": "frame",
+                      "id": "FV3wd",
+                      "name": "iconB",
+                      "width": 14,
+                      "height": 14,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "JCVwO",
+                          "x": 0.00038990937173366547,
+                          "y": 0.228962704539299,
+                          "geometry": "M0.26361 23.54204l4.984 0c0.25936-0.00581 0.49979-0.13703 0.645-0.352l13.721-22.545c0.176-0.293-0.029-0.645-0.381-0.645l-4.72 0c-0.23082-0.00251-0.44453 0.12142-0.557 0.323l-13.926 22.809c-0.088 0.176 0.029 0.41 0.234 0.41m17.181-0.352l6.479-10.408c0.09418-0.14802 0.0995-0.3358 0.01386-0.48892-0.08565-0.15312-0.24843-0.24686-0.42386-0.24408l-4.691 0c-0.17712-0.00172-0.34293 0.08684-0.44 0.235l-6.655 10.643c-0.176 0.264 0.029 0.616 0.352 0.616l4.779 0c0.24646 0.00296 0.4734-0.13374 0.586-0.353",
+                          "fill": "#0A0A0A",
+                          "width": 23.998164320364594,
+                          "height": 23.543082430958748
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "t1Gpc",
+                      "name": "metaB2",
+                      "fill": "#737373",
+                      "content": "Zenn · 5 days ago",
+                      "lineHeight": 1.5,
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 1
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "K3j9w",
+                  "name": "titleB",
+                  "fill": "#0A0A0A",
+                  "content": "TypeScriptのユニオン型からプロパティを除外する方法",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 18,
+                  "fontWeight": "300"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "NvRoG",
+          "name": "Pattern C: Trailing Link",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 16,
+          "children": [
+            {
+              "type": "text",
+              "id": "w5d9S",
+              "name": "patternCLabel",
+              "fill": "#737373",
+              "content": "C. Trailing Link（行末に外部リンク）",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 12,
+              "fontWeight": "300",
+              "letterSpacing": 1
+            },
+            {
+              "type": "frame",
+              "id": "vvc5Q",
+              "name": "entryC",
+              "width": "fill_container",
+              "stroke": {
+                "align": "inside",
+                "thickness": 1,
+                "fill": "#E5E5E5"
+              },
+              "layout": "vertical",
+              "gap": 8,
+              "padding": [
+                16,
+                0
+              ],
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "mkry8",
+                  "name": "metaRowC",
+                  "width": "fill_container",
+                  "justifyContent": "space_between",
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "vf9jt",
+                      "name": "metaLeftC",
+                      "gap": 4,
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "Ino5c",
+                          "name": "metaC1",
+                          "fill": "#737373",
+                          "content": "Published an article on",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 12,
+                          "fontWeight": "300",
+                          "letterSpacing": 1
+                        },
+                        {
+                          "type": "frame",
+                          "id": "NQwt5",
+                          "name": "iconC",
+                          "width": 14,
+                          "height": 14,
+                          "layout": "none",
+                          "children": [
+                            {
+                              "type": "path",
+                              "id": "G2s8w",
+                              "x": 0.00038990937173366547,
+                              "y": 0.228962704539299,
+                              "geometry": "M0.26361 23.54204l4.984 0c0.25936-0.00581 0.49979-0.13703 0.645-0.352l13.721-22.545c0.176-0.293-0.029-0.645-0.381-0.645l-4.72 0c-0.23082-0.00251-0.44453 0.12142-0.557 0.323l-13.926 22.809c-0.088 0.176 0.029 0.41 0.234 0.41m17.181-0.352l6.479-10.408c0.09418-0.14802 0.0995-0.3358 0.01386-0.48892-0.08565-0.15312-0.24843-0.24686-0.42386-0.24408l-4.691 0c-0.17712-0.00172-0.34293 0.08684-0.44 0.235l-6.655 10.643c-0.176 0.264 0.029 0.616 0.352 0.616l4.779 0c0.24646 0.00296 0.4734-0.13374 0.586-0.353",
+                              "fill": "#0A0A0A",
+                              "width": 23.998164320364594,
+                              "height": 23.543082430958748
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "FuXRA",
+                          "name": "metaC2",
+                          "fill": "#737373",
+                          "content": "Zenn · 5 days ago",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 12,
+                          "fontWeight": "300",
+                          "letterSpacing": 1
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "am5z2",
+                      "name": "linkIcon",
+                      "fill": "#737373",
+                      "content": "↗",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 14,
+                      "fontWeight": "300"
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "OW00I",
+                  "name": "titleC",
+                  "fill": "#0A0A0A",
+                  "content": "TypeScriptのユニオン型からプロパティを除外する方法",
+                  "lineHeight": 1.8,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 18,
+                  "fontWeight": "300"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "dP2Nq",
+      "x": 1800,
+      "y": 11561,
+      "name": "Article: B vs C Comparison",
+      "width": 1400,
+      "fill": "#FAFAFA",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 48,
+      "children": [
+        {
+          "type": "text",
+          "id": "qS36T",
+          "name": "compareHeader",
+          "fill": "#0A0A0A",
+          "content": "Article Type: B vs C 比較",
+          "fontFamily": "Source Sans 3",
+          "fontSize": 20,
+          "fontWeight": "300"
+        },
+        {
+          "type": "frame",
+          "id": "OnBPL",
+          "name": "compareRow",
+          "width": "fill_container",
+          "gap": 48,
+          "children": [
+            {
+              "type": "frame",
+              "id": "M22fP",
+              "name": "Column B",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 24,
+              "padding": 32,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "fV0We",
+                  "name": "colBHeader",
+                  "fill": "#0A0A0A",
+                  "content": "B. Inline Platform",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "letterSpacing": 0.5
+                },
+                {
+                  "type": "text",
+                  "id": "4Kf0L",
+                  "name": "colBDesc",
+                  "fill": "#737373",
+                  "content": "Platform 部分にアイコン",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "frame",
+                  "id": "v4KIS",
+                  "name": "dividerB",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#E5E5E5"
+                },
+                {
+                  "type": "frame",
+                  "id": "fxqtG",
+                  "name": "entriesB",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 20,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "GuDrQ",
+                      "name": "entryB1",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "KHDMZ",
+                          "name": "metaB1",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "INJmw",
+                              "name": "metaB1t1",
+                              "fill": "#737373",
+                              "content": "Published an article on",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "300",
+                              "letterSpacing": 0.5
+                            },
+                            {
+                              "type": "frame",
+                              "id": "ayUSZ",
+                              "name": "iconB1",
+                              "width": 12,
+                              "height": 12,
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "path",
+                                  "id": "oU3ld",
+                                  "x": 0,
+                                  "y": 0.11,
+                                  "geometry": "M0.26361 23.54204l4.984 0c0.25936-0.00581 0.49979-0.13703 0.645-0.352l13.721-22.545c0.176-0.293-0.029-0.645-0.381-0.645l-4.72 0c-0.23082-0.00251-0.44453 0.12142-0.557 0.323l-13.926 22.809c-0.088 0.176 0.029 0.41 0.234 0.41m17.181-0.352l6.479-10.408c0.09418-0.14802 0.0995-0.3358 0.01386-0.48892-0.08565-0.15312-0.24843-0.24686-0.42386-0.24408l-4.691 0c-0.17712-0.00172-0.34293 0.08684-0.44 0.235l-6.655 10.643c-0.176 0.264 0.029 0.616 0.352 0.616l4.779 0c0.24646 0.00296 0.4734-0.13374 0.586-0.353",
+                                  "fill": "#0A0A0A",
+                                  "width": 12,
+                                  "height": 11.77
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "3IEYH",
+                              "name": "metaB1t2",
+                              "fill": "#737373",
+                              "content": "Zenn · 5 days ago",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "300",
+                              "letterSpacing": 0.5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "HP749",
+                          "name": "titleB1",
+                          "fill": "#0A0A0A",
+                          "content": "TypeScriptのユニオン型からプロパティを除外する方法",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "LCMCH",
+                      "name": "entryB2",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "LoB4U",
+                          "name": "metaB2",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "X2B3O",
+                              "name": "metaB2t1",
+                              "fill": "#737373",
+                              "content": "Published an article on",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "300",
+                              "letterSpacing": 0.5
+                            },
+                            {
+                              "type": "frame",
+                              "id": "nd0rp",
+                              "name": "iconB2",
+                              "width": 12,
+                              "height": 12,
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "path",
+                                  "id": "JlsB3",
+                                  "x": 0,
+                                  "y": 0,
+                                  "geometry": "M12 0c-6.627 0-12 5.373-12 12 0 6.627 5.373 12 12 12 3.398 0 6.467-1.413 8.65-3.683-0.41133-0.06418-0.80317-0.21928-1.147-0.454-0.714-0.477-1.348-0.927-1.682-1.674-1.294 1.38-3.053 1.835-5.182 2.05-4.31 0.436-8.045-1.49-8.498-6.3-0.192-2.045 0.263-3.989 1.18-5.582l-0.533-2.1c-0.087-0.366 0.25-0.713 0.605-0.627l1.846 0.448c1.10552-0.91972 2.45958-1.48988 3.89-1.638 1.21864-0.12342 2.44849 0.07053 3.57 0.563l1.735-1.05c0.326-0.197 0.74 0.026 0.771 0.417l0.1 2.474c1.334 1.409 2.242 3.332 2.448 5.517 0.116 1.233-0.012 2.177-0.34 3.078-0.152 0.421-0.198 0.777 0.078 1.13 0.268 0.34 0.692 1.003 1.165 0.892 0.71-0.167 1.472-0.123 1.942 0.171 0.92305-1.7336 1.40459-3.66798 1.402-5.632 0-6.627-5.373-12-12-12m-0.073 5.727c-0.20503-0.0036-0.41008 0.00542-0.614 0.027-2.15309 0.22261-3.94311 1.75571-4.494 3.849l-1.318-0.2-0.014 0.259 1.298 0.14c-0.036 0.15-0.065 0.24-0.086 0.393l-1.132 0.09 0.01 0.203 1.103-0.088c-0.01968 0.15125-0.0307 0.30349-0.033 0.456l-1.008 0.412 0.05 0.25 0.96-0.45c0.002 0.135 0.008 0.206 0.02 0.342 0.267 2.837 2.637 3.398 5.468 3.111 2.831-0.287 5.052-1.311 4.785-4.148-0.013-0.136-0.032-0.207-0.055-0.34l1.04 0.226 0.024-0.229-1.091-0.207c-0.034-0.168-0.077-0.27-0.126-0.432l1.12-0.138-0.015-0.202-1.15 0.141c-0.04914-0.14447-0.10487-0.28662-0.167-0.426l1.267-0.404-0.04-0.253-1.347 0.466c-0.81301-1.72771-2.5456-2.83532-4.455-2.848",
+                                  "fill": "#0A0A0A",
+                                  "width": 12,
+                                  "height": 12
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "2KQsm",
+                              "name": "metaB2t2",
+                              "fill": "#737373",
+                              "content": "Qiita · 2 weeks ago",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "300",
+                              "letterSpacing": 0.5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "HF55X",
+                          "name": "titleB2",
+                          "fill": "#0A0A0A",
+                          "content": "React Hook Formの実践的な使い方",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "61175",
+                      "name": "entryB3",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "6abNf",
+                          "name": "metaB3",
+                          "gap": 4,
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "text",
+                              "id": "IP3nH",
+                              "name": "metaB3t1",
+                              "fill": "#737373",
+                              "content": "Published an article on",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "300",
+                              "letterSpacing": 0.5
+                            },
+                            {
+                              "type": "frame",
+                              "id": "pKy0u",
+                              "name": "iconB3",
+                              "width": 12,
+                              "height": 12,
+                              "layout": "none",
+                              "children": [
+                                {
+                                  "type": "path",
+                                  "id": "veVvY",
+                                  "x": 0,
+                                  "y": 2.47,
+                                  "geometry": "M7.42 5.11c-0.18-0.16-0.46-0.23-0.84-0.23l-0.58 0 0.02 2.44 0.04 2.45 0.56-0.02c0.41 0 0.63-0.07 0.83-0.26 0.24-0.24 0.26-0.36 0.26-2.2 0-1.91-0.02-1.96-0.29-2.18m-7.42-5.11l0 14.12 24 0 0-14.12-24 0z m8.56 10.36c-0.44 0.58-1.06 0.77-2.53 0.77l-1.32 0 0-7.54 1.4 0c1.67 0 2.16 0.18 2.6 0.9 0.27 0.43 0.29 0.6 0.32 2.57 0.05 2.23-0.02 2.73-0.47 3.3m5.09-5.47l-2.47 0 0 1.77 1.52 0 0 1.28-0.72 0.04-0.75 0.03 0 1.77 1.22 0.03 1.2 0.04 0 1.28-1.6 0c-1.53 0-1.6-0.01-1.87-0.3l-0.3-0.28 0-3.16c0-3.02 0.01-3.18 0.25-3.48 0.23-0.31 0.25-0.31 1.88-0.31l1.64 0 0 1.3 0-0.01z m4.68 5.45c-0.17 0.43-0.64 0.79-1 0.79-0.18 0-0.45-0.15-0.67-0.39-0.32-0.32-0.45-0.63-0.82-2.08l-0.9-3.39-0.45-1.67 0.76 0c0.4 0 0.75 0.02 0.75 0.05 0 0.06 1.16 4.54 1.26 4.83 0.04 0.15 0.32-0.7 0.73-2.3l0.66-2.52 0.74-0.04c0.4-0.02 0.73 0 0.73 0.04 0 0.14-1.67 6.38-1.8 6.68l0.01 0z",
+                                  "fill": "#0A0A0A",
+                                  "width": 12,
+                                  "height": 7.06
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "Hkf0c",
+                              "name": "metaB3t2",
+                              "fill": "#737373",
+                              "content": "dev.to · 01-15",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 12,
+                              "fontWeight": "300",
+                              "letterSpacing": 0.5
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "kigaz",
+                          "name": "titleB3",
+                          "fill": "#0A0A0A",
+                          "content": "Building a Design System from Scratch",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "iz7QX",
+              "name": "Column C",
+              "width": "fill_container",
+              "fill": "#FFFFFF",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 24,
+              "padding": 32,
+              "children": [
+                {
+                  "type": "text",
+                  "id": "gxaq0",
+                  "name": "colCHeader",
+                  "fill": "#0A0A0A",
+                  "content": "C. Trailing Link",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "500",
+                  "letterSpacing": 0.5
+                },
+                {
+                  "type": "text",
+                  "id": "sXvMA",
+                  "name": "colCDesc",
+                  "fill": "#737373",
+                  "content": "B + 行末に外部リンクアイコン",
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 12,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "frame",
+                  "id": "IBlYA",
+                  "name": "dividerC",
+                  "width": "fill_container",
+                  "height": 1,
+                  "fill": "#E5E5E5"
+                },
+                {
+                  "type": "frame",
+                  "id": "Uc8N6",
+                  "name": "entriesC",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 20,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "Qo3BE",
+                      "name": "entryC1",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "NHPOh",
+                          "name": "metaC1",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "4Lx6X",
+                              "name": "metaC1Left",
+                              "gap": 4,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "ECFr8",
+                                  "name": "metaC1t1",
+                                  "fill": "#737373",
+                                  "content": "Published an article on",
+                                  "fontFamily": "Source Sans 3",
+                                  "fontSize": 12,
+                                  "fontWeight": "300",
+                                  "letterSpacing": 0.5
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "cJSmt",
+                                  "name": "iconC1",
+                                  "width": 14,
+                                  "height": 14,
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "path",
+                                      "id": "frwiP",
+                                      "x": 0.00038990937173366547,
+                                      "y": 0.228962704539299,
+                                      "geometry": "M0.26361 23.54204l4.984 0c0.25936-0.00581 0.49979-0.13703 0.645-0.352l13.721-22.545c0.176-0.293-0.029-0.645-0.381-0.645l-4.72 0c-0.23082-0.00251-0.44453 0.12142-0.557 0.323l-13.926 22.809c-0.088 0.176 0.029 0.41 0.234 0.41m17.181-0.352l6.479-10.408c0.09418-0.14802 0.0995-0.3358 0.01386-0.48892-0.08565-0.15312-0.24843-0.24686-0.42386-0.24408l-4.691 0c-0.17712-0.00172-0.34293 0.08684-0.44 0.235l-6.655 10.643c-0.176 0.264 0.029 0.616 0.352 0.616l4.779 0c0.24646 0.00296 0.4734-0.13374 0.586-0.353",
+                                      "fill": "#0A0A0A",
+                                      "width": 23.998164320364594,
+                                      "height": 23.543082430958748
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "lSD2i",
+                                  "name": "metaC1t2",
+                                  "fill": "#737373",
+                                  "content": "Zenn · 5 days ago",
+                                  "fontFamily": "Source Sans 3",
+                                  "fontSize": 12,
+                                  "fontWeight": "300",
+                                  "letterSpacing": 0.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "QKald",
+                              "name": "linkC1",
+                              "fill": "#A3A3A3",
+                              "content": "↗",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "X7BV8",
+                          "name": "titleC1",
+                          "fill": "#0A0A0A",
+                          "content": "TypeScriptのユニオン型からプロパティを除外する方法",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "qyuvs",
+                      "name": "entryC2",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "of0RJ",
+                          "name": "metaC2",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "y1Ptk",
+                              "name": "metaC2Left",
+                              "gap": 4,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "a5yd2",
+                                  "name": "metaC2t1",
+                                  "fill": "#737373",
+                                  "content": "Published an article on",
+                                  "fontFamily": "Source Sans 3",
+                                  "fontSize": 12,
+                                  "fontWeight": "300",
+                                  "letterSpacing": 0.5
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "6MxDF",
+                                  "name": "iconC2",
+                                  "width": 14,
+                                  "height": 14,
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "path",
+                                      "id": "4nO6l",
+                                      "x": 0,
+                                      "y": 0,
+                                      "geometry": "M12 0c-6.627 0-12 5.373-12 12 0 6.627 5.373 12 12 12 3.398 0 6.467-1.413 8.65-3.683-0.41133-0.06418-0.80317-0.21928-1.147-0.454-0.714-0.477-1.348-0.927-1.682-1.674-1.294 1.38-3.053 1.835-5.182 2.05-4.31 0.436-8.045-1.49-8.498-6.3-0.192-2.045 0.263-3.989 1.18-5.582l-0.533-2.1c-0.087-0.366 0.25-0.713 0.605-0.627l1.846 0.448c1.10552-0.91972 2.45958-1.48988 3.89-1.638 1.21864-0.12342 2.44849 0.07053 3.57 0.563l1.735-1.05c0.326-0.197 0.74 0.026 0.771 0.417l0.1 2.474c1.334 1.409 2.242 3.332 2.448 5.517 0.116 1.233-0.012 2.177-0.34 3.078-0.152 0.421-0.198 0.777 0.078 1.13 0.268 0.34 0.692 1.003 1.165 0.892 0.71-0.167 1.472-0.123 1.942 0.171 0.92305-1.7336 1.40459-3.66798 1.402-5.632 0-6.627-5.373-12-12-12m-0.073 5.727c-0.20503-0.0036-0.41008 0.00542-0.614 0.027-2.15309 0.22261-3.94311 1.75571-4.494 3.849l-1.318-0.2-0.014 0.259 1.298 0.14c-0.036 0.15-0.065 0.24-0.086 0.393l-1.132 0.09 0.01 0.203 1.103-0.088c-0.01968 0.15125-0.0307 0.30349-0.033 0.456l-1.008 0.412 0.05 0.25 0.96-0.45c0.002 0.135 0.008 0.206 0.02 0.342 0.267 2.837 2.637 3.398 5.468 3.111 2.831-0.287 5.052-1.311 4.785-4.148-0.013-0.136-0.032-0.207-0.055-0.34l1.04 0.226 0.024-0.229-1.091-0.207c-0.034-0.168-0.077-0.27-0.126-0.432l1.12-0.138-0.015-0.202-1.15 0.141c-0.04914-0.14447-0.10487-0.28662-0.167-0.426l1.267-0.404-0.04-0.253-1.347 0.466c-0.81301-1.72771-2.5456-2.83532-4.455-2.848",
+                                      "fill": "#0A0A0A",
+                                      "width": 24.000009536743164,
+                                      "height": 24
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "WpZMw",
+                                  "name": "metaC2t2",
+                                  "fill": "#737373",
+                                  "content": "Qiita · 2 weeks ago",
+                                  "fontFamily": "Source Sans 3",
+                                  "fontSize": 12,
+                                  "fontWeight": "300",
+                                  "letterSpacing": 0.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "v8bIS",
+                              "name": "linkC2",
+                              "fill": "#A3A3A3",
+                              "content": "↗",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "2yioT",
+                          "name": "titleC2",
+                          "fill": "#0A0A0A",
+                          "content": "React Hook Formの実践的な使い方",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "IzYVy",
+                      "name": "entryC3",
+                      "width": "fill_container",
+                      "layout": "vertical",
+                      "gap": 6,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "id": "tlC5Q",
+                          "name": "metaC3",
+                          "width": "fill_container",
+                          "justifyContent": "space_between",
+                          "alignItems": "center",
+                          "children": [
+                            {
+                              "type": "frame",
+                              "id": "hqDhb",
+                              "name": "metaC3Left",
+                              "gap": 4,
+                              "alignItems": "center",
+                              "children": [
+                                {
+                                  "type": "text",
+                                  "id": "vAFVm",
+                                  "name": "metaC3t1",
+                                  "fill": "#737373",
+                                  "content": "Published an article on",
+                                  "fontFamily": "Source Sans 3",
+                                  "fontSize": 12,
+                                  "fontWeight": "300",
+                                  "letterSpacing": 0.5
+                                },
+                                {
+                                  "type": "frame",
+                                  "id": "9H8U3",
+                                  "name": "iconC3",
+                                  "width": 14,
+                                  "height": 14,
+                                  "layout": "none",
+                                  "children": [
+                                    {
+                                      "type": "path",
+                                      "id": "4q61a",
+                                      "x": 0,
+                                      "y": 4.940000057220459,
+                                      "geometry": "M7.42 5.11c-0.18-0.16-0.46-0.23-0.84-0.23l-0.58 0 0.02 2.44 0.04 2.45 0.56-0.02c0.41 0 0.63-0.07 0.83-0.26 0.24-0.24 0.26-0.36 0.26-2.2 0-1.91-0.02-1.96-0.29-2.18m-7.42-5.11l0 14.12 24 0 0-14.12-24 0z m8.56 10.36c-0.44 0.58-1.06 0.77-2.53 0.77l-1.32 0 0-7.54 1.4 0c1.67 0 2.16 0.18 2.6 0.9 0.27 0.43 0.29 0.6 0.32 2.57 0.05 2.23-0.02 2.73-0.47 3.3m5.09-5.47l-2.47 0 0 1.77 1.52 0 0 1.28-0.72 0.04-0.75 0.03 0 1.77 1.22 0.03 1.2 0.04 0 1.28-1.6 0c-1.53 0-1.6-0.01-1.87-0.3l-0.3-0.28 0-3.16c0-3.02 0.01-3.18 0.25-3.48 0.23-0.31 0.25-0.31 1.88-0.31l1.64 0 0 1.3 0-0.01z m4.68 5.45c-0.17 0.43-0.64 0.79-1 0.79-0.18 0-0.45-0.15-0.67-0.39-0.32-0.32-0.45-0.63-0.82-2.08l-0.9-3.39-0.45-1.67 0.76 0c0.4 0 0.75 0.02 0.75 0.05 0 0.06 1.16 4.54 1.26 4.83 0.04 0.15 0.32-0.7 0.73-2.3l0.66-2.52 0.74-0.04c0.4-0.02 0.73 0 0.73 0.04 0 0.14-1.67 6.38-1.8 6.68l0.01 0z",
+                                      "fill": "#0A0A0A",
+                                      "width": 24,
+                                      "height": 14.119999408721924
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "text",
+                                  "id": "19Kyu",
+                                  "name": "metaC3t2",
+                                  "fill": "#737373",
+                                  "content": "dev.to · 01-15",
+                                  "fontFamily": "Source Sans 3",
+                                  "fontSize": 12,
+                                  "fontWeight": "300",
+                                  "letterSpacing": 0.5
+                                }
+                              ]
+                            },
+                            {
+                              "type": "text",
+                              "id": "ZIrY4",
+                              "name": "linkC3",
+                              "fill": "#A3A3A3",
+                              "content": "↗",
+                              "fontFamily": "Source Sans 3",
+                              "fontSize": 14,
+                              "fontWeight": "normal"
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "id": "4vh6Q",
+                          "name": "titleC3",
+                          "fill": "#0A0A0A",
+                          "content": "Building a Design System from Scratch",
+                          "lineHeight": 1.6,
+                          "fontFamily": "Source Sans 3",
+                          "fontSize": 16,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "EjqFc",
+      "x": 1800,
+      "y": 12196,
+      "name": "Playlist Type: Design",
+      "width": 700,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 32,
+      "padding": 48,
+      "children": [
+        {
+          "type": "text",
+          "id": "XD4vQ",
+          "name": "playlistHeader",
+          "fill": "#0A0A0A",
+          "content": "Playlist Type",
+          "fontFamily": "Source Sans 3",
+          "fontSize": 20,
+          "fontWeight": "300"
+        },
+        {
+          "type": "text",
+          "id": "4mZaw",
+          "name": "playlistDesc",
+          "fill": "#737373",
+          "content": "Spotify プレイリスト共有",
+          "fontFamily": "Source Sans 3",
+          "fontSize": 12,
+          "fontWeight": "300"
+        },
+        {
+          "type": "frame",
+          "id": "oJb2D",
+          "name": "divider",
+          "width": "fill_container",
+          "height": 1,
+          "fill": "#E5E5E5"
+        },
+        {
+          "type": "frame",
+          "id": "jvFw0",
+          "name": "entries",
+          "width": "fill_container",
+          "layout": "vertical",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "TcpsD",
+              "name": "entry1",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "8wmo1",
+                  "name": "meta1",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "gTAeH",
+                      "name": "meta1t1",
+                      "fill": "#737373",
+                      "content": "Shared a playlist on",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.5
+                    },
+                    {
+                      "type": "frame",
+                      "id": "n3lZ9",
+                      "name": "icon1",
+                      "width": 12,
+                      "height": 12,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "CIQ7V",
+                          "x": 0,
+                          "y": 0,
+                          "geometry": "M12 0c-6.6 0-12 5.4-12 12 0 6.6 5.4 12 12 12 6.6 0 12-5.4 12-12 0-6.6-5.34-12-12-12m5.521 17.34c-0.24 0.359-0.66 0.48-1.021 0.24-2.82-1.74-6.36-2.101-10.561-1.141-0.418 0.122-0.779-0.179-0.899-0.539-0.12-0.421 0.18-0.78 0.54-0.9 4.56-1.021 8.52-0.6 11.64 1.32 0.42 0.18 0.479 0.659 0.301 1.02m1.44-3.3c-0.301 0.42-0.841 0.6-1.262 0.3-3.239-1.98-8.159-2.58-11.939-1.38-0.479 0.12-1.02-0.12-1.14-0.6-0.12-0.48 0.12-1.021 0.6-1.141 4.38-1.319 9.78-0.658 13.5 1.621 0.361 0.181 0.54 0.78 0.241 1.2m0.12-3.36c-3.841-2.28-10.261-2.52-13.921-1.379-0.6 0.179-1.2-0.181-1.38-0.721-0.18-0.601 0.18-1.2 0.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621 0.539 0.3 0.719 1.02 0.419 1.56-0.299 0.421-1.02 0.599-1.559 0.3",
+                          "fill": "#0A0A0A",
+                          "width": 12,
+                          "height": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "jBnaS",
+                      "name": "meta1t2",
+                      "fill": "#737373",
+                      "content": "Spotify · 1 week ago",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.5
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "Zj3iL",
+                  "name": "title1",
+                  "fill": "#0A0A0A",
+                  "content": "Coding Flow - 集中用プレイリスト",
+                  "lineHeight": 1.6,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "Sh4jg",
+                  "name": "featuring1",
+                  "fill": "#737373",
+                  "content": "Khruangbin, Tom Misch, Vulfpeck and more",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 13,
+                  "fontWeight": "300"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "WdYn2",
+              "name": "entry2",
+              "width": "fill_container",
+              "layout": "vertical",
+              "gap": 6,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "jFycS",
+                  "name": "meta2",
+                  "gap": 4,
+                  "alignItems": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "rr0YY",
+                      "name": "meta2t1",
+                      "fill": "#737373",
+                      "content": "Shared a playlist on",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.5
+                    },
+                    {
+                      "type": "frame",
+                      "id": "8qYm5",
+                      "name": "icon2",
+                      "width": 12,
+                      "height": 12,
+                      "layout": "none",
+                      "children": [
+                        {
+                          "type": "path",
+                          "id": "yjUTO",
+                          "x": 0,
+                          "y": 0,
+                          "geometry": "M12 0c-6.6 0-12 5.4-12 12 0 6.6 5.4 12 12 12 6.6 0 12-5.4 12-12 0-6.6-5.34-12-12-12m5.521 17.34c-0.24 0.359-0.66 0.48-1.021 0.24-2.82-1.74-6.36-2.101-10.561-1.141-0.418 0.122-0.779-0.179-0.899-0.539-0.12-0.421 0.18-0.78 0.54-0.9 4.56-1.021 8.52-0.6 11.64 1.32 0.42 0.18 0.479 0.659 0.301 1.02m1.44-3.3c-0.301 0.42-0.841 0.6-1.262 0.3-3.239-1.98-8.159-2.58-11.939-1.38-0.479 0.12-1.02-0.12-1.14-0.6-0.12-0.48 0.12-1.021 0.6-1.141 4.38-1.319 9.78-0.658 13.5 1.621 0.361 0.181 0.54 0.78 0.241 1.2m0.12-3.36c-3.841-2.28-10.261-2.52-13.921-1.379-0.6 0.179-1.2-0.181-1.38-0.721-0.18-0.601 0.18-1.2 0.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621 0.539 0.3 0.719 1.02 0.419 1.56-0.299 0.421-1.02 0.599-1.559 0.3",
+                          "fill": "#0A0A0A",
+                          "width": 12,
+                          "height": 12
+                        }
+                      ]
+                    },
+                    {
+                      "type": "text",
+                      "id": "TG7By",
+                      "name": "meta2t2",
+                      "fill": "#737373",
+                      "content": "Spotify · 2 months ago",
+                      "fontFamily": "Source Sans 3",
+                      "fontSize": 12,
+                      "fontWeight": "300",
+                      "letterSpacing": 0.5
+                    }
+                  ]
+                },
+                {
+                  "type": "text",
+                  "id": "gz7wt",
+                  "name": "title2",
+                  "fill": "#0A0A0A",
+                  "content": "Late Night Jazz - 夜のリラックスタイム",
+                  "lineHeight": 1.6,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "300"
+                },
+                {
+                  "type": "text",
+                  "id": "pa7fc",
+                  "name": "featuring2",
+                  "fill": "#737373",
+                  "content": "Bill Evans, Chet Baker, Miles Davis and more",
+                  "lineHeight": 1.5,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 13,
+                  "fontWeight": "300"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "EXe6M",
+      "x": 1800,
+      "y": 12710,
+      "name": "Spotify: Featuring 模写",
+      "width": 900,
+      "fill": "#121212",
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 24,
+      "children": [
+        {
+          "type": "frame",
+          "id": "SAOQ5",
+          "name": "header",
+          "width": "fill_container",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "X9VHN",
+              "name": "spotifyTitle",
+              "fill": "#FFFFFF",
+              "content": "Featuring D.A.N.",
+              "fontFamily": "Inter",
+              "fontSize": 24,
+              "fontWeight": "bold"
+            },
+            {
+              "type": "text",
+              "id": "9pn4v",
+              "name": "spotifyShowAll",
+              "fill": "#B3B3B3",
+              "content": "Show all",
+              "fontFamily": "Inter",
+              "fontSize": 14,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "63Fyl",
+          "name": "cards",
+          "width": "fill_container",
+          "gap": 24,
+          "children": [
+            {
+              "type": "frame",
+              "id": "G53Qg",
+              "name": "card1",
+              "width": 180,
+              "fill": "#181818",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "JkbLB",
+                  "name": "coverArt1",
+                  "width": 156,
+                  "height": 156,
+                  "fill": "#282828",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "NK7fQ",
+                  "name": "card1Title",
+                  "fill": "#FFFFFF",
+                  "content": "This Is D.A.N.",
+                  "lineHeight": 1.3,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "P6A7r",
+                  "name": "card1Desc",
+                  "fill": "#B3B3B3",
+                  "textGrowth": "fixed-width",
+                  "width": 156,
+                  "content": "This is D.A.N. The essential tracks, all in one playlist.",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "U6hK8",
+              "name": "card2",
+              "width": 180,
+              "fill": "#181818",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "0frbb",
+                  "name": "coverArt2",
+                  "width": 156,
+                  "height": 156,
+                  "fill": "#282828",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "yNl7E",
+                  "name": "card2Title",
+                  "fill": "#FFFFFF",
+                  "content": "D.A.N. Radio",
+                  "lineHeight": 1.3,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "tLUml",
+                  "name": "card2Desc",
+                  "fill": "#B3B3B3",
+                  "textGrowth": "fixed-width",
+                  "width": 156,
+                  "content": "With cero, VIDEOTAPEMUSIC, and more",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "941bs",
+              "name": "card3",
+              "width": 180,
+              "fill": "#181818",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "UpZAi",
+                  "name": "coverArt3",
+                  "width": 156,
+                  "height": 156,
+                  "fill": "#282828",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "NEiX1",
+                  "name": "card3Title",
+                  "fill": "#FFFFFF",
+                  "content": "Rock Strike Japan",
+                  "lineHeight": 1.3,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "JsB7p",
+                  "name": "card3Desc",
+                  "fill": "#B3B3B3",
+                  "textGrowth": "fixed-width",
+                  "width": 156,
+                  "content": "J-Rock acts who have broken the border and ar...",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "TeKnQ",
+              "name": "card4",
+              "width": 180,
+              "fill": "#181818",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 12,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "3e2D2",
+                  "name": "coverArt4",
+                  "width": 156,
+                  "height": 156,
+                  "fill": "#282828",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "X8qo4",
+                  "name": "card4Title",
+                  "fill": "#FFFFFF",
+                  "content": "CIRCLE '26",
+                  "lineHeight": 1.3,
+                  "fontFamily": "Inter",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "Un0pJ",
+                  "name": "card4Desc",
+                  "fill": "#B3B3B3",
+                  "textGrowth": "fixed-width",
+                  "width": 156,
+                  "content": "毎年5月に福岡で開催される野外音楽祭「CIRCLE...」",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Inter",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "id": "ImzhY",
+      "x": 1800,
+      "y": 13190,
+      "name": "Playlist Card: Light Theme",
+      "width": 900,
+      "fill": "#FFFFFF",
+      "layout": "vertical",
+      "gap": 16,
+      "padding": 24,
+      "children": [
+        {
+          "type": "frame",
+          "id": "Zv4dy",
+          "name": "header",
+          "width": "fill_container",
+          "justifyContent": "space_between",
+          "alignItems": "center",
+          "children": [
+            {
+              "type": "text",
+              "id": "qdQiS",
+              "name": "lightTitle",
+              "fill": "#0A0A0A",
+              "content": "Playlists",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 20,
+              "fontWeight": "300",
+              "letterSpacing": 0.5
+            },
+            {
+              "type": "text",
+              "id": "77oKe",
+              "name": "lightShowAll",
+              "fill": "#737373",
+              "content": "Show all",
+              "fontFamily": "Source Sans 3",
+              "fontSize": 13,
+              "fontWeight": "300"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "id": "mIYsr",
+          "name": "cards",
+          "width": "fill_container",
+          "gap": 20,
+          "children": [
+            {
+              "type": "frame",
+              "id": "1Fyhr",
+              "name": "card1",
+              "width": 164,
+              "fill": "#F5F5F5",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "6bap9",
+                  "name": "coverArt1",
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#E5E5E5",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "ul5cK",
+                  "name": "lTitle1",
+                  "fill": "#0A0A0A",
+                  "content": "Coding Flow",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "CVfZQ",
+                  "name": "byline1",
+                  "fill": "#737373",
+                  "content": "by synsk",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "xBli7",
+              "name": "card2",
+              "width": 164,
+              "fill": "#F5F5F5",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "kQOM2",
+                  "name": "coverArt2",
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#E5E5E5",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "a1a0f",
+                  "name": "lTitle2",
+                  "fill": "#0A0A0A",
+                  "content": "Late Night Jazz",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "uowbU",
+                  "name": "byline2",
+                  "fill": "#737373",
+                  "content": "by synsk",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "cZWtA",
+              "name": "card3",
+              "width": 164,
+              "fill": "#F5F5F5",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "hkypw",
+                  "name": "coverArt3",
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#E5E5E5",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "OdA3A",
+                  "name": "lTitle3",
+                  "fill": "#0A0A0A",
+                  "content": "Weekend Vibes",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "8PvXG",
+                  "name": "byline3",
+                  "fill": "#737373",
+                  "content": "by synsk",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "id": "mg0Up",
+              "name": "card4",
+              "width": 164,
+              "fill": "#F5F5F5",
+              "cornerRadius": 8,
+              "layout": "vertical",
+              "gap": 10,
+              "padding": 12,
+              "children": [
+                {
+                  "type": "frame",
+                  "id": "s8xL5",
+                  "name": "coverArt4",
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#E5E5E5",
+                  "cornerRadius": 4
+                },
+                {
+                  "type": "text",
+                  "id": "sPnqu",
+                  "name": "lTitle4",
+                  "fill": "#0A0A0A",
+                  "content": "Morning Coffee",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 16,
+                  "fontWeight": "bold"
+                },
+                {
+                  "type": "text",
+                  "id": "qXqmM",
+                  "name": "byline4",
+                  "fill": "#737373",
+                  "content": "by synsk",
+                  "lineHeight": 1.4,
+                  "fontFamily": "Source Sans 3",
+                  "fontSize": 14,
+                  "fontWeight": "normal"
+                }
+              ]
+            }
+          ]
+        }
+      ]
     }
   ],
   "variables": {

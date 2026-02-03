@@ -93,6 +93,12 @@ src/
 - 公式ドキュメントへのリンクを添える
 - 例: 「Atomic Design に基づき...」→ [公式サイト](https://atomicdesign.bradfrost.com/)
 
+### ドキュメントの役割
+- **ROADMAP.md**: 全体像・フェーズ・完了状態（What & When）
+- **GitHub Issues**: 具体的タスク・並行作業・議論（How & Who）
+- **docs/research/**: 設計詳細・調査ログ（Why & What）
+- **docs/adr/**: 重要な意思決定の記録
+
 ### ドキュメント更新の検知
 
 #### チェックタイミング
