@@ -25,8 +25,11 @@ ADR（Architecture Decision Record）は、アーキテクチャ上の重要な�
 
 | Number | Title | Status | Date |
 |--------|-------|--------|------|
-| [0001](./0001-product-vision.md) | Product Vision and Principles | proposed | 2025-01-23 |
+| [0001](./0001-product-vision.md) | Product Vision and Principles | proposed | 2026-01-27 |
 | [0002](./0002-hub-and-spoke-data-architecture.md) | Hub-and-Spoke Data Architecture | proposed | 2026-01-31 |
+| [0003](./0003-content-data-model.md) | Content Data Model | accepted | 2026-02-02 |
+| [0004](./0004-icon-system.md) | Icon System | accepted | 2026-02-02 |
+| [0005](./0005-design-tokens.md) | Design Tokens | accepted | 2026-02-03 |
 
 ---
 
@@ -36,7 +39,7 @@ ADR（Architecture Decision Record）は、アーキテクチャ上の重要な�
 
 ```bash
 # ファイル名: NNNN-short-title.md
-cp docs/adr/template.md docs/adr/0002-your-decision.md
+cp docs/adr/template.md docs/adr/NNNN-your-decision.md
 ```
 
 ### 2. テンプレートを埋める

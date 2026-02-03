@@ -1,7 +1,7 @@
 # ADR-0001: Product Vision and Principles
 
 - **Status**: proposed
-- **Date**: 2025-01-23
+- **Date**: 2026-01-27
 - **Deciders**: [あなたの名前]
 - **Related Principles**: [../PRINCIPLES.md](../PRINCIPLES.md)
 

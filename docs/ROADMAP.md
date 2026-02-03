@@ -53,165 +53,86 @@ Preview で確認・実験・調整
 
 ## フェーズ
 
-### Phase 1: 基盤構築
+### Phase 1: 基盤構築 [完了]
 
 | タスク | 状態 | 備考 |
 |--------|------|------|
-| VISION.md | ✅ | Working Backwards形式 |
-| PRINCIPLES.md（Core） | ✅ | 余白・実験・おもしろさ |
-| PRINCIPLES.md（Design） | ✅ | 余白・息づき・対話 |
-| 発信コンテンツ分析 | ✅ | docs/research/tweets-insight/, content-analysis/ |
-| Design Tokens（グレースケール） | ✅ | Neutral Gray で構造を固める |
-| Design Tokens（タイポグラフィ） | ✅ | 暫定、実装検証で調整（Source Sans 3 + Noto Sans JP, Light 300） |
-| Design Tokens（スペーシング） | ✅ | 8px ベース（xs/sm/md/lg/xl） |
+| VISION.md | 完了 | Working Backwards形式 |
+| PRINCIPLES.md（Core） | 完了 | 余白・実験・おもしろさ |
+| PRINCIPLES.md（Design） | 完了 | 余白・息づき・対話 |
+| 発信コンテンツ分析 | 完了 | docs/research/tweets-insight/, content-analysis/ |
+| Design Tokens | 完了 | [ADR-0005](./adr/0005-design-tokens.md) |
 
-### Phase 1.5: サイト要件定義
+### Phase 1.5: サイト要件定義 [完了]
 
 **根拠**: Working Backwards の次ステップ（Press Release → FAQ → **User Manual** → Architecture）
 
 | タスク | 状態 | 備考 |
 |--------|------|------|
-| コンテンツ要件 | 🔄 | Content Model 設計中（[content-model-design.md](./research/content-model-design.md)、データモデル決定済み [ADR-0003](./adr/0003-content-data-model.md)） |
-| 機能要件 | ⏳ | 何ができるようにするか（コンタクト方法等） |
-| 情報設計 | ✅ | **Changelog型タイムライン**を採用（[catnose分析](./research/catnose-design-analysis.md)参照） |
-| デザインパターン探索 | ✅ | exploration-content-patterns.pen、**Timeline B: Verb + Platform** 採用 |
-| アイコンシステム | ✅ | Phosphor Icons 統一、Platform アイコン戦略決定（[ADR-0004](./adr/0004-icon-system.md)） |
+| コンテンツ要件 | 完了 | データモデル決定済み（[ADR-0003](./adr/0003-content-data-model.md)） |
+| 情報設計 | 完了 | **Changelog型タイムライン**を採用（[catnose分析](./research/catnose-design-analysis.md)参照） |
+| デザインパターン探索 | 完了 | exploration-content-patterns.pen、**Timeline B: Verb + Platform** 採用 |
+| アイコンシステム | 完了 | Phosphor Icons 統一、Platform アイコン戦略決定（[ADR-0004](./adr/0004-icon-system.md)） |
 
 ### Phase 2: デザイン & 実装（反復）
 
-> 詳細タスクは [GitHub Issues](https://github.com/syunsukekobashi/synsk.me/issues) で管理
+> 詳細タスクは [GitHub Issues](https://github.com/ksyunnnn/synsk.me/issues) で管理
 
 #### Timeline コンポーネント
 
 | タスク | 状態 | Issue | 備考 |
 |--------|------|-------|------|
-| ArticleEntry | ⏳ | [#5](https://github.com/ksyunnnn/synsk.me/issues/5) | デザイン確定済み（Pattern B: Inline Platform） |
-| PlaylistSection | ⏳ | [#6](https://github.com/ksyunnnn/synsk.me/issues/6) | カード型 or リスト型を検討中 |
-| RepositoryEntry | ⏳ | [#8](https://github.com/ksyunnnn/synsk.me/issues/8) | GitHub、Article と同様の構造予定 |
-| EventEntry | ⏳ | [#9](https://github.com/ksyunnnn/synsk.me/issues/9) | Connpass, TECHPLAY |
-| TalkEntry | ⏳ | [#10](https://github.com/ksyunnnn/synsk.me/issues/10) | SpeakerDeck |
-| SandboxEntry | ⏳ | [#11](https://github.com/ksyunnnn/synsk.me/issues/11) | CodeSandbox, CodePen |
-| PostEntry | ⏳ | [#12](https://github.com/ksyunnnn/synsk.me/issues/12) | X (Twitter) |
-| Timeline 統合 | ⏳ | - | 年グルーピング、全体レイアウト |
+| ArticleEntry | 未着手 | [#5](https://github.com/ksyunnnn/synsk.me/issues/5) | デザイン確定済み（Pattern B: Inline Platform） |
+| PlaylistSection | 未着手 | [#6](https://github.com/ksyunnnn/synsk.me/issues/6) | カード型 or リスト型を検討中 |
+| RepositoryEntry | 未着手 | [#8](https://github.com/ksyunnnn/synsk.me/issues/8) | GitHub、Article と同様の構造予定 |
+| EventEntry | 未着手 | [#9](https://github.com/ksyunnnn/synsk.me/issues/9) | Connpass, TECHPLAY |
+| TalkEntry | 未着手 | [#10](https://github.com/ksyunnnn/synsk.me/issues/10) | SpeakerDeck |
+| SandboxEntry | 未着手 | [#11](https://github.com/ksyunnnn/synsk.me/issues/11) | CodeSandbox, CodePen |
+| PostEntry | 未着手 | [#12](https://github.com/ksyunnnn/synsk.me/issues/12) | X (Twitter) |
+| Timeline 統合 | 未着手 | [#14](https://github.com/ksyunnnn/synsk.me/issues/14) | 年グルーピング、全体レイアウト |
 
 #### データ基盤
 
 | タスク | 状態 | Issue | 備考 |
 |--------|------|-------|------|
-| SpotifyMetadata 型更新 | ⏳ | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | oEmbed 対応（[検証ログ](./research/spotify-api-verification.md)） |
-| oEmbed fetcher 実装 | ⏳ | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | ビルド時取得 |
-| 手動登録データファイル | ⏳ | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | プレイリストURL管理 |
+| SpotifyMetadata 型更新 | 未着手 | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | oEmbed 対応（[検証ログ](./research/spotify-api-verification.md)） |
+| oEmbed fetcher 実装 | 未着手 | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | ビルド時取得 |
+| 手動登録データファイル | 未着手 | [#7](https://github.com/ksyunnnn/synsk.me/issues/7) | プレイリストURL管理 |
+
+#### 機能要件
+
+| タスク | 状態 | 備考 |
+|--------|------|------|
+| コンタクト方法 | 未着手 | フォーム / SNS リンク |
+| ページ構成 | 未着手 | シングル / マルチ |
+| ナビゲーション | 未着手 | 固定 / スクロール連動 / なし |
+| ファーストビュー | 未着手 | 何を最初に見せるか |
+| セクション順序 | 未着手 | VISION.md 順 / カスタム |
 
 #### その他
 
 | タスク | 状態 | 備考 |
 |--------|------|------|
-| アニメーション/インタラクション | ⏳ | 息づき over 装飾 |
-| カラートークン検証 | ⏳ | 最後に色味を検討 |
+| アニメーション/インタラクション | 未着手 | 息づき over 装飾 |
+| カラートークン検証 | 未着手 | 最後に色味を検討 |
 
 ### Phase 3: 公開
 
 | タスク | 状態 | 備考 |
 |--------|------|------|
-| レビュー/調整 | ⏳ | |
-| main へマージ | ⏳ | 本番デプロイ |
+| レビュー/調整 | 未着手 | |
+| main へマージ | 未着手 | 本番デプロイ |
 
 ---
 
-## 次のアクション
+## 現在のフォーカス
 
-### Step 1: サイト要件定義 ⏳
+Phase 2 の開始準備中。
 
-**根拠**: Working Backwards（VISION.md で採用済み）の次ステップ
+### 次のステップ
 
-```
-Press Release → FAQ → User Manual → Architecture
-                       ↑ 今ここ
-```
-
-#### 1-1. コンテンツ要件
-
-VISION.md の FAQ「訪問者が何を求めるか」から導出：
-
-| 訪問者の質問 | 必要なコンテンツ | 決定 |
-|-------------|-----------------|------|
-| 「これは何ですか？」 | 自己紹介、ポジショニング | [ ] |
-| 「誰のためのものですか？」 | ターゲット明示 | [ ] |
-| 「他と何が違いますか？」 | 差別化、共創の入り口 | [ ] |
-| 「依頼には何が必要ですか？」 | 敷居の低さ説明 | [ ] |
-
-**追加で決めること**:
-- [ ] 実績/ポートフォリオの掲載範囲
-- [ ] プロフィールの詳細度
-- [ ] テキストは VISION.md 流用 or 新規作成
-
-#### 1-2. 機能要件
-
-Jobs to be Done: 「訪問者はこのサイトを"雇って"何を達成したいか？」
-
-| Job | 必要な機能 | 決定 |
-|-----|-----------|------|
-| この人が何者か知りたい | プロフィール表示 | [ ] |
-| 一緒に仕事できるか判断したい | 実績閲覧 | [ ] |
-| コンタクトしたい | 連絡手段 | [ ] |
-| 要件なしで相談できるか確認 | 明示的メッセージ | [ ] |
-
-**追加で決めること**:
-- [ ] コンタクト方法（フォーム / SNSリンク / 両方）
-- [ ] 外部コンテンツへのリンク（Zenn, GitHub 等）
-
-**検討中**:
-- [ ] Hub-and-Spoke モデル（外部プラットフォームからリアルタイムデータ取得）
-  - 詳細: [hub-and-spoke-model.md](./research/hub-and-spoke-model.md)
-  - ADR: [ADR-0002](./adr/0002-hub-and-spoke-data-architecture.md)
-
-#### 1-3. 情報設計
-
-| 決定事項 | 選択肢 | 決定 |
-|---------|--------|------|
-| ページ構成 | シングルページ / マルチページ | [ ] |
-| ナビゲーション | 固定 / スクロール連動 / なし | [ ] |
-| ファーストビュー | 何を最初に見せるか | [ ] |
-| セクション順序 | VISION.md 順 / カスタム | [ ] |
-
----
-
-### Step 2: Pencil コンポーネント作成
-
-**前提**: Step 1 完了後に実施
-
-**目的**: Figma ⇔ React連携問題をPencilで解決できるか検証
-
-**進捗**:
-1. [x] `design/foundations.pen` を Pencil で作成
-2. [x] Colors セクション（Light Mode + Dark Mode スウォッチ）
-3. [x] Typography セクション（フォント情報 + Type Scale）
-4. [x] Spacing セクション（スケール + Usage 説明）
-5. [x] Variables 定義（10色、スウォッチと連動）
-6. [ ] Article Design サンプル（オプション、必要時に追加）
-7. [ ] **Step 1 完了後** → 実際のページ/コンポーネント作成
-
-**Design Tokens 設定値（確定済み）**:
-```
-Colors: background, foreground, muted, muted-foreground, border（Light/Dark対応）
-Typography: Source Sans 3 + Noto Sans JP, Light 300, 18px, line-height 1.8
-Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
-```
-
-**トークン同期方針（決定済み）**:
-- Pencil `get_variables` API で .pen からトークン抽出可能（検証済み）
-- 同期スクリプト作成は Phase 2 実装フェーズで必要に応じて対応
-- 現時点では foundations.md をマスターとして手動同期で運用
-
----
-
-### Step 3: 実装フェーズへ移行
-
-1. ~~Design Tokens（グレースケール）の確定~~ ✅
-2. ~~Design Tokens（タイポグラフィ）の策定~~ ✅
-3. ~~Design Tokens（スペーシング）の策定~~ ✅
-4. `feature/redesign` ブランチを作成
-5. Phase 2 開始
+1. `feature/redesign` ブランチを作成
+2. 最初のタスク: [#5 ArticleEntry](https://github.com/ksyunnnn/synsk.me/issues/5)
 
 ---
 
@@ -219,7 +140,9 @@ Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 
 - [VISION.md](./VISION.md) - synsk.meが何であるべきか
 - [PRINCIPLES.md](./PRINCIPLES.md) - 判断基準
-- [Design Foundations](./design/foundations.md) - デザイントークン
+- [ADR-0003: Content Data Model](./adr/0003-content-data-model.md) - データモデル
+- [ADR-0004: Icon System](./adr/0004-icon-system.md) - アイコンシステム
+- [ADR-0005: Design Tokens](./adr/0005-design-tokens.md) - デザイントークン
 - [catnose.me デザイン分析](./research/catnose-design-analysis.md) - Changelog型パターンの参考調査
 - [Content Model 設計](./research/content-model-design.md) - データ構造の設計
 - [Hub-and-Spoke モデル](./research/hub-and-spoke-model.md) - データ取得アーキテクチャ
@@ -241,3 +164,5 @@ Spacing: 8px ベース（xs:8, sm:16, md:24, lg:48, xl:96）
 | 2026-02-02 | Timeline デザイン決定: **Timeline B: Verb + Platform** 採用 |
 | 2026-02-02 | アイコンシステム決定: Phosphor Icons + Simple Icons、ADR-0004 追加 |
 | 2026-02-03 | Phase 2 詳細化、GitHub Issues 連携（#5, #6, #7） |
+| 2026-02-03 | ドキュメント整理: design/ 廃止、ADR-0005 追加、ROADMAP 簡素化 |
+| 2026-02-03 | ROADMAP レビュー: 状態表記統一、機能要件を Phase 2 に移動、#14 作成 |

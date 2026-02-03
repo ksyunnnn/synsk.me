@@ -12,16 +12,21 @@ synsk.me プロジェクトのドキュメントハブです。
 
 ## Research
 
-| Directory | Description |
-|-----------|-------------|
-| [research/tweets-insight/](./research/tweets-insight/) | Twitter分析によるペルソナ・来歴調査 |
+| Path | Description |
+|------|-------------|
+| [research/](./research/) | 調査ログ・参考分析 |
 
 ## Guidelines
 
-| Directory | Description |
-|-----------|-------------|
+| Path | Description |
+|------|-------------|
 | [adr/](./adr/) | Architecture Decision Records |
-| [design/](./design/) | デザインガイドライン |
+
+## Guides
+
+| Path | Description |
+|------|-------------|
+| [pencil-mcp-guide.md](./pencil-mcp-guide.md) | Pencil MCP 運用ガイド |
 
 ## Document Hierarchy
 
@@ -33,13 +38,10 @@ PRINCIPLES.md
   │ "判断に迷ったとき、何を優先するか"
   ↓
 ROADMAP.md ←── research/
-  │ "今どこにいて、次に何をするか"    "ペルソナ分析・来歴調査"
+  │ "今どこにいて、次に何をするか"    "調査ログ・参考分析"
   ↓
-┌─────────────────────────────────────┐
-│                                     │
-↓                                     ↓
-adr/                             design/
-"なぜこの技術・構造を選んだか"    "どう見せるか"
+adr/
+"なぜその選択をしたか（技術・設計・デザイン）"
 ```
 
 ## Language Policy
@@ -54,4 +56,3 @@ adr/                             design/
 - **Vision**: [Amazon Working Backwards](https://workingbackwards.com/)
 - **Principles**: [Ray Dalio's Principles](https://www.principles.com/) + X over Y形式
 - **ADR**: [Architecture Decision Records](https://adr.github.io/)
-- **Design**: [Atomic Design](https://atomicdesign.bradfrost.com/) + [Design Tokens](https://medium.com/eightshapes-llc/tokens-in-design-systems-25dd82d58421)
