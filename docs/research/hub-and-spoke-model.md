@@ -226,6 +226,11 @@ const res = await fetch(
 
 **更新戦略**: 静的（更新なしのため）
 
+**RSS の制約**（2026-08-20 に実フィードを取得して確認）:
+
+- `item` に含まれるのは `title` / `link` / `guid` / `pubDate` / `category` / `content:encoded` / `dc:creator` のみ。`rel="canonical"` は含まれない
+- 返却されるのは直近 10 件のみ。Medium 上の全 23 記事は RSS では取得できない（全件が必要な場合は別手段が要る）
+
 ---
 
 ### Tier 4: 静的リンク / 手動入力
@@ -256,6 +261,16 @@ synsk.me 内でのみ公開するコンテンツ。
 - 完全手動入力
 - DisplayCategory は手動で設定
 - catnose.me の `/notes` に相当
+
+**外部プラットフォームへの転載（POSSE）**:
+
+[ADR-0006](../adr/0006-posse-publishing-strategy.md) により、internal コンテンツは synsk.me を正本として
+外部プラットフォームへ転載する。転載した記事は internal エントリと転載先プラットフォームのエントリとして
+二重に集約されるため、集約時に除外する。
+
+- internal 側が `syndicatedTo: string[]`（転載先 URL）を保持する
+- 集約時、`syndicatedTo` に含まれる URL を持つ外部エントリを除外する
+- 転載先の `rel="canonical"` を読んで判定する方式は採らない（Medium の RSS に canonical が含まれないため。上記 Tier 分類 8番の Medium を参照）
 
 ---
 

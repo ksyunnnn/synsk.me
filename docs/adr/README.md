@@ -30,6 +30,7 @@ ADR（Architecture Decision Record）は、アーキテクチャ上の重要な�
 | [0003](./0003-content-data-model.md) | Content Data Model | accepted | 2026-02-02 |
 | [0004](./0004-icon-system.md) | Icon System | accepted | 2026-02-02 |
 | [0005](./0005-design-tokens.md) | Design Tokens | accepted | 2026-02-03 |
+| [0006](./0006-posse-publishing-strategy.md) | 発信戦略として POSSE を採用する | accepted | 2026-08-20 |
 
 ---
 

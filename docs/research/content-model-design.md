@@ -226,6 +226,7 @@ interface TwitterMetadata {
 interface InternalMetadata {
   platform: 'internal';
   // サイト固有コンテンツ、手動入力
+  syndicatedTo?: string[];  // 転載先 URL（POSSE。ADR-0006）
 }
 
 type PlatformMetadata =
