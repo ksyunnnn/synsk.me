@@ -217,12 +217,12 @@ const res = await fetch(
 
 | 項目 | 内容 |
 |------|------|
-| ユーザー名 | `@syunsukekobashi` |
+| ユーザー名 | `@ksyunnnn` |
 | 取得方法 | RSS フィード |
 | Webhook | ❌ 非対応 |
 | 最終更新 | 2021年（アーカイブ扱い） |
 
-**RSS URL**: `https://medium.com/feed/@syunsukekobashi`
+**RSS URL**: `https://medium.com/feed/@ksyunnnn`
 
 **更新戦略**: 静的（更新なしのため）
 
