@@ -77,17 +77,6 @@
 
 ---
 
-## Implementation Notes
-
-<!--
-実装時に注意すべきこと（オプション）
-決定でないものを書かない。現在形のルールは REQUIREMENTS.md、未決は question ラベルの Issue が持つ。
--->
-
-[TODO: 必要に応じて記載]
-
----
-
 ## References
 
 - [TODO: 参考にした資料、リンク]

@@ -14,7 +14,7 @@ paths:
 ```
 adr/:             > この文書は決定を記録する。有効な要件は持たない。
 REQUIREMENTS.md:  > この文書は満たすべきことだけを書く。進捗と実装方法は書かない。
-research/:        > この文書は決定を持たない。決定は docs/adr/ にある。
+research/:        > この文書は決定の正本ではない。決定は docs/adr/ にある。
 notes/:           > 書き捨て。消えても困らないものだけを置く。
 ```
 
@@ -62,7 +62,9 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
    → 転記の過程で未決が決定に格上げされる
 ```
 
-`Implementation Notes` に決定でないものを書かない。未決事項の節を作らない。未決は `question` ラベルの Issue が持つ。
+`Implementation Notes` の節を作らない。決定に付随する注意は Consequences が持つ。未決事項の節も作らない。未決は `question` ラベルの Issue が持つ。
+
+**時制** — Decision は現在形で断定する（「〜を採用する」）。Context / Alternatives / Consequences は、判断した時点の記録として過去形で書く。「これから守るべきルール」を書かないという禁止は、Decision の断定形には掛からない。
 
 `Deciders` は `synsk` と書く。
 

@@ -75,7 +75,7 @@ POSSE に加え、[Webmention](https://www.w3.org/TR/webmention/) と [Bridgy](h
 
 ---
 
-## Implementation Notes
+## Decision の詳細
 
 ### 重複エントリの除外
 

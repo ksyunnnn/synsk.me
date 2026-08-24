@@ -1,6 +1,6 @@
 # Spotify API 検証ログ
 
-> この文書は決定を持たない。決定は docs/adr/ にある。
+> この文書は決定の正本ではない。決定は docs/adr/ にある。
 
 > synsk.me で Spotify プレイリストを表示するための API 検証
 

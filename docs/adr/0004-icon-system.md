@@ -96,14 +96,6 @@ Platform ロゴを使わず、ActivityType（event, sandbox 等）でアイコ�
 
 ---
 
-## Implementation Notes
-
-- Platform アイコンは `design/assets/icons/` に SVG として保存済み（9個）
-- Phosphor Icons のウェイト（Light/Regular 等）は実装時に検討
-- 既存の FontAwesome 使用箇所は、リデザイン対象外のページでは維持を検討
-
----
-
 ## References
 
 - [Simple Icons](https://simpleicons.org/)

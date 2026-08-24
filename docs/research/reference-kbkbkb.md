@@ -1,6 +1,6 @@
 # UI Reference: kbkbkb.co
 
-> この文書は決定を持たない。決定は docs/adr/ にある。
+> この文書は決定の正本ではない。決定は docs/adr/ にある。
 
 ## Contents
 

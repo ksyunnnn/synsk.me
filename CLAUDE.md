@@ -34,15 +34,11 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 
 書式と例は `.claude/rules/docs-patterns.md`、文章ルールは `.claude/rules/writing.md`。
 
-### ドキュメント更新の検知
+### ドキュメント規約の監査
 
-タスク完了時とセッション終了前に確認する。検知したら提案のみ行い、実行は許可を得てから。
+ドキュメント・ADR・要件を追加または変更したあと、コミットする前、セッションを終える前に `auditing-docs-convention` skill を使う（`.claude/skills/auditing-docs-convention/SKILL.md`）。
 
-**検知すべき変化**
-- 決定を下したのに ADR がない
-- ADR を書いたのに `docs/README.md` や `.claude/rules/` の現在形のルールを直していない（逆も同じ）
-- パス・参照の不整合（ファイル移動・削除によるリンク切れ）
-- 技術スタックの変更（依存関係や構成の変更）
+監査人が逸脱を指摘する。修正は許可を得てから行う。
 
 ## コミュニケーション
 

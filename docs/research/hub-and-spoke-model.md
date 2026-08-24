@@ -1,6 +1,6 @@
 # Hub-and-Spoke モデル設計検討
 
-> この文書は決定を持たない。決定は docs/adr/ にある。
+> この文書は決定の正本ではない。決定は docs/adr/ にある。
 
 > synsk.me をハブ（中心）として、各プラットフォームから最新データを取得・統合するアーキテクチャ
 
@@ -280,7 +280,7 @@ synsk.me 内でのみ公開するコンテンツ。
 
 **外部プラットフォームへの転載（POSSE）**:
 
-[ADR-0006](../adr/0006-posse-publishing-strategy.md) により、internal コンテンツは synsk.me を正本として
+ADR-0006 により、internal コンテンツは synsk.me を正本として
 外部プラットフォームへ転載する。転載した記事は internal エントリと転載先プラットフォームのエントリとして
 二重に集約されるため、集約時に除外する。
 
@@ -585,7 +585,7 @@ or
   DuckDB-WASM でブラウザ側集計 → インタラクティブな可視化
 ```
 
-→ 詳細は [ADR-0002](../adr/0002-hub-and-spoke-data-architecture.md) を参照
+→ 詳細は ADR-0002 を参照
 
 ---
 
@@ -620,5 +620,5 @@ or
 *作成日: 2026-01-31*
 *更新日: 2026-01-31*
 *ステータス: 方針決定済み（実装はフェーズ 1.5 以降）*
-*関連 ADR: [ADR-0002](../adr/0002-hub-and-spoke-data-architecture.md)*
+*関連 ADR: ADR-0002*
 *関連設計: [content-model-design.md](./content-model-design.md)*

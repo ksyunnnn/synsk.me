@@ -1,6 +1,6 @@
 # Texture Inspiration: 質量と時間を感じる質感
 
-> この文書は決定を持たない。決定は docs/adr/ にある。
+> この文書は決定の正本ではない。決定は docs/adr/ にある。
 
 ## Contents
 
