@@ -1,8 +1,10 @@
 # ADR-0002: Hub-and-Spoke データアーキテクチャ
 
-- **Status**: proposed
+> この文書は決定を記録する。有効な要件は持たない。
+
+- **Status**: accepted
 - **Date**: 2026-01-31
-- **Deciders**: Syunsuke Kobashi
+- **Deciders**: synsk
 - **Related Principles**: [../PRINCIPLES.md](../PRINCIPLES.md)
 
 ---
@@ -26,7 +28,14 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 
 ## Decision
 
-**synsk.me をハブとした Hub-and-Spoke モデルを採用し、データストアとして DuckDB を使用する。**
+**synsk.me をハブとした Hub-and-Spoke モデルを採用する。**
+
+> **分離の記録（2026-08-20）**: 本 ADR は当初「Hub-and-Spoke モデルの採用」と
+> 「データストアに DuckDB を使用」という2つの決定を含んでいたが、
+> [docs/adr/README.md](./README.md) の「ADR の単位は決定であって、要件ではない」に反していたため、
+> データストアの選定を [ADR-0007](./0007-duckdb-wasm-datastore.md) へ分離した。
+> 本 ADR が扱うのは Hub-and-Spoke というモデル構造の決定のみである。
+> 以降に残る DuckDB への言及は、分離前の検討記録として保持している。
 
 ### Hub-and-Spoke モデル
 
@@ -45,7 +54,9 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
    └─────────┘ └───────┘ └───────┘ └───────┘ └───────┘
 ```
 
-### DuckDB の採用理由
+### DuckDB の採用理由（[ADR-0007](./0007-duckdb-wasm-datastore.md) へ分離）
+
+> 以下は 2026-01-31 時点の検討記録。データストアの決定は ADR-0007 が最新である。
 
 1. **埋め込み型**: 外部サービス（Supabase 等）への依存なし
 2. **分析向き**: 列指向で集計クエリに強い
@@ -55,6 +66,9 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 ---
 
 ## Alternatives Considered
+
+> 以下の Option A〜D はデータストアの選択肢であり、決定は
+> [ADR-0007](./0007-duckdb-wasm-datastore.md) へ分離した。分離前の検討記録として保持する。
 
 ### Option A: キャッシュのみ（ISR + Vercel KV）
 
@@ -108,31 +122,6 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
   - 対策: ビルド時に静的生成するパターンから始める
 - 外部 API のレート制限や仕様変更
   - 対策: エラーハンドリングとフォールバックを実装
-
----
-
-## Implementation Notes
-
-### 実装フェーズ
-
-1. **フェーズ 1.5 以降に実装開始**（デザインシステム確立後）
-2. MVP では手動データで表示、その後 API 統合
-
-### 優先順位
-
-| 優先度 | プラットフォーム | 取得方法 |
-|--------|-----------------|---------|
-| 1 | GitHub | REST API + Webhook |
-| 2 | Zenn | RSS（ISR） |
-| 3 | Qiita | API v2（ISR） |
-| 4 | dev.to | API（ISR） |
-| 5 | その他 | 静的リンク |
-
-### 技術スタック
-
-- **DB**: DuckDB（ビルド時生成 or WASM）
-- **データ形式**: JSON または Parquet
-- **更新**: GitHub Webhook + ISR（1日1回）
 
 ---
 

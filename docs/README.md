@@ -1,58 +1,101 @@
 # Documentation
 
-synsk.me プロジェクトのドキュメントハブです。
+> この文書は、どこに何を書くかの判断基準を持つ。個別の内容は各文書にある。
 
-## Foundation Documents
+---
 
-| Document | Description |
-|----------|-------------|
-| [VISION.md](./VISION.md) | プロダクトのビジョン（Working Backwards形式） |
-| [PRINCIPLES.md](./PRINCIPLES.md) | 意思決定の原則 |
-| [ROADMAP.md](./ROADMAP.md) | プロジェクトの進行状況と次のステップ |
+## 入れ物と役割
 
-## Research
+| 入れ物 | 語ること | 時制 | 書いてはいけないもの |
+|--------|---------|------|---------------------|
+| [VISION.md](./VISION.md) | なぜ作るか | 未来完了 | — |
+| [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
+| [adr/](./adr/) | なぜそう決めたか | 過去形 | 現在形のルール、未決事項、他文書の転記 |
+| [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
+| [research/](./research/) | 決めるために何を調べたか | 過去形 | — |
+| [notes/](./notes/) | どこにも属さない書き捨て | 制約なし | 重要な情報 |
+| GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
+| GitHub Milestone | どのリリースに含めるか | — | 要件の定義 |
+| [../README.md](../README.md) | このリポジトリが何で、どう動かすか | 恒常 | 設計の判断基準、進捗 |
+| [CLAUDE.md](../CLAUDE.md) | プロジェクト固有の作業ルール | 恒常 | コードから導出できること |
+| [.claude/rules/writing.md](../.claude/rules/writing.md) | 全出力に適用する文章ルール | 恒常 | 特定の文書だけに効くもの |
+| [.claude/rules/docs-patterns.md](../.claude/rules/docs-patterns.md) | 文書の書式と例 | 恒常 | 役割と時制の定義 |
 
-| Path | Description |
-|------|-------------|
-| [research/](./research/) | 調査ログ・参考分析 |
+---
 
-## Guidelines
+## 参照の向き
 
-| Path | Description |
-|------|-------------|
-| [adr/](./adr/) | Architecture Decision Records |
-
-## Guides
-
-| Path | Description |
-|------|-------------|
-| [pencil-mcp-guide.md](./pencil-mcp-guide.md) | Pencil MCP 運用ガイド |
-
-## Document Hierarchy
+**変わりやすい側から変わりにくい側へ。一方向のみ。**
 
 ```
-VISION.md
-  │ "このプロダクトは何を実現するか"
-  ↓
-PRINCIPLES.md
-  │ "判断に迷ったとき、何を優先するか"
-  ↓
-ROADMAP.md ←── research/
-  │ "今どこにいて、次に何をするか"    "調査ログ・参考分析"
-  ↓
-adr/
-"なぜその選択をしたか（技術・設計・デザイン）"
+Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
+                            ↓
+                        research/
 ```
+
+`research/` は ADR から参照される。調査は決定より先に固まり、書き換えないため、ADR より変わりにくい側にある。
+
+逆向きは張らない。ここから次が導かれる。
+
+- REQUIREMENTS.md に Issue 番号を書かない。Issue は増え続けるため
+- adr/ に要件を書かない。ADR は変えないため、要件が変わると嘘になる
+- 各文書の冒頭宣言に他文書へのリンクを含めない
+- 手で維持する索引を作らない
+
+`notes/` はこの図に入らない。誰からも参照されない。
+
+---
+
+## 判断に迷ったら
+
+**要件か、作業か。**
+実装が終わっても残るなら要件。終われば閉じるなら作業。1つの要件に対して作業は複数生まれる。
+
+**決定か、要件か。**
+代替案があり、それを退けたなら決定（ADR）。満たすべき性質を述べているだけなら要件。
+
+**research か、notes か。**
+ADR から参照されるなら research。参照されないなら notes。
+
+**要件か、疑問か。**
+現在形で「〜できる」と書けるなら要件。要るかどうか分からないなら疑問（`question` ラベルの Issue）。
+
+**規則をどこに置くか。**
+全出力に効かせたいなら `.claude/rules/writing.md`。文書を書くときだけでよいなら `.claude/rules/docs-patterns.md`（`paths` 指定により、`docs/**` を読んだときだけロードされ、`/compact` 後は再注入されない）。それ以外のプロジェクト固有の作業ルールは `CLAUDE.md`。
+
+---
+
+## 階層
+
+```
+VISION.md          なぜ作るか
+  ↓
+PRINCIPLES.md      迷ったとき何を優先するか
+  ↓
+REQUIREMENTS.md    何を満たすべきか
+  ↓
+adr/               なぜそう決めたか  ──→ research/  調べたこと
+  ↓
+GitHub             何をやるか、どのリリースに含めるか
+```
+
+判断の根拠は [adr/0011-record-separation.md](./adr/0011-record-separation.md) にある。
+
+---
 
 ## Language Policy
 
 - ファイル名・見出し: 英語
 - 本文: 日本語
 
+---
+
 ## References
 
-このドキュメント構成は以下の思想に基づいています:
+このドキュメント構成は以下に基づく。
 
 - **Vision**: [Amazon Working Backwards](https://workingbackwards.com/)
-- **Principles**: [Ray Dalio's Principles](https://www.principles.com/) + X over Y形式
+- **Principles**: [Ray Dalio's Principles](https://www.principles.com/) + X over Y 形式
 - **ADR**: [Architecture Decision Records](https://adr.github.io/)
+- **同じ事実を2か所に書かない**: [arc42 Section 10](https://docs.arc42.org/section-10/)
+- **要件の階層とトレーサビリティ**: [ISO/IEC/IEEE 29148-2018](https://standards.ieee.org/standard/29148-2018.html)

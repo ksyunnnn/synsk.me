@@ -1,8 +1,10 @@
 # ADR-0005: Design Tokens
 
+> この文書は決定を記録する。有効な要件は持たない。
+
 - **Status**: accepted
 - **Date**: 2026-01-27（初版）、2026-02-03（ADR化）
-- **Deciders**: @ksyunnnn
+- **Deciders**: synsk
 - **Related Principles**: [余白 over 密度](../PRINCIPLES.md)、[息づき over 装飾](../PRINCIPLES.md)
 
 ---
@@ -33,10 +35,9 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 
 **選択理由**:
 - 純粋なグレー = 色が主張しない
-- 現在の globals.css と同一（変更コストゼロ）
+- 2026-01-27 時点の globals.css と同一（変更コストゼロ）
 - Warm/Cool グレーは「微かな暖かみ/知的さを加えたい」場合の選択肢だが、色が印象を左右しないことを優先
 
-**アクセントカラー**: Phase 2 終盤で検討。モノクロで構造を固めた後に必要性を判断する。
 
 ### 2. Typography: 囁くような軽やかさ
 
@@ -199,31 +200,3 @@ spacing: {
 - [Google Fonts: Source Sans 3](https://fonts.google.com/specimen/Source+Sans+3)
 - [Google Fonts: Noto Sans JP](https://fonts.google.com/specimen/Noto+Sans+JP)
 - [ADR-0004: アイコンシステム](./0004-icon-system.md)
-
-## Implementation Notes
-
-### UI Stack を考慮した実装
-
-デザイン実装時は **UI Stack**（5つの状態）を考慮する：
-
-1. **Blank State** - データがない状態
-2. **Loading State** - 読み込み中
-3. **Partial State** - 一部データがある状態
-4. **Error State** - エラー発生時
-5. **Ideal State** - 理想的な状態（すべてのデータが揃っている）
-
-各コンポーネントで5つの状態を設計し、ユーザー体験を一貫させる。
-
-参考: [UI Stackとは？（Digital Identity）](https://digitalidentity.co.jp/blog/creative/ui-stack.html)
-
----
-
-## Version History
-
-| Date | Changes |
-|------|---------|
-| 2026-01-27 | 初期構造作成（foundations.md として） |
-| 2026-01-27 | グレースケール（Neutral Gray）確定 |
-| 2026-01-29 | Typography 確定: Source Sans 3 + Noto Sans JP, Light 300 |
-| 2026-01-29 | Spacing 確定: 8px ベース |
-| 2026-02-03 | ADR-0005 として再構成（design/foundations.md から移行） |

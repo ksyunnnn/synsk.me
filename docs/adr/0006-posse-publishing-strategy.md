@@ -1,9 +1,11 @@
 # ADR-0006: 発信戦略として POSSE を採用する
 
+> この文書は決定を記録する。有効な要件は持たない。
+
 - **Status**: accepted
 - **Date**: 2026-08-20
-- **Deciders**: @ksyunnnn
-- **Related Principles**: [余白 over 密度](../PRINCIPLES.md#1-余白)
+- **Deciders**: synsk
+- **Related Principles**: [余白 over 密度](../PRINCIPLES.md)
 
 ---
 

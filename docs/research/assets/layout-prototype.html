@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Layout Prototype — 方針2: 時系列を残しつつ主役から降ろす</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&family=Noto+Sans+JP:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after{box-sizing:border-box}
+  body{
+    margin:0;
+    font-family:'Source Sans 3','Noto Sans JP',system-ui,sans-serif;
+    background:#e8e6e1;
+    color:#1a1a18;
+    font-weight:300;
+    -webkit-font-smoothing:antialiased;
+  }
+  .page-head{padding:48px 32px 24px;max-width:1400px;margin:0 auto}
+  .page-head h1{font-size:20px;font-weight:600;margin:0 0 8px;letter-spacing:.02em}
+  .page-head p{font-size:14px;color:#6b6862;margin:0 0 4px;line-height:1.7}
+  .page-head code{background:#dbd8d1;padding:1px 5px;border-radius:3px;font-size:12px}
+
+  .grid{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:28px;
+    padding:24px 32px 80px;max-width:1400px;margin:0 auto;
+  }
+  @media(max-width:1100px){.grid{grid-template-columns:1fr}}
+
+  .case{display:flex;flex-direction:column;min-width:0}
+  .case-label{margin-bottom:12px}
+  .case-label .tag{
+    display:inline-block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;
+    color:#8a867e;border:1px solid #c9c5bc;padding:2px 8px;border-radius:100px;margin-bottom:8px;
+  }
+  .case-label h2{font-size:15px;font-weight:600;margin:0 0 6px}
+  .case-label p{font-size:12.5px;color:#6b6862;margin:0;line-height:1.65}
+
+  /* 擬似ブラウザ */
+  .browser{
+    border-radius:10px;overflow:hidden;background:#fff;
+    box-shadow:0 1px 2px rgba(0,0,0,.06),0 12px 32px rgba(0,0,0,.10);
+  }
+  .chrome{
+    background:#dedbd4;padding:8px 10px;display:flex;align-items:center;gap:6px;
+    border-bottom:1px solid #cbc7bf;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:#c2beb5}
+  .url{
+    flex:1;margin-left:6px;background:#efedE8;border-radius:4px;
+    font-size:10.5px;color:#8a867e;padding:3px 8px;text-align:center;
+  }
+  .viewport{position:relative;background:#f4f2ee}
+  .fold{
+    position:absolute;left:0;right:0;top:760px;z-index:5;pointer-events:none;
+    border-top:1px dashed #b0aba1;
+  }
+  .fold span{
+    position:absolute;right:8px;top:-9px;background:#e8e6e1;color:#8a867e;
+    font-size:9.5px;letter-spacing:.08em;padding:1px 7px;border-radius:100px;
+    border:1px solid #d5d1c8;
+  }
+
+  /* Light noise テクスチャ（J1/J3 採用パターン） */
+  .noise{position:relative}
+  .noise::before{
+    content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode:multiply;opacity:.15;
+  }
+  .noise > *{position:relative;z-index:1}
+
+  /* セクション */
+  .hero{background:#f4f2ee;padding:56px 32px 44px}
+  .hero .name{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#8a867e;margin-bottom:20px}
+  .hero h3{
+    font-size:25px;font-weight:300;line-height:1.55;margin:0 0 18px;letter-spacing:.01em;
+  }
+  .hero .lead{font-size:13.5px;color:#5c5952;line-height:1.85;margin:0 0 26px;max-width:38ch}
+  .cta{
+    display:inline-block;font-size:13px;color:#1a1a18;text-decoration:none;
+    border-bottom:1px solid #1a1a18;padding-bottom:3px;
+  }
+
+  .flow{background:#efece7;padding:34px 32px}
+  .flow .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a867e;margin-bottom:18px}
+  .flow ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:14px}
+  .flow li{font-size:13px;line-height:1.6;display:flex;gap:12px;color:#3a3833}
+  .flow .num{color:#a8a49b;font-size:11px;padding-top:2px;min-width:14px}
+
+  .tl{background:#f4f2ee;padding:34px 32px 44px}
+  .tl-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:22px}
+  .tl-head .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a867e}
+  .tl-head a{font-size:11.5px;color:#6b6862;text-decoration:none;border-bottom:1px solid #cbc7bf;padding-bottom:2px}
+
+  .year{
+    font-size:10.5px;color:#a8a49b;letter-spacing:.1em;margin:26px 0 12px;
+    display:flex;align-items:center;gap:10px;
+  }
+  .year::after{content:'';flex:1;height:1px;background:#dedbd4}
+  .year:first-of-type{margin-top:0}
+
+  .entry{margin-bottom:20px}
+  .entry .meta{font-size:11.5px;color:#8a867e;margin-bottom:4px;display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+  .entry .meta .pf{color:#5c5952}
+  .entry .ttl{font-size:14px;line-height:1.55;color:#1a1a18}
+  .ico{width:11px;height:11px;display:inline-block;vertical-align:-1px;opacity:.65}
+
+  .stale .meta{color:#b3afa6}
+  .stale .ttl{color:#57544e}
+
+  .contact{background:#e9e6e0;padding:38px 32px}
+  .contact .eyebrow{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a867e;margin-bottom:14px}
+  .contact p{font-size:13px;line-height:1.8;color:#3a3833;margin:0 0 16px;max-width:36ch}
+
+  nav.site{
+    background:#f4f2ee;padding:16px 32px;display:flex;gap:22px;
+    border-bottom:1px solid #e2dfd8;font-size:12px;
+  }
+  nav.site a{color:#8a867e;text-decoration:none}
+  nav.site a.on{color:#1a1a18;border-bottom:1px solid #1a1a18;padding-bottom:2px}
+
+  .scroll-hint{
+    text-align:center;font-size:10.5px;color:#a8a49b;padding:18px 0 4px;letter-spacing:.06em;
+  }
+  .note{
+    margin-top:14px;font-size:11.5px;line-height:1.7;color:#6b6862;
+    background:#efece7;border-left:2px solid #cbc7bf;padding:10px 12px;border-radius:0 4px 4px 0;
+  }
+  .note b{color:#3a3833;font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="page-head">
+  <h1>Layout Prototype — 方針2「時系列は残すが主役から降ろす」</h1>
+  <p>3つの配置案を実データで比較。テクスチャは選定済みの <code>Light noise / multiply 15%</code>（J1・J3 系）、カードレス。</p>
+  <p>実データ: Zenn 最新は <b>2025-09</b>（約11ヶ月前）／登壇・イベントは <b>2017年</b>中心。古さがどう見えるかもそのまま出しています。</p>
+</div>
+
+<div class="grid">
+
+  <!-- ============ 案A ============ -->
+  <div class="case">
+    <div class="case-label">
+      <div class="tag">案 A</div>
+      <h2>トップに抜粋 + 別ページに全件</h2>
+      <p>トップは Recent 3件だけ。全件は <code>/timeline</code> へ。生きている感じは残しつつ、古い山は奥に置く。</p>
+    </div>
+    <div class="browser">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">synsk.me</span></div>
+      <div class="viewport"><div class="fold"><span>FOLD — ここまでが初見の画面</span></div>
+        <section class="hero noise">
+          <div class="name">Syunsuke Kobashi</div>
+          <h3>一緒に奏でて、<br>あなたの中にあるものを形にする。</h3>
+          <p class="lead">要件が固まっていなくても大丈夫です。対話から始めて、小さく作って試しながら、まだ言葉にならないものを形にします。</p>
+          <a class="cta" href="#">話してみる →</a>
+        </section>
+
+        <section class="flow noise">
+          <div class="eyebrow">How it works</div>
+          <ol>
+            <li><span class="num">01</span><span>まずは話を聞かせてください。要件がなくても大丈夫です</span></li>
+            <li><span class="num">02</span><span>一緒に考え、実験し、小さなプロトタイプを作ります</span></li>
+            <li><span class="num">03</span><span>必要に応じて、本格的な開発・デザインへ</span></li>
+          </ol>
+        </section>
+
+        <section class="tl noise">
+          <div class="tl-head">
+            <div class="eyebrow">Recent</div>
+            <a href="#">View all →</a>
+          </div>
+          <div class="entry">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 2025-09</div>
+            <div class="ttl">オプションを渡しても渡さなくても動く関数</div>
+          </div>
+          <div class="entry">
+            <div class="meta">Shipped a project on <span class="pf">GitHub</span> · 2025-09</div>
+            <div class="ttl">slash-commands</div>
+          </div>
+          <div class="entry">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 2025-07</div>
+            <div class="ttl">Reactコンポーネントのasを実装する</div>
+          </div>
+        </section>
+
+        <section class="contact noise">
+          <div class="eyebrow">Contact</div>
+          <p>地方・行政課題、孤立した家族への支援、コミュニティ形成に関心があります。</p>
+          <a class="cta" href="#">Facebook Messenger →</a>
+        </section>
+      </div>
+    </div>
+    <div class="note"><b>効果:</b> 年号が一切出ないので古さが表に出ない。ただし「View all」の先には 2017 年まで続く。</div>
+  </div>
+
+  <!-- ============ 案B ============ -->
+  <div class="case">
+    <div class="case-label">
+      <div class="tag">案 B</div>
+      <h2>完全に別ページへ分離</h2>
+      <p>トップは共創の入り口に純化。タイムラインはナビからのみ到達。一番はっきり「降ろす」形。</p>
+    </div>
+    <div class="browser">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">synsk.me</span></div>
+      <div class="viewport"><div class="fold"><span>FOLD — ここまでが初見の画面</span></div>
+        <nav class="site"><a class="on" href="#">Home</a><a href="#">Timeline</a><a href="#">Archives</a></nav>
+        <section class="hero noise" style="padding-top:64px;padding-bottom:56px">
+          <div class="name">Syunsuke Kobashi</div>
+          <h3>一緒に奏でて、<br>あなたの中にあるものを形にする。</h3>
+          <p class="lead">課題を抱える人、これから何かを始める人のための、実験的な共創の場。技術とデザインのセッションを通じて、まだ見えない可能性を引き出します。</p>
+          <a class="cta" href="#">話してみる →</a>
+        </section>
+
+        <section class="flow noise">
+          <div class="eyebrow">How it works</div>
+          <ol>
+            <li><span class="num">01</span><span>まずは話を聞かせてください。要件がなくても大丈夫です</span></li>
+            <li><span class="num">02</span><span>一緒に考え、実験し、小さなプロトタイプを作ります</span></li>
+            <li><span class="num">03</span><span>必要に応じて、本格的な開発・デザインへ</span></li>
+          </ol>
+        </section>
+
+        <section class="contact noise" style="padding:44px 32px">
+          <div class="eyebrow">Contact</div>
+          <p>要件定義や予算が決まっていなくても大丈夫です。「こんなことをやりたい」という想いだけで十分です。</p>
+          <a class="cta" href="#">Facebook Messenger →</a>
+        </section>
+
+        <section class="tl noise" style="background:#efece7;padding:30px 32px 40px">
+          <div class="eyebrow" style="font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8a867e;margin-bottom:12px">Elsewhere</div>
+          <p style="font-size:12.5px;color:#6b6862;line-height:1.75;margin:0 0 14px">Zenn / GitHub / Speaker Deck などでの活動は Timeline にまとめています。</p>
+          <a class="cta" style="font-size:12.5px" href="#">Timeline を見る →</a>
+        </section>
+      </div>
+    </div>
+    <div class="note"><b>効果:</b> VISION に最も忠実。ただしコンテンツへの動線が細く、初訪問者は実績を見ずに帰る可能性。</div>
+  </div>
+
+  <!-- ============ 案C ============ -->
+  <div class="case">
+    <div class="case-label">
+      <div class="tag">案 C</div>
+      <h2>トップ1ページに全部（下方に配置）</h2>
+      <p>シングルページ完結。上部が入り口、スクロールでタイムライン全件。遷移なしで読める。</p>
+    </div>
+    <div class="browser">
+      <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">synsk.me</span></div>
+      <div class="viewport"><div class="fold"><span>FOLD — ここまでが初見の画面</span></div>
+        <section class="hero noise">
+          <div class="name">Syunsuke Kobashi</div>
+          <h3>一緒に奏でて、<br>あなたの中にあるものを形にする。</h3>
+          <p class="lead">要件が固まっていなくても大丈夫です。対話から始めて、小さく作って試します。</p>
+          <a class="cta" href="#">話してみる →</a>
+          <div class="scroll-hint" style="text-align:left;padding-top:34px">↓ これまでの活動</div>
+        </section>
+
+        <section class="tl noise">
+          <div class="tl-head"><div class="eyebrow">Timeline</div></div>
+
+          <div class="year">2026</div>
+          <div class="entry">
+            <div class="meta">Working on <span class="pf">GitHub</span> · 01</div>
+            <div class="ttl">synsk.me — Personal site redesign</div>
+          </div>
+
+          <div class="year">2025</div>
+          <div class="entry">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 09</div>
+            <div class="ttl">オプションを渡しても渡さなくても動く関数</div>
+          </div>
+          <div class="entry">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 07</div>
+            <div class="ttl">Reactコンポーネントのasを実装する</div>
+          </div>
+          <div class="entry">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 01</div>
+            <div class="ttl">Template Literal Typesを知らんかったし、zodで表現する方法もあったらしい</div>
+          </div>
+
+          <div class="year">2024</div>
+          <div class="entry">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 11</div>
+            <div class="ttl">ユニオン型からプロパティ除外するのはOmitじゃなくてExcludeやね</div>
+          </div>
+          <div class="entry">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 11</div>
+            <div class="ttl">Supabaseのプロジェクトが完全停止していたときにやったこと</div>
+          </div>
+
+          <div class="year">2023</div>
+          <div class="entry stale">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 12</div>
+            <div class="ttl">タイムゾーンのなんちゃかを本気出してまとめる</div>
+          </div>
+          <div class="entry stale">
+            <div class="meta">Published an article on <span class="pf">Zenn</span> · 10</div>
+            <div class="ttl">NextjsでFaviconを動的に生成し、Faviconを見るだけで天気がわかるようにしました</div>
+          </div>
+
+          <div class="year">2021</div>
+          <div class="entry stale">
+            <div class="meta">Shipped a project on <span class="pf">GitHub</span> · 11 · ★3</div>
+            <div class="ttl">KeepBoard</div>
+          </div>
+
+          <div class="year">2017</div>
+          <div class="entry stale">
+            <div class="meta">Gave a talk on <span class="pf">Speaker Deck</span> · デブサミ2017夏</div>
+            <div class="ttl">個人がコミュニティに参加して得られるもの</div>
+          </div>
+          <div class="entry stale">
+            <div class="meta">Hosted an event on <span class="pf">TECH PLAY</span> · 09</div>
+            <div class="ttl">MoquMoquCOM 〜登壇資料もくもく作成会〜</div>
+          </div>
+        </section>
+
+        <section class="contact noise">
+          <div class="eyebrow">Contact</div>
+          <p>要件がなくても相談できる相手でありたいと思っています。</p>
+          <a class="cta" href="#">Facebook Messenger →</a>
+        </section>
+      </div>
+    </div>
+    <div class="note"><b>効果:</b> 幅と歴史は伝わるが、2017 まで一続きで見えるため「止まっている」印象も同時に出る。年号を出す代償。</div>
+  </div>
+
+</div>
+</body>
+</html>

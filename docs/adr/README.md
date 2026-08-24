@@ -1,73 +1,45 @@
 # Architecture Decision Records
 
-> 重要な意思決定を記録し、未来の自分（と他者）が「なぜ」を理解できるようにする
+重要な意思決定を記録し、なぜそう決めたかを後から辿れるようにする。
+
+一覧はこのディレクトリのファイル名を見る。ファイル名は `NNNN-short-title.md`。
 
 ---
 
-## What is an ADR?
+## 対象
 
-ADR（Architecture Decision Record）は、アーキテクチャ上の重要な決定とその理由を記録するドキュメントです。
+**代替案があり、それを退けた決定のうち、覆すコストが高いものに限る。**
 
-**記録すべきもの**:
-- 技術選定（フレームワーク、ライブラリ）
-- 設計パターンの採用
-- 構造の変更
-- トレードオフのある判断
+代替案があっても、書き換えれば覆せるものは ADR にしない。文書の書式に関する規定がこれにあたる（[.claude/rules/](../../.claude/rules/)）。
 
-**記録しなくてよいもの**:
-- 自明な判断
-- 可逆的で影響の小さい決定
-- 実装の詳細
+| 種類 | 置き場所 |
+|------|---------|
+| 要件（満たすべきこと） | [../REQUIREMENTS.md](../REQUIREMENTS.md) |
+| 未決の疑問 | GitHub Issue（`question` ラベル） |
+| 調査の記録 | [../research/](../research/) |
+| 作業 | GitHub Issue |
+| 文書の書式 | [.claude/rules/](../../.claude/rules/) |
 
----
+要件は決定ではない。1つの決定から複数の要件が派生する。**ADR の単位は決定であって、要件ではない。**
 
-## ADR Index
-
-| Number | Title | Status | Date |
-|--------|-------|--------|------|
-| [0001](./0001-product-vision.md) | Product Vision and Principles | proposed | 2026-01-27 |
-| [0002](./0002-hub-and-spoke-data-architecture.md) | Hub-and-Spoke Data Architecture | proposed | 2026-01-31 |
-| [0003](./0003-content-data-model.md) | Content Data Model | accepted | 2026-02-02 |
-| [0004](./0004-icon-system.md) | Icon System | accepted | 2026-02-02 |
-| [0005](./0005-design-tokens.md) | Design Tokens | accepted | 2026-02-03 |
-| [0006](./0006-posse-publishing-strategy.md) | 発信戦略として POSSE を採用する | accepted | 2026-08-20 |
+書式と例は [.claude/rules/docs-patterns.md](../../.claude/rules/docs-patterns.md) にある。
 
 ---
 
-## How to Write an ADR
+## 書き方
 
-### 1. 新しいADRを作成
+1. [template.md](./template.md) をコピーして `NNNN-short-title.md` を作る
+2. 番号は再利用しない
+3. 承認後は決定内容を変更しない。覆すときは新しい ADR を書き、古い方の Status を `superseded` にする
 
-```bash
-# ファイル名: NNNN-short-title.md
-cp docs/adr/template.md docs/adr/NNNN-your-decision.md
-```
+### Status
 
-### 2. テンプレートを埋める
-
-[template.md](./template.md) を参照
-
-### 3. ステータスを設定
-
-| Status | Meaning |
-|--------|---------|
-| `proposed` | 提案中（レビュー待ち） |
-| `accepted` | 承認済み（実装可） |
+| Status | 意味 |
+|--------|------|
+| `proposed` | 提案中 |
+| `accepted` | 承認済み |
 | `deprecated` | 非推奨（新規採用しない） |
-| `superseded` | 置き換え済み（新しいADRを参照） |
-
-### 4. PRINCIPLESとの関連を記載
-
-ADRは [PRINCIPLES.md](../PRINCIPLES.md) に基づいて判断されるべきです。
-
----
-
-## Principles for Writing ADRs
-
-- **1つの決定に1つのADR**: 複数の決定は分割する
-- **不変性**: 承認後は変更せず、新しいADRで置き換える
-- **簡潔さ**: 判断に必要な情報のみ記載
-- **タイムリー**: 決定時に記録（後から思い出すのは難しい）
+| `superseded` | 置き換え済み（新しい ADR を参照） |
 
 ---
 

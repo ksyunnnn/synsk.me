@@ -1,6 +1,24 @@
 # Content Model 設計
 
+> この文書は調査した時点の記録。決定は持たない。
+
 > synsk.me のコンテンツデータ構造の設計ドキュメント
+
+## Contents
+
+- 概要
+- Activity 型
+- ActivityType
+- Platform
+- DisplayCategory
+- PlatformMetadata
+- 経歴・実績・Activity の関係（決定済み）
+- 決定済み事項
+- 未決定事項
+- 次回の継続ポイント
+- 参考
+
+---
 
 ---
 

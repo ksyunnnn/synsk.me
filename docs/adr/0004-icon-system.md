@@ -1,8 +1,10 @@
 # ADR-0004: アイコンシステム
 
+> この文書は決定を記録する。有効な要件は持たない。
+
 - **Status**: accepted
 - **Date**: 2026-02-02
-- **Deciders**: @ksyunnnn
+- **Deciders**: synsk
 - **Related Principles**: [おもしろさ over 安全圏](../PRINCIPLES.md#3-おもしろさ)
 
 ---
@@ -39,7 +41,7 @@ synsk.me のリデザインにおいて、Timeline 表示で Platform を視覚�
 
 - 既存コードで使用中（追加コストなし）
 - 6つのウェイト（Thin〜Fill）から選択可能
-- ウェイト選択は実装時に foundations.md の Typography と合わせて検討
+- ウェイト選択は実装時に [ADR-0005](./0005-design-tokens.md) の Typography と合わせて検討
 
 ---
 

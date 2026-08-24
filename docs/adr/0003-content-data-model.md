@@ -1,8 +1,10 @@
 # ADR-0003: コンテンツデータモデル設計（C: 分離モデル）
 
+> この文書は決定を記録する。有効な要件は持たない。
+
 - **Status**: accepted
 - **Date**: 2026-02-02
-- **Deciders**: shunsuke
+- **Deciders**: synsk
 - **Related Principles**: [余白 over 完成形](../PRINCIPLES.md#1-余白), [対話 over 展示](../PRINCIPLES.md#3-対話)
 
 ---
@@ -16,14 +18,6 @@ synsk.me のリデザインにおいて、以下のデータを適切に管理�
 3. **Career（経歴）**: 職歴情報
 
 これらの関係をどうモデリングするかが課題となった。
-
-### 要件
-
-- 職務経歴書の出力に適した構造
-- 訪問者向けのタイムライン表示
-- Activity と Project の関係性を表現
-- 型安全なデータ操作
-- DuckDB での実装を想定
 
 ---
 
@@ -46,6 +40,11 @@ Activity（成果物）
 - **Project 自体はタイムラインに表示しない**（Activity のみ）
 
 ### 公開設定
+
+> **分離の記録（2026-08-21）**: 本 ADR は当初「3テーブル構成の採用」と「公開設定」という
+> 2つの決定を含んでいたが、[docs/adr/README.md](./README.md) の「ADR の単位は決定であって、要件ではない」に
+> 反していたため、可視性の決定を [ADR-0008](./0008-content-visibility.md) へ分離した。
+> 以下は分離前の記録である。
 
 - 雇用関係のクライアント: 会社名を公開
 - 業務委託のクライアント: 業界名でぼかす（`client` vs `clientPublic`）
@@ -95,56 +94,6 @@ Project を Activity の一種として扱う（`type: 'project'`）。
 
 - Project の数が増えた場合、管理が煩雑になる可能性
   - **対策**: isHighlighted フラグでハイライト表示を制御
-
----
-
-## Implementation Notes
-
-### TypeScript 型定義
-
-```typescript
-interface Career {
-  id: string;
-  company: string;
-  employmentType: 'employee' | 'freelance' | 'intern';
-  role: string;
-  startDate: Date;
-  endDate?: Date;  // null = 現在
-  description?: string;
-  skills?: string[];
-  url?: string;
-}
-
-interface Project {
-  id: string;
-  careerId?: string;  // Career への参照（nullable: 個人開発など）
-  title: string;
-  client?: string;        // 元のクライアント名（非公開）
-  clientPublic?: string;  // 公開用の名前（業界名でぼかす）
-  role: string;
-  startDate: Date;
-  endDate?: Date;
-  description?: string;
-  highlights?: string[];
-  skills?: string[];
-  url?: string;
-  isHighlighted?: boolean;
-}
-
-interface Activity {
-  id: string;
-  projectId?: string;  // Project への参照（nullable）
-  type: ActivityType;
-  title: string;
-  url: string;
-  publishedAt: Date;
-  // ... 他の属性は content-model-design.md 参照
-}
-```
-
-### DuckDB スキーマ
-
-詳細は [content-model-design.md](../research/content-model-design.md) を参照。
 
 ---
 

@@ -1,8 +1,10 @@
 # ADR-NNNN: [Title]
 
+> この文書は決定を記録する。有効な要件は持たない。
+
 - **Status**: proposed | accepted | deprecated | superseded by [ADR-XXXX]
 - **Date**: YYYY-MM-DD
-- **Deciders**: [名前]
+- **Deciders**: synsk
 - **Related Principles**: [PRINCIPLES.mdの該当原則へのリンク]
 
 ---
@@ -79,6 +81,7 @@
 
 <!--
 実装時に注意すべきこと（オプション）
+決定でないものを書かない。現在形のルールは REQUIREMENTS.md、未決は question ラベルの Issue が持つ。
 -->
 
 [TODO: 必要に応じて記載]

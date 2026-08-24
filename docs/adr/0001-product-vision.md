@@ -1,8 +1,10 @@
 # ADR-0001: Product Vision and Principles
 
-- **Status**: proposed
+> この文書は決定を記録する。有効な要件は持たない。
+
+- **Status**: accepted
 - **Date**: 2026-01-27
-- **Deciders**: [あなたの名前]
+- **Deciders**: synsk
 - **Related Principles**: [../PRINCIPLES.md](../PRINCIPLES.md)
 
 ---
@@ -12,7 +14,7 @@
 synsk.me プロジェクトにおいて、プロダクトの目的・原則を明確にする必要がある。
 
 これにより:
-- 今後の技術・デザイン判断に一貫性を持たせる
+- 技術・デザイン判断に一貫性を持たせる
 - ポートフォリオ閲覧者に意図を伝える
 - 自分自身の思考を整理する
 

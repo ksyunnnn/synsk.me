@@ -1,5 +1,22 @@
 # UI Reference: kbkbkb.co
 
+> この文書は調査した時点の記録。決定は持たない。
+
+## Contents
+
+- Overview
+- Typography
+- Layout & Spacing
+- Color
+- Animation & Interaction
+- Responsive
+- PRINCIPLES.md との対応
+- synsk.me への示唆
+- Technical Notes
+- Version History
+
+---
+
 **分析対象**: YOSHIYUKI KUBO ポートフォリオサイト
 **URL**: https://kbkbkb.co/
 **分析日**: 2026-01-29

@@ -1,76 +1,6 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
-
-## 開発コマンド
-
-### 基本的な開発コマンド
-```bash
-# 開発サーバー起動（Turbopack使用）
-npm run dev
-
-# プロダクションビルド
-npm run build
-
-# プロダクションサーバー起動
-npm start
-
-# リンター実行
-npm run lint
-```
-
-### 開発環境
-- ローカル開発サーバー: http://localhost:3000
-- 開発時はTurbopackを使用して高速なビルドを実現
-
-## アーキテクチャ
-
-### 技術スタック
-- **Framework**: Next.js 15 (App Router)
-- **言語**: TypeScript
-- **スタイリング**: Tailwind CSS + CSS-in-JS
-- **フォント**: Source Sans 3 + Noto Sans JP (Google Fonts) ※リデザイン後
-- **アイコン**: Phosphor Icons, Lucide React, FontAwesome
-- **アナリティクス**: Google Tag Manager
-
-### プロジェクト構造
-```
-src/
-├── app/                    # App Routerのページとレイアウト
-│   ├── layout.tsx         # ルートレイアウト（メタデータ、フォント、Analytics）
-│   ├── page.tsx           # ホームページ（工事中表示）
-│   ├── globals.css        # グローバルスタイル
-│   ├── Analytics.tsx      # GTM設定（本番環境のみ動作）
-│   ├── archives/          # アーカイブページ
-│   └── asset/             # SVGアセット
-├── components/ui/         # 再利用可能なUIコンポーネント
-├── lib/                   # ユーティリティ関数
-│   ├── gtm.ts            # Google Analytics設定
-│   ├── utils.ts          # 共通ユーティリティ
-│   └── createMetadata.ts # メタデータ生成ヘルパー
-└── icon.tsx              # カスタムアイコンコンポーネント
-```
-
-### 重要な設定ファイル
-- `tailwind.config.ts`: カスタムスクリーンサイズとデザインシステム対応
-- `components.json`: shadcn/ui設定
-- `next.config.js`: 基本的なNext.js設定（現在はデフォルト）
-
-### アナリティクス
-- 本番環境のみでGoogle Tag Managerが動作
-- `NEXT_PUBLIC_GA_MEASUREMENT_ID`環境変数が必要
-- ページビュー自動トラッキング機能あり
-
-### デザインシステム
-- Tailwind CSSのカスタムカラーパレット（CSS変数ベース）
-- レスポンシブデザイン対応（sm: 480px, md: 768px, lg: 976px, xl: 1440px）
-- ダークモード対応準備済み
-
-### 特徴的な実装
-- 個人ポートフォリオサイト（現在工事中）
-- 2024年版のアーカイブページが存在
-- モバイルファーストのレスポンシブデザイン
-- Suspenseを使用したアナリティクスの非同期読み込み
+synsk.me プロジェクトで Claude Code が従うルール。プロジェクトの概要と開発コマンドは `README.md` を参照。
 
 ## 作業ルール
 
@@ -79,9 +9,14 @@ src/
 - コミットは自由に行ってよい
 - Push 前にセンシティブな情報が含まれていないか確認する
 
+### ブランチ戦略
+- 作業は `feature/*` ブランチで行い、main へ PR を作成する
+- Preview 環境で確認してからマージする
+- デザインと実装は行き来しながら進める（工程を順番に消化する形は採らない）
+
 ### Git追跡除外ディレクトリ
 - `raw_data/` - 分析用の生データ（スクリーンショット、エクスポートファイル等）。センシティブな情報を含む可能性があるため追跡しない
-- `docs/tmp/` - 一時的な作業ファイル
+- `docs/.tmp/` - 一時的な作業ファイル
 
 ### 分析・調査
 - 一次ソース（元データ）での検証を重視する
@@ -94,33 +29,20 @@ src/
 - 例: 「Atomic Design に基づき...」→ [公式サイト](https://atomicdesign.bradfrost.com/)
 
 ### ドキュメントの役割
-- **ROADMAP.md**: 全体像・フェーズ・完了状態（What & When）
-- **GitHub Issues**: 具体的タスク・並行作業・議論（How & Who）
-- **docs/research/**: 設計詳細・調査ログ（Why & What）
-- **docs/adr/**: 重要な意思決定の記録
+
+どこに何を書くかの判断基準は `docs/README.md` にある。入れ物ごとの役割・時制・書いてはいけないもの、参照の向き、迷ったときの判断基準が集約されている。
+
+書式と例は `.claude/rules/docs-patterns.md`、文章ルールは `.claude/rules/writing.md`。
 
 ### ドキュメント更新の検知
 
-#### チェックタイミング
-- タスク完了時
-- セッション終了前
+タスク完了時とセッション終了前に確認する。検知したら提案のみ行い、実行は許可を得てから。
 
-#### 検知の契機
-- すべてのコード変更
-
-#### 更新対象ドキュメント
-- docs/ ディレクトリ全体（特に ROADMAP.md）
-- CLAUDE.md
-- ADR（重要な決定がある場合）
-
-#### 検知すべき変化
-- ステータス変化（⏳→✅）
+**検知すべき変化**
+- 決定を下したのに ADR がない
+- ADR を書いたのに `docs/README.md` や `.claude/rules/` の現在形のルールを直していない（逆も同じ）
 - パス・参照の不整合（ファイル移動・削除によるリンク切れ）
-- 技術スタック変更（依存関係や構成の変更）
-- 新規ドキュメントの必要性（新機能や重要な決定）
-
-#### 行動方針
-- 更新の必要性を検知したら提案のみ行う（実行は許可を得てから）
+- 技術スタックの変更（依存関係や構成の変更）
 
 ## コミュニケーション
 

@@ -1,5 +1,7 @@
 # Pencil MCP 検証レポート（記事ドラフト）
 
+> 予告なく削除される。他文書から参照しない。
+
 > リデザイン作業中に知見を蓄積し、最終的に記事化する
 
 ---
@@ -64,7 +66,7 @@
 - ファイル保存は手動（Cmd+S）が必要
 - `open_document` はタイムアウトエラーを返すが実際は成功している
 
-詳細: [pencil-mcp-guide.md](../pencil-mcp-guide.md)
+詳細: pencil-mcp-guide.md（2026-08-21 に削除）
 
 ### その他
 
@@ -96,5 +98,5 @@
 
 - [Pencil 公式サイト](https://www.pencil.dev/)
 - [MCP (Model Context Protocol)](https://modelcontextprotocol.io/)
-- [pencil-mcp-guide.md](../pencil-mcp-guide.md) - 運用ガイド
+- pencil-mcp-guide.md（2026-08-21 に削除）
 - [ADR-0005: Design Tokens](../adr/0005-design-tokens.md) - デザイントークンの決定

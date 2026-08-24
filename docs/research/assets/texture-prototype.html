@@ -1,0 +1,2272 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Texture Prototype - 質量と時間を感じる質感</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #0a0a0a;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 60px 20px;
+      gap: 80px;
+    }
+
+    h1 {
+      color: #fff;
+      font-size: 14px;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      opacity: 0.6;
+    }
+
+    .section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .section-title {
+      color: #666;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+    }
+
+    /* ===== Table of Contents ===== */
+    .toc {
+      width: 100%;
+      max-width: 800px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 32px;
+    }
+
+    .toc-title {
+      color: #888;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px 24px;
+    }
+
+    .toc-item {
+      color: #666;
+      font-size: 13px;
+      text-decoration: none;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.03);
+      transition: color 0.2s ease;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+    }
+
+    .toc-item:hover {
+      color: #fff;
+    }
+
+    .toc-item .toc-label {
+      color: #444;
+      font-size: 11px;
+      font-weight: 500;
+      min-width: 28px;
+    }
+
+    .toc-item:hover .toc-label {
+      color: #666;
+    }
+
+    /* Fixed Back to Top Button */
+    .back-to-top {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 48px;
+      height: 48px;
+      background: rgba(30,30,30,0.9);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: #888;
+      font-size: 11px;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(8px);
+      z-index: 100;
+    }
+
+    .back-to-top:hover {
+      background: rgba(50,50,50,0.95);
+      color: #fff;
+      border-color: rgba(255,255,255,0.2);
+    }
+
+    .back-to-top::before {
+      content: '↑';
+      font-size: 18px;
+    }
+
+    /* Section anchors */
+    .section[id] {
+      scroll-margin-top: 40px;
+    }
+
+    .section-bg[id] {
+      scroll-margin-top: 40px;
+    }
+
+    .fullwidth-section[id] {
+      scroll-margin-top: 40px;
+    }
+
+    /* ===== Noise Texture (SVG filter) ===== */
+    .noise-filter {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 0;
+      height: 0;
+    }
+
+    /* ===== Card Style A: Nani Translate 風 ===== */
+    .card-a {
+      width: 320px;
+      height: 320px;
+      background: linear-gradient(165deg, #6bb8e8 0%, #3b82c4 50%, #2563a8 100%);
+      border-radius: 28px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease;
+
+      /* 質量感を出す影 */
+      box-shadow:
+        /* 内側のベベル（上部ハイライト） */
+        inset 0 2px 3px rgba(255,255,255,0.25),
+        /* 内側のベベル（下部シャドウ） */
+        inset 0 -3px 6px rgba(0,0,0,0.15),
+        /* カード全体の縁の影 */
+        inset 0 0 0 1px rgba(0,0,0,0.1),
+        /* ドロップシャドウ（浅い） */
+        0 4px 8px rgba(0,0,0,0.2),
+        /* ドロップシャドウ（深い） */
+        0 20px 40px rgba(0,0,0,0.4),
+        /* ドロップシャドウ（最深部） */
+        0 40px 80px rgba(0,0,0,0.3);
+    }
+
+    .card-a:hover {
+      transform: translateY(-8px) scale(1.02);
+      box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.3),
+        inset 0 -3px 6px rgba(0,0,0,0.15),
+        inset 0 0 0 1px rgba(0,0,0,0.1),
+        0 8px 16px rgba(0,0,0,0.2),
+        0 30px 60px rgba(0,0,0,0.5),
+        0 50px 100px rgba(0,0,0,0.35);
+    }
+
+    /* ノイズオーバーレイ */
+    .card-a::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.08;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .card-a-icon {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(145deg, #4a9fd4, #2d7ab8);
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow:
+        inset 0 1px 2px rgba(255,255,255,0.3),
+        0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .card-a-icon span {
+      font-size: 32px;
+    }
+
+    .card-a-title {
+      color: #fff;
+      font-size: 28px;
+      font-weight: 500;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .card-a-subtitle {
+      color: rgba(255,255,255,0.7);
+      font-size: 14px;
+    }
+
+    .card-a-footer {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      right: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-a-badge {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .card-a-meta {
+      color: rgba(255,255,255,0.6);
+      font-size: 11px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ===== Card Style B: 展示物風（モノクロ） ===== */
+    .card-b {
+      width: 280px;
+      height: 360px;
+      background: #1a1a1a;
+      border-radius: 4px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+
+      /* 額縁のような影 */
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,0.05),
+        0 2px 4px rgba(0,0,0,0.3),
+        0 8px 24px rgba(0,0,0,0.4),
+        0 24px 48px rgba(0,0,0,0.3);
+    }
+
+    .card-b:hover {
+      transform: translateY(-4px) rotate(-0.5deg);
+    }
+
+    .card-b-image {
+      width: 100%;
+      height: 260px;
+      background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+      position: relative;
+    }
+
+    /* 埃がかかったような質感 */
+    .card-b-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='dust'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23dust)'/%3E%3C/svg%3E");
+      opacity: 0.04;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .card-b-content {
+      padding: 20px;
+    }
+
+    .card-b-title {
+      color: #fff;
+      font-size: 15px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .card-b-year {
+      color: #666;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+    }
+
+    /* ===== Card Style C: ロゴ/バッジ風 ===== */
+    .card-c {
+      width: 180px;
+      height: 180px;
+      background: linear-gradient(145deg, #f5f5f5 0%, #e0e0e0 100%);
+      border-radius: 50%;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+      /* ステッカーのような質感 */
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.8),
+        inset 0 -2px 4px rgba(0,0,0,0.1),
+        0 1px 2px rgba(0,0,0,0.1),
+        0 4px 8px rgba(0,0,0,0.15),
+        0 12px 24px rgba(0,0,0,0.2);
+    }
+
+    .card-c:hover {
+      transform: scale(1.05) rotate(2deg);
+      box-shadow:
+        inset 0 2px 4px rgba(255,255,255,0.8),
+        inset 0 -2px 4px rgba(0,0,0,0.1),
+        0 2px 4px rgba(0,0,0,0.1),
+        0 8px 16px rgba(0,0,0,0.2),
+        0 20px 40px rgba(0,0,0,0.25);
+    }
+
+    /* 紙のようなテクスチャ */
+    .card-c::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='paper'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23paper)'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+    }
+
+    .card-c-text {
+      font-size: 48px;
+      font-weight: 300;
+      color: #1a1a1a;
+      letter-spacing: -0.02em;
+    }
+
+    /* ===== Card Style D: ニューモーフィズム ===== */
+    .card-d {
+      width: 300px;
+      height: 200px;
+      background: #1a1a1a;
+      border-radius: 20px;
+      position: relative;
+      padding: 28px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      /* ニューモーフィズム + 質量感 */
+      box-shadow:
+        inset 1px 1px 2px rgba(255,255,255,0.05),
+        inset -1px -1px 2px rgba(0,0,0,0.3),
+        4px 4px 12px rgba(0,0,0,0.4),
+        -2px -2px 8px rgba(40,40,40,0.2);
+    }
+
+    .card-d:hover {
+      box-shadow:
+        inset 1px 1px 2px rgba(255,255,255,0.08),
+        inset -1px -1px 2px rgba(0,0,0,0.3),
+        6px 6px 20px rgba(0,0,0,0.5),
+        -3px -3px 12px rgba(40,40,40,0.25);
+    }
+
+    /* 微細なノイズ */
+    .card-d::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      opacity: 0.02;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .card-d-label {
+      color: #666;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .card-d-title {
+      color: #fff;
+      font-size: 22px;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .card-d-meta {
+      position: absolute;
+      bottom: 28px;
+      left: 28px;
+      color: #444;
+      font-size: 11px;
+    }
+
+    /* ===== 比較セクション ===== */
+    .compare-row {
+      display: flex;
+      gap: 60px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    /* ===== Card Style E: Timeline Card ===== */
+    .card-timeline {
+      width: 480px;
+      background: #141414;
+      border-radius: 16px;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+      display: flex;
+
+      /* 質量感のある影 */
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.04),
+        inset 0 0 0 1px rgba(255,255,255,0.03),
+        0 2px 4px rgba(0,0,0,0.2),
+        0 8px 24px rgba(0,0,0,0.35),
+        0 24px 48px rgba(0,0,0,0.25);
+    }
+
+    .card-timeline:hover {
+      transform: translateY(-4px);
+      box-shadow:
+        inset 0 1px 1px rgba(255,255,255,0.06),
+        inset 0 0 0 1px rgba(255,255,255,0.04),
+        0 4px 8px rgba(0,0,0,0.2),
+        0 16px 32px rgba(0,0,0,0.4),
+        0 32px 64px rgba(0,0,0,0.3);
+    }
+
+    /* ノイズテクスチャ - 22% Heavy */
+    .card-timeline::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.22;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Paper Fiber バリアント */
+    .card-timeline.paper-fiber::before {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='fiber'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.015 0.5' numOctaves='5' seed='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23fiber)'/%3E%3C/svg%3E");
+      opacity: 0.18;
+      mix-blend-mode: soft-light;
+    }
+
+    .card-timeline-image {
+      width: 160px;
+      min-height: 140px;
+      background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    /* 画像エリアの追加テクスチャ */
+    .card-timeline-image::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='dust'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23dust)'/%3E%3C/svg%3E");
+      opacity: 0.06;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    .card-timeline-content {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex-grow: 1;
+      position: relative;
+      z-index: 2;
+    }
+
+    .card-timeline-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .card-timeline-year {
+      color: #666;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      font-weight: 500;
+    }
+
+    .card-timeline-tag {
+      color: #888;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+    }
+
+    .card-timeline-title {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 400;
+      line-height: 1.4;
+      margin-top: 12px;
+    }
+
+    .card-timeline-description {
+      color: #555;
+      font-size: 12px;
+      line-height: 1.6;
+      margin-top: auto;
+    }
+
+    /* Timeline カード - ライトバージョン */
+    .card-timeline.light {
+      background: linear-gradient(165deg, #f8f8f8 0%, #ebebeb 100%);
+      box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.8),
+        inset 0 -1px 2px rgba(0,0,0,0.05),
+        0 2px 4px rgba(0,0,0,0.08),
+        0 8px 24px rgba(0,0,0,0.12),
+        0 24px 48px rgba(0,0,0,0.08);
+    }
+
+    .card-timeline.light:hover {
+      box-shadow:
+        inset 0 2px 3px rgba(255,255,255,0.8),
+        inset 0 -1px 2px rgba(0,0,0,0.05),
+        0 4px 8px rgba(0,0,0,0.1),
+        0 16px 32px rgba(0,0,0,0.15),
+        0 32px 64px rgba(0,0,0,0.1);
+    }
+
+    .card-timeline.light .card-timeline-image {
+      background: linear-gradient(135deg, #ddd 0%, #ccc 100%);
+    }
+
+    .card-timeline.light .card-timeline-year {
+      color: #888;
+    }
+
+    .card-timeline.light .card-timeline-tag {
+      color: #666;
+      background: rgba(0,0,0,0.05);
+    }
+
+    .card-timeline.light .card-timeline-title {
+      color: #1a1a1a;
+    }
+
+    .card-timeline.light .card-timeline-description {
+      color: #888;
+    }
+
+    /* ===== Notes ===== */
+    .notes {
+      max-width: 600px;
+      color: #666;
+      font-size: 13px;
+      line-height: 1.8;
+      margin-top: 40px;
+      padding: 24px;
+      background: rgba(255,255,255,0.02);
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .notes h2 {
+      color: #999;
+      font-size: 11px;
+      font-weight: 400;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .notes ul {
+      padding-left: 20px;
+    }
+
+    .notes li {
+      margin-bottom: 8px;
+    }
+
+    .notes code {
+      background: rgba(255,255,255,0.05);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 12px;
+    }
+
+    /* ===== Comparison Section ===== */
+    .comparison {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .comparison-pair {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+    }
+
+    .comparison-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .comparison-label {
+      color: #444;
+      font-size: 10px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .comparison-label.current {
+      color: #666;
+    }
+
+    .comparison-label.heavy {
+      color: #8b5cf6;
+    }
+
+    /* ===== Heavy Texture Variants ===== */
+
+    /* Card A Heavy */
+    .card-a.heavy::before {
+      opacity: 0.22;
+    }
+
+    /* Card A Extra Heavy - フィルムグレイン風 */
+    .card-a.extra-heavy::before {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='6' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23grain)'/%3E%3C/svg%3E");
+      opacity: 0.35;
+      mix-blend-mode: soft-light;
+    }
+
+    /* Card B Heavy - 強い埃 */
+    .card-b.heavy .card-b-image::after {
+      opacity: 0.12;
+    }
+
+    /* Card B Extra Heavy - ヴィンテージ写真風 */
+    .card-b.extra-heavy .card-b-image::after {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='vintage'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='6'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0.05 0 0.9 0 0 0.02 0 0 0.8 0 0 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23vintage)'/%3E%3C/svg%3E");
+      opacity: 0.18;
+      mix-blend-mode: overlay;
+    }
+
+    /* ヴィンテージにセピアトーンを追加 */
+    .card-b.extra-heavy .card-b-image::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(180,140,100,0.1) 0%, rgba(60,40,30,0.15) 100%);
+      pointer-events: none;
+    }
+
+    /* Card C Heavy */
+    .card-c.heavy::before {
+      opacity: 0.1;
+    }
+
+    /* Card C Extra Heavy - 紙の繊維感 */
+    .card-c.extra-heavy::before {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='fiber'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.02 0.8' numOctaves='4' seed='5'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23fiber)'/%3E%3C/svg%3E");
+      opacity: 0.15;
+      mix-blend-mode: multiply;
+    }
+
+    /* Card D Heavy */
+    .card-d.heavy::before {
+      opacity: 0.08;
+    }
+
+    /* Card D Extra Heavy - コンクリート風 */
+    .card-d.extra-heavy::before {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='concrete'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04' numOctaves='5'/%3E%3CfeDisplacementMap scale='2'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23concrete)'/%3E%3C/svg%3E");
+      opacity: 0.12;
+      mix-blend-mode: soft-light;
+    }
+
+    /* ===== Divider ===== */
+    .divider {
+      width: 100%;
+      max-width: 800px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      margin: 20px 0;
+    }
+
+    /* ===== Texture Scale Demo ===== */
+    .texture-scale {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .texture-swatch {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 8px;
+    }
+
+    .texture-swatch.blue {
+      background: linear-gradient(165deg, #6bb8e8 0%, #3b82c4 100%);
+    }
+
+    .texture-swatch.dark {
+      background: #1a1a1a;
+    }
+
+    .texture-swatch.light {
+      background: linear-gradient(145deg, #f5f5f5, #e0e0e0);
+    }
+
+    .texture-swatch::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .texture-swatch.op-0::before { opacity: 0; }
+    .texture-swatch.op-5::before { opacity: 0.05; }
+    .texture-swatch.op-10::before { opacity: 0.10; }
+    .texture-swatch.op-15::before { opacity: 0.15; }
+    .texture-swatch.op-20::before { opacity: 0.20; }
+    .texture-swatch.op-30::before { opacity: 0.30; }
+    .texture-swatch.op-40::before { opacity: 0.40; }
+
+    .texture-swatch span {
+      font-size: 9px;
+      color: rgba(255,255,255,0.7);
+      letter-spacing: 0.05em;
+    }
+
+    .texture-swatch.light span {
+      color: rgba(0,0,0,0.5);
+    }
+
+    /* ===== Section Background Texture Patterns ===== */
+
+    /* セクション背景用ベース */
+    .section-bg {
+      width: 100%;
+      max-width: 900px;
+      padding: 60px 40px;
+      border-radius: 24px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    /* パターン F1: ダーク背景 + Heavy ノイズ + フラットカード */
+    .section-bg.dark-noise {
+      background: #111;
+    }
+
+    .section-bg.dark-noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.22;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    /* J5改善: ダーク背景でテクスチャを感じやすく */
+    .section-bg.dark-noise-v2 {
+      background: #151515;
+    }
+
+    .section-bg.dark-noise-v2::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.28;
+      mix-blend-mode: soft-light;
+      pointer-events: none;
+    }
+
+    /* J5改善 v3: より強いコントラスト */
+    .section-bg.dark-noise-v3 {
+      background: linear-gradient(165deg, #1a1a1a 0%, #0f0f0f 100%);
+    }
+
+    .section-bg.dark-noise-v3::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.15;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    /* パターン F2: グラデーション背景 + ノイズ */
+    .section-bg.gradient-noise {
+      background: linear-gradient(165deg, #1a1a2e 0%, #0f0f1a 100%);
+    }
+
+    .section-bg.gradient-noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.18;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    /* パターン F3: ライト背景 + ノイズ（紙の質感） */
+    .section-bg.light-noise {
+      background: linear-gradient(165deg, #f5f5f5 0%, #e8e8e8 100%);
+    }
+
+    .section-bg.light-noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.15;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    /* パターン F4: ウォーム背景 + ノイズ（古紙風） */
+    .section-bg.warm-noise {
+      background: linear-gradient(165deg, #f5f0e8 0%, #e8e0d5 100%);
+    }
+
+    .section-bg.warm-noise::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='5' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.12;
+      mix-blend-mode: multiply;
+      pointer-events: none;
+    }
+
+    /* セクション内のフラットカード */
+    .flat-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      z-index: 1;
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .flat-card:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: rgba(255,255,255,0.1);
+    }
+
+    .flat-card-row {
+      display: flex;
+      gap: 16px;
+    }
+
+    .flat-card-image {
+      width: 80px;
+      height: 80px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .flat-card-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .flat-card-meta {
+      color: #666;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+    }
+
+    .flat-card-title {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 400;
+    }
+
+    .flat-card-desc {
+      color: #555;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    /* ライト背景用のフラットカード */
+    .section-bg.light-noise .flat-card,
+    .section-bg.warm-noise .flat-card {
+      background: rgba(255,255,255,0.6);
+      border-color: rgba(0,0,0,0.06);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .section-bg.light-noise .flat-card:hover,
+    .section-bg.warm-noise .flat-card:hover {
+      background: rgba(255,255,255,0.8);
+      border-color: rgba(0,0,0,0.1);
+    }
+
+    .section-bg.light-noise .flat-card-image,
+    .section-bg.warm-noise .flat-card-image {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .section-bg.light-noise .flat-card-meta,
+    .section-bg.warm-noise .flat-card-meta {
+      color: #888;
+    }
+
+    .section-bg.light-noise .flat-card-title,
+    .section-bg.warm-noise .flat-card-title {
+      color: #1a1a1a;
+    }
+
+    .section-bg.light-noise .flat-card-desc,
+    .section-bg.warm-noise .flat-card-desc {
+      color: #666;
+    }
+
+    /* セクションヘッダー */
+    .section-bg-header {
+      position: relative;
+      z-index: 1;
+    }
+
+    .section-bg-title {
+      color: #fff;
+      font-size: 24px;
+      font-weight: 400;
+      margin-bottom: 8px;
+    }
+
+    .section-bg-subtitle {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .section-bg.light-noise .section-bg-title,
+    .section-bg.warm-noise .section-bg-title {
+      color: #1a1a1a;
+    }
+
+    .section-bg.light-noise .section-bg-subtitle,
+    .section-bg.warm-noise .section-bg-subtitle {
+      color: #888;
+    }
+
+    /* ===== H. Timeline on Textured Background ===== */
+
+    /* Timeline カード - 背景テクスチャ用（カード自体はテクスチャなし） */
+    .card-timeline.no-texture::before {
+      display: none;
+    }
+
+    /* Timeline カード - 軽いテクスチャ */
+    .card-timeline.light-texture::before {
+      opacity: 0.08;
+    }
+
+    /* Timeline on Light Background */
+    .section-bg.light-noise .card-timeline {
+      background: #fff;
+      box-shadow:
+        0 1px 2px rgba(0,0,0,0.04),
+        0 4px 12px rgba(0,0,0,0.06),
+        0 12px 24px rgba(0,0,0,0.04);
+    }
+
+    .section-bg.light-noise .card-timeline:hover {
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.05),
+        0 8px 20px rgba(0,0,0,0.08),
+        0 20px 40px rgba(0,0,0,0.06);
+    }
+
+    .section-bg.light-noise .card-timeline .card-timeline-image {
+      background: linear-gradient(135deg, #e8e8e8 0%, #ddd 100%);
+    }
+
+    .section-bg.light-noise .card-timeline .card-timeline-year {
+      color: #888;
+    }
+
+    .section-bg.light-noise .card-timeline .card-timeline-tag {
+      color: #666;
+      background: rgba(0,0,0,0.05);
+    }
+
+    .section-bg.light-noise .card-timeline .card-timeline-title {
+      color: #1a1a1a;
+    }
+
+    .section-bg.light-noise .card-timeline .card-timeline-description {
+      color: #888;
+    }
+
+    /* Timeline on Warm Background */
+    .section-bg.warm-noise .card-timeline {
+      background: #fffcf8;
+      box-shadow:
+        0 1px 2px rgba(80,60,40,0.04),
+        0 4px 12px rgba(80,60,40,0.06),
+        0 12px 24px rgba(80,60,40,0.04);
+    }
+
+    .section-bg.warm-noise .card-timeline .card-timeline-image {
+      background: linear-gradient(135deg, #e8e0d5 0%, #d8d0c5 100%);
+    }
+
+    .section-bg.warm-noise .card-timeline .card-timeline-year {
+      color: #8a7a6a;
+    }
+
+    .section-bg.warm-noise .card-timeline .card-timeline-tag {
+      color: #6a5a4a;
+      background: rgba(80,60,40,0.08);
+    }
+
+    .section-bg.warm-noise .card-timeline .card-timeline-title {
+      color: #2a2420;
+    }
+
+    .section-bg.warm-noise .card-timeline .card-timeline-description {
+      color: #8a7a6a;
+    }
+
+    /* ===== J. Cardless / Borderless Layout ===== */
+
+    /* カードレスアイテム */
+    .cardless-item {
+      display: flex;
+      gap: 24px;
+      padding: 32px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cardless-item + .cardless-item {
+      border-top: none; /* ボーダーなし */
+    }
+
+    .cardless-image {
+      width: 120px;
+      height: 90px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .cardless-content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cardless-meta {
+      color: #666;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+    }
+
+    .cardless-title {
+      color: #fff;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 1.4;
+    }
+
+    .cardless-desc {
+      color: #555;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    /* ライト背景用 */
+    .section-bg.light-noise .cardless-image,
+    .section-bg.warm-noise .cardless-image {
+      background: rgba(0,0,0,0.05);
+    }
+
+    .section-bg.light-noise .cardless-meta,
+    .section-bg.warm-noise .cardless-meta {
+      color: #888;
+    }
+
+    .section-bg.light-noise .cardless-title {
+      color: #1a1a1a;
+    }
+
+    .section-bg.warm-noise .cardless-title {
+      color: #2a2420;
+    }
+
+    .section-bg.light-noise .cardless-desc {
+      color: #666;
+    }
+
+    .section-bg.warm-noise .cardless-desc {
+      color: #8a7a6a;
+    }
+
+    /* 縦並びカードレス */
+    .cardless-vertical {
+      padding: 40px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .cardless-vertical-image {
+      width: 100%;
+      max-width: 400px;
+      height: 240px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .section-bg.light-noise .cardless-vertical-image,
+    .section-bg.warm-noise .cardless-vertical-image {
+      background: rgba(0,0,0,0.05);
+    }
+
+    /* テキストオンリー（画像なし） */
+    .cardless-text-only {
+      padding: 28px 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* リスト形式 */
+    .cardless-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .cardless-list-item {
+      display: flex;
+      align-items: baseline;
+      gap: 24px;
+      padding: 20px 0;
+      position: relative;
+      z-index: 1;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .cardless-list-item:hover {
+      opacity: 0.7;
+    }
+
+    .cardless-list-year {
+      color: #555;
+      font-size: 12px;
+      letter-spacing: 0.05em;
+      min-width: 80px;
+    }
+
+    .cardless-list-title {
+      color: #fff;
+      font-size: 16px;
+      font-weight: 400;
+      flex-grow: 1;
+    }
+
+    .cardless-list-tag {
+      color: #444;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .section-bg.light-noise .cardless-list-year {
+      color: #999;
+    }
+
+    .section-bg.light-noise .cardless-list-title {
+      color: #1a1a1a;
+    }
+
+    .section-bg.light-noise .cardless-list-tag {
+      color: #888;
+    }
+
+    .section-bg.warm-noise .cardless-list-year {
+      color: #9a8a7a;
+    }
+
+    .section-bg.warm-noise .cardless-list-title {
+      color: #2a2420;
+    }
+
+    .section-bg.warm-noise .cardless-list-tag {
+      color: #8a7a6a;
+    }
+
+    /* ===== I. Additional Texture Experiments ===== */
+
+    /* I1: ビネット効果（周辺減光） */
+    .section-bg.vignette::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15) 100%);
+      pointer-events: none;
+    }
+
+    /* I2: スキャンライン効果 */
+    .section-bg.scanlines::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.03) 2px,
+        rgba(0,0,0,0.03) 4px
+      );
+      pointer-events: none;
+    }
+
+    /* I3: ハーフトーン風 */
+    .halftone-bg {
+      background:
+        radial-gradient(circle at center, #333 1px, transparent 1px);
+      background-size: 4px 4px;
+    }
+
+    /* I4: グレイン + グロー効果 */
+    .section-bg.glow::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse at 30% 20%, rgba(100,150,200,0.08) 0%, transparent 50%);
+      pointer-events: none;
+    }
+
+    /* I5: ダスト/傷 効果 */
+    .section-bg.dust::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='dust'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.02' numOctaves='2' seed='42'/%3E%3CfeColorMatrix type='matrix' values='1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 25 -12'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23dust)'/%3E%3C/svg%3E");
+      opacity: 0.15;
+      mix-blend-mode: screen;
+      pointer-events: none;
+    }
+
+    /* I6: 紙の折り目風テクスチャ */
+    .section-bg.creased::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        linear-gradient(90deg, transparent 49.5%, rgba(0,0,0,0.02) 50%, transparent 50.5%),
+        linear-gradient(0deg, transparent 49.5%, rgba(0,0,0,0.02) 50%, transparent 50.5%);
+      pointer-events: none;
+    }
+
+    /* I7: 布/キャンバス風テクスチャ */
+    .canvas-texture::before {
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='canvas'%3E%3CfeTurbulence type='turbulence' baseFrequency='0.4' numOctaves='2' seed='1'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23canvas)'/%3E%3C/svg%3E");
+      opacity: 0.1;
+      mix-blend-mode: multiply;
+    }
+
+    /* ===== J. Border Texture ===== */
+    .textured-border {
+      position: relative;
+    }
+
+    .textured-border::after {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: inherit;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(0,0,0,0.1));
+      mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      padding: 2px;
+      pointer-events: none;
+    }
+
+    /* フルワイドセクション（ページ全体にテクスチャ） */
+    .fullwidth-section {
+      width: 100vw;
+      margin-left: calc(-50vw + 50%);
+      padding: 80px 40px;
+      position: relative;
+    }
+
+    .fullwidth-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+      opacity: 0.22;
+      mix-blend-mode: overlay;
+      pointer-events: none;
+    }
+
+    .fullwidth-section.dark {
+      background: linear-gradient(180deg, #0a0a0a 0%, #141414 50%, #0a0a0a 100%);
+    }
+
+    .fullwidth-section.gradient {
+      background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 30%, #0f0f1a 70%, #0a0a0a 100%);
+    }
+
+    .fullwidth-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* 影のみカード（背景テクスチャ用） */
+    .shadow-card {
+      background: #1a1a1a;
+      border-radius: 16px;
+      padding: 28px;
+      position: relative;
+      box-shadow:
+        0 4px 12px rgba(0,0,0,0.3),
+        0 12px 32px rgba(0,0,0,0.2);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .shadow-card:hover {
+      transform: translateY(-4px);
+      box-shadow:
+        0 8px 20px rgba(0,0,0,0.35),
+        0 20px 48px rgba(0,0,0,0.25);
+    }
+
+    .shadow-card-title {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 400;
+      margin-bottom: 12px;
+    }
+
+    .shadow-card-desc {
+      color: #666;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <h1 id="top">Texture Prototype</h1>
+
+  <!-- Table of Contents -->
+  <nav class="toc" id="toc">
+    <div class="toc-title">Table of Contents</div>
+    <div class="toc-grid">
+      <a href="#section-a" class="toc-item"><span class="toc-label">A</span> Nani Translate Style</a>
+      <a href="#section-b" class="toc-item"><span class="toc-label">B</span> Museum / Archive</a>
+      <a href="#section-cd" class="toc-item"><span class="toc-label">C/D</span> Badge / Neumorphism</a>
+      <a href="#section-e" class="toc-item"><span class="toc-label">E</span> Timeline Card</a>
+      <a href="#section-f" class="toc-item"><span class="toc-label">F</span> Section Background</a>
+      <a href="#section-g" class="toc-item"><span class="toc-label">G</span> Full-width Section</a>
+      <a href="#section-h" class="toc-item"><span class="toc-label">H</span> Timeline + Textured BG</a>
+      <a href="#section-i" class="toc-item"><span class="toc-label">I</span> Texture Experiments</a>
+      <a href="#section-j" class="toc-item"><span class="toc-label">J</span> Cardless / Borderless</a>
+      <a href="#section-scale" class="toc-item"><span class="toc-label">—</span> Opacity Scale</a>
+      <a href="#section-compare" class="toc-item"><span class="toc-label">—</span> Comparisons</a>
+    </div>
+  </nav>
+
+  <!-- Back to Top Button -->
+  <a href="#toc" class="back-to-top" title="Back to TOC"></a>
+
+  <!-- Style A: Nani Translate 風 -->
+  <div class="section" id="section-a">
+    <div class="section-title">A. Nani Translate Style</div>
+    <div class="card-a">
+      <div class="card-a-icon">
+        <span>S</span>
+      </div>
+      <div class="card-a-title">synsk.me</div>
+      <div class="card-a-subtitle">by Shunsuke Kobashi</div>
+      <div class="card-a-footer">
+        <div class="card-a-badge">2026</div>
+        <div class="card-a-meta">PORTFOLIO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Style B: 展示物風 -->
+  <div class="section" id="section-b">
+    <div class="section-title">B. Museum / Archive Style</div>
+    <div class="card-b">
+      <div class="card-b-image"></div>
+      <div class="card-b-content">
+        <div class="card-b-title">Project Title</div>
+        <div class="card-b-year">2024</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Style C & D 比較 -->
+  <div class="section" id="section-cd">
+    <div class="section-title">C. Badge / D. Neumorphism</div>
+    <div class="compare-row">
+      <div class="card-c">
+        <div class="card-c-text">SK</div>
+      </div>
+      <div class="card-d">
+        <div class="card-d-label">Works</div>
+        <div class="card-d-title">Design System<br>Implementation</div>
+        <div class="card-d-meta">2024</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Style E: Timeline Card - Heavy vs Paper Fiber -->
+  <div class="section" id="section-e">
+    <div class="section-title">E. Timeline Card - Heavy (22%) vs Paper Fiber</div>
+    <div class="comparison">
+      <div class="comparison-pair" style="flex-direction: column; gap: 32px;">
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Heavy Noise (22%)</div>
+          <div class="card-timeline">
+            <div class="card-timeline-image"></div>
+            <div class="card-timeline-content">
+              <div>
+                <div class="card-timeline-header">
+                  <div class="card-timeline-year">2024.03</div>
+                  <div class="card-timeline-tag">Design</div>
+                </div>
+                <div class="card-timeline-title">Portfolio Renewal Project</div>
+              </div>
+              <div class="card-timeline-description">質量と時間を感じるデザイン探求</div>
+            </div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Paper Fiber (18%)</div>
+          <div class="card-timeline paper-fiber">
+            <div class="card-timeline-image"></div>
+            <div class="card-timeline-content">
+              <div>
+                <div class="card-timeline-header">
+                  <div class="card-timeline-year">2024.03</div>
+                  <div class="card-timeline-tag">Design</div>
+                </div>
+                <div class="card-timeline-title">Portfolio Renewal Project</div>
+              </div>
+              <div class="card-timeline-description">質量と時間を感じるデザイン探求</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline Card - Light Version -->
+  <div class="section">
+    <div class="section-title">E. Timeline Card - Light Version (22%)</div>
+    <div class="comparison">
+      <div class="comparison-pair" style="flex-direction: column; gap: 32px;">
+        <div class="comparison-item">
+          <div class="comparison-label current">Light + Heavy Noise</div>
+          <div class="card-timeline light">
+            <div class="card-timeline-image"></div>
+            <div class="card-timeline-content">
+              <div>
+                <div class="card-timeline-header">
+                  <div class="card-timeline-year">2023.11</div>
+                  <div class="card-timeline-tag">Frontend</div>
+                </div>
+                <div class="card-timeline-title">Design System Implementation</div>
+              </div>
+              <div class="card-timeline-description">コンポーネント設計とトークン整備</div>
+            </div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Light + Paper Fiber</div>
+          <div class="card-timeline light paper-fiber">
+            <div class="card-timeline-image"></div>
+            <div class="card-timeline-content">
+              <div>
+                <div class="card-timeline-header">
+                  <div class="card-timeline-year">2023.11</div>
+                  <div class="card-timeline-tag">Frontend</div>
+                </div>
+                <div class="card-timeline-title">Design System Implementation</div>
+              </div>
+              <div class="card-timeline-description">コンポーネント設計とトークン整備</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ===== F. Section Background Texture ===== -->
+  <div class="section" id="section-f">
+    <div class="section-title">F. Section Background with Texture (Card = Flat)</div>
+  </div>
+
+  <!-- F1: Dark + Heavy Noise -->
+  <div class="section-bg dark-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">F1: Dark background + Heavy noise (22%)</div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2024.03 — Design</div>
+          <div class="flat-card-title">Portfolio Renewal Project</div>
+          <div class="flat-card-desc">質量と時間を感じるデザイン探求。カードはフラットでセクション背景にテクスチャ。</div>
+        </div>
+      </div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2023.11 — Frontend</div>
+          <div class="flat-card-title">Design System Implementation</div>
+          <div class="flat-card-desc">コンポーネント設計とトークン整備</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F2: Gradient + Noise -->
+  <div class="section-bg gradient-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">F2: Gradient background + Noise (18%)</div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2024.03 — Design</div>
+          <div class="flat-card-title">Portfolio Renewal Project</div>
+          <div class="flat-card-desc">深い青紫のグラデーション背景。夜空のような質感。</div>
+        </div>
+      </div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2023.11 — Frontend</div>
+          <div class="flat-card-title">Design System Implementation</div>
+          <div class="flat-card-desc">コンポーネント設計とトークン整備</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F3: Light + Noise -->
+  <div class="section-bg light-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">F3: Light background + Noise (15%)</div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2024.03 — Design</div>
+          <div class="flat-card-title">Portfolio Renewal Project</div>
+          <div class="flat-card-desc">ライトグレーの背景。印刷物のような質感。</div>
+        </div>
+      </div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2023.11 — Frontend</div>
+          <div class="flat-card-title">Design System Implementation</div>
+          <div class="flat-card-desc">コンポーネント設計とトークン整備</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- F4: Warm + Noise (古紙風) -->
+  <div class="section-bg warm-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">F4: Warm background + Noise (12%) — 古紙風</div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2024.03 — Design</div>
+          <div class="flat-card-title">Portfolio Renewal Project</div>
+          <div class="flat-card-desc">ウォームなクリーム色。古い書類や紙の質感。倉庫で見つけ出す感覚。</div>
+        </div>
+      </div>
+    </div>
+    <div class="flat-card">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2023.11 — Frontend</div>
+          <div class="flat-card-title">Design System Implementation</div>
+          <div class="flat-card-desc">コンポーネント設計とトークン整備</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- G. Full-width Section with Texture -->
+  <div class="section" id="section-g">
+    <div class="section-title">G. Full-width Section Background</div>
+  </div>
+
+  <div class="fullwidth-section dark">
+    <div class="fullwidth-inner">
+      <div class="section-bg-header" style="margin-bottom: 32px;">
+        <div class="section-bg-title">Featured Work</div>
+        <div class="section-bg-subtitle">G1: 画面幅いっぱいにテクスチャ。カードには影のみ。</div>
+      </div>
+      <div class="shadow-card" style="margin-bottom: 20px;">
+        <div class="shadow-card-title">Portfolio Renewal Project</div>
+        <div class="shadow-card-desc">テクスチャはセクション背景に。カード自体はシンプルな影で浮かせる。視覚的な階層を作りつつ、テクスチャの一貫性を保つ。</div>
+      </div>
+      <div class="shadow-card">
+        <div class="shadow-card-title">Design System Implementation</div>
+        <div class="shadow-card-desc">セクション全体が一つのキャンバスのように感じられる。カードは「上に置かれたもの」として認識される。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="fullwidth-section gradient">
+    <div class="fullwidth-inner">
+      <div class="section-bg-header" style="margin-bottom: 32px;">
+        <div class="section-bg-title">Featured Work</div>
+        <div class="section-bg-subtitle">G2: グラデーション + テクスチャで深みを出す</div>
+      </div>
+      <div class="shadow-card" style="margin-bottom: 20px;">
+        <div class="shadow-card-title">Portfolio Renewal Project</div>
+        <div class="shadow-card-desc">背景のグラデーションがテクスチャと組み合わさり、より空間的な奥行きを感じさせる。</div>
+      </div>
+      <div class="shadow-card">
+        <div class="shadow-card-title">Design System Implementation</div>
+        <div class="shadow-card-desc">夜空や深海のような、静かで深い印象。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ===== H. Timeline Card on Textured Background ===== -->
+  <div class="section" id="section-h">
+    <div class="section-title">H. Timeline Card on Textured Background</div>
+  </div>
+
+  <!-- H1: Light Noise Background + Timeline (テクスチャなし) -->
+  <div class="section-bg light-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">H1: Light noise background + Timeline card (no card texture)</div>
+    </div>
+    <div class="card-timeline no-texture" style="width:100%;max-width:520px;">
+      <div class="card-timeline-image"></div>
+      <div class="card-timeline-content">
+        <div>
+          <div class="card-timeline-header">
+            <div class="card-timeline-year">2024.03</div>
+            <div class="card-timeline-tag">Design</div>
+          </div>
+          <div class="card-timeline-title">Portfolio Renewal Project</div>
+        </div>
+        <div class="card-timeline-description">背景にテクスチャ、カードはクリーン</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- H2: Light Noise Background + Timeline (軽いテクスチャ) -->
+  <div class="section-bg light-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">H2: Light noise background + Timeline card (light card texture 8%)</div>
+    </div>
+    <div class="card-timeline light-texture" style="width:100%;max-width:520px;">
+      <div class="card-timeline-image"></div>
+      <div class="card-timeline-content">
+        <div>
+          <div class="card-timeline-header">
+            <div class="card-timeline-year">2024.03</div>
+            <div class="card-timeline-tag">Design</div>
+          </div>
+          <div class="card-timeline-title">Portfolio Renewal Project</div>
+        </div>
+        <div class="card-timeline-description">背景にもカードにも軽いテクスチャ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- H3: Warm Noise Background + Timeline -->
+  <div class="section-bg warm-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">H3: Warm noise background (古紙風) + Timeline card</div>
+    </div>
+    <div class="card-timeline no-texture" style="width:100%;max-width:520px;">
+      <div class="card-timeline-image"></div>
+      <div class="card-timeline-content">
+        <div>
+          <div class="card-timeline-header">
+            <div class="card-timeline-year">2024.03</div>
+            <div class="card-timeline-tag">Design</div>
+          </div>
+          <div class="card-timeline-title">Portfolio Renewal Project</div>
+        </div>
+        <div class="card-timeline-description">倉庫で見つけ出すような、アーカイブ感</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ===== I. Additional Texture Experiments ===== -->
+  <div class="section" id="section-i">
+    <div class="section-title">I. Additional Texture Experiments</div>
+  </div>
+
+  <!-- I1: Light + Vignette -->
+  <div class="section-bg light-noise vignette">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">I1: Light noise + Vignette (周辺減光)</div>
+    </div>
+    <div class="card-timeline no-texture" style="width:100%;max-width:520px;">
+      <div class="card-timeline-image"></div>
+      <div class="card-timeline-content">
+        <div>
+          <div class="card-timeline-header">
+            <div class="card-timeline-year">2024.03</div>
+            <div class="card-timeline-tag">Design</div>
+          </div>
+          <div class="card-timeline-title">Portfolio Renewal Project</div>
+        </div>
+        <div class="card-timeline-description">周辺が暗くなり、中央に視線を集める</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- I2: Warm + Dust -->
+  <div class="section-bg warm-noise dust">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">I2: Warm noise + Dust/Scratches (埃・傷)</div>
+    </div>
+    <div class="card-timeline no-texture" style="width:100%;max-width:520px;">
+      <div class="card-timeline-image"></div>
+      <div class="card-timeline-content">
+        <div>
+          <div class="card-timeline-header">
+            <div class="card-timeline-year">2024.03</div>
+            <div class="card-timeline-tag">Design</div>
+          </div>
+          <div class="card-timeline-title">Portfolio Renewal Project</div>
+        </div>
+        <div class="card-timeline-description">古い写真やフィルムのような傷・埃感</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- I3: Light + Scanlines -->
+  <div class="section-bg light-noise scanlines">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">I3: Light noise + Scanlines (走査線)</div>
+    </div>
+    <div class="card-timeline no-texture" style="width:100%;max-width:520px;">
+      <div class="card-timeline-image"></div>
+      <div class="card-timeline-content">
+        <div>
+          <div class="card-timeline-header">
+            <div class="card-timeline-year">2024.03</div>
+            <div class="card-timeline-tag">Design</div>
+          </div>
+          <div class="card-timeline-title">Portfolio Renewal Project</div>
+        </div>
+        <div class="card-timeline-description">印刷物やCRTモニターのような質感</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- I4: Gradient + Glow -->
+  <div class="section-bg gradient-noise glow">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">I4: Gradient noise + Subtle Glow (微かな光)</div>
+    </div>
+    <div class="flat-card" style="max-width:520px;">
+      <div class="flat-card-row">
+        <div class="flat-card-image"></div>
+        <div class="flat-card-content">
+          <div class="flat-card-meta">2024.03 — Design</div>
+          <div class="flat-card-title">Portfolio Renewal Project</div>
+          <div class="flat-card-desc">左上からの微かな光が空間に深みを与える</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- I5: Warm + Creased (折り目) -->
+  <div class="section-bg warm-noise creased">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">I5: Warm noise + Creased (紙の折り目)</div>
+    </div>
+    <div class="card-timeline no-texture" style="width:100%;max-width:520px;">
+      <div class="card-timeline-image"></div>
+      <div class="card-timeline-content">
+        <div>
+          <div class="card-timeline-header">
+            <div class="card-timeline-year">2024.03</div>
+            <div class="card-timeline-tag">Design</div>
+          </div>
+          <div class="card-timeline-title">Portfolio Renewal Project</div>
+        </div>
+        <div class="card-timeline-description">紙を折った跡のような、使い込まれた感</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- ===== J. Cardless / Borderless Layout ===== -->
+  <div class="section" id="section-j">
+    <div class="section-title">J. Cardless / Borderless Layout</div>
+  </div>
+
+  <!-- J1: Light Noise + Cardless Horizontal -->
+  <div class="section-bg light-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">J1: Light noise + Cardless (horizontal, no border)</div>
+    </div>
+    <div class="cardless-item">
+      <div class="cardless-image"></div>
+      <div class="cardless-content">
+        <div class="cardless-meta">2024.03 — Design</div>
+        <div class="cardless-title">Portfolio Renewal Project</div>
+        <div class="cardless-desc">質量と時間を感じるデザイン探求。カードなし、ボーダーなし。</div>
+      </div>
+    </div>
+    <div class="cardless-item">
+      <div class="cardless-image"></div>
+      <div class="cardless-content">
+        <div class="cardless-meta">2023.11 — Frontend</div>
+        <div class="cardless-title">Design System Implementation</div>
+        <div class="cardless-desc">コンポーネント設計とトークン整備</div>
+      </div>
+    </div>
+    <div class="cardless-item">
+      <div class="cardless-image"></div>
+      <div class="cardless-content">
+        <div class="cardless-meta">2023.06 — Development</div>
+        <div class="cardless-title">API Integration Platform</div>
+        <div class="cardless-desc">外部サービス連携基盤の構築</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- J2: Warm Noise + Cardless Vertical -->
+  <div class="section-bg warm-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">J2: Warm noise + Cardless (vertical layout)</div>
+    </div>
+    <div class="cardless-vertical">
+      <div class="cardless-vertical-image"></div>
+      <div class="cardless-meta">2024.03 — Design</div>
+      <div class="cardless-title">Portfolio Renewal Project</div>
+      <div class="cardless-desc">質量と時間を感じるデザイン探求。縦並びレイアウト。</div>
+    </div>
+  </div>
+
+  <!-- J3: Light Noise + List Style -->
+  <div class="section-bg light-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">J3: Light noise + List style (minimal)</div>
+    </div>
+    <div class="cardless-list">
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2024.03</div>
+        <div class="cardless-list-title">Portfolio Renewal Project</div>
+        <div class="cardless-list-tag">Design</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.11</div>
+        <div class="cardless-list-title">Design System Implementation</div>
+        <div class="cardless-list-tag">Frontend</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.06</div>
+        <div class="cardless-list-title">API Integration Platform</div>
+        <div class="cardless-list-tag">Development</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.02</div>
+        <div class="cardless-list-title">E-commerce Analytics Dashboard</div>
+        <div class="cardless-list-tag">Data</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2022.09</div>
+        <div class="cardless-list-title">Brand Identity Refresh</div>
+        <div class="cardless-list-tag">Design</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- J4: Warm Noise + Text Only -->
+  <div class="section-bg warm-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">J4: Warm noise + Text only (no images)</div>
+    </div>
+    <div class="cardless-text-only">
+      <div class="cardless-meta">2024.03 — Design</div>
+      <div class="cardless-title" style="margin-top:8px;">Portfolio Renewal Project</div>
+      <div class="cardless-desc" style="margin-top:12px;max-width:500px;">質量と時間を感じるデザイン探求。画像なし、テキストのみのミニマルな表現。kbkbkb.co の「余白 over 密度」を体現。</div>
+    </div>
+    <div class="cardless-text-only">
+      <div class="cardless-meta">2023.11 — Frontend</div>
+      <div class="cardless-title" style="margin-top:8px;">Design System Implementation</div>
+      <div class="cardless-desc" style="margin-top:12px;max-width:500px;">コンポーネント設計とトークン整備。一貫性のある UI を実現するための基盤。</div>
+    </div>
+  </div>
+
+  <!-- J5: Dark + Cardless List (Original) -->
+  <div class="section-bg dark-noise">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">J5: Dark noise + Cardless list (original - 22% overlay)</div>
+    </div>
+    <div class="cardless-list">
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2024.03</div>
+        <div class="cardless-list-title">Portfolio Renewal Project</div>
+        <div class="cardless-list-tag">Design</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.11</div>
+        <div class="cardless-list-title">Design System Implementation</div>
+        <div class="cardless-list-tag">Frontend</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.06</div>
+        <div class="cardless-list-title">API Integration Platform</div>
+        <div class="cardless-list-tag">Development</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- J5-v2: Dark + Cardless List (Improved - soft-light) -->
+  <div class="section-bg dark-noise-v2">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">J5-v2: Dark noise improved (28% soft-light, brighter base)</div>
+    </div>
+    <div class="cardless-list">
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2024.03</div>
+        <div class="cardless-list-title">Portfolio Renewal Project</div>
+        <div class="cardless-list-tag">Design</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.11</div>
+        <div class="cardless-list-title">Design System Implementation</div>
+        <div class="cardless-list-tag">Frontend</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.06</div>
+        <div class="cardless-list-title">API Integration Platform</div>
+        <div class="cardless-list-tag">Development</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- J5-v3: Dark + Cardless List (Screen blend) -->
+  <div class="section-bg dark-noise-v3">
+    <div class="section-bg-header">
+      <div class="section-bg-title">Works</div>
+      <div class="section-bg-subtitle">J5-v3: Dark gradient + screen blend (15% screen, high contrast)</div>
+    </div>
+    <div class="cardless-list">
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2024.03</div>
+        <div class="cardless-list-title">Portfolio Renewal Project</div>
+        <div class="cardless-list-tag">Design</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.11</div>
+        <div class="cardless-list-title">Design System Implementation</div>
+        <div class="cardless-list-tag">Frontend</div>
+      </div>
+      <div class="cardless-list-item">
+        <div class="cardless-list-year">2023.06</div>
+        <div class="cardless-list-title">API Integration Platform</div>
+        <div class="cardless-list-tag">Development</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Texture Intensity Scale -->
+  <div class="section" id="section-scale">
+    <div class="section-title">Texture Opacity Scale (0% → 40%)</div>
+    <div class="texture-scale">
+      <div class="texture-swatch blue op-0"><span>0%</span></div>
+      <div class="texture-swatch blue op-5"><span>5%</span></div>
+      <div class="texture-swatch blue op-10"><span>10%</span></div>
+      <div class="texture-swatch blue op-15"><span>15%</span></div>
+      <div class="texture-swatch blue op-20"><span>20%</span></div>
+      <div class="texture-swatch blue op-30"><span>30%</span></div>
+      <div class="texture-swatch blue op-40"><span>40%</span></div>
+    </div>
+    <div class="texture-scale">
+      <div class="texture-swatch dark op-0"><span>0%</span></div>
+      <div class="texture-swatch dark op-5"><span>5%</span></div>
+      <div class="texture-swatch dark op-10"><span>10%</span></div>
+      <div class="texture-swatch dark op-15"><span>15%</span></div>
+      <div class="texture-swatch dark op-20"><span>20%</span></div>
+      <div class="texture-swatch dark op-30"><span>30%</span></div>
+      <div class="texture-swatch dark op-40"><span>40%</span></div>
+    </div>
+    <div class="texture-scale">
+      <div class="texture-swatch light op-0"><span>0%</span></div>
+      <div class="texture-swatch light op-5"><span>5%</span></div>
+      <div class="texture-swatch light op-10"><span>10%</span></div>
+      <div class="texture-swatch light op-15"><span>15%</span></div>
+      <div class="texture-swatch light op-20"><span>20%</span></div>
+      <div class="texture-swatch light op-30"><span>30%</span></div>
+      <div class="texture-swatch light op-40"><span>40%</span></div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Comparison: Card A -->
+  <div class="section" id="section-compare">
+    <div class="section-title">A. Texture Comparison (Current → Heavy → Extra Heavy)</div>
+    <div class="comparison">
+      <div class="comparison-pair">
+        <div class="comparison-item">
+          <div class="comparison-label current">Current (8%)</div>
+          <div class="card-a" style="width:240px;height:240px;">
+            <div class="card-a-icon" style="width:54px;height:54px;border-radius:14px;"><span style="font-size:24px;">S</span></div>
+            <div class="card-a-title" style="font-size:20px;">synsk.me</div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Heavy (22%)</div>
+          <div class="card-a heavy" style="width:240px;height:240px;">
+            <div class="card-a-icon" style="width:54px;height:54px;border-radius:14px;"><span style="font-size:24px;">S</span></div>
+            <div class="card-a-title" style="font-size:20px;">synsk.me</div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Film Grain (35%)</div>
+          <div class="card-a extra-heavy" style="width:240px;height:240px;">
+            <div class="card-a-icon" style="width:54px;height:54px;border-radius:14px;"><span style="font-size:24px;">S</span></div>
+            <div class="card-a-title" style="font-size:20px;">synsk.me</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison: Card B -->
+  <div class="section">
+    <div class="section-title">B. Museum Style Comparison</div>
+    <div class="comparison">
+      <div class="comparison-pair">
+        <div class="comparison-item">
+          <div class="comparison-label current">Current (4%)</div>
+          <div class="card-b" style="width:200px;height:260px;">
+            <div class="card-b-image" style="height:180px;"></div>
+            <div class="card-b-content" style="padding:14px;">
+              <div class="card-b-title" style="font-size:13px;">Project</div>
+              <div class="card-b-year">2024</div>
+            </div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Heavy (12%)</div>
+          <div class="card-b heavy" style="width:200px;height:260px;">
+            <div class="card-b-image" style="height:180px;"></div>
+            <div class="card-b-content" style="padding:14px;">
+              <div class="card-b-title" style="font-size:13px;">Project</div>
+              <div class="card-b-year">2024</div>
+            </div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Vintage (18%)</div>
+          <div class="card-b extra-heavy" style="width:200px;height:260px;">
+            <div class="card-b-image" style="height:180px;"></div>
+            <div class="card-b-content" style="padding:14px;">
+              <div class="card-b-title" style="font-size:13px;">Project</div>
+              <div class="card-b-year">2024</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Comparison: Card C & D -->
+  <div class="section">
+    <div class="section-title">C & D. Badge / Neumorphism Comparison</div>
+    <div class="comparison">
+      <div class="comparison-pair">
+        <div class="comparison-item">
+          <div class="comparison-label current">Badge Current</div>
+          <div class="card-c" style="width:120px;height:120px;">
+            <div class="card-c-text" style="font-size:32px;">SK</div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Heavy (10%)</div>
+          <div class="card-c heavy" style="width:120px;height:120px;">
+            <div class="card-c-text" style="font-size:32px;">SK</div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Paper Fiber</div>
+          <div class="card-c extra-heavy" style="width:120px;height:120px;">
+            <div class="card-c-text" style="font-size:32px;">SK</div>
+          </div>
+        </div>
+      </div>
+      <div class="comparison-pair" style="margin-top:24px;">
+        <div class="comparison-item">
+          <div class="comparison-label current">Neu Current</div>
+          <div class="card-d" style="width:200px;height:140px;padding:18px;">
+            <div class="card-d-label" style="font-size:9px;">Works</div>
+            <div class="card-d-title" style="font-size:16px;">Design System</div>
+            <div class="card-d-meta" style="bottom:18px;left:18px;">2024</div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Heavy (8%)</div>
+          <div class="card-d heavy" style="width:200px;height:140px;padding:18px;">
+            <div class="card-d-label" style="font-size:9px;">Works</div>
+            <div class="card-d-title" style="font-size:16px;">Design System</div>
+            <div class="card-d-meta" style="bottom:18px;left:18px;">2024</div>
+          </div>
+        </div>
+        <div class="comparison-item">
+          <div class="comparison-label heavy">Concrete</div>
+          <div class="card-d extra-heavy" style="width:200px;height:140px;padding:18px;">
+            <div class="card-d-label" style="font-size:9px;">Works</div>
+            <div class="card-d-title" style="font-size:16px;">Design System</div>
+            <div class="card-d-meta" style="bottom:18px;left:18px;">2024</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Notes -->
+  <div class="notes">
+    <h2>Implementation Notes</h2>
+    <ul>
+      <li><strong>ノイズテクスチャ</strong>: SVG <code>feTurbulence</code> フィルターをインライン data URI で適用</li>
+      <li><strong>質量感</strong>: 複数レイヤーの <code>box-shadow</code>（内側ベベル + 多段ドロップシャドウ）</li>
+      <li><strong>埃の質感</strong>: <code>mix-blend-mode: screen</code> + 低 opacity のノイズ</li>
+      <li><strong>ホバー</strong>: 微妙な <code>translateY</code> と <code>rotate</code> で「持ち上がる」感覚</li>
+    </ul>
+  </div>
+
+</body>
+</html>
