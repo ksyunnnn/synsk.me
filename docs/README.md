@@ -12,8 +12,8 @@
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
 | [adr/](./adr/) | なぜそう決めたか | 過去形 | 現在形のルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
-| [research/](./research/) | 決めるために何を調べたか | 過去形 | — |
-| [notes/](./notes/) | どこにも属さない書き捨て | 制約なし | 重要な情報 |
+| [research/](./research/) | 調べたこと、決定を受けた設計の詳細 | 制約なし | — |
+| [notes/](./notes/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
 | GitHub Milestone | どのリリースに含めるか | — | 要件の定義 |
 | [../README.md](../README.md) | このリポジトリが何で、どう動かすか | 恒常 | 設計の判断基準、進捗 |
@@ -33,7 +33,7 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
                         research/
 ```
 
-`research/` は ADR から参照される。調査は決定より先に固まり、書き換えないため、ADR より変わりにくい側にある。
+`research/` は ADR から参照される。
 
 逆向きは張らない。ここから次が導かれる。
 
@@ -42,7 +42,7 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 - 各文書の冒頭宣言に他文書へのリンクを含めない
 - 手で維持する索引を作らない
 
-`notes/` はこの図に入らない。誰からも参照されない。
+`notes/` はこの図に入らない。
 
 ---
 
@@ -55,7 +55,7 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 代替案があり、それを退けたなら決定（ADR）。満たすべき性質を述べているだけなら要件。
 
 **research か、notes か。**
-ADR から参照されるなら research。参照されないなら notes。
+他から参照される可能性があるなら research。それ以外は notes。厳密に分けなくてよい。git で復元できる。
 
 **要件か、疑問か。**
 現在形で「〜できる」と書けるなら要件。要るかどうか分からないなら疑問（`question` ラベルの Issue）。
