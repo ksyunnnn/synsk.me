@@ -152,46 +152,6 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 
 ---
 
-## Implementation
-
-```css
-/* src/app/globals.css */
-:root {
-  --background: 0 0% 100%;
-  --foreground: 0 0% 3.9%;
-  --muted: 0 0% 96.1%;
-  --muted-foreground: 0 0% 45.1%;
-  --border: 0 0% 89.8%;
-
-  --spacing-xs: 8px;
-  --spacing-sm: 16px;
-  --spacing-md: 24px;
-  --spacing-lg: 48px;
-  --spacing-xl: 96px;
-}
-
-body {
-  font-family: 'Source Sans 3', 'Noto Sans JP', sans-serif;
-  font-weight: 300;
-  font-size: 18px;
-  line-height: 1.8;
-}
-```
-
-```typescript
-// tailwind.config.ts
-fontFamily: {
-  sans: ['Source Sans 3', 'Noto Sans JP', 'sans-serif'],
-}
-spacing: {
-  'xs': '8px',
-  'sm': '16px',
-  'md': '24px',
-  'lg': '48px',
-  'xl': '96px',
-}
-```
-
 ---
 
 ## References
