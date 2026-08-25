@@ -91,7 +91,7 @@ const res = await fetch(
 |------|------|
 | ユーザー名 | `ksyunnnn` |
 | 取得方法 | RSS フィード |
-| Webhook | ✅ Zenn → GitHub 連携経由で可能 |
+| Webhook | ❌ GitHub 連携未使用のため不可 |
 | レート制限 | なし（RSS） |
 
 **RSS URL**: `https://zenn.dev/ksyunnnn/feed`
@@ -187,16 +187,11 @@ const res = await fetch(
 | 項目 | 内容 |
 |------|------|
 | ユーザー名 | `synsk` |
-| 取得方法 | Spotify Web API |
+| 取得方法 | oEmbed + 手動登録 |
 | Webhook | ❌ 非対応 |
 | レート制限 | あり（認証必須） |
 
-**API エンドポイント**: `https://api.spotify.com/v1/users/{user_id}/playlists`
-
-**取得可能データ**:
-- プレイリスト名、URL、説明
-- トラック数、フォロワー数
-- 公開/非公開フラグ
+→ 取得方式の検証は [spotify-api-verification.md](./spotify-api-verification.md) にある。
 
 **更新戦略**: ISR（週1回程度）
 
@@ -551,41 +546,9 @@ REVALIDATE_SECRET=xxxx
 
 ## 決定事項
 
-### データストア: DuckDB
+### データストア
 
-**決定**: データストアとして DuckDB を採用
-
-**選定理由**:
-1. **埋め込み型**: 外部サービス（Supabase 等）への依存なし
-2. **分析向き**: 列指向で集計クエリに強い
-3. **JSON 直接クエリ**: API レスポンスをそのまま分析可能
-4. **技術的興味**: 実際に使った経験を発信のネタにできる
-
-**トレードオフ**:
-- データ量（数百件）に対してはオーバースペック
-- 「オーバースペックだけど使ってみたい」は個人サイトでは正当な理由
-
-**検討した代替案**:
-
-| 選択肢 | 不採用理由 |
-|--------|-----------|
-| キャッシュのみ（ISR + Vercel KV） | 履歴蓄積不可、分析不可 |
-| Supabase（PostgreSQL） | 外部依存、コスト、オーバースペック |
-| SQLite | 分析クエリに劣る、技術的新鮮味が薄い |
-
-**実装パターン**:
-
-```
-ビルド時:
-  API/RSS → JSON/Parquet 生成 → DuckDB でクエリ → 静的ページ生成
-
-or
-
-ランタイム (WASM):
-  DuckDB-WASM でブラウザ側集計 → インタラクティブな可視化
-```
-
-→ 詳細は [ADR-0007](../adr/0007-duckdb-wasm-datastore.md) を参照
+→ [ADR-0007](../adr/0007-duckdb-wasm-datastore.md) の決定を受ける。
 
 ---
 
@@ -594,12 +557,6 @@ or
 **決定**: Web エディタのみ使用（GitHub 連携なし）
 
 → Webhook は使用不可。RSS での定期取得（ISR）で対応。
-
-### 実装タイミング
-
-**決定**: デザインシステム確立後に実装を開始する。それまでは手動データを使用する。
-
----
 
 ## 未解決の検討事項
 
