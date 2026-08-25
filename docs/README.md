@@ -21,7 +21,7 @@
 |--------|---------|------|---------------------|
 | [VISION.md](./VISION.md) | なぜ作るか | 未来完了 | — |
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
-| [adr/](./adr/) | なぜそう決めたか | Decision は現在形、他は過去形 | これから守るべきルール、未決事項、他文書の転記 |
+| [adr/](./adr/) | なぜそう決めたか | Decision と Consequences は現在形、Context と Alternatives は過去形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
 | [research/](./research/) | 調べたこと、決定を受けた設計の詳細 | 制約なし | — |
 | [notes/](./notes/) | それ以外 | 制約なし | — |
@@ -67,7 +67,7 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 実装が終わっても残るなら要件。終われば閉じるなら作業。1つの要件に対して作業は複数生まれる。
 
 **決定か、要件か。**
-代替案があり、それを退けたなら決定（ADR）。満たすべき性質を述べているだけなら要件。
+代替案があり、それを退けた決定のうち、覆すコストが高いものが ADR。満たすべき性質を述べているだけなら要件。
 
 **research か、notes か。**
 他から参照される可能性があるなら research。それ以外は notes。厳密に分けなくてよい。git で復元できる。

@@ -506,9 +506,7 @@ TypeScriptのユニオン型からプロパティを除外する方法
 
 ### 公開設定
 
-**決定**: 公開 / 限定公開 / 非公開の3段階で扱う。公開できない値と公開できる値は `client` / `clientPublic` の形で対にする。
-
-→ 詳細は [ADR-0008](../adr/0008-content-visibility.md) を参照
+→ [ADR-0008](../adr/0008-content-visibility.md) の決定を受ける。
 
 ### 手動タグ（tags）
 
