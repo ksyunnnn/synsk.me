@@ -62,7 +62,7 @@ bash .claude/skills/auditing-docs-convention/scripts/check.sh
 ```
 docs/REQUIREMENTS.md
 docs/adr/            README.md と template.md を含むすべて
-docs/research/       すべて
+docs/research/       archive/ を除くすべて
 docs/notes/          すべて
 README.md
 CLAUDE.md

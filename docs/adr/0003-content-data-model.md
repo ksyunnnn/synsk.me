@@ -99,6 +99,6 @@ Project を Activity の一種として扱う（`type: 'project'`）。
 
 ## References
 
-- [Content Model 設計](../research/content-model-design.md) - 詳細なデータ構造定義
-- [Hub-and-Spoke モデル](../research/hub-and-spoke-model.md) - データ取得アーキテクチャ
+- [Content Model 設計](../research/archive/content-model-design.md) - 詳細なデータ構造定義
+- [Hub-and-Spoke モデル](../research/archive/hub-and-spoke-model.md) - データ取得アーキテクチャ
 - [ADR-0002: Hub-and-Spoke データアーキテクチャ](./0002-hub-and-spoke-data-architecture.md)

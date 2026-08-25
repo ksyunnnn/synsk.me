@@ -2,6 +2,7 @@
 #
 # ドキュメント規約のうち、確実に判定できる検査だけを置く。
 # 曖昧なものは監査人へ委ね、ここに書かない。
+# docs/research/archive/ は凍結された記録のため、すべての検査から除く。
 # 出力した行はすべて違反である。誤検出を出さないことを優先する。
 #
 set -u
@@ -16,7 +17,7 @@ while IFS= read -r line; do
 done < <(python3 - <<'PY'
 import pathlib, re
 for p in sorted(pathlib.Path('.').rglob('*.md')):
-    if 'node_modules' in str(p):
+    if 'node_modules' in str(p) or 'docs/research/archive' in str(p):
         continue
     for i, line in enumerate(p.read_text().split('\n'), 1):
         for m in re.finditer(r'\]\(([^)#]+?)(#[^)]*)?\)', line):
@@ -29,13 +30,13 @@ PY
 )
 
 # --- [冒頭宣言] 対象文書の見出し直後に宣言がない ---
-for f in docs/REQUIREMENTS.md docs/adr/0*.md docs/research/*.md docs/research/*/*.md docs/notes/*.md; do
+for f in docs/REQUIREMENTS.md docs/adr/0*.md docs/research/*.md docs/notes/*.md; do
   [ -f "$f" ] || continue
   head -6 "$f" | grep -q '^> ' || report "[冒頭宣言] $f"
 done
 
 # --- [目次] 100行超の research に Contents がない ---
-for f in docs/research/*.md docs/research/*/*.md; do
+for f in docs/research/*.md; do
   [ -f "$f" ] || continue
   n=$(wc -l < "$f")
   [ "$n" -le 100 ] && continue

@@ -129,5 +129,5 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 
 - [DuckDB Documentation](https://duckdb.org/docs/)
 - [DuckDB WASM](https://duckdb.org/docs/api/wasm/overview.html)
-- [Hub-and-Spoke Model 設計検討](../research/hub-and-spoke-model.md)
-- [発信コンテンツ分析](../research/content-analysis/07-cross-platform-synthesis.md)
+- [Hub-and-Spoke Model 設計検討](../research/archive/hub-and-spoke-model.md)
+- [発信コンテンツ分析](../research/archive/content-analysis/07-cross-platform-synthesis.md)

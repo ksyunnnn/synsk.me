@@ -23,7 +23,7 @@ ADR-0002 の記録から、判断に必要な事実は以下のとおり。
 
 ### 1. 公開データの露出
 
-[content-model-design.md](../research/content-model-design.md) は、訪問者に見せないデータを設計している。
+[content-model-design.md](../research/archive/content-model-design.md) は、訪問者に見せないデータを設計している。
 
 「UI に表示しない」という設計は「配信されない」ことを意味しない。DuckDB を WASM で動かす場合、データファイルはブラウザへダウンロードされて実行されるため、UI に出していないフィールドも閲覧可能になる。
 
@@ -105,4 +105,4 @@ DuckDB でビルド時に集計し、結果を静的ファイルとして配信�
 - [@duckdb/duckdb-wasm — npm](https://www.npmjs.com/package/@duckdb/duckdb-wasm)
 - [ADR-0002: Hub-and-Spoke データアーキテクチャ](./0002-hub-and-spoke-data-architecture.md)
 - [ADR-0003: コンテンツデータモデル設計](./0003-content-data-model.md)
-- [content-model-design.md](../research/content-model-design.md)
+- [content-model-design.md](../research/archive/content-model-design.md)

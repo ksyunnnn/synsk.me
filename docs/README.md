@@ -24,6 +24,7 @@
 | [adr/](./adr/) | なぜそう決めたか | Decision は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
 | [research/](./research/) | 調べたこと、決定を受けた設計の詳細 | 制約なし | — |
+| [research/archive/](./research/archive/) | ドキュメント規約より前に書かれた記録 | 制約なし | — |
 | [notes/](./notes/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
 | GitHub Milestone | どのリリースに含めるか | — | 要件の定義 |
@@ -34,7 +35,7 @@
 | [.claude/agents/](../.claude/agents/) | エージェントの役割・立場・手順 | 恒常 | 基準の内容 |
 | [.claude/skills/](../.claude/skills/) | skill の起動手順と結果の扱い | 恒常 | 観点と判定手順 |
 
-`research/` の文書は、書いた時点の記録として扱う。2026-08-25 より前に作られたものは書き換えない。規約から外れていても直さない。
+`research/archive/` は書き換えない。規約から外れていても直さない。
 
 ---
 
