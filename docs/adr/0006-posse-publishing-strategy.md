@@ -71,7 +71,7 @@ POSSE に加え、[Webmention](https://www.w3.org/TR/webmention/) と [Bridgy](h
 
 ### Risks
 
-- 同一コンテンツが synsk.me と転載先の両方に存在するため、Hub-and-Spoke の集約時に重複エントリが発生する。対処は Implementation Notes を参照
+- 同一コンテンツが synsk.me と転載先の両方に存在するため、Hub-and-Spoke の集約時に重複エントリが発生する。対処は Decision の詳細を参照
 
 ---
 

@@ -35,7 +35,9 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 
 `research/` は ADR から参照される。
 
-逆向きは張らない。ここから次が導かれる。
+逆向きは張らない。この向きは文書の中身に適用する。**ディレクトリの `README.md` は案内板なので、どこへでもリンクしてよい。**
+
+ここから次が導かれる。
 
 - REQUIREMENTS.md に Issue 番号を書かない。Issue は増え続けるため
 - adr/ に要件を書かない。ADR は変えないため、要件が変わると嘘になる
