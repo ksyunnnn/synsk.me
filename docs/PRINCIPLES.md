@@ -4,6 +4,16 @@
 
 ---
 
+## Contents
+
+- How to Use This Document
+- Core Principles
+- Design Principles
+- Anti-Principles
+- Methodology
+
+---
+
 ## How to Use This Document
 
 1. **新しい判断が必要なとき**: 原則に照らして検討する
@@ -164,12 +174,3 @@ Ray Dalio の「Pain + Reflection = Progress」に基づき、原則が生まれ
 - 原則の意図が伝わる
 - 将来の自分が文脈を理解できる
 - 原則を更新すべきタイミングがわかる
-
----
-
-## Version History
-
-| Date | Version | Changes |
-|------|---------|---------|
-| 2026-01-23 | 0.1.0 | Core Principles 策定（余白・実験・おもしろさ） |
-| 2026-01-27 | 0.2.0 | Design Principles 策定（余白・息づき・対話）、Anti-Principles 追加 |

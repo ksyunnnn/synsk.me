@@ -9,10 +9,9 @@
 - Reference 2: kbkbkb.co
 - 適用の方向性
 - 関連する表現・美学
-- 今後の検討
+- 検討項目
 - 選定候補パターン（2026-02-03）
 - プロトタイプファイル
-- Version History
 
 ---
 
@@ -126,7 +125,7 @@ Works/Projects セクションで「展示物」としてのカードを作る
 
 ---
 
-## 今後の検討
+## 検討項目
 
 - [x] ノイズテクスチャの CSS/SVG 実装方法を調査 → `feTurbulence` フィルター使用
 - [x] カードコンポーネントのプロトタイプ作成 → `texture-prototype.html`
@@ -195,12 +194,3 @@ background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.15)
 
 - **HTML**: [assets/texture-prototype.html](./assets/texture-prototype.html)
 - **参照画像**: [assets/texture-ref-nani-translate.png](./assets/texture-ref-nani-translate.png)
-
----
-
-## Version History
-
-| Date | Changes |
-|------|---------|
-| 2026-02-03 | 初版作成 - Nani Translate Card + kbkbkb.co からの着想 |
-| 2026-02-03 | プロトタイプ作成、候補パターン選定（I1, J1-J4, J5改善版）|

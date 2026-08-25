@@ -36,7 +36,7 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 ```
 
 - 各入れ物の役割と時制を `docs/README.md` に定義する
-- ADR は過去形で決定だけを記録し、現在形のルール・未決事項・他文書の転記を持たない
+- ADR は決定だけを記録し、これから守るべきルール・未決事項・他文書の転記を持たない
 - 状態は GitHub が持つ。Issue が作業を、Milestone がリリース単位のスコープを持つ
 - Milestone をフェーズで区切らない。フェーズ型は前段の完了を後段の条件にするため、複数を並行して追えなくなる
 - `docs/ROADMAP.md` を廃止する

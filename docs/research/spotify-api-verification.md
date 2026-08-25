@@ -95,13 +95,13 @@ interface SpotifyMetadata {
 
 ### 2026-02-03: 調査開始
 
-#### 重要: Spotify Developer API の現状
+#### 重要: Spotify Developer API の状況（2026-02-03 時点）
 
 **新規アプリ作成が一時停止中の可能性あり**
 
 - 2024年11月: 推薦系 API の大量廃止
 - 2025年4月: Extended Access の審査基準厳格化（95% が却下）
-- 現在: 新規アプリ作成時に「New integrations are currently on hold」と表示される報告あり
+- 2026-02-03 時点: 新規アプリ作成時に「New integrations are currently on hold」と表示される報告あり
 
 **影響**
 - Development Mode: 25ユーザーまで（個人利用には十分）
@@ -295,8 +295,3 @@ interface SpotifyMetadata {
 - [Updating the Criteria for Web API Extended Access](https://developer.spotify.com/blog/2025-04-15-updating-the-criteria-for-web-api-extended-access)
 - [Spotify cuts developer access | TechCrunch](https://techcrunch.com/2024/11/27/spotify-cuts-developer-access-to-several-of-its-recommendation-features/)
 
----
-
-*作成日: 2026-02-03*
-*更新日: 2026-02-03*
-*ステータス: 方針決定（oEmbed + 手動登録）、実装待ち*

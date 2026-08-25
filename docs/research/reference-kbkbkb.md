@@ -13,7 +13,6 @@
 - PRINCIPLES.md との対応
 - synsk.me への示唆
 - Technical Notes
-- Version History
 
 ---
 
@@ -231,12 +230,3 @@ lineHeight: {
 ### Font Loading
 
 FontPlus のスクリプトを使用してWebフォントを配信。
-
----
-
-## Version History
-
-| Date | Changes |
-|------|---------|
-| 2026-01-29 | 初版作成 |
-| 2026-01-29 | Type Scale 訂正: ステートメント本文は 20-24px（16px は誤り） |

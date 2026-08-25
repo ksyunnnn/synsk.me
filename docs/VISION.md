@@ -95,9 +95,3 @@ A: 要件が固まった状態での単なる「作業」としての開発。�
 このドキュメントは [Amazon Working Backwards](https://workingbackwards.com/) 手法に基づいています。
 
 > "If you can't clearly explain why your product matters to customers before it exists, you shouldn't build it."
-
-### Version History
-
-| Date       | Version | Changes       |
-| ---------- | ------- | ------------- |
-| 2026-01-23 | 0.1.0   | Initial draft |

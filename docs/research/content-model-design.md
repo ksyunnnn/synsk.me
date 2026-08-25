@@ -15,7 +15,7 @@
 - 経歴・実績・Activity の関係（決定済み）
 - 決定済み事項
 - 未決定事項
-- 次回の継続ポイント
+- 継続ポイント
 - 参考
 
 ---
@@ -303,7 +303,7 @@ Activity（成果物）
 
 | エンティティ | 役割 | 例 |
 |-------------|------|-----|
-| **Career** | 「どこで働いたか」 | 独立/フリーランス (2023/10〜現在) |
+| **Career** | 「どこで働いたか」 | 独立/フリーランス (2023/10〜) |
 | **Project** | 「何を作ったか」 | 地域空き家推定システム |
 | **Activity** | 「成果物/証拠」 | GitHub リポジトリ、Zenn 記事 |
 
@@ -317,7 +317,7 @@ interface Career {
   employmentType: 'employee' | 'freelance' | 'intern';
   role: string;
   startDate: Date;
-  endDate?: Date;  // null = 現在
+  endDate?: Date;  // null = 継続中
   description?: string;
   skills?: string[];
   url?: string;
@@ -406,7 +406,7 @@ CREATE TABLE activity (
 
 ### 関連データ
 
-- [resume-raw.md](../../raw_data/resume-raw.md) - 職務経歴データ（非公開、raw_data/）
+- 職務経歴データ: `raw_data/resume-raw.md`（git 追跡外）
 
 ---
 
@@ -506,8 +506,9 @@ TypeScriptのユニオン型からプロパティを除外する方法
 
 ### 公開設定
 
-- 雇用関係のクライアント: 会社名を公開
-- 業務委託のクライアント: 業界名でぼかす（`client` vs `clientPublic`）
+**決定**: 公開 / 限定公開 / 非公開の3段階で扱う。公開できない値と公開できる値は `client` / `clientPublic` の形で対にする。
+
+→ 詳細は [ADR-0008](../adr/0008-content-visibility.md) を参照
 
 ### 手動タグ（tags）
 
@@ -563,7 +564,7 @@ Activity を参照する形でスキル・強みを表現する構造。
 
 ---
 
-## 次回の継続ポイント
+## 継続ポイント
 
 1. ~~経歴・実績（Career / Project）の詳細設計~~ ✅ 決定済み
 2. DuckDB スキーマの実装（テーブル作成、初期データ投入）
@@ -586,8 +587,3 @@ Activity を参照する形でスキル・強みを表現する構造。
 - **「余白 over 完成形」**: `misc` カテゴリで想定外のコンテンツに対応
 - **「余白 over 密度」**: 4カテゴリでシンプルに保つ
 
----
-
-*作成日: 2026-01-31*
-*更新日: 2026-02-03*
-*ステータス: データモデル決定済み、Timeline デザイン決定済み、Article Entry デザイン決定済み、SpotifyMetadata oEmbed対応、Playlist デザイン検討中*

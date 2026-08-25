@@ -11,7 +11,7 @@
 
 ## Context
 
-[ADR-0002](./0002-hub-and-spoke-data-architecture.md) は「Hub-and-Spoke モデルの採用」と「データストアに DuckDB を使用」という2つの決定を1本に含んでいた。これは [docs/adr/README.md](./README.md) が定める「ADR の単位は決定であって、要件ではない」に反しており、Hub-and-Spoke だけを確定させることができない状態だった。本 ADR は後者を切り出して独立させる。
+[ADR-0002](./0002-hub-and-spoke-data-architecture.md) は「Hub-and-Spoke モデルの採用」と「データストアに DuckDB を使用」という2つの決定を1本に含んでいた。これは [docs/adr/README.md](./README.md) が定める ADR の単位に反しており、Hub-and-Spoke だけを確定させることができない状態だった。本 ADR は後者を切り出して独立させる。
 
 ADR-0002 の記録から、判断に必要な事実は以下のとおり。
 

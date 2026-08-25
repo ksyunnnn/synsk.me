@@ -4,6 +4,17 @@
 
 ---
 
+## Contents
+
+- 入れ物と役割
+- 参照の向き
+- 判断に迷ったら
+- 階層
+- Language Policy
+- References
+
+---
+
 ## 入れ物と役割
 
 | 入れ物 | 語ること | 時制 | 書いてはいけないもの |
@@ -20,6 +31,8 @@
 | [CLAUDE.md](../CLAUDE.md) | プロジェクト固有の作業ルール | 恒常 | コードから導出できること |
 | [.claude/rules/writing.md](../.claude/rules/writing.md) | 全出力に適用する文章ルール | 恒常 | 特定の文書だけに効くもの |
 | [.claude/rules/docs-patterns.md](../.claude/rules/docs-patterns.md) | 文書の書式と例 | 恒常 | 役割と時制の定義 |
+| [.claude/agents/](../.claude/agents/) | エージェントの役割・立場・手順 | 恒常 | 基準の内容 |
+| [.claude/skills/](../.claude/skills/) | skill の起動手順と結果の扱い | 恒常 | 観点と判定手順 |
 
 ---
 
@@ -35,7 +48,7 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 
 `research/` は ADR から参照される。
 
-逆向きは張らない。この向きは文書の中身に適用する。**ディレクトリの `README.md` は案内板なので、どこへでもリンクしてよい。**
+逆向きは張らない。リンクと ID 参照の両方に適用する。例外は2つ。**ディレクトリの `README.md` は案内板なので、どこへでもリンクしてよい。** `research/` は、受けた決定を ADR の ID またはリンクで示してよい。
 
 ここから次が導かれる。
 

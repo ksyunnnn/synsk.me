@@ -13,7 +13,7 @@
 
 synsk.me のリデザインにおいて、Timeline 表示で Platform を視覚的に識別する必要がある。また、UI 全体で使用するアイコンライブラリを整理する必要がある。
 
-現状、3つのアイコンライブラリが混在している:
+3つのアイコンライブラリが混在している:
 - **Phosphor Icons**: メインで使用中（`src/icon.tsx`）
 - **Lucide React**: shadcn/ui のデフォルトとして設定されているが、ほぼ未使用
 - **FontAwesome**: Script タグで読み込み、既存ページで使用

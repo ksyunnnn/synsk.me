@@ -107,7 +107,7 @@
 | 記事数 | 77 | [Fact] |
 | Contributions | 835 | [Fact] |
 | トップタグ | React (19%), HTML (14%), JavaScript (14%) | [Fact] |
-| 活動期間 | 2016年〜現在 | [Fact] |
+| 活動期間 | 2016年〜 | [Fact] |
 
 **[Observation]** Reactが最多タグ（19%）で、フロントエンド専門性が明確。HTML/CSSの基礎記事も多く、初学者向けコンテンツにも注力。
 
@@ -118,7 +118,7 @@
 | 記事数 | 25 | [Fact] |
 | いいね数 | 488 | [Fact] |
 | フォロワー | 28 | [Fact] |
-| 活動期間 | 2022年7月〜現在 | [Fact] |
+| 活動期間 | 2022年7月〜 | [Fact] |
 | 主要トピック | TypeScript, Next.js, Supabase | [Observation] |
 
 **記事一覧（RSSフィードより20件）:**
@@ -232,7 +232,7 @@
 **About（自己紹介）:**
 > "I am an experienced full-stack web developer from Japan who has been mainly focusing on UI, Design System, TypeScript, Next.js, JavaScript and cloud-based development tools (like Supabase, Firebase) to develop the products. I am web developer based in Tokyo since 2016. I currently live in the southern suburbs of Sydney."
 
-**[Fact]** 2016年から東京でWeb開発者、現在はシドニー南部在住。
+**[Fact]** 2016年から東京でWeb開発者、2026-01 時点でシドニー南部在住。
 
 **Experience:**
 - Full-Stack Web Developer (Freelance) - Mar 2023〜Present (2 yrs 11 mos), Remote
@@ -405,7 +405,7 @@
 | 2017年7月 | デブサミ登壇 | Medium, Speaker Deck | [Fact] |
 | 2019年8月 | Dribbbleアカウント作成 | Dribbble | [Fact] |
 | 2023年3月〜 | フルスタック開発者（フリーランス、リモート） | LinkedIn | [Fact] |
-| 現在 | シドニー在住 | LinkedIn, Wantedly | [Fact] |
+| 2026-01 時点 | シドニー在住 | LinkedIn, Wantedly | [Fact] |
 
 ### 2.4 アウトプット量の比較
 
@@ -440,7 +440,7 @@
 | **確立期** | 2019-2020 | 東京（三軒茶屋） | フリーランスFE | Vue/React、実務経験蓄積 |
 | **専門化期** | 2021-2022 | 東京 | フリーランスFE、リード | TypeScript過激派、沖縄ワーケーション |
 | **越境期** | 2023-2024 | シドニー | フリーランスFE（リモート） | オーストラリアワーホリ、海外挑戦 |
-| **統合期** | 2024-現在 | 東京⇔シドニー | フリーランスFE・リード | 成熟、プロダクト実装のファシリテーター |
+| **統合期** | 2024 以降 | 東京⇔シドニー | フリーランスFE・リード | 成熟、プロダクト実装のファシリテーター |
 
 ### 3.2 詳細タイムライン（全プラットフォーム統合）
 
@@ -570,7 +570,7 @@
 
 **[Inference]** 「おもしろさ over 安全圏」の原則を体現。コンフォートゾーンを出続ける姿勢。
 
-#### 2024-現在: 統合期「成熟」
+#### 2024 以降: 統合期「成熟」
 
 **[Observation] この時期の特徴:**
 - 「おっさんが落ち着いて見えるのは元気がないから」（Twitter）→ 成熟した自己認識
@@ -591,7 +591,7 @@
     ↓
 2021-2022: TypeScript, GraphQL, Apollo Client, Figma, Chakra UI（専門性深化）
     ↓
-2023-現在: Next.js, TypeScript, Supabase, Prisma, TailwindCSS, Electron（フルスタック化）
+2023 以降: Next.js, TypeScript, Supabase, Prisma, TailwindCSS, Electron（フルスタック化）
 ```
 
 **[Inference]** バックエンド学習 → モバイル経験 → フロントエンド専門化 → TypeScript軸確立 → フルスタック回帰という螺旋的成長。
@@ -611,7 +611,7 @@
     ↓
 2023/12-2024/9: オーストラリア・シドニーでワーホリ（約9ヶ月）
     ↓
-2024-現在: 東京拠点、柔軟なスタイル継続
+2024 以降: 東京拠点、柔軟なスタイル継続
 ```
 
 **[Inference]** 会社員 → フリーランス → 海外リモート体験 → 国内ワーケーション → 海外長期滞在 → 拠点自由化。段階的に「場所に縛られない働き方」を実践。
@@ -653,7 +653,7 @@
 - 2017年: MoquMoquCOM 23回（爆発的活動）
 - 2018-2020年: 個人開発・実務に注力（発信減少）
 - 2021-2022年: リード役割、チーム育成へシフト
-- 2023-現在: 海外でのコミュニティ参加
+- 2023 以降: 海外でのコミュニティ参加
 
 コミュニティ活動は「主催」から「参加・育成」へ形を変えながら継続。
 
@@ -672,9 +672,9 @@
 ```
 2016-2018: Medium（ポエム・コミュニティ）
     ↓
-2016-現在: Qiita（技術記事、77本）
+2016 以降: Qiita（技術記事、77本）
     ↓
-2020-現在: Zenn（より新しい技術、25本）
+2020 以降: Zenn（より新しい技術、25本）
     ↓
 継続: Codesandbox（コード共有、150本）
 ```
@@ -714,7 +714,7 @@
 | Design System知識 | Atomic Workflow発表、Product Hunt関心 | [Observation] |
 | 言語化能力 | 100+記事（Qiita+Zenn+Medium） | [Fact] |
 | コミュニティ構築 | MoquMoquCOM 23回開催、connpass 86参加 | [Fact] |
-| 国際経験 | 現在オーストラリア在住、英語プロフィール | [Fact] |
+| 国際経験 | 2026-01 時点でオーストラリア在住、英語プロフィール | [Fact] |
 
 ### 3.3 興味・関心領域
 
@@ -838,5 +838,5 @@
 ---
 
 *分析日: 2026年1月28日*
-*対象期間: 2014年〜現在*
+*対象期間: 2014年〜2026-01*
 *分析者: Claude Code*
