@@ -85,4 +85,4 @@
 ## References
 
 - [ADR-0003: Content Data Model](./0003-content-data-model.md)
-- [content-model-design.md](../research/archive/content-model-design.md)
+- [content-model-design.md](../archive/content-model-design.md)

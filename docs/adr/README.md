@@ -16,7 +16,6 @@
 |------|---------|
 | 要件（満たすべきこと） | [../REQUIREMENTS.md](../REQUIREMENTS.md) |
 | 未決の疑問 | GitHub Issue（`question` ラベル） |
-| 調査の記録 | [../research/](../research/) |
 | 作業 | GitHub Issue |
 | 文書の書式 | [.claude/rules/](../../.claude/rules/) |
 

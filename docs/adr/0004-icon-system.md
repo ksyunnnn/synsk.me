@@ -100,4 +100,4 @@ Platform ロゴを使わず、ActivityType（event, sandbox 等）でアイコ�
 
 - [Simple Icons](https://simpleicons.org/)
 - [Phosphor Icons](https://phosphoricons.com/)
-- [content-model-design.md](../research/archive/content-model-design.md) - Platform アイコン一覧
+- [content-model-design.md](../archive/content-model-design.md) - Platform アイコン一覧

@@ -22,8 +22,7 @@
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
 | [adr/](./adr/) | なぜそう決めたか | Decision は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
-| [research/](./research/) | 調べたこと、決定を受けた設計の詳細 | 制約なし | — |
-| [research/archive/](./research/archive/) | ドキュメント規約より前に書かれた記録 | 制約なし | — |
+| [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
 | GitHub Milestone | どのリリースに含めるか | — | 要件の定義 |
@@ -34,7 +33,7 @@
 | [.claude/agents/](../.claude/agents/) | エージェントの役割・立場・手順 | 恒常 | 基準の内容 |
 | [.claude/skills/](../.claude/skills/) | skill の起動手順と結果の扱い | 恒常 | 観点と判定手順 |
 
-`research/archive/` は書き換えない。規約から外れていても直さない。
+`archive/` は書き換えない。規約から外れていても直さない。調べたことは ADR の Context が持つ。
 
 ---
 
@@ -44,13 +43,9 @@
 
 ```
 Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
-                            ↓
-                        research/
 ```
 
-`research/` は ADR から参照される。
-
-逆向きは張らない。リンクと ID 参照の両方に適用する。例外は2つ。**ディレクトリの `README.md` は案内板なので、どこへでもリンクしてよい。** `research/` は、受けた決定を ADR の ID またはリンクで示してよい。
+逆向きは張らない。リンクと ID 参照の両方に適用する。例外は1つ。**ディレクトリの `README.md` は案内板なので、どこへでもリンクしてよい。**
 
 ここから次が導かれる。
 
@@ -72,9 +67,6 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 
 **決定か、要件か。**
 代替案があり、それを退けた決定のうち、覆すコストが高いものが ADR。満たすべき性質を述べているだけなら要件。
-
-**research か、scraps か。**
-他から参照される可能性があるなら research。それ以外は scraps。厳密に分けなくてよい。git で復元できる。
 
 **要件か、疑問か。**
 現在形で「〜できる」と書けるなら要件。要るかどうか分からないなら疑問（`question` ラベルの Issue）。
