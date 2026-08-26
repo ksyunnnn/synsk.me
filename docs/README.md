@@ -13,7 +13,7 @@
 | [adr/](./adr/) | なぜそう決めたか | Decision は現在形、他は過去形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
 | [research/](./research/) | 調べたこと、決定を受けた設計の詳細 | 制約なし | — |
-| [notes/](./notes/) | それ以外 | 制約なし | — |
+| [scraps/](./scraps/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
 | GitHub Milestone | どのリリースに含めるか | — | 要件の定義 |
 | [../README.md](../README.md) | このリポジトリが何で、どう動かすか | 恒常 | 設計の判断基準、進捗 |
@@ -44,7 +44,7 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 - 各文書の冒頭宣言に他文書へのリンクを含めない
 - 手で維持する索引を作らない
 
-`notes/` はこの図に入らない。
+`scraps/` はこの図に入らない。
 
 ---
 
@@ -56,8 +56,8 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 **決定か、要件か。**
 代替案があり、それを退けたなら決定（ADR）。満たすべき性質を述べているだけなら要件。
 
-**research か、notes か。**
-他から参照される可能性があるなら research。それ以外は notes。厳密に分けなくてよい。git で復元できる。
+**research か、scraps か。**
+他から参照される可能性があるなら research。それ以外は scraps。厳密に分けなくてよい。git で復元できる。
 
 **要件か、疑問か。**
 現在形で「〜できる」と書けるなら要件。要るかどうか分からないなら疑問（`question` ラベルの Issue）。

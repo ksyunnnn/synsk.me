@@ -9,16 +9,16 @@ paths:
 
 ## 冒頭の宣言
 
-`adr/` `REQUIREMENTS.md` `research/` `notes/` の各文書は、**見出しの直後**に引用ブロックで宣言を置く。他文書へのリンクを含めない（参照の向きに違反するため）。
+`adr/` `REQUIREMENTS.md` `research/` `scraps/` の各文書は、**見出しの直後**に引用ブロックで宣言を置く。他文書へのリンクを含めない（参照の向きに違反するため）。
 
 ```
 adr/:             > この文書は決定を記録する。有効な要件は持たない。
 REQUIREMENTS.md:  > この文書は満たすべきことだけを書く。進捗と実装方法は書かない。
 research/:        > この文書は決定の正本ではない。決定は docs/adr/ にある。
-notes/:           > 書き捨て。消えても困らないものだけを置く。
+scraps/:          > 書き捨て。消えても困らないものだけを置く。
 ```
 
-`VISION.md` `PRINCIPLES.md` `template.md` と各ディレクトリの `README.md` は宣言の対象外。ただし `notes/README.md` は、その場所の性質を読む人に伝える必要があるため宣言を持つ。
+`VISION.md` `PRINCIPLES.md` `template.md` と各ディレクトリの `README.md` は宣言の対象外。ただし `scraps/README.md` は、その場所の性質を読む人に伝える必要があるため宣言を持つ。
 
 ## 要件
 

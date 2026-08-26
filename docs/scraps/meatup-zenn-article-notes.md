@@ -142,7 +142,7 @@ published: true
 ## 7. 出典（文体分析の一次情報）
 - `synsk.me/docs/research/content-analysis/01-zenn-articles.md`（関西弁・テーマ分布）
 - `synsk.me/docs/research/content-analysis/02-qiita-articles.md`（短尺・コード中心）
-- `synsk.me/docs/notes/pencil-article-draft.md`（実テンプレ骨格）
+- `synsk.me/docs/scraps/pencil-article-draft.md`（実テンプレ骨格）
 - `synsk.me/docs/research/public-presence-insight.md` / `content-classification-report.md`（人物像・プロダクト報告型の前例）
 - `synsk.me/docs/research/tweets-insight/07-summary.md`（自虐・等身大の声）
 
