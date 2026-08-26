@@ -9,7 +9,6 @@
 - 入れ物と役割
 - 参照の向き
 - 判断に迷ったら
-- 階層
 - Language Policy
 - References
 
@@ -62,6 +61,8 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 
 `notes/` はこの図に入らない。
 
+判断の根拠は [adr/0011-record-separation.md](./adr/0011-record-separation.md) にある。
+
 ---
 
 ## 判断に迷ったら
@@ -80,24 +81,6 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 
 **規則をどこに置くか。**
 全出力に効かせたいなら `.claude/rules/writing.md`。文書を書くときだけでよいなら `.claude/rules/docs-patterns.md`（`paths` 指定により、`docs/**` を読んだときだけロードされ、`/compact` 後は再注入されない）。それ以外のプロジェクト固有の作業ルールは `CLAUDE.md`。
-
----
-
-## 階層
-
-```
-VISION.md          なぜ作るか
-  ↓
-PRINCIPLES.md      迷ったとき何を優先するか
-  ↓
-REQUIREMENTS.md    何を満たすべきか
-  ↓
-adr/               なぜそう決めたか  ──→ research/  調べたこと
-  ↓
-GitHub             何をやるか、どのリリースに含めるか
-```
-
-判断の根拠は [adr/0011-record-separation.md](./adr/0011-record-separation.md) にある。
 
 ---
 
