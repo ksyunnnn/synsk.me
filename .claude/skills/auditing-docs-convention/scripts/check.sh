@@ -30,7 +30,7 @@ PY
 )
 
 # --- [冒頭宣言] 対象文書の見出し直後に宣言がない ---
-for f in docs/REQUIREMENTS.md docs/adr/0*.md docs/research/*.md docs/notes/*.md; do
+for f in docs/REQUIREMENTS.md docs/adr/0*.md docs/research/*.md docs/scraps/*.md; do
   [ -f "$f" ] || continue
   head -6 "$f" | grep -q '^> ' || report "[冒頭宣言] $f"
 done
