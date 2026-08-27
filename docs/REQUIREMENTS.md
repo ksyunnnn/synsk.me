@@ -40,6 +40,24 @@
 ## FR-12: career と project から職務経歴書を出力できる
 根拠: [ADR-0003](./adr/0003-content-data-model.md)
 
+## FR-13: 公開されたときの見た目を、公開前に確認できる
+根拠: [ADR-0014](./adr/0014-authoring-and-datastore.md)
+
+## FR-14: 保存操作をせずに編集内容が保持される
+根拠: [ADR-0014](./adr/0014-authoring-and-datastore.md)
+
+## FR-15: internal コンテンツに URL を入力すると、参照先の情報を伴う表示になる
+根拠: [ADR-0014](./adr/0014-authoring-and-datastore.md)
+
+## FR-16: スマートフォンから internal コンテンツを作成・編集・公開できる
+根拠: [ADR-0014](./adr/0014-authoring-and-datastore.md)
+
+## FR-17: internal コンテンツの公開と修正が、公開操作の後に別の工程を挟まずに反映される
+根拠: [ADR-0014](./adr/0014-authoring-and-datastore.md)
+
+## FR-18: 職務経歴書を複数保持し、それぞれに公開範囲を設定できる
+根拠: [ADR-0015](./adr/0015-multiple-resumes.md)
+
 ## NFR-01: 永続化したデータ全体を復元できる
 根拠: なし
 
