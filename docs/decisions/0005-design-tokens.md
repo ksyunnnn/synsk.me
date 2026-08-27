@@ -3,7 +3,7 @@
 > この文書は決定を記録する。有効な要件は持たない。
 
 - **Status**: accepted
-- **Date**: 2026-01-27（初版）、2026-02-03（ADR化）
+- **Date**: 2026-01-27
 - **Deciders**: synsk
 - **Related Principles**: [余白 over 密度](../PRINCIPLES.md)、[息づき over 装飾](../PRINCIPLES.md)
 

@@ -11,7 +11,7 @@
 
 ## Context
 
-synsk.me の発信は、これまで外部プラットフォーム上でのみ行われてきた。
+synsk.me の発信は、2026-08-20 まで外部プラットフォーム上でのみ行われてきた。
 
 - Zenn: 25記事（2020-12〜2025-09）。技術記事のみ
 - Medium: 23記事（2016-10〜2021-01）。日記・キャリア・コミュニティ・思想。更新停止
@@ -19,7 +19,7 @@ synsk.me の発信は、これまで外部プラットフォーム上でのみ�
 
 この構成では、コンテンツの所有権と永続性が各プラットフォームに依存する。実際に外部プラットフォームが機能を停止する事例は発生しており、たとえば Webmention 中継サービス Bridgy は X（旧 Twitter）・Facebook・Medium のサポートをいずれも終了している（https://brid.gy/about の FAQ 項目「What happened to Twitter? / Facebook? / Medium?」で確認、2026-08-20 時点）。
 
-[ADR-0002](./0002-hub-and-spoke-data-architecture.md) では、外部プラットフォームから synsk.me へコンテンツを集約する Hub-and-Spoke（IndieWeb の分類では PESOS 相当）を採用した。しかし逆方向、つまり synsk.me を起点に発信する場合の指針は決めていなかった。[content-model-design.md](../research/content-model-design.md) の `platform: 'internal'`（サイト固有コンテンツ）は型としては定義済みだが、外部プラットフォームとの関係が未定義だった。
+[ADR-0002](./0002-hub-and-spoke-data-architecture.md) では、外部プラットフォームから synsk.me へコンテンツを集約する Hub-and-Spoke（IndieWeb の分類では PESOS 相当）を採用した。しかし逆方向、つまり synsk.me を起点に発信する場合の指針は決めていなかった。[content-model-design.md](../archive/content-model-design.md) の `platform: 'internal'`（サイト固有コンテンツ）は型としては定義済みだが、外部プラットフォームとの関係が未定義だった。
 
 ---
 

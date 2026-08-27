@@ -11,13 +11,13 @@
 
 ## Context
 
-[ADR-0002](./0002-hub-and-spoke-data-architecture.md) は Hub-and-Spoke モデルを採用した。取得方式の詳細は [hub-and-spoke-model.md](../research/hub-and-spoke-model.md) にある。
+[ADR-0002](./0002-hub-and-spoke-data-architecture.md) は Hub-and-Spoke モデルを採用した。取得方式の詳細は [hub-and-spoke-model.md](../archive/hub-and-spoke-model.md) にある。
 
 ただし、そこに記載された統合アーキテクチャには保管の層が存在しない。fetcher が外部 API と RSS から取得し、aggregator が集約して、そのままページへ渡す。ISR でキャッシュし、Webhook で再検証する構成である。
 
 この構成では、取得したデータに人が後から情報を付けられない。[ADR-0008](./0008-content-visibility.md) が定めた「削除せずに非公開へ戻す」を実現する場所がない。
 
-判断の時点で、X（Twitter）の API は有料化されており、自動取得の対象から外れていた。[hub-and-spoke-model.md](../research/hub-and-spoke-model.md) は埋め込み（手動選択）で扱うと記録している。
+判断の時点で、X（Twitter）の API は有料化されており、自動取得の対象から外れていた。[hub-and-spoke-model.md](../archive/hub-and-spoke-model.md) は埋め込み（手動選択）で扱うと記録している。
 
 ---
 
@@ -72,4 +72,4 @@
 
 - [ADR-0002: Hub-and-Spoke Data Architecture](./0002-hub-and-spoke-data-architecture.md)
 - [ADR-0008: コンテンツの可視性を3段階で扱う](./0008-content-visibility.md)
-- [hub-and-spoke-model.md](../research/hub-and-spoke-model.md)
+- [hub-and-spoke-model.md](../archive/hub-and-spoke-model.md)

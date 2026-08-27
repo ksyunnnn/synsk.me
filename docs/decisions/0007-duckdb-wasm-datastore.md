@@ -2,7 +2,7 @@
 
 > この文書は決定を記録する。有効な要件は持たない。
 
-- **Status**: superseded by [ADR-0014](./0014-authoring-and-datastore.md)
+- **Status**: superseded by ADR-0014
 - **Date**: 2026-08-20
 - **Deciders**: synsk
 - **Related Principles**: [実験 over 完璧な計画](../PRINCIPLES.md#2-実験), [おもしろさ over 安全圏](../PRINCIPLES.md#3-おもしろさ)
@@ -11,7 +11,7 @@
 
 ## Context
 
-[ADR-0002](./0002-hub-and-spoke-data-architecture.md) は「Hub-and-Spoke モデルの採用」と「データストアに DuckDB を使用」という2つの決定を1本に含んでいた。これは [docs/adr/README.md](./README.md) が定める「ADR の単位は決定であって、要件ではない」に反しており、Hub-and-Spoke だけを確定させることができない状態だった。本 ADR は後者を切り出して独立させる。
+[ADR-0002](./0002-hub-and-spoke-data-architecture.md) は「Hub-and-Spoke モデルの採用」と「データストアに DuckDB を使用」という2つの決定を1本に含んでいた。これは [docs/adr/README.md](./README.md) が定める ADR の単位に反しており、Hub-and-Spoke だけを確定させることができない状態だった。本 ADR は後者を切り出して独立させる。
 
 ADR-0002 の記録から、判断に必要な事実は以下のとおり。
 
@@ -23,7 +23,7 @@ ADR-0002 の記録から、判断に必要な事実は以下のとおり。
 
 ### 1. 公開データの露出
 
-[content-model-design.md](../research/content-model-design.md) は、訪問者に見せないデータを設計している。
+[content-model-design.md](../archive/content-model-design.md) は、訪問者に見せないデータを設計している。
 
 「UI に表示しない」という設計は「配信されない」ことを意味しない。DuckDB を WASM で動かす場合、データファイルはブラウザへダウンロードされて実行されるため、UI に出していないフィールドも閲覧可能になる。
 
@@ -105,4 +105,4 @@ DuckDB でビルド時に集計し、結果を静的ファイルとして配信�
 - [@duckdb/duckdb-wasm — npm](https://www.npmjs.com/package/@duckdb/duckdb-wasm)
 - [ADR-0002: Hub-and-Spoke データアーキテクチャ](./0002-hub-and-spoke-data-architecture.md)
 - [ADR-0003: コンテンツデータモデル設計](./0003-content-data-model.md)
-- [content-model-design.md](../research/content-model-design.md)
+- [content-model-design.md](../archive/content-model-design.md)

@@ -42,7 +42,7 @@ Activity（成果物）
 ### 公開設定
 
 > **分離の記録（2026-08-21）**: 本 ADR は当初「3テーブル構成の採用」と「公開設定」という
-> 2つの決定を含んでいたが、[docs/adr/README.md](./README.md) の「ADR の単位は決定であって、要件ではない」に
+> 2つの決定を含んでいたが、[docs/adr/README.md](./README.md) が定める ADR の単位に
 > 反していたため、可視性の決定を [ADR-0008](./0008-content-visibility.md) へ分離した。
 > 以下は分離前の記録である。
 
@@ -99,6 +99,6 @@ Project を Activity の一種として扱う（`type: 'project'`）。
 
 ## References
 
-- [Content Model 設計](../research/content-model-design.md) - 詳細なデータ構造定義
-- [Hub-and-Spoke モデル](../research/hub-and-spoke-model.md) - データ取得アーキテクチャ
+- [Content Model 設計](../archive/content-model-design.md) - 詳細なデータ構造定義
+- [Hub-and-Spoke モデル](../archive/hub-and-spoke-model.md) - データ取得アーキテクチャ
 - [ADR-0002: Hub-and-Spoke データアーキテクチャ](./0002-hub-and-spoke-data-architecture.md)

@@ -16,7 +16,7 @@
 > 雇用関係のクライアント: 会社名を公開
 > 業務委託のクライアント: 業界名でぼかす（`client` vs `clientPublic`）
 
-これは [docs/adr/README.md](./README.md) の「ADR の単位は決定であって、要件ではない」に反する。本 ADR は可視性の決定を切り出し、あわせて 2026-08-21 の検討で判明した論点を含めて決め直す。
+これは [docs/adr/README.md](./README.md) が定める ADR の単位に反する。本 ADR は可視性の決定を切り出し、あわせて 2026-08-21 の検討で判明した論点を含めて決め直す。
 
 検討で挙がった、公開しない状態を必要とする理由は3つ。
 
@@ -85,4 +85,4 @@
 ## References
 
 - [ADR-0003: Content Data Model](./0003-content-data-model.md)
-- [content-model-design.md](../research/content-model-design.md)
+- [content-model-design.md](../archive/content-model-design.md)

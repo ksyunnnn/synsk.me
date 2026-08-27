@@ -6,6 +6,19 @@
 
 ---
 
+## Contents
+
+- 記事の方向性
+- 1. 背景・動機
+- 2. 検証内容
+- 3. 良かった点
+- 4. 課題・注意点
+- 5. 結論
+- 知見メモ（作業中に追記）
+- 参考リンク
+
+---
+
 ## 記事の方向性
 
 **仮タイトル**: 「Claude Code + Pencil MCP でデザインシステムを構築する」
@@ -99,4 +112,4 @@
 - [Pencil 公式サイト](https://www.pencil.dev/)
 - [MCP (Model Context Protocol)](https://modelcontextprotocol.io/)
 - pencil-mcp-guide.md（2026-08-21 に削除）
-- [ADR-0005: Design Tokens](../adr/0005-design-tokens.md) - デザイントークンの決定
+- [ADR-0005: Design Tokens](../decisions/0005-design-tokens.md) - デザイントークンの決定

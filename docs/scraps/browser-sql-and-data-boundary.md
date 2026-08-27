@@ -6,6 +6,18 @@
 
 ---
 
+## Contents
+
+- Q. 非公開データはどう守るのが一般的か
+- Q. 「迂回」とは何か
+- Q. 迂回できると危ないのか
+- Q. DuckDB WASM は何と組み合わせるのか
+- Q. SQLite の WASM でも同じことができるか
+- Q. 抽出物を置くと何が失われるか
+- 結論
+
+---
+
 ## Q. 非公開データはどう守るのが一般的か
 
 **出力する層で、出す項目を明示する。** フレームワークを問わず同じ結論だった。
@@ -21,7 +33,7 @@ DRF の記述。
 
 > It is strongly recommended that you explicitly set all fields that should be serialized using the `fields` attribute. This will make it less likely to result in unintentionally exposing data when your models change.
 
-これは [ADR-0008](../adr/0008-content-visibility.md) が Risks に書いた「許可リスト方式（これだけを出す）であれば、新しいカラムは既定で公開されない」と同じことを言っている。
+これは [ADR-0008](../decisions/0008-content-visibility.md) が Risks に書いた「許可リスト方式（これだけを出す）であれば、新しいカラムは既定で公開されない」と同じことを言っている。
 
 ---
 
@@ -100,7 +112,7 @@ Turso の embedded replica はブラウザでは動かない。ファイルシ�
 | 削除の即時性 | [FR-11](../REQUIREMENTS.md) — DB から消しても抽出物に残る |
 | 非公開への切り替えの即時性 | [FR-06](../REQUIREMENTS.md) — 同上 |
 
-最後の2つは [ADR-0008](../adr/0008-content-visibility.md) の動機（センシティブな情報が見つかったとき、削除以外の方法が要る）に直接ぶつかる。
+最後の2つは [ADR-0008](../decisions/0008-content-visibility.md) の動機（センシティブな情報が見つかったとき、削除以外の方法が要る）に直接ぶつかる。
 
 抽出物は URL が分かれば誰でも取得できる。中身は公開データだけなので漏洩ではないが、サイトの全データが1ファイルで持ち出せる状態にはなる。
 
@@ -110,4 +122,4 @@ Turso の embedded replica はブラウザでは動かない。ファイルシ�
 
 2026-08-26 時点で横断的な探索は機能のスコープに入っていないため、ブラウザで SQL を動かす案は採らない。
 
-採るとしたら、探索機能を要件に入れてからになる。そのとき決めるのは「Parquet か SQLite か」ではなく、**抽出物をいつ作り直すか**。非公開への切り替えと削除に追随できないと [ADR-0008](../adr/0008-content-visibility.md) と衝突する。
+採るとしたら、探索機能を要件に入れてからになる。そのとき決めるのは「Parquet か SQLite か」ではなく、**抽出物をいつ作り直すか**。非公開への切り替えと削除に追随できないと [ADR-0008](../decisions/0008-content-visibility.md) と衝突する。

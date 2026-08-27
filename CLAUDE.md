@@ -11,12 +11,12 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 
 ### ブランチ戦略
 - 作業は `feature/*` ブランチで行い、main へ PR を作成する
-- Preview 環境で確認してからマージする
+- 実装の変更は Preview 環境で確認してからマージする。`docs/`・`.claude/`・`CLAUDE.md` だけの変更は Preview 確認を要さない
 - デザインと実装は行き来しながら進める（工程を順番に消化する形は採らない）
 
-### Git追跡除外ディレクトリ
-- `raw_data/` - 分析用の生データ（スクリーンショット、エクスポートファイル等）。センシティブな情報を含む可能性があるため追跡しない
-- `docs/.tmp/` - 一時的な作業ファイル
+### ワークスペース
+- `desk-NN` は git worktree の常設ワークスペース。`repository/desk-01` のように main と並べて置く
+- `desk-NN` ブランチにコミットを積まない。main を取り込むだけの受け皿とし、作業は `desk-NN` の中で `feature/*` を checkout して行う
 
 ### 分析・調査
 - 一次ソース（元データ）での検証を重視する
@@ -37,7 +37,15 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 
 ### ドキュメント規約の監査
 
-ドキュメント・ADR・要件を追加または変更したあと、コミットする前、セッションを終える前に `auditing-docs-convention` skill を使う（`.claude/skills/auditing-docs-convention/SKILL.md`）。
+2段構えで行う。
+
+**機械的検査** — 文書を変更したら `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する。出力された行はすべて違反である。
+
+**監査人** — `auditing-docs-convention` skill を使う。実行コストが高いため、次のときに限る。
+
+- 規約そのもの（`docs/README.md`、`.claude/rules/`、`docs/decisions/README.md`）を変更したとき
+- 入れ物を追加・廃止・改名したとき
+- PR を作る前
 
 監査人が逸脱を指摘する。修正は許可を得てから行う。
 
