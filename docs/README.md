@@ -20,7 +20,7 @@
 |--------|---------|------|---------------------|
 | [VISION.md](./VISION.md) | なぜ作るか | 未来完了 | — |
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
-| [decisions/](./decisions/) | なぜそう決めたか | Decision は現在形 | これから守るべきルール、未決事項、他文書の転記 |
+| [decisions/](./decisions/) | なぜそう決めたか | Decision Outcome は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
 | [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |

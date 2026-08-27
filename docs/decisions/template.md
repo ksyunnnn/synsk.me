@@ -3,8 +3,6 @@
 status: "{proposed | rejected | accepted | deprecated | … | superseded by ADR-0123}"
 date: {YYYY-MM-DD when the decision was last updated}
 decision-makers: synsk
-consulted: {list everyone whose opinions are sought (typically subject-matter experts); and with whom there is a two-way communication}
-informed: {list everyone who is kept up-to-date on progress; and with whom there is a one-way communication}
 ---
 
 # {short title, representative of solved problem and found solution}
@@ -39,11 +37,6 @@ Chosen option: "{title of option 1}", because {justification. e.g., only option,
 * … <!-- numbers of consequences can vary -->
 
 <!-- This is an optional element. Feel free to remove. -->
-### Confirmation
-
-{Describe how the implementation / compliance of the ADR can/will be confirmed. Is there any automated or manual fitness function? If so, list it and explain how it is applied. Is the chosen design and its implementation in line with the decision? E.g., a design/code review or a test with a library such as ArchUnit can help validate this. Note that although we classify this element as optional, it is included in many ADRs.}
-
-<!-- This is an optional element. Feel free to remove. -->
 ## Pros and Cons of the Options
 
 ### {title of option 1}
@@ -66,8 +59,3 @@ Chosen option: "{title of option 1}", because {justification. e.g., only option,
 * Neutral, because {argument b}
 * Bad, because {argument c}
 * …
-
-<!-- This is an optional element. Feel free to remove. -->
-## More Information
-
-{You might want to provide additional evidence/confidence for the decision outcome here and/or document the team agreement on the decision and/or define when/how this decision the decision should be realized and if/when it should be re-visited. Links to other decisions and resources might appear here as well.}

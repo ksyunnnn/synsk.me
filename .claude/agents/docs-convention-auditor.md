@@ -53,7 +53,7 @@ model: inherit
 bash .claude/skills/auditing-docs-convention/scripts/check.sh
 ```
 
-このスクリプトが出すのは**確実に判定できる6項目だけ**。出力はそのまま指摘としてよい。
+このスクリプトが出すのは**確実に判定できるものだけ**。出力はそのまま指摘としてよい。
 
 スクリプトが出さないものは、以降の手順で自分が判定する。
 

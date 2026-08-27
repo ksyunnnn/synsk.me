@@ -43,8 +43,6 @@
 | `deprecated` | 非推奨（新規採用しない） |
 | `superseded by ADR-NNNN` | 置き換え済み |
 
-0001 から 0011 は MADR 形式より前に書かれたもので、書式が異なる。
-
 ---
 
 ## References
