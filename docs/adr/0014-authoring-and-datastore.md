@@ -23,7 +23,7 @@
 
 ## Decision
 
-**internal コンテンツをブラウザ上の管理画面で作成・編集し、本文を Cloudflare D1 に保管する。ビルドを経ずに公開へ反映する。**
+**internal コンテンツをブラウザ上の管理画面で作成・編集し、本文を Cloudflare D1 に保管する。公開操作の後に別の工程を挟まずに反映する。**
 
 本 ADR は [ADR-0007](./0007-duckdb-wasm-datastore.md) を置き換える。
 
@@ -82,3 +82,7 @@ Supabase や Firebase を使う。
 - [ADR-0008: コンテンツの可視性を3段階で扱う](./0008-content-visibility.md)
 - [ADR-0010: internal コンテンツの正本を synsk.me が持つ](./0010-content-storage-scope.md)
 - [ADR-0012: ホスティングに Cloudflare を採用する](./0012-cloudflare-hosting.md)
+- [OWASP: Mass Assignment Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Mass_Assignment_Cheat_Sheet.html)
+- [Django REST Framework: Serializers](https://www.django-rest-framework.org/api-guide/serializers/)
+- [Laravel: Eloquent API Resources](https://laravel.com/docs/12.x/eloquent-resources)
+- [Next.js: How to implement authentication](https://nextjs.org/docs/app/guides/authentication)

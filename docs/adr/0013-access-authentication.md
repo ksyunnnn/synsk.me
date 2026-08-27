@@ -60,7 +60,7 @@ NextAuth.js や Better Auth を使い、ログイン画面とセッション管�
 ### Risks
 
 - **ログインしている相手をアプリケーションが直接知らない。** 判定はアプリケーションの外で終わる。相手のメールアドレスが必要になった場合、Cloudflare が付与する JWT（`Cf-Access-Jwt-Assertion` ヘッダ）を読み、署名を検証することになる
-- **JWT の `sub` を、システムが持つ識別子に使わない。** 公式は `unique to an email address per account` とのみ定めており、Cloudflare アカウントの外で通用する保証も、永続する保証も示していない
+- **JWT の `sub` は Cloudflare が発行する値である。** 公式は `unique to an email address per account` とのみ定めており、Cloudflare アカウントの外で通用する保証も、永続する保証も示していない
 
 ---
 
