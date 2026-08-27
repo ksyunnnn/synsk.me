@@ -5,7 +5,7 @@
 - **Status**: accepted
 - **Date**: 2026-08-27
 - **Deciders**: synsk
-- **Related Principles**: [余白 over 密度](../PRINCIPLES.md#1-余白)
+- **Related Principles**: [余白 over 密度](../PRINCIPLES.md#1-余白-1)
 
 ---
 

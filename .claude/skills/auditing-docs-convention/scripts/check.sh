@@ -28,7 +28,7 @@ for p in sorted(pathlib.Path('.').rglob('*.md')):
         if line.lstrip().startswith('```'):
             fenced = not fenced
             continue
-        if fenced:
+        if fenced or 'check-ignore' in line:
             continue
         for m in re.finditer(r'\]\(([^)#]+?)(#[^)]*)?\)', line):
             t = m.group(1).strip()
@@ -56,17 +56,17 @@ done
 # --- [decision-makers] 決定の記録の decision-makers が synsk 以外 ---
 while IFS= read -r line; do
   report "[decision-makers] $line"
-done < <(grep -n '^decision-makers:' docs/decisions/0*.md 2>/dev/null | grep -v ':decision-makers: synsk$')
+done < <(grep -n '^decision-makers:' docs/decisions/0*.md 2>/dev/null | grep -v ':decision-makers: synsk$' | grep -v 'check-ignore')
 
 # --- [Issue番号] REQUIREMENTS.md に Issue 番号がある ---
 while IFS= read -r line; do
   report "[Issue番号] docs/REQUIREMENTS.md:$line"
-done < <(grep -n '#[0-9]' docs/REQUIREMENTS.md 2>/dev/null)
+done < <(grep -n '#[0-9]' docs/REQUIREMENTS.md 2>/dev/null | grep -v 'check-ignore')
 
 # --- [原則リンク] Decision Drivers が PRINCIPLES.md 全体を指している ---
 while IFS= read -r line; do
   report "[原則リンク] $line"
-done < <(grep -ln '^decision-makers:' docs/decisions/0*.md 2>/dev/null | xargs -r grep -n '](\.\./PRINCIPLES\.md)' 2>/dev/null)
+done < <(grep -ln '^decision-makers:' docs/decisions/0*.md 2>/dev/null | xargs -r grep -n '](\.\./PRINCIPLES\.md)' 2>/dev/null | grep -v 'check-ignore')
 
 # --- [MADR] 決定の記録が MADR の構造から外れている ---
 while IFS= read -r line; do
@@ -127,7 +127,7 @@ PY
 # --- [用語] REQUIREMENTS.md に固定していない語がある ---
 while IFS= read -r line; do
   report "[用語] docs/REQUIREMENTS.md:$line"
-done < <(grep -n 'エントリ\|レコード\|記事' docs/REQUIREMENTS.md 2>/dev/null)
+done < <(grep -n 'エントリ\|レコード\|記事' docs/REQUIREMENTS.md 2>/dev/null | grep -v 'check-ignore')
 
 # --- [参照の向き] 変わりにくい側から変わりやすい側へのリンクがある ---
 while IFS= read -r line; do

@@ -20,7 +20,7 @@
 |--------|---------|------|---------------------|
 | [VISION.md](./VISION.md) | なぜ作るか | 未来完了 | — |
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
-| [decisions/](./decisions/) | なぜそう決めたか | Decision Outcome は現在形 | これから守るべきルール、未決事項、他文書の転記 |
+| [decisions/](./decisions/) | なぜそう決めたか | 決定を述べる節は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
 | [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |
@@ -31,7 +31,7 @@
 | [.claude/rules/writing.md](../.claude/rules/writing.md) | 全出力に適用する文章ルール | 恒常 | 特定の文書だけに効くもの |
 | [.claude/rules/docs-patterns.md](../.claude/rules/docs-patterns.md) | 文書の書式と例 | 恒常 | 役割と時制の定義 |
 | [.claude/agents/](../.claude/agents/) | エージェントの役割・立場・手順 | 恒常 | 基準の内容 |
-| [.claude/skills/](../.claude/skills/) | skill の起動手順と結果の扱い | 恒常 | 観点と判定手順 |
+| [.claude/skills/](../.claude/skills/) | skill の起動手順と結果の扱い | 恒常 | 観点と判定基準（`scripts/` は除く） |
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 

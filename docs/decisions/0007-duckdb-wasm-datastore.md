@@ -2,7 +2,7 @@
 
 > この文書は決定を記録する。有効な要件は持たない。
 
-- **Status**: superseded by [ADR-0014](./0014-authoring-and-datastore.md)
+- **Status**: superseded by ADR-0014
 - **Date**: 2026-08-20
 - **Deciders**: synsk
 - **Related Principles**: [実験 over 完璧な計画](../PRINCIPLES.md#2-実験), [おもしろさ over 安全圏](../PRINCIPLES.md#3-おもしろさ)

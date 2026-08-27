@@ -26,7 +26,7 @@ REQUIREMENTS.md:  > この文書は満たすべきことだけを書く。進捗
 scraps/:          > 書き捨て。消えても困らないものだけを置く。
 ```
 
-`VISION.md` `PRINCIPLES.md` `template.md` と各ディレクトリの `README.md` は宣言の対象外。ただし `scraps/README.md` は、その場所の性質を読む人に伝える必要があるため宣言を持つ。
+`VISION.md` `PRINCIPLES.md` `template.md` `decisions/*.md` と各ディレクトリの `README.md` は宣言の対象外。0001 から 0016 が持つ宣言は旧形式の名残であり、書き換えない。ただし `scraps/README.md` は、その場所の性質を読む人に伝える必要があるため宣言を持つ。
 
 ## 要件
 
@@ -95,7 +95,7 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 **時制** — `docs/README.md` の表に従う。
 
-0001 から 0016 は MADR より前の形式で書かれている。書き換えない。
+0001 から 0016 は MADR より前の形式で書かれている。書き換えない。front matter・節の構成・見出しの番号・`Related Principles` の書式は、これらに適用しない。決定を述べる節は `## Decision` である。
 
 ## Issue
 
@@ -118,7 +118,7 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 ## 検査の例外
 
-`check.sh` が誤って指摘する行には、同じ行に `<!-- check-ignore: 理由 -->` を書く。
+`check.sh` の行単位の検査（リンク切れ・参照の向き・用語・Issue番号・decision-makers・原則リンク）が誤って指摘する行には、同じ行に `<!-- check-ignore: 理由 -->` を書く。文書単位の検査（冒頭宣言・目次・MADR）には効かない。
 
 ```
 | 要件 | [../REQUIREMENTS.md](../REQUIREMENTS.md) | <!-- check-ignore: 案内板 -->

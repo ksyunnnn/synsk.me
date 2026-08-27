@@ -39,9 +39,9 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 
 2段構えで行う。
 
-**機械的検査** — 文書を変更したら `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する。0.5秒で終わる。出力された行はすべて違反である。
+**機械的検査** — 文書を変更したら `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する。出力された行はすべて違反である。
 
-**監査人** — `auditing-docs-convention` skill を使う。10分と10万トークン以上を要するため、次のときに限る。
+**監査人** — `auditing-docs-convention` skill を使う。実行コストが高いため、次のときに限る。
 
 - 規約そのもの（`docs/README.md`、`.claude/rules/`、`docs/decisions/README.md`）を変更したとき
 - 入れ物を追加・廃止・改名したとき

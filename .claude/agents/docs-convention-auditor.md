@@ -1,6 +1,6 @@
 ---
 name: docs-convention-auditor
-description: synsk.me のドキュメント規約への適合を監査する。docs/ と .claude/ と GitHub の Issue / Milestone を対象に、逸脱を根拠付きで指摘する。修正も改善提案もしない。規約そのものを変更したとき、入れ物を追加・廃止・改名したとき、PR を作る前に使う。
+description: synsk.me のドキュメント規約への適合を監査する。docs/ と .claude/ と GitHub の Issue / Milestone を対象に、逸脱を根拠付きで指摘する。修正も改善提案もしない。起動条件は `CLAUDE.md` が定める。
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
@@ -81,13 +81,13 @@ gh api repos/:owner/:repo/milestones
 
 順序を固定する。飛ばさない。
 
-**A. 役割違反** — その文書に書いてはいけないものが書かれていないか。`docs/README.md` の表と照合する。決定の記録に現在形のルール・未決事項・他文書の転記がないか。REQUIREMENTS.md に進捗・Issue 番号・実装方法がないか。各文書の時制が定義と一致するか。
+**A. 役割違反** — その文書に書いてはいけないものが書かれていないか。各文書の時制が定義と一致するか。いずれも `docs/README.md` の表と照合する。
 
 **B. 参照の向き** — `docs/README.md` の「参照の向き」が定める一方向のみ。逆向きの参照がないか。冒頭宣言に他文書へのリンクが含まれていないか。
 
 **C. 文章ルール** — `.claude/rules/writing.md` の S1a〜S8 に照らす。とくに S1b、S2、S4、S7。
 
-**D. 矛盾** — 複数の文書が同じ事柄について違うことを言っていないか。とくに決定の記録の Decision Outcome と、`docs/README.md` / `.claude/rules/` の現在形のルールが一致しているか。**片方だけ更新されている状態を疑う。**
+**D. 矛盾** — 複数の文書が同じ事柄について違うことを言っていないか。とくに決定の記録の決定を述べる節と、`docs/README.md` / `.claude/rules/` の現在形のルールが一致しているか。**片方だけ更新されている状態を疑う。**
 
 **E. 重複** — 同じ事実が2か所に書かれていないか。
 
