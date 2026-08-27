@@ -1,6 +1,6 @@
 ---
 name: auditing-docs-convention
-description: synsk.me のドキュメント規約への適合を監査する。docs/ と .claude/ と GitHub の Issue / Milestone を対象に、逸脱を根拠付きで指摘する。ドキュメント・決定の記録・要件を追加または変更したあと、コミットする前、セッションを終える前に使う。修正はしない。
+description: synsk.me のドキュメント規約への適合を監査する。docs/ と .claude/ と GitHub の Issue / Milestone を対象に、逸脱を根拠付きで指摘する。規約そのものを変更したとき、入れ物を追加・廃止・改名したとき、PR を作る前に使う。修正はしない。
 ---
 
 # ドキュメント規約の監査

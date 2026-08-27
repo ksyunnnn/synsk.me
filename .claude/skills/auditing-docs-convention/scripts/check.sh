@@ -76,11 +76,16 @@ import pathlib, re
 REQUIRED = ['## Context and Problem Statement', '## Considered Options', '## Decision Outcome']
 FORBIDDEN = ['## Confirmation', '## More Information']
 STATUS = re.compile(r'^(proposed|rejected|accepted|deprecated|superseded by ADR-\d{4})$')
-for p in sorted(pathlib.Path('docs/decisions').glob('0*.md')):
+targets = sorted(pathlib.Path('docs/decisions').glob('0*.md'))
+targets.append(pathlib.Path('docs/decisions/template.md'))
+for p in targets:
+    if not p.exists():
+        continue
     text = p.read_text()
     lines = text.split('\n')
     if not lines or lines[0].strip() != '---':
         continue
+    is_template = p.name == 'template.md'
     try:
         end = lines.index('---', 1)
     except ValueError:
@@ -91,11 +96,15 @@ for p in sorted(pathlib.Path('docs/decisions').glob('0*.md')):
         if ':' in l and not l.lstrip().startswith('#'):
             k, _, v = l.partition(':')
             fm[k.strip()] = v.strip().strip('"')
-    if 'status' not in fm:
+    if is_template:
+        pass
+    elif 'status' not in fm:
         print(f'{p}:1 status がない')
     elif not STATUS.match(fm['status']):
         print(f'{p}:1 status の値が不正: ' + fm['status'])
-    if 'date' not in fm:
+    if is_template:
+        pass
+    elif 'date' not in fm:
         print(f'{p}:1 date がない')
     elif not re.match(r'^\d{4}-\d{2}-\d{2}$', fm['date']):
         print(f'{p}:1 date が YYYY-MM-DD でない: ' + fm['date'])
@@ -105,6 +114,8 @@ for p in sorted(pathlib.Path('docs/decisions').glob('0*.md')):
     for s in FORBIDDEN:
         if s in text:
             print(f'{p}:1 使わない節がある: {s}')
+    if is_template:
+        continue
     for i, l in enumerate(lines[end+1:], end+2):
         if l.startswith('# '):
             if re.match(r'^# (ADR-)?\d+[:.]', l):

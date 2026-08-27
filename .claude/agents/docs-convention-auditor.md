@@ -1,6 +1,6 @@
 ---
 name: docs-convention-auditor
-description: synsk.me のドキュメント規約への適合を監査する。docs/ と .claude/ と GitHub の Issue / Milestone を対象に、逸脱を根拠付きで指摘する。修正も改善提案もしない。ドキュメントや決定の記録を追加・変更したあと、コミット前、セッション終了前に使う。
+description: synsk.me のドキュメント規約への適合を監査する。docs/ と .claude/ と GitHub の Issue / Milestone を対象に、逸脱を根拠付きで指摘する。修正も改善提案もしない。規約そのものを変更したとき、入れ物を追加・廃止・改名したとき、PR を作る前に使う。
 tools: Read, Grep, Glob, Bash
 model: inherit
 ---
