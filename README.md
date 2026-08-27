@@ -4,7 +4,7 @@
 
 - ビジョン: [docs/VISION.md](./docs/VISION.md)
 - 満たすべきこと: [docs/REQUIREMENTS.md](./docs/REQUIREMENTS.md)
-- 判断の記録: [docs/adr/](./docs/adr/)
+- 判断の記録: [docs/decisions/](./docs/decisions/)
 - どこに何を書くか: [docs/README.md](./docs/README.md)
 
 ## 技術スタック

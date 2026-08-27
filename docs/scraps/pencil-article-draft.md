@@ -112,4 +112,4 @@
 - [Pencil 公式サイト](https://www.pencil.dev/)
 - [MCP (Model Context Protocol)](https://modelcontextprotocol.io/)
 - pencil-mcp-guide.md（2026-08-21 に削除）
-- [ADR-0005: Design Tokens](../adr/0005-design-tokens.md) - デザイントークンの決定
+- [ADR-0005: Design Tokens](../decisions/0005-design-tokens.md) - デザイントークンの決定

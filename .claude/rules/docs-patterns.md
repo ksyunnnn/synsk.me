@@ -11,17 +11,17 @@ paths:
 
 - 冒頭の宣言
 - 要件
-- ADR
+- 決定の記録
 - Issue
+- 検査の例外
 
 ---
 
 ## 冒頭の宣言
 
-`adr/` `REQUIREMENTS.md` `scraps/` の各文書は、**見出しの直後**に引用ブロックで宣言を置く。他文書へのリンクを含めない（参照の向きに違反するため）。
+`REQUIREMENTS.md` と `scraps/` の各文書は、**見出しの直後**に引用ブロックで宣言を置く。他文書へのリンクを含めない（参照の向きに違反するため）。
 
 ```
-adr/:             > この文書は決定を記録する。有効な要件は持たない。
 REQUIREMENTS.md:  > この文書は満たすべきことだけを書く。進捗と実装方法は書かない。
 scraps/:          > 書き捨て。消えても困らないものだけを置く。
 ```
@@ -48,44 +48,54 @@ scraps/:          > 書き捨て。消えても困らないものだけを置く
 
 FR は機能要件、NFR は非機能要件（性能・可用性・セキュリティ・保守性・コスト）。
 
-**この文書（REQUIREMENTS.md）の中でのみ**、対象を指す語を `activity` / `career` / `project` / `internal コンテンツ` の4つに固定する。「エントリ」「レコード」「記事」を使わない。ADR には及ばない。データベースの行を指す「レコード」のように、4語では言い換えられない概念があるため。
+**この文書（REQUIREMENTS.md）の中でのみ**、対象を指す語を `activity` / `career` / `project` / `internal コンテンツ` の4つに固定する。「エントリ」「レコード」「記事」を使わない。決定の記録には及ばない。データベースの行を指す「レコード」のように、4語では言い換えられない概念があるため。
 
-## ADR
+## 決定の記録
 
-対象と単位は [docs/adr/README.md](../../docs/adr/README.md) が定める。
+テンプレートは [docs/decisions/template.md](../../docs/decisions/template.md)（MADR 4）。対象と単位は [docs/decisions/README.md](../../docs/decisions/README.md) が定める。
+
+**front matter** — `status` `date` `decision-makers` を使う。`consulted` と `informed` は書かない。`decision-makers` は `synsk`。
+
+**使う節** — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Pros and Cons of the Options
+
+**使わない節** — Confirmation / More Information
+
+**見出しに番号を書かない。** 番号はファイル名が持つ。他文書からは `ADR-NNNN` で参照する。
+
+**Decision Drivers** — 判断を駆動したものを並べる。任意の節。該当する原則があれば、アンカー付きのリンクで1行目に置く。
 
 ```
-✓ Decision: 外部プラットフォームへの転載は synsk.me を正本とする（POSSE）
-✗ Decision: VISION.md と PRINCIPLES.md を定義する
+✓ * 実験 over 完璧な計画（[PRINCIPLES.md](../PRINCIPLES.md#2-実験)）
+✗ * [PRINCIPLES.md](../PRINCIPLES.md)
+   → どの原則が効いたか読めない
+```
+
+```
+✓ Decision Outcome: 外部プラットフォームへの転載は synsk.me を正本とする（POSSE）
+✗ Decision Outcome: VISION.md と PRINCIPLES.md を定義する
    → 代替案がない。文書の存在告知でしかない
 
-✓ Context: Medium の RSS には rel="canonical" が含まれない（2026-08-20 に実フィードを取得して確認）
-✗ Implementation Notes: 配信データに `tags` を含めてはならない
-   → 現在形のルール。要件文書が持つべき
-
-✓ Context: 詳細は content-model-design.md を参照
-✗ Context: （content-model-design.md の表をそのまま転記）
+✓ Context and Problem Statement: Medium の RSS には rel="canonical" が含まれない（2026-08-20 に実フィードを取得して確認）
+✗ Context and Problem Statement: （他文書の表をそのまま転記）
    → 転記の過程で未決が決定に格上げされる
 ```
 
-**引用してよいのは ADR から ADR への引用に限る。** ADR は書き換えないので引用が古くならない。書き換わる文書（`REQUIREMENTS.md`）からは引用せず、リンクか ID で参照する。
+**引用してよいのは決定の記録から決定の記録への引用に限る。** 決定の記録は書き換えないので引用が古くならない。書き換わる文書（`REQUIREMENTS.md`）からは引用せず、リンクか ID で参照する。
 
-`Implementation Notes` の節を作らない。決定に付随する注意は Consequences が持つ。未決事項の節も作らない。未決は `question` ラベルの Issue が持つ。
-
-**Risks に「決めていない」と書いてよいのは、その決定の帰結として生じた不確実性に限る。** その ADR で決めるべきだったことは Risks ではなく Issue が持つ。
+**Consequences に「決めていない」と書いてよいのは、その決定の帰結として生じた不確実性に限る。** その記録で決めるべきだったことは Issue が持つ。
 
 ```
-✓ Risks: 版の粒度を決めていない。保存のたびに版を作るのか、
-         公開のたびに作るのかで、保管量が桁違いになる
+✓ Bad, because 版の粒度を決めていない。保存のたびに版を作るのか、
+  公開のたびに作るのかで、保管量が桁違いになる
    → 「本文と版を保管する」と決めた結果、新しく生じた論点
 
-✗ Risks: この ADR ではデータ形式を確定していない
-   → その ADR で決めるべきだったこと。Issue が持つ
+✗ Bad, because この記録ではデータ形式を確定していない
+   → その記録で決めるべきだったこと。Issue が持つ
 ```
 
 **時制** — `docs/README.md` の表に従う。
 
-`Deciders` は `synsk` と書く。
+0001 から 0011 は MADR より前の形式で書かれている。書き換えない。
 
 ## Issue
 
@@ -105,3 +115,15 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
   記事の版管理ができるようにする。過去の版を保持し…
    → 要件文書のコピー。要件が変わると嘘になる
 ```
+
+## 検査の例外
+
+`check.sh` が誤って指摘する行には、同じ行に `<!-- check-ignore: 理由 -->` を書く。
+
+```
+| 要件 | [../REQUIREMENTS.md](../REQUIREMENTS.md) | <!-- check-ignore: 案内板 -->
+```
+
+例外の一覧は作らない。対象の行が消えれば例外も消えるようにする。
+
+ディレクトリ単位の除外は `check.sh` 冒頭の `EXCLUDE_DIRS` が持つ。

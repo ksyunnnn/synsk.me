@@ -37,7 +37,7 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 
 ### ドキュメント規約の監査
 
-ドキュメント・ADR・要件を追加または変更したあと、コミットする前、セッションを終える前に `auditing-docs-convention` skill を使う（`.claude/skills/auditing-docs-convention/SKILL.md`）。
+ドキュメント・決定の記録・要件を追加または変更したあと、コミットする前、セッションを終える前に `auditing-docs-convention` skill を使う（`.claude/skills/auditing-docs-convention/SKILL.md`）。
 
 監査人が逸脱を指摘する。修正は許可を得てから行う。
 
