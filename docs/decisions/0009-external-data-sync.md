@@ -1,15 +1,12 @@
-# ADR-0009: 外部データを永続化し、手で付けた情報を再取得後も保持する
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-08-21
-- **Deciders**: synsk
-- **Related Principles**: [余白 over 完成形](../PRINCIPLES.md)
-
+---
+status: accepted
+date: 2026-08-21
+decision-makers: synsk
 ---
 
-## Context
+# 外部データを永続化し、手で付けた情報を再取得後も保持する
+
+## Context and Problem Statement
 
 [ADR-0002](./0002-hub-and-spoke-data-architecture.md) は Hub-and-Spoke モデルを採用した。取得方式の詳細は [hub-and-spoke-model.md](../archive/hub-and-spoke-model.md) にある。
 
@@ -19,17 +16,31 @@
 
 判断の時点で、X（Twitter）の API は有料化されており、自動取得の対象から外れていた。[hub-and-spoke-model.md](../archive/hub-and-spoke-model.md) は埋め込み（手動選択）で扱うと記録している。
 
----
+## Decision Drivers
 
-## Decision
+* [余白 over 完成形](../PRINCIPLES.md#1-余白)
+
+## Considered Options
+
+* 取得して使い捨てる（記載済みの構成）
+* 人が付けた情報だけを保持する
+* 外部データごと永続化する
+
+## Decision Outcome
 
 **外部 activity を自動で取得して永続化し、人が後から付けた情報は再取得後も保持する。**
 
 人が付ける情報には、コメント、表示分類の上書き、非公開への切り替えが含まれる。
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because 記事の削除やサービス終了に耐える
+* Good, because 取得の失敗時に前回の値を出せる（`fetchStatus` の設計が活きる）
+* Good, because 毎回すべてを取得する必要がなくなり、レート制限とビルド時間の消費が減る
+* Bad, because 再取得したデータが同一のレコードかどうかを判定する処理が要る
+* Bad, because **同一性の判定は外部の仕様に依存する。** 安定した識別子を外部が提供しているかはプラットフォームごとに異なり、こちらで決められない。判定できない場合、手で付けた情報を引き継げない
+
+## Pros and Cons of the Options
 
 ### Option A: 取得して使い捨てる（記載済みの構成）
 
@@ -47,26 +58,6 @@
 
 - **Pros**: 外部から消えても残る。取得に失敗しても前回の値を出せる
 - **Cons**: 保管する量が増える。外部の更新を取り込む処理が要る
-
----
-
-## Consequences
-
-### Positive
-
-- 記事の削除やサービス終了に耐える
-- 取得の失敗時に前回の値を出せる（`fetchStatus` の設計が活きる）
-- 毎回すべてを取得する必要がなくなり、レート制限とビルド時間の消費が減る
-
-### Negative
-
-- 再取得したデータが同一のレコードかどうかを判定する処理が要る
-
-### Risks
-
-- **同一性の判定は外部の仕様に依存する。** 安定した識別子を外部が提供しているかはプラットフォームごとに異なり、こちらで決められない。判定できない場合、手で付けた情報を引き継げない
-
----
 
 ## References
 

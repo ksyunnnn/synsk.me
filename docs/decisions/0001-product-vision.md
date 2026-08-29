@@ -1,15 +1,12 @@
-# ADR-0001: Product Vision and Principles
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-01-27
-- **Deciders**: synsk
-- **Related Principles**: [../PRINCIPLES.md](../PRINCIPLES.md)
-
+---
+status: accepted
+date: 2026-01-27
+decision-makers: synsk
 ---
 
-## Context
+# Product Vision and Principles
+
+## Context and Problem Statement
 
 synsk.me プロジェクトにおいて、プロダクトの目的・原則を明確にする必要がある。
 
@@ -18,9 +15,12 @@ synsk.me プロジェクトにおいて、プロダクトの目的・原則を�
 - ポートフォリオ閲覧者に意図を伝える
 - 自分自身の思考を整理する
 
----
+## Considered Options
 
-## Decision
+* READMEに統合
+* 独立したドキュメント
+
+## Decision Outcome
 
 **プロダクトのビジョンと原則を [VISION.md](../VISION.md) と [PRINCIPLES.md](../PRINCIPLES.md) として定義する。**
 
@@ -36,9 +36,17 @@ X over Y 形式を採用:
 - トレードオフを明示
 - 各原則に背景（Pain + Reflection）を記録
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because すべての判断がビジョン・原則に基づくようになる
+* Good, because ドキュメント間の関係が明確になる
+* Good, because ポートフォリオとして技術力・思考力をアピールできる
+* Bad, because ドキュメントのメンテナンスコストが発生
+* Bad, because 最初に考える時間が必要
+* Bad, because ビジョン・原則が形骸化する可能性
+  * 対策: 定期的な見直しをスケジュール
+
+## Pros and Cons of the Options
 
 ### Option A: READMEに統合
 
@@ -53,28 +61,6 @@ Vision と Principles を README.md に記載する。
 
 - **Pros**: 役割が明確、階層構造が作れる、参照しやすい
 - **Cons**: ファイル数が増える
-
----
-
-## Consequences
-
-### Positive
-
-- すべての判断がビジョン・原則に基づくようになる
-- ドキュメント間の関係が明確になる
-- ポートフォリオとして技術力・思考力をアピールできる
-
-### Negative
-
-- ドキュメントのメンテナンスコストが発生
-- 最初に考える時間が必要
-
-### Risks
-
-- ビジョン・原則が形骸化する可能性
-  - 対策: 定期的な見直しをスケジュール
-
----
 
 ## References
 

@@ -1,15 +1,12 @@
-# ADR-0010: internal コンテンツの正本を synsk.me が持つ
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-08-21
-- **Deciders**: synsk
-- **Related Principles**: [実験 over 完璧な計画](../PRINCIPLES.md)
-
+---
+status: accepted
+date: 2026-08-21
+decision-makers: synsk
 ---
 
-## Context
+# internal コンテンツの正本を synsk.me が持つ
+
+## Context and Problem Statement
 
 [ADR-0006](./0006-posse-publishing-strategy.md) は POSSE を採用し、synsk.me を正本として外部プラットフォームへ転載すると決めた。正本を持つということは、本文そのものを保管するということである。
 
@@ -21,17 +18,31 @@
 
 2026-08-21 の検討で、版を保持する必要があることを確認した。書き直して内容が変わったとき、前の版に戻せる必要がある。
 
----
+## Decision Drivers
 
-## Decision
+* [実験 over 完璧な計画](../PRINCIPLES.md#2-実験)
+
+## Considered Options
+
+* 本文を外部プラットフォームに置き、synsk.me は参照だけ持つ
+* 最新版だけを保管する
+* 本文・メディア・過去の版を保管する
+
+## Decision Outcome
 
 **internal コンテンツの本文・メディア・過去の版を synsk.me が保管する。**
 
 保管の物理的な形式と置き場所は本 ADR では扱わない。
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because 外部プラットフォームが終了しても、書いたものが残る
+* Good, because 公開後に書き直しても、前の版に戻せる
+* Bad, because 版の保持方式を設計する必要がある。既存サービス（Zenn、dev.to）の挙動が参考になる
+* Bad, because メディアファイルの保管が、テキストとは別の仕組みを要求する
+* Bad, because **版の粒度を決めていない。** 保存のたびに版を作るのか、公開のたびに作るのかで、保管量が桁違いになる
+
+## Pros and Cons of the Options
 
 ### Option A: 本文を外部プラットフォームに置き、synsk.me は参照だけ持つ
 
@@ -49,26 +60,6 @@ Medium や Zenn に書いて、synsk.me からリンクする。
 
 - **Pros**: POSSE が成立する。書き直しを恐れずに公開できる
 - **Cons**: 保管量が増える。版を管理する設計が要る
-
----
-
-## Consequences
-
-### Positive
-
-- 外部プラットフォームが終了しても、書いたものが残る
-- 公開後に書き直しても、前の版に戻せる
-
-### Negative
-
-- 版の保持方式を設計する必要がある。既存サービス（Zenn、dev.to）の挙動が参考になる
-- メディアファイルの保管が、テキストとは別の仕組みを要求する
-
-### Risks
-
-- **版の粒度を決めていない。** 保存のたびに版を作るのか、公開のたびに作るのかで、保管量が桁違いになる
-
----
 
 ## References
 

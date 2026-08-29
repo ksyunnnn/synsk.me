@@ -1,15 +1,12 @@
-# ADR-0007: データストアに DuckDB WASM を採用する
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: superseded by ADR-0014
-- **Date**: 2026-08-20
-- **Deciders**: synsk
-- **Related Principles**: [実験 over 完璧な計画](../PRINCIPLES.md#2-実験), [おもしろさ over 安全圏](../PRINCIPLES.md#3-おもしろさ)
-
+---
+status: superseded by ADR-0014
+date: 2026-08-20
+decision-makers: synsk
 ---
 
-## Context
+# データストアに DuckDB WASM を採用する
+
+## Context and Problem Statement
 
 [ADR-0002](./0002-hub-and-spoke-data-architecture.md) は「Hub-and-Spoke モデルの採用」と「データストアに DuckDB を使用」という2つの決定を1本に含んでいた。これは [docs/adr/README.md](./README.md) が定める ADR の単位に反しており、Hub-and-Spoke だけを確定させることができない状態だった。本 ADR は後者を切り出して独立させる。
 
@@ -41,17 +38,35 @@ DuckDB WASM の配布バイナリのサイズを 2026-08-20 に jsDelivr で実�
 
 DuckDB の公式ドキュメントは WASM 版の用途を「in-browser SQL analytics」と位置づけており、シングルスレッド動作とメモリ上限 4GB という制約も明記している。初期表示の高速化ではなく、読み込み後にサーバー往復なしで分析クエリを返すことが利点である。
 
----
+## Decision Drivers
 
-## Decision
+* [実験 over 完璧な計画](../PRINCIPLES.md#2-実験)
+* [おもしろさ over 安全圏](../PRINCIPLES.md#3-おもしろさ)
+
+## Considered Options
+
+* 静的生成のみ（DuckDB を使わない）
+* 外部のマネージド DB（Supabase 等）
+* DuckDB をビルド時のみ使用
+* DuckDB WASM
+
+## Decision Outcome
 
 **データストアに DuckDB を採用し、ブラウザ上で動作する WASM 版を使用する。**
 
 初期ロードのコストを承知のうえで採用する。synsk.me を技術実験場として使い、WASM でブラウザ内 SQL を動かす実地経験を得ることを目的に含む。
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because ブラウザ内 SQL の実地経験を得られる。検証結果は発信コンテンツとして利用できる
+* Good, because 読み込み完了後は、タグ・年代・プラットフォームなどによる絞り込みをサーバー往復なしで返せる
+* Good, because サーバーやマネージド DB を持たずに済む
+* Bad, because 初期ロードで圧縮後も数 MB 規模のダウンロードが発生する。タイムラインの表示のみを目的とする場合、Option A（静的生成）に対して初期表示は明確に遅くなる
+* Bad, because シングルスレッド動作、メモリ上限 4GB という制約を受ける
+* Bad, because **配信データの露出**: ブラウザへ配信するデータファイルに非公開フィールドが含まれると、UI に表示していなくても閲覧できてしまう
+* Bad, because WASM 版がプロダクション用途で安定して動作するかは未検証（ADR-0002 から引き継ぐ）
+
+## Pros and Cons of the Options
 
 ### Option A: 静的生成のみ（DuckDB を使わない）
 
@@ -76,28 +91,6 @@ DuckDB でビルド時に集計し、結果を静的ファイルとして配信�
 
 - **Pros**: 読み込み後はサーバー往復なしで分析クエリを実行できる。WASM の実地検証という学習価値がある。外部サービスに依存しない
 - **Cons**: 初期ロードが重い。配信データの露出に配慮が必要
-
----
-
-## Consequences
-
-### Positive
-
-- ブラウザ内 SQL の実地経験を得られる。検証結果は発信コンテンツとして利用できる
-- 読み込み完了後は、タグ・年代・プラットフォームなどによる絞り込みをサーバー往復なしで返せる
-- サーバーやマネージド DB を持たずに済む
-
-### Negative
-
-- 初期ロードで圧縮後も数 MB 規模のダウンロードが発生する。タイムラインの表示のみを目的とする場合、Option A（静的生成）に対して初期表示は明確に遅くなる
-- シングルスレッド動作、メモリ上限 4GB という制約を受ける
-
-### Risks
-
-- **配信データの露出**: ブラウザへ配信するデータファイルに非公開フィールドが含まれると、UI に表示していなくても閲覧できてしまう
-- WASM 版がプロダクション用途で安定して動作するかは未検証（ADR-0002 から引き継ぐ）
-
----
 
 ## References
 

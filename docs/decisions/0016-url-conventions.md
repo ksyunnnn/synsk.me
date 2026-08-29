@@ -1,15 +1,12 @@
-# ADR-0016: URL の規則
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-08-27
-- **Deciders**: synsk
-- **Related Principles**: [余白 over 密度](../PRINCIPLES.md#1-余白-1)
-
+---
+status: accepted
+date: 2026-08-27
+decision-makers: synsk
 ---
 
-## Context
+# URL の規則
+
+## Context and Problem Statement
 
 URL を変えると、外部プラットフォームへ転載した記事から synsk.me を指す canonical が壊れる（[ADR-0006](./0006-posse-publishing-strategy.md)）。転載先に設定した値は、こちらから直せない。このため URL の安定性が、他のサイトより高い代償を持つ。
 
@@ -21,9 +18,30 @@ URL を変えると、外部プラットフォームへ転載した記事から 
 
 職務経歴書を複数保持し、何を軸に分けるかを定めない方針を決めた（[ADR-0015](./0015-multiple-resumes.md)）。識別子で軸を表すことになる。
 
----
+## Decision Drivers
 
-## Decision
+* [余白 over 密度](../PRINCIPLES.md#1-余白-1)
+
+## Considered Options
+
+識別子の形
+
+* 題をそのまま識別子にする
+* 題を URL に含め、末尾のハッシュで解決する
+* 題とは別に識別子を持つ
+
+管理画面の位置
+
+* 公開物の隣に置く
+* 前置きにまとめる
+
+絞り込みの扱い
+
+* パスで表す
+* クエリで表し、操作でも書き込む
+* 書き込まず、読むだけ
+
+## Decision Outcome
 
 **URL は resourceful routing に従い、コレクション名と識別子で表す。**
 
@@ -35,9 +53,17 @@ URL を変えると、外部プラットフォームへ転載した記事から 
 - 末尾にスラッシュを付けない
 - 歴代サイトは年ごとのサブドメインに置く
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because 題を直しても URL が変わらない
+* Good, because 転載先に設定した canonical が壊れない
+* Good, because `/notes` `/projects` `/resume` を切れば、それぞれの一覧に辿り着ける
+* Bad, because 記事を書くたびに識別子を確定させる操作が挟まる
+* Bad, because 公開ページの URL を書き換えないと編集画面に入れない
+* Bad, because **同じ slug を二度使えない。** 過去に使った識別子は、その記事が存在する限り再利用できない
+* Bad, because **絞り込んだ状態を共有したあと、相手の操作は URL に反映されない。** 送った URL と、相手が見ているものがずれる
+
+## Pros and Cons of the Options
 
 ### 識別子の形
 
@@ -60,28 +86,6 @@ URL を変えると、外部プラットフォームへ転載した記事から 
 **Option B: クエリで表し、操作でも書き込む** — 共有でき、戻る操作でも戻れる。ただし同じ内容に複数の URL が生じる。
 
 **Option C: 書き込まず、読むだけ — 採用** — URL が1つに保たれる。絞り込んだ状態を共有できるが、その後の操作は URL に反映されない。
-
----
-
-## Consequences
-
-### Positive
-
-- 題を直しても URL が変わらない
-- 転載先に設定した canonical が壊れない
-- `/notes` `/projects` `/resume` を切れば、それぞれの一覧に辿り着ける
-
-### Negative
-
-- 記事を書くたびに識別子を確定させる操作が挟まる
-- 公開ページの URL を書き換えないと編集画面に入れない
-
-### Risks
-
-- **同じ slug を二度使えない。** 過去に使った識別子は、その記事が存在する限り再利用できない
-- **絞り込んだ状態を共有したあと、相手の操作は URL に反映されない。** 送った URL と、相手が見ているものがずれる
-
----
 
 ## References
 
