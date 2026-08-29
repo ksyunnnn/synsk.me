@@ -15,8 +15,6 @@ synsk.me のリデザインにあたり、視覚言語の基盤となる Design 
 
 PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「対話 over 展示」を視覚的に体現するため、Colors・Typography・Spacing の各要素について意図的な設計判断を行う。
 
-参考サイト: [kbkbkb.co](https://kbkbkb.co/) - 写真家 YOSHIYUKI KUBO のポートフォリオ。これらの原則を体現したデザイン。
-
 ---
 
 ## Decision
@@ -156,7 +154,7 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 
 ## References
 
-- [kbkbkb.co](https://kbkbkb.co/) - 参考サイト
+- kbkbkb.co - 参考サイト
 - [Google Fonts: Source Sans 3](https://fonts.google.com/specimen/Source+Sans+3)
 - [Google Fonts: Noto Sans JP](https://fonts.google.com/specimen/Noto+Sans+JP)
 - [ADR-0004: アイコンシステム](./0004-icon-system.md)
