@@ -36,9 +36,9 @@
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 
-各入れ物の役割と時制をここに定める根拠は [decisions/0011-record-separation.md](./decisions/0011-record-separation.md) にある。
+入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0011-record-separation.md](./decisions/0011-record-separation.md) にある。
 
-外部ツールが配り、人が書き足さないファイルは対象外とする。手で書き換えない。`.specify/` と `.claude/skills/speckit-*` がこれに当たる。`specs/` 配下は人が書くため対象に含む。
+外部ツールが配り、人が書き足さないファイルは、上の表の対象外とする。手で書き換えない。`.specify/` と `.claude/skills/speckit-*` がこれに当たる。`specs/` 配下は人が書くため対象に含む。
 
 ---
 

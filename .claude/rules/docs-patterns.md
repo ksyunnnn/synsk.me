@@ -56,9 +56,9 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 **front matter** — `status` `date` `decision-makers` を使う。`consulted` と `informed` は書かない。`decision-makers` は `synsk`。
 
-**使う節** — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Pros and Cons of the Options / References
+**使う節**（MADR が定める節を指す。それ以外の小見出しは制約しない） — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Pros and Cons of the Options / References
 
-**使わない節** — Confirmation / More Information。参照は `## References` に置く
+**使わない節** — Confirmation / More Information
 
 **見出しに番号を書かない。** 番号はファイル名が持つ。他文書からは `ADR-NNNN` で参照する。
 
@@ -116,7 +116,7 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 ## 検査の例外
 
-`check.sh` の行単位の検査（リンク切れ・参照の向き・用語・Issue番号・decision-makers・原則リンク）が誤って指摘する行には、同じ行に `<!-- check-ignore: 理由 -->` を書く。文書単位の検査（冒頭宣言・目次・MADR）には効かない。
+`check.sh` の行単位の検査（リンク切れ・参照の向き・用語・Issue番号・原則リンク）が誤って指摘する行には、同じ行に `<!-- check-ignore: 理由 -->` を書く。文書単位の検査（冒頭宣言・目次・MADR）には効かない。
 
 ```
 | 要件 | [../REQUIREMENTS.md](../REQUIREMENTS.md) | <!-- check-ignore: 案内板 -->
