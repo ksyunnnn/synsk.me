@@ -54,11 +54,6 @@ for f in docs/*.md docs/scraps/*.md; do
   grep -q '^## Contents' "$f" || report "[目次] $f ($n 行)"
 done
 
-# --- [decision-makers] 決定の記録の decision-makers が synsk 以外 ---
-while IFS= read -r line; do
-  report "[decision-makers] $line"
-done < <(grep -n '^decision-makers:' docs/decisions/0*.md 2>/dev/null | grep -v ':decision-makers: synsk$' | grep -v 'check-ignore')
-
 # --- [Issue番号] REQUIREMENTS.md に Issue 番号がある ---
 while IFS= read -r line; do
   report "[Issue番号] docs/REQUIREMENTS.md:$line"
@@ -89,7 +84,6 @@ while IFS= read -r line; do
 done < <(python3 - <<'PY'
 import pathlib, re
 REQUIRED = ['## Context and Problem Statement', '## Considered Options', '## Decision Outcome']
-FORBIDDEN = ['## Confirmation', '## More Information']
 STATUS = re.compile(r'^(proposed|rejected|accepted|deprecated|superseded by ADR-\d{4})$')
 targets = sorted(pathlib.Path('docs/decisions').glob('0*.md'))
 targets.append(pathlib.Path('docs/decisions/template.md'))
@@ -126,9 +120,6 @@ for p in targets:
     for s in REQUIRED:
         if s not in text:
             print(f'{p}:1 必須節がない: {s}')
-    for s in FORBIDDEN:
-        if s in text:
-            print(f'{p}:1 使わない節がある: {s}')
     if is_template:
         continue
     for i, l in enumerate(lines[end+1:], end+2):
@@ -183,5 +174,5 @@ for p in sorted(pathlib.Path('docs').rglob('*.md')):
 PY
 )
 
-[ "$found" -eq 0 ] && echo "検出なし（9項目すべて）"
+[ "$found" -eq 0 ] && echo "検出なし（8項目すべて）"
 exit 0

@@ -36,6 +36,8 @@
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 
+各入れ物の役割と時制をここに定める根拠は [decisions/0011-record-separation.md](./decisions/0011-record-separation.md) にある。
+
 `.specify/` と `.claude/skills/speckit-*` は Spec Kit が配る。人が書き足さないため、この規約の対象外とし、手で書き換えない。`specs/` 配下は人が書くため対象に含む。
 
 ---
@@ -71,7 +73,7 @@ Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.
 実装が終わっても残るなら要件。終われば閉じるなら作業。1つの要件に対して作業は複数生まれる。
 
 **決定か、要件か。**
-代替案があり、それを退けたなら決定（`decisions/`）。満たすべき性質を述べているだけなら要件。
+なぜそう決めたかを述べるなら決定（`decisions/`）。満たすべき性質を述べているだけなら要件。
 
 **要件をどこに置くか。**
 機能を足すたびに問い直されるなら `REQUIREMENTS.md`。その機能を作り終えたら閉じるなら `spec.md`。
