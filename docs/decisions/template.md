@@ -59,3 +59,7 @@ Chosen option: "{title of option 1}", because {justification. e.g., only option,
 * Neutral, because {argument b}
 * Bad, because {argument c}
 * …
+
+## References
+
+* {link to a related decision record, standard, or source}

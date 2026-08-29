@@ -38,7 +38,7 @@
 
 各入れ物の役割と時制をここに定める根拠は [decisions/0011-record-separation.md](./decisions/0011-record-separation.md) にある。
 
-`.specify/` と `.claude/skills/speckit-*` は Spec Kit が配る。人が書き足さないため、この規約の対象外とし、手で書き換えない。`specs/` 配下は人が書くため対象に含む。
+外部ツールが配り、人が書き足さないファイルは対象外とする。手で書き換えない。`.specify/` と `.claude/skills/speckit-*` がこれに当たる。`specs/` 配下は人が書くため対象に含む。
 
 ---
 

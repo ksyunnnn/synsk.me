@@ -58,7 +58,7 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 **使う節** — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Pros and Cons of the Options / References
 
-**使わない節** — Confirmation / More Information。MADR はどちらも optional とし、Confirmation には「included in many ADRs」と付している。使わないのはこのプロジェクトの選択であり、書かれていても違反ではない。参照は `## References` に置く
+**使わない節** — Confirmation / More Information。参照は `## References` に置く
 
 **見出しに番号を書かない。** 番号はファイル名が持つ。他文書からは `ADR-NNNN` で参照する。
 
