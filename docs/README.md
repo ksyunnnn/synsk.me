@@ -20,7 +20,7 @@
 |--------|---------|------|---------------------|
 | [VISION.md](./VISION.md) | なぜ作るか | 未来完了 | — |
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
-| [decisions/](./decisions/) | なぜそう決めたか | 決定を述べる節は現在形 | これから守るべきルール、未決事項、他文書の転記 |
+| [decisions/](./decisions/) | なぜそう決めたか | `## Decision Outcome` は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 機能をまたいで満たすべきこと | 現在形 | 進捗、Issue 番号、実装方法、1つの機能で閉じる要件 |
 | `../specs/<機能ディレクトリ>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
 | [archive/](./archive/) | 過去の記録 | — | — |

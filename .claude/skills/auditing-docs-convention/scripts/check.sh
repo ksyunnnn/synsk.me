@@ -67,7 +67,21 @@ done < <(grep -n '#[0-9]' docs/REQUIREMENTS.md 2>/dev/null | grep -v 'check-igno
 # --- [原則リンク] Decision Drivers が PRINCIPLES.md 全体を指している ---
 while IFS= read -r line; do
   report "[原則リンク] $line"
-done < <(grep -ln '^decision-makers:' docs/decisions/0*.md 2>/dev/null | xargs -r grep -n '](\.\./PRINCIPLES\.md)' 2>/dev/null | grep -v 'check-ignore')
+done < <(python3 - <<'PY'
+import pathlib, re
+for p in sorted(pathlib.Path('docs/decisions').glob('0*.md')):
+    lines = p.read_text().split('\n')
+    inside = False
+    for i, l in enumerate(lines, 1):
+        if l.startswith('## '):
+            inside = l.strip() == '## Decision Drivers'
+            continue
+        if not inside or 'check-ignore' in l:
+            continue
+        if re.search(r'\]\(\.\./PRINCIPLES\.md\)', l):
+            print(f'{p}:{i}:{l}')
+PY
+)
 
 # --- [MADR] 決定の記録が MADR の構造から外れている ---
 while IFS= read -r line; do
