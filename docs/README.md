@@ -36,7 +36,7 @@
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 
-`.specify/` と `.claude/skills/speckit-*` は Spec Kit が生成する。この規約の対象外とし、手で書き換えない。
+`.specify/` と `.claude/skills/speckit-*` は Spec Kit が配る。人が書き足さないため、この規約の対象外とし、手で書き換えない。`specs/` 配下は人が書くため対象に含む。
 
 ---
 

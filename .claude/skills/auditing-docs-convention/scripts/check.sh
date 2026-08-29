@@ -8,7 +8,7 @@
 #
 set -u
 
-# 検査から除くディレクトリ。追加はここだけ。
+# 検査から除くパス。値は部分文字列で照合する。追加はここだけ。
 EXCLUDE_DIRS="node_modules docs/archive .specify .claude/skills/speckit-"
 export EXCLUDE_DIRS
 cd "$(git rev-parse --show-toplevel)" || exit 1
