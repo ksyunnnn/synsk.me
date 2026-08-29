@@ -21,7 +21,8 @@
 | [VISION.md](./VISION.md) | なぜ作るか | 未来完了 | — |
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
 | [decisions/](./decisions/) | なぜそう決めたか | 決定を述べる節は現在形 | これから守るべきルール、未決事項、他文書の転記 |
-| [REQUIREMENTS.md](./REQUIREMENTS.md) | 何を満たすべきか | 現在形 | 進捗、Issue 番号、実装方法 |
+| [REQUIREMENTS.md](./REQUIREMENTS.md) | 機能をまたいで満たすべきこと | 現在形 | 進捗、Issue 番号、実装方法、1つの機能で閉じる要件 |
+| `specs/<PREFIX>-<SHORT-NAME>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
 | [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
@@ -42,8 +43,10 @@
 **変わりやすい側から変わりにくい側へ。一方向のみ。**
 
 ```
-Issue → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.md
+Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.md
 ```
+
+`spec.md` の位置は Spec Kit の公式に根拠を持たない。公式が定めるのは生成の順序（Spec → Plan → Tasks → Implement）であり、`spec.md` が機能をまたぐ要件文書を参照してよいかは書かれていない。
 
 逆向きは張らない。リンクと ID 参照の両方に適用する。例外は1つ。**ディレクトリの `README.md` は案内板なので、どこへでもリンクしてよい。**
 
@@ -67,6 +70,23 @@ Issue → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.md
 
 **決定か、要件か。**
 代替案があり、それを退けたなら決定（`decisions/`）。満たすべき性質を述べているだけなら要件。
+
+**要件をどこに置くか。**
+機能を足すたびに問い直されるなら `REQUIREMENTS.md`。その機能を作り終えたら閉じるなら `spec.md`。
+
+```
+✓ ## FR-11: 永続化したデータを完全に削除できる
+   → データを持つ機能を足すたびに問い直される
+
+✓ ## FR-16: スマートフォンから internal コンテンツを作成・編集・公開できる
+   → 編集機能を足すたびに問い直される
+
+✗ ## FR-12: career と project から職務経歴書を出力できる
+   → 出力機能で閉じる。spec.md が持つ
+
+✗ ## FR-04: internal コンテンツに画像などのメディアを含められる
+   → エディタで閉じる。spec.md が持つ
+```
 
 **要件か、疑問か。**
 現在形で「〜できる」と書けるなら要件。要るかどうか分からないなら疑問（`question` ラベルの Issue）。
