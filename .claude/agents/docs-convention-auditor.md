@@ -59,6 +59,12 @@ bash .claude/skills/auditing-docs-convention/scripts/check.sh
 
 ### 3. 対象を読む
 
+起動時に渡される範囲で分岐する。
+
+**範囲が差分のとき** — 起動時に渡された対象ファイルだけを読む。GitHub は取得しない。
+
+**範囲が全体のとき** — 次を読む。
+
 ```
 docs/REQUIREMENTS.md
 docs/decisions/            README.md と template.md を含むすべて
@@ -80,6 +86,8 @@ gh api repos/:owner/:repo/milestones
 ### 4. 観点ごとに照合する
 
 順序を固定する。飛ばさない。
+
+範囲が差分のときは D と E と G を実施しない。実施しなかった観点は、報告の「照合したが問題がなかったもの」に「未実施（範囲が差分）」と書く。**実施していないものを「なし」と書かない。**
 
 **A. 役割違反** — その文書に書いてはいけないものが書かれていないか。各文書の時制が定義と一致するか。いずれも `docs/README.md` の表と照合する。
 
