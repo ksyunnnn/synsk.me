@@ -3,12 +3,13 @@
 # ドキュメント規約のうち、確実に判定できる検査だけを置く。
 # 曖昧なものは監査人へ委ね、ここに書かない。
 # docs/archive/ は凍結された記録のため、すべての検査から除く。
+# .specify/ と .claude/skills/speckit-* は Spec Kit の生成物のため、すべての検査から除く。
 # 出力した行はすべて違反である。誤検出を出さないことを優先する。
 #
 set -u
 
 # 検査から除くディレクトリ。追加はここだけ。
-EXCLUDE_DIRS="node_modules docs/archive"
+EXCLUDE_DIRS="node_modules docs/archive .specify .claude/skills/speckit-"
 export EXCLUDE_DIRS
 cd "$(git rev-parse --show-toplevel)" || exit 1
 

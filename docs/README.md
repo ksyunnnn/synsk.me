@@ -22,7 +22,7 @@
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
 | [decisions/](./decisions/) | なぜそう決めたか | 決定を述べる節は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 機能をまたいで満たすべきこと | 現在形 | 進捗、Issue 番号、実装方法、1つの機能で閉じる要件 |
-| `specs/<PREFIX>-<SHORT-NAME>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
+| `../specs/<機能ディレクトリ>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
 | [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
@@ -35,6 +35,8 @@
 | [.claude/skills/](../.claude/skills/) | skill の起動手順と結果の扱い | 恒常 | 観点と判定基準（`scripts/` は除く） |
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
+
+`.specify/` と `.claude/skills/speckit-*` は Spec Kit が生成する。この規約の対象外とし、手で書き換えない。
 
 ---
 
