@@ -2,6 +2,9 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
 	"name": "synsk-me",
+	// synsk.me だけを入口にする。workers.dev で同じ内容が配信されると
+	// 検索エンジンから見て重複する。preview_urls は既定で workers_dev に従う
+	"workers_dev": false,
 	"compatibility_date": "2026-08-29",
 	"compatibility_flags": [
 		"nodejs_compat",
