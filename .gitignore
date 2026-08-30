@@ -44,6 +44,7 @@ docs/.tmp/
 .playwright-mcp/
 # OpenNext
 .open-next
+cloudflare-env.d.ts
 
 # wrangler files
 .wrangler
