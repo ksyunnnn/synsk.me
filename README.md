@@ -9,14 +9,19 @@
 
 ## 技術スタック
 
-Next.js 15（App Router）/ TypeScript / Tailwind CSS
+Next.js 15（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
+
+Workers 上では [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) を介して動く。Worker の設定は `wrangler.jsonc`、アダプタの設定は `open-next.config.ts` が持つ。
 
 ## 開発
 
 ```bash
-npm run dev     # 開発サーバー（http://localhost:3000）
-npm run build   # プロダクションビルド
-npm run lint    # リンター
+npm run dev        # 開発サーバー（http://localhost:3000）
+npm run build      # プロダクションビルド
+npm run lint       # リンター
+npm run preview    # Workers ランタイムでローカル起動
+npm run deploy     # Cloudflare Workers へデプロイ
+npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
 ## 環境変数
@@ -24,3 +29,4 @@ npm run lint    # リンター
 | 変数 | 用途 |
 |------|------|
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。本番環境でのみ動作する |
+| `NEXTJS_ENV` | Workers ランタイムが読み込む `.env` を選ぶ。git 管理外の `.dev.vars` に置く。未定義なら `production` |
