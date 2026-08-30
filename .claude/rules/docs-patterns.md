@@ -73,7 +73,7 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 ```
 ✓ Decision Outcome: 外部プラットフォームへの転載は synsk.me を正本とする（POSSE）
 ✗ Decision Outcome: VISION.md と PRINCIPLES.md を定義する
-   → 代替案がない。文書の存在告知でしかない
+   → 文書の存在告知でしかない。プロジェクトの進み方に影響しない
 
 ✓ Context and Problem Statement: Medium の RSS には rel="canonical" が含まれない（2026-08-20 に実フィードを取得して確認）
 ✗ Context and Problem Statement: （他文書の表をそのまま転記）
