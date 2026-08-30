@@ -1,7 +1,5 @@
 import { ImageResponse } from "next/og";
 
-export const runtime = 'edge';
-
 export const alt = 'synsk.me';
 export const size = {
   width: 1200,
@@ -13,10 +11,21 @@ export const contentType = 'image/png';
 const url =
   'https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&current=weathercode&timezone=Asia%2FTokyo&forecast_days=1';
 
-export default async function Image() {
-  const json = await fetch(url).then((res) => res.json());
+export const dynamic = 'force-dynamic';
 
-  const isFine = Number(json.current.weathercode) === 0;
+async function isFineInTokyo(): Promise<boolean> {
+  try {
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) return false;
+    const json = await res.json();
+    return Number(json?.current?.weathercode) === 0;
+  } catch {
+    return false;
+  }
+}
+
+export default async function Image() {
+  const isFine = await isFineInTokyo();
 
   return new ImageResponse(
     (
