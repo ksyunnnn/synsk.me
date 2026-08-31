@@ -65,6 +65,10 @@ Activity（成果物）
 * Bad, because Project の数が増えた場合、管理が煩雑になる可能性
   * **対策**: isHighlighted フラグでハイライト表示を制御
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: 参照モデル（Project → Activity）

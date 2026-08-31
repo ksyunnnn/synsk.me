@@ -58,6 +58,10 @@ synsk.me のリデザインにおいて、Timeline 表示で Platform を視覚�
 * Bad, because Simple Icons のアイコンが変更・削除される可能性（低リスク）
 * Bad, because Phosphor Icons のウェイト選択を誤ると Typography との不整合が起きる
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: ActivityType ごとにアイコン設定

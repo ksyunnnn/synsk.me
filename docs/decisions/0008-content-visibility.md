@@ -54,6 +54,10 @@ decision-makers: synsk
 * Bad, because 選別の対象が増えるため、カラムを追加するたびに判断が発生する
 * Bad, because **選別の漏れ。** 除外リスト方式（これを除く）にすると、カラムが増えたときに漏れる。許可リスト方式（これだけを出す）であれば、新しいカラムは既定で公開されない
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: 公開 / 非公開の2段階

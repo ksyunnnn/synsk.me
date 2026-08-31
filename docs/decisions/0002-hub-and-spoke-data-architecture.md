@@ -80,6 +80,10 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 * Bad, because 外部 API のレート制限や仕様変更
   * 対策: エラーハンドリングとフォールバックを実装
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 > 以下の Option A〜D はデータストアの選択肢であり、決定は

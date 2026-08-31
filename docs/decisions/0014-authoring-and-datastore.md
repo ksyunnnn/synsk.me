@@ -43,6 +43,10 @@ decision-makers: synsk
 * Bad, because ブラウザ内で SQL を動かす経験は得られなくなる
 * Bad, because **オフラインで書けない。** Option A では手元で完結していた
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: リポジトリに Markdown を置く

@@ -46,6 +46,10 @@ X over Y 形式を採用:
 * Bad, because ビジョン・原則が形骸化する可能性
   * 対策: 定期的な見直しをスケジュール
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: READMEに統合

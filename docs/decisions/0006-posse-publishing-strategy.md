@@ -71,6 +71,10 @@ interface InternalMetadata {
 - dev.to は `canonical_url` フィールドを持つ
 - Zenn には canonical を指定する機能がない認識だが、未検証（[推測]）
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: 外部プラットフォームを正本にする（PESOS のみ）

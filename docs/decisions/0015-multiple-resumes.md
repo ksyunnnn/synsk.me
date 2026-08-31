@@ -35,6 +35,10 @@ decision-makers: synsk
 * Bad, because 版が増えると、どれを誰に渡したかを把握する必要が生じる
 * Bad, because **どの版を誰に渡したかを、システムが持たない。** 版ごとに公開範囲は設定できるが、渡した相手の記録は残らない。版が増えたとき、どれを整理してよいかの判断材料がない
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: 1つだけ持つ

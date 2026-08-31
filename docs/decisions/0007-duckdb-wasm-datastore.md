@@ -66,6 +66,10 @@ DuckDB の公式ドキュメントは WASM 版の用途を「in-browser SQL anal
 * Bad, because **配信データの露出**: ブラウザへ配信するデータファイルに非公開フィールドが含まれると、UI に表示していなくても閲覧できてしまう
 * Bad, because WASM 版がプロダクション用途で安定して動作するかは未検証（ADR-0002 から引き継ぐ）
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: 静的生成のみ（DuckDB を使わない）

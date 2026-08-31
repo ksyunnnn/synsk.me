@@ -42,6 +42,10 @@ decision-makers: synsk
 * Bad, because メディアファイルの保管が、テキストとは別の仕組みを要求する
 * Bad, because **版の粒度を決めていない。** 保存のたびに版を作るのか、公開のたびに作るのかで、保管量が桁違いになる
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: 本文を外部プラットフォームに置き、synsk.me は参照だけ持つ

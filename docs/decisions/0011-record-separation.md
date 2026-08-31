@@ -62,6 +62,10 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 * Bad, because **`docs/notes/` が実質的な正本になる可能性。** 他文書から参照されない前提の場所だが、参照されれば削除できなくなる
 * Bad, because **要件が増えたとき、通し番号だけでは見通しが悪くなる。** 領域で分けられないため、数が増えると一覧性が下がる
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: 文書中心

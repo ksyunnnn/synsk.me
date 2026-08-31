@@ -123,6 +123,10 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 * Bad, because モノクロのみでは強調表現に制限がある
 * Bad, because アクセントカラーが必要になった場合、後から追加が必要
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Colors: Warm Gray / Cool Gray

@@ -54,11 +54,11 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 テンプレートは [docs/decisions/template.md](../../docs/decisions/template.md)（MADR 4）。対象と単位は [docs/decisions/README.md](../../docs/decisions/README.md) が定める。
 
-**front matter** — `status` `date` `decision-makers` を使う。`consulted` と `informed` は書かない。`decision-makers` は `synsk`。
+**front matter** — `decision-makers` には決めた者を書く。起案した者が別なら `consulted` に書く。
 
-**使う節**（MADR が定める節を指す。それ以外の小見出しは制約しない） — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Pros and Cons of the Options / References
+**使う節**（MADR が定める節を指す。それ以外の小見出しは制約しない） — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Confirmation / Pros and Cons of the Options / References
 
-**使わない節** — Confirmation / More Information
+**使わない節** — More Information
 
 **見出しに番号を書かない。** 番号はファイル名が持つ。他文書からは `ADR-NNNN` で参照する。
 
@@ -78,6 +78,21 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 ✓ Context and Problem Statement: Medium の RSS には rel="canonical" が含まれない（2026-08-20 に実フィードを取得して確認）
 ✗ Context and Problem Statement: （他文書の表をそのまま転記）
    → 転記の過程で未決が決定に格上げされる
+```
+
+**Confirmation は常に書く。** 判定手段がなければ、ないことと理由を書く。節ごと消さない。理由は「思いつかなかった」で足りる。考えた結果ないことと、考えていないことを分けるため。
+
+```
+✓ Confirmation: `check.sh` の [参照の向き] 検査が、変わりにくい側から
+  変わりやすい側へのリンクを検出する
+
+✓ Confirmation: 判定手段がない。「軸を定めない」ことを確認する方法が思いつかなかった
+
+✗ Confirmation: 実装時に注意する
+   → 判定していない
+
+✗ （節がない）
+   → 考えた結果ないのか、考えていないのかが読めない
 ```
 
 **引用してよいのは決定の記録から決定の記録への引用に限る。** 決定の記録は書き換えないので引用が古くならない。書き換わる文書（`REQUIREMENTS.md`）からは引用せず、リンクか ID で参照する。

@@ -44,6 +44,10 @@ Vercel に留まる選択も成立する。管理画面もサーバ側の処理�
 * Bad, because Vercel 上の既存サイトを移す作業が発生する
 * Bad, because **依存先が1社に集中する。** サイトの配信、データ、画像、認証がすべて同じ会社の提供による。無料枠の廃止や仕様変更が起きた場合、影響が同時に及ぶ。同種の事例として、PlanetScale は 2024-04-08 に無料プランを廃止している（[Deprecating the Hobby plan](https://planetscale.com/changelog/deprecating-hobby)）
 
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
 ## Pros and Cons of the Options
 
 ### Option A: Vercel に留まる
