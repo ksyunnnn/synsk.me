@@ -71,7 +71,7 @@ Supabase や Firebase を使う。
 - **Pros**: データベースへ届く経路が自分の書いたコードだけになる。選別を1箇所で行える
 - **Cons**: 読み書きの処理を自分で書くことになる
 
-## References
+## More Information
 
 - [ADR-0006: 発信戦略として POSSE を採用する](./0006-posse-publishing-strategy.md)
 - [ADR-0007: データストアに DuckDB WASM を採用する](./0007-duckdb-wasm-datastore.md)

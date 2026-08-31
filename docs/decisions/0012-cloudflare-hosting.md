@@ -62,7 +62,7 @@ Vercel に留まる選択も成立する。管理画面もサーバ側の処理�
 - **Pros**: データ、画像、認証が同じ場所で揃う。R2 は転送量が無料。別プロジェクトで構成の実績がある
 - **Cons**: 依存先が1社に集中する。Next.js の対応はアダプタ（`@opennextjs/cloudflare`）を介する
 
-## References
+## More Information
 
 - [ADR-0010: internal コンテンツの正本を synsk.me が持つ](./0010-content-storage-scope.md)
 - [Cloudflare R2 Pricing](https://developers.cloudflare.com/r2/pricing/)

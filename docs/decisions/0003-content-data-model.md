@@ -92,7 +92,7 @@ Project を Activity の一種として扱う（`type: 'project'`）。
   - 外部取得 Activity と手動作成 Project の性質が異なる
   - Discriminated Union が複雑化
 
-## References
+## More Information
 
 - [Content Model 設計](../archive/content-model-design.md) - 詳細なデータ構造定義
 - [Hub-and-Spoke モデル](../archive/hub-and-spoke-model.md) - データ取得アーキテクチャ

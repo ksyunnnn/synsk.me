@@ -108,7 +108,7 @@ GitHub Spec Kit や AWS Kiro を使い、仕様から計画とタスクを生成
 - **Pros**: 調査が示した「最小かつ正確」に最も近い
 - **Cons**: 実装前の段階では、正本になるコードが存在しない
 
-## References
+## More Information
 
 - [ISO/IEC/IEEE 29148-2018](https://standards.ieee.org/standard/29148-2018.html)
 - [arc42 Section 10: Quality Requirements](https://docs.arc42.org/section-10/)

@@ -91,7 +91,7 @@ URL を変えると、外部プラットフォームへ転載した記事から 
 
 **Option C: 書き込まず、読むだけ — 採用** — URL が1つに保たれる。絞り込んだ状態を共有できるが、その後の操作は URL に反映されない。
 
-## References
+## More Information
 
 - [ADR-0003: コンテンツデータモデル設計（C: 分離モデル）](./0003-content-data-model.md)
 - [ADR-0006: 発信戦略として POSSE を採用する](./0006-posse-publishing-strategy.md)

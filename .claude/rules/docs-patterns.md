@@ -56,9 +56,7 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 **front matter** — `decision-makers` には決めた者を書く。起案した者が別なら `consulted` に書く。
 
-**使う節**（MADR が定める節を指す。それ以外の小見出しは制約しない） — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Confirmation / Pros and Cons of the Options / References
-
-**使わない節** — More Information
+**使う節**（MADR が定める節を指す。それ以外の小見出しは制約しない） — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Confirmation / Pros and Cons of the Options / More Information
 
 **見出しに番号を書かない。** 番号はファイル名が持つ。他文書からは `ADR-NNNN` で参照する。
 
@@ -79,6 +77,8 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 ✗ Context and Problem Statement: （他文書の表をそのまま転記）
    → 転記の過程で未決が決定に格上げされる
 ```
+
+**More Information** — 追加の証拠、いつ・どう実現するか、いつ見直すか、他の決定や資料へのリンクを置く。
 
 **Confirmation は常に書く。** 判定手段がなければ、ないことと理由を書く。節ごと消さない。理由は「思いつかなかった」で足りる。考えた結果ないことと、考えていないことを分けるため。
 

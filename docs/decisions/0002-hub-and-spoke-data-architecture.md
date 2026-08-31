@@ -117,7 +117,7 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 - **Pros**: 分析向き、JSON 直接クエリ、WASM 対応、学習価値
 - **Cons**: データ量に対してはオーバースペック
 
-## References
+## More Information
 
 - [DuckDB Documentation](https://duckdb.org/docs/)
 - [DuckDB WASM](https://duckdb.org/docs/api/wasm/overview.html)

@@ -65,7 +65,7 @@ Medium や Zenn に書いて、synsk.me からリンクする。
 - **Pros**: POSSE が成立する。書き直しを恐れずに公開できる
 - **Cons**: 保管量が増える。版を管理する設計が要る
 
-## References
+## More Information
 
 - [ADR-0006: 発信戦略として POSSE を採用する](./0006-posse-publishing-strategy.md)
 - [ADR-0009: 外部データを永続化し、手で付けた情報を再取得後も保持する](./0009-external-data-sync.md)

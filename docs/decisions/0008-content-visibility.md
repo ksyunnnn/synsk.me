@@ -77,7 +77,7 @@ decision-makers: synsk
 - **Pros**: 案件情報が1箇所にまとまる。可視性がカラムの構造そのもので表現される
 - **Cons**: 配信物を生成する側が、出す値を選別する責任を負う
 
-## References
+## More Information
 
 - [ADR-0003: Content Data Model](./0003-content-data-model.md)
 - [content-model-design.md](../archive/content-model-design.md)

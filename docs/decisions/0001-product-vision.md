@@ -66,7 +66,7 @@ Vision と Principles を README.md に記載する。
 - **Pros**: 役割が明確、階層構造が作れる、参照しやすい
 - **Cons**: ファイル数が増える
 
-## References
+## More Information
 
 - [Amazon Working Backwards](https://workingbackwards.com/)
 - [Ray Dalio's Principles](https://www.principles.com/)

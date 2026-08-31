@@ -58,7 +58,7 @@ decision-makers: synsk
 - **Pros**: 相手ごとにも時点ごとにも分けられる。新しい分け方が必要になっても構造を変えずに済む
 - **Cons**: 何が何のための版かを、作り手が識別子で表すことになる
 
-## References
+## More Information
 
 - [ADR-0003: コンテンツデータモデル設計（C: 分離モデル）](./0003-content-data-model.md)
 - [ADR-0008: コンテンツの可視性を3段階で扱う](./0008-content-visibility.md)

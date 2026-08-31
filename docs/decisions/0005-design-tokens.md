@@ -146,7 +146,7 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 - **Pros**: 可読性が高い日本語フォント
 - **Cons**: Source Sans 3 とのペアリングで違和感
 
-## References
+## More Information
 
 - kbkbkb.co - 参考サイト
 - [Google Fonts: Source Sans 3](https://fonts.google.com/specimen/Source+Sans+3)

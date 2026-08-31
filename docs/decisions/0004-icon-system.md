@@ -91,7 +91,7 @@ Platform ロゴを使わず、ActivityType（event, sandbox 等）でアイコ�
 
 → **不採用**: GitHub や Zenn の認知度を活かせない
 
-## References
+## More Information
 
 - [Simple Icons](https://simpleicons.org/)
 - [Phosphor Icons](https://phosphoricons.com/)

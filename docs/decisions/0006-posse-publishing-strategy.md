@@ -96,7 +96,7 @@ POSSE に加え、[Webmention](https://www.w3.org/TR/webmention/) と [Bridgy](h
 - **Pros**: 所有権と永続性を確保しつつ、実装は転載と canonical 設定のみで済む
 - **Cons**: 反応は各プラットフォームに分散したまま残る
 
-## References
+## More Information
 
 - [POSSE — IndieWeb](https://indieweb.org/POSSE)
 - [PESOS — IndieWeb](https://indieweb.org/PESOS)

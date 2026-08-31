@@ -96,7 +96,7 @@ DuckDB でビルド時に集計し、結果を静的ファイルとして配信�
 - **Pros**: 読み込み後はサーバー往復なしで分析クエリを実行できる。WASM の実地検証という学習価値がある。外部サービスに依存しない
 - **Cons**: 初期ロードが重い。配信データの露出に配慮が必要
 
-## References
+## More Information
 
 - [DuckDB-Wasm 公式ドキュメント](https://duckdb.org/docs/stable/clients/wasm/overview.html)
 - [@duckdb/duckdb-wasm — npm](https://www.npmjs.com/package/@duckdb/duckdb-wasm)

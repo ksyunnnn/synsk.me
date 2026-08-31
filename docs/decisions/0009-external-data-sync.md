@@ -63,7 +63,7 @@ decision-makers: synsk
 - **Pros**: 外部から消えても残る。取得に失敗しても前回の値を出せる
 - **Cons**: 保管する量が増える。外部の更新を取り込む処理が要る
 
-## References
+## More Information
 
 - [ADR-0002: Hub-and-Spoke Data Architecture](./0002-hub-and-spoke-data-architecture.md)
 - [ADR-0008: コンテンツの可視性を3段階で扱う](./0008-content-visibility.md)

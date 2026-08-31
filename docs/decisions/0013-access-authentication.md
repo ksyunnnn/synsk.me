@@ -59,7 +59,7 @@ NextAuth.js や Better Auth を使い、ログイン画面とセッション管�
 - **Pros**: 実装するものがない。設定で許可する相手を指定する
 - **Cons**: ログイン画面の見た目を作れない
 
-## References
+## More Information
 
 - [ADR-0012: ホスティングに Cloudflare を採用する](./0012-cloudflare-hosting.md)
 - [Cloudflare Access: Application token](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/application-token/)
