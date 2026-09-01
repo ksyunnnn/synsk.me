@@ -5,7 +5,7 @@ paths:
 
 # ドキュメントの書き方
 
-役割と時制の定義は [docs/README.md](../../docs/README.md) にある。ここは書式の例だけを持つ。
+役割と時制の定義は [docs/README.md](../../docs/README.md) にある。ここは書式の例だけを持つ。テンプレートを持つ文書の書式は、そのテンプレートが持つ。
 
 ## Contents
 
@@ -52,61 +52,9 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 
 ## 決定の記録
 
-テンプレートは [docs/decisions/template.md](../../docs/decisions/template.md)（MADR 4）。対象と単位は [docs/decisions/README.md](../../docs/decisions/README.md) が定める。
-
-**front matter** — `decision-makers` には決めた者を書く。起案した者が別なら `consulted` に書く。
-
-**使う節**（MADR が定める節を指す。それ以外の小見出しは制約しない） — Context and Problem Statement / Decision Drivers / Considered Options / Decision Outcome / Consequences / Confirmation / Pros and Cons of the Options / More Information
-
-**見出しに番号を書かない。** 番号はファイル名が持つ。他文書からは `ADR-NNNN` で参照する。
-
-**Decision Drivers** — 判断を駆動したものを並べる。任意の節。該当する原則があれば、アンカー付きのリンクで1行目に置く。
-
-```
-✓ * 実験 over 完璧な計画（[PRINCIPLES.md](../PRINCIPLES.md#2-実験)）
-✗ * [PRINCIPLES.md](../PRINCIPLES.md)
-   → どの原則が効いたか読めない
-```
-
-```
-✓ Decision Outcome: 外部プラットフォームへの転載は synsk.me を正本とする（POSSE）
-✗ Decision Outcome: VISION.md と PRINCIPLES.md を定義する
-   → 文書の存在告知でしかない。プロジェクトの進み方に影響しない
-
-✓ Context and Problem Statement: Medium の RSS には rel="canonical" が含まれない（2026-08-20 に実フィードを取得して確認）
-✗ Context and Problem Statement: （他文書の表をそのまま転記）
-   → 転記の過程で未決が決定に格上げされる
-```
-
-**More Information** — 追加の証拠、いつ・どう実現するか、いつ見直すか、他の決定や資料へのリンクを置く。
-
-**Confirmation は常に書く。** 判定手段がなければ、ないことと理由を書く。節ごと消さない。理由は「思いつかなかった」で足りる。考えた結果ないことと、考えていないことを分けるため。
-
-```
-✓ Confirmation: `check.sh` の [参照の向き] 検査が、変わりにくい側から
-  変わりやすい側へのリンクを検出する
-
-✓ Confirmation: 判定手段がない。「軸を定めない」ことを確認する方法が思いつかなかった
-
-✗ Confirmation: 実装時に注意する
-   → 判定していない
-
-✗ （節がない）
-   → 考えた結果ないのか、考えていないのかが読めない
-```
+テンプレートは [docs/decisions/template.md](../../docs/decisions/template.md)（MADR 4）。書式と例はテンプレート内の `Added by synsk:` のコメントが持つ。対象と単位は [docs/decisions/README.md](../../docs/decisions/README.md) が定める。
 
 **引用してよいのは決定の記録から決定の記録への引用に限る。** 決定の記録は書き換えないので引用が古くならない。書き換わる文書（`REQUIREMENTS.md`）からは引用せず、リンクか ID で参照する。
-
-**Consequences に「決めていない」と書いてよいのは、その決定の帰結として生じた不確実性に限る。** その記録で決めるべきだったことは Issue が持つ。
-
-```
-✓ Bad, because 版の粒度を決めていない。保存のたびに版を作るのか、
-  公開のたびに作るのかで、保管量が桁違いになる
-   → 「本文と版を保管する」と決めた結果、新しく生じた論点
-
-✗ Bad, because この記録ではデータ形式を確定していない
-   → その記録で決めるべきだったこと。Issue が持つ
-```
 
 **時制** — `docs/README.md` の表に従う。
 
