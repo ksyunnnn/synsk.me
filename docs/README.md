@@ -75,6 +75,9 @@ Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.
 **決定か、要件か。**
 なぜそう決めたかを述べるなら決定（`decisions/`）。満たすべき性質を述べているだけなら要件。
 
+**決定をどこに置くか。**
+機能をまたいで効くなら `decisions/`。その機能で閉じるなら `spec.md` と `plan.md`。
+
 **要件をどこに置くか。**
 機能を足すたびに問い直されるなら `REQUIREMENTS.md`。その機能を作り終えたら閉じるなら `spec.md`。
 
