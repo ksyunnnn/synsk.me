@@ -3,8 +3,11 @@
 	"main": ".open-next/worker.js",
 	"name": "synsk-me",
 	// synsk.me だけを入口にする。workers.dev で同じ内容が配信されると
-	// 検索エンジンから見て重複する。preview_urls は既定で workers_dev に従う
+	// 検索エンジンから見て重複する
 	"workers_dev": false,
+	// ブランチごとのプレビュー URL は出す。既定では workers_dev に従って
+	// 無効になるため、明示する
+	"preview_urls": true,
 	"compatibility_date": "2026-08-29",
 	"compatibility_flags": [
 		"nodejs_compat",
