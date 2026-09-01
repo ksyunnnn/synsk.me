@@ -11,6 +11,8 @@ export interface YearGroup {
 
 export interface VariantProps {
   groups: YearGroup[];
+  /** 相対表記の基準時刻。サーバとクライアントで同じ値を使い、再描画でずれないようにする。 */
+  now: number;
 }
 
 export const VARIANT_LABEL: Record<TimelineVariant, string> = {
