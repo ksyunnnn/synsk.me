@@ -36,7 +36,7 @@
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 
-入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0011-record-separation.md](./decisions/0011-record-separation.md) にある。
+入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0017-requirement-placement.md](./decisions/0017-requirement-placement.md) にある。
 
 外部ツールが配り、人が書き足さないファイルは、上の表の対象外とする。手で書き換えない。`.specify/` と `.claude/skills/speckit-*` がこれに当たる。`specs/` 配下は人が書くため対象に含む。
 
@@ -63,7 +63,7 @@ Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.
 
 `scraps/` はこの図に入らない。
 
-判断の根拠は [decisions/0011-record-separation.md](./decisions/0011-record-separation.md) にある。
+判断の根拠は [decisions/0017-requirement-placement.md](./decisions/0017-requirement-placement.md) にある。
 
 ---
 
