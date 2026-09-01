@@ -88,10 +88,10 @@ Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.
 ✓ ## FR-16: スマートフォンから internal コンテンツを作成・編集・公開できる
    → 編集機能を足すたびに問い直される
 
-✗ ## FR-12: career と project から職務経歴書を出力できる
+✗ ## FR-99: career と project から職務経歴書を出力できる
    → 出力機能で閉じる。spec.md が持つ
 
-✗ ## FR-04: internal コンテンツに画像などのメディアを含められる
+✗ ## FR-99: internal コンテンツに画像などのメディアを含められる
    → エディタで閉じる。spec.md が持つ
 ```
 
