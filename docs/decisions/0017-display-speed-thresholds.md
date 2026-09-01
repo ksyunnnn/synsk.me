@@ -1,5 +1,5 @@
 ---
-status: "accepted"
+status: accepted
 date: 2026-09-01
 decision-makers: synsk
 ---
@@ -36,8 +36,8 @@ decision-makers: synsk
 
 ## Decision Drivers
 
-* 余白 over 密度（[PRINCIPLES.md](../PRINCIPLES.md#1-余白-1)）
-* 息づき over 装飾（[PRINCIPLES.md](../PRINCIPLES.md#2-息づき)）
+* [余白 over 密度](../PRINCIPLES.md#1-余白-1)
+* [息づき over 装飾](../PRINCIPLES.md#2-息づき)
 * 表現を優先したい。速度が表現に優先する場面を限定する
 * 実ユーザーのデータで検証できること
 
@@ -95,6 +95,12 @@ TBT は同記事が「vital in catching and diagnosing potential interactivity i
 * Bad, because 満たすべき値が Google の定義に依存する。同社が値を変えれば追随することになる
 * Bad, because 目標値の出所が2サイトの2026-08-30 時点の実測であり、その後の変化を反映しない
 * Bad, because CrUX にデータがないため、Chrome の集計では検証できない。実ユーザーのデータを得る手段を別に用意することになる
+
+### Confirmation
+
+CrUX API と Cloudflare の Web Analytics が、モバイルとデスクトップそれぞれの75パーセンタイルで5指標を返す。返された値を満たすべき値と突き合わせる。
+
+`synsk.me` は CrUX にデータを持たないため、この手段は Cloudflare の Web Analytics で beacon を配信した後に成立する。
 
 ## Pros and Cons of the Options
 
