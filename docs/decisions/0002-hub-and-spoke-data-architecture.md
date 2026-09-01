@@ -34,7 +34,7 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 
 > **分離の記録（2026-08-20）**: 本 ADR は当初「Hub-and-Spoke モデルの採用」と
 > 「データストアに DuckDB を使用」という2つの決定を含んでいたが、
-> [docs/adr/README.md](./README.md) が定める ADR の単位に反していたため、
+> [docs/decisions/README.md](./README.md) が定める ADR の単位に反していたため、
 > データストアの選定を [ADR-0007](./0007-duckdb-wasm-datastore.md) へ分離した。
 > 本 ADR が扱うのは Hub-and-Spoke というモデル構造の決定のみである。
 > 以降に残る DuckDB への言及は、分離前の検討記録として保持している。
@@ -58,7 +58,7 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 
 ### DuckDB の採用理由（[ADR-0007](./0007-duckdb-wasm-datastore.md) へ分離）
 
-> 以下は 2026-01-31 時点の検討記録。データストアの決定は ADR-0007 が最新である。
+> 以下は 2026-01-31 時点の検討記録。データストアの選定は [ADR-0007](./0007-duckdb-wasm-datastore.md) へ分離した。
 
 1. **埋め込み型**: 外部サービス（Supabase 等）への依存なし
 2. **分析向き**: 列指向で集計クエリに強い
