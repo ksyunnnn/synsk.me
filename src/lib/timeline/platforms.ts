@@ -25,7 +25,7 @@ export interface PlatformMeta {
 }
 
 /**
- * connpass / TECHPLAY / CodePen は simple-icons 16.29.0 に存在しない。
+ * connpass と CodePen は simple-icons 16.29.0 に存在しない。
  * 実測: https://cdn.jsdelivr.net/npm/simple-icons@16.29.0/icons/codepen.svg → 404
  */
 export const PLATFORM_META: Record<Platform, PlatformMeta> = {

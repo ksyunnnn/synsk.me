@@ -3,7 +3,7 @@ import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /**
  * Forem API v1。認証不要だが User-Agent が無いと 403 を返す。
- * fetchWithTimeout が User-Agent を必ず付ける。
+ * registry.ts の request が User-Agent を必ず付ける。
  */
 const ENDPOINT = `https://dev.to/api/articles?username=ksyunnnn&per_page=${PER_SOURCE_LIMIT}`;
 const REFERENCE = 'https://developers.forem.com/api/v1';

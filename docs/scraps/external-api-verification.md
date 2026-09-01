@@ -2,7 +2,7 @@
 
 > 書き捨て。消えても困らないものだけを置く。
 
-11 プラットフォームについて、公式ドキュメントと実リクエストの両方で取得可否を確定させた記録。実装は `src/lib/timeline/sources/` にある。
+12 プラットフォームについて、公式ドキュメントと実リクエストの両方で取得可否を確定させた記録。実装は `src/lib/timeline/sources/` にある（TECHPLAY は取得手段が無いため実装を持たない）。
 
 ## 取得できる
 
@@ -17,14 +17,21 @@
 | CodeSandbox | `https://codesandbox.io/embed/<id>` の OG メタ | 不要 | 個別指定 |
 | Spotify | oEmbed `https://open.spotify.com/oembed?url=` | 不要 | 個別指定 |
 
+## 認証情報があれば取得できる
+
+| Platform | 経路 | 認証 | 根拠 |
+|---|---|---|---|
+| connpass | v2 API `https://connpass.com/api/v2/users/ksyunnnn/attended_events/` | `X-API-Key` ヘッダ。個人・コミュニティは無料だが申請と審査を要する | https://connpass.com/about/api/v2/ |
+
+v1 は廃止済みで 403 を返す。
+
 ## 取得できない
 
 | Platform | 理由 | 根拠 |
 |---|---|---|
 | CodePen | 公開 API が存在せず、oEmbed も Cloudflare の bot challenge で 403 | https://blog.codepen.io/docs/api/ |
 | X | 無料での一覧取得ができない。認証不要なのは個別投稿指定の oEmbed のみ | https://docs.x.com/x-api/getting-started/pricing |
-| TECHPLAY | 公開 API もユーザー単位のフィードも存在しない。全体の新着イベント RSS のみで、`?keyword=` を付けても内容が変わらない | https://techplay.jp/robots.txt |
-| connpass | v2 API は API キー必須。v1 は廃止済みで 403 | https://connpass.com/about/api/v2/ |
+| TECHPLAY | 公開 API もユーザー単位のフィードも存在しない。提供されるのは全体の新着イベント RSS `https://rss.techplay.jp/event/w3c-rss-format/rss.xml` のみで、`?keyword=` を付けても内容が変わらないことを実測した。ユーザーページは 404 | 実測（2026-09-02） |
 
 ## 実装に効く制約
 
@@ -48,4 +55,10 @@ Cloudflare Workers は共有 IP から出るため、未認証の IP 単位の�
 
 ## 疎通の検査
 
-`bash scripts/check-timeline-sources.sh` が、上の表の経路が生きているかを検査する。
+`bash scripts/check-timeline-sources.sh` が、次の 12 経路の状態を検査する。
+
+- 「取得できる」の 8 経路が 200 を返すこと
+- dev.to が User-Agent 無しでは 403 を返すこと
+- CodePen の oEmbed が 403、connpass v1 が 403、connpass v2 が 401 のままであること
+
+X と TECHPLAY は検査しない。掲載対象を手で指名する経路と、経路そのものが無いものにあたる。

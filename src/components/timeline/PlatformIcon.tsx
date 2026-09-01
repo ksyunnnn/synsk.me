@@ -4,7 +4,7 @@ import type { Platform } from '@/lib/timeline/types';
 
 /**
  * ADR-0004 の 2 層構造に従う。Simple Icons に無い Platform
- * （connpass / TECHPLAY / CodePen）は Phosphor の Planet へ落とす。
+ * （connpass / CodePen）は Phosphor の Planet へ落とす。
  *
  * プラットフォーム名はどの案でもテキストで併記するため、
  * アイコンは装飾として aria-hidden にする。読み上げが二重になるのを避ける。
@@ -40,7 +40,9 @@ export const PlatformIcon = ({
       focusable="false"
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={`${useBrand ? 'text-(--brand-color) dark:text-foreground' : ''} ${className ?? ''}`}
+      className={[useBrand ? 'text-(--brand-color) dark:text-foreground' : '', className ?? '']
+        .filter(Boolean)
+        .join(' ')}
       style={useBrand ? ({ '--brand-color': meta.brandHex } as React.CSSProperties) : undefined}
     >
       <path d={meta.iconPath} />
