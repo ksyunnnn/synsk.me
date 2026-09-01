@@ -29,4 +29,5 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 | 変数 | 用途 |
 |------|------|
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。本番環境でのみ動作する |
+| `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
 | `NEXTJS_ENV` | Workers ランタイムが読み込む `.env` を選ぶ。git 管理外の `.dev.vars` に置く。未定義なら `production` |
