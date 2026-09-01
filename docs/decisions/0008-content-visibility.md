@@ -1,15 +1,12 @@
-# ADR-0008: コンテンツの可視性を3段階で扱う
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-08-21
-- **Deciders**: synsk
-- **Related Principles**: [対話 over 展示](../PRINCIPLES.md)
-
+---
+status: accepted
+date: 2026-08-21
+decision-makers: synsk
 ---
 
-## Context
+# コンテンツの可視性を3段階で扱う
+
+## Context and Problem Statement
 
 [ADR-0003](./0003-content-data-model.md) は「Career + Project + Activity の3テーブル構成」を決定したが、その中に「公開設定」として別の決定が同居していた。
 
@@ -28,9 +25,17 @@
 
 さらに、経歴には商談の相手にだけ開示する場面がある。公開と非公開の2段階では表現できない。
 
----
+## Decision Drivers
 
-## Decision
+* [対話 over 展示](../PRINCIPLES.md#3-対話)
+
+## Considered Options
+
+* 公開 / 非公開の2段階
+* 非公開データを別ストアに隔離する
+* 3段階 + 同一レコードで保持
+
+## Decision Outcome
 
 **コンテンツの可視性を、公開 / 限定公開 / 非公開の3段階で扱う。公開できる値と公開できない値は、同一レコードの別カラムとして対にして保持する。**
 
@@ -41,9 +46,19 @@
 
 限定公開を閲覧させる仕組み（認証、共有リンク）は本 ADR の対象ではない。
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because 商談で経歴を開示する運用を、データ構造の変更なしに後から実装できる
+* Good, because 公開後に判断が変わっても、データを失わずに取り下げられる
+* Bad, because 配信物を生成する処理が、出す値と出さない値を選別する必要がある
+* Bad, because 選別の対象が増えるため、カラムを追加するたびに判断が発生する
+* Bad, because **選別の漏れ。** 除外リスト方式（これを除く）にすると、カラムが増えたときに漏れる。許可リスト方式（これだけを出す）であれば、新しいカラムは既定で公開されない
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 ### Option A: 公開 / 非公開の2段階
 
@@ -62,27 +77,7 @@
 - **Pros**: 案件情報が1箇所にまとまる。可視性がカラムの構造そのもので表現される
 - **Cons**: 配信物を生成する側が、出す値を選別する責任を負う
 
----
-
-## Consequences
-
-### Positive
-
-- 商談で経歴を開示する運用を、データ構造の変更なしに後から実装できる
-- 公開後に判断が変わっても、データを失わずに取り下げられる
-
-### Negative
-
-- 配信物を生成する処理が、出す値と出さない値を選別する必要がある
-- 選別の対象が増えるため、カラムを追加するたびに判断が発生する
-
-### Risks
-
-- **選別の漏れ。** 除外リスト方式（これを除く）にすると、カラムが増えたときに漏れる。許可リスト方式（これだけを出す）であれば、新しいカラムは既定で公開されない
-
----
-
-## References
+## More Information
 
 - [ADR-0003: Content Data Model](./0003-content-data-model.md)
 - [content-model-design.md](../archive/content-model-design.md)

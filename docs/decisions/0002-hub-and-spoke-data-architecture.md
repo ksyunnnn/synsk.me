@@ -1,15 +1,12 @@
-# ADR-0002: Hub-and-Spoke データアーキテクチャ
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-01-31
-- **Deciders**: synsk
-- **Related Principles**: [../PRINCIPLES.md](../PRINCIPLES.md)
-
+---
+status: accepted
+date: 2026-01-31
+decision-makers: synsk
 ---
 
-## Context
+# Hub-and-Spoke データアーキテクチャ
+
+## Context and Problem Statement
 
 synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to 等）での発信活動を集約して表示するポートフォリオサイトである。
 
@@ -24,9 +21,14 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 - 外部サービス依存を最小化
 - 技術的な学習・実験の場としても活用
 
----
+## Considered Options
 
-## Decision
+* キャッシュのみ（ISR + Vercel KV）
+* Supabase（PostgreSQL）
+* SQLite
+* DuckDB
+
+## Decision Outcome
 
 **synsk.me をハブとした Hub-and-Spoke モデルを採用する。**
 
@@ -63,9 +65,26 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 3. **JSON 直接クエリ**: API レスポンスをそのまま分析可能
 4. **技術的興味**: 実際に使った経験を発信のネタにできる
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because 複数プラットフォームのデータを一元管理できる
+* Good, because 活動履歴の蓄積・可視化・分析が可能になる
+* Good, because 外部サービスへの依存を最小化（DB は埋め込み型）
+* Good, because DuckDB の実践経験を得られ、技術記事のネタになる
+* Good, because 個人サイトを技術実験場として活用できる
+* Bad, because データ量（数百件）に対して DuckDB はオーバースペック
+* Bad, because 学習コストが発生する（DuckDB の習熟）
+* Bad, because 実装の複雑度が「キャッシュのみ」より高い
+* Bad, because DuckDB の WASM 版がプロダクション用途で安定しているか未検証
+  * 対策: ビルド時に静的生成するパターンから始める
+* Bad, because 外部 API のレート制限や仕様変更
+  * 対策: エラーハンドリングとフォールバックを実装
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 > 以下の Option A〜D はデータストアの選択肢であり、決定は
 > [ADR-0007](./0007-duckdb-wasm-datastore.md) へ分離した。分離前の検討記録として保持する。
@@ -98,34 +117,7 @@ synsk.me は複数のプラットフォーム（Zenn、GitHub、Qiita、dev.to �
 - **Pros**: 分析向き、JSON 直接クエリ、WASM 対応、学習価値
 - **Cons**: データ量に対してはオーバースペック
 
----
-
-## Consequences
-
-### Positive
-
-- 複数プラットフォームのデータを一元管理できる
-- 活動履歴の蓄積・可視化・分析が可能になる
-- 外部サービスへの依存を最小化（DB は埋め込み型）
-- DuckDB の実践経験を得られ、技術記事のネタになる
-- 個人サイトを技術実験場として活用できる
-
-### Negative
-
-- データ量（数百件）に対して DuckDB はオーバースペック
-- 学習コストが発生する（DuckDB の習熟）
-- 実装の複雑度が「キャッシュのみ」より高い
-
-### Risks
-
-- DuckDB の WASM 版がプロダクション用途で安定しているか未検証
-  - 対策: ビルド時に静的生成するパターンから始める
-- 外部 API のレート制限や仕様変更
-  - 対策: エラーハンドリングとフォールバックを実装
-
----
-
-## References
+## More Information
 
 - [DuckDB Documentation](https://duckdb.org/docs/)
 - [DuckDB WASM](https://duckdb.org/docs/api/wasm/overview.html)

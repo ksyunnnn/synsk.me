@@ -1,15 +1,12 @@
-# ADR-0013: 認証をアプリケーションの外で行う
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-08-27
-- **Deciders**: synsk
-- **Related Principles**: [実験 over 完璧な計画](../PRINCIPLES.md#2-実験)
-
+---
+status: accepted
+date: 2026-08-27
+decision-makers: synsk
 ---
 
-## Context
+# 認証をアプリケーションの外で行う
+
+## Context and Problem Statement
 
 記事をブラウザ上の管理画面で書く方針を決めたことで、その画面に誰を通すかを判定する必要が生じた。使うのは作り手ひとりで、サインアップの仕組みを必要としない。
 
@@ -17,15 +14,33 @@
 
 前者は 2026年夏に別プロジェクト（meatup）で使った。そのとき手を取られたのは認証そのものではなく、ログイン状態を画面へ反映する処理だった。アプリケーションの中に認証状態を持つことから生じている。
 
----
+## Decision Drivers
 
-## Decision
+* [実験 over 完璧な計画](../PRINCIPLES.md#2-実験)
+
+## Considered Options
+
+* 認証ライブラリをアプリケーションに組む
+* Firebase Authentication を使う
+* Cloudflare Access
+
+## Decision Outcome
 
 **認証をアプリケーションの外で行う。Cloudflare Access で判定する。**
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because ログイン画面、セッション管理、ログアウトを実装しない
+* Good, because 利用者の情報をデータベースに持たない
+* Bad, because ログイン画面の見た目を作れない。組織名、ロゴ、背景色の変更にとどまる
+* Bad, because **ログインしている相手をアプリケーションが直接知らない。** 判定はアプリケーションの外で終わる。相手のメールアドレスが必要になった場合、Cloudflare が付与する JWT（`Cf-Access-Jwt-Assertion` ヘッダ）を読み、署名を検証することになる
+* Bad, because **JWT の `sub` は Cloudflare が発行する値である。** 公式は `unique to an email address per account` とのみ定めており、Cloudflare アカウントの外で通用する保証も、永続する保証も示していない
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 ### Option A: 認証ライブラリをアプリケーションに組む
 
@@ -44,27 +59,7 @@ NextAuth.js や Better Auth を使い、ログイン画面とセッション管�
 - **Pros**: 実装するものがない。設定で許可する相手を指定する
 - **Cons**: ログイン画面の見た目を作れない
 
----
-
-## Consequences
-
-### Positive
-
-- ログイン画面、セッション管理、ログアウトを実装しない
-- 利用者の情報をデータベースに持たない
-
-### Negative
-
-- ログイン画面の見た目を作れない。組織名、ロゴ、背景色の変更にとどまる
-
-### Risks
-
-- **ログインしている相手をアプリケーションが直接知らない。** 判定はアプリケーションの外で終わる。相手のメールアドレスが必要になった場合、Cloudflare が付与する JWT（`Cf-Access-Jwt-Assertion` ヘッダ）を読み、署名を検証することになる
-- **JWT の `sub` は Cloudflare が発行する値である。** 公式は `unique to an email address per account` とのみ定めており、Cloudflare アカウントの外で通用する保証も、永続する保証も示していない
-
----
-
-## References
+## More Information
 
 - [ADR-0012: ホスティングに Cloudflare を採用する](./0012-cloudflare-hosting.md)
 - [Cloudflare Access: Application token](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/application-token/)

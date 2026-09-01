@@ -1,15 +1,12 @@
-# ADR-0015: 職務経歴書を複数保持する
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-08-27
-- **Deciders**: synsk
-- **Related Principles**: [対話 over 展示](../PRINCIPLES.md#3-対話)
-
+---
+status: accepted
+date: 2026-08-27
+decision-makers: synsk
 ---
 
-## Context
+# 職務経歴書を複数保持する
+
+## Context and Problem Statement
 
 経歴には、そのまま公開できない情報が含まれる。会社名を出せる相手と、業界名でぼかす必要がある相手がいる（[ADR-0008](./0008-content-visibility.md)）。
 
@@ -17,15 +14,32 @@
 
 2026-08-26 に、職務経歴書を扱うサービスの公開ページの形を調べた。多くは利用者ごとに1つの URL を持ち、その内容を更新していく形だった。[Proff](https://proff.io/) は、利用者が任意の文字列で識別子を決められ、1アカウントに紐づく数に制限を設けていない。用途に応じた使い分けを想定していると案内している。
 
----
+## Decision Drivers
 
-## Decision
+* [対話 over 展示](../PRINCIPLES.md#3-対話)
+
+## Considered Options
+
+* 1つだけ持つ
+* 時点を軸に複数持つ
+* 複数持ち、軸を定めない
+
+## Decision Outcome
 
 **職務経歴書を複数保持する。何を軸に分けるかは定めない。**
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because 相手に応じて、公開できる値とできない値のどちらを使うかを版ごとに選べる
+* Good, because 公開範囲を版ごとに設定できる
+* Bad, because 版が増えると、どれを誰に渡したかを把握する必要が生じる
+* Bad, because **どの版を誰に渡したかを、システムが持たない。** 版ごとに公開範囲は設定できるが、渡した相手の記録は残らない。版が増えたとき、どれを整理してよいかの判断材料がない
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 ### Option A: 1つだけ持つ
 
@@ -44,26 +58,7 @@
 - **Pros**: 相手ごとにも時点ごとにも分けられる。新しい分け方が必要になっても構造を変えずに済む
 - **Cons**: 何が何のための版かを、作り手が識別子で表すことになる
 
----
-
-## Consequences
-
-### Positive
-
-- 相手に応じて、公開できる値とできない値のどちらを使うかを版ごとに選べる
-- 公開範囲を版ごとに設定できる
-
-### Negative
-
-- 版が増えると、どれを誰に渡したかを把握する必要が生じる
-
-### Risks
-
-- **どの版を誰に渡したかを、システムが持たない。** 版ごとに公開範囲は設定できるが、渡した相手の記録は残らない。版が増えたとき、どれを整理してよいかの判断材料がない
-
----
-
-## References
+## More Information
 
 - [ADR-0003: コンテンツデータモデル設計（C: 分離モデル）](./0003-content-data-model.md)
 - [ADR-0008: コンテンツの可視性を3段階で扱う](./0008-content-visibility.md)

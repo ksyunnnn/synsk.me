@@ -1,15 +1,12 @@
-# ADR-0003: コンテンツデータモデル設計（C: 分離モデル）
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-02-02
-- **Deciders**: synsk
-- **Related Principles**: [余白 over 完成形](../PRINCIPLES.md#1-余白), [対話 over 展示](../PRINCIPLES.md#3-対話)
-
+---
+status: accepted
+date: 2026-02-02
+decision-makers: synsk
 ---
 
-## Context
+# コンテンツデータモデル設計（C: 分離モデル）
+
+## Context and Problem Statement
 
 synsk.me のリデザインにおいて、以下のデータを適切に管理する必要がある：
 
@@ -19,9 +16,17 @@ synsk.me のリデザインにおいて、以下のデータを適切に管理�
 
 これらの関係をどうモデリングするかが課題となった。
 
----
+## Decision Drivers
 
-## Decision
+* [余白 over 完成形](../PRINCIPLES.md#1-余白)
+* [対話 over 展示](../PRINCIPLES.md#3-対話)
+
+## Considered Options
+
+* 参照モデル（Project → Activity）
+* 統合モデル（Project as Activity）
+
+## Decision Outcome
 
 **Career + Project + Activity の3テーブル構成で、Activity → Project → Career の参照方向で設計する（C: 分離モデル）。**
 
@@ -49,9 +54,22 @@ Activity（成果物）
 - 雇用関係のクライアント: 会社名を公開
 - 業務委託のクライアント: 業界名でぼかす（`client` vs `clientPublic`）
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because **型安全性**: 各エンティティの属性が明示的に定義される
+* Good, because **クエリのシンプルさ**: 単純な JOIN で関連データを取得可能
+* Good, because **職務経歴書出力に最適**: Career → Project → Activity の階層が自然
+* Good, because **柔軟性**: Activity は Project に属さない独立したものも許容（`projectId: null`）
+* Bad, because **3テーブル管理**: テーブル数が増える
+* Bad, because **手動入力の負担**: Project と Career は基本的に手動入力
+* Bad, because Project の数が増えた場合、管理が煩雑になる可能性
+  * **対策**: isHighlighted フラグでハイライト表示を制御
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 ### Option A: 参照モデル（Project → Activity）
 
@@ -74,30 +92,7 @@ Project を Activity の一種として扱う（`type: 'project'`）。
   - 外部取得 Activity と手動作成 Project の性質が異なる
   - Discriminated Union が複雑化
 
----
-
-## Consequences
-
-### Positive
-
-- **型安全性**: 各エンティティの属性が明示的に定義される
-- **クエリのシンプルさ**: 単純な JOIN で関連データを取得可能
-- **職務経歴書出力に最適**: Career → Project → Activity の階層が自然
-- **柔軟性**: Activity は Project に属さない独立したものも許容（`projectId: null`）
-
-### Negative
-
-- **3テーブル管理**: テーブル数が増える
-- **手動入力の負担**: Project と Career は基本的に手動入力
-
-### Risks
-
-- Project の数が増えた場合、管理が煩雑になる可能性
-  - **対策**: isHighlighted フラグでハイライト表示を制御
-
----
-
-## References
+## More Information
 
 - [Content Model 設計](../archive/content-model-design.md) - 詳細なデータ構造定義
 - [Hub-and-Spoke モデル](../archive/hub-and-spoke-model.md) - データ取得アーキテクチャ

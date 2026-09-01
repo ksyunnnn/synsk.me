@@ -1,15 +1,12 @@
-# ADR-0011: 記録の住み分けを定める
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-08-21
-- **Deciders**: synsk
-- **Related Principles**: [余白 over 密度](../PRINCIPLES.md)
-
+---
+status: accepted
+date: 2026-08-21
+decision-makers: synsk
 ---
 
-## Context
+# 記録の住み分けを定める
+
+## Context and Problem Statement
 
 同じ原因による失敗が2件観測された。
 
@@ -25,9 +22,20 @@
 - 文脈ファイルの陳腐化は3〜6ヶ月で顕在化する。`docs/ROADMAP.md` の停止期間はこの区間に入る
 - 不要な記述はエージェントの成功率を下げる。無視されるからではなく、忠実に従われるからである
 
----
+## Decision Drivers
 
-## Decision
+* [余白 over 密度](../PRINCIPLES.md#1-余白-1)
+
+## Considered Options
+
+* 文書中心
+* GitHub 中心
+* 分離型（定義は文書、状態は GitHub）
+* Spec-Driven Development ツールの導入
+* 決定中心（ADR / RFD の拡張）
+* 最小主義（コードを正本にする）
+
+## Decision Outcome
 
 **満たすべきことを語る文書を `docs/REQUIREMENTS.md` ひとつに限り、参照を変わりやすい側から変わりにくい側への一方向に固定する。**
 
@@ -44,9 +52,21 @@ Issue → REQUIREMENTS.md → adr/ → PRINCIPLES.md / VISION.md
 - 要件の ID は通し番号とし、領域名を含めない。Issue が ID を参照するため、領域名を含めると後から分割できなくなる
 - 文書の書式に関する規定は `.claude/rules/` に置き、ADR にしない。書き換えれば覆せるため
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because 更新が止まっても文書が嘘にならない。進捗は GitHub が持つため、書き写す列が存在しない
+* Good, because 古い ADR を有効なルールと読み違える経路が塞がれる。現在形を語る文書が1つに限られるため
+* Good, because 参照の向きが一方向に固定されるため、リンクの張り忘れによる不整合が起きない
+* Bad, because 全体像を把握するのに GitHub を開く必要がある。1ファイルを読めば済む形ではなくなる
+* Bad, because 要件と Issue の対応を、要件 ID の参照で維持する手間が生じる
+* Bad, because **`docs/notes/` が実質的な正本になる可能性。** 他文書から参照されない前提の場所だが、参照されれば削除できなくなる
+* Bad, because **要件が増えたとき、通し番号だけでは見通しが悪くなる。** 領域で分けられないため、数が増えると一覧性が下がる
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 ### Option A: 文書中心
 
@@ -88,29 +108,7 @@ GitHub Spec Kit や AWS Kiro を使い、仕様から計画とタスクを生成
 - **Pros**: 調査が示した「最小かつ正確」に最も近い
 - **Cons**: 実装前の段階では、正本になるコードが存在しない
 
----
-
-## Consequences
-
-### Positive
-
-- 更新が止まっても文書が嘘にならない。進捗は GitHub が持つため、書き写す列が存在しない
-- 古い ADR を有効なルールと読み違える経路が塞がれる。現在形を語る文書が1つに限られるため
-- 参照の向きが一方向に固定されるため、リンクの張り忘れによる不整合が起きない
-
-### Negative
-
-- 全体像を把握するのに GitHub を開く必要がある。1ファイルを読めば済む形ではなくなる
-- 要件と Issue の対応を、要件 ID の参照で維持する手間が生じる
-
-### Risks
-
-- **`docs/notes/` が実質的な正本になる可能性。** 他文書から参照されない前提の場所だが、参照されれば削除できなくなる
-- **要件が増えたとき、通し番号だけでは見通しが悪くなる。** 領域で分けられないため、数が増えると一覧性が下がる
-
----
-
-## References
+## More Information
 
 - [ISO/IEC/IEEE 29148-2018](https://standards.ieee.org/standard/29148-2018.html)
 - [arc42 Section 10: Quality Requirements](https://docs.arc42.org/section-10/)

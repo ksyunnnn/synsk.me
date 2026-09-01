@@ -3,12 +3,13 @@
 # ドキュメント規約のうち、確実に判定できる検査だけを置く。
 # 曖昧なものは監査人へ委ね、ここに書かない。
 # docs/archive/ は凍結された記録のため、すべての検査から除く。
+# 外部ツールが配り、人が書き足さないファイルは、すべての検査から除く。
 # 出力した行はすべて違反である。誤検出を出さないことを優先する。
 #
 set -u
 
-# 検査から除くディレクトリ。追加はここだけ。
-EXCLUDE_DIRS="node_modules docs/archive"
+# 検査から除くパス。値は部分文字列で照合する。追加はここだけ。
+EXCLUDE_DIRS="node_modules docs/archive .specify .claude/skills/speckit-"
 export EXCLUDE_DIRS
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
@@ -53,11 +54,6 @@ for f in docs/*.md docs/scraps/*.md; do
   grep -q '^## Contents' "$f" || report "[目次] $f ($n 行)"
 done
 
-# --- [decision-makers] 決定の記録の decision-makers が synsk 以外 ---
-while IFS= read -r line; do
-  report "[decision-makers] $line"
-done < <(grep -n '^decision-makers:' docs/decisions/0*.md 2>/dev/null | grep -v ':decision-makers: synsk$' | grep -v 'check-ignore')
-
 # --- [Issue番号] REQUIREMENTS.md に Issue 番号がある ---
 while IFS= read -r line; do
   report "[Issue番号] docs/REQUIREMENTS.md:$line"
@@ -66,7 +62,21 @@ done < <(grep -n '#[0-9]' docs/REQUIREMENTS.md 2>/dev/null | grep -v 'check-igno
 # --- [原則リンク] Decision Drivers が PRINCIPLES.md 全体を指している ---
 while IFS= read -r line; do
   report "[原則リンク] $line"
-done < <(grep -ln '^decision-makers:' docs/decisions/0*.md 2>/dev/null | xargs -r grep -n '](\.\./PRINCIPLES\.md)' 2>/dev/null | grep -v 'check-ignore')
+done < <(python3 - <<'PY'
+import pathlib, re
+for p in sorted(pathlib.Path('docs/decisions').glob('0*.md')):
+    lines = p.read_text().split('\n')
+    inside = False
+    for i, l in enumerate(lines, 1):
+        if l.startswith('## '):
+            inside = l.strip() == '## Decision Drivers'
+            continue
+        if not inside or 'check-ignore' in l:
+            continue
+        if re.search(r'\]\(\.\./PRINCIPLES\.md\)', l):
+            print(f'{p}:{i}:{l}')
+PY
+)
 
 # --- [MADR] 決定の記録が MADR の構造から外れている ---
 while IFS= read -r line; do
@@ -74,7 +84,6 @@ while IFS= read -r line; do
 done < <(python3 - <<'PY'
 import pathlib, re
 REQUIRED = ['## Context and Problem Statement', '## Considered Options', '## Decision Outcome']
-FORBIDDEN = ['## Confirmation', '## More Information']
 STATUS = re.compile(r'^(proposed|rejected|accepted|deprecated|superseded by ADR-\d{4})$')
 targets = sorted(pathlib.Path('docs/decisions').glob('0*.md'))
 targets.append(pathlib.Path('docs/decisions/template.md'))
@@ -111,9 +120,6 @@ for p in targets:
     for s in REQUIRED:
         if s not in text:
             print(f'{p}:1 必須節がない: {s}')
-    for s in FORBIDDEN:
-        if s in text:
-            print(f'{p}:1 使わない節がある: {s}')
     if is_template:
         continue
     for i, l in enumerate(lines[end+1:], end+2):
@@ -168,5 +174,5 @@ for p in sorted(pathlib.Path('docs').rglob('*.md')):
 PY
 )
 
-[ "$found" -eq 0 ] && echo "検出なし（9項目すべて）"
+[ "$found" -eq 0 ] && echo "検出なし（8項目すべて）"
 exit 0

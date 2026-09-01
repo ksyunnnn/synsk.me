@@ -1,15 +1,12 @@
-# ADR-0004: アイコンシステム
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-02-02
-- **Deciders**: synsk
-- **Related Principles**: [おもしろさ over 安全圏](../PRINCIPLES.md#3-おもしろさ)
-
+---
+status: accepted
+date: 2026-02-02
+decision-makers: synsk
 ---
 
-## Context
+# アイコンシステム
+
+## Context and Problem Statement
 
 synsk.me のリデザインにおいて、Timeline 表示で Platform を視覚的に識別する必要がある。また、UI 全体で使用するアイコンライブラリを整理する必要がある。
 
@@ -18,9 +15,17 @@ synsk.me のリデザインにおいて、Timeline 表示で Platform を視覚�
 - **Lucide React**: shadcn/ui のデフォルトとして設定されているが、ほぼ未使用
 - **FontAwesome**: Script タグで読み込み、既存ページで使用
 
----
+## Decision Drivers
 
-## Decision
+* [おもしろさ over 安全圏](../PRINCIPLES.md#3-おもしろさ)
+
+## Considered Options
+
+* ActivityType ごとにアイコン設定
+* 全て Platform アイコン（フォールバックなし）
+* 全て ActivityType アイコン
+
+## Decision Outcome
 
 **アイコンシステムを2層構造で設計する。**
 
@@ -43,9 +48,21 @@ synsk.me のリデザインにおいて、Timeline 表示で Platform を視覚�
 - 6つのウェイト（Thin〜Fill）から選択可能
 - ウェイト選択は実装時に [ADR-0005](./0005-design-tokens.md) の Typography と合わせて検討
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because Platform の視覚的識別が容易になる
+* Good, because UI アイコンの一貫性が向上
+* Good, because フォールバック（Planet）がユーモアを加える
+* Bad, because Simple Icons に依存（外部リソース）
+* Bad, because フォールバック対象の Platform が増えると Planet の意味が薄れる可能性
+* Bad, because Simple Icons のアイコンが変更・削除される可能性（低リスク）
+* Bad, because Phosphor Icons のウェイト選択を誤ると Typography との不整合が起きる
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 ### Option A: ActivityType ごとにアイコン設定
 
@@ -74,29 +91,7 @@ Platform ロゴを使わず、ActivityType（event, sandbox 等）でアイコ�
 
 → **不採用**: GitHub や Zenn の認知度を活かせない
 
----
-
-## Consequences
-
-### Positive
-
-- Platform の視覚的識別が容易になる
-- UI アイコンの一貫性が向上
-- フォールバック（Planet）がユーモアを加える
-
-### Negative
-
-- Simple Icons に依存（外部リソース）
-- フォールバック対象の Platform が増えると Planet の意味が薄れる可能性
-
-### Risks
-
-- Simple Icons のアイコンが変更・削除される可能性（低リスク）
-- Phosphor Icons のウェイト選択を誤ると Typography との不整合が起きる
-
----
-
-## References
+## More Information
 
 - [Simple Icons](https://simpleicons.org/)
 - [Phosphor Icons](https://phosphoricons.com/)

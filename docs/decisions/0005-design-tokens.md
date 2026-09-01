@@ -1,23 +1,29 @@
-# ADR-0005: Design Tokens
-
-> この文書は決定を記録する。有効な要件は持たない。
-
-- **Status**: accepted
-- **Date**: 2026-01-27
-- **Deciders**: synsk
-- **Related Principles**: [余白 over 密度](../PRINCIPLES.md)、[息づき over 装飾](../PRINCIPLES.md)
-
+---
+status: accepted
+date: 2026-01-27
+decision-makers: synsk
 ---
 
-## Context
+# Design Tokens
+
+## Context and Problem Statement
 
 synsk.me のリデザインにあたり、視覚言語の基盤となる Design Tokens を定義する必要がある。
 
 PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「対話 over 展示」を視覚的に体現するため、Colors・Typography・Spacing の各要素について意図的な設計判断を行う。
 
----
+## Decision Drivers
 
-## Decision
+* [余白 over 密度](../PRINCIPLES.md#1-余白-1)
+* [息づき over 装飾](../PRINCIPLES.md#2-息づき)
+
+## Considered Options
+
+* Colors: Warm Gray / Cool Gray
+* Typography: Lato + Noto Sans JP
+* Typography: BIZ UDGothic
+
+## Decision Outcome
 
 ### 1. Colors: モノクロファースト
 
@@ -108,9 +114,20 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 - Platform アイコン: Simple Icons
 - フォールバック: Phosphor Icons `Planet`
 
----
+### Consequences
 
-## Alternatives Considered
+* Good, because PRINCIPLES.md との一貫性が保たれる
+* Good, because 実装時の判断基準が明確になる
+* Good, because kbkbkb.co で実証済みのアプローチを採用
+* Bad, because Light 300 は一部の環境で細すぎる可能性
+* Bad, because モノクロのみでは強調表現に制限がある
+* Bad, because アクセントカラーが必要になった場合、後から追加が必要
+
+### Confirmation
+
+判定手段を定めていない。`Confirmation` を規約に加えたのは 2026-08-31 で、この記録より後である。
+
+## Pros and Cons of the Options
 
 ### Colors: Warm Gray / Cool Gray
 
@@ -129,30 +146,7 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 - **Pros**: 可読性が高い日本語フォント
 - **Cons**: Source Sans 3 とのペアリングで違和感
 
----
-
-## Consequences
-
-### Positive
-
-- PRINCIPLES.md との一貫性が保たれる
-- 実装時の判断基準が明確になる
-- kbkbkb.co で実証済みのアプローチを採用
-
-### Negative
-
-- Light 300 は一部の環境で細すぎる可能性
-- モノクロのみでは強調表現に制限がある
-
-### Risks
-
-- アクセントカラーが必要になった場合、後から追加が必要
-
----
-
----
-
-## References
+## More Information
 
 - kbkbkb.co - 参考サイト
 - [Google Fonts: Source Sans 3](https://fonts.google.com/specimen/Source+Sans+3)

@@ -44,7 +44,8 @@ model: inherit
 
 - `docs/README.md` — 入れ物と役割、時制、参照の向き、判断に迷ったときの基準
 - `.claude/rules/writing.md` — 文章ルール S1a〜S8
-- `.claude/rules/docs-patterns.md` — 文書種別ごとの書式と例
+- `.claude/rules/docs-patterns.md` — 文書の書式と例
+- `docs/decisions/template.md` — 決定の記録の書式と例（`Added by synsk:` のコメント）
 - `docs/decisions/0011-record-separation.md` — 上記3つの根拠
 
 ### 2. 機械的検査を走らせる
