@@ -25,8 +25,8 @@ const Page = async ({ searchParams }: { searchParams: Promise<{ ui?: string }> }
     <main className="mx-auto max-w-3xl px-5 py-16">
       <h1 className="mb-2 text-2xl font-bold">Timeline</h1>
       <p className="mb-12 text-sm text-muted-foreground">
-        外部プラットフォームの取得可否を確かめる検証用ページ。{results.length} 件中 {okCount}{' '}
-        件が実 API から取得でき、{total} 件を時系列に並べる。
+        外部プラットフォームの取得可否を確かめる検証用ページ。{results.length} 件中 {okCount} 件が実
+        API から取得でき、{total} 件を時系列に並べる。
       </p>
 
       <SourceStatusPanel results={results} />

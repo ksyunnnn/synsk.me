@@ -16,7 +16,13 @@ export const PlatformIcon = ({
 }: {
   platform: Platform;
   className?: string;
-  /** グリフにブランド色を当てる。案 Casual だけが使う。 */
+  /**
+   * グリフにブランド色を当てる。案 Casual だけが使う。
+   *
+   * ブランド色は inline style で CSS 変数に入れ、色そのものはクラスで当てる。
+   * inline style で色を直接指定すると `dark:` のクラス指定に勝ってしまい、
+   * 暗い地で沈むプラットフォーム（GitHub の #181717 など）が読めなくなる。
+   */
   brandColor?: boolean;
 }) => {
   const meta = PLATFORM_META[platform];
@@ -25,6 +31,8 @@ export const PlatformIcon = ({
     return <Planet aria-hidden="true" className={className} weight="regular" />;
   }
 
+  const useBrand = brandColor && meta.brandHex !== null;
+
   return (
     <svg
       role="presentation"
@@ -32,9 +40,8 @@ export const PlatformIcon = ({
       focusable="false"
       viewBox="0 0 24 24"
       fill="currentColor"
-      className={className}
-      // 暗い地でブランド色が沈むため、ダークでは currentColor に戻す。
-      style={brandColor && meta.brandHex ? { color: meta.brandHex } : undefined}
+      className={`${useBrand ? 'text-(--brand-color) dark:text-foreground' : ''} ${className ?? ''}`}
+      style={useBrand ? ({ '--brand-color': meta.brandHex } as React.CSSProperties) : undefined}
     >
       <path d={meta.iconPath} />
     </svg>

@@ -42,42 +42,17 @@ export function catnoseVerb(entry: TimelineEntry): string {
   }
 }
 
-const KIND_LABEL: Record<TimelineEntry['kind'], string> = {
-  article: 'ARTICLE',
-  repository: 'REPOSITORY',
-  talk: 'TALK',
-  sandbox: 'SANDBOX',
-  event: 'EVENT',
-  playlist: 'PLAYLIST',
-  post: 'POST',
-};
-
 /**
- * 案 Chic のラベル。プラットフォームに種別が 1 つしかない場合は種別名を省く。
- * 省く対象は、その Platform が 1 種別しか出さないもの。
+ * 案 Chic のラベル。
+ *
+ * どの source も kind を 1 つに固定して返すため、プラットフォーム名が決まれば
+ * 種別も決まる。種別名を併記しても情報が増えないので、名前だけを出す。
  */
-const SINGLE_KIND_PLATFORMS = new Set(['spotify', 'speakerdeck', 'connpass', 'codepen', 'x']);
-
 export function chicLabel(entry: TimelineEntry): string {
-  const platform = PLATFORM_META[entry.platform].label.toUpperCase();
-  if (SINGLE_KIND_PLATFORMS.has(entry.platform)) return platform;
-  return `${platform} · ${KIND_LABEL[entry.kind]}`;
+  return PLATFORM_META[entry.platform].label.toUpperCase();
 }
 
-const MONTHS = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 /** `<time datetime>` に入れる機械可読値。表示形式に関わらず常に完全な日付。 */
 export function isoDate(value: string): string {

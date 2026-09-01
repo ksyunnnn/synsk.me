@@ -1,5 +1,5 @@
 import { SPOTIFY_PLAYLISTS } from '@/data/manual-entries';
-import { fetchWithTimeout } from '../registry';
+import { fetchJson } from '../registry';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /**
@@ -22,9 +22,13 @@ export const spotifySource: TimelineSource = {
   fetch: async (): Promise<SourceResult> => {
     const settled = await Promise.allSettled(
       SPOTIFY_PLAYLISTS.map(async (ref) => {
-        const response = await fetchWithTimeout(`${OEMBED}?url=${encodeURIComponent(ref.url)}`);
-        if (!response.ok) throw new Error(`${ref.url} → ${response.status}`);
-        const data = (await response.json()) as SpotifyOembed;
+        const response = await fetchJson<SpotifyOembed>(
+          `${OEMBED}?url=${encodeURIComponent(ref.url)}`
+        );
+        if (!response.ok || response.body === undefined) {
+          throw new Error(`${ref.url} → ${response.status}`);
+        }
+        const data = response.body;
 
         const entry: TimelineEntry = {
           id: `spotify:${ref.url}`,
@@ -37,11 +41,13 @@ export const spotifySource: TimelineSource = {
           embedUrl: data.iframe_url,
         };
         return entry;
-      }),
+      })
     );
 
     const entries = settled
-      .filter((result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled')
+      .filter(
+        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled'
+      )
       .map((result) => result.value);
     const failed = settled.length - entries.length;
 

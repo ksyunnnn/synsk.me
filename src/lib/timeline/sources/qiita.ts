@@ -1,4 +1,4 @@
-import { fetchWithTimeout, PER_SOURCE_LIMIT } from '../registry';
+import { fetchJson, PER_SOURCE_LIMIT } from '../registry';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /** 公式 API v2。未認証は 60 req/h/IP、トークン付きで 1000 req/h。 */
@@ -20,11 +20,12 @@ export const qiitaSource: TimelineSource = {
   label: 'Qiita',
   fetch: async (): Promise<SourceResult> => {
     const token = process.env.QIITA_ACCESS_TOKEN;
-    const response = await fetchWithTimeout(ENDPOINT, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const response = await fetchJson<QiitaItem[]>(
+      ENDPOINT,
+      token ? { Authorization: `Bearer ${token}` } : {}
+    );
 
-    if (!response.ok) {
+    if (!response.ok || response.body === undefined) {
       return {
         platform: 'qiita',
         status: 'error',
@@ -35,7 +36,7 @@ export const qiitaSource: TimelineSource = {
       };
     }
 
-    const items = (await response.json()) as QiitaItem[];
+    const items = response.body;
     const entries: TimelineEntry[] = items.map((item) => ({
       id: `qiita:${item.id}`,
       kind: 'article',

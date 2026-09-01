@@ -1,4 +1,4 @@
-import { fetchWithTimeout, PER_SOURCE_LIMIT } from '../registry';
+import { fetchJson, PER_SOURCE_LIMIT } from '../registry';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /**
@@ -28,7 +28,7 @@ export const connpassSource: TimelineSource = {
     if (!apiKey) {
       return {
         platform: 'connpass',
-        status: 'fixture',
+        status: 'unconfigured',
         entries: [],
         note: 'API キーが未設定のため取得していない。CONNPASS_API_KEY を設定すると v2 API から取得する。個人利用は無料だが申請と審査を要する。',
         reference: REFERENCE,
@@ -36,8 +36,10 @@ export const connpassSource: TimelineSource = {
       };
     }
 
-    const response = await fetchWithTimeout(ENDPOINT, { headers: { 'X-API-Key': apiKey } });
-    if (!response.ok) {
+    const response = await fetchJson<{ events?: ConnpassEvent[] }>(ENDPOINT, {
+      'X-API-Key': apiKey,
+    });
+    if (!response.ok || response.body === undefined) {
       return {
         platform: 'connpass',
         status: 'error',
@@ -48,8 +50,7 @@ export const connpassSource: TimelineSource = {
       };
     }
 
-    const data = (await response.json()) as { events?: ConnpassEvent[] };
-    const entries: TimelineEntry[] = (data.events ?? []).map((event) => ({
+    const entries: TimelineEntry[] = (response.body.events ?? []).map((event) => ({
       id: `connpass:${event.id}`,
       kind: 'event',
       platform: 'connpass',

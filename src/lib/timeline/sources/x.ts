@@ -1,5 +1,5 @@
 import { X_POSTS } from '@/data/manual-entries';
-import { fetchWithTimeout } from '../registry';
+import { fetchJson } from '../registry';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /**
@@ -42,11 +42,13 @@ export const xSource: TimelineSource = {
 
     const settled = await Promise.allSettled(
       X_POSTS.map(async (ref) => {
-        const response = await fetchWithTimeout(
-          `${OEMBED}?url=${encodeURIComponent(ref.url)}&omit_script=1`,
+        const response = await fetchJson<XOembed>(
+          `${OEMBED}?url=${encodeURIComponent(ref.url)}&omit_script=1`
         );
-        if (!response.ok) throw new Error(`${ref.url} → ${response.status}`);
-        const data = (await response.json()) as XOembed;
+        if (!response.ok || response.body === undefined) {
+          throw new Error(`${ref.url} → ${response.status}`);
+        }
+        const data = response.body;
 
         const entry: TimelineEntry = {
           id: `x:${ref.url}`,
@@ -57,18 +59,26 @@ export const xSource: TimelineSource = {
           publishedAt: ref.registeredAt,
         };
         return entry;
-      }),
+      })
     );
 
     const entries = settled
-      .filter((result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled')
+      .filter(
+        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled'
+      )
       .map((result) => result.value);
 
+    const failed = settled.length - entries.length;
     return {
       platform: 'x',
       status: entries.length > 0 ? 'ok' : 'error',
       entries,
-      note: `oEmbed から ${entries.length} 件取得した。一覧取得の経路が無いため掲載対象は手で指名する。`,
+      note:
+        entries.length > 0
+          ? `oEmbed から ${entries.length} 件取得した` +
+            (failed > 0 ? `（${failed} 件が失敗）` : '') +
+            '。一覧取得の経路が無いため掲載対象は手で指名する。'
+          : `指名した ${settled.length} 件すべてで oEmbed の取得に失敗した。`,
       reference: REFERENCE,
     };
   },

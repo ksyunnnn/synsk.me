@@ -9,26 +9,64 @@ export const PER_SOURCE_LIMIT = 10;
 /** 取得の上限時間。1 source の遅延が全体を止めないようにする。 */
 export const FETCH_TIMEOUT_MS = 8000;
 
-export async function fetchWithTimeout(
+export interface FetchResult<T> {
+  ok: boolean;
+  status: number;
+  headers: Headers;
+  /** ok が false のとき undefined。 */
+  body?: T;
+}
+
+/**
+ * 取得と本文の読み取りを 1 つの制限時間で覆う。
+ *
+ * ヘッダの受信時点でタイマーを解除すると、本文の読み取りが無制限になる。
+ * RSS は本文が大きいため、解除は読み終えた後に行う。
+ */
+async function request<T>(
   url: string,
-  init: RequestInit = {},
-  timeoutMs: number = FETCH_TIMEOUT_MS,
-): Promise<Response> {
+  read: (response: Response) => Promise<T>,
+  headers: Record<string, string> = {},
+  timeoutMs: number = FETCH_TIMEOUT_MS
+): Promise<FetchResult<T>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, {
-      ...init,
+    const response = await fetch(url, {
       signal: controller.signal,
       headers: {
         // 一部のプラットフォームは User-Agent の無いリクエストを拒否する。
         'User-Agent': 'synsk.me (+https://synsk.me)',
-        ...init.headers,
+        ...headers,
       },
     });
+
+    if (!response.ok) {
+      return { ok: false, status: response.status, headers: response.headers };
+    }
+    return {
+      ok: true,
+      status: response.status,
+      headers: response.headers,
+      body: await read(response),
+    };
   } finally {
     clearTimeout(timer);
   }
+}
+
+export function fetchText(
+  url: string,
+  headers?: Record<string, string>
+): Promise<FetchResult<string>> {
+  return request(url, (response) => response.text(), headers);
+}
+
+export function fetchJson<T>(
+  url: string,
+  headers?: Record<string, string>
+): Promise<FetchResult<T>> {
+  return request(url, (response) => response.json() as Promise<T>, headers);
 }
 
 /**
@@ -59,7 +97,9 @@ export function mergeEntries(results: SourceResult[]): TimelineEntry[] {
 }
 
 /** publishedAt の年で束ねる。年は降順、年内も降順。 */
-export function groupByYear(entries: TimelineEntry[]): { year: number; entries: TimelineEntry[] }[] {
+export function groupByYear(
+  entries: TimelineEntry[]
+): { year: number; entries: TimelineEntry[] }[] {
   const buckets = new Map<number, TimelineEntry[]>();
 
   for (const entry of entries) {

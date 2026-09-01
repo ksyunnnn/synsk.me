@@ -2,14 +2,14 @@ import type { SourceResult, SourceStatus } from '@/lib/timeline/types';
 
 const STATUS_LABEL: Record<SourceStatus, string> = {
   ok: '実 API から取得',
-  fixture: '記録済みレスポンス',
+  unconfigured: '設定待ち',
   unavailable: '取得手段なし',
   error: '取得失敗',
 };
 
 const STATUS_STYLE: Record<SourceStatus, string> = {
   ok: 'bg-foreground text-background',
-  fixture: 'bg-muted text-muted-foreground',
+  unconfigured: 'bg-muted text-muted-foreground',
   unavailable: 'bg-muted text-muted-foreground',
   error: 'bg-destructive text-destructive-foreground',
 };

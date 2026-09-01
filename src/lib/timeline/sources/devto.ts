@@ -1,4 +1,4 @@
-import { fetchWithTimeout, PER_SOURCE_LIMIT } from '../registry';
+import { fetchJson, PER_SOURCE_LIMIT } from '../registry';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /**
@@ -24,8 +24,8 @@ export const devtoSource: TimelineSource = {
   platform: 'devto',
   label: 'dev.to',
   fetch: async (): Promise<SourceResult> => {
-    const response = await fetchWithTimeout(ENDPOINT);
-    if (!response.ok) {
+    const response = await fetchJson<DevtoArticle[]>(ENDPOINT);
+    if (!response.ok || response.body === undefined) {
       return {
         platform: 'devto',
         status: 'error',
@@ -35,7 +35,7 @@ export const devtoSource: TimelineSource = {
       };
     }
 
-    const articles = (await response.json()) as DevtoArticle[];
+    const articles = response.body;
     const entries: TimelineEntry[] = articles.map((article) => ({
       id: `devto:${article.id}`,
       kind: 'article',

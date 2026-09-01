@@ -31,8 +31,24 @@ export const SPOTIFY_PLAYLISTS: ManualRef[] = [
  * `docs/archive/content-analysis/05-codesandbox-analysis.md` に記録された sandbox。
  * `https://codesandbox.io/embed/<id>` は存在しない ID でも 200 を返すため、
  * og:title がサイト既定値のものは取り込まない（source 側で判定する）。
+ *
+ * OG メタは日付を返さないため、他の手動登録と同じく registeredAt を持たせる。
  */
-export const CODESANDBOX_IDS: string[] = ['2u1kz', 'smolt0', '26ghy', '1xlol'];
+export interface SandboxRef extends ManualRef {
+  /** codesandbox.io の sandbox ID。url はこれを埋めて組み立てる。 */
+  id: string;
+}
+
+export const CODESANDBOX_SANDBOXES: SandboxRef[] = [
+  { id: '2u1kz', url: 'https://codesandbox.io/s/2u1kz', registeredAt: '2026-09-02T00:00:00.000Z' },
+  {
+    id: 'smolt0',
+    url: 'https://codesandbox.io/s/smolt0',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  { id: '26ghy', url: 'https://codesandbox.io/s/26ghy', registeredAt: '2026-09-02T00:00:00.000Z' },
+  { id: '1xlol', url: 'https://codesandbox.io/s/1xlol', registeredAt: '2026-09-02T00:00:00.000Z' },
+];
 
 /**
  * 掲載したいツイート。

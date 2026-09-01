@@ -7,6 +7,8 @@ import { XMLParser } from 'fast-xml-parser';
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: '@_',
+  // 既定では数字だけのタグ本文が number になり、文字列として扱う処理が落ちる。
+  parseTagValue: false,
   // <category> が 1 件のときも配列で受け取り、呼び出し側の分岐を減らす。
   isArray: (name) => name === 'item' || name === 'category',
 });

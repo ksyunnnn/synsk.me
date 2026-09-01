@@ -1,4 +1,4 @@
-import { fetchWithTimeout, PER_SOURCE_LIMIT } from '../registry';
+import { fetchText, PER_SOURCE_LIMIT } from '../registry';
 import { itemGuid, itemMediaUrl, parseRssItems, stripHtml, toIsoDate } from '../rss';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
@@ -13,8 +13,8 @@ export const speakerdeckSource: TimelineSource = {
   platform: 'speakerdeck',
   label: 'Speaker Deck',
   fetch: async (): Promise<SourceResult> => {
-    const response = await fetchWithTimeout(FEED_URL);
-    if (!response.ok) {
+    const response = await fetchText(FEED_URL);
+    if (!response.ok || response.body === undefined) {
       return {
         platform: 'speakerdeck',
         status: 'error',
@@ -24,7 +24,7 @@ export const speakerdeckSource: TimelineSource = {
       };
     }
 
-    const items = parseRssItems(await response.text());
+    const items = parseRssItems(response.body);
     const entries: TimelineEntry[] = [];
 
     for (const item of items) {

@@ -12,7 +12,11 @@ import type { VariantProps } from './types';
 export const CasualTimeline = ({ groups, now }: VariantProps) => (
   <div className="mx-auto w-full max-w-[720px]">
     {groups.map((group) => (
-      <section key={group.year} aria-labelledby={`casual-${group.year}`} className="mt-24 first:mt-0">
+      <section
+        key={group.year}
+        aria-labelledby={`casual-${group.year}`}
+        className="mt-24 first:mt-0"
+      >
         <h2
           id={`casual-${group.year}`}
           className="text-2xl leading-[1.4] font-normal tracking-[-0.01em] text-foreground"
@@ -30,7 +34,7 @@ export const CasualTimeline = ({ groups, now }: VariantProps) => (
                 className="-mx-4 flex gap-4 rounded-xl px-4 py-4 transition-colors duration-150 hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
               >
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted">
-                  <PlatformIcon platform={entry.platform} className="size-6 dark:text-foreground" brandColor />
+                  <PlatformIcon platform={entry.platform} className="size-6" brandColor />
                 </span>
 
                 <span className="min-w-0 flex-1">

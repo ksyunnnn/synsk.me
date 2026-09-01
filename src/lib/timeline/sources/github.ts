@@ -1,4 +1,4 @@
-import { fetchWithTimeout, PER_SOURCE_LIMIT } from '../registry';
+import { fetchJson, PER_SOURCE_LIMIT } from '../registry';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /** 未認証は 60 req/h/IP。Workers は共有 IP から出るため GITHUB_TOKEN の併用を勧める。 */
@@ -16,7 +16,8 @@ interface GitHubRepo {
   forks_count: number;
   archived: boolean;
   fork: boolean;
-  pushed_at: string;
+  /** コミットが 1 つも無いリポジトリでは null になる。 */
+  pushed_at: string | null;
   created_at: string;
 }
 
@@ -25,14 +26,12 @@ export const githubSource: TimelineSource = {
   label: 'GitHub',
   fetch: async (): Promise<SourceResult> => {
     const token = process.env.GITHUB_TOKEN;
-    const response = await fetchWithTimeout(ENDPOINT, {
-      headers: {
-        Accept: 'application/vnd.github+json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
+    const response = await fetchJson<GitHubRepo[]>(ENDPOINT, {
+      Accept: 'application/vnd.github+json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     });
 
-    if (!response.ok) {
+    if (!response.ok || response.body === undefined) {
       return {
         platform: 'github',
         status: 'error',
@@ -43,7 +42,7 @@ export const githubSource: TimelineSource = {
       };
     }
 
-    const repos = (await response.json()) as GitHubRepo[];
+    const repos = response.body;
     const entries: TimelineEntry[] = repos
       // fork と archived は自分の活動として扱わない。
       .filter((repo) => !repo.fork && !repo.archived)
@@ -55,7 +54,9 @@ export const githubSource: TimelineSource = {
         title: repo.name,
         url: repo.html_url,
         // 「動きがあった日」を時系列の軸に採る。created_at では活動が古い側に固まる。
-        publishedAt: new Date(repo.pushed_at).toISOString(),
+        // コミットが 1 つも無いと pushed_at が null になり、new Date(null) は
+        // Invalid Date ではなく 1970 になるため、created_at へ落とす。
+        publishedAt: new Date(repo.pushed_at ?? repo.created_at).toISOString(),
         summary: repo.description ?? undefined,
         metrics: [{ label: 'Stars', value: repo.stargazers_count }],
         tags: repo.language ? [repo.language, ...repo.topics] : repo.topics,
