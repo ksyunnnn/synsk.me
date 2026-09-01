@@ -8,17 +8,17 @@ decision-makers: synsk
 
 ## Context and Problem Statement
 
-`docs/PRINCIPLES.md` は「余白 over 密度」と「息づき over 装飾」を定めるが、表示速度との優先順位を定めていない。`docs/REQUIREMENTS.md` の NFR も表示速度を扱っていない。表示速度と見た目・動き・機能が競合したとき、どちらを取るかを判断する記述が存在しない。
+`docs/PRINCIPLES.md` は「余白 over 密度」と「息づき over 装飾」を定めるが、表示速度との優先順位を定めていなかった。`docs/REQUIREMENTS.md` の NFR も表示速度を扱っていなかった。表示速度と見た目・動き・機能が競合したとき、どちらを取るかを判断する記述が存在しなかった。
 
 指標の体系は Web に固有のものが1つある。[web.dev: user-centric performance metrics](https://web.dev/articles/user-centric-performance-metrics) が指標を「Objective criteria that can be quantitatively measured」と定義し、FCP・LCP・INP・TBT・CLS・TTFB の6つを挙げる。同記事は「no single metric is sufficient to capture all the performance characteristics of a page」と述べる。
 
-この体系はしきい値の判定方法も定める。
+この体系は閾値の判定方法も定める。
 
 > a good threshold to measure is the 75th percentile of page loads, segmented across mobile and desktop devices
 
 75パーセンタイルは、ページの読み込みを速い順に並べたときの、下から75%の位置にある値を指す。4回の訪問のうち3回はその値より速い、という状態を表す。平均を使わないのは、極端に遅い訪問に引きずられたり、速い多数に隠されたりするためである。
 
-この体系は Google が定めたものであり、次の制約を持つ。しきい値は他のブラウザベンダと標準化団体が承認していない。判定に使う CrUX は Chrome のデータのみで、対応プラットフォームはデスクトップ版 Chrome と Android 版 Chrome に限られる。[Interop 2026](https://github.com/web-platform-tests/interop/blob/main/2026/README.md) の focus areas 20件と investigation efforts 4件に、表示速度の指標は含まれない。測定 API 自体は W3C Web Performance Working Group の仕様であり、Safari 26.2（2025-12-12）が Event Timing API と Largest Contentful Paint を実装している。
+この体系は Google が定めたものであり、次の制約を持つ。閾値は他のブラウザベンダと標準化団体が承認していない。判定に使う CrUX は Chrome のデータのみで、対応プラットフォームはデスクトップ版 Chrome と Android 版 Chrome に限られる。[Interop 2026](https://github.com/web-platform-tests/interop/blob/main/2026/README.md) の focus areas 20件と investigation efforts 4件に、表示速度の指標は含まれない。測定 API 自体は W3C Web Performance Working Group の仕様であり、Safari 26.2（2025-12-12）が Event Timing API と Largest Contentful Paint を実装している。
 
 `synsk.me` は CrUX にデータを持たない。PageSpeed Insights が No Data を返す（2026-08-29 確認）。CrUX は「sufficiently popular」であることを条件とし、閾値は非公開である。
 
@@ -52,7 +52,7 @@ decision-makers: synsk
 
 ### 閾値
 
-* web.dev の good のしきい値をそのまま採る
+* web.dev の good の閾値をそのまま採る
 * 実測から独自の値を定める
 * 満たすべき値と目標値の2水準を持つ
 
@@ -68,7 +68,7 @@ decision-makers: synsk
 | TTFB | 800ms | 450ms |
 | FCP | 1,800ms | 900ms |
 
-満たすべき値は web.dev が定める good のしきい値である。目標値は catnose.me と zenn.dev の実測値を上回る最小値である。
+満たすべき値は web.dev が定める good の閾値である。目標値は catnose.me と zenn.dev の実測値を上回る最小値である。
 
 判定はモバイルとデスクトップそれぞれの75パーセンタイルで行う。
 
@@ -121,7 +121,7 @@ TBT は同記事が「vital in catching and diagnosing potential interactivity i
 * Bad, because 内訳の重み（TBT 30%、LCP 25%、CLS 25%、FCP 10%、Speed Index 10%）に判断を委ねることになる
 * Bad, because ラボ計測でしか得られない
 
-### web.dev の good のしきい値をそのまま採る
+### web.dev の good の閾値をそのまま採る
 
 * Good, because 外部のツールが同じ値で判定する。Cloudflare の Web Analytics は「based on the thresholds defined by Google」で Good / Needs Improvement / Poor を判定する
 * Bad, because 目標として弱い。実測した2サイトはいずれも good を大きく下回る
