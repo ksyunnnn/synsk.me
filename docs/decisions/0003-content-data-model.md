@@ -47,7 +47,7 @@ Activity（成果物）
 ### 公開設定
 
 > **分離の記録（2026-08-21）**: 本 ADR は当初「3テーブル構成の採用」と「公開設定」という
-> 2つの決定を含んでいたが、[docs/adr/README.md](./README.md) が定める ADR の単位に
+> 2つの決定を含んでいたが、[docs/decisions/README.md](./README.md) が定める ADR の単位に
 > 反していたため、可視性の決定を [ADR-0008](./0008-content-visibility.md) へ分離した。
 > 以下は分離前の記録である。
 

@@ -22,7 +22,7 @@ synsk.me プロジェクトにおいて、プロダクトの目的・原則を�
 
 ## Decision Outcome
 
-**プロダクトのビジョンと原則を [VISION.md](../VISION.md) と [PRINCIPLES.md](../PRINCIPLES.md) として定義する。**
+**ビジョンを Working Backwards 形式で、原則を X over Y 形式で書く。どちらも `README.md` から分離した独立の文書に置く。**
 
 ### VISION.md
 

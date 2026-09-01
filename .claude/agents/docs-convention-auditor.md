@@ -46,7 +46,7 @@ model: inherit
 - `.claude/rules/writing.md` — 文章ルール S1a〜S8
 - `.claude/rules/docs-patterns.md` — 文書の書式と例
 - `docs/decisions/template.md` — 決定の記録の書式と例（`Added by synsk:` のコメント）
-- `docs/decisions/0011-record-separation.md` — 上記3つの根拠
+- `docs/decisions/0017-requirement-placement.md` — 上記3つの根拠
 
 ### 2. 機械的検査を走らせる
 
@@ -102,7 +102,7 @@ gh api repos/:owner/:repo/milestones
 
 **F. 決定の記録漏れ** — 現在形のルールとして書かれているのに、根拠の決定の記録がないものがないか。基準は `docs/decisions/README.md` が定める対象。
 
-**G. GitHub の整合** — Milestone がリリース単位になっているか（ADR-0011）。Issue が `.claude/rules/docs-patterns.md` の粒度基準を満たしているか。要件から作業への流れが通っているか。
+**G. GitHub の整合** — Milestone がリリース単位になっているか（ADR-0017）。Issue が `.claude/rules/docs-patterns.md` の粒度基準を満たしているか。要件から作業への流れが通っているか。
 
 ### 5. 定型で報告する
 

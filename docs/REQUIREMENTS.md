@@ -13,9 +13,6 @@
 ## FR-03: career と project を永続化する
 根拠: [ADR-0003](./decisions/0003-content-data-model.md)
 
-## FR-04: internal コンテンツに画像などのメディアを含められる
-根拠: [ADR-0010](./decisions/0010-content-storage-scope.md)
-
 ## FR-05: internal コンテンツに、公開前の下書き状態を持てる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
 
@@ -36,9 +33,6 @@
 
 ## FR-11: 永続化したデータを完全に削除できる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
-
-## FR-12: career と project から職務経歴書を出力できる
-根拠: [ADR-0003](./decisions/0003-content-data-model.md)
 
 ## FR-13: 公開されたときの見た目を、公開前に確認できる
 根拠: [ADR-0014](./decisions/0014-authoring-and-datastore.md)
