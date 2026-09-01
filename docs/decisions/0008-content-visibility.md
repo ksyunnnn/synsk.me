@@ -13,7 +13,7 @@ decision-makers: synsk
 > 雇用関係のクライアント: 会社名を公開
 > 業務委託のクライアント: 業界名でぼかす（`client` vs `clientPublic`）
 
-これは [docs/adr/README.md](./README.md) が定める ADR の単位に反する。本 ADR は可視性の決定を切り出し、あわせて 2026-08-21 の検討で判明した論点を含めて決め直す。
+これは [docs/decisions/README.md](./README.md) が定める ADR の単位に反する。本 ADR は可視性の決定を切り出し、あわせて 2026-08-21 の検討で判明した論点を含めて決め直す。
 
 検討で挙がった、公開しない状態を必要とする理由は3つ。
 
