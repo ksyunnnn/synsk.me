@@ -5,13 +5,14 @@
 | 項目 | 値 |
 |---|---|
 | 状態 | `ok` |
-| 経路 | RSS（一覧）+ oEmbed（埋め込み URL） |
+| 経路 | RSS（一覧）、oEmbed（埋め込み URL） |
 | エンドポイント | `https://speakerdeck.com/ksyunnnn.rss` / `https://speakerdeck.com/oembed.json?url=` |
 | 認証 | 不要 |
 | 公式性 | 公式 |
 | レート制限 | 公式記載なし。レスポンスヘッダにも `x-ratelimit-*` は無い |
 | 出典 | https://speakerdeck.com/faq |
-| 実測日 | 2026-09-02（4 件） |
+| 件数 | 4 |
+| 実測日 | 2026-09-02 |
 
 REST API は存在しない。公式 FAQ が案内するのは oEmbed のみで、これは個別デッキの指定に限られる。一覧は RSS から取る。
 

@@ -6,12 +6,13 @@
 |---|---|
 | 状態 | `ok` |
 | 経路 | REST |
-| エンドポイント | `https://dev.to/api/articles?username=ksyunnnn` |
+| エンドポイント | `https://dev.to/api/articles?username=ksyunnnn&per_page=10` |
 | 認証 | 不要 |
 | 公式性 | 公式（Forem API v1） |
 | レート制限 | 読み取りの記載なし。書き込みのみ記載がある |
 | 出典 | https://developers.forem.com/api/v1 |
-| 実測日 | 2026-09-02（1 件） |
+| 件数 | 1 |
+| 実測日 | 2026-09-02 |
 
 **User-Agent が必須。** 空の User-Agent では 403 を返す。Cloudflare Workers の `fetch` は既定の User-Agent を付けないため、明示する。
 
@@ -24,7 +25,7 @@
 | `description` | string | 常時 | this is a memo for personal reference | |
 | `url` | string | 常時 | `https://dev.to/ksyunnnn/how-to-use-supabase-cli-local-dev-5bic` | |
 | `published_at` | string | 常時 | `2024-01-03T05:48:34Z` | ISO 8601 UTC |
-| `public_reactions_count` | number | 常時 | `7` | |
+| `public_reactions_count` | number | 常時 | `7` | `positive_reactions_count` も同値で返る |
 | `social_image` | string | 常時 | `https://media2.dev.to/dynamic/image/...` | 1000x500 |
 | `cover_image` | string \| null | 常時 | `null` | |
 | `tag_list` | string[] | 常時 | `["supabase","docker"]` | |

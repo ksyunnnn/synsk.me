@@ -11,9 +11,10 @@
 | 公式性 | 公式（Zenn 自身が配信するフィード） |
 | レート制限 | 公式記載なし。レスポンスヘッダにも `rate-*` は無い |
 | 出典 | [zenn-dev/zenn-community#496](https://github.com/zenn-dev/zenn-community/issues/496) |
-| 実測日 | 2026-09-02（20 件） |
+| 件数 | 20 |
+| 実測日 | 2026-09-02 |
 
-公開 API は存在しない。Zenn 運営メンバーが上記 issue で「いいえ、公開しているAPIはありません」と回答している。`https://zenn.dev/api/articles?username=ksyunnnn` は 200 を返し全 25 件を取得できるが、非公式のため採らない。
+公開 API は存在しない。Zenn 運営メンバーが上記 issue で「いいえ、公開しているAPIはありません」と回答している。`https://zenn.dev/api/articles?username=ksyunnnn` は 200 を返し全 25 件を返すが、非公式の経路である。
 
 ## フィールド
 

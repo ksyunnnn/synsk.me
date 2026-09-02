@@ -11,7 +11,8 @@
 | 公式性 | 公式 |
 | レート制限 | 公式記載なし。`cache-control: private, must-revalidate, max-age=900` |
 | 出典 | [Medium/medium-api-docs](https://github.com/Medium/medium-api-docs) |
-| 実測日 | 2026-09-02（10 件） |
+| 件数 | 10 |
+| 実測日 | 2026-09-02 |
 
 API は提供終了している。上記リポジトリの README に "The Medium API is no longer supported." と明記され、2023-03-02 にアーカイブ済み。
 

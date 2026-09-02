@@ -11,13 +11,14 @@
 | 公式性 | **非公式**（メタデータ取得を目的とした経路ではない） |
 | レート制限 | 未確認 |
 | 出典 | https://codesandbox.io/docs |
-| 実測日 | 2026-09-02（掲載 4 件） |
+| 件数 | 1 |
+| 実測日 | 2026-09-02 |
 
 公式 oEmbed（`https://codesandbox.io/oembed`）は Cloudflare の bot challenge で 403 を返す。200 で通るのは `/embed/<id>` だけで、そこから OG メタを読んでいる。
 
 **存在しない ID でも 200 とサイト既定の OG が返る。** `og:title` が既定値かどうかで判定する。
 
-掲載対象は `src/data/manual-entries.ts` の `CODESANDBOX_SANDBOXES` で指名する。ユーザー単位の列挙は 403。
+掲載対象は `src/data/manual-entries.ts` の `CODESANDBOX_SANDBOXES` が持つ。ユーザー単位の列挙は 403。
 
 ## フィールド
 

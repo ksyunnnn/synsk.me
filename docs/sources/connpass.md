@@ -11,15 +11,16 @@
 | 公式性 | 公式 |
 | レート制限 | **5 秒に 1 リクエスト**（申請フォームの条件。OpenAPI が書く「1 秒 1 リクエスト」より厳しい） |
 | 出典 | https://connpass.com/about/api/v2/ |
-| 実測日 | 2026-09-02（キーなしのため 401） |
+| 件数 | — |
+| 実測日 | 2026-09-02 |
 
-v1 は廃止済みで 403 を返す。公式 OpenAPI 3.1.0 が `https://connpass.com/about/api/v2/openapi.json` にあり、7 paths / 16 schemas / `APIKeyAuth` を定義している。下の表はそこから引いた。
+v1 は廃止済みで 403 を返す。公式 OpenAPI 3.1.0 が `https://connpass.com/about/api/v2/openapi.json` にあり、7 paths / 16 schemas / `APIKeyAuth` を定義している。
 
 **キーは個人・コミュニティなら無償。** 審査は 5 営業日程度。訪問者の操作でリアルタイムに API を呼ぶ構成は承認されない場合があり、キーをブラウザや公開リポジトリに置くことは禁じられている。ビルド時に取得して静的化する形は、フォームの記入例と一致する。
 
 ## フィールド
 
-`EventListResponseSchema`（公式 OpenAPI より）。
+API キーが無いため実データを持たない。型と必須の別は公式 OpenAPI の `EventListResponseSchema` による。
 
 | フィールド | 型 | 取得 | 実データ | 備考 |
 |---|---|---|---|---|

@@ -6,12 +6,13 @@
 |---|---|
 | 状態 | `ok` |
 | 経路 | REST |
-| エンドポイント | `https://qiita.com/api/v2/users/ksyunnnn/items` |
+| エンドポイント | `https://qiita.com/api/v2/users/ksyunnnn/items?per_page=10` |
 | 認証 | 任意（`QIITA_ACCESS_TOKEN`） |
 | 公式性 | 公式 |
 | レート制限 | 未認証 60 req/h/IP、認証 1,000 req/h |
 | 出典 | https://qiita.com/api/v2/docs |
-| 実測日 | 2026-09-02（77 件） |
+| 件数 | 10（`per_page=10` のため。総数は `total-count` が 77） |
+| 実測日 | 2026-09-02 |
 
 `per_page` は 1〜100、`page` は 1〜100。総数はレスポンスヘッダ `total-count` で取れる。
 

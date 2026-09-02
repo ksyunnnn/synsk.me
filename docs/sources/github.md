@@ -11,11 +11,12 @@
 | 公式性 | 公式 |
 | レート制限 | 未認証 60 req/h/IP、PAT 5,000 req/h |
 | 出典 | https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api |
-| 実測日 | 2026-09-02（公開 56 件） |
+| 件数 | 30（`per_page=30` のため。公開リポジトリは 56 件） |
+| 実測日 | 2026-09-02 |
 
 Cloudflare Workers は共有 IP から出るため、未認証の 60 req/h は他のテナントと分け合う。
 
-OpenAPI の記述を GitHub 自身が [github/rest-api-description](https://github.com/github/rest-api-description) で公開している（MIT）。下の表はそこから引ける。
+OpenAPI の記述を GitHub 自身が [github/rest-api-description](https://github.com/github/rest-api-description) で公開している（MIT）。
 
 ## フィールド
 

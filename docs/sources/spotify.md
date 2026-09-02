@@ -11,9 +11,10 @@
 | 公式性 | 公式 |
 | レート制限 | 公式記載なし |
 | 出典 | https://developer.spotify.com/documentation/embeds |
-| 実測日 | 2026-09-02（掲載 2 件） |
+| 件数 | 1 |
+| 実測日 | 2026-09-02 |
 
-個別プレイリストの指定に限られる。掲載対象は `src/data/manual-entries.ts` の `SPOTIFY_PLAYLISTS` で指名する。
+個別プレイリストの指定に限られる。掲載対象は `src/data/manual-entries.ts` の `SPOTIFY_PLAYLISTS` が持つ。
 
 Web API の `GET /v1/users/{id}/playlists` と `GET /v1/users/{id}` は **2026 年の変更で削除され、代替が無い**。収録曲は所有・共同編集のプレイリストに限られ、Client Credentials では取れない。正規に取るには Authorization Code フローとアプリ所有者の Premium 契約が要る。
 
