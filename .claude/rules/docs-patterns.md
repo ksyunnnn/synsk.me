@@ -12,7 +12,6 @@ paths:
 - 冒頭の宣言
 - 要件
 - 決定の記録
-- 外部プラットフォームの記録
 - Issue
 - 検査の例外
 
@@ -27,7 +26,7 @@ REQUIREMENTS.md:  > この文書は満たすべきことだけを書く。進捗
 scraps/:          > 書き捨て。消えても困らないものだけを置く。
 ```
 
-`VISION.md` `PRINCIPLES.md` `template.md` `decisions/*.md` と各ディレクトリの `README.md` は宣言の対象外。ただし `scraps/README.md` と `sources/README.md` は、その場所の性質を読む人に伝える必要があるため宣言を持つ。
+`VISION.md` `PRINCIPLES.md` `template.md` `decisions/*.md` と各ディレクトリの `README.md` は宣言の対象外。ただし `scraps/README.md` は、その場所の性質を読む人に伝える必要があるため宣言を持つ。
 
 ## 要件
 
@@ -58,12 +57,6 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 **引用してよいのは決定の記録から決定の記録への引用に限る。** 決定の記録は書き換えないので引用が古くならない。書き換わる文書（`REQUIREMENTS.md`）からは引用せず、リンクか ID で参照する。
 
 **時制** — `docs/README.md` の表に従う。
-
-## 外部プラットフォームの記録
-
-1 プラットフォーム 1 ファイル。節・列・語彙は [docs/sources/README.md](../../docs/sources/README.md) が定める。
-
-**経路の値は実測とする。** 再取得の手段は `scripts/probe-sources.sh`。
 
 ## Issue
 
