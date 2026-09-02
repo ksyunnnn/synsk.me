@@ -61,7 +61,7 @@ export const codesandboxSource: TimelineSource = {
           title,
           url: ref.url,
           // OG メタは日付を返さないため、登録日を並び順に使う。
-          publishedAt: ref.registeredAt,
+          publishedAt: ref.publishedAt ?? ref.registeredAt,
           summary: readMeta(html, 'og:description'),
           // og:image は https://codesandbox.io/api/v1/sandboxes/<id>/screenshot.png を
           // 指すが、これも bot challenge で 403 になる。壊れた画像を出さないため持たせない。

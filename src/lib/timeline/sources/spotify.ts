@@ -36,7 +36,7 @@ export const spotifySource: TimelineSource = {
           platform: 'spotify',
           title: data.title,
           url: ref.url,
-          publishedAt: ref.registeredAt,
+          publishedAt: ref.publishedAt ?? ref.registeredAt,
           thumbnailUrl: data.thumbnail_url,
           embedUrl: data.iframe_url,
         };

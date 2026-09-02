@@ -56,7 +56,7 @@ export const xSource: TimelineSource = {
           platform: 'x',
           title: textFromHtml(data.html) ?? ref.url,
           url: ref.url,
-          publishedAt: ref.registeredAt,
+          publishedAt: ref.publishedAt ?? ref.registeredAt,
         };
         return entry;
       })

@@ -5,14 +5,19 @@
  * 経路が無い（各 source のコメントに根拠を書いた）。掲載するものをここで指名する。
  *
  * `registeredAt` は**このファイルへ登録した日**であり、コンテンツの公開日ではない。
- * 公開日が判明したものから置き換える。
+ * 公開日が判明したものは `publishedAt` を持ち、並び順はそちらを使う。
  */
 
 export interface ManualRef {
   /** 取得元 URL。oEmbed やメタデータの取得キーになる。 */
   url: string;
-  /** ISO 8601。時系列の並び順に使う。 */
+  /** ISO 8601。このファイルへ登録した日。publishedAt が無いときの並び順に使う。 */
   registeredAt: string;
+  /**
+   * ISO 8601。公開日が判明しているものだけが持つ。
+   * 並び順はこちらを優先する。
+   */
+  publishedAt?: string;
 }
 
 /** oEmbed でタイトルとジャケット画像が取れる。プレイリスト単位で指名する。 */
@@ -91,7 +96,52 @@ export const CODEPEN_PENS: PenRef[] = [
 ];
 
 /**
- * 掲載したいツイート。
- * X は無料で一覧を取得できず、oEmbed も個別ツイート指定のため、ここに URL を並べる。
+ * 掲載する投稿。
+ *
+ * X は無料で一覧を取得できず、oEmbed も個別投稿の指定に限られるため、ここに並べる。
+ * 選んだのは Zenn と Qiita の記事本文に本人が埋め込んだ投稿と、
+ * 2026-09-02 に oEmbed で本人（author_name: こばしゅん）と確認できたもの。
+ * publishedAt は同じ oEmbed のレスポンスから読んだ値。
  */
-export const X_POSTS: ManualRef[] = [];
+export const X_POSTS: ManualRef[] = [
+  {
+    url: 'https://twitter.com/ksyunnnn/status/2019011393044058438',
+    publishedAt: '2026-02-04T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    url: 'https://twitter.com/ksyunnnn/status/1891642492484731147',
+    publishedAt: '2025-02-18T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    url: 'https://twitter.com/ksyunnnn/status/1850757894746358123',
+    publishedAt: '2024-10-28T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    url: 'https://twitter.com/ksyunnnn/status/1814576380845150411',
+    publishedAt: '2024-07-20T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    url: 'https://twitter.com/ksyunnnn/status/1712422086491431275',
+    publishedAt: '2023-10-12T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    url: 'https://twitter.com/ksyunnnn/status/1179354779589513218',
+    publishedAt: '2019-10-02T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    url: 'https://twitter.com/ksyunnnn/status/958664234350518272',
+    publishedAt: '2018-01-31T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    url: 'https://twitter.com/ksyunnnn/status/865812339072802816',
+    publishedAt: '2017-05-20T00:00:00.000Z',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+];

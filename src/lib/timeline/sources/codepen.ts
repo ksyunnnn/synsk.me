@@ -21,7 +21,7 @@ export const codepenSource: TimelineSource = {
       platform: 'codepen',
       title: pen.title,
       url: pen.url,
-      publishedAt: pen.registeredAt,
+      publishedAt: pen.publishedAt ?? pen.registeredAt,
       embedUrl: `https://codepen.io/ksyunnnn/embed/${pen.id}?default-tab=result`,
     }));
 
