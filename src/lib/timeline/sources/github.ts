@@ -8,6 +8,7 @@ const REFERENCE = 'https://docs.github.com/en/rest/using-the-rest-api/rate-limit
 interface GitHubRepo {
   id: number;
   name: string;
+  full_name: string;
   description: string | null;
   html_url: string;
   language: string | null;
@@ -58,6 +59,9 @@ export const githubSource: TimelineSource = {
         // Invalid Date ではなく 1970 になるため、created_at へ落とす。
         publishedAt: new Date(repo.pushed_at ?? repo.created_at).toISOString(),
         summary: repo.description ?? undefined,
+        // GitHub がリポジトリの OG 画像を返す経路。REST API のドキュメントには無い。
+        // 実測: https://opengraph.githubassets.com/1/ksyunnnn/synsk.me → 200 image/png
+        thumbnailUrl: `https://opengraph.githubassets.com/1/${repo.full_name}`,
         metrics: [{ label: 'Stars', value: repo.stargazers_count }],
         tags: repo.language ? [repo.language, ...repo.topics] : repo.topics,
       }));

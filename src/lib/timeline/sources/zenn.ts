@@ -1,5 +1,5 @@
 import { fetchText, PER_SOURCE_LIMIT } from '../registry';
-import { itemGuid, parseRssItems, stripHtml, toIsoDate } from '../rss';
+import { itemGuid, itemMediaUrl, parseRssItems, stripHtml, toIsoDate } from '../rss';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
 /**
@@ -41,6 +41,8 @@ export const zennSource: TimelineSource = {
         url,
         publishedAt,
         summary: stripHtml(item.description),
+        // enclosure に Cloudinary 生成の OG 画像（1200x630）が入る。
+        thumbnailUrl: itemMediaUrl(item),
       });
     }
 
