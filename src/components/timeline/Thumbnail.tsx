@@ -1,53 +1,51 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { useState } from 'react';
+import type { TimelineEntry } from '@/lib/timeline/types';
+import { PlatformIcon } from './PlatformIcon';
 
 /**
- * CSS の url() に載せられる形か検査する。
+ * サムネイルを固定比の井戸に敷く。
  *
- * URL は外部 API が返す値なので、そのまま style へ入れない。
- * encodeURI は使えない。Zenn の OG 画像 URL のように符号化済みの値を
- * 二重符号化してしまうため。http(s) に限り、CSS 上で意味を持つ文字を弾く。
- */
-function cssUrl(url: string): string | undefined {
-  if (!/^https?:\/\//.test(url)) return undefined;
-  if (/["'()\\\s]/.test(url)) return undefined;
-  return url;
-}
-
-/**
- * サムネイルを敷く。
+ * 井戸の比を固定するのは、画像の到着でレイアウトを動かさないため
+ * （ADR-0017 の CLS 目標値 0）。読み込みに失敗したら PlatformIcon へ落とし、
+ * 壊れた画像アイコンを出さない。画像を持たないエントリも同じ状態になるので、
+ * 欠損は特別扱いではなく井戸の既定状態として扱える。
  *
- * `<img>` ではなく背景画像で敷くのは、読み込みに失敗したときに
- * 壊れた画像アイコンを出さないため。失敗すると地の色だけが残る。
- *
- * 画像に alt を持たせられないため装飾として扱う。タイトルは必ず
- * テキストで隣に置き、画像だけが情報を運ぶ形にしない。
+ * 画像は装飾。`alt=""` にし、情報は隣の見出しとメタ行が持つ。
  */
 export const Thumbnail = ({
-  url,
-  className,
-  fallback,
+  entry,
+  ratio,
+  className = '',
 }: {
-  url: string | undefined;
-  /** 寸法と角丸は呼び出し側が決める。 */
-  className: string;
-  /** 画像を持たないエントリに置くもの。 */
-  fallback?: ReactNode;
+  entry: TimelineEntry;
+  /** `aspect-[2/1]` や `aspect-video` など。呼び出し側が決める。 */
+  ratio: string;
+  className?: string;
 }) => {
-  const safeUrl = url ? cssUrl(url) : undefined;
-
-  if (!safeUrl) {
-    return (
-      <div aria-hidden="true" className={`flex items-center justify-center bg-muted ${className}`}>
-        {fallback}
-      </div>
-    );
-  }
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(entry.thumbnailUrl) && !failed;
 
   return (
-    <div
-      aria-hidden="true"
-      className={`bg-muted bg-cover bg-center ${className}`}
-      style={{ backgroundImage: `url("${safeUrl}")` }}
-    />
+    <span className={`relative block overflow-hidden bg-muted ${ratio} ${className}`}>
+      {showImage ? (
+        // next/image を使わない。対象は 8 つの外部ホストにまたがり、
+        // next.config.js の images.remotePatterns に 1 つも登録が無い。
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={entry.thumbnailUrl}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          onError={() => setFailed(true)}
+          className="size-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] group-focus-visible:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+        />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center">
+          <PlatformIcon platform={entry.platform} className="size-8 text-muted-foreground" />
+        </span>
+      )}
+    </span>
   );
 };

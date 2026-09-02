@@ -60,7 +60,8 @@ export const githubSource: TimelineSource = {
         publishedAt: new Date(repo.pushed_at ?? repo.created_at).toISOString(),
         summary: repo.description ?? undefined,
         // GitHub がリポジトリの OG 画像を返す経路。REST API のドキュメントには無い。
-        // 実測: https://opengraph.githubassets.com/1/ksyunnnn/synsk.me → 200 image/png
+        // 実測: 200 image/png を返すが、続けて叩くと 429 を返す。上限の記載は無い。
+        // 落ちたものは Thumbnail が PlatformIcon へ落とすため、表示は崩れない。
         thumbnailUrl: `https://opengraph.githubassets.com/1/${repo.full_name}`,
         metrics: [{ label: 'Stars', value: repo.stargazers_count }],
         tags: repo.language ? [repo.language, ...repo.topics] : repo.topics,

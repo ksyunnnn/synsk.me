@@ -1,6 +1,6 @@
 import type { TimelineEntry } from '@/lib/timeline/types';
 
-export const TIMELINE_VARIANTS = ['casual', 'chic', 'catnose'] as const;
+export const TIMELINE_VARIANTS = ['casual', 'chic', 'catnose', 'rich', 'principles'] as const;
 
 export type TimelineVariant = (typeof TIMELINE_VARIANTS)[number];
 
@@ -19,6 +19,8 @@ export const VARIANT_LABEL: Record<TimelineVariant, string> = {
   casual: 'Casual',
   chic: 'Chic',
   catnose: 'Catnose',
+  rich: 'Rich',
+  principles: 'Principles',
 };
 
 export function isTimelineVariant(value: unknown): value is TimelineVariant {

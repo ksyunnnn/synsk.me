@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { CasualTimeline } from './variants/CasualTimeline';
 import { CatnoseTimeline } from './variants/CatnoseTimeline';
 import { ChicTimeline } from './variants/ChicTimeline';
+import { PrinciplesTimeline } from './variants/PrinciplesTimeline';
+import { RichTimeline } from './variants/RichTimeline';
 import {
   TIMELINE_VARIANTS,
   VARIANT_LABEL,
@@ -15,6 +17,8 @@ const VARIANT_COMPONENT = {
   casual: CasualTimeline,
   chic: ChicTimeline,
   catnose: CatnoseTimeline,
+  rich: RichTimeline,
+  principles: PrinciplesTimeline,
 };
 
 /**

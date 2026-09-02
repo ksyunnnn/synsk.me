@@ -5,9 +5,10 @@ import type { VariantProps } from './types';
 /**
  * 案 Casual。48px のアイコンチップ、広い余白、ブランド色をグリフ 1 点に使う。
  *
- * 日付ピルの地に bg-muted を使わない。ライトの muted-foreground(#737373) は
+ * 面に muted 系の地を使わない。ライトの muted-foreground(#737373) は
  * muted(#f5f5f5) 上で 4.35:1 と WCAG 2.2 SC 1.4.3 の AA を割るため、
- * 地を background に置き枠線で囲む（4.74:1）。
+ * 日付ピルの地は background に置き枠線で囲む（4.74:1）。hover も同じ理由で
+ * 面を塗らず、浮きと枠の濃さで表す。accent は muted と同値である。
  */
 export const CasualTimeline = ({ groups, now }: VariantProps) => (
   <div className="mx-auto w-full max-w-[720px]">
@@ -31,7 +32,7 @@ export const CasualTimeline = ({ groups, now }: VariantProps) => (
                 href={entry.url}
                 target="_blank"
                 rel="noreferrer"
-                className="-mx-4 flex gap-4 rounded-xl px-4 py-4 transition-colors duration-150 hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none"
+                className="-mx-4 flex gap-4 rounded-xl border border-transparent px-4 py-4 transition-[border-color,transform] duration-150 hover:-translate-y-0.5 hover:border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none motion-reduce:hover:translate-y-0"
               >
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-muted">
                   <PlatformIcon platform={entry.platform} className="size-6" brandColor />
