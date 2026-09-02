@@ -2,6 +2,7 @@ import type { SourceResult, SourceStatus } from '@/lib/timeline/types';
 
 const STATUS_LABEL: Record<SourceStatus, string> = {
   ok: '実 API から取得',
+  manual: '手動登録',
   unconfigured: '設定待ち',
   unavailable: '取得手段なし',
   error: '取得失敗',
@@ -9,6 +10,7 @@ const STATUS_LABEL: Record<SourceStatus, string> = {
 
 const STATUS_STYLE: Record<SourceStatus, string> = {
   ok: 'bg-foreground text-background',
+  manual: 'border border-border text-muted-foreground',
   unconfigured: 'bg-muted text-muted-foreground',
   unavailable: 'bg-muted text-muted-foreground',
   error: 'bg-destructive text-destructive-foreground',
@@ -20,6 +22,7 @@ const STATUS_STYLE: Record<SourceStatus, string> = {
  */
 export const SourceStatusPanel = ({ results }: { results: SourceResult[] }) => {
   const okCount = results.filter((result) => result.status === 'ok').length;
+  const manualCount = results.filter((result) => result.status === 'manual').length;
 
   return (
     <section aria-labelledby="source-status-heading" className="mb-16">
@@ -27,7 +30,7 @@ export const SourceStatusPanel = ({ results }: { results: SourceResult[] }) => {
         Sources
       </h2>
       <p className="mb-4 text-xs text-muted-foreground">
-        {results.length} 件中 {okCount} 件が実 API から取得
+        {results.length} 件中 {okCount} 件が実 API から取得、{manualCount} 件が手動登録
       </p>
 
       <ul className="divide-y divide-border border-y border-border">

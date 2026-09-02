@@ -59,11 +59,12 @@ export interface TimelineEntry {
  * source の取得結果。
  *
  * - `ok`: 実 API から取得した
+ * - `manual`: 取得の経路が無く、手で登録した値を読んだ
  * - `unconfigured`: 認証情報が無いため取得を試みていない。`requiredEnv` を満たせば `ok` になりうる
- * - `unavailable`: 取得手段が存在しない。設定では変わらない
+ * - `unavailable`: 取得手段が存在せず、掲載するものも登録されていない
  * - `error`: 取得を試みて失敗した
  */
-export type SourceStatus = 'ok' | 'unconfigured' | 'unavailable' | 'error';
+export type SourceStatus = 'ok' | 'manual' | 'unconfigured' | 'unavailable' | 'error';
 
 export interface SourceResult {
   platform: Platform;

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { CasualTimeline } from './variants/CasualTimeline';
 import { CatnoseTimeline } from './variants/CatnoseTimeline';
 import { ChicTimeline } from './variants/ChicTimeline';
+import { EmbedTimeline } from './variants/EmbedTimeline';
 import { PrinciplesTimeline } from './variants/PrinciplesTimeline';
 import { RichTimeline } from './variants/RichTimeline';
 import {
@@ -19,6 +20,7 @@ const VARIANT_COMPONENT = {
   catnose: CatnoseTimeline,
   rich: RichTimeline,
   principles: PrinciplesTimeline,
+  embed: EmbedTimeline,
 };
 
 /**

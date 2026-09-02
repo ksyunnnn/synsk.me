@@ -1,4 +1,4 @@
-import { fetchText, PER_SOURCE_LIMIT } from '../registry';
+import { fetchJson, fetchText, PER_SOURCE_LIMIT } from '../registry';
 import { itemGuid, itemMediaUrl, parseRssItems, stripHtml, toIsoDate } from '../rss';
 import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
 
@@ -8,6 +8,19 @@ import type { SourceResult, TimelineEntry, TimelineSource } from '../types';
  */
 const FEED_URL = 'https://speakerdeck.com/ksyunnnn.rss';
 const REFERENCE = 'https://speakerdeck.com/faq';
+const OEMBED = 'https://speakerdeck.com/oembed.json';
+
+/**
+ * デッキごとの player の URL を oEmbed から取る。
+ * player のハッシュはデッキの slug と別物なので、URL からは組み立てられない。
+ */
+async function playerUrl(deckUrl: string): Promise<string | undefined> {
+  const response = await fetchJson<{ html?: string }>(
+    `${OEMBED}?url=${encodeURIComponent(deckUrl)}`
+  );
+  if (!response.ok || !response.body?.html) return undefined;
+  return response.body.html.match(/src="([^"]+)"/)?.[1];
+}
 
 export const speakerdeckSource: TimelineSource = {
   platform: 'speakerdeck',
@@ -44,10 +57,16 @@ export const speakerdeckSource: TimelineSource = {
       });
     }
 
+    const limited = entries.slice(0, PER_SOURCE_LIMIT);
+    const players = await Promise.all(limited.map((entry) => playerUrl(entry.url)));
+    limited.forEach((entry, index) => {
+      entry.embedUrl = players[index];
+    });
+
     return {
       platform: 'speakerdeck',
       status: 'ok',
-      entries: entries.slice(0, PER_SOURCE_LIMIT),
+      entries: limited,
       note: 'REST API が無いため RSS から取得する。1 枚目スライドの画像が media:content に入る。',
       reference: REFERENCE,
     };

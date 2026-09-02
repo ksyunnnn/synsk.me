@@ -51,6 +51,46 @@ export const CODESANDBOX_SANDBOXES: SandboxRef[] = [
 ];
 
 /**
+ * CodePen の pen。
+ *
+ * codepen.io はサーバ側からの取得を Cloudflare の bot challenge で
+ * 全経路 403 にするため、題も一覧も取れない。一方、埋め込み iframe は
+ * 閲覧者のブラウザが直接読むので描画される。題はブラウザで確認した値。
+ */
+export interface PenRef extends ManualRef {
+  /** codepen.io の pen ID。埋め込み URL をこれで組み立てる。 */
+  id: string;
+  title: string;
+}
+
+export const CODEPEN_PENS: PenRef[] = [
+  {
+    id: 'LYwzYEE',
+    title: 'フォーカスで表示・非表示',
+    url: 'https://codepen.io/ksyunnnn/pen/LYwzYEE',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    id: 'oNoMVNB',
+    title: '2 列レイアウト',
+    url: 'https://codepen.io/ksyunnnn/pen/oNoMVNB',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    id: 'QWOBdPj',
+    title: 'アニメーション・下から上へ',
+    url: 'https://codepen.io/ksyunnnn/pen/QWOBdPj',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+  {
+    id: 'qyOZWe',
+    title: 'BookList',
+    url: 'https://codepen.io/ksyunnnn/pen/qyOZWe',
+    registeredAt: '2026-09-02T00:00:00.000Z',
+  },
+];
+
+/**
  * 掲載したいツイート。
  * X は無料で一覧を取得できず、oEmbed も個別ツイート指定のため、ここに URL を並べる。
  */

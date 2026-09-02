@@ -65,6 +65,8 @@ export const codesandboxSource: TimelineSource = {
           summary: readMeta(html, 'og:description'),
           // og:image は https://codesandbox.io/api/v1/sandboxes/<id>/screenshot.png を
           // 指すが、これも bot challenge で 403 になる。壊れた画像を出さないため持たせない。
+          // 埋め込みは閲覧者のブラウザが直接読むので描画される。
+          embedUrl: `https://codesandbox.io/embed/${ref.id}`,
         };
         return entry;
       })
