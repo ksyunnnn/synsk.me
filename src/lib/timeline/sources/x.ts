@@ -50,6 +50,9 @@ export const xSource: TimelineSource = {
         }
         const data = response.body;
 
+        // 投稿 ID。埋め込み URL を組み立てるのに使う。
+        const statusId = ref.url.match(/status\/(\d+)/)?.[1];
+
         const entry: TimelineEntry = {
           id: `x:${ref.url}`,
           kind: 'post',
@@ -57,6 +60,11 @@ export const xSource: TimelineSource = {
           title: textFromHtml(data.html) ?? ref.url,
           url: ref.url,
           publishedAt: ref.publishedAt ?? ref.registeredAt,
+          // 画像・引用・リンクカードは oEmbed の html では描かれない。
+          // 公式の埋め込みページなら script 無しで実物どおりに描かれる。
+          embedUrl: statusId
+            ? `https://platform.twitter.com/embed/Tweet.html?id=${statusId}&lang=ja&dnt=true`
+            : undefined,
         };
         return entry;
       })
