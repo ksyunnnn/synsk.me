@@ -12,8 +12,12 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-const Page = async ({ searchParams }: { searchParams: Promise<{ ui?: string }> }) => {
-  const { ui } = await searchParams;
+const Page = async ({
+  searchParams,
+}: {
+  searchParams: Promise<{ ui?: string; embed?: string }>;
+}) => {
+  const { ui, embed } = await searchParams;
   const initialVariant: TimelineVariant = isTimelineVariant(ui) ? ui : 'catnose';
 
   const results = await fetchAllSources(TIMELINE_SOURCES);
@@ -32,7 +36,12 @@ const Page = async ({ searchParams }: { searchParams: Promise<{ ui?: string }> }
 
       <SourceStatusPanel results={results} />
 
-      <TimelineLab groups={groups} now={Date.now()} initialVariant={initialVariant} />
+      <TimelineLab
+        groups={groups}
+        now={Date.now()}
+        initialVariant={initialVariant}
+        initialAutoOpen={embed === 'auto'}
+      />
     </main>
   );
 };

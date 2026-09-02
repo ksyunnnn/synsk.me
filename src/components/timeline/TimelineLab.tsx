@@ -38,13 +38,17 @@ export const TimelineLab = ({
   groups,
   now,
   initialVariant,
+  initialAutoOpen = false,
 }: {
   groups: YearGroup[];
   now: number;
   initialVariant: TimelineVariant;
+  initialAutoOpen?: boolean;
 }) => {
   const [variant, setVariant] = useState<TimelineVariant>(initialVariant);
   const [dark, setDark] = useState(false);
+  // Embed 案だけが使う。押さずに最初から実物を出すかどうか。
+  const [autoOpen, setAutoOpen] = useState(initialAutoOpen);
   const Variant = VARIANT_COMPONENT[variant];
 
   useEffect(() => {
@@ -74,6 +78,21 @@ export const TimelineLab = ({
           ))}
         </div>
 
+        {variant === 'embed' ? (
+          <button
+            type="button"
+            onClick={() => setAutoOpen((current) => !current)}
+            aria-pressed={autoOpen}
+            className={`rounded-full border px-3 py-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring motion-reduce:transition-none ${
+              autoOpen
+                ? 'border-foreground bg-foreground text-background'
+                : 'border-border text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            自動で開く
+          </button>
+        ) : null}
+
         <button
           type="button"
           onClick={() => setDark((current) => !current)}
@@ -85,7 +104,7 @@ export const TimelineLab = ({
       </div>
 
       <div className="rounded-2xl bg-background px-6 py-10 text-foreground">
-        <Variant groups={groups} now={now} />
+        <Variant groups={groups} now={now} autoOpen={autoOpen} />
       </div>
     </>
   );

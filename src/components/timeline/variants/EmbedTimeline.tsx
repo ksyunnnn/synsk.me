@@ -160,8 +160,10 @@ const Embed = ({
  * X の埋め込みは本文をそのまま描くため、開いた後は上の見出しと重なる。
  * 見出しは読み上げと構造のために残し、視覚的にだけ畳む。
  */
-const EmbedEntry = ({ entry }: { entry: TimelineEntry }) => {
-  const [live, setLive] = useState(false);
+const EmbedEntry = ({ entry, autoOpen }: { entry: TimelineEntry; autoOpen: boolean }) => {
+  const [opened, setOpened] = useState(false);
+  // autoOpen は後から切り替わる。useState の初期値では追随しないため合成する。
+  const live = opened || autoOpen;
   const titleIsDuplicated = live && entry.platform === 'x';
 
   return (
@@ -191,14 +193,17 @@ const EmbedEntry = ({ entry }: { entry: TimelineEntry }) => {
       {/* 埋め込みを持つものだけ実物を出す。持たないものは題と要約で終える。 */}
       {entry.embedUrl ? (
         <div className="mt-6">
-          <Embed entry={entry} live={live} onOpen={() => setLive(true)} />
+          <Embed entry={entry} live={live} onOpen={() => setOpened(true)} />
         </div>
       ) : null}
     </li>
   );
 };
 
-export const EmbedTimeline = ({ groups }: VariantProps) => (
+export const EmbedTimeline = ({
+  groups,
+  autoOpen = false,
+}: VariantProps & { autoOpen?: boolean }) => (
   <div className="mx-auto w-full max-w-[720px]">
     {groups.map((group) => (
       <section
@@ -215,7 +220,7 @@ export const EmbedTimeline = ({ groups }: VariantProps) => (
 
         <ol className="mt-6 space-y-12">
           {group.entries.map((entry) => (
-            <EmbedEntry key={entry.id} entry={entry} />
+            <EmbedEntry key={entry.id} entry={entry} autoOpen={autoOpen} />
           ))}
         </ol>
       </section>

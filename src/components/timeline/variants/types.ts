@@ -20,6 +20,8 @@ export interface VariantProps {
   groups: YearGroup[];
   /** 相対表記の基準時刻。サーバとクライアントで同じ値を使い、再描画でずれないようにする。 */
   now: number;
+  /** 埋め込みを押さずに最初から出す。Embed 案だけが見る。 */
+  autoOpen?: boolean;
 }
 
 export const VARIANT_LABEL: Record<TimelineVariant, string> = {
