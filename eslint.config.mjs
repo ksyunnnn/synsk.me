@@ -1,39 +1,68 @@
-import { defineConfig } from "eslint/config";
-import next from "eslint-config-next";
-import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
-import typescriptEslint from "@typescript-eslint/eslint-plugin";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import { FlatCompat } from "@eslint/eslintrc";
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
+import prettier from 'eslint-config-prettier/flat'
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const compat = new FlatCompat({
-    baseDirectory: __dirname,
-    recommendedConfig: js.configs.recommended,
-    allConfig: js.configs.all
-});
+/**
+ * ESLint flat config。
+ *
+ * `eslint-config-next` は `@next/next` / `react` / `react-hooks` / `import` /
+ * `jsx-a11y` の各プラグインと、TypeScript ファイル向けの `@typescript-eslint`
+ * プラグインおよびパーサを自前で登録する。そのため FlatCompat も
+ * `@eslint/eslintrc` も要らない。
+ *
+ * @type {import('eslint').Linter.Config[]}
+ */
+const config = [
+  {
+    ignores: ['.next/**', '.open-next/**', '.wrangler/**', 'out/**', 'build/**', 'cloudflare-env.d.ts'],
+  },
 
-export default defineConfig([{
-    extends: [
-        ...next,
-        ...nextCoreWebVitals,
-        ...compat.extends("plugin:jsx-a11y/recommended"),
-        ...compat.extends("prettier")
-    ],
+  // next + next/core-web-vitals
+  ...nextCoreWebVitals,
 
-    plugins: {
-        "@typescript-eslint": typescriptEslint,
-    },
+  // jsx-a11y の recommended 全体。eslint-config-next が有効にするのは 34 ルール
+  // 中 6 ルールだけなので、残りを明示的に足す。
+  // プラグイン本体は eslint-config-next が登録済みで、そこに入っているのは
+  // `_interop_require_wildcard` を通した複製オブジェクトである。
+  // `jsxA11y.flatConfigs.recommended` をそのまま展開すると同じキーに別の
+  // オブジェクトを割り当てることになり `Cannot redefine plugin "jsx-a11y"`
+  // で落ちる。だからルールだけを取り出す。
+  {
+    name: 'jsx-a11y/recommended',
+    rules: jsxA11y.flatConfigs.recommended.rules,
+  },
 
+  // prettier と競合する整形系ルールを落とす。他の config より後に置く。
+  prettier,
+
+  {
+    name: 'synsk/rules',
     rules: {
-        "react/function-component-definition": [2, {
-            namedComponents: "arrow-function",
-        }],
-
-        "@typescript-eslint/no-unused-vars": 1,
-        "no-console": 2,
-        "@typescript-eslint/no-explicit-any": 2,
+      'react/function-component-definition': [2, { namedComponents: 'arrow-function' }],
+      'no-console': 2,
     },
-}]);
+  },
+
+  {
+    // `@typescript-eslint` プラグインは eslint-config-next が TypeScript
+    // ファイルにだけ登録するため、ルールの適用範囲も揃える。
+    name: 'synsk/rules-typescript',
+    files: ['**/*.{ts,tsx,mts,cts}'],
+    rules: {
+      '@typescript-eslint/no-unused-vars': 1,
+      '@typescript-eslint/no-explicit-any': 2,
+    },
+  },
+
+  {
+    // リポジトリ直下のビルド時 Node スクリプト。失敗を stderr に出すのは
+    // 正当なので `console.error` / `console.warn` を許す。
+    name: 'synsk/build-config-files',
+    files: ['*.{js,mjs,cjs,ts,mts,cts}'],
+    rules: {
+      'no-console': [2, { allow: ['error', 'warn'] }],
+    },
+  },
+]
+
+export default config
