@@ -29,6 +29,13 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 - 公式ドキュメントへのリンクを添える
 - 例: 「Atomic Design に基づき...」→ [公式サイト](https://atomicdesign.bradfrost.com/)
 
+### spec
+
+`specs/` 配下は `/speckit-specify` で作る。テンプレートを手でコピーしない。
+既存の spec に要件を足す・直すときは `/speckit-clarify` を使う。仕様全体を書き直すときは `/speckit-specify` を再実行する。
+
+詳細は [Spec Kit: Agentic SDD](https://github.com/github/spec-kit/blob/main/docs/reference/agentic-sdd.md) にある。
+
 ### ドキュメントの役割
 
 どこに何を書くかの判断基準は `docs/README.md` にある。入れ物ごとの役割・時制・書いてはいけないもの、参照の向き、迷ったときの判断基準が集約されている。
