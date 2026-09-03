@@ -1,5 +1,5 @@
 /** Workers Builds のブランチ コントロールで指定しているプロダクション ブランチ */
-const PRODUCTION_BRANCH = 'main'
+const PRODUCTION_BRANCH = 'main';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -9,9 +9,9 @@ const nextConfig = {
     NEXT_PUBLIC_DEPLOY_ENV:
       process.env.WORKERS_CI_BRANCH === PRODUCTION_BRANCH ? 'production' : 'preview',
   },
-}
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;
 
 import('@opennextjs/cloudflare')
   .then((m) => m.initOpenNextCloudflareForDev())

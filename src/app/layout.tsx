@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     title: 'synsk.me',
     description: 'SYUNSUKE KOBASHI / 小橋俊介 / こばしゅん',
     creator: '@ksyunnnn',
-  }
+  },
 };
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
