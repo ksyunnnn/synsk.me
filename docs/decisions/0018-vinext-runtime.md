@@ -39,7 +39,7 @@ Cloudflare の [Next.js フレームワーク ガイド](https://developers.clou
 * Good, because Next.js のビルド出力を reverse-engineer する層がなくなる
 * Good, because ビルドが 8.6 秒で終わる（2026-09-04、`npm run build` の実測）
 * Good, because `next/font/google` の Lato が `/_next/static/_vinext_fonts/` 配下から自ホストで配信される（2026-09-04 実測。vinext の README が Known gap として挙げる CDN 読み込みには該当しなかった）
-* Bad, because **HTML がエッジにキャッシュされない。** 2026-09-04 の実測で、`@opennextjs/cloudflare` による `https://synsk.me/` は `cache-control: s-maxage=31536000` と `x-nextjs-cache: HIT` を返し、2 回目の取得の TTFB が 55 ミリ秒だった。vinext のプレビュー配信（バージョン `a72eaf62`）は `cf-cache-status: BYPASS`、`cache-control: no-store, must-revalidate` を返し、TTFB は 77 から 235 ミリ秒だった。vinext 1.0.0-beta.9 は App Router のページを静的に分類できず（ビルド出力が `Some routes could not be classified` と報告する）、`vite.config.ts` に `prerender: { routes: "*" }` を置いても `/` と `/archives/2024` は `dynamic` として skip される。`export const revalidate` を足すと ISR に分類されるが、データキャッシュを構成していないため `X-Vinext-Cache: MISS` のままである。[#38](https://github.com/ksyunnnn/synsk.me/issues/38) が戻したキャッシュの当たりは、この決定によって失われる
+* Bad, because **HTML がエッジにキャッシュされない。** 2026-09-04 の実測で、`@opennextjs/cloudflare` による `https://synsk.me/` は `cache-control: s-maxage=31536000` と `x-nextjs-cache: HIT` を返す。vinext のプレビュー配信（バージョン `f0079388`）は `cf-cache-status: BYPASS`、`cache-control: no-store, must-revalidate` を返す。vinext 1.0.0-beta.9 は App Router のページを静的に分類できず（ビルド出力が `Some routes could not be classified` と報告する）、`vite.config.ts` に `prerender: { routes: "*" }` を置いても `/` と `/archives/2024` は `dynamic` として skip される。`export const revalidate` を足すと ISR に分類されるが、データキャッシュを構成していないため `X-Vinext-Cache: MISS` のままである。[#38](https://github.com/ksyunnnn/synsk.me/issues/38) が戻したキャッシュの当たりは、この決定によって失われる
 * Bad, because `/` の HTML が 14,962 バイトから 20,895 バイトに増えた（2026-09-04 実測）
 * Bad, because beta に依存する。`vinext` は 1.0.0-beta.9 であり、README が `not yet a drop-in replacement for every application or production workload` と明記する
 * Bad, because Cloudflare のダッシュボードが持つ Workers Builds の 3 欄（ビルド・デプロイ・バージョンの各コマンド）を書き換えないと配信が成立しない。リポジトリの変更だけでは完結しない
@@ -58,7 +58,7 @@ Cloudflare の [Next.js フレームワーク ガイド](https://developers.clou
 | 静的アセットのキャッシュ | プレビュー配信の `/_next/static/media/*.svg` への `curl` | `cache-control: public,max-age=31536000,immutable`（`public/_headers` の指定どおり） |
 | lint と整形 | `npm run lint`、`npm run format:check` | どちらも exit 0 |
 
-上の TTFB は 1 回ずつの取得値であり、NFR-06 が定める「モバイルとデスクトップそれぞれの75パーセンタイル」ではない。判定は下していない。NFR-03（LCP）と NFR-07（FCP）も測っていない。75パーセンタイルの実測は本番の訪問がないと得られないため、デプロイの後に [#62](https://github.com/ksyunnnn/synsk.me/issues/62) で測る。
+TTFB の比較は下していない。`curl` を数回ずつ実行する方法では値が収束しなかった。`/` について 7 標本ずつ取った中央値は vinext のプレビュー配信が 108 ミリ秒、`https://synsk.me/` が 56 ミリ秒だったが、別の 5 標本ずつでは 131 ミリ秒と 385 ミリ秒で順序が入れ替わった。いずれも NFR-06 が定める「モバイルとデスクトップそれぞれの75パーセンタイル」ではない。NFR-03（LCP）と NFR-07（FCP）も測っていない。75パーセンタイルの実測は本番の訪問がないと得られないため、デプロイの後に [#62](https://github.com/ksyunnnn/synsk.me/issues/62) で測る。
 
 エッジのキャッシュに当たらない状態を解消する作業は [#61](https://github.com/ksyunnnn/synsk.me/issues/61) が持つ。この記録は Workers KV をデータ キャッシュに割り当てない状態を出発点として提案する。
 
