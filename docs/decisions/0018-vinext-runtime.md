@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: proposed
 date: 2026-09-04
 decision-makers: synsk
 ---
@@ -58,7 +58,11 @@ Cloudflare の [Next.js フレームワーク ガイド](https://developers.clou
 | 静的アセットのキャッシュ | プレビュー配信の `/_next/static/media/*.svg` への `curl` | `cache-control: public,max-age=31536000,immutable`（`public/_headers` の指定どおり） |
 | lint と整形 | `npm run lint`、`npm run format:check` | どちらも exit 0 |
 
-TTFB は NFR-06 の上限 800 ミリ秒を下回るが、目標の 450 ミリ秒に対しては初回描画で超える場合がある。キャッシュの当たりを取り戻す手段は Workers KV をデータ キャッシュに割り当てることであり、この記録は KV を採らない状態を承認する。
+上の TTFB は 1 回ずつの取得値であり、NFR-06 が定める「モバイルとデスクトップそれぞれの75パーセンタイル」ではない。判定は下していない。NFR-03（LCP）と NFR-07（FCP）も測っていない。75パーセンタイルの実測は本番の訪問がないと得られないため、デプロイの後に [#62](https://github.com/ksyunnnn/synsk.me/issues/62) で測る。
+
+エッジのキャッシュに当たらない状態を解消する作業は [#61](https://github.com/ksyunnnn/synsk.me/issues/61) が持つ。この記録は Workers KV をデータ キャッシュに割り当てない状態を出発点として提案する。
+
+この記録が `proposed` である理由は、エッジのキャッシュを手放す代償が承認の時点で見えていなかったことによる。[#57](https://github.com/ksyunnnn/synsk.me/issues/57) と [#59](https://github.com/ksyunnnn/synsk.me/issues/59) が承認したのは vinext への移行であり、[#38](https://github.com/ksyunnnn/synsk.me/issues/38) が戻したキャッシュの当たりを手放すことは、その時点の既知のギャップに入っていない。この代償を承認したときに `accepted` にする。
 
 ## Pros and Cons of the Options
 
