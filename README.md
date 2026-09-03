@@ -11,16 +11,18 @@
 
 Next.js 16（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
 
-Workers 上では [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) を介して動く。Worker の設定は `wrangler.jsonc`、アダプタの設定は `open-next.config.ts` が持つ。
+Workers 上では [`vinext`](https://vinext.dev/) を介して動く。vinext は Next.js の API を Vite プラグインとして再実装したもので、Next.js のビルド出力は使わない。Worker の設定は `wrangler.jsonc`、ビルドの設定は `vite.config.ts` が持つ。採用の理由は [ADR-0018](./docs/decisions/0018-vinext-runtime.md) にある。
 
 ## 開発
 
 ```bash
 npm run dev        # 開発サーバー（http://localhost:3000）
-npm run build      # プロダクションビルド
+npm run build      # プロダクションビルド（出力は dist/）
 npm run lint       # リンター
-npm run preview    # Workers ランタイムでローカル起動
+npm run start      # ビルド出力をローカルで起動
+npm run preview    # ビルドして Workers ランタイムでローカル起動
 npm run deploy     # Cloudflare Workers へデプロイ
+npm run upload     # デプロイせずバージョンだけ上げ、プレビュー URL を得る
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
@@ -30,12 +32,12 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 
 | 欄 | 値 |
 |------|------|
-| ビルド コマンド | `npx opennextjs-cloudflare build` |
-| デプロイ コマンド | `npx opennextjs-cloudflare deploy` |
-| バージョン コマンド | `npx opennextjs-cloudflare upload` |
+| ビルド コマンド | `npx vinext build` |
+| デプロイ コマンド | `npx vinext-cloudflare deploy --skip-build --config dist/server/wrangler.json` |
+| バージョン コマンド | `npx wrangler versions upload --config dist/server/wrangler.json` |
 | プロダクション ブランチ | `main` |
 
-**デプロイとバージョンのコマンドは `@opennextjs/cloudflare` の CLI を通す。** Cloudflare の既定値（`npx wrangler deploy` / `npx wrangler versions upload`）はアダプタを経由しないため増分キャッシュのアセットが生成されず、`open-next.config.ts` の `incrementalCache` が無効になる。この欄はリポジトリから読めないため、キャッシュが当たらないときは実装より先にここを見る。
+**デプロイとバージョンのコマンドは `dist/server/wrangler.json` を指す。** `vinext build` はリポジトリ直下の `wrangler.jsonc` を読み、binding とアセットの位置を解決した設定を `dist/server/wrangler.json` に書き出す。直下の `wrangler.jsonc` を渡すと `dist/client` が未解決のまま扱われる。`--skip-build` はビルド コマンドとの二重ビルドを避ける。この欄はリポジトリから読めないため、デプロイの挙動が説明と合わないときは実装より先にここを見る。
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
 
@@ -56,4 +58,3 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。`WORKERS_CI_BRANCH` が `main` のビルドでのみ埋め込む |
 | `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
-| `NEXTJS_ENV` | Workers ランタイムが読み込む `.env` を選ぶ。git 管理外の `.dev.vars` に置く。未定義なら `production` |
