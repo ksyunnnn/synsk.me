@@ -24,10 +24,26 @@ npm run deploy     # Cloudflare Workers へデプロイ
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
+## 配信
+
+本番は Cloudflare Workers Builds が `main` への push を受けてビルドし、デプロイする。ビルド構成はリポジトリではなく Cloudflare のダッシュボード（Workers & Pages → `synsk-me` → Settings → Build）が持つ。
+
+| 欄 | 値 |
+|------|------|
+| ビルド コマンド | `npx opennextjs-cloudflare build` |
+| デプロイ コマンド | `npx opennextjs-cloudflare deploy` |
+| バージョン コマンド | `npx opennextjs-cloudflare upload` |
+| プロダクション ブランチ | `main` |
+
+**デプロイとバージョンのコマンドは `@opennextjs/cloudflare` の CLI を通す。** Cloudflare の既定値（`npx wrangler deploy` / `npx wrangler versions upload`）はアダプタを経由しないため増分キャッシュのアセットが生成されず、`open-next.config.ts` の `incrementalCache` が無効になる。この欄はリポジトリから読めないため、キャッシュが当たらないときは実装より先にここを見る。
+
+`main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
+
 ## 環境変数
 
 | 変数 | 用途 |
 |------|------|
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。本番環境でのみ動作する |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。`WORKERS_CI_BRANCH` が `main` のビルドでのみ埋め込む |
+| `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
 | `NEXTJS_ENV` | Workers ランタイムが読み込む `.env` を選ぶ。git 管理外の `.dev.vars` に置く。未定義なら `production` |
