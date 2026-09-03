@@ -9,7 +9,7 @@
 
 ## 技術スタック
 
-Next.js 15（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
+Next.js 16（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
 
 Workers 上では [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) を介して動く。Worker の設定は `wrangler.jsonc`、アダプタの設定は `open-next.config.ts` が持つ。
 
