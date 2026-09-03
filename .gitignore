@@ -39,11 +39,11 @@ docs/.tmp/
 
 # Playwright MCP screenshots
 .playwright-mcp/
-# OpenNext
-.open-next
 cloudflare-env.d.ts
 
 # wrangler files
 .wrangler
 .dev.vars*
 !.dev.vars.example
+/dist/
+.vinext/

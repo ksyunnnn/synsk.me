@@ -16,7 +16,8 @@ const config = [
   {
     ignores: [
       '.next/**',
-      '.open-next/**',
+      'dist/**',
+      '.vinext/**',
       '.wrangler/**',
       'out/**',
       'build/**',
@@ -35,7 +36,11 @@ const config = [
   // オブジェクトを割り当てることになり `Cannot redefine plugin "jsx-a11y"`
   // で落ちる。だからルールだけを取り出す。
   {
+    // `eslint-config-next` がプラグインを登録する対象は JSX を書ける拡張子に
+    // 限られる。`postcss.config.cjs` のような `.cjs` を含めると
+    // `Cannot find plugin "jsx-a11y"` で落ちるため、範囲を揃える。
     name: 'jsx-a11y/recommended',
+    files: ['**/*.{js,mjs,jsx,ts,tsx}'],
     rules: jsxA11y.flatConfigs.recommended.rules,
   },
 
@@ -44,6 +49,7 @@ const config = [
 
   {
     name: 'synsk/rules',
+    files: ['**/*.{js,mjs,jsx,ts,tsx}'],
     rules: {
       'react/function-component-definition': [2, { namedComponents: 'arrow-function' }],
       'no-console': 2,
