@@ -1,5 +1,13 @@
 # Feature Specification: 職務経歴書の出力
 
+**Feature Branch**: `002-resume-output`
+
+**Created**: 2026-09-03
+
+**Status**: Draft
+
+**Input**: User description: "職務経歴書の出力。作り手が /dash/ で職務経歴書を複数作り、含める career と project を選び、識別子を決めて保存する。版の URL を相手に渡すと、相手がその URL で内容を読める。版ごとに公開 / 限定公開 / 非公開を設定できる。公開できない値を持つ career は、公開の版では公開できる値で表示される。"
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - 相手に渡す職務経歴書を作る (Priority: P1)
@@ -8,12 +16,14 @@
 
 **Why this priority**: 版が作れなければ渡すものが存在しない。他のすべてはこの上に載る。
 
+**Independent Test**: `/dash/` で版を1件作り、識別子で呼び出せる。この経路だけで、相手に渡せる版が手元に存在するという価値が成立する。
+
 **Acceptance Scenarios**:
 
-1. `/dash/` から職務経歴書を新規に作れる
-2. 保持している career と project から、その版に含めるものを選べる
-3. 識別子を決めて保存すると、その識別子で版を呼び出せる
-4. 同じ識別子を持つ版を2つ作れない
+1. **Given** career と project を保持している、**When** 作り手が `/dash/` から職務経歴書を新規に作る、**Then** 空の版が作られる
+2. **Given** 版を編集している、**When** 作り手が保持している career と project から含めるものを選ぶ、**Then** その版に含まれる
+3. **Given** 版に識別子を与えて保存した、**When** その識別子を指定する、**Then** その版が呼び出せる
+4. **Given** ある識別子の版が既にある、**When** 同じ識別子で別の版を作ろうとする、**Then** その識別子が使えないことが分かる
 
 ### User Story 2 - 職務経歴書を渡す (Priority: P2)
 
@@ -21,11 +31,13 @@
 
 **Why this priority**: 作った版を届けられなければ、複数持つ意味がない。
 
+**Independent Test**: 公開した版の URL を開き、含まれる career と project が読める。作り手以外の目に届くところまでを1本で確かめられる。
+
 **Acceptance Scenarios**:
 
-1. 版の URL を開くと、その版に含まれる career と project が読める
-2. 公開できない値を持つ career は、公開できる値に置き換わって表示される
-3. 非公開の版の URL を開いても内容は読めない
+1. **Given** 公開の版がある、**When** その URL を開く、**Then** 版に含まれる career と project が読める
+2. **Given** 公開できない値を持つ career を含む公開の版、**When** その URL を開く、**Then** その career は公開できる値に置き換わって表示される
+3. **Given** 非公開の版がある、**When** その URL を開く、**Then** 内容は読めない
 
 ### User Story 3 - 版を作り直す (Priority: P3)
 
@@ -33,11 +45,13 @@
 
 **Why this priority**: 経歴は増える。作り直せなければ版が古くなる。
 
+**Independent Test**: 既存の版に含める career と project を差し替え、公開範囲を変えて、変更が版に反映される。
+
 **Acceptance Scenarios**:
 
-1. 既存の版に含める career と project を変えられる
-2. 版の公開範囲を、公開 / 限定公開 / 非公開のいずれかに設定できる
-3. 版を非公開に戻しても、その版は消えない
+1. **Given** 既存の版がある、**When** 含める career と project を変える、**Then** 変更後の内容で版が読める
+2. **Given** 既存の版がある、**When** 公開範囲を公開 / 限定公開 / 非公開のいずれかに設定する、**Then** その設定が版に反映される
+3. **Given** 公開していた版を非公開に戻した、**When** その版を `/dash/` で見る、**Then** 版は消えずに残っている
 
 ### Edge Cases
 

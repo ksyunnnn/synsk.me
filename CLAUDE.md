@@ -32,6 +32,9 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 ### spec
 
 `specs/` 配下は `/speckit-specify` で作る。テンプレートを手でコピーしない。
+既存の spec に要件を足す・直すときは `/speckit-clarify` を使う。仕様全体を書き直すときは `/speckit-specify` を再実行する。
+
+詳細は [Spec Kit: Agentic SDD](https://github.com/github/spec-kit/blob/main/docs/reference/agentic-sdd.md) にある。
 
 ### ドキュメントの役割
 
