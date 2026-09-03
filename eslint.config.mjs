@@ -1,6 +1,6 @@
-import nextCoreWebVitals from 'eslint-config-next/core-web-vitals'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
-import prettier from 'eslint-config-prettier/flat'
+import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import prettier from 'eslint-config-prettier/flat';
 
 /**
  * ESLint flat config。
@@ -14,7 +14,14 @@ import prettier from 'eslint-config-prettier/flat'
  */
 const config = [
   {
-    ignores: ['.next/**', '.open-next/**', '.wrangler/**', 'out/**', 'build/**', 'cloudflare-env.d.ts'],
+    ignores: [
+      '.next/**',
+      '.open-next/**',
+      '.wrangler/**',
+      'out/**',
+      'build/**',
+      'cloudflare-env.d.ts',
+    ],
   },
 
   // next + next/core-web-vitals
@@ -63,6 +70,6 @@ const config = [
       'no-console': [2, { allow: ['error', 'warn'] }],
     },
   },
-]
+];
 
-export default config
+export default config;
