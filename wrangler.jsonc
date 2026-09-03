@@ -25,6 +25,13 @@
 			"service": "synsk-me"
 		}
 	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "synsk-me",
+			"database_id": "23a6b53c-fb77-46ef-b299-a4696de72226"
+		}
+	],
 	"images": {
 		// Enable image optimization
 		// see https://opennext.js.org/cloudflare/howtos/image
