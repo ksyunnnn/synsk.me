@@ -39,6 +39,16 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
 
+## コンソール
+
+サイトの運用に使う外部の管理画面。開いた先で対象を選ぶ。アカウント ID とプロパティ ID は書かない。配信される HTML と JS に出ていないため、書けば新たに公開することになる。
+
+| 対象 | 選ぶもの | 用途 |
+|------|---------|------|
+| [Cloudflare](https://dash.cloudflare.com/) | Workers & Pages → `synsk-me` | 配信、ビルド設定、デプロイの履歴 |
+| [Google アナリティクス](https://analytics.google.com/) | プロパティ `synsk.me` | アクセスの確認 |
+| [Google タグ マネージャー](https://tagmanager.google.com/) | コンテナ `GTM-5C664DPR` | タグとトリガーの設定 |
+
 ## 環境変数
 
 | 変数 | 用途 |
