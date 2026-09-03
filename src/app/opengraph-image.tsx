@@ -17,7 +17,7 @@ async function isFineInTokyo(): Promise<boolean> {
   try {
     const res = await fetch(url, { cache: 'no-store' });
     if (!res.ok) return false;
-    const json = await res.json();
+    const json = (await res.json()) as { current?: { weathercode?: number } };
     return Number(json?.current?.weathercode) === 0;
   } catch {
     return false;
