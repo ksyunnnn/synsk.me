@@ -16,7 +16,7 @@ export const Analytics = () => {
     }
   }, [pathname, searchParams]);
 
-  if (process.env.NEXT_PUBLIC_VERCEL_ENV !== 'production') {
+  if (process.env.NEXT_PUBLIC_DEPLOY_ENV !== 'production') {
     return null;
   }
 
