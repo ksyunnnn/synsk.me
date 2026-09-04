@@ -84,7 +84,7 @@ Workers KV は使わない。KV のデータ キャッシュ（`kvDataAdapter`�
 
 * Good, because Cloudflare が既定として推奨する
 * Good, because ビルドが速く、フォントが自ホストされる
-* Bad, because App Router のページの静的分類が未完成で、エッジのキャッシュに当たらない
+* Bad, because App Router のページの静的分類が未完成で、エッジのキャッシュに載せるには `export const revalidate` と二段アップロードの両方が要る
 * Bad, because beta である
 
 ## More Information
