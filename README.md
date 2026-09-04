@@ -21,8 +21,9 @@ npm run build      # プロダクションビルド（出力は dist/）
 npm run lint       # リンター
 npm run start      # ビルド出力をローカルで起動
 npm run preview    # ビルドして Workers ランタイムでローカル起動
-npm run deploy     # Cloudflare Workers へデプロイ
+npm run deploy     # Cloudflare Workers へデプロイし、配信を検査する
 npm run upload     # デプロイせずバージョンだけ上げ、プレビュー URL を得る
+npm run verify:deploy # 配信されているものを検査する（URL を渡すとその対象を見る）
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
@@ -32,10 +33,12 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 
 | 欄 | 値 |
 |------|------|
-| ビルド コマンド | `npx vinext build` |
-| デプロイ コマンド | `npx vinext-cloudflare deploy --skip-build --config dist/server/wrangler.json --name synsk-me --experimental-warm-cdn-cache --warm-cdn-target https://synsk.me` |
-| バージョン コマンド | `npx wrangler versions upload --config dist/server/wrangler.json` |
+| ビルド コマンド | `npm run build` |
+| デプロイ コマンド | `npm run deploy` |
+| バージョン コマンド | `npm run upload` |
 | プロダクション ブランチ | `main` |
+
+**3 欄は `npm run` を通す。** コマンドの実体を `package.json` に置き、リポジトリ側だけを読めば配信の手順が分かる状態にするため。ダッシュボードにコマンドを直接書くと、リポジトリの変更と食い違っても誰も気づけない。
 
 **デプロイとバージョンのコマンドは `dist/server/wrangler.json` を指す。** `vinext build` はリポジトリ直下の `wrangler.jsonc` を読み、binding とアセットの位置を解決した設定を `dist/server/wrangler.json` に書き出す。直下の `wrangler.jsonc` を渡すと `dist/client` が未解決のまま扱われる。`--skip-build` はビルド コマンドとの二重ビルドを避ける。この欄はリポジトリから読めないため、デプロイの挙動が説明と合わないときは実装より先にここを見る。
 
@@ -44,6 +47,26 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 `/` と `/archives/2024` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
+
+## 配信の検査
+
+`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものである。
+
+| 検査 | 落ちたときに疑うもの |
+| --- | --- |
+| 4 経路が 200 を返す | 経路の設定、ビルドの出力 |
+| `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
+| `/` と `/archives/2024` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
+| HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
+| HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
+
+プレビュー配信を見るときは URL を渡す。
+
+```bash
+npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.dev
+```
+
+エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
 
 ## コンソール
 
