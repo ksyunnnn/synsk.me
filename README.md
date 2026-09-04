@@ -33,11 +33,15 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 | 欄 | 値 |
 |------|------|
 | ビルド コマンド | `npx vinext build` |
-| デプロイ コマンド | `npx vinext-cloudflare deploy --skip-build --config dist/server/wrangler.json` |
+| デプロイ コマンド | `npx vinext-cloudflare deploy --skip-build --config dist/server/wrangler.json --name synsk-me --experimental-warm-cdn-cache --warm-cdn-target https://synsk.me` |
 | バージョン コマンド | `npx wrangler versions upload --config dist/server/wrangler.json` |
 | プロダクション ブランチ | `main` |
 
 **デプロイとバージョンのコマンドは `dist/server/wrangler.json` を指す。** `vinext build` はリポジトリ直下の `wrangler.jsonc` を読み、binding とアセットの位置を解決した設定を `dist/server/wrangler.json` に書き出す。直下の `wrangler.jsonc` を渡すと `dist/client` が未解決のまま扱われる。`--skip-build` はビルド コマンドとの二重ビルドを避ける。この欄はリポジトリから読めないため、デプロイの挙動が説明と合わないときは実装より先にここを見る。
+
+**`--experimental-warm-cdn-cache` を外すと HTML がエッジのキャッシュに載らない。** vinext がページをキャッシュ可能と判定する manifest は、この二段アップロード（版を 0% で置いて経路を probe し、判定結果を載せた版を上げ直す）でしか作られない。外した版は全経路が `cache-control: no-store` になる。`--warm-cdn-target` には本番の URL が要る。warm に失敗した場合、新しい版は 0% のまま留まり、既存の版が 100% を保つ。その場合は `npx wrangler versions deploy` で昇格を選ぶ。
+
+`/` と `/archives/2024` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
 

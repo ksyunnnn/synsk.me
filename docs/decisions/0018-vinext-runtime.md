@@ -39,8 +39,11 @@ Cloudflare の [Next.js フレームワーク ガイド](https://developers.clou
 * Good, because Next.js のビルド出力を reverse-engineer する層がなくなる
 * Good, because ビルドが 8.6 秒で終わる（2026-09-04、`npm run build` の実測）
 * Good, because `next/font/google` の Lato が `/_next/static/_vinext_fonts/` 配下から自ホストで配信される（2026-09-04 実測。vinext の README が Known gap として挙げる CDN 読み込みには該当しなかった）
-* Bad, because **HTML がエッジにキャッシュされない。** 2026-09-04 の実測で、`@opennextjs/cloudflare` による `https://synsk.me/` は `cache-control: s-maxage=31536000` と `x-nextjs-cache: HIT` を返す。vinext のプレビュー配信（バージョン `f0079388`）は `cf-cache-status: BYPASS`、`cache-control: no-store, must-revalidate` を返す。vinext 1.0.0-beta.9 は App Router のページを静的に分類できず（ビルド出力が `Some routes could not be classified` と報告する）、`vite.config.ts` に `prerender: { routes: "*" }` を置いても `/` と `/archives/2024` は `dynamic` として skip される。`export const revalidate` を足すと ISR に分類されるが、データキャッシュを構成していないため `X-Vinext-Cache: MISS` のままである。[#38](https://github.com/ksyunnnn/synsk.me/issues/38) が戻したキャッシュの当たりは、この決定によって失われる
-* Bad, because `/` の HTML が 14,962 バイトから 20,895 バイトに増えた（2026-09-04 実測）
+* Bad, because **HTML をエッジのキャッシュに載せる条件が増える。** `@opennextjs/cloudflare` では全ページがビルド時に事前生成され、静的アセットとして配信されることでキャッシュに当たっていた（`https://synsk.me/` は `cache-control: s-maxage=31536000` と `x-nextjs-cache: HIT` を返す）。vinext では次の 3 つが揃ってはじめて載る。1つでも欠けると全経路が `cache-control: no-store, must-revalidate` と `cf-cache-status: BYPASS` になる
+  1. 経路が ISR に分類されること。`vinext build` の静的解析は App Router のページを分類できず（`Some routes could not be classified` と報告する）、`vite.config.ts` の `prerender: { routes: "*" }` を置いても `dynamic` として skip される。`export const revalidate` を各ページに書くことで ISR に分類される
+  2. `vite.config.ts` に `cdnAdapter()` があり、`wrangler.jsonc` に `cache: { enabled: true }` と `version_metadata` があること
+  3. デプロイが `vinext-cloudflare deploy --experimental-warm-cdn-cache` の二段アップロードであること。キャッシュ可能と判定した経路を載せる manifest は、この経路（版を 0% で置いて probe し、判定結果を載せた版を上げ直す）でしか生成されない。`wrangler versions upload` だけの版では manifest が空になる
+* Bad, because `/` の HTML が 14,962 バイトから 20,895 バイトに増えた（2026-09-04 実測）。増分の 5,933 バイトのうち 3,558 バイトは `<style>` に埋め込まれた Lato の `@font-face` 9 件である。vinext はフォントの CSS をビルド時に切り出さず HTML に注入する（README が Known gap として挙げるもの）。残りは `modulepreload` の `link` が 1 件から 10 件に増えた分と、RSC のペイロードの差である。圧縮後の転送量は 3,901 バイトから 4,645 バイト（gzip）で、差は 744 バイトになる
 * Bad, because beta に依存する。`vinext` は 1.0.0-beta.9 であり、README が `not yet a drop-in replacement for every application or production workload` と明記する
 * Bad, because Cloudflare のダッシュボードが持つ Workers Builds の 3 欄（ビルド・デプロイ・バージョンの各コマンド）を書き換えないと配信が成立しない。リポジトリの変更だけでは完結しない
 
@@ -56,11 +59,15 @@ Cloudflare の [Next.js フレームワーク ガイド](https://developers.clou
 | `/icon`、`/opengraph-image` の中身 | 先頭バイトの確認 | `8950 4e47 0d0a 1a0a` と `IHDR`。32x32 と 1200x630 の PNG |
 | `NEXT_PUBLIC_DEPLOY_ENV` | `WORKERS_CI_BRANCH=main npm run build` の出力を検索 | `googletagmanager` を含むクライアント チャンクが 1 件。変数なしのビルドでは 0 件 |
 | 静的アセットのキャッシュ | プレビュー配信の `/_next/static/media/*.svg` への `curl` | `cache-control: public,max-age=31536000,immutable`（`public/_headers` の指定どおり） |
-| lint と整形 | `npm run lint`、`npm run format:check` | どちらも exit 0 |
+| lint と整形 | `npm run lint`、`npm run format:check`、`npx tsc --noEmit` | いずれも exit 0 |
+| キャッシュ可能性の判定 | `vinext-cloudflare deploy --experimental-warm-cdn-cache` の probe | `classified 2 route patterns with 2 render probes; 0 observed dynamic` |
+| HTML の増分の内訳 | `/` の HTML の構成要素を数える | `<style>` の `@font-face` 9 件で 3,558 バイト、`modulepreload` が 1 件から 10 件。圧縮後は 3,901 バイトから 4,645 バイト（gzip） |
 
 TTFB の比較は下していない。`curl` を数回ずつ実行する方法では値が収束しなかった。`/` について 7 標本ずつ取った中央値は vinext のプレビュー配信が 108 ミリ秒、`https://synsk.me/` が 56 ミリ秒だったが、別の 5 標本ずつでは 131 ミリ秒と 385 ミリ秒で順序が入れ替わった。いずれも NFR-06 が定める「モバイルとデスクトップそれぞれの75パーセンタイル」ではない。NFR-03（LCP）と NFR-07（FCP）も測っていない。75パーセンタイルの実測は本番の訪問がないと得られないため、デプロイの後に [#62](https://github.com/ksyunnnn/synsk.me/issues/62) で測る。
 
-エッジのキャッシュに当たらない状態を解消する作業は [#61](https://github.com/ksyunnnn/synsk.me/issues/61) が持つ。この記録は Workers KV をデータ キャッシュに割り当てない状態を出発点として提案する。
+エッジのキャッシュについては、`vinext-cloudflare deploy --experimental-warm-cdn-cache` の probe が `/` と `/archives/2024` の 2 経路を「キャッシュ可能」と分類するところまで確認した（`classified 2 route patterns with 2 render probes; 0 observed dynamic`）。本番の URL に対する warm と昇格は実行していないため、`cf-cache-status: HIT` は未確認である。経過は [#61](https://github.com/ksyunnnn/synsk.me/issues/61) が持つ。
+
+Workers KV は使わない。KV のデータ キャッシュ（`kvDataAdapter`）が受け持つのは `"use cache"` のエントリであり、ページのキャッシュは Workers Cache（`cdnAdapter`）が持つ。synsk.me は `"use cache"` を使っていない。
 
 この記録が `proposed` である理由は、エッジのキャッシュを手放す代償が承認の時点で見えていなかったことによる。[#57](https://github.com/ksyunnnn/synsk.me/issues/57) と [#59](https://github.com/ksyunnnn/synsk.me/issues/59) が承認したのは vinext への移行であり、[#38](https://github.com/ksyunnnn/synsk.me/issues/38) が戻したキャッシュの当たりを手放すことは、その時点の既知のギャップに入っていない。この代償を承認したときに `accepted` にする。
 

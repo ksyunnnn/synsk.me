@@ -1,3 +1,8 @@
+// vinext の cdnAdapter がエッジのキャッシュに載せる対象は ISR に分類された
+// 経路に限る。この値がないと dynamic として扱われ、毎リクエスト描画される。
+// 内容が変わるのはデプロイの時だけなので、値そのものに意味はない。
+export const revalidate = 3600;
+
 import Image from 'next/image';
 import GlassesIcon from '@/app/asset/glasses.svg';
 import Link from 'next/link';
