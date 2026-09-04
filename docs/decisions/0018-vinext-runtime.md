@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-09-04
 decision-makers: synsk
 ---
@@ -43,6 +43,8 @@ Cloudflare の [Next.js フレームワーク ガイド](https://developers.clou
   1. 経路が ISR に分類されること。`vinext build` の静的解析は App Router のページを分類できず（`Some routes could not be classified` と報告する）、`vite.config.ts` の `prerender: { routes: "*" }` を置いても `dynamic` として skip される。`export const revalidate` を各ページに書くことで ISR に分類される
   2. `vite.config.ts` に `cdnAdapter()` があり、`wrangler.jsonc` に `cache: { enabled: true }` と `version_metadata` があること
   3. デプロイが `vinext-cloudflare deploy --experimental-warm-cdn-cache` の二段アップロードであること。キャッシュ可能と判定した経路を載せる manifest は、この経路（版を 0% で置いて probe し、判定結果を載せた版を上げ直す）でしか生成されない。`wrangler versions upload` だけの版では manifest が空になる
+
+  3 つを満たした状態で `https://synsk.me/` と `https://synsk.me/archives/2024` が 2 回目の取得で `cf-cache-status: HIT` を返すことを確認した。`@opennextjs/cloudflare` の `s-maxage=31536000` に対し、`cache-control` は `public, max-age=0, must-revalidate` になる。エッジが実体を持ち、ブラウザは毎回問い合わせる
 * Bad, because `/` の HTML が 14,962 バイトから 20,895 バイトに増えた（2026-09-04 実測）。増分の 5,933 バイトのうち 3,558 バイトは `<style>` に埋め込まれた Lato の `@font-face` 9 件である。vinext はフォントの CSS をビルド時に切り出さず HTML に注入する（README が Known gap として挙げるもの）。残りは `modulepreload` の `link` が 1 件から 10 件に増えた分と、RSC のペイロードの差である。圧縮後の転送量は 3,901 バイトから 4,645 バイト（gzip）で、差は 744 バイトになる
 * Bad, because beta に依存する。`vinext` は 1.0.0-beta.9 であり、README が `not yet a drop-in replacement for every application or production workload` と明記する
 * Bad, because Cloudflare のダッシュボードが持つ Workers Builds の 3 欄（ビルド・デプロイ・バージョンの各コマンド）を書き換えないと配信が成立しない。リポジトリの変更だけでは完結しない
@@ -60,16 +62,20 @@ Cloudflare の [Next.js フレームワーク ガイド](https://developers.clou
 | `NEXT_PUBLIC_DEPLOY_ENV` | `WORKERS_CI_BRANCH=main npm run build` の出力を検索 | `googletagmanager` を含むクライアント チャンクが 1 件。変数なしのビルドでは 0 件 |
 | 静的アセットのキャッシュ | プレビュー配信の `/_next/static/media/*.svg` への `curl` | `cache-control: public,max-age=31536000,immutable`（`public/_headers` の指定どおり） |
 | lint と整形 | `npm run lint`、`npm run format:check`、`npx tsc --noEmit` | いずれも exit 0 |
+| 本番の 4 経路 | `https://synsk.me` への `curl`（バージョン `eeb47fbe`） | 4 経路とも 200。`/icon` と `/opengraph-image` は `image/png` |
+| 本番のエッジのキャッシュ | 同じ経路を 2 回取得 | `/` と `/archives/2024` が `MISS` の次に `HIT` |
+| 本番の GTM | `https://synsk.me/` の HTML を検索 | `GTM-5C664DPR` が 1 件 |
+| 本番の TTFB | 10 標本 | 中央値 88 ミリ秒（38 から 151 ミリ秒）。転送量は約 5.0 KB |
 | キャッシュ可能性の判定 | `vinext-cloudflare deploy --experimental-warm-cdn-cache` の probe | `classified 2 route patterns with 2 render probes; 0 observed dynamic` |
 | HTML の増分の内訳 | `/` の HTML の構成要素を数える | `<style>` の `@font-face` 9 件で 3,558 バイト、`modulepreload` が 1 件から 10 件。圧縮後は 3,901 バイトから 4,645 バイト（gzip） |
 
 TTFB の比較は下していない。`curl` を数回ずつ実行する方法では値が収束しなかった。`/` について 7 標本ずつ取った中央値は vinext のプレビュー配信が 108 ミリ秒、`https://synsk.me/` が 56 ミリ秒だったが、別の 5 標本ずつでは 131 ミリ秒と 385 ミリ秒で順序が入れ替わった。いずれも NFR-06 が定める「モバイルとデスクトップそれぞれの75パーセンタイル」ではない。NFR-03（LCP）と NFR-07（FCP）も測っていない。75パーセンタイルの実測は本番の訪問がないと得られないため、デプロイの後に [#62](https://github.com/ksyunnnn/synsk.me/issues/62) で測る。
 
-エッジのキャッシュについては、`vinext-cloudflare deploy --experimental-warm-cdn-cache` の probe が `/` と `/archives/2024` の 2 経路を「キャッシュ可能」と分類するところまで確認した（`classified 2 route patterns with 2 render probes; 0 observed dynamic`）。本番の URL に対する warm と昇格は実行していないため、`cf-cache-status: HIT` は未確認である。経過は [#61](https://github.com/ksyunnnn/synsk.me/issues/61) が持つ。
+キャッシュの有無を測るときはブラウザ相当のヘッダ（`User-Agent`、`Accept`、`Accept-Encoding`）を付ける。manifest は warm 時に確認した識別子だけをキャッシュ可能として許可するため、素の `curl` では `cf-cache-status: BYPASS` と `cache-control: no-store, must-revalidate` が返る。経過は [#61](https://github.com/ksyunnnn/synsk.me/issues/61) が持つ。
 
 Workers KV は使わない。KV のデータ キャッシュ（`kvDataAdapter`）が受け持つのは `"use cache"` のエントリであり、ページのキャッシュは Workers Cache（`cdnAdapter`）が持つ。synsk.me は `"use cache"` を使っていない。
 
-この記録が `proposed` である理由は、エッジのキャッシュを手放す代償が承認の時点で見えていなかったことによる。[#57](https://github.com/ksyunnnn/synsk.me/issues/57) と [#59](https://github.com/ksyunnnn/synsk.me/issues/59) が承認したのは vinext への移行であり、[#38](https://github.com/ksyunnnn/synsk.me/issues/38) が戻したキャッシュの当たりを手放すことは、その時点の既知のギャップに入っていない。この代償を承認したときに `accepted` にする。
+[#38](https://github.com/ksyunnnn/synsk.me/issues/38) が戻したエッジのキャッシュは、上の 3 条件を満たすことで保たれた。
 
 ## Pros and Cons of the Options
 
@@ -84,7 +90,7 @@ Workers KV は使わない。KV のデータ キャッシュ（`kvDataAdapter`�
 
 * Good, because Cloudflare が既定として推奨する
 * Good, because ビルドが速く、フォントが自ホストされる
-* Bad, because App Router のページの静的分類が未完成で、エッジのキャッシュに載せるには `export const revalidate` と二段アップロードの両方が要る
+* Bad, because App Router のページの静的分類が未完成で、エッジのキャッシュに載せるには `export const revalidate` と二段アップロードの両方が要る（[#61](https://github.com/ksyunnnn/synsk.me/issues/61)）
 * Bad, because beta である
 
 ## More Information

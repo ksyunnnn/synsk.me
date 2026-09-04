@@ -68,12 +68,12 @@ const config = [
   },
 
   {
-    // リポジトリ直下のビルド時 Node スクリプト。失敗を stderr に出すのは
-    // 正当なので `console.error` / `console.warn` を許す。
+    // リポジトリ直下のビルド時 Node スクリプトと `scripts/` の運用スクリプト。
+    // 検査の結果を stdout に出すのが役目なので `console` を許す。
     name: 'synsk/build-config-files',
-    files: ['*.{js,mjs,cjs,ts,mts,cts}'],
+    files: ['*.{js,mjs,cjs,ts,mts,cts}', 'scripts/*.{js,mjs,cjs,ts,mts,cts}'],
     rules: {
-      'no-console': [2, { allow: ['error', 'warn'] }],
+      'no-console': 0,
     },
   },
 ];
