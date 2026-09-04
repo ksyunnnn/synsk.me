@@ -21,8 +21,8 @@ npm run build      # プロダクションビルド（出力は dist/）
 npm run lint       # リンター
 npm run start      # ビルド出力をローカルで起動
 npm run preview    # ビルドして Workers ランタイムでローカル起動
-npm run deploy     # Cloudflare Workers へデプロイし、配信を検査する
-npm run upload     # デプロイせずバージョンだけ上げ、プレビュー URL を得る
+npm run deploy     # ビルド済みの dist をデプロイし、配信を検査する
+npm run upload     # ビルド済みの dist からバージョンだけ上げ、プレビュー URL を得る
 npm run verify:deploy # 配信されているものを検査する（URL を渡すとその対象を見る）
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
@@ -37,6 +37,8 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 | デプロイ コマンド | `npm run deploy` |
 | バージョン コマンド | `npm run upload` |
 | プロダクション ブランチ | `main` |
+
+**`deploy` と `upload` はビルドしない。** ビルド コマンドが作った `dist/` を前提にする。手元で使うときは `npm run build` を先に実行する。両方がビルドすると 1 回分（手元の実測で 8.6 秒）が無駄になる。
 
 **3 欄は `npm run` を通す。** コマンドの実体を `package.json` に置き、リポジトリ側だけを読めば配信の手順が分かる状態にするため。ダッシュボードにコマンドを直接書くと、リポジトリの変更と食い違っても誰も気づけない。
 
