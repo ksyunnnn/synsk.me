@@ -88,3 +88,21 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 | `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
 | `CLOUDFLARE_API_TOKEN` | Workers Builds のビルドログを読む。user トークンで、権限は Workers スクリプト（読み取り）と Workers Builds 構成（編集）。`.env.local` に置く |
+
+## Workers Builds のビルド構成
+
+リポジトリから読めない。Cloudflare のダッシュボードと API が持つ。trigger は 2 つあり、**ダッシュボードは本番の trigger しか編集できない。**プレビューの trigger は API でしか変えられない。
+
+| trigger | build | deploy | 対象ブランチ |
+|---|---|---|---|
+| 本番 | `npm run build` | `npm run deploy` | `main` |
+| プレビュー | `npm run build` | `npm run upload` | `main` 以外 |
+
+値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
+
+確認と変更は Builds API による。`CLOUDFLARE_API_TOKEN` が要る。
+
+```
+GET   /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/triggers
+PATCH /client/v4/accounts/{account_id}/builds/triggers/{trigger_uuid}
+```
