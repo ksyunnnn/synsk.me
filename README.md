@@ -9,25 +9,131 @@
 
 ## 技術スタック
 
-Next.js 15（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
+Next.js 16（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
 
-Workers 上では [`@opennextjs/cloudflare`](https://opennext.js.org/cloudflare) を介して動く。Worker の設定は `wrangler.jsonc`、アダプタの設定は `open-next.config.ts` が持つ。
+Workers 上では [`vinext`](https://vinext.dev/) を介して動く。vinext は Next.js の API を Vite プラグインとして再実装したもので、Next.js のビルド出力は使わない。Worker の設定は `wrangler.jsonc`、ビルドの設定は `vite.config.ts` が持つ。採用の理由は [ADR-0018](./docs/decisions/0018-vinext-runtime.md) にある。
 
 ## 開発
 
 ```bash
 npm run dev        # 開発サーバー（http://localhost:3000）
-npm run build      # プロダクションビルド
+npm run build      # プロダクションビルド（出力は dist/）
 npm run lint       # リンター
-npm run preview    # Workers ランタイムでローカル起動
-npm run deploy     # Cloudflare Workers へデプロイ
+npm run start      # ビルド出力をローカルで起動
+npm run preview    # ビルドして Workers ランタイムでローカル起動
+npm run deploy     # ビルド済みの dist をデプロイし、配信を検査する
+npm run upload     # ビルド済みの dist からバージョンだけ上げ、プレビュー URL を得る
+npm run verify:deploy # 配信されているものを検査する（URL を渡すとその対象を見る）
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
+
+## テスト
+
+```bash
+npm test              # 単体。純関数とソースの静的な検査
+npm run test:watch    # 単体を watch で回す
+npm run test:workers  # workerd の中。D1 の binding とマイグレーション
+npm run test:integration # 結合。ビルドしてから本番出力を workerd で起動する
+npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
+```
+
+段階ごとの割り当てと時間の上限は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
+
+| 段階 | 回すもの | Tolerable | Goal |
+|---|---|---|---|
+| 手元 watch | `npm run test:watch` | 10 秒 | 1 秒 |
+| コミット前 | `npm test` `npm run test:workers` `npx tsc --noEmit` `npm run lint` `npm run format:check` | 60 秒 | 30 秒 |
+| PR の CI | 上記と結合・E2E。CI はビルドを 1 回に抑えるため `test:integration:only` と `test:e2e:only` を呼ぶ | 10 分 | 5 分 |
+
+設定は 4 つに分かれる。単体と workerd は vinext を読み込まない。vinext は公開の `next/*` を自前の shim に置き換えるため、読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。
+
+| ファイル | 対象 |
+|---|---|
+| `vitest.config.ts` | 単体 |
+| `vitest.workers.config.ts` | workerd の中 |
+| `vitest.integration.config.ts` | 結合 |
+| `playwright.config.ts` | E2E |
+
+ビジュアル回帰は入れていない。基準画像は OS ごとに別のファイルになり、Linux の CI でしか撮れない。比較する対象が増えた時点で足す。`playwright.config.ts` の `snapshotPathTemplate` と `.gitignore` の `*-darwin.png` は、そのときのために置いてある。
+
+デプロイ後の検査は `npm run verify:deploy` が担う。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体は、デプロイ前には確かめられない。
+
+## 配信
+
+本番は Cloudflare Workers Builds が `main` への push を受けてビルドし、デプロイする。ビルド構成はリポジトリではなく Cloudflare のダッシュボード（Workers & Pages → `synsk-me` → Settings → Build）が持つ。
+
+| 欄 | 値 |
+|------|------|
+| ビルド コマンド | `npm run build` |
+| デプロイ コマンド | `npm run deploy` |
+| バージョン コマンド | `npm run upload` |
+| プロダクション ブランチ | `main` |
+
+**`deploy` と `upload` はビルドしない。** ビルド コマンドが作った `dist/` を前提にする。手元で使うときは `npm run build` を先に実行する。両方がビルドすると 1 回分（手元の実測で 8.6 秒）が無駄になる。
+
+**3 欄は `npm run` を通す。** コマンドの実体を `package.json` に置き、リポジトリ側だけを読めば配信の手順が分かる状態にするため。ダッシュボードにコマンドを直接書くと、リポジトリの変更と食い違っても誰も気づけない。
+
+**デプロイとバージョンのコマンドは `dist/server/wrangler.json` を指す。** `vinext build` はリポジトリ直下の `wrangler.jsonc` を読み、binding とアセットの位置を解決した設定を `dist/server/wrangler.json` に書き出す。直下の `wrangler.jsonc` を渡すと `dist/client` が未解決のまま扱われる。`--skip-build` はビルド コマンドとの二重ビルドを避ける。この欄はリポジトリから読めないため、デプロイの挙動が説明と合わないときは実装より先にここを見る。
+
+**`--experimental-warm-cdn-cache` を外すと HTML がエッジのキャッシュに載らない。** vinext がページをキャッシュ可能と判定する manifest は、この二段アップロード（版を 0% で置いて経路を probe し、判定結果を載せた版を上げ直す）でしか作られない。外した版は全経路が `cache-control: no-store` になる。`--warm-cdn-target` には本番の URL が要る。warm に失敗した場合、新しい版は 0% のまま留まり、既存の版が 100% を保つ。その場合は `npx wrangler versions deploy` で昇格を選ぶ。
+
+`/` と `/archives/2024` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
+
+`main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
+
+## 配信の検査
+
+`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものである。
+
+| 検査 | 落ちたときに疑うもの |
+| --- | --- |
+| 4 経路が 200 を返す | 経路の設定、ビルドの出力 |
+| `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
+| `/` と `/archives/2024` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
+| HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
+| HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
+
+プレビュー配信を見るときは URL を渡す。
+
+```bash
+npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.dev
+```
+
+エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
+
+## コンソール
+
+サイトの運用に使う外部の管理画面。開いた先で対象を選ぶ。アカウント ID とプロパティ ID は書かない。配信される HTML と JS に出ていないため、書けば新たに公開することになる。
+
+| 対象 | 選ぶもの | 用途 |
+|------|---------|------|
+| [Cloudflare](https://dash.cloudflare.com/) | Workers & Pages → `synsk-me` | 配信、ビルド設定、デプロイの履歴 |
+| [Google アナリティクス](https://analytics.google.com/) | プロパティ `synsk.me` | アクセスの確認 |
+| [Google タグ マネージャー](https://tagmanager.google.com/) | コンテナ `GTM-5C664DPR` | タグとトリガーの設定 |
 
 ## 環境変数
 
 | 変数 | 用途 |
 |------|------|
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。本番環境でのみ動作する |
+| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。`WORKERS_CI_BRANCH` が `main` のビルドでのみ埋め込む |
+| `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
-| `NEXTJS_ENV` | Workers ランタイムが読み込む `.env` を選ぶ。git 管理外の `.dev.vars` に置く。未定義なら `production` |
+| `CLOUDFLARE_API_TOKEN` | Workers Builds のビルドログを読む。user トークンで、権限は Workers スクリプト（読み取り）と Workers Builds 構成（編集）。`.env.local` に置く |
+
+## Workers Builds のビルド構成
+
+リポジトリから読めない。Cloudflare のダッシュボードと API が持つ。trigger は 2 つあり、**ダッシュボードは本番の trigger しか編集できない。**プレビューの trigger は API でしか変えられない。
+
+| trigger | build | deploy | 対象ブランチ |
+|---|---|---|---|
+| 本番 | `npm run build` | `npm run deploy` | `main` |
+| プレビュー | `npm run build` | `npm run upload` | `main` 以外 |
+
+値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
+
+確認と変更は Builds API による。`CLOUDFLARE_API_TOKEN` が要る。
+
+```
+GET   /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/triggers
+PATCH /client/v4/accounts/{account_id}/builds/triggers/{trigger_uuid}
+```

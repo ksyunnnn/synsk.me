@@ -1,5 +1,5 @@
 ---
-status: superseded by ADR-0017
+status: superseded by ADR-0020
 date: 2026-08-21
 decision-makers: synsk
 ---

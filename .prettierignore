@@ -1,0 +1,10 @@
+# npm の生成物
+package-lock.json
+
+# 書き換えない。docs/README.md が定める
+docs/archive/
+.specify/
+.claude/skills/speckit-*/
+
+# 整形の対象にしない。内容の規約は .claude/rules/writing.md が持つ
+**/*.md

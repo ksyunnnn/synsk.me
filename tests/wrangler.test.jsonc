@@ -1,0 +1,21 @@
+{
+  // テスト専用の Worker 設定。`wrangler.jsonc` とは別に置く。
+  //
+  // `main` を持たない。`wrangler.jsonc` の `main` は `vinext/server/fetch-handler`
+  // を指し、vinext の Vite プラグインが解決する仮想モジュールを前提とする。
+  // `@cloudflare/vitest-plugin` はプール自身の esbuild で束ねるため、その前提を
+  // 満たせない。ここで扱うのは binding だけである。
+  //
+  // 根拠は docs/decisions/0019-testing-strategy.md にある。
+  "name": "synsk-me-test",
+  "compatibility_date": "2026-08-29",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "synsk-me-test",
+      "database_id": "synsk-me-test",
+      "migrations_dir": "fixtures/migrations",
+    },
+  ],
+}
