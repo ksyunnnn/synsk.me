@@ -25,7 +25,7 @@ wrangler 4.128.0 を使い、リポジトリの外に隔離した Worker 設定�
 
 - SQLite の `ALTER TABLE` が直接できるのは 5 操作のみである（テーブルの改名、カラムの改名、カラムの追加、カラムの削除、`NOT NULL` の設定と解除）。型の変更や `UNIQUE` の追加は 12 手順のテーブル再構築に落ちる
 - Drizzle のスキーマ定義はダイアレクト間で移植できない。公式が「there is no such thing as a common table object in drizzle」と述べる
-- Drizzle の差分を生成する道具は、SQLite のテーブル再構築で cascade delete を考慮せず関連データを黙って失う問題を抱えている（drizzle-team/drizzle-orm の issue 4938、2025-09-25 起票、2026-09-08 時点で open）
+- Drizzle のマイグレーションを生成する道具は、SQLite のテーブル再構築で cascade delete を考慮せず関連データを黙って失う問題を抱えている（drizzle-team/drizzle-orm の issue 4938、2025-09-25 起票、2026-09-08 時点で open）
 
 ## Decision Drivers
 
@@ -38,7 +38,7 @@ wrangler 4.128.0 を使い、リポジトリの外に隔離した Worker 設定�
 * 宣言的な正本を手で書き、流し直して適用する
 * 宣言的な正本を手で書き、マイグレーションも人が書く
 * マイグレーションを正本とし、読むための 1 枚を導出する
-* 宣言的な正本を持ち、差分の生成を道具にやらせる
+* 宣言的な正本を持ち、マイグレーションの生成を道具にやらせる
 
 ## Decision Outcome
 
@@ -48,7 +48,7 @@ wrangler 4.128.0 を使い、リポジトリの外に隔離した Worker 設定�
 - マイグレーションの生成は `wrangler d1 migrations create` が行い、中身は人が書く
 - `wrangler.jsonc` の `d1_databases` に `migrations_dir` と `migrations_pattern` を書かない。既定の `migrations/*.sql` に従う
 - 正本を `schemas/schema.sql` に置く。`migrations/` の直下に置かない。既定のパターン `migrations/*.sql` に一致し、`wrangler d1 migrations apply` がマイグレーションとして適用するためである（2026-09-08 に実測。`migrations/schema.sql` を置いた状態で apply したところ、適用対象として拾われ `✅` を返した）
-- 差分を生成する道具を入れない
+- マイグレーションを生成する道具を入れない
 
 突き合わせを実装する場所は本 ADR では扱わない。
 
@@ -64,7 +64,7 @@ wrangler 4.128.0 を使い、リポジトリの外に隔離した Worker 設定�
 
 ### Confirmation
 
-マイグレーションを適用したデータベースと、正本から作ったデータベースの `wrangler d1 export --no-data` の出力を突き合わせ、差分があれば落とす。突き合わせの前に `d1_migrations` の DDL・`PRAGMA defer_foreign_keys`・`DELETE FROM sqlite_sequence` を除き、テーブル名で並べ替える。
+マイグレーションを適用したデータベースと、正本から作ったデータベースの `wrangler d1 export --no-data` の出力を突き合わせ、食い違いがあれば落とす。突き合わせの前に `d1_migrations` の DDL・`PRAGMA defer_foreign_keys`・`DELETE FROM sqlite_sequence` を除き、テーブル名で並べ替える。
 
 正本から作る側は、毎回空のデータベースを用意し、正本を 1 回だけ流す。既存のデータベースへ流し直す形は本 ADR が棄却しているが、空のデータベースへの初回の適用は働くため、検査は成立する。
 
@@ -88,7 +88,7 @@ wrangler 4.128.0 を使い、リポジトリの外に隔離した Worker 設定�
 
 ### 宣言的な正本を手で書き、マイグレーションも人が書く — 採用
 
-* Good, because 1 枚で読める形と、レビューできる差分の両方を得る
+* Good, because 1 枚で読める形と、レビューできるマイグレーションの両方を得る
 * Good, because 道具を増やさない
 * Bad, because 2 系統を人が同期する。ADR-0011 の Context が記録した失敗（文書が実態から離れても、離れたことに気づけない）と同じ形になりうる
 * Neutral, because 同期の失敗は機械で検出できる。`wrangler d1 export --no-data` の突き合わせがそれにあたる
@@ -100,14 +100,14 @@ wrangler 4.128.0 を使い、リポジトリの外に隔離した Worker 設定�
 * Good, because 人が二重に書かない。乖離が原理的に起きない
 * Bad, because 出力は人が書いたファイルではない。`ALTER TABLE` の痕跡が末尾に付き、雑音が混じり、並びは適用順になる。読むための 1 枚として整えるには、除去と整列を自作して保守することになる
 
-### 宣言的な正本を持ち、差分の生成を道具にやらせる
+### 宣言的な正本を持ち、マイグレーションの生成を道具にやらせる
 
 型で書いた宣言からマイグレーションを生成する。
 
-* Good, because 正本が 1 つで、差分が自動で出る
+* Good, because 正本が 1 つで、マイグレーションが自動で出る
 * Good, because カラム名の変更が型検査で全箇所に波及する
 * Bad, because 生成物にテーブル再構築が混じる。SQLite の `ALTER TABLE` が 5 操作しか許さないためである
-* Bad, because **差分を生成する道具が cascade delete を考慮せず関連データを黙って失う問題が報告されている。** [ADR-0003](./0003-content-data-model.md) は Career から Project、Project から Activity への 3 段の参照を決めており、cascade が効く形である
+* Bad, because **マイグレーションを生成する道具が cascade delete を考慮せず関連データを黙って失う問題が報告されている。** [ADR-0003](./0003-content-data-model.md) は Career から Project、Project から Activity への 3 段の参照を決めており、cascade が効く形である
 * Bad, because 版の結び目が 1 つ増える
 
 ## More Information
