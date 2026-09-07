@@ -101,6 +101,8 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 
 エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
 
+**チャンクの検査に使う HTML は、キャッシュを迂回して取る。** 昇格の直後、キャッシュには新しい版の HTML があり、Worker はまだ古い版で応答しうる。キャッシュ済みの HTML が参照するチャンクを古い版に求めると 404 になる（[ADR-0022](./docs/decisions/0022-deploy-version-window.md)）。
+
 ## コンソール
 
 サイトの運用に使う外部の管理画面。開いた先で対象を選ぶ。アカウント ID とプロパティ ID は書かない。配信される HTML と JS に出ていないため、書けば新たに公開することになる。
