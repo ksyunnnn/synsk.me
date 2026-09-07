@@ -47,3 +47,6 @@ cloudflare-env.d.ts
 !.dev.vars.example
 /dist/
 .vinext/
+
+# vinext へ移す前の生成物。作られなくなったが、既存の作業ツリーに残る
+/.open-next/
