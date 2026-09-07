@@ -12,13 +12,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
  * issue が持つ。
  */
 
-declare module 'cloudflare:test' {
-  interface ProvidedEnv {
-    DB: D1Database;
-    TEST_MIGRATIONS: D1Migration[];
-  }
-}
-
 beforeAll(async () => {
   await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
 });
