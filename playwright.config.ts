@@ -19,7 +19,8 @@ export default defineConfig({
   retries: process.env.CI ? 1 : 0,
   // 既定は論理コアの半分。CI の runner は 4 vCPU なので明示する
   workers: process.env.CI ? 2 : undefined,
-  reporter: process.env.CI ? [['github'], ['list']] : 'list',
+  // CI では失敗時に html reporter の成果物を回収する。github は注釈だけを出す
+  reporter: process.env.CI ? [['github'], ['list'], ['html', { open: 'never' }]] : 'list',
   // 既定は 5 分で緩い。ADR-0019 の予算に合わせて下げる
   reportSlowTests: { max: 5, threshold: 10_000 },
 
@@ -43,7 +44,9 @@ export default defineConfig({
   webServer: {
     command: 'npx wrangler dev --config dist/server/wrangler.json --port 8788',
     url: 'http://127.0.0.1:8788/',
-    reuseExistingServer: !process.env.CI,
+    // 再利用しない。手元に古い `wrangler dev` が残っていると、これから
+    // commit するのとは別のビルドに対して緑が出る
+    reuseExistingServer: false,
     timeout: 60_000,
   },
 });

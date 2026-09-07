@@ -43,7 +43,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 |---|---|---|---|
 | 手元 watch | `npm run test:watch` | 10 秒 | 1 秒 |
 | コミット前 | `npm test` `npm run test:workers` `npx tsc --noEmit` `npm run lint` `npm run format:check` | 60 秒 | 30 秒 |
-| PR の CI | 上記と `npm run test:integration` `npm run test:e2e` | 10 分 | 5 分 |
+| PR の CI | 上記と結合・E2E。CI はビルドを 1 回に抑えるため `test:integration:only` と `test:e2e:only` を呼ぶ | 10 分 | 5 分 |
 
 設定は 4 つに分かれる。単体と workerd は vinext を読み込まない。vinext は公開の `next/*` を自前の shim に置き換えるため、読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。
 
@@ -57,7 +57,6 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 ビジュアル回帰は入れていない。基準画像は OS ごとに別のファイルになり、Linux の CI でしか撮れない。比較する対象が増えた時点で足す。`playwright.config.ts` の `snapshotPathTemplate` と `.gitignore` の `*-darwin.png` は、そのときのために置いてある。
 
 デプロイ後の検査は `npm run verify:deploy` が担う。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体は、デプロイ前には確かめられない。
-```
 
 ## 配信
 

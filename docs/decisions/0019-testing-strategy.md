@@ -45,8 +45,8 @@ Vitest Browser Mode の `browser.headless` の既定は `process.env.CI` であ�
 |---|---|---|---|
 | 手元 watch | 変更に関係する単体のみ | 10 秒 | 1 秒 |
 | コミット前 | 単体全部・D1・型検査・lint・format | 60 秒 | 30 秒 |
-| PR の CI | 上記と結合・E2E（Chromium のみ）・a11y・ビジュアル回帰 | 10 分 | 5 分 |
-| 定期 | 複数ブラウザ・ビジュアル回帰の全面更新 | — | — |
+| PR の CI | 上記と結合・E2E（Chromium のみ） | 10 分 | 5 分 |
+| 定期 | 複数ブラウザ | — | — |
 
 `scripts/verify-deploy.mjs` は残す。traditional test は production test を代替しない。
 

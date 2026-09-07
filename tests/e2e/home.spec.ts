@@ -33,12 +33,20 @@ test.describe('トップ', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
-  test('JavaScript の実行時エラーが出ない', async ({ page }) => {
+  test('ハイドレーションが警告なく終わる', async ({ page }) => {
+    // React のハイドレーション不一致は pageerror ではなく console.error に出る
     const errors: string[] = [];
-    page.on('pageerror', (e) => errors.push(e.message));
+    page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push('console: ' + m.text());
+    });
+
     await page.goto('/');
-    // ハイドレーションが終わるまで待つ
+    // ハイドレーションの完了を待つ。React がクライアント側の island を
+    // 立ち上げるまで、body の data 属性は付かない
+    await page.waitForLoadState('networkidle');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+
     expect(errors).toEqual([]);
   });
 });
