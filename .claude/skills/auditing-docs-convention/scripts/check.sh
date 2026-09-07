@@ -174,5 +174,10 @@ for p in sorted(pathlib.Path('docs').rglob('*.md')):
 PY
 )
 
-[ "$found" -eq 0 ] && echo "検出なし（8項目すべて）"
+# --- [番号重複] decisions/ の連番が重複している ---
+while IFS= read -r n; do
+  report "[番号重複] docs/decisions/ に $n が複数ある: $(ls docs/decisions/"$n"-*.md | tr '\n' ' ')"
+done < <(ls docs/decisions/[0-9][0-9][0-9][0-9]-*.md 2>/dev/null | sed 's|.*/||' | cut -c1-4 | sort | uniq -d)
+
+[ "$found" -eq 0 ] && echo "検出なし（9項目すべて）"
 exit 0
