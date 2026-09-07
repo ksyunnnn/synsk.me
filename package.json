@@ -16,7 +16,14 @@
     "upload": "wrangler versions upload --config dist/server/wrangler.json",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "test": "vitest run --config vitest.config.ts",
+    "test:watch": "vitest --config vitest.config.ts",
+    "test:workers": "vitest run --config vitest.workers.config.ts",
+    "test:integration": "vinext build && vitest run --config vitest.integration.config.ts",
+    "test:e2e": "vinext build && playwright test",
+    "test:integration:only": "vitest run --config vitest.integration.config.ts",
+    "test:e2e:only": "playwright test"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -32,6 +39,8 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.54.3",
+    "@cloudflare/vitest-plugin": "^1.1.4",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24",
     "@types/react": "19.2.18",
@@ -47,6 +56,7 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
     "vite": "^8.2.2",
+    "vitest": "4.1.11",
     "wrangler": "^4.128.0"
   },
   "overrides": {

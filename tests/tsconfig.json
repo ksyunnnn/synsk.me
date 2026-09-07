@@ -1,0 +1,14 @@
+{
+  // テストの型検査。`@cloudflare/vitest-plugin` が供給する `cloudflare:test` の
+  // 型は、この設定でだけ有効にする。src の型検査に持ち込まない。
+  //
+  // Cloudflare 公式が示す形に従う。
+  // https://developers.cloudflare.com/workers/testing/vitest-integration/write-your-first-test/
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["@cloudflare/vitest-plugin/types", "vitest/globals"]
+  },
+  "include": ["./**/*.ts", "../cloudflare-env.d.ts"],
+  // 親の exclude は "tests" を含む。継承すると自分自身を除外してしまう
+  "exclude": ["../node_modules"]
+}

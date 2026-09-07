@@ -47,3 +47,12 @@ cloudflare-env.d.ts
 !.dev.vars.example
 /dist/
 .vinext/
+
+# vinext へ移す前の生成物。作られなくなったが、既存の作業ツリーに残る
+/.open-next/
+
+# Playwright
+/test-results/
+/playwright-report/
+# 基準画像は Linux の CI で撮る。手元（darwin）のものは追跡しない
+/tests/e2e/__screenshots__/*-darwin.png

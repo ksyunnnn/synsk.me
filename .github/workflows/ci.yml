@@ -1,0 +1,78 @@
+# PR で lint・型検査・テストを止める。
+#
+# 段階の割り当ては docs/decisions/0019-testing-strategy.md が定める。この
+# workflow が担うのは「PR の CI」の層で、Tolerable 10 分 / Goal 5 分。
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    # 既定の 360 分は長すぎる。ADR-0019 の Tolerable が 10 分
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # `cloudflare-env.d.ts` は `wrangler types` の生成物で .gitignore の
+      # 対象。binding の型を供給するため、型検査より先に生成する
+      - name: binding の型を生成
+        run: npm run cf-typegen
+
+      - name: lint
+        run: npm run lint
+
+      - name: 整形
+        run: npm run format:check
+
+      - name: 単体
+        run: npm test
+
+      - name: workerd の中
+        run: npm run test:workers
+
+      # `vinext build` が `next-env.d.ts` と `.next/types/routes.d.ts` を生成する。
+      # どちらも .gitignore の対象で、型検査はこれらを要する。したがってビルドが
+      # 型検査より先に来る
+      - name: ビルド
+        run: npm run build
+
+      - name: 型検査（src）
+        run: npx tsc --noEmit
+
+      - name: 型検査（tests）
+        run: npx tsc --noEmit -p tests/tsconfig.json
+
+      # ビルド済みの dist/ に対して走る。`test:integration` は自身でも
+      # `vinext build` を呼ぶが、ここでは直前のビルドを使う
+      - name: 結合
+        run: npm run test:integration:only
+
+      - name: ブラウザを入れる
+        run: npx playwright install chromium --with-deps
+
+      - name: E2E
+        run: npm run test:e2e:only
+
+      - if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

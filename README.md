@@ -27,6 +27,37 @@ npm run verify:deploy # 配信されているものを検査する（URL を渡�
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
+## テスト
+
+```bash
+npm test              # 単体。純関数とソースの静的な検査
+npm run test:watch    # 単体を watch で回す
+npm run test:workers  # workerd の中。D1 の binding とマイグレーション
+npm run test:integration # 結合。ビルドしてから本番出力を workerd で起動する
+npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
+```
+
+段階ごとの割り当てと時間の上限は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
+
+| 段階 | 回すもの | Tolerable | Goal |
+|---|---|---|---|
+| 手元 watch | `npm run test:watch` | 10 秒 | 1 秒 |
+| コミット前 | `npm test` `npm run test:workers` `npx tsc --noEmit` `npm run lint` `npm run format:check` | 60 秒 | 30 秒 |
+| PR の CI | 上記と結合・E2E。CI はビルドを 1 回に抑えるため `test:integration:only` と `test:e2e:only` を呼ぶ | 10 分 | 5 分 |
+
+設定は 4 つに分かれる。単体と workerd は vinext を読み込まない。vinext は公開の `next/*` を自前の shim に置き換えるため、読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。
+
+| ファイル | 対象 |
+|---|---|
+| `vitest.config.ts` | 単体 |
+| `vitest.workers.config.ts` | workerd の中 |
+| `vitest.integration.config.ts` | 結合 |
+| `playwright.config.ts` | E2E |
+
+ビジュアル回帰は入れていない。基準画像は OS ごとに別のファイルになり、Linux の CI でしか撮れない。比較する対象が増えた時点で足す。`playwright.config.ts` の `snapshotPathTemplate` と `.gitignore` の `*-darwin.png` は、そのときのために置いてある。
+
+デプロイ後の検査は `npm run verify:deploy` が担う。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体は、デプロイ前には確かめられない。
+
 ## 配信
 
 本番は Cloudflare Workers Builds が `main` への push を受けてビルドし、デプロイする。ビルド構成はリポジトリではなく Cloudflare のダッシュボード（Workers & Pages → `synsk-me` → Settings → Build）が持つ。
@@ -87,3 +118,22 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。`WORKERS_CI_BRANCH` が `main` のビルドでのみ埋め込む |
 | `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
+| `CLOUDFLARE_API_TOKEN` | Workers Builds のビルドログを読む。user トークンで、権限は Workers スクリプト（読み取り）と Workers Builds 構成（編集）。`.env.local` に置く |
+
+## Workers Builds のビルド構成
+
+リポジトリから読めない。Cloudflare のダッシュボードと API が持つ。trigger は 2 つあり、**ダッシュボードは本番の trigger しか編集できない。**プレビューの trigger は API でしか変えられない。
+
+| trigger | build | deploy | 対象ブランチ |
+|---|---|---|---|
+| 本番 | `npm run build` | `npm run deploy` | `main` |
+| プレビュー | `npm run build` | `npm run upload` | `main` 以外 |
+
+値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
+
+確認と変更は Builds API による。`CLOUDFLARE_API_TOKEN` が要る。
+
+```
+GET   /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/triggers
+PATCH /client/v4/accounts/{account_id}/builds/triggers/{trigger_uuid}
+```
