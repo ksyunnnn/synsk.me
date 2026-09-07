@@ -61,3 +61,17 @@ jobs:
       # `vinext build` を呼ぶが、ここでは直前のビルドを使う
       - name: 結合
         run: npx vitest run --config vitest.integration.config.ts
+
+      - name: ブラウザを入れる
+        run: npx playwright install chromium --with-deps
+
+      # 基準画像は Linux の CI で撮る。手元（darwin）のものは追跡しない
+      - name: E2E とビジュアル回帰
+        run: npx playwright test
+
+      - if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

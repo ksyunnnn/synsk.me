@@ -27,6 +27,38 @@ npm run verify:deploy # 配信されているものを検査する（URL を渡�
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
+## テスト
+
+```bash
+npm test              # 単体。純関数とソースの静的な検査
+npm run test:watch    # 単体を watch で回す
+npm run test:workers  # workerd の中。D1 の binding とマイグレーション
+npm run test:integration # 結合。ビルドしてから本番出力を workerd で起動する
+npm run test:e2e      # E2E とビジュアル回帰。ビルドしてから実ブラウザで開く
+```
+
+段階ごとの割り当てと時間の上限は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
+
+| 段階 | 回すもの | Tolerable | Goal |
+|---|---|---|---|
+| 手元 watch | `npm run test:watch` | 10 秒 | 1 秒 |
+| コミット前 | `npm test` `npm run test:workers` `npx tsc --noEmit` `npm run lint` `npm run format:check` | 60 秒 | 30 秒 |
+| PR の CI | 上記と `npm run test:integration` `npm run test:e2e` | 10 分 | 5 分 |
+
+設定は 4 つに分かれる。単体と workerd は vinext を読み込まない。vinext は公開の `next/*` を自前の shim に置き換えるため、読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。
+
+| ファイル | 対象 |
+|---|---|
+| `vitest.config.ts` | 単体 |
+| `vitest.workers.config.ts` | workerd の中 |
+| `vitest.integration.config.ts` | 結合 |
+| `playwright.config.ts` | E2E とビジュアル回帰 |
+
+ビジュアル回帰の基準画像は Linux の CI で撮る。ファイル名に OS が入るため、macOS の手元で撮ったものは CI と別ファイルになる。`.gitignore` が `*-darwin.png` を除外する。
+
+デプロイ後の検査は `npm run verify:deploy` が担う。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体は、デプロイ前には確かめられない。
+```
+
 ## 配信
 
 本番は Cloudflare Workers Builds が `main` への push を受けてビルドし、デプロイする。ビルド構成はリポジトリではなく Cloudflare のダッシュボード（Workers & Pages → `synsk-me` → Settings → Build）が持つ。
