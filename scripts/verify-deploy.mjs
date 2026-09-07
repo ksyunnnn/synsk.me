@@ -70,15 +70,17 @@ async function getFromOrigin(path) {
  */
 async function getWhenReady(fetcher, path, attempts = 12, intervalMs = 5_000) {
   let last;
+  let lastError;
   for (let i = 1; i <= attempts; i++) {
     try {
       last = await fetcher(path);
       if (last.ok) return last;
     } catch (error) {
-      if (i === attempts) throw error;
+      lastError = error;
     }
     if (i < attempts) await sleep(intervalMs);
   }
+  if (!last) throw lastError ?? new Error(`取得できなかった: ${path}`);
   return last;
 }
 
@@ -172,7 +174,10 @@ async function checkBudget() {
   const paths = extractChunkPaths(html);
   let jsBytes = 0;
   for (const path of paths) {
-    const chunk = await getWhenReady(get, path, 6, 5_000);
+    // 配信中の版から取った HTML なので、本来チャンクは揃っている。伝播の途中で
+    // 別の版のエッジに当たる場合に備えて数回だけ待つ。長く待つと、本当に欠けて
+    // いるときの待ち時間がチャンクの数だけ積み上がる
+    const chunk = await getWhenReady(get, path, 3, 2_000);
     if (!chunk.ok) {
       check(false, `${path} が取得できる`, `${chunk.status}`);
       continue;
