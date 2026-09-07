@@ -28,6 +28,11 @@ jobs:
 
       - run: npm ci
 
+      # `cloudflare-env.d.ts` は `wrangler types` の生成物で .gitignore の
+      # 対象。binding の型を供給するため、型検査より先に生成する
+      - name: binding の型を生成
+        run: npm run cf-typegen
+
       - name: lint
         run: npm run lint
 
