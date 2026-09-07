@@ -20,13 +20,12 @@ Google SRE Book はテストを 2 系統に分ける。
 
 この区分に照らすと `verify-deploy.mjs` は production test にあたり、smoke / performance / configuration の定義に一致する。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体の 3 つは、デプロイ前には原理的に確かめられない。欠けているのは traditional test の側である。
 
-速さの基準を持つ出典は 4 つある。Google Testing Blog "Test Sizes"（2010-12-13）が Small 60 秒 / Medium 300 秒 / Large 900 秒以上を定め、Humble と Farley の Continuous Delivery が commit stage を「ideally less than five minutes, certainly no more than ten minutes」とし、DORA が「less than ten minutes both on local workstations and from the continuous integration system」とし、Nielsen が応答時間の 3 閾値（0.1 / 1 / 10 秒）を示す。Vitest・Playwright・Stryker の各公式は実行時間の推奨値を出していない。
+速さの基準を持つ出典は 4 つある。Google Testing Blog "Test Sizes"（2010-12-13）が Small 60 秒 / Medium 300 秒 / Large 900 秒以上を定め、Humble と Farley の Continuous Delivery が commit stage を「ideally less than five minutes, certainly no more than ten minutes」とし、DORA が「less than ten minutes both on local workstations and from the continuous integration system」とし、Nielsen が応答時間の 3 閾値（0.1 / 1 / 10 秒）を示す。Vitest と Playwright の各公式は実行時間の推奨値を出していない。
 
 Vitest の `latest` は 5.0.0 である。一方 `@cloudflare/vitest-plugin@1.1.4` の peer は `vitest: ^4.1.0` で、5.0.0 を受け付けない。このパッケージは D1 を workerd の中でテストする唯一の公式手段である。
 
 Vitest Browser Mode の `browser.headless` の既定は `process.env.CI` であり、手元では `false` になってブラウザ画面が出る。Playwright の `headless` は既定 `true` である。
 
-Stryker の `concurrency` の既定は `cpuCoreCount <= 4 ? cpuCoreCount : cpuCoreCount - 1` で、12 コアの環境では 11 プロセスが走る。
 
 ## Decision Drivers
 
@@ -47,7 +46,7 @@ Stryker の `concurrency` の既定は `cpuCoreCount <= 4 ? cpuCoreCount : cpuCo
 | 手元 watch | 変更に関係する単体のみ | 10 秒 | 1 秒 |
 | コミット前 | 単体全部・D1・型検査・lint・format | 60 秒 | 30 秒 |
 | PR の CI | 上記と結合・E2E（Chromium のみ）・a11y・ビジュアル回帰 | 10 分 | 5 分 |
-| 定期 | ミューテーション・複数ブラウザ・ビジュアル回帰の全面更新 | — | — |
+| 定期 | 複数ブラウザ・ビジュアル回帰の全面更新 | — | — |
 
 `scripts/verify-deploy.mjs` は残す。traditional test は production test を代替しない。
 
@@ -55,13 +54,19 @@ Stryker の `concurrency` の既定は `cpuCoreCount <= 4 ? cpuCoreCount : cpuCo
 
 - `vitest` — **4.1.11 に固定する**
 - `@cloudflare/vitest-plugin` — D1 とマイグレーション
-- `@playwright/test` — E2E・ビジュアル回帰・a11y・レスポンシブ
+- `@playwright/test` — E2E・ビジュアル回帰・レスポンシブ
 - `createTestHarness()` — 本番ビルド出力に対する結合
-- `@axe-core/playwright` / `msw` / `web-vitals` / `@stryker-mutator/*`
 
 **Vitest Browser Mode は採らない。** ブラウザは Playwright が担う。
 
-実装が正しいことは、カバレッジ率では測らない。**意図的に欠陥を注入し、対応するテストが落ちることをカテゴリごとに確認する。** 加えて可視性の選別ロジックにミューテーションテストを回す。
+次は採らない。いずれも `docs/REQUIREMENTS.md` と `specs/` の要件に紐づかないためである。要件が足りないのであれば、道具ではなく要件を先に足す。
+
+- `@axe-core/playwright` — `docs/REQUIREMENTS.md` にアクセシビリティの要件が 1 件もない。NFR-02 が扱うのはデータがない・読み込み中・一部欠損・エラーの各状態である。静的な検査は `eslint-plugin-jsx-a11y` が既に担う
+- `web-vitals` を検査として回すこと — [ADR-0017](./0017-display-speed-thresholds.md) の Confirmation は 75 パーセンタイルでの判定を定める。ラボでの 1 回の計測は 75 パーセンタイルではない。フィールドの計測手段としては別に扱う
+- `msw` — `specs/001` と `specs/002` にクライアント側の fetch がない。外部への呼び出しは FR-02 と FR-15 で、どちらも workerd の中で起きる
+- `@stryker-mutator/*` — テストの対象になるコードが `src/lib/` の 3 ファイルしかない
+
+実装が正しいことは、カバレッジ率では測らない。**意図的に欠陥を注入し、対応するテストが落ちることをカテゴリごとに確認する。**
 
 ### Consequences
 
@@ -71,7 +76,7 @@ Stryker の `concurrency` の既定は `cpuCoreCount <= 4 ? cpuCoreCount : cpuCo
 * Bad, because **Vitest の最新版を使えない。** 4.1.11 に固定する。`@cloudflare/vitest-plugin` が Vitest 5 に対応した時点で見直す
 * Bad, because 段階が 4 つあるため、どこで何が落ちたかを人が把握する必要がある
 * Bad, because **NFR-03 から NFR-07 は、この 4 段階のいずれでも判定できない。** web.dev が「lab measurement (…) is not a substitute for field measurement」と述べ、INP はラボで測れない。フィールド計測を別に持つ
-* Bad, because **`@cloudflare/vitest-plugin` と vinext を併用できるかを確認していない。** プラグインは「Custom Vitest `environment`s or `runner`s are not supported」と明言する
+* Neutral, because **`@cloudflare/vitest-plugin` と vinext は併用できる。** 2026-09-07 に実測した。vinext は `dist/shims/public-shim-map.json.js` が 24 件の写像を持ち、`next/link` `next/navigation` をはじめとする公開の `next/*` をすべて自前の shim に置き換えるため、vinext を読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。したがって `next/*` を import するモジュールをこのプールの対象にしない。binding だけを扱う
 
 ### Confirmation
 
@@ -85,7 +90,6 @@ Stryker の `concurrency` の既定は `cpuCoreCount <= 4 ? cpuCoreCount : cpuCo
 
 * Good, because 人が段階を意識しなくてよい
 * Bad, because ブラウザの起動とビルドが毎回乗る。Nielsen の 10 秒を確実に超える
-* Bad, because ミューテーションテストが総当たりのため、手元で回すと待ち時間が桁で変わる
 
 ### テストを 4 段階に分け、段階ごとに時間の上限を定める — 採用
 

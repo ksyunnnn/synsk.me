@@ -5,9 +5,8 @@ import { describe, expect, it } from 'vitest';
 /**
  * ADR-0018 が定める、HTML をエッジのキャッシュに載せる 3 条件のうち 1 つ目を守る。
  *
- * `vinext build` の静的解析は App Router のページを分類できず、`dynamic` として
- * skip する。`export const revalidate` を書くことで ISR に分類される。1 つでも
- * 欠けると全経路が `cache-control: no-store, must-revalidate` と
+ * `export const revalidate` がないページは `Unknown` に分類され、ISR にならない。
+ * 1 つでも欠けると全経路が `cache-control: no-store, must-revalidate` と
  * `cf-cache-status: BYPASS` になる。
  *
  * `scripts/verify-deploy.mjs` の `cf-cache-status: HIT` 検査は本番へ配ったあとに
