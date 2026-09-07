@@ -5,13 +5,14 @@ paths:
 
 # ドキュメントの書き方
 
-役割と時制の定義は [docs/README.md](../../docs/README.md) にある。ここは書式の例だけを持つ。テンプレートを持つ文書の書式は、そのテンプレートが持つ。
+役割と時制の定義は [docs/README.md](../../docs/README.md) にある。ここは書式の例だけを持つ。テンプレートを持つ文書の書式は、そのテンプレートが持つ。手で書き換えないテンプレートはこれに当たらない。
 
 ## Contents
 
 - 冒頭の宣言
 - 要件
 - 決定の記録
+- constitution
 - Issue
 - 検査の例外
 
@@ -57,6 +58,23 @@ FR は機能要件、NFR は非機能要件（性能・可用性・セキュリ�
 **引用してよいのは決定の記録から決定の記録への引用に限る。** 決定の記録は書き換えないので引用が古くならない。書き換わる文書（`REQUIREMENTS.md`）からは引用せず、リンクか ID で参照する。
 
 **時制** — `docs/README.md` の表に従う。
+
+## constitution
+
+`/speckit-plan` がゲートで読む。**判定できることが要件。**`.claude/skills/speckit-constitution/SKILL.md` が「declarative, testable, and free of vague language」を求める。迷ったとき何を優先するかは `PRINCIPLES.md` が持つ。
+
+```
+✓ テストは4段階に分け、PR の CI は10分以内に収める
+   → 超えたかどうかを判定できる
+
+✗ おもしろさ over 安全圏
+   → 満たしたかを判定できない。PRINCIPLES.md が持つ
+
+✗ 表示速度に配慮する
+   → 「配慮」が判定できない
+```
+
+書き換えるのは `/speckit-constitution` による。テンプレートは Spec Kit が配るため、書式をそこへ書けない。
 
 ## Issue
 
