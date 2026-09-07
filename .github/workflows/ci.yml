@@ -60,13 +60,13 @@ jobs:
       # ビルド済みの dist/ に対して走る。`test:integration` は自身でも
       # `vinext build` を呼ぶが、ここでは直前のビルドを使う
       - name: 結合
-        run: npx vitest run --config vitest.integration.config.ts
+        run: npm run test:integration:only
 
       - name: ブラウザを入れる
         run: npx playwright install chromium --with-deps
 
       - name: E2E
-        run: npx playwright test
+        run: npm run test:e2e:only
 
       - if: failure()
         uses: actions/upload-artifact@v6

@@ -75,6 +75,7 @@ Vitest Browser Mode の `browser.headless` の既定は `process.env.CI` であ�
 * Good, because ブラウザ画面が手元に出る経路がない
 * Bad, because **Vitest の最新版を使えない。** 4.1.11 に固定する。`@cloudflare/vitest-plugin` が Vitest 5 に対応した時点で見直す
 * Bad, because 段階が 4 つあるため、どこで何が落ちたかを人が把握する必要がある
+* Bad, because **E2E の層が、いま守るものをほとんど持たない。** 要件に紐づく対象（`specs/001` の一覧から詳細への遷移、`specs/003` のエディタ）が実装されていない。置いた 3 本のうち、結合の層と重ならないのは JavaScript の実行時エラーの検査だけである。Playwright はブラウザバイナリ 94MB を要し、CI の時間を 55 秒から 1 分 37 秒へ増やす。対象が増えるまで、この増分は守るものに見合わない
 * Bad, because **NFR-03 から NFR-07 は、この 4 段階のいずれでも判定できない。** web.dev が「lab measurement (…) is not a substitute for field measurement」と述べ、INP はラボで測れない。フィールド計測を別に持つ
 * Neutral, because **`@cloudflare/vitest-plugin` と vinext は併用できる。** 2026-09-07 に実測した。vinext は `dist/shims/public-shim-map.json.js` が 24 件の写像を持ち、`next/link` `next/navigation` をはじめとする公開の `next/*` をすべて自前の shim に置き換えるため、vinext を読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。したがって `next/*` を import するモジュールをこのプールの対象にしない。binding だけを扱う
 

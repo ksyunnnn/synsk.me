@@ -21,7 +21,9 @@
     "test:watch": "vitest --config vitest.config.ts",
     "test:workers": "vitest run --config vitest.workers.config.ts",
     "test:integration": "vinext build && vitest run --config vitest.integration.config.ts",
-    "test:e2e": "vinext build && playwright test"
+    "test:e2e": "vinext build && playwright test",
+    "test:integration:only": "vitest run --config vitest.integration.config.ts",
+    "test:e2e:only": "playwright test"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
