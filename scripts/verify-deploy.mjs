@@ -12,6 +12,7 @@
 // 使い方: node scripts/verify-deploy.mjs [URL]
 // 既定の対象は https://synsk.me。プレビュー URL を渡してもよい。
 
+import { readFile } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
 import { bypassCacheUrl, extractChunkPaths, isPng } from './lib/verify-deploy.mjs';
 
@@ -32,10 +33,29 @@ const BROWSER_HEADERS = {
   'Accept-Language': 'ja,en-US;q=0.9',
 };
 
-const failures = [];
-const notes = [];
+/**
+ * このビルドが出した版。`X-Vinext-Build-Id` と同じ値が入る。
+ *
+ * 昇格の直後は古い版が応答しうる。これと突き合わせないと、前回のデプロイを
+ * 測って緑を出すことになる。
+ */
+const EXPECTED_BUILD_ID = await readFile('dist/server/RSC_BUILD_ID', 'utf8')
+  .then((text) => text.trim())
+  .catch(() => null);
 
-/** キャッシュ経由で取れた HTML の版。配信中の版と食い違うかを見るために持つ。 */
+/**
+ * 版の一致を必須にするかどうか。
+ *
+ * Workers Builds の中ではビルドとデプロイが同じ作業ディレクトリで走るため、
+ * `dist/` は今回の出力である。手元から本番を見るときの `dist/` は古いことが
+ * あるので、必須にしない。
+ */
+const ENFORCE_BUILD_ID = Boolean(process.env.WORKERS_CI_BRANCH) && Boolean(EXPECTED_BUILD_ID);
+
+const failures = [];
+const notes = new Set();
+
+/** キャッシュから返ってきた HTML の版。`cf-cache-status: HIT` のときだけ持つ。 */
 let cachedBuildId = null;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -100,7 +120,11 @@ async function checkHtmlRoutes() {
     const res = await getWhenReady(get, path);
     const body = await res.text();
     pages[path] = body;
-    if (path === '/') cachedBuildId = res.headers.get('x-vinext-build-id');
+    // キャッシュから返ったときだけ版を控える。MISS の応答は配信中の版そのもの
+    // なので、食い違いの検知には使えない
+    if (path === '/' && res.headers.get('cf-cache-status') === 'HIT') {
+      cachedBuildId = res.headers.get('x-vinext-build-id');
+    }
     const type = res.headers.get('content-type') ?? '';
     check(
       res.status === 200 && type.startsWith('text/html'),
@@ -147,11 +171,22 @@ function checkAnalytics(html) {
   console.log('アクセス解析');
   const isProductionHost = new URL(BASE).hostname === 'synsk.me';
   if (!isProductionHost) {
-    notes.push('アクセス解析の検査は synsk.me 以外では行わない');
+    notes.add('アクセス解析の検査は synsk.me 以外では行わない');
     console.log('  skip アクセス解析のタグ — 対象が synsk.me ではない');
     return;
   }
   check(html.includes('googletagmanager'), 'HTML に GTM のタグが入る');
+}
+
+/** チャンクを 1 本取る。例外も「取れなかった」として扱い、検査を止めない。 */
+async function fetchChunk(path) {
+  try {
+    const res = await getWhenReady(getFromOrigin, path, 3, 2_000);
+    if (!res.ok) return { ok: false, reason: `${res.status}` };
+    return { ok: true, bytes: gzipSync(Buffer.from(await res.text())).length };
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error ? error.message : String(error) };
+  }
 }
 
 /**
@@ -161,14 +196,27 @@ function checkAnalytics(html) {
  * 新しい版の HTML があり、Worker はまだ古い版で応答することがある。片方だけを
  * 迂回すると、HTML と参照先のチャンクが別の版から来て 404 になる（#71）。
  *
- * HTML を取った後に昇格が進んだ場合もチャンクは 404 になる。そのときは HTML から
- * 取り直す。
+ * さらに、迂回して揃えただけでは「古い版を測って緑」になりうる。Workers Builds
+ * の中では、応答する版が今回のビルドと一致するまで待つ。
  */
 async function checkBudget() {
   console.log('予算');
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    const lastAttempt = attempt === 2;
-    const res = await getWhenReady(getFromOrigin, '/');
+  const attempts = ENFORCE_BUILD_ID ? 8 : 2;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const lastAttempt = attempt === attempts;
+
+    let res;
+    try {
+      res = await getWhenReady(getFromOrigin, '/', 3, 2_000);
+    } catch (error) {
+      if (lastAttempt) {
+        check(false, '配信中の版から HTML を取れる', error instanceof Error ? error.message : '');
+        return;
+      }
+      await sleep(5_000);
+      continue;
+    }
+
     const html = await res.text();
     const type = res.headers.get('content-type') ?? '';
     const originBuildId = res.headers.get('x-vinext-build-id');
@@ -182,10 +230,18 @@ async function checkBudget() {
       continue;
     }
 
-    if (cachedBuildId && originBuildId && cachedBuildId !== originBuildId) {
-      notes.push(
-        `キャッシュの HTML と配信中の版が違う（cache ${cachedBuildId} / origin ${originBuildId}）。昇格の伝播中である`,
-      );
+    if (ENFORCE_BUILD_ID && originBuildId !== EXPECTED_BUILD_ID) {
+      if (lastAttempt) {
+        check(
+          false,
+          '配信中の版が今回のビルドと一致する',
+          `期待 ${EXPECTED_BUILD_ID} / 応答 ${originBuildId}`,
+        );
+        return;
+      }
+      console.log('  ...  応答した版が今回のビルドと違う。昇格の伝播中とみて待つ');
+      await sleep(5_000);
+      continue;
     }
 
     const paths = extractChunkPaths(html);
@@ -201,15 +257,12 @@ async function checkBudget() {
     const missing = [];
     let jsBytes = 0;
     for (const path of paths) {
-      // 配信中の版から取った HTML なので、本来チャンクは揃っている。伝播の途中で
-      // 別の版に当たる場合に備えて数回だけ待つ。長く待つと、本当に欠けていると
-      // きの待ち時間がチャンクの数だけ積み上がる
-      const chunk = await getWhenReady(getFromOrigin, path, 3, 2_000);
-      if (!chunk.ok) {
-        missing.push(`${path} (${chunk.status})`);
-        continue;
+      const chunk = await fetchChunk(path);
+      if (chunk.ok) {
+        jsBytes += chunk.bytes;
+      } else {
+        missing.push(`${path} (${chunk.reason})`);
       }
-      jsBytes += gzipSync(Buffer.from(await chunk.text())).length;
     }
 
     if (missing.length > 0 && !lastAttempt) {
@@ -218,18 +271,33 @@ async function checkBudget() {
       continue;
     }
 
+    if (ENFORCE_BUILD_ID) {
+      check(true, '配信中の版が今回のビルドと一致する', EXPECTED_BUILD_ID);
+    } else if (cachedBuildId && originBuildId && cachedBuildId !== originBuildId) {
+      notes.add(
+        `キャッシュの HTML と配信中の版が違う（cache ${cachedBuildId} / origin ${originBuildId}）。昇格の伝播中である`,
+      );
+    }
+
     const htmlBytes = gzipSync(Buffer.from(html)).length;
     check(
       htmlBytes <= BUDGET.html,
       `HTML が ${BUDGET.html} バイト以内（gzip）`,
       `${htmlBytes} バイト`,
     );
+
     for (const item of missing) check(false, `${item} が取得できる`);
-    check(
-      missing.length === 0 && jsBytes <= BUDGET.js,
-      `クライアント JS が ${BUDGET.js} バイト以内（gzip）`,
-      `${paths.length} チャンクで ${jsBytes} バイト`,
-    );
+    if (missing.length === 0) {
+      check(
+        jsBytes <= BUDGET.js,
+        `クライアント JS が ${BUDGET.js} バイト以内（gzip）`,
+        `${paths.length} チャンクで ${jsBytes} バイト`,
+      );
+    } else {
+      console.log(
+        `  skip クライアント JS の予算 — ${paths.length - missing.length}/${paths.length} 本しか取れていない`,
+      );
+    }
     return;
   }
 }
