@@ -87,3 +87,4 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 | `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。`WORKERS_CI_BRANCH` が `main` のビルドでのみ埋め込む |
 | `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
 | `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
+| `CLOUDFLARE_API_TOKEN` | Workers Builds のビルドログを読む。user トークンで、権限は Workers スクリプト（読み取り）と Workers Builds 構成（編集）。`.env.local` に置く |
