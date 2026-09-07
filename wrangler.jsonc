@@ -23,6 +23,14 @@
       "database_id": "23a6b53c-fb77-46ef-b299-a4696de72226",
     },
   ],
+  // note の本文に貼る画像の保管先（ADR-0012、specs/003-note-editor の FR-005）。
+  // IMAGES は Cloudflare Images が使うため別の名前にする
+  "r2_buckets": [
+    {
+      "binding": "NOTE_IMAGES",
+      "bucket_name": "synsk-me-images",
+    },
+  ],
   "images": {
     // next/image の最適化。vite.config.ts の imagesOptimizer() が実行時に使う
     "binding": "IMAGES",
