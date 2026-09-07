@@ -32,9 +32,6 @@ const BROWSER_HEADERS = {
   'Accept-Language': 'ja,en-US;q=0.9',
 };
 
-/** この実行を通して同じ値を使う。同じ版に対する一連の取得であることを揃える。 */
-const NONCE = `${Date.now()}`;
-
 const failures = [];
 const notes = [];
 
@@ -56,9 +53,16 @@ async function get(path, init = {}) {
   return fetch(`${BASE}${path}`, { headers: BROWSER_HEADERS, redirect: 'manual', ...init });
 }
 
-/** エッジのキャッシュを迂回して、配信中の版そのものから取る。 */
+/**
+ * エッジのキャッシュを迂回して、配信中の版そのものから取る。
+ *
+ * nonce は呼び出しごとに変える。同じ URL を繰り返すと、1 回目の応答がエッジの
+ * キャッシュに載り、2 回目以降がそれを受け取る。CDN のアダプタはクエリに
+ * 関わらず `CDN-Cache-Control` を付けるため、迂回の効果が消える。
+ */
 async function getFromOrigin(path) {
-  return fetch(bypassCacheUrl(BASE, path, NONCE), {
+  const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  return fetch(bypassCacheUrl(BASE, path, nonce), {
     headers: BROWSER_HEADERS,
     redirect: 'manual',
   });
@@ -66,7 +70,10 @@ async function getFromOrigin(path) {
 
 /**
  * デプロイ直後は伝播の途中でありうる。昇格が全エッジに行き渡るまでの数秒間、
- * 古い版が応答して 404 を返すことがある（#71）。200 を返すまで待つ。
+ * 古い版が応答することがある（#71）。200 を返すまで待つ。
+ *
+ * 最後の試行が例外だったときは、その例外を投げる。前の試行の古い応答を返すと、
+ * 接続の失敗を「503 が返った」と誤って報告することになる。
  */
 async function getWhenReady(fetcher, path, attempts = 12, intervalMs = 5_000) {
   let last;
@@ -74,13 +81,15 @@ async function getWhenReady(fetcher, path, attempts = 12, intervalMs = 5_000) {
   for (let i = 1; i <= attempts; i++) {
     try {
       last = await fetcher(path);
+      lastError = undefined;
       if (last.ok) return last;
     } catch (error) {
       lastError = error;
     }
     if (i < attempts) await sleep(intervalMs);
   }
-  if (!last) throw lastError ?? new Error(`取得できなかった: ${path}`);
+  if (lastError) throw lastError;
+  if (!last) throw new Error(`取得できなかった: ${path}`);
   return last;
 }
 
@@ -148,47 +157,81 @@ function checkAnalytics(html) {
 /**
  * HTML とクライアント JS が予算に収まるかを見る。
  *
- * **キャッシュ済みの HTML を使わない。**昇格の直後、キャッシュには新しい版の
- * HTML があり、Worker はまだ古い版で応答することがある。その HTML から抽出した
- * チャンクは古い版に存在せず 404 になる（#71）。配信中の版から HTML を取れば、
- * HTML とチャンクの版が揃う。
+ * **HTML もチャンクもキャッシュを迂回して取る。**昇格の直後、キャッシュには
+ * 新しい版の HTML があり、Worker はまだ古い版で応答することがある。片方だけを
+ * 迂回すると、HTML と参照先のチャンクが別の版から来て 404 になる（#71）。
+ *
+ * HTML を取った後に昇格が進んだ場合もチャンクは 404 になる。そのときは HTML から
+ * 取り直す。
  */
 async function checkBudget() {
   console.log('予算');
-  const res = await getWhenReady(getFromOrigin, '/');
-  const html = await res.text();
-  const originBuildId = res.headers.get('x-vinext-build-id');
-  if (cachedBuildId && originBuildId && cachedBuildId !== originBuildId) {
-    notes.push(
-      `キャッシュの HTML と配信中の版が違う（cache ${cachedBuildId} / origin ${originBuildId}）。昇格の伝播中である`,
-    );
-  }
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    const lastAttempt = attempt === 2;
+    const res = await getWhenReady(getFromOrigin, '/');
+    const html = await res.text();
+    const type = res.headers.get('content-type') ?? '';
+    const originBuildId = res.headers.get('x-vinext-build-id');
 
-  const htmlBytes = gzipSync(Buffer.from(html)).length;
-  check(
-    htmlBytes <= BUDGET.html,
-    `HTML が ${BUDGET.html} バイト以内（gzip）`,
-    `${htmlBytes} バイト`,
-  );
-
-  const paths = extractChunkPaths(html);
-  let jsBytes = 0;
-  for (const path of paths) {
-    // 配信中の版から取った HTML なので、本来チャンクは揃っている。伝播の途中で
-    // 別の版のエッジに当たる場合に備えて数回だけ待つ。長く待つと、本当に欠けて
-    // いるときの待ち時間がチャンクの数だけ積み上がる
-    const chunk = await getWhenReady(get, path, 3, 2_000);
-    if (!chunk.ok) {
-      check(false, `${path} が取得できる`, `${chunk.status}`);
+    if (res.status !== 200 || !type.startsWith('text/html')) {
+      if (lastAttempt) {
+        check(false, '配信中の版から HTML を取れる', `${res.status} ${type}`);
+        return;
+      }
+      await sleep(5_000);
       continue;
     }
-    jsBytes += gzipSync(Buffer.from(await chunk.text())).length;
+
+    if (cachedBuildId && originBuildId && cachedBuildId !== originBuildId) {
+      notes.push(
+        `キャッシュの HTML と配信中の版が違う（cache ${cachedBuildId} / origin ${originBuildId}）。昇格の伝播中である`,
+      );
+    }
+
+    const paths = extractChunkPaths(html);
+    if (paths.length === 0) {
+      if (lastAttempt) {
+        check(false, 'HTML がクライアント JS を参照している', '0 本');
+        return;
+      }
+      await sleep(5_000);
+      continue;
+    }
+
+    const missing = [];
+    let jsBytes = 0;
+    for (const path of paths) {
+      // 配信中の版から取った HTML なので、本来チャンクは揃っている。伝播の途中で
+      // 別の版に当たる場合に備えて数回だけ待つ。長く待つと、本当に欠けていると
+      // きの待ち時間がチャンクの数だけ積み上がる
+      const chunk = await getWhenReady(getFromOrigin, path, 3, 2_000);
+      if (!chunk.ok) {
+        missing.push(`${path} (${chunk.status})`);
+        continue;
+      }
+      jsBytes += gzipSync(Buffer.from(await chunk.text())).length;
+    }
+
+    if (missing.length > 0 && !lastAttempt) {
+      console.log(`  ...  ${missing.length} 本が取れない。版の伝播中とみて HTML から取り直す`);
+      await sleep(10_000);
+      continue;
+    }
+
+    const htmlBytes = gzipSync(Buffer.from(html)).length;
+    check(
+      htmlBytes <= BUDGET.html,
+      `HTML が ${BUDGET.html} バイト以内（gzip）`,
+      `${htmlBytes} バイト`,
+    );
+    for (const item of missing) check(false, `${item} が取得できる`);
+    check(
+      missing.length === 0 && jsBytes <= BUDGET.js,
+      `クライアント JS が ${BUDGET.js} バイト以内（gzip）`,
+      `${paths.length} チャンクで ${jsBytes} バイト`,
+    );
+    return;
   }
-  check(
-    jsBytes <= BUDGET.js,
-    `クライアント JS が ${BUDGET.js} バイト以内（gzip）`,
-    `${paths.length} チャンクで ${jsBytes} バイト`,
-  );
 }
 
 console.log(`検査の対象: ${BASE}\n`);

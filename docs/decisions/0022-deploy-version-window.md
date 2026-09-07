@@ -37,7 +37,7 @@ consulted: Claude
 
 **窓を許容する。** あわせて 2 つを固定する。
 
-1. `scripts/verify-deploy.mjs` は、チャンクの検査に使う HTML を**エッジのキャッシュを迂回して**取る（`?__verify=<nonce>`）。HTML とチャンクが同じ版から来るため、伝播中でも食い違わない
+1. `scripts/verify-deploy.mjs` は、予算の検査で **HTML もチャンクもエッジのキャッシュを迂回して**取る（`?__verify=<nonce>`、nonce は取得ごとに変える）。HTML とチャンクが同じ版から来るため、伝播中でも食い違わない。HTML を取った後に昇格が進んだ場合に備えて、チャンクが取れなければ HTML から一度だけ取り直す
 2. JavaScript が読めない状態でもページが読め、遷移できることを `tests/e2e/no-js.spec.ts` が固定する。窓を許容できるのは、この前提が成り立つ間に限る
 
 「昇格と同時に purge する」は、窓そのものを消す唯一の手段だが、Zone の Cache Purge 権限を持つ API トークンが要る。2026-09-08 時点の `CLOUDFLARE_API_TOKEN` で `POST /zones/{zone_id}/purge_cache` を試すと 401 を返す。権限を足せば採れる。
