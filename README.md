@@ -34,7 +34,7 @@ npm test              # 単体。純関数とソースの静的な検査
 npm run test:watch    # 単体を watch で回す
 npm run test:workers  # workerd の中。D1 の binding とマイグレーション
 npm run test:integration # 結合。ビルドしてから本番出力を workerd で起動する
-npm run test:e2e      # E2E とビジュアル回帰。ビルドしてから実ブラウザで開く
+npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 ```
 
 段階ごとの割り当てと時間の上限は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
@@ -52,9 +52,9 @@ npm run test:e2e      # E2E とビジュアル回帰。ビルドしてから実�
 | `vitest.config.ts` | 単体 |
 | `vitest.workers.config.ts` | workerd の中 |
 | `vitest.integration.config.ts` | 結合 |
-| `playwright.config.ts` | E2E とビジュアル回帰 |
+| `playwright.config.ts` | E2E |
 
-ビジュアル回帰の基準画像は Linux の CI で撮る。ファイル名に OS が入るため、macOS の手元で撮ったものは CI と別ファイルになる。`.gitignore` が `*-darwin.png` を除外する。
+ビジュアル回帰は入れていない。基準画像は OS ごとに別のファイルになり、Linux の CI でしか撮れない。比較する対象が増えた時点で足す。`playwright.config.ts` の `snapshotPathTemplate` と `.gitignore` の `*-darwin.png` は、そのときのために置いてある。
 
 デプロイ後の検査は `npm run verify:deploy` が担う。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体は、デプロイ前には確かめられない。
 ```

@@ -65,8 +65,7 @@ jobs:
       - name: ブラウザを入れる
         run: npx playwright install chromium --with-deps
 
-      # 基準画像は Linux の CI で撮る。手元（darwin）のものは追跡しない
-      - name: E2E とビジュアル回帰
+      - name: E2E
         run: npx playwright test
 
       - if: failure()
