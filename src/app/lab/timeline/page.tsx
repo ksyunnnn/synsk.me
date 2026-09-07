@@ -12,6 +12,13 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
+// react-hooks/purity は component の本体で Date.now() を呼ぶことを許さない。
+// 取得と同じ、component ではない関数で時刻を捉える。
+const loadTimeline = async () => {
+  const results = await fetchAllSources(TIMELINE_SOURCES);
+  return { results, groups: groupByYear(mergeEntries(results)), now: Date.now() };
+};
+
 const Page = async ({
   searchParams,
 }: {
@@ -20,8 +27,7 @@ const Page = async ({
   const { ui, embed } = await searchParams;
   const initialVariant: TimelineVariant = isTimelineVariant(ui) ? ui : 'catnose';
 
-  const results = await fetchAllSources(TIMELINE_SOURCES);
-  const groups = groupByYear(mergeEntries(results));
+  const { results, groups, now } = await loadTimeline();
   const total = groups.reduce((sum, group) => sum + group.entries.length, 0);
   const okCount = results.filter((result) => result.status === 'ok').length;
   const manualCount = results.filter((result) => result.status === 'manual').length;
@@ -38,7 +44,7 @@ const Page = async ({
 
       <TimelineLab
         groups={groups}
-        now={Date.now()}
+        now={now}
         initialVariant={initialVariant}
         initialAutoOpen={embed === 'auto'}
       />
