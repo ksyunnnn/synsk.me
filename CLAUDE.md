@@ -81,8 +81,7 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 - 例: `Timeline B` → `Timeline B: External Link Icon` のように派生版を作成
 - 採用が決まったら、採用版を明示し、不要な派生版は整理する
 
-### MCP の前提
-- `.pen` は暗号化されている。Read と grep では読めない。pencil MCP 経由でのみ読み書きする
-- MCP はアプリが起動していないと繋がらない。`open -a Pen design/<file>.pen` で開いてから操作する
-- `claude mcp list` の `✔ Connected` はアプリとの接続を意味しない。アプリの停止中は、すべてのツールが `transport not connected to app: desktop` で失敗する
-- MCP の定義は `~/.claude.json` にあり、アプリが自動で書き込む。`.mcp.json` には入らない
+### デザインファイルの読み書き
+- `.pen` は暗号化されている。Read と Grep では読めない。pencil MCP で読み書きする
+- pencil MCP は起動中のアプリに接続する。`open -a Pen design/<file>.pen` で開いてから操作する
+- MCP の操作はアプリの中に留まる。ファイルへの書き込みは `pen interactive` の `save()` で行う。手順は [README.md](./README.md) の「開発」が持つ
