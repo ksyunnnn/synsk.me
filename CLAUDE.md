@@ -75,8 +75,13 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 
 ## デザイン作業
 
-### Pencil (.pen) ファイルでの作業
+### pen.dev (.pen) ファイルでの作業
 - デザイン変更の提案時は、元のデザインを変更せず、新しいフレームとして追加する
 - 差分がわかるように並べて比較できるようにする
 - 例: `Timeline B` → `Timeline B: External Link Icon` のように派生版を作成
-- 採用が決まったら、採用版を明示し、不要な派生版は整理する
+- 採用が決まったら、採用した案を明示し、不要な派生版は整理する
+
+### デザインファイルの読み書き
+- `.pen` は暗号化されている。Read と Grep では読めない。pencil MCP で読み書きする
+- pencil MCP は起動中のアプリに接続する。`open -a Pen design/<file>.pen` で開いてから操作する
+- MCP の操作はアプリの中に留まる。ファイルへの書き込みは `pen interactive` の `save()` で行う。手順は [README.md](./README.md) の「開発」が持つ

@@ -27,6 +27,14 @@ npm run verify:deploy # 配信されているものを検査する（URL を渡�
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
+デザインは `design/*.pen` が持つ。[pen.dev](https://pen.dev) のアプリで開く。アプリ名は `Pen` である。
+
+```bash
+open -a Pen design/<file>.pen                    # 開く
+npm install -g @pen.dev/cli                      # 保存に使う。初回は pen login で認証する
+pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() がファイルへ書き込む
+```
+
 ## テスト
 
 ```bash
@@ -100,6 +108,8 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 ```
 
 エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
+
+**予算の検査は、HTML もチャンクもキャッシュを迂回して取る。** 昇格の直後、キャッシュには新しい版の HTML があり、Worker はまだ古い版で応答しうる。キャッシュ済みの HTML が参照するチャンクを古い版に求めると 404 になる（[ADR-0022](./docs/decisions/0022-deploy-version-window.md)）。
 
 ## コンソール
 

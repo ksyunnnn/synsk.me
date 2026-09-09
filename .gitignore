@@ -56,3 +56,6 @@ cloudflare-env.d.ts
 /playwright-report/
 # 基準画像は Linux の CI で撮る。手元（darwin）のものは追跡しない
 /tests/e2e/__screenshots__/*-darwin.png
+
+# Claude Code が subagent 用に作る git worktree
+.claude/worktrees/
