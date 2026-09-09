@@ -69,12 +69,12 @@ export const codesandboxSource: TimelineSource = {
           embedUrl: `https://codesandbox.io/embed/${ref.id}`,
         };
         return entry;
-      })
+      }),
     );
 
     const entries = settled
       .filter(
-        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled'
+        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled',
       )
       .map((result) => result.value);
     const failed = settled.length - entries.length;

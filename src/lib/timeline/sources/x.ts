@@ -43,7 +43,7 @@ export const xSource: TimelineSource = {
     const settled = await Promise.allSettled(
       X_POSTS.map(async (ref) => {
         const response = await fetchJson<XOembed>(
-          `${OEMBED}?url=${encodeURIComponent(ref.url)}&omit_script=1`
+          `${OEMBED}?url=${encodeURIComponent(ref.url)}&omit_script=1`,
         );
         if (!response.ok || response.body === undefined) {
           throw new Error(`${ref.url} → ${response.status}`);
@@ -67,12 +67,12 @@ export const xSource: TimelineSource = {
             : undefined,
         };
         return entry;
-      })
+      }),
     );
 
     const entries = settled
       .filter(
-        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled'
+        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled',
       )
       .map((result) => result.value);
 

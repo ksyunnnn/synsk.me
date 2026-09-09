@@ -27,7 +27,7 @@ async function request<T>(
   url: string,
   read: (response: Response) => Promise<T>,
   headers: Record<string, string> = {},
-  timeoutMs: number = FETCH_TIMEOUT_MS
+  timeoutMs: number = FETCH_TIMEOUT_MS,
 ): Promise<FetchResult<T>> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -57,14 +57,14 @@ async function request<T>(
 
 export function fetchText(
   url: string,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): Promise<FetchResult<string>> {
   return request(url, (response) => response.text(), headers);
 }
 
 export function fetchJson<T>(
   url: string,
-  headers?: Record<string, string>
+  headers?: Record<string, string>,
 ): Promise<FetchResult<T>> {
   return request(url, (response) => response.json() as Promise<T>, headers);
 }
@@ -98,7 +98,7 @@ export function mergeEntries(results: SourceResult[]): TimelineEntry[] {
 
 /** publishedAt の年で束ねる。年は降順、年内も降順。 */
 export function groupByYear(
-  entries: TimelineEntry[]
+  entries: TimelineEntry[],
 ): { year: number; entries: TimelineEntry[] }[] {
   const buckets = new Map<number, TimelineEntry[]>();
 

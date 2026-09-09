@@ -23,13 +23,7 @@ export type Platform = (typeof PLATFORMS)[number];
 
 /** エントリの種別。表示する動詞と情報の選択がこれで決まる。 */
 export type EntryKind =
-  | 'article'
-  | 'repository'
-  | 'talk'
-  | 'sandbox'
-  | 'event'
-  | 'playlist'
-  | 'post';
+  'article' | 'repository' | 'talk' | 'sandbox' | 'event' | 'playlist' | 'post';
 
 /** エントリに添える数値。プラットフォームごとに意味が違うため label を持たせる。 */
 export interface EntryMetric {

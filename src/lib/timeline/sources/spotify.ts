@@ -23,7 +23,7 @@ export const spotifySource: TimelineSource = {
     const settled = await Promise.allSettled(
       SPOTIFY_PLAYLISTS.map(async (ref) => {
         const response = await fetchJson<SpotifyOembed>(
-          `${OEMBED}?url=${encodeURIComponent(ref.url)}`
+          `${OEMBED}?url=${encodeURIComponent(ref.url)}`,
         );
         if (!response.ok || response.body === undefined) {
           throw new Error(`${ref.url} → ${response.status}`);
@@ -41,12 +41,12 @@ export const spotifySource: TimelineSource = {
           embedUrl: data.iframe_url,
         };
         return entry;
-      })
+      }),
     );
 
     const entries = settled
       .filter(
-        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled'
+        (result): result is PromiseFulfilledResult<TimelineEntry> => result.status === 'fulfilled',
       )
       .map((result) => result.value);
     const failed = settled.length - entries.length;

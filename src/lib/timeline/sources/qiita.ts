@@ -22,7 +22,7 @@ export const qiitaSource: TimelineSource = {
     const token = process.env.QIITA_ACCESS_TOKEN;
     const response = await fetchJson<QiitaItem[]>(
       ENDPOINT,
-      token ? { Authorization: `Bearer ${token}` } : {}
+      token ? { Authorization: `Bearer ${token}` } : {},
     );
 
     if (!response.ok || response.body === undefined) {

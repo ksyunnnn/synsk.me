@@ -16,7 +16,7 @@ const OEMBED = 'https://speakerdeck.com/oembed.json';
  */
 async function playerUrl(deckUrl: string): Promise<string | undefined> {
   const response = await fetchJson<{ html?: string }>(
-    `${OEMBED}?url=${encodeURIComponent(deckUrl)}`
+    `${OEMBED}?url=${encodeURIComponent(deckUrl)}`,
   );
   if (!response.ok || !response.body?.html) return undefined;
   return response.body.html.match(/src="([^"]+)"/)?.[1];
