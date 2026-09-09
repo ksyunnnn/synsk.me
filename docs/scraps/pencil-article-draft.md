@@ -113,3 +113,7 @@
 - [MCP (Model Context Protocol)](https://modelcontextprotocol.io/)
 - pencil-mcp-guide.md（2026-08-21 に削除）
 - [ADR-0005: Design Tokens](../decisions/0005-design-tokens.md) - デザイントークンの決定
+
+---
+
+**注記（2026-09-09）**: このドラフトは旧称 Pencil と旧いツール名で書かれている。2026-09-09 時点でアプリ名は `Pen.app`、製品名の表記は pen.dev、MCP のツールは `get_app_state` / `execute` / `browser` / `get_style` / `read_skill` であり、`open_document` は存在しない。`.pen` は暗号化されており、上の「JSON ベースで透明性がある」は事実と異なる。
