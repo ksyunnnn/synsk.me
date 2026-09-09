@@ -27,6 +27,12 @@ npm run verify:deploy # 配信されているものを検査する（URL を渡�
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
 
+デザインは `design/*.pen` が持つ。[pen.dev](https://pen.dev) のアプリで開く。アプリ名は `Pen` である。
+
+```bash
+open -a Pen design/foundations.pen
+```
+
 ## テスト
 
 ```bash
