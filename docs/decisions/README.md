@@ -22,7 +22,7 @@ MADR は対象を絞らない（[Overview](https://adr.github.io/madr/)）。範
 
 要件は決定ではない。1つの決定から複数の要件が派生する。**単位は決定であって、要件ではない。**
 
-デザインの採用版は `design/*.pen` が持つ。この記録が持つのは、なぜその案にしたかである。
+デザインの探索と、採用した案は `design/*.pen` が持つ。この記録が持つのは、なぜその案にしたかである。
 
 書式と例は [.claude/rules/docs-patterns.md](../../.claude/rules/docs-patterns.md) にある。
 
