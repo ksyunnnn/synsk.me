@@ -30,7 +30,9 @@ npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 デザインは `design/*.pen` が持つ。[pen.dev](https://pen.dev) のアプリで開く。アプリ名は `Pen` である。
 
 ```bash
-open -a Pen design/foundations.pen
+open -a Pen design/<file>.pen                    # 開く
+npm install -g @pen.dev/cli                      # 保存に使う。初回は pen login で認証する
+pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() がファイルへ書き込む
 ```
 
 ## テスト
