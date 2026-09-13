@@ -22,6 +22,7 @@
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
 | [decisions/](./decisions/) | なぜそう決めたか | `## Decision Outcome` は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 機能をまたいで満たすべきこと | 現在形 | 進捗、Issue 番号、実装方法、1つの機能で閉じる要件 |
+| [POLICY.md](./POLICY.md) | 機械の読み手にどう応えるか | 現在形 | 理由（`decisions/` が持つ）、実装方法、未決事項、Issue 番号 |
 | `.specify/memory/constitution.md` | `/speckit-plan` のゲートが読む基準 | 現在形 | 優先順位（`PRINCIPLES.md` が持つ） |
 | `../specs/<機能ディレクトリ>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
 | `../specs/<機能ディレクトリ>/plan.md` | その機能をどう作るか | 現在形 | 機能をまたぐ決定（`decisions/` が持つ） |
@@ -40,7 +41,7 @@
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 
-入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。
+入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。`POLICY.md` を入れ物に加えた根拠は [decisions/0025-policy-document.md](./decisions/0025-policy-document.md) にある。
 
 外部ツールが配り、人が書き足さないファイルは、上の表の対象外とする。手で書き換えない。`.specify/templates/`、`.specify/scripts/`、`.claude/skills/speckit-*` がこれに当たる。`specs/` 配下と `.specify/memory/constitution.md` は人が書くため対象に含む。
 
@@ -52,6 +53,7 @@
 
 ```
 Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.md
+Issue → spec.md → POLICY.md → decisions/
 ```
 
 `spec.md` の位置は Spec Kit の公式に根拠を持たない。公式が定めるのは生成の順序（Spec → Plan → Tasks → Implement）であり、`spec.md` が機能をまたぐ要件文書を参照してよいかは書かれていない。
@@ -67,7 +69,7 @@ Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.
 
 `scraps/` はこの図に入らない。
 
-判断の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。
+判断の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。`POLICY.md` を通る行の根拠は [decisions/0025-policy-document.md](./decisions/0025-policy-document.md) にある。
 
 ---
 
