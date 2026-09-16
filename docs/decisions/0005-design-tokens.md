@@ -15,7 +15,7 @@ PRINCIPLES.md で定めた「余白 over 密度」「息づき over 装飾」「
 ## Decision Drivers
 
 * [余白 over 密度](../PRINCIPLES.md#1-余白-1)
-* [息づき over 装飾](../PRINCIPLES.md#2-息づき)
+* [息づき over 装飾](../PRINCIPLES.md#3-息づき)
 
 ## Considered Options
 
