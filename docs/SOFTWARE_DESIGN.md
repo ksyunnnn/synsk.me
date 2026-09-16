@@ -20,10 +20,10 @@
   - Repository
   - DTO
   - 組み立て用の関数
-  - 依存を作るときに渡す
+  - Dependency Injection
   - 読む → 計算 → 書く
   - ユースケースを単位にする
-  - 外部データの詰め替え
+  - Anti-Corruption Layer
   - 失敗の表し方
   - 見た目と操作を分ける
 
@@ -95,20 +95,26 @@
 
 コードの形の定番を置く。同じ形が2つ目の場所に出たら足す。もとにした原則を1つ以上指せるものだけを足す。静的解析で検査できる部分は、規約の設定が持つ。
 
-1つのパターンには、名前（短い名詞句）・困ることと解き方・Bad と Good の短いコード・もとにした原則・手本のファイルを書く。手本のファイルは、その形を最初に書いたときに足す。
+1つのパターンには、名前（短い名詞句）・困ることと解き方・Bad と Good の短いコード・もとにした原則・手本のファイルを書く。手本のファイルは、その形を最初に書いたときに足す。名前は、広く通じる呼び名があればそれを使う。中身がずれるときは自分たちの名前を使い、どこがずれるかを書く。
 
 ### Repository
 
 データベースを直接呼ぶと、データベースなしでは動かして確かめられない。見せてよいかの確認も呼ぶ側ごとに散らばり、確認を忘れた画面から値が漏れる。取り出し方と保存の仕方をインタフェースにして `domain/` に置き、実装を `server/` に置く。見せてよいかは、実装の中で、取り出すときに確かめる。
 
-```ts
-// Bad: ユースケースがデータベースを直接呼び、画面で公開範囲を確かめる
-const { results } = await env.DB.prepare("SELECT * FROM projects").all();
-return results.filter((p) => p.visibility === "public");
+Bad: ユースケースがデータベースを直接呼び、画面で公開範囲を確かめる。
 
-// Good: 取り出すときに確かめる実装を、インタフェース越しに使う
-return projects.listPublished();
+```ts
+const { results } = await env.DB.prepare("SELECT * FROM projects").all();
+const visible = results.filter((row) => row.visibility === "public");
 ```
+
+Good: 取り出すときに確かめる実装を、インタフェース越しに使う。
+
+```ts
+const visible = await projects.listPublished();
+```
+
+一般名との違い: Repository（Fowler、Patterns of Enterprise Application Architecture）の定義は、ドメインとデータの取り出しの間に立つところまで。見せてよいかを確かめる役割は、synsk.me が足したもの。
 
 もとにした原則: 1、8、9
 手本のファイル: 未定（その形を最初に書いたときに足す）
@@ -117,14 +123,20 @@ return projects.listPublished();
 
 保存する形をそのまま画面へ渡すと、カラムが増えたときに、出すつもりのない値まで画面へ届く。画面に渡す形を別に作り、出してよい値だけを詰める。
 
-```ts
-// Bad: 保存する形をそのまま渡す（非公開の client も一緒に渡る）
-return <ProjectCard project={row} />;
+Bad: 保存する形をそのまま渡す。非公開の `client` も一緒に渡る。
 
-// Good: 出してよい値だけを詰めた形に変えて渡す
-const card: ProjectCardDto = { id: row.id, title: row.title, client: row.clientPublic };
-return <ProjectCard project={card} />;
+```tsx
+const view = <ProjectCard project={row} />;
 ```
+
+Good: 出してよい値だけを詰めた形に変えて渡す。
+
+```tsx
+const card: ProjectCardDto = { id: row.id, title: row.title, client: row.clientPublic };
+const view = <ProjectCard project={card} />;
+```
+
+一般名との違い: Data Transfer Object（Fowler、同上）の目的は、呼び出しの回数を減らすこと。出してよい値の選別ではない。画面に渡す形という意味では Presentation Model が近い。
 
 もとにした原則: 1
 手本のファイル: 未定（その形を最初に書いたときに足す）
@@ -133,34 +145,46 @@ return <ProjectCard project={card} />;
 
 画面ごとに部品を組み立てると、同じ組み立てが画面の数だけ散らばる。機能ごとに1か所で組み立て、画面はその関数を呼ぶだけにする。
 
-```ts
-// Bad: 画面の中で組み立てる
-const projects = createProjectRepository(getDb());
-const cards = await listProjectCards(projects);
+Bad: 画面の中で組み立てる。
 
-// Good: 機能ごとに1か所で組み立て、画面はそれを呼ぶ
+```ts
+const projects = createProjectRepository(getDb());
+const cards = await listProjectCardsUseCase(projects);
+```
+
+Good: 機能ごとに1か所で組み立て、画面はそれを呼ぶ。
+
+```ts
 // src/features/project/server/queries.ts
 export async function listProjectCards() {
   return listProjectCardsUseCase(createProjectRepository(getDb()));
 }
 ```
 
+一般名との違い: Composition Root（Mark Seemann、2011-07-28）は、アプリケーション全体で1か所に置くもの。ここでは機能ごとに1か所に置くので、数が違う。
+
 もとにした原則: 9
 手本のファイル: 未定（その形を最初に書いたときに足す）
 
-### 依存を作るときに渡す
+### Dependency Injection
 
 使うものを関数の中で作ると、差し替えられない。データベースなしでは動かして確かめられなくなる。使うものは引数で受け取る。
 
+Bad: 中で作る。
+
 ```ts
-// Bad: 中で作る
 export async function publishNote(id: NoteId) {
   const notes = createNoteRepository(getDb());
 }
+```
 
-// Good: 外から受け取る
+Good: 外から受け取る。
+
+```ts
 export async function publishNote(notes: NoteRepository, id: NoteId) {}
 ```
+
+一般名: Dependency Injection（Fowler、2004-01-23）。日本語は「依存性の注入」。引数で受け取る形は Constructor Injection にあたる。
 
 もとにした原則: 9
 手本のファイル: 未定（その形を最初に書いたときに足す）
@@ -169,17 +193,24 @@ export async function publishNote(notes: NoteRepository, id: NoteId) {}
 
 計算の途中で読み書きすると、どこまで進んだかによって結果が変わり、確かめにくくなる。先にまとめて読み、計算だけの関数に渡し、最後に書く。
 
-```ts
-// Bad: 計算の途中で読む
-for (const career of careers) {
-  const items = await projects.listByCareer(career.id);
-}
+Bad: 計算の途中で読む。
 
-// Good: 先に読み、計算し、最後に書く
+```ts
+for (const career of await careersRepo.list()) {
+  const items = await projects.listByCareer(career.id);
+  await resumes.save(buildResume([career], items));
+}
+```
+
+Good: 先に読み、計算し、最後に書く。
+
+```ts
 const [careers, items] = await Promise.all([careersRepo.list(), projects.list()]);
 const resume = buildResume(careers, items);
 await resumes.save(resume);
 ```
+
+一般名: Recawr Sandwich（Mark Seemann、2025-01-13）。読む・計算する・書くの順を指す。近い呼び名に Functional Core, Imperative Shell（Gary Bernhardt、2012）があり、こちらは順序までは定めない。
 
 もとにした原則: 9
 手本のファイル: 未定（その形を最初に書いたときに足す）
@@ -188,30 +219,42 @@ await resumes.save(resume);
 
 データの作成・更新・削除を並べると、「何をしたいのか」がコードから読めない。やりたいこと1つを関数の単位にし、その名前で呼ぶ。
 
-```ts
-// Bad: データの更新として書く
-await notes.update(id, { status: "published", publishedAt: new Date() });
+Bad: データの更新として書く。
 
-// Good: やりたいことの名前で呼ぶ
+```ts
+await notes.update(id, { status: "published", publishedAt: new Date() });
+```
+
+Good: やりたいことの名前で呼ぶ。
+
+```ts
 await publishNote(notes, id);
 ```
+
+一般名との違い: Use Case（Robert C. Martin、2012-08-13）は層の名前で、その層がシステムのユースケースを持つ、と述べるところまで。関数1つを単位にするかどうかは定めていない。
 
 もとにした原則: 9
 手本のファイル: 未定（その形を最初に書いたときに足す）
 
-### 外部データの詰め替え
+### Anti-Corruption Layer
 
 外部サービスが返す形のまま持ち回ると、相手の仕様が変わったときに、触る場所が全体に散らばる。取得したらすぐ、自分の形に変える。
 
-```ts
-// Bad: 取得した形のまま画面まで運ぶ
-const events = await fetchGitHubEvents();
-return <Timeline events={events} />;
+Bad: 取得した形のまま画面まで運ぶ。
 
-// Good: 境目で自分の形に変える
-const activities = (await fetchGitHubEvents()).map(toActivity);
-return <Timeline activities={activities} />;
+```tsx
+const events = await fetchGitHubEvents();
+const view = <Timeline events={events} />;
 ```
+
+Good: 境目で自分の形に変える。
+
+```tsx
+const activities = (await fetchGitHubEvents()).map(toActivity);
+const view = <Timeline activities={activities} />;
+```
+
+一般名: Anti-Corruption Layer（Eric Evans が Domain-Driven Design で示し、Microsoft Learn が同じ名で解説）。日本語は「腐敗防止層」。
 
 もとにした原則: 7
 手本のファイル: 未定（その形を最初に書いたときに足す）
@@ -220,17 +263,23 @@ return <Timeline activities={activities} />;
 
 取得元の1つが応答しないだけでページ全体が落ちると、表示できたはずの部分まで見られなくなる。失敗を投げずに、取れた分と欠けたことを返す。
 
-```ts
-// Bad: 1つでも失敗すると、全体が落ちる
-const [github, rss] = await Promise.all([fetchGitHub(), fetchRss()]);
+Bad: 1つでも失敗すると、全体が落ちる。
 
-// Good: 取れた分と、欠けた取得元を返す
-const results = await Promise.allSettled([fetchGitHub(), fetchRss()]);
-return {
-  activities: results.flatMap((r) => (r.status === "fulfilled" ? r.value : [])),
-  failed: results.filter((r) => r.status === "rejected").length,
+```ts
+const [github, rss] = await Promise.all([fetchGitHub(), fetchRss()]);
+```
+
+Good: 取れた分と、欠けた取得元を返す。
+
+```ts
+const settled = await Promise.allSettled([fetchGitHub(), fetchRss()]);
+const result = {
+  activities: settled.flatMap((r) => (r.status === "fulfilled" ? r.value : [])),
+  failed: settled.filter((r) => r.status === "rejected").length,
 };
 ```
+
+一般名: 見つからない。Result 型は成功か失敗の二択で、一部だけ取れた状態を表さない。
 
 もとにした原則: 4
 手本のファイル: 未定（その形を最初に書いたときに足す）
@@ -239,15 +288,23 @@ return {
 
 開閉・フォーカスの移動・キーボード操作を自前で書くと、見た目は同じでもキーボードや読み上げで使えない部品になる。操作は headless のライブラリに任せ、見た目をかぶせる。
 
-```tsx
-// Bad: 見た目の要素に、開閉だけを付ける
-<div onClick={() => setOpen(!open)}>設定</div>;
+Bad: 見た目の要素に、開閉だけを付ける。静的解析（`jsx-a11y`）もこれを止める。
 
-// Good: 操作はライブラリが持ち、見た目だけを与える
-<Dialog.Root>
-  <Dialog.Trigger className="...">設定</Dialog.Trigger>
-</Dialog.Root>;
+```tsx
+const view = <div onClick={() => setOpen(!open)}>設定</div>;
 ```
+
+Good: 操作はライブラリが持ち、見た目だけを与える。
+
+```tsx
+const view = (
+  <Dialog.Root>
+    <Dialog.Trigger className="...">設定</Dialog.Trigger>
+  </Dialog.Root>
+);
+```
+
+一般名: headless UI。ライブラリの分類として通じる呼び名で、提唱者による定義はない。
 
 もとにした原則: 5、9
 手本のファイル: 未定（その形を最初に書いたときに足す）
