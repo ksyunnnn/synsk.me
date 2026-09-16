@@ -19,7 +19,7 @@ synsk.me のリデザインにおいて、以下のデータを適切に管理�
 ## Decision Drivers
 
 * [余白 over 完成形](../PRINCIPLES.md#1-余白)
-* [対話 over 展示](../PRINCIPLES.md#3-対話)
+* [対話 over 展示](../PRINCIPLES.md#4-対話)
 
 ## Considered Options
 

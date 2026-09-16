@@ -27,7 +27,7 @@ decision-makers: synsk
 
 ## Decision Drivers
 
-* [対話 over 展示](../PRINCIPLES.md#3-対話)
+* [対話 over 展示](../PRINCIPLES.md#4-対話)
 
 ## Considered Options
 

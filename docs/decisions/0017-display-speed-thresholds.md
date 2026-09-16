@@ -37,7 +37,7 @@ decision-makers: synsk
 ## Decision Drivers
 
 * [余白 over 密度](../PRINCIPLES.md#1-余白-1)
-* [息づき over 装飾](../PRINCIPLES.md#2-息づき)
+* [息づき over 装飾](../PRINCIPLES.md#3-息づき)
 * 表現を優先したい。速度が表現に優先する場面を限定する
 * 実ユーザーのデータで検証できること
 
