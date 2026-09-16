@@ -77,18 +77,159 @@
 
 コードの形の定番を置く。同じ形が2つ目の場所に出たら足す。もとにした原則を1つ以上指せるものだけを足す。静的解析で検査できる部分は、規約の設定が持つ。
 
-1つのパターンには、名前（短い名詞句）・困ることと解き方・Bad と Good の短いコード・もとにした原則・手本のファイルを書く。
+1つのパターンには、名前（短い名詞句）・困ることと解き方・Bad と Good の短いコード・もとにした原則・手本のファイルを書く。手本のファイルは、その形を最初に書いたときに足す。
 
-以下は名前と一言だけを置く。困ることと解き方、Bad と Good、手本のファイルは、その形を最初に書くときに足す。
+### Repository
 
-| 名前 | 一言 | もとにした原則 |
-|------|------|---------------|
-| Repository | データの出どころを隠し、見せてよいかは取り出すときに確かめる | 1、8、9 |
-| DTO | 画面には、出してよい値だけを詰めた形を渡す | 1 |
-| 組み立て用の関数 | 機能ごとに1か所で部品を組み、画面はそれを呼ぶ | 9 |
-| 依存を作るときに渡す | 使うものを内側で作らず、外から受け取る | 9 |
-| 読む → 計算 → 書く | 読み書きを両端に寄せ、間を計算だけにする | 9 |
-| ユースケースを単位にする | 「やりたいこと1つ」を関数の単位にする | 9 |
-| 外部データの詰め替え | 外部サービスの形は、境目で synsk.me の形に変える | 7 |
-| 失敗の表し方 | 失敗しても、取れた部分と欠けたことを返す | 4 |
-| 見た目と操作を分ける | 操作・フォーカス・状態は headless のライブラリに任せ、見た目をかぶせる | 5、9 |
+データベースを直接呼ぶと、データベースなしでは動かして確かめられない。見せてよいかの確認も呼ぶ側ごとに散らばり、確認を忘れた画面から値が漏れる。取り出し方と保存の仕方をインタフェースにして `domain/` に置き、実装を `server/` に置く。見せてよいかは、実装の中で、取り出すときに確かめる。
+
+```ts
+// Bad: ユースケースがデータベースを直接呼び、画面で公開範囲を確かめる
+const { results } = await env.DB.prepare("SELECT * FROM projects").all();
+return results.filter((p) => p.visibility === "public");
+
+// Good: 取り出すときに確かめる実装を、インタフェース越しに使う
+return projects.listPublished();
+```
+
+もとにした原則: 1、8、9
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### DTO
+
+保存する形をそのまま画面へ渡すと、カラムが増えたときに、出すつもりのない値まで画面へ届く。画面に渡す形を別に作り、出してよい値だけを詰める。
+
+```ts
+// Bad: 保存する形をそのまま渡す（非公開の client も一緒に渡る）
+return <ProjectCard project={row} />;
+
+// Good: 出してよい値だけを詰めた形に変えて渡す
+const card: ProjectCardDto = { id: row.id, title: row.title, client: row.clientPublic };
+return <ProjectCard project={card} />;
+```
+
+もとにした原則: 1
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### 組み立て用の関数
+
+画面ごとに部品を組み立てると、同じ組み立てが画面の数だけ散らばる。機能ごとに1か所で組み立て、画面はその関数を呼ぶだけにする。
+
+```ts
+// Bad: 画面の中で組み立てる
+const projects = createProjectRepository(getDb());
+const cards = await listProjectCards(projects);
+
+// Good: 機能ごとに1か所で組み立て、画面はそれを呼ぶ
+// src/features/project/server/queries.ts
+export async function listProjectCards() {
+  return listProjectCardsUseCase(createProjectRepository(getDb()));
+}
+```
+
+もとにした原則: 9
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### 依存を作るときに渡す
+
+使うものを関数の中で作ると、差し替えられない。データベースなしでは動かして確かめられなくなる。使うものは引数で受け取る。
+
+```ts
+// Bad: 中で作る
+export async function publishNote(id: NoteId) {
+  const notes = createNoteRepository(getDb());
+}
+
+// Good: 外から受け取る
+export async function publishNote(notes: NoteRepository, id: NoteId) {}
+```
+
+もとにした原則: 9
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### 読む → 計算 → 書く
+
+計算の途中で読み書きすると、どこまで進んだかによって結果が変わり、確かめにくくなる。先にまとめて読み、計算だけの関数に渡し、最後に書く。
+
+```ts
+// Bad: 計算の途中で読む
+for (const career of careers) {
+  const items = await projects.listByCareer(career.id);
+}
+
+// Good: 先に読み、計算し、最後に書く
+const [careers, items] = await Promise.all([careersRepo.list(), projects.list()]);
+const resume = buildResume(careers, items);
+await resumes.save(resume);
+```
+
+もとにした原則: 9
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### ユースケースを単位にする
+
+データの作成・更新・削除を並べると、「何をしたいのか」がコードから読めない。やりたいこと1つを関数の単位にし、その名前で呼ぶ。
+
+```ts
+// Bad: データの更新として書く
+await notes.update(id, { status: "published", publishedAt: new Date() });
+
+// Good: やりたいことの名前で呼ぶ
+await publishNote(notes, id);
+```
+
+もとにした原則: 9
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### 外部データの詰め替え
+
+外部サービスが返す形のまま持ち回ると、相手の仕様が変わったときに、触る場所が全体に散らばる。取得したらすぐ、自分の形に変える。
+
+```ts
+// Bad: 取得した形のまま画面まで運ぶ
+const events = await fetchGitHubEvents();
+return <Timeline events={events} />;
+
+// Good: 境目で自分の形に変える
+const activities = (await fetchGitHubEvents()).map(toActivity);
+return <Timeline activities={activities} />;
+```
+
+もとにした原則: 7
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### 失敗の表し方
+
+取得元の1つが応答しないだけでページ全体が落ちると、表示できたはずの部分まで見られなくなる。失敗を投げずに、取れた分と欠けたことを返す。
+
+```ts
+// Bad: 1つでも失敗すると、全体が落ちる
+const [github, rss] = await Promise.all([fetchGitHub(), fetchRss()]);
+
+// Good: 取れた分と、欠けた取得元を返す
+const results = await Promise.allSettled([fetchGitHub(), fetchRss()]);
+return {
+  activities: results.flatMap((r) => (r.status === "fulfilled" ? r.value : [])),
+  failed: results.filter((r) => r.status === "rejected").length,
+};
+```
+
+もとにした原則: 4
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### 見た目と操作を分ける
+
+開閉・フォーカスの移動・キーボード操作を自前で書くと、見た目は同じでもキーボードや読み上げで使えない部品になる。操作は headless のライブラリに任せ、見た目をかぶせる。
+
+```tsx
+// Bad: 見た目の要素に、開閉だけを付ける
+<div onClick={() => setOpen(!open)}>設定</div>;
+
+// Good: 操作はライブラリが持ち、見た目だけを与える
+<Dialog.Root>
+  <Dialog.Trigger className="...">設定</Dialog.Trigger>
+</Dialog.Root>;
+```
+
+もとにした原則: 5、9
+手本のファイル: 未定（その形を最初に書いたときに足す）
