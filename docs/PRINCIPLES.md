@@ -117,7 +117,7 @@
 
 **きっかけ**: Apple の [Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/accessibility) の Accessibility に、動きを使いすぎると気が散り、めまいを起こすことがあると書かれていた。使いすぎると気が散ってしまうのは、自分自身も苦手なこと。スクロールを止めても動き続ける画面は、気が散る。全部止まっていてほしいわけではない。
 
-**学び**: Apple の LP の静と動の緩急は気に入っており、速い動きや点滅に注意するという Accessibility の記述から来ているのかなと想像できた。
+**学び**: よくある商品の LP の静と動の緩急は気に入っており、速い動きや点滅に注意するという Accessibility の記述から来ているのかなと想像できた。
 
 **適用場面**: マイクロインタラクション設計、ローディング表現、アイドル状態のUI
 
