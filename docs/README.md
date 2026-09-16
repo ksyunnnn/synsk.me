@@ -24,7 +24,7 @@
 | [decisions/](./decisions/) | なぜそう決めたか | `## Decision Outcome` は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 機能をまたいで満たすべきこと | 現在形 | 進捗、Issue 番号、実装方法、1つの機能で閉じる要件 |
 | [POLICY.md](./POLICY.md) | 機械の読み手にどう応えるか | 現在形 | 理由（`decisions/` が持つ）、実装方法、未決事項、Issue 番号 |
-| `.specify/memory/constitution.md` | `/speckit-plan` のゲートが読む基準 | 現在形 | 優先順位（`PRINCIPLES.md` が持つ） |
+| `.specify/memory/constitution.md` | `/speckit-plan` のゲートが読む基準。Core Principles は `SOFTWARE_DESIGN.md` の設計原則を判定できる形に写したもので、設計原則が変わったときに作り直す | 現在形 | 優先順位（`PRINCIPLES.md` が持つ） |
 | `../specs/<機能ディレクトリ>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
 | `../specs/<機能ディレクトリ>/plan.md` | その機能をどう作るか | 現在形 | 機能をまたぐ決定（`decisions/` が持つ） |
 | `../specs/<機能ディレクトリ>/checklists/` | spec が満たすべき品質の検査項目 | 現在形 | 要件そのもの |
