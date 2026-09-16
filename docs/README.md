@@ -20,6 +20,7 @@
 |--------|---------|------|---------------------|
 | [VISION.md](./VISION.md) | なぜ作るか | 未来完了 | — |
 | [PRINCIPLES.md](./PRINCIPLES.md) | 迷ったとき何を優先するか | 恒常 | — |
+| [SOFTWARE_DESIGN.md](./SOFTWARE_DESIGN.md) | コードの判断の軸と、形の定番 | 恒常 | なぜそう決めたか（`decisions/` が持つ）、静的解析で検査できること（設定が持つ）、UI の原則（`PRINCIPLES.md` が持つ） |
 | [decisions/](./decisions/) | なぜそう決めたか | `## Decision Outcome` は現在形 | これから守るべきルール、未決事項、他文書の転記 |
 | [REQUIREMENTS.md](./REQUIREMENTS.md) | 機能をまたいで満たすべきこと | 現在形 | 進捗、Issue 番号、実装方法、1つの機能で閉じる要件 |
 | `.specify/memory/constitution.md` | `/speckit-plan` のゲートが読む基準 | 現在形 | 優先順位（`PRINCIPLES.md` が持つ） |

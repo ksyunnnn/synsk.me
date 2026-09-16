@@ -20,11 +20,12 @@ paths:
 
 ## 冒頭の宣言
 
-`REQUIREMENTS.md` と `scraps/` の各文書は、**見出しの直後**に引用ブロックで宣言を置く。他文書へのリンクを含めない（参照の向きに違反するため）。
+`REQUIREMENTS.md` と `SOFTWARE_DESIGN.md`、`scraps/` の各文書は、**見出しの直後**に引用ブロックで宣言を置く。他文書へのリンクを含めない（参照の向きに違反するため）。
 
 ```
-REQUIREMENTS.md:  > この文書は満たすべきことだけを書く。進捗と実装方法は書かない。
-scraps/:          > 書き捨て。消えても困らないものだけを置く。
+REQUIREMENTS.md:      > この文書は満たすべきことだけを書く。進捗と実装方法は書かない。
+SOFTWARE_DESIGN.md:   > この文書は、コードの判断の軸（設計原則）と、形の定番（デザインパターン）を書く。なぜそう決めたかは書かない。
+scraps/:              > 書き捨て。消えても困らないものだけを置く。
 ```
 
 `VISION.md` `PRINCIPLES.md` `template.md` `decisions/*.md` と各ディレクトリの `README.md` は宣言の対象外。ただし `scraps/README.md` は、その場所の性質を読む人に伝える必要があるため宣言を持つ。
