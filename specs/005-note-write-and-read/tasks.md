@@ -96,8 +96,8 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Implementation for User Story 2
 
-- [ ] T032 [US2] ユースケース「保存する」 in src/features/note/application/save-note.ts
-- [ ] T033 [US2] Server Action `saveNoteAction` と、編集のフォームの「保存する」、公開済みの note での「公開し直す」の呼び名と、slug を変えられない表示 in src/features/note/server/actions.ts と src/features/note/components/note-form.tsx
+- [X] T032 [US2] ユースケース「保存する」 in src/features/note/application/save-note.ts
+- [X] T033 [US2] Server Action `saveNoteAction` と、編集のフォームの「保存する」、公開済みの note での「公開し直す」の呼び名と、slug を変えられない表示 in src/features/note/server/actions.ts と src/features/note/components/note-form.tsx
 
 **Checkpoint**: User Story 1 と 2 が動く
 

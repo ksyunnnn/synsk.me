@@ -3,7 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NoteForm } from '@/features/note/components/note-form';
 import { toNoteFormState } from '@/features/note/domain/note';
-import { publishNoteAction } from '@/features/note/server/actions';
+import { editNoteAction } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
 
 // 作り手の画面をエッジのキャッシュに載せない（specs/005-note-write-and-read/research.md の R3）
@@ -26,10 +26,9 @@ const Page = async ({ params }: Props) => {
       <h1>note を編集する</h1>
       <p>状態: {note.status === 'published' ? '公開' : '下書き'}</p>
       <NoteForm
-        action={publishNoteAction}
+        action={editNoteAction}
         initialState={toNoteFormState(note)}
-        submitLabel="公開する"
-        id={note.id}
+        note={{ id: note.id, status: note.status }}
       />
     </main>
   );

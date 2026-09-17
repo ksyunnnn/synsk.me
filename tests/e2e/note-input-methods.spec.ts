@@ -34,6 +34,8 @@ test.describe('キーボードだけ', () => {
     await tabTo(page, page.getByRole('button', { name: '公開する' }));
     await page.keyboard.press('Enter');
     await expect(page.getByText('公開しました')).toBeVisible();
+    // 画面を読み込み直さなくても、公開済みの note の呼び名に変わる
+    await expect(page.getByRole('button', { name: '公開し直す' })).toBeVisible();
   });
 
   test('保存する', async ({ page }) => {

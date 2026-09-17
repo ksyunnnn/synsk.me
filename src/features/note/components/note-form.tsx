@@ -7,6 +7,7 @@ import type {
   NoteFormResult,
   NoteFormState,
   NoteId,
+  NoteStatus,
 } from '@/features/note/domain/note';
 
 /**
@@ -25,10 +26,11 @@ type NoteFormAction = (state: NoteFormState, formData: FormData) => Promise<Note
 type Props = {
   action: NoteFormAction;
   initialState: NoteFormState;
-  /** 送信するボタンの名前 */
-  submitLabel: string;
-  /** 編集する note の id。作るフォームでは持たない */
-  id?: NoteId;
+  /**
+   * 編集する note。持たなければ作るフォームで、「作る」のボタンを置く。持てば編集の
+   * フォームで、「保存する」と「公開する」のボタンを置き、押したボタンを `intent` で送る
+   */
+  note?: { id: NoteId; status: NoteStatus };
 };
 
 const ERROR_MESSAGES: {
@@ -48,6 +50,7 @@ const ERROR_MESSAGES: {
 };
 
 const RESULT_MESSAGES: Record<NoteFormResult, string> = {
+  saved: '保存しました',
   published: '公開しました',
   'slug-taken': 'この slug は他の note が使っています',
   'slug-fixed': '公開した note の slug は変えられません',
@@ -57,23 +60,38 @@ const RESULT_MESSAGES: Record<NoteFormResult, string> = {
   forbidden: '作り手であることを確かめられませんでした。ログインし直してから入力し直してください',
 };
 
-export const NoteForm = ({ action, initialState, submitLabel, id }: Props) => {
+/** 操作がうまくいったことを伝える結果。ほかは誤りや失敗として伝える */
+const SUCCEEDED: ReadonlySet<NoteFormResult> = new Set(['saved', 'published']);
+
+export const NoteForm = ({ action, initialState, note }: Props) => {
   const [{ values, errors, result }, formAction] = useActionState(action, initialState);
+  const published = note?.status === 'published';
   const slugError = errors.slug && ERROR_MESSAGES.slug[errors.slug];
+  // 公開した note の slug を変えられないことを、入力の説明として読み上げにも伝える
+  const slugDescription =
+    [slugError && 'note-slug-error', published && 'note-slug-fixed'].filter(Boolean).join(' ') ||
+    undefined;
   const titleError = errors.title && ERROR_MESSAGES.title[errors.title];
   const bodyError = errors.body && ERROR_MESSAGES.body[errors.body];
 
   return (
     <form action={formAction}>
-      {id !== undefined && <input type="hidden" name="id" value={id} />}
+      {/* name を `id` にしない。`form.id` がこの入力を返し、JavaScript ありの送信で、
+          押したボタンの `intent` が送られなくなる（server/actions.ts の NOTE_ID_FIELD） */}
+      {note && <input type="hidden" name="noteId" value={note.id} />}
 
-      {result === 'published' && (
+      {result !== null && SUCCEEDED.has(result) && (
         <p role="status">
-          {RESULT_MESSAGES.published}{' '}
-          <Link href={`/notes/${values.slug}`}>公開した note を開く</Link>
+          {RESULT_MESSAGES[result]}
+          {result === 'published' && (
+            <>
+              {' '}
+              <Link href={`/notes/${values.slug}`}>公開した note を開く</Link>
+            </>
+          )}
         </p>
       )}
-      {result !== null && result !== 'published' && <p role="alert">{RESULT_MESSAGES[result]}</p>}
+      {result !== null && !SUCCEEDED.has(result) && <p role="alert">{RESULT_MESSAGES[result]}</p>}
 
       <div>
         <label htmlFor="note-slug">slug</label>
@@ -81,10 +99,12 @@ export const NoteForm = ({ action, initialState, submitLabel, id }: Props) => {
           id="note-slug"
           name="slug"
           defaultValue={values.slug}
+          readOnly={published}
           autoComplete="off"
           aria-invalid={slugError ? true : undefined}
-          aria-describedby={slugError ? 'note-slug-error' : undefined}
+          aria-describedby={slugDescription}
         />
+        {published && <p id="note-slug-fixed">公開した note の slug は変えられません</p>}
         {slugError && <p id="note-slug-error">{slugError}</p>}
       </div>
 
@@ -113,7 +133,20 @@ export const NoteForm = ({ action, initialState, submitLabel, id }: Props) => {
         {bodyError && <p id="note-body-error">{bodyError}</p>}
       </div>
 
-      <button type="submit">{submitLabel}</button>
+      {note ? (
+        <>
+          {/* 入力の中で Enter を押したときに送られる、先頭のボタンを「保存する」にする。
+              公開は訪問者に見える操作のため、押したことが明らかなときだけ行う */}
+          <button type="submit" name="intent" value="save">
+            保存する
+          </button>
+          <button type="submit" name="intent" value="publish">
+            {published ? '公開し直す' : '公開する'}
+          </button>
+        </>
+      ) : (
+        <button type="submit">作る</button>
+      )}
     </form>
   );
 };

@@ -20,7 +20,7 @@ const Page = async () => {
         <Link href="/dash">note の一覧へ戻る</Link>
       </p>
       <h1>新しい note</h1>
-      <NoteForm action={createNoteAction} initialState={toNoteFormState()} submitLabel="作る" />
+      <NoteForm action={createNoteAction} initialState={toNoteFormState()} />
     </main>
   );
 };

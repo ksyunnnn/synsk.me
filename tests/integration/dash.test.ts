@@ -109,7 +109,7 @@ describe('D1 から読める', () => {
 
       await submit(`/dash/notes/${draft.id}`, fields, {
         ...PUBLISH,
-        id: draft.id,
+        noteId: draft.id,
         ...INPUT,
         slug: draft.slug,
       });
@@ -122,7 +122,7 @@ describe('D1 から読める', () => {
 
       await submit(`/dash/notes/${draft.id}`, fields, {
         ...SAVE,
-        id: draft.id,
+        noteId: draft.id,
         ...INPUT,
         slug: draft.slug,
       });
@@ -166,7 +166,7 @@ describe('D1 から読める', () => {
       await submit(
         `/dash/notes/${draft.id}`,
         fields,
-        { ...PUBLISH, id: draft.id, ...INPUT, slug: draft.slug },
+        { ...PUBLISH, noteId: draft.id, ...INPUT, slug: draft.slug },
         { ...(await authorHeaders()), origin: FOREIGN_ORIGIN },
       );
       expect(await readNoteRows(ctx.db)).toEqual(before);
@@ -222,7 +222,7 @@ describe('D1 から読める', () => {
         const res = await submit(
           `/dash/notes/${draft.id}`,
           fields,
-          { ...PUBLISH, id: draft.id, ...INPUT, slug: draft.slug },
+          { ...PUBLISH, noteId: draft.id, ...INPUT, slug: draft.slug },
           await authorHeaders(),
         );
         expect(res.status).toBe(200);
@@ -240,7 +240,7 @@ describe('D1 から読める', () => {
         const res = await submit(
           `/dash/notes/${published.id}`,
           fields,
-          { ...SAVE, id: published.id, ...INPUT, slug: published.slug },
+          { ...SAVE, noteId: published.id, ...INPUT, slug: published.slug },
           await authorHeaders(),
         );
         expect(res.status).toBe(200);
@@ -272,7 +272,7 @@ describe('D1 から読める', () => {
         const res = await submit(
           `/dash/notes/${draft.id}`,
           fields,
-          { ...PUBLISH, id: draft.id, slug: draft.slug, title: draft.title, body: draft.body },
+          { ...PUBLISH, noteId: draft.id, slug: draft.slug, title: draft.title, body: draft.body },
           await authorHeaders(),
         );
         expect(res.status).toBe(200);
@@ -291,7 +291,7 @@ describe('D1 から読める', () => {
         const res = await submit(
           `/dash/notes/${published.id}`,
           fields,
-          { ...SAVE, id: published.id, ...INPUT, slug: published.slug },
+          { ...SAVE, noteId: published.id, ...INPUT, slug: published.slug },
           await authorHeaders(),
         );
         expect(res.status).toBe(200);

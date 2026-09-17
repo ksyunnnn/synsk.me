@@ -2,9 +2,11 @@
 
 import 'server-only';
 
+import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createNote } from '@/features/note/application/create-note';
 import { publishNote } from '@/features/note/application/publish-note';
+import { saveNote } from '@/features/note/application/save-note';
 import {
   parseNoteId,
   toNoteFormState,
@@ -40,7 +42,7 @@ const readContent = (formData: FormData): NoteContent => ({
   body: readString(formData, 'body').replace(/\r\n?/g, '\n'),
 });
 
-const withResult = (values: NoteContent, result: NoteFormResult): NoteFormState => ({
+const withResult = (values: NoteContent, result: NoteFormResult | null): NoteFormState => ({
   values,
   errors: {},
   result,
@@ -68,29 +70,60 @@ export const createNoteAction = async (
   redirect(`/dash/notes/${outcome.id}`);
 };
 
-/** 入力した内容を保存して公開する。移動せず、同じ画面に結果を返す */
-export const publishNoteAction = async (
+/**
+ * 編集する note の id を送る入力の名前。フォームの部品と揃える。`id` にしない。
+ * `name="id"` の入力を持つフォームでは `form.id` がその入力を返し、React が押した
+ * ボタンの name と value を送るために足す入力に、誤った `form` 属性が付いて送られなくなる
+ * （`react-dom` の `createFormDataWithSubmitter`）
+ */
+const NOTE_ID_FIELD = 'noteId';
+
+/** 編集のフォームで押したボタン。`intent` の name で送られる */
+type EditIntent = 'save' | 'publish';
+
+const readIntent = (formData: FormData): EditIntent | null => {
+  const intent = readString(formData, 'intent');
+  return intent === 'save' || intent === 'publish' ? intent : null;
+};
+
+/**
+ * 編集のフォームの操作。押したボタン（`intent`）で、保存するか、保存して公開するかを
+ * 分ける。移動せず、同じ画面に結果を返す。
+ *
+ * 保存と公開を別の Server Action にしない。1つのフォームに `useActionState` の
+ * 操作を2つ置くと、JavaScript なしの送信で、どちらの状態へ結果を返すかを取り違える。
+ * React は結果を返す先を、フォームの中の最初の `$ACTION_KEY` の hidden の入力で
+ * 決め、押したボタンのものを選ばない（`react-server-dom-webpack` の `decodeFormState`）
+ */
+export const editNoteAction = async (
   _state: NoteFormState,
   formData: FormData,
 ): Promise<NoteFormState> => {
   if (!(await getCurrentAuthor())) return FORBIDDEN_STATE;
 
   const values = readContent(formData);
-  const id = parseNoteId(readString(formData, 'id'));
+  const intent = readIntent(formData);
+  // どちらのボタンで送られたか分からなければ、書き込まない
+  if (intent === null) return withResult(values, null);
+  const id = parseNoteId(readString(formData, NOTE_ID_FIELD));
   if (id === null) return withResult(values, 'not-found');
 
-  const outcome = await publishNote(
-    await createNoteRepository(),
-    id,
-    values,
-    new Date().toISOString(),
-  );
-  if (outcome.ok) return withResult(values, 'published');
+  const notes = await createNoteRepository();
+  const outcome =
+    intent === 'save'
+      ? await saveNote(notes, id, values)
+      : await publishNote(notes, id, values, new Date().toISOString());
+  if (outcome.ok) {
+    // 画面の状態（下書きか公開か）と、slug を変えられるかを、JavaScript ありの
+    // 送信でも描画し直す。JavaScript なしの送信は、ページ全体を描画し直す
+    refresh();
+    return withResult(values, intent === 'save' ? 'saved' : 'published');
+  }
   switch (outcome.reason) {
     case 'invalid':
       return { values, errors: outcome.errors, result: null };
     case 'failed':
-      return withResult(values, 'publish-failed');
+      return withResult(values, intent === 'save' ? 'save-failed' : 'publish-failed');
     default:
       return withResult(values, outcome.reason);
   }

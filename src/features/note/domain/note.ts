@@ -174,6 +174,7 @@ export const toEditableNoteDto = (note: EditableNote): EditableNoteDto => ({
 
 /** 作る・編集のフォームに返す、操作の結果。入力の誤りは `errors` が持つ */
 export type NoteFormResult =
+  | 'saved'
   | 'published'
   | 'slug-taken'
   | 'slug-fixed'
