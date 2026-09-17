@@ -58,7 +58,8 @@
    - 設定値（issuer、aud、オーナーのメールアドレス）は Worker の secret に置き、リポジトリに書かない
    - aud は、本番の `/dash` とプレビュー全体の2つの Access のアプリケーションの AUD タグを、カンマで区切って1つの secret `ACCESS_AUD` に持つ。Cloudflare の公式は、アプリケーションごとに固有の AUD タグを割り当てると書いており、プレビュー URL の版も本番と同じ secret を読むため、どちらか1つだけでは片方の JWT が検証を通らない。`jose` の `jwtVerify` の `audience` は配列を受け付ける
    - 次のどれかに当たれば止める: JWT がない、検証に失敗する、設定値が欠けている
-   - 止めるとき、画面はページの中で `forbidden()`（403）を返し、操作は何も書き込まずに失敗を返す（R7）
+   - 止めるとき、画面はページの中で `forbidden()`（403）を返し、操作は何も書き込まずに失敗を返す（R7）。vinext の `forbidden()` は設定なしで使え、403 を返す（`vinext/dist/shims/navigation-errors.js`、ビルド出力で確認）
+   - D1 から読み出せないとき、ページは例外をそのまま投げ、`src/app/global-error.tsx` が 500 で描画する。vinext は `error.tsx` で描画した応答を 200 に、`global-error.tsx` で描画した応答を 500 にする（`vinext/dist/server/app-page-boundary-render.js` の `renderAppPageErrorBoundary`）
    - JWT の検証には `jose` を使う
 3. **配信後の検査**: `npm run verify:deploy` に、認証なしの要求が Access のログインへ移されることの検査を足す。プレビュー URL を検査するときは、Access の service token をヘッダに付けて通す。service token は `.env.local` に置く
 
@@ -93,7 +94,7 @@
 - `docs/REQUIREMENTS.md` の FR-17（公開の後に別の工程を挟まずに反映）を、キャッシュの削除なしで満たせる。キャッシュに載せると `revalidatePath` による削除が要り、削除が失敗すると `stale-while-revalidate`（1年）の間、削除した note まで出続けうる。設計原則2「止まる over 危ない方へ進む」
 - `/dash` の HTML をキャッシュに載せると、キャッシュのキーはホスト名を含まず、Worker より先に引かれる（公式の cache-keys）。作り手の画面が訪問者に返りうる。設計原則1
 - 表示速度（NFR-03〜NFR-07）のために `/notes/[slug]` をキャッシュに載せるかは、計測してから決める。設計原則6「測って直す over 先回りで速くする」
-- `vite.config.ts` の `prerender: { routes: '*' }` は、`cloudflare:workers` を読み込むページをビルド時に Node で描画しようとして落ちる（`ERR_UNSUPPORTED_ESM_URL_SCHEME`）。`force-dynamic` のページは事前描画の対象から外れ、ビルドが通ることを確かめた
+- `vinext build` は、ページのモジュールをビルド時に Node で読み込む。動的セグメントを持つページ（`/notes/[slug]`）は、`force-dynamic` でも `generateStaticParams` を探すために読み込まれる（`vinext/dist/build/prerender.js` の `prerenderApp`）。モジュールの先頭で `cloudflare:workers` を import すると、Node が `ERR_UNSUPPORTED_ESM_URL_SCHEME` で読めずにビルドが落ちる。このため `cloudflare:workers` は、`src/features/note/server/context.ts` の関数の中で、使うときに `await import('cloudflare:workers')` で読み込む
 
 **Alternatives considered**:
 - `revalidate` と `generateStaticParams() { return [] }` でキャッシュに載せ、公開・削除のたびに `revalidatePath` で消す: タグでの削除は本番でしか確かめられず、失敗したときに古い内容が長く残る
