@@ -128,7 +128,7 @@ description: "Task list for note を書いて公開し、読む"
 ## Phase 6: Polish & Cross-Cutting Concerns
 
 - [X] T040 [P] 配信後の検査に足す。認証なしの `/dash` と `/dash/notes/new` が Access のログイン（`*.cloudflareaccess.com`）へ移される。service token を付けないプレビュー URL の `/` が Access のログインへ移される。`/notes/<存在しない slug>` を2回取っても `cf-cache-status` が `HIT` にならない。プレビュー URL のそのほかの検査には、`.env.local` の service token をヘッダに付ける in scripts/lib/verify-deploy.mjs、scripts/verify-deploy.mjs、tests/unit/verify-deploy.test.ts
-- [ ] T041 [P] マイグレーションの作り方と適用の命令、JWT の検証の secret、service token の環境変数を書く in README.md
+- [X] T041 [P] マイグレーションの作り方と適用の命令、JWT の検証の secret、service token の環境変数を書く in README.md
 - [ ] T042 [P] デザインパターンの「手本のファイル」を、この機能で最初に書いたファイルで埋める（Repository、DTO、組み立て用の関数、Dependency Injection、ユースケースを単位にする、Anti-Corruption Layer） in docs/SOFTWARE_DESIGN.md
 - [ ] T043 `npm test`、`npm run test:workers`、`npm run build`、`npx tsc --noEmit`、`npx tsc --noEmit -p tests/tsconfig.json`、`npm run lint`、`npm run format:check`、`npm run test:integration:only`、`npm run test:e2e:only` をすべて通す
 - [ ] T044 Cloudflare の設定: Access のアプリケーション2つ（本番の `/dash`、プレビュー全体）と service token を作り、Worker の secret を入れ、本番の D1 に `npx wrangler d1 migrations apply synsk-me --remote` を当てる。Zero Trust の組織が作られていることが前提
