@@ -116,6 +116,8 @@
 - 保存する、公開する、公開し直す: 移らない。`useActionState` の結果として、したことを同じ画面に出す
 - 削除する: `redirect()` で `/dash?deleted=1` へ移り、一覧の画面が削除したことを出す
 
+編集の画面の「保存する」と「公開する」は、1つの Server Action `editNoteAction` にまとめ、押したボタンの `intent`（`save` か `publish`）で分ける。1つのフォームに `useActionState` の操作を2つ置くと、JavaScript なしの送信で結果を返す先を取り違えるため。`react-server-dom-webpack` の `decodeFormState` は、返す先の目印 `$ACTION_KEY` をフォームの最初の要素から読み、押したボタンのものを選ばない。note の id を送る入力の名前は `id` にしない。`name="id"` の入力があると `form.id` がその要素を返し、React が押したボタンの値を足す仮の入力がフォームから外れて、JavaScript ありの送信で `intent` が送られない。保存と公開が書き込めたら `refresh()`（`next/cache`）を呼び、ボタンの呼び名と slug の入力の状態を描画し直す。
+
 Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` が読み込んで、フォームの部品に props で渡す。`'use client'` のフォームの部品は `server/` を import しない（ADR-0026 の依存の向き 3）。
 
 **Rationale**:
