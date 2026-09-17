@@ -30,6 +30,9 @@ const Page = async ({ params }: Props) => {
         initialState={toNoteFormState(note)}
         note={{ id: note.id, status: note.status }}
       />
+      <p>
+        <Link href={`/dash/notes/${note.id}/delete`}>この note を削除する</Link>
+      </p>
     </main>
   );
 };

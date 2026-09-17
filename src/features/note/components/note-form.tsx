@@ -2,12 +2,13 @@
 
 import Link from 'next/link';
 import { useActionState } from 'react';
-import type {
-  NoteContentErrors,
-  NoteFormResult,
-  NoteFormState,
-  NoteId,
-  NoteStatus,
+import {
+  NOTE_ID_FIELD,
+  type NoteContentErrors,
+  type NoteFormResult,
+  type NoteFormState,
+  type NoteId,
+  type NoteStatus,
 } from '@/features/note/domain/note';
 
 /**
@@ -76,9 +77,7 @@ export const NoteForm = ({ action, initialState, note }: Props) => {
 
   return (
     <form action={formAction}>
-      {/* name を `id` にしない。`form.id` がこの入力を返し、JavaScript ありの送信で、
-          押したボタンの `intent` が送られなくなる（server/actions.ts の NOTE_ID_FIELD） */}
-      {note && <input type="hidden" name="noteId" value={note.id} />}
+      {note && <input type="hidden" name={NOTE_ID_FIELD} value={note.id} />}
 
       {result !== null && SUCCEEDED.has(result) && (
         <p role="status">

@@ -118,8 +118,8 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] ユースケース「削除する」 in src/features/note/application/delete-note.ts
-- [ ] T039 [US3] Server Action `deleteNoteAction`（成功は `/dash?deleted=1` へ `redirect()`）と、削除の確認の画面（`force-dynamic`、作り手でなければ `forbidden()`、note がなければ `notFound()`、D1 が読めないときは 500）、一覧の画面の削除したことの表示 in src/features/note/server/actions.ts、src/app/dash/notes/[id]/delete/page.tsx、src/app/dash/page.tsx
+- [X] T038 [US3] ユースケース「削除する」 in src/features/note/application/delete-note.ts
+- [X] T039 [US3] Server Action `deleteNoteAction`（成功は `/dash?deleted=1` へ `redirect()`）と、削除の確認の画面（`force-dynamic`、作り手でなければ `forbidden()`、note がなければ `notFound()`、D1 が読めないときは 500）、一覧の画面の削除したことの表示 in src/features/note/server/actions.ts、src/app/dash/notes/[id]/delete/page.tsx、src/app/dash/page.tsx
 
 **Checkpoint**: すべての User Story が動く
 

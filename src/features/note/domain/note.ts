@@ -194,3 +194,16 @@ export type NoteFormState = {
 export const toNoteFormState = (
   { slug, title, body }: NoteContent = { slug: '', title: '', body: '' },
 ): NoteFormState => ({ values: { slug, title, body }, errors: {}, result: null });
+
+/**
+ * 編集と削除のフォームで、note の id を送る入力の名前。`id` にしない。
+ * `name="id"` の入力を持つフォームでは `form.id` がその入力を返し、JavaScript ありの
+ * 送信で、React が押したボタンの name と value を足す入力に誤った `form` 属性が付いて
+ * 送られなくなる（`react-dom` の `createFormDataWithSubmitter`）
+ */
+export const NOTE_ID_FIELD = 'noteId';
+
+/** 削除の確認のフォームの状態。削除できたときは一覧の画面へ移るため、状態を持たない */
+export type DeleteNoteFormState = { result: 'delete-failed' | 'forbidden' | null };
+
+export const INITIAL_DELETE_NOTE_FORM_STATE: DeleteNoteFormState = { result: null };

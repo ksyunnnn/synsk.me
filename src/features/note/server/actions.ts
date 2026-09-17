@@ -5,10 +5,13 @@ import 'server-only';
 import { refresh } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createNote } from '@/features/note/application/create-note';
+import { deleteNote } from '@/features/note/application/delete-note';
 import { publishNote } from '@/features/note/application/publish-note';
 import { saveNote } from '@/features/note/application/save-note';
 import {
+  NOTE_ID_FIELD,
   parseNoteId,
+  type DeleteNoteFormState,
   toNoteFormState,
   type NoteContent,
   type NoteFormResult,
@@ -70,14 +73,6 @@ export const createNoteAction = async (
   redirect(`/dash/notes/${outcome.id}`);
 };
 
-/**
- * 編集する note の id を送る入力の名前。フォームの部品と揃える。`id` にしない。
- * `name="id"` の入力を持つフォームでは `form.id` がその入力を返し、React が押した
- * ボタンの name と value を送るために足す入力に、誤った `form` 属性が付いて送られなくなる
- * （`react-dom` の `createFormDataWithSubmitter`）
- */
-const NOTE_ID_FIELD = 'noteId';
-
 /** 編集のフォームで押したボタン。`intent` の name で送られる */
 type EditIntent = 'save' | 'publish';
 
@@ -127,4 +122,24 @@ export const editNoteAction = async (
     default:
       return withResult(values, outcome.reason);
   }
+};
+
+/**
+ * note を削除し、一覧の画面へ移る。確認の画面（`/dash/notes/{id}/delete`）のフォームが呼ぶ。
+ * note が存在しなければ、書き込まずに一覧の画面へ移る。削除に失敗すれば、確認の画面に
+ * 失敗を返す
+ */
+export const deleteNoteAction = async (
+  _state: DeleteNoteFormState,
+  formData: FormData,
+): Promise<DeleteNoteFormState> => {
+  if (!(await getCurrentAuthor())) return { result: 'forbidden' };
+
+  const id = parseNoteId(readString(formData, NOTE_ID_FIELD));
+  if (id === null) redirect('/dash');
+
+  const outcome = await deleteNote(await createNoteRepository(), id);
+  if (outcome.ok) redirect('/dash?deleted=1');
+  if (outcome.reason === 'not-found') redirect('/dash');
+  return { result: 'delete-failed' };
 };
