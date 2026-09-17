@@ -26,10 +26,10 @@ description: "Task list for note を書いて公開し、読む"
 
 - [x] T001 `wrangler dev` の中の Worker から、`ACCESS_ISSUER` で向けた手元の公開鍵のサーバへ要求が届くかを scratchpad で確かめ、結果を research.md の R6 に書く
 - [X] T002 `jose` と `server-only` を dependencies に足す in package.json
-- [ ] T003 [P] data-model.md の表 `note`（id は `INTEGER PRIMARY KEY AUTOINCREMENT`）と `note_publication`、公開後の slug の変更を止めるトリガを、STRICT の表で書く in migrations/0001_create_note.sql
-- [ ] T004 [P] workerd のテストが `migrations/` を読むように、`readD1Migrations` の読み先を変え、D1 の `migrations_dir` を `../migrations` にする。D1 の配管を確かめる tests/workers/d1-plumbing.test.ts と tests/fixtures/migrations/0001_probe.sql を消す in vitest.workers.config.ts と tests/wrangler.test.jsonc
-- [ ] T005 [P] `rewrites()` の `fallback` に `/dash/:path*` から同じ経路への rewrite を足し、`/dash` 配下をデプロイ時のキャッシュ判定から外す。理由をコメントに書く in next.config.js
-- [ ] T006 [P] JWT の検証の設定値 `ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL` の雛形を置く in .dev.vars.example
+- [X] T003 [P] data-model.md の表 `note`（id は `INTEGER PRIMARY KEY AUTOINCREMENT`）と `note_publication`、公開後の slug の変更を止めるトリガを、STRICT の表で書く in migrations/0001_create_note.sql
+- [X] T004 [P] workerd のテストが `migrations/` を読むように、`readD1Migrations` の読み先を変え、D1 の `migrations_dir` を `../migrations` にする。D1 の配管を確かめる tests/workers/d1-plumbing.test.ts と tests/fixtures/migrations/0001_probe.sql を消す in vitest.workers.config.ts と tests/wrangler.test.jsonc
+- [X] T005 [P] `rewrites()` の `fallback` に `/dash/:path*` から同じ経路への rewrite を足し、`/dash` 配下をデプロイ時のキャッシュ判定から外す。理由をコメントに書く in next.config.js
+- [X] T006 [P] JWT の検証の設定値 `ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL` の雛形を置く in .dev.vars.example
 
 ---
 

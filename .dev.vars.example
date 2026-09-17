@@ -1,0 +1,13 @@
+# `wrangler dev` が読む設定値の雛形。`.dev.vars` に写して値を入れる。
+# `.dev.vars` は git が追跡しない。本番とプレビューの値は Worker の secret に置く。
+#
+# `/dash` の画面と書き込みの操作は、Cloudflare Access が付ける
+# `Cf-Access-Jwt-Assertion` の JWT を検証する（docs/decisions/0036-verify-access-jwt-in-app.md）。
+# 3 つのどれかが欠けると、作り手であることを確かめられないとして拒む。
+
+# Access の team domain。公開鍵は `<ACCESS_ISSUER>/cdn-cgi/access/certs` から取る
+ACCESS_ISSUER=https://<team-name>.cloudflareaccess.com
+# Access のアプリケーションの Application Audience (AUD) Tag
+ACCESS_AUD=<application-audience-tag>
+# 作り手として認めるメールアドレス
+ACCESS_OWNER_EMAIL=<owner@example.com>
