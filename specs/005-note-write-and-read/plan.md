@@ -33,7 +33,6 @@
 **Constraints**:
 - D1 Free: 1回の Worker 呼び出しで50クエリ、書き込み1日10万行、1行 2 MB
 - 題200文字、本文100,000文字、slug 100文字（[data-model.md](./data-model.md)）
-- 1回の操作で D1 に送るクエリは2本以下
 - すべての画面と操作が JavaScript なしで動く
 
 **Scale/Scope**: 作り手1人。note は数十〜数百件を想定する
@@ -45,16 +44,16 @@
 | 原則・制約 | 判定 | この plan での満たし方 |
 |---|---|---|
 | I. Protected Values | 通る | 下書きの題と本文は、訪問者向けの取り出しが SELECT しない（R1）。書き込みの経路は Access と JWT の検証の2段で守り、作り手以外が通れないことを結合テストと配信後の検査で確かめる（R2、R6） |
-| II. Stop on Missing Input | 通る | 公開の操作は、題が空なら公開しない。JWT の検証の設定値が欠けたら画面も操作も止める。上限の値: 題200文字、本文100,000文字、slug 100文字、1操作あたりのクエリ2本 |
-| III. Verified Scope | 通る | spec の FR と Acceptance Scenario を、R6 の段階のどれか1つに割り当てる。対応は `tasks.md` が持つ |
-| IV. Partial Availability | 通る | 1つの画面が読む取得元は D1 だけで、複数の取得元を持たない。D1 が失敗したときは失敗を伝える表示にし、入力した値を残す（FR-013） |
-| V. Accessible Controls | 通る | 操作はすべてネイティブの `<form>`、`<button>`、`<a>`、ラベル付きの入力で作る。削除の確認は別の画面にし、開閉を持たない（R5） |
+| II. Stop on Missing Input | 通る | 公開の操作は、題が空なら公開しない。JWT の検証の設定値が欠けたら画面も操作も止める。上限の値: 題200文字、本文100,000文字、slug 100文字 |
+| III. Verified Scope | 通る | spec の FR・Edge Cases・Acceptance Scenario を、R6 の段階のどれか1つに割り当てる。対応は `tasks.md` が持つ |
+| IV. Partial Availability | 通る | 訪問者の画面が読む取得元は D1 だけ。作り手の画面は D1 と Access の公開鍵を読み、公開鍵が取れなければ作り手であることを確かめられないとして止める（R2）。NFR-02 の各状態: データがない（一覧が0件）とエラー（D1 が読めない）の表示を contract に定める。読み込み中は、JavaScript なしでページ全体を描画して返すため生じない。一部欠損は、取得元が1つのため生じない |
+| V. Accessible Controls | 通る | 操作はすべてネイティブの `<form>`、`<button>`、`<a>`、ラベル付きの入力で作る。削除の確認は別の画面にし、開閉を持たない（R5）。キーボードだけの操作とスマートフォンの画面幅での操作を E2E で、要素の情報を `eslint-plugin-jsx-a11y` で確かめる（R6） |
 | VI. Measure Before Optimizing | 通る | 速さのための最適化を含めない。キャッシュに載せない判断は、速さではなく正しさによる（R3） |
 | VII. Boundary Translation | 通る | 外部サービスから受け取るのは Access の JWT だけ。検証する関数の中で `Author` の型に変換し、JWT の型を外に出さない |
 | VIII. Portable Core | 通る | D1 の API は `src/features/note/server/` の Repository の実装に閉じる。`cloudflare:workers` を読み込むのも `server/` だけ。Access の JWT は `server/` の検証の関数に閉じる |
 | IX. Simplicity | 通る | 足すインタフェースは `NoteRepository` の1つ。差し替えの対象は、単体テストの偽の実装。JWT の検証は、2つ目の機能が使うまで `features/note/server/` に置き、`shared/` に出さない |
 | Test Layering | 通る | R6 |
-| Display Speed | 計測で確かめる | 配信後に計測する。閾値を割ったらキャッシュを検討する |
+| Display Speed | この機能の中では確かめられない | プレビュー URL は Access の後ろにあり、外部の計測が届かない。本番へのマージの後に `/notes/{slug}` を計測し、閾値を割ったらキャッシュを検討する（R3、R6） |
 | Cacheability | 反する | `force-dynamic` のページを置く。Complexity Tracking に書く |
 | Allowlist Visibility | 通る | 訪問者向けの取り出しは、出す列を SELECT で列挙する。画面に渡す形（DTO）も出す項目だけを持つ |
 

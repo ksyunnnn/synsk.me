@@ -9,7 +9,7 @@ description: "Task list for note を書いて公開し、読む"
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/routes.md, quickstart.md
 
-**Tests**: constitution の III. Verified Scope が、満たすべきことの1つ1つに検査を対応させることを求めるため、テストの作業を含める。段階の割り当ては research.md の R6。
+**Tests**: constitution の III. Verified Scope が、満たすべきことの1つ1つに検査を対応させることを求めるため、テストの作業を含める。段階の割り当ては research.md の R6。同じことを2つの段階で確かめない。
 
 **Organization**: 作業を User Story ごとにまとめる。
 
@@ -22,31 +22,32 @@ description: "Task list for note を書いて公開し、読む"
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-**Purpose**: 依存・マイグレーション・設定を揃える
+**Purpose**: 前提を確かめ、依存・マイグレーション・設定を揃える
 
-- [ ] T001 `jose` と `server-only` を dependencies に足す in package.json
-- [ ] T002 [P] data-model.md の表 `note` と `note_publication`、公開後の slug の変更を止めるトリガを、STRICT の表で書く in migrations/0001_create_note.sql
-- [ ] T003 [P] workerd のテストが `migrations/` を読むように、`readD1Migrations` の読み先を変え、D1 の `migrations_dir` を `../migrations` にする。配管の検査だった tests/workers/d1-plumbing.test.ts と tests/fixtures/migrations/0001_probe.sql を消す in vitest.workers.config.ts と tests/wrangler.test.jsonc
-- [ ] T004 [P] `rewrites()` の `fallback` に `/dash/:path*` から同じ経路への rewrite を足し、`/dash` 配下をデプロイ時のキャッシュ判定から外す。理由を research.md の R7 への参照とともにコメントに書く in next.config.js
-- [ ] T005 [P] JWT の検証の設定値 `ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL` の型を、`wrangler types` が secret を拾う形（`.dev.vars` の雛形）で用意する in .dev.vars.example と .gitignore
+- [ ] T001 E2E で作り手として操作できるかを確かめる。テスト用の鍵の組を作り、公開鍵を配る小さなサーバを立て、`.dev.vars` の `ACCESS_ISSUER` をそのサーバへ向けた `wrangler dev` の中の Worker から、公開鍵を取りに行けるかを scratchpad で試す。結果を research.md の R6 に書く。届かなければ R6 の代わりの形（作り手としての操作の E2E を quickstart.md に移す）で、この後の作業を読み替える
+- [ ] T002 `jose` と `server-only` を dependencies に足す in package.json
+- [ ] T003 [P] data-model.md の表 `note`（id は `INTEGER PRIMARY KEY AUTOINCREMENT`）と `note_publication`、公開後の slug の変更を止めるトリガを、STRICT の表で書く in migrations/0001_create_note.sql
+- [ ] T004 [P] workerd のテストが `migrations/` を読むように、`readD1Migrations` の読み先を変え、D1 の `migrations_dir` を `../migrations` にする。配管の検査だった tests/workers/d1-plumbing.test.ts と tests/fixtures/migrations/0001_probe.sql を消す in vitest.workers.config.ts と tests/wrangler.test.jsonc
+- [ ] T005 [P] `rewrites()` の `fallback` に `/dash/:path*` から同じ経路への rewrite を足し、`/dash` 配下をデプロイ時のキャッシュ判定から外す。理由をコメントに書く in next.config.js
+- [ ] T006 [P] JWT の検証の設定値 `ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL` の雛形を置き、`.dev.vars` を git の対象から外す in .dev.vars.example と .gitignore
 
 ---
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-**Purpose**: どの User Story も使う、note の規則・保存・作り手の確かめ方
+**Purpose**: どの User Story も使う、note の規則・保存・作り手の確かめ方・テストの土台
 
-- [ ] T006 [P] slug・題・本文の規則（文字数はコードポイントで数える）、状態、画面に渡す形（`PublishedNoteDto`、`NoteSummaryDto`、`EditableNoteDto`）を定める in src/features/note/domain/note.ts
-- [ ] T007 [P] `NoteRepository` のインタフェース（作る、保存する、公開する、削除する、公開済みを slug で取り出す、編集用に id で取り出す、作り手向けに一覧する）を定める in src/features/note/domain/note-repository.ts
-- [ ] T008 [P] slug・題・本文の規則の単体テスト。境界（200文字と201文字、絵文字、大文字、空）を含める in tests/unit/note-domain.test.ts
-- [ ] T009 `NoteRepository` の D1 の実装。先頭で `import 'server-only'`。訪問者向けの取り出しは `note_publication` の列だけを列挙して SELECT する。存在しない id への保存・公開・削除を「存在しない」として返す in src/features/note/server/d1-note-repository.ts
-- [ ] T010 D1 の実装のテスト。下書きが公開済みの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開後の slug の変更が拒まれる、削除で公開の行も消える、削除した slug を使い回せる、書き換え待ちの判定、データベースの制約 in tests/workers/d1-note-repository.test.ts
-- [ ] T011 [P] `Cf-Access-Jwt-Assertion` の JWT を `jose` で検証し、作り手（`Author`）か拒否を返す関数。公開鍵の取得先、`iss`、`aud`、オーナーのメールアドレスを引数で受け取る。設定値が欠けたら拒否する in src/features/note/server/author.ts
-- [ ] T012 [P] JWT の検証の単体テスト。テスト用の鍵で署名し、正しい JWT は通り、ヘッダなし・署名違い・`aud` 違い・期限切れ・メールアドレス違い・設定値の欠けは拒否されることを確かめる in tests/unit/note-author.test.ts
-- [ ] T013 E2E で作り手として操作するための仕組み。テスト用の鍵の組を作り、公開鍵を配る小さなサーバを Playwright の webServer に足し、`wrangler dev` に `.dev.vars` で `ACCESS_ISSUER` をそのサーバへ向ける。`wrangler dev` の中の Worker からそのサーバへ公開鍵を取りに行けるかを確かめ、結果を research.md の R6 に書く in tests/e2e/support/access.ts と playwright.config.ts
-- [ ] T014 E2E の前にローカルの D1 へマイグレーションを当てる手順を足す in playwright.config.ts と .github/workflows/ci.yml
+- [ ] T007 [P] slug・題・本文の規則（文字数はコードポイントで数える）、状態、公開日を日本時間の `YYYY-MM-DD` に直す関数、画面に渡す形（`PublishedNoteDto`、`NoteSummaryDto`、`EditableNoteDto`）を定める in src/features/note/domain/note.ts
+- [ ] T008 [P] `NoteRepository` のインタフェースを定める。作る、保存する、公開する（保存と公開を1つの書き込みで）、削除する、公開済みを slug で取り出す、編集用に id で取り出す、作り手向けに一覧する。結果に「slug の重複」「存在しない」「公開後の slug の変更」を区別して返す in src/features/note/domain/note-repository.ts
+- [ ] T009 [P] 規則の単体テスト。境界（題200文字と201文字、本文100,000文字と100,001文字、絵文字、大文字、空の slug、101文字の slug）と、公開日の日付（`2026-09-16T15:30:00.000Z` が `2026-09-17`）を含める in tests/unit/note-domain.test.ts
+- [ ] T010 `NoteRepository` の D1 の実装。先頭で `import 'server-only'`。訪問者向けの取り出しは `note_publication` の列だけを列挙して SELECT する。公開は `db.batch()` で保存と写しを原子的に行う in src/features/note/server/d1-note-repository.ts
+- [ ] T011 D1 の実装のテスト。下書きが公開済みの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開の2文目が失敗すると保存も残らない、公開後の slug の変更が拒まれる、削除で公開の行も消える、削除した slug を使い回せる、削除した id を使い回さない、公開し直していない書き換えの判定、データベースの制約 in tests/workers/d1-note-repository.test.ts
+- [ ] T012 [P] `Cf-Access-Jwt-Assertion` の JWT を `jose` で検証し、作り手（`Author`）か拒否を返す関数。先頭で `import 'server-only'`。公開鍵の取得先、`iss`、`aud`、オーナーのメールアドレスを引数で受け取る。設定値が欠けたら拒否する。公開鍵が取れなければ拒否する in src/features/note/server/author.ts
+- [ ] T013 [P] JWT の検証の単体テスト。テスト用の鍵で署名し、正しい JWT は通り、ヘッダなし・署名違い・`aud` 違い・期限切れ・メールアドレス違い・設定値の欠け・公開鍵が取れないは拒否されることを確かめる in tests/unit/note-author.test.ts
+- [ ] T014 結合テストの D1 の土台。ビルド出力を起動する前に `migrations/` を当て、公開済み1件・公開し直していない書き換えのある公開済み1件・下書き1件を SQL で入れる。行の数と中身を読むための関数を置く in tests/integration/support/d1.ts
+- [ ] T015 E2E の土台。T001 の結果に従い、公開鍵を配るサーバと、作り手の JWT をブラウザの要求に付ける関数を置く。起動前にローカルの D1 へマイグレーションを当てる in tests/e2e/support/access.ts、playwright.config.ts、.github/workflows/ci.yml
 
-**Checkpoint**: 規則・保存・作り手の確かめ方が揃い、User Story の作業を始められる
+**Checkpoint**: 規則・保存・作り手の確かめ方・テストの土台が揃い、User Story の作業を始められる
 
 ---
 
@@ -58,21 +59,22 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] ユースケース「作る」「公開する」「公開済みを読む」「一覧する」の単体テスト。偽の `NoteRepository` を渡す。題が空なら公開しない、存在しない note は公開しない in tests/unit/note-usecases.test.ts
-- [ ] T016 [P] [US1] 訪問者の経路の結合テスト。公開済みは 200 で題・公開日・本文を返す。下書きと存在しない slug は同じ 404 を返し、下書きの題と本文が応答（本文、`<title>`、メタデータ）に現れない in tests/integration/notes.test.ts
-- [ ] T017 [P] [US1] 作り手の経路の結合テスト。JWT のない `/dash`・`/dash/notes/new`・`/dash/notes/{id}` が 403。JWT のない操作の要求と、Origin が異なる操作の要求が何も書き込まない。ビルド出力の `dist/server/vinext-prerender-paths.json` に `/dash` 配下が入らない in tests/integration/dash.test.ts
-- [ ] T018 [P] [US1] JavaScript を切った E2E。作り手として note を作る → 訪問者として `/notes/{slug}` が 404 → 公開する → 訪問者として題・公開日・本文を読む。本文の改行が保たれ、HTML の文字列が文字のまま出る in tests/e2e/note-publish.spec.ts
+- [ ] T016 [P] [US1] ユースケース「作る」「公開する」「公開済みを読む」「一覧する」の単体テスト。偽の `NoteRepository` を渡す。入力の誤り、slug の重複、題が空の公開、存在しない note、保存の失敗のそれぞれで、書き込まずに種類の分かる結果を返す in tests/unit/note-usecases.test.ts
+- [ ] T017 [P] [US1] 訪問者の経路の結合テスト。公開済みは 200 で題・公開日・本文を返し、公開し直していない書き換えは出ない。下書きと存在しない slug は同じ 404 を返し、下書きの題と本文が応答（本文、`<title>`、メタデータ）に現れない。D1 が読めないときは 500 で、note の題と本文を含まない in tests/integration/notes.test.ts
+- [ ] T018 [P] [US1] 作り手の経路の結合テスト。JWT のない `/dash`・`/dash/notes/new`・`/dash/notes/{id}` が 403。JWT のない「作る」「公開する」の操作と、Origin が異なる操作の前後で、D1 の行が変わらない。存在しない id の `/dash/notes/{id}` が作り手に 404。ビルド出力の `dist/server/vinext-prerender-paths.json` に `/dash` 配下が入らない in tests/integration/dash.test.ts
+- [ ] T019 [P] [US1] JavaScript を切った E2E。作り手として note を作る → 一覧に下書きとして並ぶ → 訪問者として note がないことが伝わる → 公開する → 訪問者として題・公開日・本文を読む。本文の改行が保たれ、HTML の文字列が文字のまま出る。大文字を含む slug で保存すると誤りが出て、題と本文が残る。note が0件の一覧の文言 in tests/e2e/note-publish.spec.ts
+- [ ] T020 [P] [US1] 同じ流れ（作る → 公開する）を、キーボードだけで行う E2E と、スマートフォンの画面幅で行う E2E in tests/e2e/note-publish-input.spec.ts
 
 ### Implementation for User Story 1
 
-- [ ] T019 [P] [US1] ユースケース「作る」「公開する」（入力を保存してから公開する）「公開済みを読む」「一覧する」。`NoteRepository` を引数で受け取る in src/features/note/application/create-note.ts、publish-note.ts、get-published-note.ts、list-notes.ts
-- [ ] T020 [US1] 組み立て用の関数。`getPublishedNote(slug)`、`listNotesForAuthor()`、`getNoteForEdit(id)`。作り手向けの2つは、先に作り手であることを確かめる in src/features/note/server/queries.ts
-- [ ] T021 [US1] Server Action `createNoteAction`・`publishNoteAction`。先に作り手であることを確かめ、確かめられなければ何も書き込まずに失敗を返す。入力の誤り・存在しない note・失敗を、入力した値とともに返す in src/features/note/server/actions.ts
-- [ ] T022 [P] [US1] 作る・編集のフォーム（`useActionState`、ラベル付きの入力、JavaScript なしで送れる）、公開済みの note の表示（本文を文字列で出し、改行を保つ）、作り手の一覧 in src/features/note/components/note-form.tsx、published-note.tsx、note-list.tsx
-- [ ] T023 [US1] 訪問者の画面。`force-dynamic`、存在しなければ `notFound()`、メタデータは公開済みの値だけから作る in src/app/notes/[slug]/page.tsx
-- [ ] T024 [US1] 作り手の画面。`force-dynamic`、作り手であることを確かめられなければ `forbidden()` in src/app/dash/page.tsx、src/app/dash/notes/new/page.tsx、src/app/dash/notes/[id]/page.tsx
+- [ ] T021 [P] [US1] ユースケース「作る」「公開する」「公開済みを読む」「一覧する」。`NoteRepository` を引数で受け取る in src/features/note/application/create-note.ts、publish-note.ts、get-published-note.ts、list-notes.ts
+- [ ] T022 [US1] 組み立て用の関数。先頭で `import 'server-only'`。`getPublishedNote(slug)`、`listNotesForAuthor()`、`getNoteForEdit(id)`。作り手向けの2つは、先に作り手であることを確かめる in src/features/note/server/queries.ts
+- [ ] T023 [US1] Server Action `createNoteAction`・`publishNoteAction`。先に作り手であることを確かめ、確かめられなければ何も書き込まずに失敗を返す。入力の誤り・slug の重複・存在しない note・失敗を、入力した値とともに返す in src/features/note/server/actions.ts
+- [ ] T024 [US1] 作る・編集のフォーム（`'use client'`、`useActionState`、ラベル付きの入力、JavaScript なしで送れる。Server Action は props で受け取る）、公開済みの note の表示（本文を文字列で出し、改行を保つ）、作り手の一覧（0件の表示を含む） in src/features/note/components/note-form.tsx、published-note.tsx、note-list.tsx
+- [ ] T025 [US1] 訪問者の画面。`force-dynamic`、存在しなければ `notFound()`、メタデータは公開済みの値だけから作る。D1 が読めないときの表示 in src/app/notes/[slug]/page.tsx
+- [ ] T026 [US1] 作り手の画面。`force-dynamic`、作り手であることを確かめられなければ `forbidden()`、`id` の note がなければ `notFound()`。Server Action を読み込んでフォームに props で渡す in src/app/dash/page.tsx、src/app/dash/notes/new/page.tsx、src/app/dash/notes/[id]/page.tsx
 
-**Checkpoint**: User Story 1 が単独で動き、T015〜T018 が通る
+**Checkpoint**: User Story 1 が単独で動き、T016〜T020 が通る
 
 ---
 
@@ -84,13 +86,14 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Tests for User Story 2
 
-- [ ] T025 [P] [US2] ユースケース「保存する」の単体テスト。公開済みの note の slug は変えられない、存在しない note は保存しない in tests/unit/note-usecases.test.ts
-- [ ] T026 [P] [US2] JavaScript を切った E2E。公開済みの note を保存 → 訪問者には書き換える前の題 → 一覧に書き換え待ちが出る → 公開し直す → 訪問者に書き換えた題、公開日は変わらない in tests/e2e/note-edit.spec.ts
+- [ ] T027 [P] [US2] ユースケース「保存する」の単体テスト。公開済みの note の slug は変えられない、存在しない note は保存しない、保存の失敗を返す in tests/unit/note-usecases.test.ts
+- [ ] T028 [P] [US2] JWT のない「保存する」の操作の前後で D1 の行が変わらない結合テスト in tests/integration/dash.test.ts
+- [ ] T029 [P] [US2] JavaScript を切った E2E。公開済みの note を保存 → 訪問者には書き換える前の題 → 一覧に公開し直していない書き換えがあることが出る → 公開し直す → 訪問者に書き換えた題 in tests/e2e/note-edit.spec.ts
 
 ### Implementation for User Story 2
 
-- [ ] T027 [US2] ユースケース「保存する」 in src/features/note/application/save-note.ts
-- [ ] T028 [US2] Server Action `saveNoteAction` と、編集のフォームの「保存する」、公開済みの note での「公開し直す」の呼び名と slug を変えられない表示 in src/features/note/server/actions.ts と src/features/note/components/note-form.tsx
+- [ ] T030 [US2] ユースケース「保存する」 in src/features/note/application/save-note.ts
+- [ ] T031 [US2] Server Action `saveNoteAction` と、編集のフォームの「保存する」、公開済みの note での「公開し直す」の呼び名と、slug を変えられない表示 in src/features/note/server/actions.ts と src/features/note/components/note-form.tsx
 
 **Checkpoint**: User Story 1 と 2 が動く
 
@@ -100,17 +103,18 @@ description: "Task list for note を書いて公開し、読む"
 
 **Goal**: 作り手が確認を経て note を削除し、訪問者に見えなくなる
 
-**Independent Test**: 公開済みの note を削除し、`/notes/{slug}` が 404 になり、`/dash` の一覧からも消える
+**Independent Test**: 公開済みの note を削除し、`/notes/{slug}` で note がないことが伝わり、`/dash` の一覧からも消える
 
 ### Tests for User Story 3
 
-- [ ] T029 [P] [US3] ユースケース「削除する」の単体テスト in tests/unit/note-usecases.test.ts
-- [ ] T030 [P] [US3] JavaScript を切った E2E。削除の確認の画面を経て削除 → 訪問者に 404 → 一覧から消える → 同じ slug で作れる。別のページで削除した note を保存すると、存在しないことが出る in tests/e2e/note-delete.spec.ts
+- [ ] T032 [P] [US3] ユースケース「削除する」の単体テスト。存在しない note、削除の失敗 in tests/unit/note-usecases.test.ts
+- [ ] T033 [P] [US3] JWT のない `/dash/notes/{id}/delete` が 403、JWT のない「削除する」の操作の前後で D1 の行が変わらない結合テスト in tests/integration/dash.test.ts
+- [ ] T034 [P] [US3] JavaScript を切った E2E。削除の確認の画面を経て削除 → 訪問者に note がないことが伝わる → 一覧から消える → 同じ slug で作れる。別のページで削除した note を保存すると、存在しないことが出る in tests/e2e/note-delete.spec.ts
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] ユースケース「削除する」 in src/features/note/application/delete-note.ts
-- [ ] T032 [US3] Server Action `deleteNoteAction` と削除の確認の画面（`force-dynamic`、作り手でなければ `forbidden()`） in src/features/note/server/actions.ts と src/app/dash/notes/[id]/delete/page.tsx
+- [ ] T035 [US3] ユースケース「削除する」 in src/features/note/application/delete-note.ts
+- [ ] T036 [US3] Server Action `deleteNoteAction` と削除の確認の画面（`force-dynamic`、作り手でなければ `forbidden()`、note がなければ `notFound()`） in src/features/note/server/actions.ts と src/app/dash/notes/[id]/delete/page.tsx
 
 **Checkpoint**: すべての User Story が動く
 
@@ -118,12 +122,12 @@ description: "Task list for note を書いて公開し、読む"
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T033 [P] 配信後の検査に、認証なしの `/dash` が Access のログイン（`*.cloudflareaccess.com`）へ移されることを足す。プレビュー URL を検査するときは、`.env.local` の service token をヘッダに付ける in scripts/lib/verify-deploy.mjs、scripts/verify-deploy.mjs、tests/unit/verify-deploy.test.ts
-- [ ] T034 [P] マイグレーションの作り方と適用の命令、JWT の検証の secret、service token の環境変数を書く in README.md
-- [ ] T035 [P] デザインパターンの「手本のファイル」を、この機能で最初に書いたファイルで埋める（Repository、DTO、組み立て用の関数、Dependency Injection、ユースケースを単位にする） in docs/SOFTWARE_DESIGN.md
-- [ ] T036 `npm test`、`npm run test:workers`、`npm run build`、`npx tsc --noEmit`、`npx tsc --noEmit -p tests/tsconfig.json`、`npm run lint`、`npm run format:check`、`npm run test:integration:only`、`npm run test:e2e:only` をすべて通す
-- [ ] T037 Cloudflare の設定: Access のアプリケーション2つ（本番の `/dash`、プレビュー全体）と service token を作り、Worker の secret を入れ、本番の D1 に `npx wrangler d1 migrations apply synsk-me --remote` を当てる。Zero Trust の組織が作られていることが前提
-- [ ] T038 quickstart.md の「プレビュー URL で確かめる」を実行し、結果を記録する
+- [ ] T037 [P] 配信後の検査に足す。認証なしの `/dash` が Access のログイン（`*.cloudflareaccess.com`）へ移される。service token を付けないプレビュー URL の `/` が Access のログインへ移される。プレビュー URL のそのほかの検査には、`.env.local` の service token をヘッダに付ける in scripts/lib/verify-deploy.mjs、scripts/verify-deploy.mjs、tests/unit/verify-deploy.test.ts
+- [ ] T038 [P] マイグレーションの作り方と適用の命令、JWT の検証の secret、service token の環境変数を書く in README.md
+- [ ] T039 [P] デザインパターンの「手本のファイル」を、この機能で最初に書いたファイルで埋める（Repository、DTO、組み立て用の関数、Dependency Injection、ユースケースを単位にする） in docs/SOFTWARE_DESIGN.md
+- [ ] T040 `npm test`、`npm run test:workers`、`npm run build`、`npx tsc --noEmit`、`npx tsc --noEmit -p tests/tsconfig.json`、`npm run lint`、`npm run format:check`、`npm run test:integration:only`、`npm run test:e2e:only` をすべて通す
+- [ ] T041 Cloudflare の設定: Access のアプリケーション2つ（本番の `/dash`、プレビュー全体）と service token を作り、Worker の secret を入れ、本番の D1 に `npx wrangler d1 migrations apply synsk-me --remote` を当てる。Zero Trust の組織が作られていることが前提
+- [ ] T042 quickstart.md の「プレビュー URL で確かめる」をスマートフォンを含めて実行し、結果を記録する
 
 ---
 
@@ -131,10 +135,10 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Phase Dependencies
 
-- **Setup (Phase 1)**: 依存なし
+- **Setup (Phase 1)**: 依存なし。T001 の結果が T015 と各 E2E の形を決める
 - **Foundational (Phase 2)**: Setup の後。すべての User Story を止める
-- **User Stories (Phase 3〜5)**: Foundational の後。US2 と US3 は US1 の画面（T022、T024）の上に操作を足す
-- **Polish (Phase 6)**: すべての User Story の後。T037 は Zero Trust の組織が作られるまで始められない。T038 は T037 の後
+- **User Stories (Phase 3〜5)**: Foundational の後。US2 と US3 は US1 の画面（T024、T026）の上に操作を足す
+- **Polish (Phase 6)**: すべての User Story の後。T041 は Zero Trust の組織が作られるまで始められない。T042 は T041 の後
 
 ### Within Each User Story
 
@@ -143,8 +147,8 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Parallel Opportunities
 
-- T002〜T005 は並行できる
-- T006〜T008、T011〜T012 は並行できる
+- T003〜T006 は並行できる
+- T007〜T009、T012〜T013 は並行できる
 - 各 User Story のテスト（[P]）は並行できる
 
 ---
@@ -166,7 +170,7 @@ Task: "JavaScript を切った E2E in tests/e2e/note-publish.spec.ts"
 
 1. Phase 1 と Phase 2 を終える
 2. Phase 3（User Story 1）を終える
-3. T015〜T018 が通ることを確かめる
+3. T016〜T020 が通ることを確かめる
 
 ### Incremental Delivery
 
@@ -179,3 +183,4 @@ Task: "JavaScript を切った E2E in tests/e2e/note-publish.spec.ts"
 
 - 作業ごと、または作業のまとまりごとにコミットする
 - `/dash` 配下の画面と操作を足すときは、必ず作り手であることを先に確かめる（ADR-0036）
+- 本番へのマージの後に確かめること（この tasks.md の範囲外）: `/notes/{slug}` の表示速度（constitution の Display Speed）、Access を有効にした後の本番のデプロイが `/dash` で止まらないこと（research.md の R7）

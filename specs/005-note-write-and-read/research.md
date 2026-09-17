@@ -28,7 +28,7 @@
 
 **Rationale**:
 - D1 は SQL の `BEGIN` を受け付けない。ローカルで実行し、`D1_ERROR: To execute a transaction, please use the state.storage.transaction() ...` で拒まれることを確かめた。Drizzle の D1 向け `transaction()` は `begin` を発行し（`drizzle-orm/d1/session.js`）、kysely-d1 は `Transactions are not supported yet.` を投げる。どの案でも複数の文をまとめるには `db.batch()` を使うことになり、ORM を入れても差がない
-- この機能の書き込みは、どれも1文で済む。公開は `INSERT ... SELECT ... ON CONFLICT DO UPDATE` の1文、削除は外部キーの `ON DELETE CASCADE` による1文
+- この機能の書き込みは、保存と削除が1文、公開が2文で済む。保存は `UPDATE` の1文、削除は外部キーの `ON DELETE CASCADE` による1文。公開は、入力した内容を保存する `UPDATE` と、`note_publication` へ写す `INSERT ... SELECT ... ON CONFLICT DO UPDATE` の2文を、`db.batch()` にまとめる。公式は batch を「SQL transactions」とし、途中の文が失敗すると全体を巻き戻すと書いている。ローカルの D1 で、2文目が制約に反すると1文目も残らないことを確かめた
 - `@cloudflare/vitest-plugin` の `readD1Migrations` はディレクトリ直下の `.sql` だけを読む。Drizzle の生成物は入れ子（`<ts>_name/migration.sql`）で、既存のテスト基盤のままでは読めない
 - 設計原則9「単純さ over 先回りの構造」: クエリは5種類で、ORM を入れる具体的な理由（差し替え、2つ目の使い道）がない
 - 設計原則8「置き場を選ばない」: D1 に固有の API は Repository の実装に閉じる。Drizzle もスキーマの定義が方言ごとに別で、D1 から移るときの書き直しは避けられない
@@ -109,6 +109,8 @@
 
 **Decision**: 書き込みの操作は、`<form action>` に渡す Server Action で作る。入力の誤りと失敗は `useActionState` で画面に返し、入力した値を残す。成功した後の移動は `redirect()` による。D1 の binding は `import { env } from "cloudflare:workers"` で取る。
 
+Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` が読み込んで、フォームの部品に props で渡す。`'use client'` のフォームの部品は `server/` を import しない（ADR-0026 の依存の向き 3）。
+
 **Rationale**:
 - JavaScript なしでもフォームの送信が動き、`redirect()` は 303 になることを、ビルド出力を `wrangler dev` で動かして確かめた。JavaScript ありでも同じ結果になった
 - `useActionState` は、JavaScript なしでも、誤りの文言と入力した値を返した
@@ -135,18 +137,20 @@
 
 ## R6. テストの割り当て
 
-**Decision**: constitution の Test Layering に従い、同じことを2つの段階で確かめない。
+**Decision**: constitution の Test Layering に従い、同じことを2つの段階で確かめない。状態コード・応答の中身・書き込みの有無は結合テストが、画面に出る文言と操作の連なりは E2E が、データの規則はデータベースに近い段階が持つ。
 
 | 段階 | 確かめること |
 |---|---|
-| 単体（`npm test`） | slug・題・本文の規則、ユースケースの規則（偽の Repository を渡す）、JWT の検証（テスト用の鍵で署名したもの） |
-| workerd（`npm run test:workers`） | D1 の Repository の実装を本物のマイグレーションに当てたもの。下書きが訪問者向けの取り出しに出ない、公開し直しても初めて公開した日が変わらない、削除で公開の行も消える、データベースの制約 |
-| 結合（`npm run test:integration`） | ビルド出力の経路: `/notes/{slug}` の 200 と、下書き・存在しない slug の 404 が同じ中身、JWT のない `/dash` の 403、JWT のない書き込みの操作が何も書き込まない、Origin が異なる書き込みの操作が何も書き込まない、`/dash` 配下がデプロイ時のキャッシュ判定の対象に入らない（R7） |
-| E2E（`npm run test:e2e`） | 作り手として作る → 公開する → 訪問者として読む → 書き換えて公開し直す → 削除する。JavaScript を切った状態で行う |
-| 配信後（`npm run verify:deploy`） | 本番の `/dash` が Access のログインへ移される。プレビュー URL の `/` が Access のログインへ移される |
+| 単体（`npm test`） | slug・題・本文の規則（文字数の境界）、公開日を日本時間の日付に直すこと、ユースケースの規則と結果（偽の Repository を渡す。入力の誤り、slug の重複、存在しない note、保存の失敗）、JWT の検証（テスト用の鍵で署名したもの） |
+| workerd（`npm run test:workers`） | D1 の Repository の実装を本物のマイグレーションに当てたもの。下書きが訪問者向けの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開が原子的に行われる、削除で公開の行も消える、削除した id を使い回さない、データベースの制約 |
+| 結合（`npm run test:integration`） | ビルド出力に、マイグレーションと行を入れた D1 を付けて起動したもの。`/notes/{slug}` の 200 と、下書き・存在しない slug の 404 が同じ中身で下書きの題と本文を含まない、D1 が読めないときの応答が note の題と本文を含まない、JWT のない `/dash` 配下の画面が 403、JWT のない操作と Origin が異なる操作の前後で行が変わらない、`/dash` 配下がデプロイ時のキャッシュ判定の対象に入らない（R7） |
+| E2E（`npm run test:e2e`） | JavaScript を切ったブラウザで、作り手として作る → 公開する → 訪問者として読む → 書き換えて公開し直す → 削除する。入力の誤りと存在しない note の文言が出て、入力が残ること。0件の一覧の文言。キーボードだけで作って公開できること。スマートフォンの画面幅で作って公開できること |
+| 静的な検査（`npm run lint`） | 操作できる要素にラベルなどの情報があること（`eslint-plugin-jsx-a11y`、ADR-0033） |
+| 配信後（`npm run verify:deploy`） | 本番の `/dash` が Access のログインへ移される。service token を付けないプレビュー URL の `/` が Access のログインへ移される |
 
 - 既存の `tests/workers/d1-plumbing.test.ts` と `tests/fixtures/migrations/0001_probe.sql` は、D1 の配管を確かめるためのもの。Repository のテストが同じ配管を通るため、廃止する
-- E2E で作り手として操作するには、テスト用の鍵で署名した JWT と、その公開鍵を配る先が要る。本番のコードに試験用の分岐を持たせず、設定値（issuer）の向け先だけを変える。方法は実装で確かめる
+- E2E で作り手として操作するには、テスト用の鍵で署名した JWT と、その公開鍵を配る先が要る。本番のコードに試験用の分岐を持たせず、設定値（issuer）の向け先を、Playwright が起動する公開鍵のサーバに変える。`wrangler dev` の中の Worker からそのサーバへ届くかは、実装の最初に確かめる。届かなければ、作り手としての操作の E2E を [quickstart.md](./quickstart.md) の手順に移し、E2E には訪問者としての操作だけを残す
+- 表示速度（constitution の Display Speed）は、この機能の中では測れない。プレビュー URL は Access の後ろにあり、外部の計測が届かない。本番へのマージの後に測る
 
 ## R7. デプロイ時のキャッシュ判定と `/dash`
 
