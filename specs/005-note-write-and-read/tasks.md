@@ -40,8 +40,8 @@ description: "Task list for note を書いて公開し、読む"
 - [X] T007 [P] slug・題・本文の規則（文字数はコードポイントで数える）、状態、公開日を日本時間の `YYYY-MM-DD` に直す関数、画面に渡す形（`PublishedNoteDto`、`NoteSummaryDto`、`EditableNoteDto`）を定める in src/features/note/domain/note.ts
 - [X] T008 [P] `NoteRepository` のインタフェースを定める。作る、保存する、公開する（保存と公開を1つの書き込みで）、削除する、公開済みを slug で取り出す、編集用に id で取り出す、作り手向けに一覧する。結果に「slug の重複」「存在しない」「公開後の slug の変更」を区別して返す in src/features/note/domain/note-repository.ts
 - [X] T009 [P] 規則の単体テスト。境界（題200文字と201文字、本文100,000文字と100,001文字、絵文字、大文字、空の slug、100文字と101文字の slug）と、公開日の日付（`2026-09-16T15:30:00.000Z` が `2026-09-17`）を含める in tests/unit/note-domain.test.ts
-- [ ] T010 `NoteRepository` の D1 の実装。先頭で `import 'server-only'`。訪問者向けの取り出しは `note_publication` の列だけを列挙して SELECT する。公開は `db.batch()` で保存と写しを原子的に行う in src/features/note/server/d1-note-repository.ts
-- [ ] T011 D1 の実装のテスト。下書きが公開済みの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開の2文目が失敗すると保存も残らない、公開後の slug の変更が拒まれる、削除で公開の行も消える、削除した slug を使い回せる、削除した id を使い回さない、公開し直していない書き換えの判定、データベースの制約 in tests/workers/d1-note-repository.test.ts
+- [X] T010 `NoteRepository` の D1 の実装。先頭で `import 'server-only'`。訪問者向けの取り出しは `note_publication` の列だけを列挙して SELECT する。公開は `db.batch()` で保存と写しを原子的に行う in src/features/note/server/d1-note-repository.ts
+- [X] T011 D1 の実装のテスト。下書きが公開済みの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開の2文目が失敗すると保存も残らない、公開後の slug の変更が拒まれる、削除で公開の行も消える、削除した slug を使い回せる、削除した id を使い回さない、公開し直していない書き換えの判定、データベースの制約 in tests/workers/d1-note-repository.test.ts
 - [ ] T012 [P] `Cf-Access-Jwt-Assertion` の JWT を `jose` で検証し、作り手（`Author`）か拒否を返す関数。先頭で `import 'server-only'`。JWT の型を関数の外に出さず `Author` に変換する。公開鍵の取得先、`iss`、`aud`、オーナーのメールアドレスを引数で受け取る。設定値が欠けたら拒否する。公開鍵が取れなければ拒否する in src/features/note/server/author.ts
 - [ ] T013 [P] JWT の検証の単体テスト。テスト用の鍵で署名し、正しい JWT は通り、ヘッダなし・署名違い・`aud` 違い・期限切れ・メールアドレス違い・設定値の欠け・公開鍵が取れないは拒否されることを確かめる in tests/unit/note-author.test.ts
 - [ ] T014 [P] テスト用の鍵と作り手の JWT。テスト用の鍵の組を作り、公開鍵を `/cdn-cgi/access/certs` で配るサーバを起動する関数と、作り手の JWT を作る関数を置く。結合テストと E2E の両方が使う in tests/support/access.ts

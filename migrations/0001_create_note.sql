@@ -23,9 +23,11 @@ CREATE TABLE note_publication (
   -- 空の題では公開しない
   title TEXT NOT NULL CHECK (length(title) BETWEEN 1 AND 200),
   body TEXT NOT NULL CHECK (length(body) <= 100000),
-  -- Date.prototype.toISOString() の形（UTC）。文字列の並びと時刻の並びが一致する
+  -- Date.prototype.toISOString() の形（UTC）。文字列の並びと時刻の並びが一致する。
+  -- 形を GLOB で書くと、D1 が「LIKE or GLOB pattern too complex」で拒む。日時として
+  -- 読めない値は strftime() が NULL を返すため、= ではなく IS で比べる
   first_published_at TEXT NOT NULL CHECK (
-    first_published_at GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9]:[0-9][0-9]:[0-9][0-9].[0-9][0-9][0-9]Z'
+    strftime('%Y-%m-%dT%H:%M:%fZ', first_published_at) IS first_published_at
   )
 ) STRICT;
 
