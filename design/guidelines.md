@@ -1,0 +1,74 @@
+# Guidelines
+
+## Contents
+
+- Getting started
+  - Design principles
+- Foundations
+  - Accessibility
+  - App icons
+  - Branding
+  - Color
+  - Dark Mode
+  - Icons
+  - Images
+  - Immersive experiences
+  - Inclusion
+  - Layout
+  - Materials
+  - Motion
+  - Privacy
+  - Right to left
+  - SF Symbols
+  - Spatial layout
+  - Typography
+  - Writing
+- Patterns
+  - Charting data
+  - Collaboration and sharing
+  - Drag and drop
+  - Entering data
+  - Feedback
+  - File management
+  - Going full screen
+  - Launching
+  - Live-viewing apps
+  - Loading
+  - Managing accounts
+  - Managing notifications
+  - Modality
+  - Multitasking
+  - Offering help
+  - Onboarding
+  - Playing audio
+  - Playing haptics
+  - Playing video
+  - Printing
+  - Ratings and reviews
+  - Searching
+  - Settings
+  - Undo and redo
+  - Workouts
+- Components
+  - Content
+  - Layout and organization
+  - Menus and actions
+  - Navigation and search
+  - Presentation
+  - Selection and input
+  - Status
+  - System experiences
+- Inputs
+  - Action button
+  - Apple Pencil and Scribble
+  - Camera Control
+  - Digital Crown
+  - Eyes
+  - Focus and selection
+  - Game controls
+  - Gestures
+  - Gyroscope and accelerometer
+  - Keyboards
+  - Nearby interactions
+  - Pointing devices
+  - Remotes
