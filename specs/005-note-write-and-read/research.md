@@ -56,6 +56,7 @@
    - 検証する項目: 署名（RS256、`kid` に合う公開鍵）、`iss`、`aud`、`exp`、`nbf`、`email` がオーナーのものと一致すること
    - 公開鍵は `<issuer>/cdn-cgi/access/certs` から実行時に取る
    - 設定値（issuer、aud、オーナーのメールアドレス）は Worker の secret に置き、リポジトリに書かない
+   - aud は、本番の `/dash` とプレビュー全体の2つの Access のアプリケーションの AUD タグを、カンマで区切って1つの secret `ACCESS_AUD` に持つ。Cloudflare の公式は、アプリケーションごとに固有の AUD タグを割り当てると書いており、プレビュー URL の版も本番と同じ secret を読むため、どちらか1つだけでは片方の JWT が検証を通らない。`jose` の `jwtVerify` の `audience` は配列を受け付ける
    - 次のどれかに当たれば止める: JWT がない、検証に失敗する、設定値が欠けている
    - 止めるとき、画面はページの中で `forbidden()`（403）を返し、操作は何も書き込まずに失敗を返す（R7）
    - JWT の検証には `jose` を使う
