@@ -189,3 +189,9 @@ Task: "JavaScript を切った E2E in tests/e2e/note-publish.spec.ts"
 - 作業ごと、または作業のまとまりごとにコミットする
 - `/dash` 配下の画面と操作を足すときは、必ず作り手であることを先に確かめる（ADR-0036）
 - 本番へのマージの後に確かめること（この tasks.md の範囲外）: `/notes/{slug}` の表示速度（plan.md の Complexity Tracking）、Access を有効にした後の本番のデプロイが `/dash` で止まらないこと（research.md の R7）
+
+---
+
+## Phase 7: Convergence
+
+- [X] T047 CRITICAL: 作り手の JWT のない「作る」「保存する」「公開する」の操作の応答が、入力した題と本文を含まないことを確かめる検査を足す in tests/integration/dash.test.ts per Edge Cases（作り手のログインが切れた状態でフォームを送ったとき）, Constitution III (partial)

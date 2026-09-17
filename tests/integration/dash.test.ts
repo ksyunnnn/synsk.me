@@ -39,6 +39,15 @@ const FOREIGN_ORIGIN = 'https://attacker.example';
 
 const startServer = () => startNoteTestServer();
 
+/**
+ * 作り手であることを確かめられない操作は、入力した題と本文を応答に残さない（spec の Edge Cases:
+ * ログインが切れた状態でフォームを送ったとき）
+ */
+const expectNoInputEchoed = (text: string) => {
+  expect(text).not.toContain(INPUT.title);
+  expect(text).not.toContain(INPUT.body);
+};
+
 describe('D1 から読める', () => {
   let ctx: NoteTestServer;
   const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
@@ -97,37 +106,40 @@ describe('D1 から読める', () => {
       expect(res.status).toBe(403);
     });
 
-    it('「作る」の操作は書き込まない', async () => {
+    it('「作る」の操作は書き込まず、入力した題と本文を返さない', async () => {
       const fields = await readFormOf('/dash/notes/new');
       const before = await readNoteRows(ctx.db);
 
-      await submit('/dash/notes/new', fields, inputWithSlug('no-jwt-create'));
+      const res = await submit('/dash/notes/new', fields, inputWithSlug('no-jwt-create'));
+      expectNoInputEchoed(await res.text());
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
-    it('「公開する」の操作は書き込まない', async () => {
+    it('「公開する」の操作は書き込まず、入力した題と本文を返さない', async () => {
       const fields = await readFormOf(`/dash/notes/${draft.id}`);
       const before = await readNoteRows(ctx.db);
 
-      await submit(`/dash/notes/${draft.id}`, fields, {
+      const res = await submit(`/dash/notes/${draft.id}`, fields, {
         ...PUBLISH,
         noteId: draft.id,
         ...INPUT,
         slug: draft.slug,
       });
+      expectNoInputEchoed(await res.text());
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
-    it('「保存する」の操作は書き込まない', async () => {
+    it('「保存する」の操作は書き込まず、入力した題と本文を返さない', async () => {
       const fields = await readFormOf(`/dash/notes/${draft.id}`);
       const before = await readNoteRows(ctx.db);
 
-      await submit(`/dash/notes/${draft.id}`, fields, {
+      const res = await submit(`/dash/notes/${draft.id}`, fields, {
         ...SAVE,
         noteId: draft.id,
         ...INPUT,
         slug: draft.slug,
       });
+      expectNoInputEchoed(await res.text());
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
