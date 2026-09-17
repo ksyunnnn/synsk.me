@@ -24,7 +24,6 @@
 - workerd のテストは `vitest.workers.config.ts` の `readD1Migrations` を `migrations/` に向け、本番と同じマイグレーションを当てる
 - 表は `note`（書き換えている内容）と `note_publication`（見せている内容）の2つ。形は [data-model.md](./data-model.md)
 - 公開してよいかは、Repository の実装が取り出すときに確かめる。訪問者向けの取り出しは `note_publication` の列だけを列挙して SELECT する
-- slug の長さの上限を100文字とする。spec に値はない。設計原則2「止まる over 危ない方へ進む」が量に上限を求めるため置く
 
 **Rationale**:
 - D1 は SQL の `BEGIN` を受け付けない。ローカルで実行し、`D1_ERROR: To execute a transaction, please use the state.storage.transaction() ...` で拒まれることを確かめた。Drizzle の D1 向け `transaction()` は `begin` を発行し（`drizzle-orm/d1/session.js`）、kysely-d1 は `Transactions are not supported yet.` を投げる。どの案でも複数の文をまとめるには `db.batch()` を使うことになり、ORM を入れても差がない
@@ -107,7 +106,13 @@
 
 ## R4. 書き込みの操作の作り方
 
-**Decision**: 書き込みの操作は、`<form action>` に渡す Server Action で作る。入力の誤りと失敗は `useActionState` で画面に返し、入力した値を残す。成功した後の移動は `redirect()` による。D1 の binding は `import { env } from "cloudflare:workers"` で取る。
+**Decision**: 書き込みの操作は、`<form action>` に渡す Server Action で作る。入力の誤りと失敗は `useActionState` で画面に返し、入力した値を残す。D1 の binding は `import { env } from "cloudflare:workers"` で取る。
+
+操作の後の画面は次のとおりにする。
+
+- 作る: `redirect()` で `/dash/notes/{id}` へ移る
+- 保存する、公開する、公開し直す: 移らない。`useActionState` の結果として、したことを同じ画面に出す
+- 削除する: `redirect()` で `/dash?deleted=1` へ移り、一覧の画面が削除したことを出す
 
 Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` が読み込んで、フォームの部品に props で渡す。`'use client'` のフォームの部品は `server/` を import しない（ADR-0026 の依存の向き 3）。
 
@@ -141,16 +146,17 @@ Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` �
 
 | 段階 | 確かめること |
 |---|---|
-| 単体（`npm test`） | slug・題・本文の規則（文字数の境界）、公開日を日本時間の日付に直すこと、ユースケースの規則と結果（偽の Repository を渡す。入力の誤り、slug の重複、存在しない note、保存の失敗）、JWT の検証（テスト用の鍵で署名したもの） |
+| 単体（`npm test`） | slug・題・本文の規則（文字数の境界）、公開日を日本時間の日付に直すこと、ユースケースの規則と結果（偽の Repository を渡す。入力の誤り、slug の重複、公開後の slug の変更、存在しない note、保存の失敗）、JWT の検証（テスト用の鍵で署名したもの） |
 | workerd（`npm run test:workers`） | D1 の Repository の実装を本物のマイグレーションに当てたもの。下書きが訪問者向けの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開が原子的に行われる、削除で公開の行も消える、削除した id を使い回さない、データベースの制約 |
-| 結合（`npm run test:integration`） | ビルド出力に、マイグレーションと行を入れた D1 を付けて起動したもの。`/notes/{slug}` の 200 と、下書き・存在しない slug の 404 が同じ中身で下書きの題と本文を含まない、D1 が読めないときの応答が note の題と本文を含まない、JWT のない `/dash` 配下の画面が 403、JWT のない操作と Origin が異なる操作の前後で行が変わらない、`/dash` 配下がデプロイ時のキャッシュ判定の対象に入らない（R7） |
-| E2E（`npm run test:e2e`） | JavaScript を切ったブラウザで、作り手として作る → 公開する → 訪問者として読む → 書き換えて公開し直す → 削除する。入力の誤りと存在しない note の文言が出て、入力が残ること。0件の一覧の文言。キーボードだけで作って公開できること。スマートフォンの画面幅で作って公開できること |
+| 結合（`npm run test:integration`） | ビルド出力に、マイグレーションと行を入れた D1 と、テスト用の公開鍵を向けた設定値を付けて起動したもの。`/notes/{slug}` の 200 と中身（改行が保たれ、HTML の文字列が文字のまま）、下書き・存在しない slug の 404 が同じ中身で下書きの題と本文を含まない、D1 が読めないときの訪問者と作り手の画面が 500 で note の題と本文を含まない、JWT のない `/dash` 配下の画面が 403、JWT のない操作と Origin が異なる操作の前後で行が変わらない、作り手の操作が D1 の失敗で失敗を返し入力した値を含む、`/dash` 配下がデプロイ時のキャッシュ判定の対象に入らない（R7） |
+| E2E（`npm run test:e2e`） | JavaScript を切ったブラウザで、作り手として作る → 公開する → 訪問者として読む → 書き換えて公開し直す → 削除する。入力の誤り（空の slug、使えない slug、重複した slug、長すぎる題と本文、空の題での公開）の文言が出て入力が残ること。0件の一覧の文言。確認の画面から戻ると削除されないこと。作成・保存・公開・削除を、キーボードだけで、また幅 360px の画面で行えること |
 | 静的な検査（`npm run lint`） | 操作できる要素にラベルなどの情報があること（`eslint-plugin-jsx-a11y`、ADR-0033） |
-| 配信後（`npm run verify:deploy`） | 本番の `/dash` が Access のログインへ移される。service token を付けないプレビュー URL の `/` が Access のログインへ移される |
+| 配信後（`npm run verify:deploy`） | 本番の `/dash` と `/dash/notes/new` が Access のログインへ移される。service token を付けないプレビュー URL の `/` が Access のログインへ移される。`/notes/<存在しない slug>` を2回取っても `cf-cache-status` が `HIT` にならない |
 
-- 既存の `tests/workers/d1-plumbing.test.ts` と `tests/fixtures/migrations/0001_probe.sql` は、D1 の配管を確かめるためのもの。Repository のテストが同じ配管を通るため、廃止する
-- E2E で作り手として操作するには、テスト用の鍵で署名した JWT と、その公開鍵を配る先が要る。本番のコードに試験用の分岐を持たせず、設定値（issuer）の向け先を、Playwright が起動する公開鍵のサーバに変える。`wrangler dev` の中の Worker からそのサーバへ届くかは、実装の最初に確かめる。届かなければ、作り手としての操作の E2E を [quickstart.md](./quickstart.md) の手順に移し、E2E には訪問者としての操作だけを残す
-- 表示速度（constitution の Display Speed）は、この機能の中では測れない。プレビュー URL は Access の後ろにあり、外部の計測が届かない。本番へのマージの後に測る
+- 既存の `tests/workers/d1-plumbing.test.ts` と `tests/fixtures/migrations/0001_probe.sql` は、D1 の配管を確かめるもの。Repository のテストが同じ配管を通るため、廃止する
+- 作り手として操作する結合テストと E2E には、テスト用の鍵で署名した JWT と、その公開鍵を配る先が要る。本番のコードに試験用の分岐を持たせず、設定値 `ACCESS_ISSUER` の向け先を、テストが起動する公開鍵のサーバに変える
+- 2026-09-17 に scratchpad で、`compatibility_flags` に `global_fetch_strictly_public` を持つ Worker を `wrangler dev` で起動し、`ACCESS_ISSUER` を `http://127.0.0.1:8799` にして `/cdn-cgi/access/certs` を取りに行かせた。手元の Node のサーバが応答し、Worker は 200 を受け取った。`createTestHarness()` から同じ設定値を渡せるかは、結合テストの土台を作るときに確かめる
+- 表示速度（constitution の Display Speed）は、この機能の中では測れない。[plan.md](./plan.md) の Complexity Tracking による
 
 ## R7. デプロイ時のキャッシュ判定と `/dash`
 

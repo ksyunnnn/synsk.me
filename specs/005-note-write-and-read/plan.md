@@ -44,7 +44,7 @@
 | 原則・制約 | 判定 | この plan での満たし方 |
 |---|---|---|
 | I. Protected Values | 通る | 下書きの題と本文は、訪問者向けの取り出しが SELECT しない（R1）。書き込みの経路は Access と JWT の検証の2段で守り、作り手以外が通れないことを結合テストと配信後の検査で確かめる（R2、R6） |
-| II. Stop on Missing Input | 通る | 公開の操作は、題が空なら公開しない。JWT の検証の設定値が欠けたら画面も操作も止める。上限の値: 題200文字、本文100,000文字、slug 100文字 |
+| II. Stop on Missing Input | 通る | 公開の操作は、題が空なら公開しない。JWT の検証の設定値が欠けたら画面も操作も止める。量の上限: 題200文字、本文100,000文字、slug 100文字。回数の上限: 書き込みは Access の後ろにいる作り手1人の手の操作に限られ、1回の操作で書き込む文は2文まで（公開）。D1 Free の書き込み1日10万行を超えると、D1 が書き込みを止める |
 | III. Verified Scope | 通る | spec の FR・Edge Cases・Acceptance Scenario を、R6 の段階のどれか1つに割り当てる。対応は `tasks.md` が持つ |
 | IV. Partial Availability | 通る | 訪問者の画面が読む取得元は D1 だけ。作り手の画面は D1 と Access の公開鍵を読み、公開鍵が取れなければ作り手であることを確かめられないとして止める（R2）。NFR-02 の各状態: データがない（一覧が0件）とエラー（D1 が読めない）の表示を contract に定める。読み込み中は、JavaScript なしでページ全体を描画して返すため生じない。一部欠損は、取得元が1つのため生じない |
 | V. Accessible Controls | 通る | 操作はすべてネイティブの `<form>`、`<button>`、`<a>`、ラベル付きの入力で作る。削除の確認は別の画面にし、開閉を持たない（R5）。キーボードだけの操作とスマートフォンの画面幅での操作を E2E で、要素の情報を `eslint-plugin-jsx-a11y` で確かめる（R6） |
@@ -53,7 +53,7 @@
 | VIII. Portable Core | 通る | D1 の API は `src/features/note/server/` の Repository の実装に閉じる。`cloudflare:workers` を読み込むのも `server/` だけ。Access の JWT は `server/` の検証の関数に閉じる |
 | IX. Simplicity | 通る | 足すインタフェースは `NoteRepository` の1つ。差し替えの対象は、単体テストの偽の実装。JWT の検証は、2つ目の機能が使うまで `features/note/server/` に置き、`shared/` に出さない |
 | Test Layering | 通る | R6 |
-| Display Speed | この機能の中では確かめられない | プレビュー URL は Access の後ろにあり、外部の計測が届かない。本番へのマージの後に `/notes/{slug}` を計測し、閾値を割ったらキャッシュを検討する（R3、R6） |
+| Display Speed | 反する（確かめないまま進める） | この機能の中では計測できない。Complexity Tracking に書く |
 | Cacheability | 反する | `force-dynamic` のページを置く。Complexity Tracking に書く |
 | Allowlist Visibility | 通る | 訪問者向けの取り出しは、出す列を SELECT で列挙する。画面に渡す形（DTO）も出す項目だけを持つ |
 
@@ -70,7 +70,8 @@ specs/005-note-write-and-read/
 ├── contracts/
 │   └── routes.md
 ├── checklists/
-│   └── requirements.md
+│   ├── requirements.md
+│   └── security.md
 └── tasks.md             # /speckit-tasks が作る
 ```
 
@@ -106,16 +107,20 @@ src/
             └── actions.ts                 Server Action（フォームが呼ぶ）
 
 tests/
+├── support/                               テスト用の鍵と作り手の JWT（結合と E2E が使う）
 ├── unit/                                  単体
 ├── workers/                               workerd の中の D1
 ├── integration/                           ビルド出力の経路
+│   └── support/                           D1 の行を用意する
 └── e2e/                                   作り手と訪問者の操作
+    └── support/                           作り手の JWT をブラウザの要求に付ける
 ```
 
-**Structure Decision**: ADR-0026 のディレクトリの形に従い、機能を `src/features/note/` に置く。`shared/` には何も置かない。複数の機能で使うものがまだないため（設計原則9）。
+**Structure Decision**: ADR-0026 のディレクトリの形に従い、機能を `src/features/note/` に置く。`shared/` には何も置かない。2つ以上の機能で使うものがないため（設計原則9）。
 
 ## Complexity Tracking
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Cacheability: `/notes/[slug]` と `/dash` 配下のページが正の `revalidate` を持たず、`force-dynamic` を宣言する | `/dash` はキャッシュに載ると作り手の画面が訪問者に返りうる。`/notes/[slug]` は、公開と削除を直後に反映するために、キャッシュの削除に頼らない（R3） | `revalidate` を付けてキャッシュに載せ、`revalidatePath` で消す案は、削除が失敗したときに削除した note が長く出続ける。constitution の文面と `tests/unit/cacheability.test.ts` が食い違っており、検査は `force-dynamic` を認めている。文面をどちらに揃えるかはオーナーが決める |
+| Cacheability: `/notes/[slug]` と `/dash` 配下のページが正の `revalidate` を持たず、`force-dynamic` を宣言する | `/dash` はキャッシュに載ると作り手の画面が訪問者に返りうる。`/notes/[slug]` は、公開と削除を直後に反映するために、キャッシュの削除に頼らない（R3） | `revalidate` を付けてキャッシュに載せ、`revalidatePath` で消す案は、削除が失敗したときに削除した note が長く出続ける。constitution の文面と `tests/unit/cacheability.test.ts` が食い違っており、検査は `force-dynamic` を認めている。文面と検査のどちらに揃えるかの決定は `/speckit-constitution` による |
+| Display Speed: `/notes/{slug}` が NFR-03〜NFR-07 の閾値を満たすことを、この機能の中で確かめない | プレビュー URL は Access の後ろにあり、外部の計測（PageSpeed Insights、Web Analytics）が届かない。本番に出るのは main へのマージの後である | プレビュー URL の Access を外して計測する案は、プレビューの版が本番の D1 に書き込めるため、作り手以外に書き込みの画面を開く。本番へのマージの後に計測し、閾値を割ったら R3 のキャッシュの判断に戻る |
