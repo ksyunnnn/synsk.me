@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { SEEDED_NOTES, readNoteRows, startNoteTestServer, type NoteTestServer } from './support/d1';
 import { encodeForm, readActionFields } from './support/form';
 
@@ -140,6 +140,14 @@ describe('D1 から読める', () => {
   });
 
   describe('別のサイトから送られた操作', () => {
+    // vinext は Origin の異なる操作を、要求の本文を読まずに 403 で拒む
+    // （`vinext/dist/server/request-pipeline.js` の `validateCsrfOrigin`）。その後の
+    // 要求が `createTestHarness()` の中で `Network connection lost.` の 500 になることが
+    // ある。拒まれた操作の後に1つ要求を送って、次の検査に持ち越さない
+    afterEach(async () => {
+      await (await ctx.server.fetch('/')).arrayBuffer();
+    });
+
     it('作り手の JWT が付いていても「作る」は書き込まない', async () => {
       const fields = await readFormOf('/dash/notes/new');
       const before = await readNoteRows(ctx.db);
