@@ -62,11 +62,11 @@ description: "Task list for note を書いて公開し、読む"
 
 - [X] T046 [US1] JWT の検証が、`ACCESS_AUD` のカンマ区切りの AUD タグのどれかに一致する JWT を通すようにし、単体テストに2つの AUD のそれぞれで通ることを足す（research.md の R2） in src/features/note/server/author.ts と tests/unit/note-author.test.ts
 
-- [ ] T017 [P] [US1] ユースケース「作る」「公開する」「公開済みを読む」「一覧する」の単体テスト。偽の `NoteRepository` を渡す。入力の誤り、slug の重複、公開後の slug の変更、題が空の公開、存在しない note、保存の失敗のそれぞれで、書き込まずに種類の分かる結果を返す in tests/unit/note-usecases.test.ts
-- [ ] T018 [P] [US1] 訪問者の経路の結合テスト。公開済みは 200 で題・公開日・本文を返し、本文の改行が保たれ、HTML の文字列が文字のまま出て、公開し直していない書き換えは出ない。下書きと存在しない slug は同じ 404 を返し、下書きの題と本文が応答（本文、`<title>`、メタデータ）に現れない。D1 が読めないときは 500 で、note の題と本文を含まない in tests/integration/notes.test.ts
-- [ ] T019 [P] [US1] 作り手の経路の結合テスト。JWT のない `/dash`・`/dash/notes/new`・`/dash/notes/{id}` が 403。JWT のない「作る」「公開する」の操作と、Origin が異なる操作の前後で、D1 の行が変わらない。作り手の JWT 付きで、存在しない id の `/dash/notes/{id}` が 404、D1 が読めないときの `/dash` と `/dash/notes/{id}` が 500 で note の題と本文を含まない、D1 が書き込めないときの「作る」「公開する」が失敗を返し入力した値を含む。ビルド出力の `dist/server/vinext-prerender-paths.json` に `/dash` 配下が入らない in tests/integration/dash.test.ts
-- [ ] T020 [P] [US1] JavaScript を切った E2E。作り手として note を作る → 一覧に下書きとして並ぶ → 訪問者として note がないことが伝わる → 公開する → 訪問者として題・公開日・本文を読む。空の slug、使えない slug、重複した slug、長すぎる題と本文、空の題での公開のそれぞれで、誤りの文言が出て題と本文が残る。note が0件の一覧の文言 in tests/e2e/note-publish.spec.ts
-- [ ] T021 [P] [US1] 「作る」「公開する」を、キーボードだけで行う E2E と、幅 360px の画面で行う E2E in tests/e2e/note-input-methods.spec.ts
+- [X] T017 [P] [US1] ユースケース「作る」「公開する」「公開済みを読む」「一覧する」の単体テスト。偽の `NoteRepository` を渡す。入力の誤り、slug の重複、公開後の slug の変更、題が空の公開、存在しない note、保存の失敗のそれぞれで、書き込まずに種類の分かる結果を返す in tests/unit/note-usecases.test.ts
+- [X] T018 [P] [US1] 訪問者の経路の結合テスト。公開済みは 200 で題・公開日・本文を返し、本文の改行が保たれ、HTML の文字列が文字のまま出て、公開し直していない書き換えは出ない。下書きと存在しない slug は同じ 404 を返し、下書きの題と本文が応答（本文、`<title>`、メタデータ）に現れない。D1 が読めないときは 500 で、note の題と本文を含まない in tests/integration/notes.test.ts
+- [X] T019 [P] [US1] 作り手の経路の結合テスト。JWT のない `/dash`・`/dash/notes/new`・`/dash/notes/{id}` が 403。JWT のない「作る」「公開する」の操作と、Origin が異なる操作の前後で、D1 の行が変わらない。作り手の JWT 付きで、存在しない id の `/dash/notes/{id}` が 404、D1 が読めないときの `/dash` と `/dash/notes/{id}` が 500 で note の題と本文を含まない、D1 が書き込めないときの「作る」「公開する」が失敗を返し入力した値を含む。ビルド出力の `dist/server/vinext-prerender-paths.json` に `/dash` 配下が入らない in tests/integration/dash.test.ts
+- [X] T020 [P] [US1] JavaScript を切った E2E。作り手として note を作る → 一覧に下書きとして並ぶ → 訪問者として note がないことが伝わる → 公開する → 訪問者として題・公開日・本文を読む。空の slug、使えない slug、重複した slug、長すぎる題と本文、空の題での公開のそれぞれで、誤りの文言が出て題と本文が残る。note が0件の一覧の文言 in tests/e2e/note-publish.spec.ts
+- [X] T021 [P] [US1] 「作る」「公開する」を、キーボードだけで行う E2E と、幅 360px の画面で行う E2E in tests/e2e/note-input-methods.spec.ts
 
 ### Implementation for User Story 1
 

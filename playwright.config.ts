@@ -37,7 +37,21 @@ export default defineConfig({
   // macOS の手元で撮ったものは CI と別ファイルになり、追跡しても意味がない
   snapshotPathTemplate: '{testDir}/__screenshots__/{arg}-{platform}{ext}',
 
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    // note が1件もない D1 を前提とするテスト（タグ `@empty-db`）を、ほかのテストが
+    // note を作る前に走らせる。テストは同じローカルの D1 を並行して使う
+    {
+      name: 'empty-db',
+      grep: /@empty-db/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium',
+      grepInvert: /@empty-db/,
+      dependencies: ['empty-db'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
 
   webServer: [
     // テスト用の鍵の組を作り、公開鍵を Cloudflare Access の代わりに配る。
