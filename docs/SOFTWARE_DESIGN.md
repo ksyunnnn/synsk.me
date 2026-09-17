@@ -117,7 +117,7 @@ const visible = await projects.listPublished();
 一般名との違い: Repository（Fowler、Patterns of Enterprise Application Architecture）の定義は、ドメインとデータの取り出しの間に立つところまで。見せてよいかを確かめる役割は、synsk.me が足したもの。
 
 もとにした原則: 1、8、9
-手本のファイル: 未定（その形を最初に書いたときに足す）
+手本のファイル: `src/features/note/domain/note-repository.ts`、`src/features/note/server/d1-note-repository.ts`
 
 ### DTO
 
@@ -139,7 +139,7 @@ const view = <ProjectCard project={card} />;
 一般名との違い: Data Transfer Object（Fowler、同上）の目的は、呼び出しの回数を減らすこと。出してよい値の選別ではない。画面に渡す形という意味では Presentation Model が近い。
 
 もとにした原則: 1
-手本のファイル: 未定（その形を最初に書いたときに足す）
+手本のファイル: `src/features/note/domain/note.ts`
 
 ### 組み立て用の関数
 
@@ -164,7 +164,7 @@ export async function listProjectCards() {
 一般名との違い: Composition Root（Mark Seemann、2011-07-28）は、アプリケーション全体で1か所に置くもの。ここでは機能ごとに1か所に置くので、数が違う。
 
 もとにした原則: 9
-手本のファイル: 未定（その形を最初に書いたときに足す）
+手本のファイル: `src/features/note/server/queries.ts`
 
 ### Dependency Injection
 
@@ -187,7 +187,7 @@ export async function publishNote(notes: NoteRepository, id: NoteId) {}
 一般名: Dependency Injection（Fowler、2004-01-23）。日本語は「依存性の注入」。引数で受け取る形は Constructor Injection にあたる。
 
 もとにした原則: 9
-手本のファイル: 未定（その形を最初に書いたときに足す）
+手本のファイル: `src/features/note/application/publish-note.ts`
 
 ### 読む → 計算 → 書く
 
@@ -234,7 +234,7 @@ await publishNote(notes, id);
 一般名との違い: Use Case（Robert C. Martin、2012-08-13）は層の名前で、その層がシステムのユースケースを持つ、と述べるところまで。関数1つを単位にするかどうかは定めていない。
 
 もとにした原則: 9
-手本のファイル: 未定（その形を最初に書いたときに足す）
+手本のファイル: `src/features/note/application/publish-note.ts`
 
 ### Anti-Corruption Layer
 
@@ -257,7 +257,7 @@ const view = <Timeline activities={activities} />;
 一般名: Anti-Corruption Layer（Eric Evans が Domain-Driven Design で示し、Microsoft Learn が同じ名で解説）。日本語は「腐敗防止層」。
 
 もとにした原則: 7
-手本のファイル: 未定（その形を最初に書いたときに足す）
+手本のファイル: `src/features/note/server/author.ts`
 
 ### 失敗の表し方
 
