@@ -45,6 +45,28 @@ describe('作り手であることを確かめる', () => {
     expect(await verifyAuthor(await sign(), settings)).toEqual({ email: TEST_OWNER_EMAIL });
   });
 
+  describe('AUD タグをカンマで区切って複数持つ', () => {
+    // 本番の `/dash` とプレビュー全体の2つの Access のアプリケーションは、別の AUD タグを
+    // 持つ。どちらの JWT も通す（specs/005-note-write-and-read/research.md の R2）
+    const audience = `production-aud, ${TEST_ACCESS_AUD}`;
+
+    it.each(['production-aud', TEST_ACCESS_AUD])('%s の JWT は作り手として通る', async (aud) => {
+      expect(await verifyAuthor(await sign({ audience: aud }), { ...settings, audience })).toEqual({
+        email: TEST_OWNER_EMAIL,
+      });
+    });
+
+    it('どれにも一致しない JWT は拒む', async () => {
+      expect(
+        await verifyAuthor(await sign({ audience: 'other-aud' }), { ...settings, audience }),
+      ).toBeNull();
+    });
+
+    it('区切りだけで AUD タグがなければ拒む', async () => {
+      expect(await verifyAuthor(await sign(), { ...settings, audience: ' , ' })).toBeNull();
+    });
+  });
+
   describe('JWT を拒む', () => {
     it.each([
       ['ヘッダがない', null],

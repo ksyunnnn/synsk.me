@@ -7,7 +7,8 @@
 
 # Access の team domain。公開鍵は `<ACCESS_ISSUER>/cdn-cgi/access/certs` から取る
 ACCESS_ISSUER=https://<team-name>.cloudflareaccess.com
-# Access のアプリケーションの Application Audience (AUD) Tag
+# Access のアプリケーションの Application Audience (AUD) Tag。本番の `/dash` とプレビュー全体の
+# 2つのアプリケーションの AUD タグをカンマで区切って並べる。どれかに一致すれば通す
 ACCESS_AUD=<application-audience-tag>
 # 作り手として認めるメールアドレス
 ACCESS_OWNER_EMAIL=<owner@example.com>

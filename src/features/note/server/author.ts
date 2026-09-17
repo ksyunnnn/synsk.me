@@ -22,7 +22,11 @@ export type AccessSettings = {
   certsUrl: string | undefined;
   /** JWT の `iss`。Access の team domain */
   issuer: string | undefined;
-  /** JWT の `aud`。Access のアプリケーションの AUD タグ */
+  /**
+   * JWT の `aud`。Access のアプリケーションの AUD タグ。本番の `/dash` とプレビュー全体の
+   * アプリケーションは別の AUD タグを持つため、カンマで区切って複数を持てる。どれかに
+   * 一致すれば通す
+   */
   audience: string | undefined;
   /** 作り手として認めるメールアドレス */
   ownerEmail: string | undefined;
@@ -37,14 +41,18 @@ export const verifyAuthor = async (
   token: string | null | undefined,
   { certsUrl, issuer, audience, ownerEmail }: AccessSettings,
 ): Promise<Author | null> => {
-  if (!token || !certsUrl || !issuer || !audience || !ownerEmail) return null;
+  const audiences = (audience ?? '')
+    .split(',')
+    .map((tag) => tag.trim())
+    .filter((tag) => tag !== '');
+  if (!token || !certsUrl || !issuer || audiences.length === 0 || !ownerEmail) return null;
 
   try {
     // 公開鍵は Access が入れ替えるため、埋め込まずに取りに行く
     const keys = createRemoteJWKSet(new URL(certsUrl));
     const { payload } = await jwtVerify(token, keys, {
       issuer,
-      audience,
+      audience: audiences,
       algorithms: ['RS256'],
     });
     // 大文字と小文字を区別して比べる。緩めると、オーナーでない人を通しうる
