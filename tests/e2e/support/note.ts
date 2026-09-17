@@ -1,4 +1,4 @@
-import type { Locator, Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * note の E2E が使う道具。
@@ -29,6 +29,21 @@ export const createNote = async (
   await fields.title.fill(values.title);
   await fields.body.fill(values.body);
   await page.getByRole('button', { name: '作る' }).click();
+};
+
+/**
+ * 新しい note を作って公開し、編集の画面の URL を返す。題は空にしない。
+ * 作る画面から編集の画面へ移り、「公開する」を押す
+ */
+export const createPublishedNote = async (
+  page: Page,
+  values: { slug: string; title: string; body: string },
+) => {
+  await createNote(page, values);
+  await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
+  await page.getByRole('button', { name: '公開する' }).click();
+  await expect(page.getByText('公開しました')).toBeVisible();
+  return page.url();
 };
 
 /**

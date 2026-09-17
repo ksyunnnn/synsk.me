@@ -89,10 +89,10 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Tests for User Story 2
 
-- [ ] T028 [P] [US2] ユースケース「保存する」の単体テスト。公開済みの note の slug は変えられない、存在しない note は保存しない、保存の失敗を返す in tests/unit/note-usecases.test.ts
-- [ ] T029 [P] [US2] 結合テスト。JWT のない「保存する」の操作の前後で D1 の行が変わらない。作り手の JWT 付きで、D1 が書き込めないときの「保存する」が失敗を返し入力した値を含む in tests/integration/dash.test.ts
-- [ ] T030 [P] [US2] JavaScript を切った E2E。公開済みの note を保存 → 一覧に公開し直していない書き換えがあることが出る → 公開し直す → 訪問者に書き換えた題 in tests/e2e/note-edit.spec.ts
-- [ ] T031 [P] [US2] 「保存する」を、キーボードだけで行う E2E と、幅 360px の画面で行う E2E in tests/e2e/note-input-methods.spec.ts
+- [X] T028 [P] [US2] ユースケース「保存する」の単体テスト。公開済みの note の slug は変えられない、存在しない note は保存しない、保存の失敗を返す in tests/unit/note-usecases.test.ts
+- [X] T029 [P] [US2] 結合テスト。JWT のない「保存する」の操作の前後で D1 の行が変わらない。作り手の JWT 付きで、D1 が書き込めないときの「保存する」が失敗を返し入力した値を含む in tests/integration/dash.test.ts
+- [X] T030 [P] [US2] JavaScript を切った E2E。公開済みの note を保存 → 一覧に公開し直していない書き換えがあることが出る → 公開し直す → 訪問者に書き換えた題 in tests/e2e/note-edit.spec.ts
+- [X] T031 [P] [US2] 「保存する」を、キーボードだけで行う E2E と、幅 360px の画面で行う E2E in tests/e2e/note-input-methods.spec.ts
 
 ### Implementation for User Story 2
 

@@ -4,6 +4,7 @@ import { getNoteForEdit } from '@/features/note/application/get-note-for-edit';
 import { getPublishedNote } from '@/features/note/application/get-published-note';
 import { listNotes } from '@/features/note/application/list-notes';
 import { publishNote } from '@/features/note/application/publish-note';
+import { saveNote } from '@/features/note/application/save-note';
 import type { NoteContent } from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
 
@@ -72,6 +73,65 @@ describe('作る', () => {
       throw new Error('D1_ERROR: 書き込めない');
     });
     expect(await createNote(fakeRepository({ create }), content)).toEqual({
+      ok: false,
+      reason: 'failed',
+    });
+  });
+});
+
+describe('保存する', () => {
+  it('規則に合う入力で、保存を頼む', async () => {
+    const save = vi.fn(async () => ({ ok: true as const }));
+    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({ ok: true });
+    expect(save).toHaveBeenCalledWith(3, content);
+  });
+
+  it('題が空でも保存できる', async () => {
+    const save = vi.fn(async () => ({ ok: true as const }));
+    expect(await saveNote(fakeRepository({ save }), 3, { ...content, title: '' })).toEqual({
+      ok: true,
+    });
+  });
+
+  it('入力が規則に合わなければ、書き込まずに誤りを返す', async () => {
+    const notes = fakeRepository();
+    expect(await saveNote(notes, 3, { ...content, title: 'あ'.repeat(201) })).toEqual({
+      ok: false,
+      reason: 'invalid',
+      errors: { title: 'too-long' },
+    });
+    expect(notes.save).not.toHaveBeenCalled();
+  });
+
+  it('公開済みの note の slug を変えようとすれば、そのことを返す', async () => {
+    const save = vi.fn(async () => ({ ok: false as const, reason: 'slug-fixed' as const }));
+    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
+      ok: false,
+      reason: 'slug-fixed',
+    });
+  });
+
+  it('存在しない note は保存せず、そのことを返す', async () => {
+    const save = vi.fn(async () => ({ ok: false as const, reason: 'not-found' as const }));
+    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('slug が他の note と重なれば、そのことを返す', async () => {
+    const save = vi.fn(async () => ({ ok: false as const, reason: 'slug-taken' as const }));
+    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
+      ok: false,
+      reason: 'slug-taken',
+    });
+  });
+
+  it('保存に失敗すれば、失敗を返す', async () => {
+    const save = vi.fn(async () => {
+      throw new Error('D1_ERROR: 書き込めない');
+    });
+    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
       ok: false,
       reason: 'failed',
     });

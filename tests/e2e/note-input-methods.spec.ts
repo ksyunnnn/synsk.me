@@ -35,6 +35,23 @@ test.describe('キーボードだけ', () => {
     await page.keyboard.press('Enter');
     await expect(page.getByText('公開しました')).toBeVisible();
   });
+
+  test('保存する', async ({ page }) => {
+    const slug = uniqueSlug('keyboard-save');
+    await createNote(page, { slug, title: 'キーボードで保存する前の題', body: '本文' });
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
+
+    const fields = noteFields(page);
+    await tabTo(page, fields.title);
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.type('キーボードで保存した題');
+    await tabTo(page, page.getByRole('button', { name: '保存する' }));
+    await page.keyboard.press('Enter');
+    await expect(page.getByText('保存しました')).toBeVisible();
+
+    await page.reload();
+    await expect(fields.title).toHaveValue('キーボードで保存した題');
+  });
 });
 
 test.describe('幅 360px の画面', () => {
@@ -55,5 +72,21 @@ test.describe('幅 360px の画面', () => {
     expect(await fitsViewportWidth(page)).toBe(true);
     await page.goto('/dash');
     expect(await fitsViewportWidth(page)).toBe(true);
+  });
+
+  test('保存する', async ({ page }) => {
+    const slug = uniqueSlug('narrow-save');
+    await createNote(page, { slug, title: '狭い画面で保存する前の題', body: '本文' });
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
+
+    const fields = noteFields(page);
+    await fields.title.tap();
+    await fields.title.fill('狭い画面で保存した題');
+    await page.getByRole('button', { name: '保存する' }).tap();
+    await expect(page.getByText('保存しました')).toBeVisible();
+    expect(await fitsViewportWidth(page)).toBe(true);
+
+    await page.reload();
+    await expect(fields.title).toHaveValue('狭い画面で保存した題');
   });
 });

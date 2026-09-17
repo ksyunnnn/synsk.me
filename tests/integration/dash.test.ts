@@ -27,6 +27,13 @@ const INPUT = { slug: 'integration-note', title: '結合テストで入力した
  */
 const inputWithSlug = (slug: string) => ({ ...INPUT, slug });
 
+/**
+ * 編集の画面のフォームは、押したボタンの `intent` で保存と公開を分ける。
+ * JavaScript なしのブラウザは、押したボタンの name と value を送る
+ */
+const SAVE = { intent: 'save' };
+const PUBLISH = { intent: 'publish' };
+
 /** 要求先のホストと異なる Origin。別のサイトから送られた操作 */
 const FOREIGN_ORIGIN = 'https://attacker.example';
 
@@ -100,7 +107,25 @@ describe('D1 から読める', () => {
       const fields = await readFormOf(`/dash/notes/${draft.id}`);
       const before = await readNoteRows(ctx.db);
 
-      await submit(`/dash/notes/${draft.id}`, fields, { id: draft.id, ...INPUT, slug: draft.slug });
+      await submit(`/dash/notes/${draft.id}`, fields, {
+        ...PUBLISH,
+        id: draft.id,
+        ...INPUT,
+        slug: draft.slug,
+      });
+      expect(await readNoteRows(ctx.db)).toEqual(before);
+    });
+
+    it('「保存する」の操作は書き込まない', async () => {
+      const fields = await readFormOf(`/dash/notes/${draft.id}`);
+      const before = await readNoteRows(ctx.db);
+
+      await submit(`/dash/notes/${draft.id}`, fields, {
+        ...SAVE,
+        id: draft.id,
+        ...INPUT,
+        slug: draft.slug,
+      });
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
@@ -133,7 +158,7 @@ describe('D1 から読める', () => {
       await submit(
         `/dash/notes/${draft.id}`,
         fields,
-        { id: draft.id, ...INPUT, slug: draft.slug },
+        { ...PUBLISH, id: draft.id, ...INPUT, slug: draft.slug },
         { ...(await authorHeaders()), origin: FOREIGN_ORIGIN },
       );
       expect(await readNoteRows(ctx.db)).toEqual(before);
@@ -189,12 +214,30 @@ describe('D1 から読める', () => {
         const res = await submit(
           `/dash/notes/${draft.id}`,
           fields,
-          { id: draft.id, ...INPUT, slug: draft.slug },
+          { ...PUBLISH, id: draft.id, ...INPUT, slug: draft.slug },
           await authorHeaders(),
         );
         expect(res.status).toBe(200);
         const html = await res.text();
         expect(html).toContain('公開に失敗しました');
+        expect(html).toContain(`value="${INPUT.title}"`);
+        expect(html).toContain(`>${INPUT.body}</textarea>`);
+        expect(await readNoteRows(ctx.db)).toEqual(before);
+      });
+
+      it('「保存する」は失敗を返し、入力した値を含む', async () => {
+        const fields = await readFormOf(`/dash/notes/${published.id}`);
+        const before = await readNoteRows(ctx.db);
+
+        const res = await submit(
+          `/dash/notes/${published.id}`,
+          fields,
+          { ...SAVE, id: published.id, ...INPUT, slug: published.slug },
+          await authorHeaders(),
+        );
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('保存に失敗しました');
         expect(html).toContain(`value="${INPUT.title}"`);
         expect(html).toContain(`>${INPUT.body}</textarea>`);
         expect(await readNoteRows(ctx.db)).toEqual(before);
@@ -221,7 +264,7 @@ describe('D1 から読める', () => {
         const res = await submit(
           `/dash/notes/${draft.id}`,
           fields,
-          { id: draft.id, slug: draft.slug, title: draft.title, body: draft.body },
+          { ...PUBLISH, id: draft.id, slug: draft.slug, title: draft.title, body: draft.body },
           await authorHeaders(),
         );
         expect(res.status).toBe(200);
@@ -231,6 +274,27 @@ describe('D1 から読める', () => {
           title: draft.title,
           body: draft.body,
         });
+      });
+
+      it('「保存する」は note を保存し、公開している内容を変えない', async () => {
+        const fields = await readFormOf(`/dash/notes/${published.id}`);
+        const before = await readNoteRows(ctx.db);
+
+        const res = await submit(
+          `/dash/notes/${published.id}`,
+          fields,
+          { ...SAVE, id: published.id, ...INPUT, slug: published.slug },
+          await authorHeaders(),
+        );
+        expect(res.status).toBe(200);
+
+        const after = await readNoteRows(ctx.db);
+        expect(after.note.find((row) => row.id === published.id)).toMatchObject({
+          slug: published.slug,
+          title: INPUT.title,
+          body: INPUT.body,
+        });
+        expect(after.notePublication).toEqual(before.notePublication);
       });
     });
   });
