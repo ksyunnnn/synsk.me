@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { ACCESS_CERTS_URL, D1_PERSIST_DIR } from './tests/e2e/support/author';
 
 /**
  * 実ブラウザで確かめるものの設定。
@@ -36,17 +37,43 @@ export default defineConfig({
   // macOS の手元で撮ったものは CI と別ファイルになり、追跡しても意味がない
   snapshotPathTemplate: '{testDir}/__screenshots__/{arg}-{platform}{ext}',
 
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    // note が1件もない D1 を前提とするテスト（タグ `@empty-db`）を、ほかのテストが
+    // note を作る前に走らせる。テストは同じローカルの D1 を並行して使う
+    {
+      name: 'empty-db',
+      grep: /@empty-db/,
+      use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'chromium',
+      grepInvert: /@empty-db/,
+      dependencies: ['empty-db'],
+      use: { ...devices['Desktop Chrome'] },
+    },
+  ],
 
-  // 本番のビルド出力を Workers ランタイムで起動する。`vinext dev` ではない。
-  // dev は vinext の Known gap（native モジュールが RSC の開発環境で落ちうる）を
-  // 踏む
-  webServer: {
-    command: 'npx wrangler dev --config dist/server/wrangler.json --port 8788',
-    url: 'http://127.0.0.1:8788/',
-    // 再利用しない。手元に古い `wrangler dev` が残っていると、これから
-    // commit するのとは別のビルドに対して緑が出る
-    reuseExistingServer: false,
-    timeout: 60_000,
-  },
+  webServer: [
+    // テスト用の鍵の組を作り、公開鍵を Cloudflare Access の代わりに配る。
+    // `wrangler dev` の Worker が、作り手の JWT の検証のために取りに来る。
+    // 作り手として操作するテストは tests/e2e/support/author.ts の `actAsAuthor` を使う
+    {
+      command: `node tests/e2e/support/access-server.ts`,
+      url: ACCESS_CERTS_URL,
+      reuseExistingServer: false,
+      timeout: 30_000,
+    },
+    // 本番のビルド出力を Workers ランタイムで起動する。`vinext dev` ではない。
+    // dev は vinext の Known gap（native モジュールが RSC の開発環境で落ちうる）を
+    // 踏む。起動の前に、ローカルの D1 へマイグレーションを当て、JWT の検証の
+    // 設定値を `dist/server/.dev.vars` に書く。CI も同じコマンドで同じ準備をする
+    {
+      command: `node tests/e2e/support/prepare-worker.ts && npx wrangler dev --config dist/server/wrangler.json --port 8788 --persist-to ${D1_PERSIST_DIR}`,
+      url: 'http://127.0.0.1:8788/',
+      // 再利用しない。手元に古い `wrangler dev` が残っていると、これから
+      // commit するのとは別のビルドに対して緑が出る
+      reuseExistingServer: false,
+      timeout: 60_000,
+    },
+  ],
 });

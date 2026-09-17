@@ -65,6 +65,9 @@ jobs:
       - name: ブラウザを入れる
         run: npx playwright install chromium --with-deps
 
+      # playwright.config.ts の webServer が、`wrangler dev` の起動の前に、
+      # ローカルの D1 へのマイグレーションの適用と `dist/server/.dev.vars` の
+      # 書き出しを行い、テスト用の公開鍵のサーバを起動する。手元と同じ手順を踏む
       - name: E2E
         run: npm run test:e2e:only
 

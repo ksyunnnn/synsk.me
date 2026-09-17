@@ -1,9 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
 
-const migrations = await readD1Migrations(
-  new URL('tests/fixtures/migrations', import.meta.url).pathname,
-);
+// 本番と同じ migrations/ を当てる（ADR-0035）
+const migrations = await readD1Migrations(new URL('migrations', import.meta.url).pathname);
 
 /**
  * workerd の中で走らせるテストの設定。
@@ -19,6 +18,15 @@ const migrations = await readD1Migrations(
  * 根拠は docs/decisions/0019-testing-strategy.md にある。
  */
 export default defineConfig({
+  resolve: {
+    alias: {
+      // tsconfig.json の paths と同じ。src のコードが `@/` で読み込み合う
+      '@': new URL('src', import.meta.url).pathname,
+      // `server-only` の既定の入口は、読み込んだだけで例外を投げる。React Server
+      // Components の環境で解決される空の入口に向ける。vitest.config.ts と同じ
+      'server-only': new URL('node_modules/server-only/empty.js', import.meta.url).pathname,
+    },
+  },
   plugins: [
     cloudflareTest({
       wrangler: { configPath: './tests/wrangler.test.jsonc' },
