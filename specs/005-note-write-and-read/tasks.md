@@ -73,7 +73,7 @@ description: "Task list for note を書いて公開し、読む"
 - [X] T022 [P] [US1] ユースケース「作る」「公開する」「公開済みを読む」「一覧する」。`NoteRepository` を引数で受け取る in src/features/note/application/create-note.ts、publish-note.ts、get-published-note.ts、list-notes.ts
 - [X] T023 [US1] 組み立て用の関数。先頭で `import 'server-only'`。`getPublishedNote(slug)`、`listNotesForAuthor()`、`getNoteForEdit(id)`。作り手向けの2つは、先に作り手であることを確かめる in src/features/note/server/queries.ts
 - [X] T024 [US1] Server Action `createNoteAction`・`publishNoteAction`。ファイルの先頭で `'use server'` と `import 'server-only'`。先に作り手であることを確かめ、確かめられなければ何も書き込まずに失敗を返す。入力の誤り・slug の重複・存在しない note・失敗を、入力した値とともに返す。「作る」の成功は `/dash/notes/{id}` へ `redirect()` in src/features/note/server/actions.ts
-- [ ] T025 [US1] 作る・編集のフォーム（`'use client'`、`useActionState`、ラベル付きの入力、JavaScript なしで送れる。Server Action は props で受け取る）、公開済みの note の表示（本文を文字列で出し、改行を保つ）、作り手の一覧（0件の表示を含む） in src/features/note/components/note-form.tsx、published-note.tsx、note-list.tsx
+- [X] T025 [US1] 作る・編集のフォーム（`'use client'`、`useActionState`、ラベル付きの入力、JavaScript なしで送れる。Server Action は props で受け取る）、公開済みの note の表示（本文を文字列で出し、改行を保つ）、作り手の一覧（0件の表示を含む） in src/features/note/components/note-form.tsx、published-note.tsx、note-list.tsx
 - [ ] T026 [US1] 訪問者の画面。`force-dynamic`、存在しなければ `notFound()`、メタデータは公開済みの値だけから作る。D1 が読めないときは 500 と読み出せなかったことの表示 in src/app/notes/[slug]/page.tsx
 - [ ] T027 [US1] 作り手の画面。`force-dynamic`、作り手であることを確かめられなければ `forbidden()`、`id` の note がなければ `notFound()`、D1 が読めないときは 500 と読み出せなかったことの表示。Server Action を読み込んでフォームに props で渡す in src/app/dash/page.tsx、src/app/dash/notes/new/page.tsx、src/app/dash/notes/[id]/page.tsx
 
