@@ -75,17 +75,19 @@ describe('D1 から読める', () => {
   });
 
   describe('作り手の JWT がない', () => {
-    it.each(['/dash', '/dash/notes/new', `/dash/notes/${draft.id}`])(
-      '%s は 403 で、画面の中身を返さない',
-      async (path) => {
-        const res = await ctx.server.fetch(path);
-        expect(res.status).toBe(403);
+    it.each([
+      '/dash',
+      '/dash/notes/new',
+      `/dash/notes/${draft.id}`,
+      `/dash/notes/${draft.id}/delete`,
+    ])('%s は 403 で、画面の中身を返さない', async (path) => {
+      const res = await ctx.server.fetch(path);
+      expect(res.status).toBe(403);
 
-        const text = await res.text();
-        for (const title of SEEDED_TITLES) expect(text).not.toContain(title);
-        expect(text).not.toContain('<form');
-      },
-    );
+      const text = await res.text();
+      for (const title of SEEDED_TITLES) expect(text).not.toContain(title);
+      expect(text).not.toContain('<form');
+    });
 
     it('オーナーでないメールアドレスの JWT も 403', async () => {
       const token = await ctx.signAuthorJwt({ email: 'visitor@synsk.test' });
@@ -126,6 +128,14 @@ describe('D1 から読める', () => {
         ...INPUT,
         slug: draft.slug,
       });
+      expect(await readNoteRows(ctx.db)).toEqual(before);
+    });
+
+    it('「削除する」の操作は書き込まない', async () => {
+      const fields = await readFormOf(`/dash/notes/${draft.id}/delete`);
+      const before = await readNoteRows(ctx.db);
+
+      await submit(`/dash/notes/${draft.id}/delete`, fields, { noteId: draft.id });
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
@@ -191,6 +201,10 @@ describe('D1 から読める', () => {
             `CREATE TRIGGER fail_note_update BEFORE UPDATE ON note
              BEGIN SELECT RAISE(ABORT, 'integration-write-failure'); END`,
           ),
+          ctx.db.prepare(
+            `CREATE TRIGGER fail_note_delete BEFORE DELETE ON note
+             BEGIN SELECT RAISE(ABORT, 'integration-write-failure'); END`,
+          ),
         ]);
       });
 
@@ -198,6 +212,7 @@ describe('D1 から読める', () => {
         await ctx.db.batch([
           ctx.db.prepare('DROP TRIGGER fail_note_insert'),
           ctx.db.prepare('DROP TRIGGER fail_note_update'),
+          ctx.db.prepare('DROP TRIGGER fail_note_delete'),
         ]);
       });
 
@@ -248,6 +263,21 @@ describe('D1 から読める', () => {
         expect(html).toContain('保存に失敗しました');
         expect(html).toContain(`value="${INPUT.title}"`);
         expect(html).toContain(`>${INPUT.body}</textarea>`);
+        expect(await readNoteRows(ctx.db)).toEqual(before);
+      });
+
+      it('「削除する」は失敗を返す', async () => {
+        const fields = await readFormOf(`/dash/notes/${published.id}/delete`);
+        const before = await readNoteRows(ctx.db);
+
+        const res = await submit(
+          `/dash/notes/${published.id}/delete`,
+          fields,
+          { noteId: published.id },
+          await authorHeaders(),
+        );
+        expect(res.status).toBe(200);
+        expect(await res.text()).toContain('削除に失敗しました');
         expect(await readNoteRows(ctx.db)).toEqual(before);
       });
     });
@@ -304,6 +334,25 @@ describe('D1 から読める', () => {
         });
         expect(after.notePublication).toEqual(before.notePublication);
       });
+
+      it('「削除する」は note を削除し、一覧の画面へ移す', async () => {
+        const created = await ctx.db
+          .prepare('INSERT INTO note (slug, title, body) VALUES (?, ?, ?) RETURNING id')
+          .bind('integration-delete', '削除する題', '削除する本文')
+          .first<{ id: number }>();
+        const id = created?.id ?? 0;
+        const fields = await readFormOf(`/dash/notes/${id}/delete`);
+
+        const res = await submit(
+          `/dash/notes/${id}/delete`,
+          fields,
+          { noteId: id },
+          await authorHeaders(),
+        );
+        expect(res.status).toBe(303);
+        expect(res.headers.get('location')).toMatch(/\/dash\?deleted=1$/);
+        expect((await readNoteRows(ctx.db)).note.find((row) => row.id === id)).toBeUndefined();
+      });
     });
   });
 });
@@ -323,7 +372,7 @@ describe('D1 から読めない', () => {
     await ctx?.close();
   });
 
-  it.each(['/dash', `/dash/notes/${published.id}`])(
+  it.each(['/dash', `/dash/notes/${published.id}`, `/dash/notes/${published.id}/delete`])(
     '作り手の JWT 付きの %s は 500 で、note の題と本文を含めない',
     async (path) => {
       const res = await ctx.server.fetch(path, {

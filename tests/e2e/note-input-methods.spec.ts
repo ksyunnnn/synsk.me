@@ -54,6 +54,22 @@ test.describe('キーボードだけ', () => {
     await page.reload();
     await expect(fields.title).toHaveValue('キーボードで保存した題');
   });
+
+  test('確認の画面を経て削除する', async ({ page }) => {
+    const slug = uniqueSlug('keyboard-delete');
+    await createNote(page, { slug, title: 'キーボードで削除する題', body: '本文' });
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
+
+    await tabTo(page, page.getByRole('link', { name: 'この note を削除する' }));
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+\/delete$/);
+
+    await tabTo(page, page.getByRole('button', { name: '削除する' }));
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/dash\?deleted=1$/);
+    await expect(page.getByText('note を削除しました')).toBeVisible();
+    await expect(page.getByRole('listitem').filter({ hasText: slug })).toHaveCount(0);
+  });
 });
 
 test.describe('幅 360px の画面', () => {
@@ -90,5 +106,20 @@ test.describe('幅 360px の画面', () => {
 
     await page.reload();
     await expect(fields.title).toHaveValue('狭い画面で保存した題');
+  });
+  test('確認の画面を経て削除する', async ({ page }) => {
+    const slug = uniqueSlug('narrow-delete');
+    await createNote(page, { slug, title: '狭い画面で削除する題', body: '本文' });
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
+
+    await page.getByRole('link', { name: 'この note を削除する' }).tap();
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+\/delete$/);
+    expect(await fitsViewportWidth(page)).toBe(true);
+
+    await page.getByRole('button', { name: '削除する' }).tap();
+    await expect(page).toHaveURL(/\/dash\?deleted=1$/);
+    await expect(page.getByText('note を削除しました')).toBeVisible();
+    await expect(page.getByRole('listitem').filter({ hasText: slug })).toHaveCount(0);
+    expect(await fitsViewportWidth(page)).toBe(true);
   });
 });

@@ -111,10 +111,10 @@ description: "Task list for note を書いて公開し、読む"
 
 ### Tests for User Story 3
 
-- [ ] T034 [P] [US3] ユースケース「削除する」の単体テスト。存在しない note、削除の失敗 in tests/unit/note-usecases.test.ts
-- [ ] T035 [P] [US3] 結合テスト。JWT のない `/dash/notes/{id}/delete` が 403、JWT のない「削除する」の操作の前後で D1 の行が変わらない。作り手の JWT 付きで、D1 が読めないときの削除の確認の画面が 500、D1 が書き込めないときの「削除する」が失敗を返す in tests/integration/dash.test.ts
-- [ ] T036 [P] [US3] JavaScript を切った E2E。削除の確認の画面から戻るリンクで戻ると、一覧に残り訪問者も読める → 確認の画面で削除する → 訪問者に note がないことが伝わる → 一覧から消え、削除したことが出る → 同じ slug で作れる。別のページで削除した note を保存すると、存在しないことが出る（T033 の後） in tests/e2e/note-delete.spec.ts
-- [ ] T037 [P] [US3] 確認の画面を経て削除することを、キーボードだけで行う E2E と、幅 360px の画面で行う E2E in tests/e2e/note-input-methods.spec.ts
+- [X] T034 [P] [US3] ユースケース「削除する」の単体テスト。存在しない note、削除の失敗 in tests/unit/note-usecases.test.ts
+- [X] T035 [P] [US3] 結合テスト。JWT のない `/dash/notes/{id}/delete` が 403、JWT のない「削除する」の操作の前後で D1 の行が変わらない。作り手の JWT 付きで、D1 が読めないときの削除の確認の画面が 500、D1 が書き込めないときの「削除する」が失敗を返す in tests/integration/dash.test.ts
+- [X] T036 [P] [US3] JavaScript を切った E2E。削除の確認の画面から戻るリンクで戻ると、一覧に残り訪問者も読める → 確認の画面で削除する → 訪問者に note がないことが伝わる → 一覧から消え、削除したことが出る → 同じ slug で作れる。別のページで削除した note を保存すると、存在しないことが出る（T033 の後） in tests/e2e/note-delete.spec.ts
+- [X] T037 [P] [US3] 確認の画面を経て削除することを、キーボードだけで行う E2E と、幅 360px の画面で行う E2E in tests/e2e/note-input-methods.spec.ts
 
 ### Implementation for User Story 3
 

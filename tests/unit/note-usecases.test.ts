@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createNote } from '@/features/note/application/create-note';
+import { deleteNote } from '@/features/note/application/delete-note';
 import { getNoteForEdit } from '@/features/note/application/get-note-for-edit';
 import { getPublishedNote } from '@/features/note/application/get-published-note';
 import { listNotes } from '@/features/note/application/list-notes';
@@ -181,6 +182,32 @@ describe('公開する', () => {
       throw new Error('D1_ERROR: 書き込めない');
     });
     expect(await publishNote(fakeRepository({ publish }), 3, content, PUBLISHED_AT)).toEqual({
+      ok: false,
+      reason: 'failed',
+    });
+  });
+});
+
+describe('削除する', () => {
+  it('note の削除を頼む', async () => {
+    const del = vi.fn(async () => ({ ok: true as const }));
+    expect(await deleteNote(fakeRepository({ delete: del }), 3)).toEqual({ ok: true });
+    expect(del).toHaveBeenCalledWith(3);
+  });
+
+  it('存在しない note なら、そのことを返す', async () => {
+    const del = vi.fn(async () => ({ ok: false as const, reason: 'not-found' as const }));
+    expect(await deleteNote(fakeRepository({ delete: del }), 3)).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('削除に失敗すれば、失敗を返す', async () => {
+    const del = vi.fn(async () => {
+      throw new Error('D1_ERROR: 書き込めない');
+    });
+    expect(await deleteNote(fakeRepository({ delete: del }), 3)).toEqual({
       ok: false,
       reason: 'failed',
     });
