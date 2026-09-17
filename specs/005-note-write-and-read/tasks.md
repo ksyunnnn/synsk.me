@@ -46,7 +46,7 @@ description: "Task list for note を書いて公開し、読む"
 - [X] T013 [P] JWT の検証の単体テスト。テスト用の鍵で署名し、正しい JWT は通り、ヘッダなし・署名違い・`aud` 違い・期限切れ・メールアドレス違い・設定値の欠け・公開鍵が取れないは拒否されることを確かめる in tests/unit/note-author.test.ts
 - [X] T014 [P] テスト用の鍵と作り手の JWT。テスト用の鍵の組を作り、公開鍵を `/cdn-cgi/access/certs` で配るサーバを起動する関数と、作り手の JWT を作る関数を置く。結合テストと E2E の両方が使う in tests/support/access.ts
 - [X] T015 結合テストの土台。ビルド出力を起動する前に `migrations/` を当て、公開済み1件・公開し直していない書き換えのある公開済み1件・下書き1件を SQL で入れる。`ACCESS_*` を T014 の公開鍵のサーバへ向けて `createTestHarness()` に渡す。渡せなければ、渡す方法を research.md の R6 に書く。行の数と中身を読む関数を置く in tests/integration/support/d1.ts
-- [ ] T016 E2E の土台。Playwright の webServer に T014 の公開鍵のサーバを足し、作り手の JWT をブラウザの要求のヘッダに付ける関数を置く。`wrangler dev` を起動する前に、ローカルの D1 へマイグレーションを当て、`dist/server/.dev.vars` に `ACCESS_*` を書く。CI でも同じ手順を踏む in tests/e2e/support/author.ts、playwright.config.ts、.github/workflows/ci.yml
+- [X] T016 E2E の土台。Playwright の webServer に T014 の公開鍵のサーバを足し、作り手の JWT をブラウザの要求のヘッダに付ける関数を置く。`wrangler dev` を起動する前に、ローカルの D1 へマイグレーションを当て、`dist/server/.dev.vars` に `ACCESS_*` を書く。CI でも同じ手順を踏む in tests/e2e/support/author.ts、playwright.config.ts、.github/workflows/ci.yml
 
 **Checkpoint**: 規則・保存・作り手の確かめ方・テストの土台が揃い、User Story の作業を始められる
 
