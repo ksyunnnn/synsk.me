@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { SEEDED_NOTES, readNoteRows, startNoteTestServer, type NoteTestServer } from './support/d1';
-import { readActionFields, toFormBody } from './support/form';
+import { encodeForm, readActionFields } from './support/form';
 
 /**
  * 作り手の経路 `/dash` 配下（specs/005-note-write-and-read/contracts/routes.md）。
@@ -21,6 +21,12 @@ const SEEDED_TITLES = [
 /** 作り手が入力する値。応答に残ることを確かめるため、他の値と重ならないものにする */
 const INPUT = { slug: 'integration-note', title: '結合テストで入力した題', body: '入力した本文' };
 
+/**
+ * 書き込まないことを確かめる操作ごとに、別の slug を使う。前の検査が誤って書き込んだ
+ * とき、後の検査が slug の重複で書き込まずに通ってしまわないようにする
+ */
+const inputWithSlug = (slug: string) => ({ ...INPUT, slug });
+
 /** 要求先のホストと異なる Origin。別のサイトから送られた操作 */
 const FOREIGN_ORIGIN = 'https://attacker.example';
 
@@ -38,18 +44,20 @@ describe('D1 から読める', () => {
   };
 
   /** JavaScript なしのブラウザと同じ形で、フォームを送る */
-  const submit = (
+  const submit = async (
     path: string,
     actionFields: Record<string, string>,
     values: Record<string, string | number>,
     headers: Record<string, string> = {},
-  ) =>
-    ctx.server.fetch(path, {
+  ) => {
+    const { body, contentType } = await encodeForm(actionFields, values);
+    return ctx.server.fetch(path, {
       method: 'POST',
-      body: toFormBody(actionFields, values),
-      headers,
+      body,
+      headers: { ...headers, 'content-type': contentType },
       redirect: 'manual',
     });
+  };
 
   beforeAll(async () => {
     ctx = await startServer();
@@ -84,7 +92,7 @@ describe('D1 から読める', () => {
       const fields = await readFormOf('/dash/notes/new');
       const before = await readNoteRows(ctx.db);
 
-      await submit('/dash/notes/new', fields, INPUT);
+      await submit('/dash/notes/new', fields, inputWithSlug('no-jwt-create'));
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
@@ -101,7 +109,7 @@ describe('D1 から読める', () => {
       const fields = await readFormOf('/dash/notes/new');
       const before = await readNoteRows(ctx.db);
 
-      await submit('/', fields, INPUT);
+      await submit('/', fields, inputWithSlug('no-jwt-outside'));
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
   });
@@ -111,7 +119,7 @@ describe('D1 から読める', () => {
       const fields = await readFormOf('/dash/notes/new');
       const before = await readNoteRows(ctx.db);
 
-      await submit('/dash/notes/new', fields, INPUT, {
+      await submit('/dash/notes/new', fields, inputWithSlug('foreign-origin-create'), {
         ...(await authorHeaders()),
         origin: FOREIGN_ORIGIN,
       });

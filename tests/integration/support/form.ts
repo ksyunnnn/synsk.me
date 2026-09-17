@@ -36,13 +36,22 @@ export const readActionFields = (html: string): Record<string, string> => {
   return fields;
 };
 
-/** 操作を指す入力と、入力した値を、ブラウザが送るのと同じ multipart の本文にする */
-export const toFormBody = (
+/**
+ * 操作を指す入力と、入力した値を、ブラウザが送るのと同じ multipart の本文にする。
+ * `createTestHarness()` の `fetch` に `FormData` をそのまま渡すと、`content-type` に
+ * multipart の boundary が付かず、vinext が Server Action の送信と見なさない。
+ * 本文とヘッダを先に組み立てて渡す
+ */
+export const encodeForm = async (
   actionFields: Record<string, string>,
   values: Record<string, string | number>,
 ) => {
-  const body = new FormData();
-  for (const [name, value] of Object.entries(actionFields)) body.append(name, value);
-  for (const [name, value] of Object.entries(values)) body.append(name, String(value));
-  return body;
+  const form = new FormData();
+  for (const [name, value] of Object.entries(actionFields)) form.append(name, value);
+  for (const [name, value] of Object.entries(values)) form.append(name, String(value));
+  const encoded = new Response(form);
+  return {
+    body: await encoded.arrayBuffer(),
+    contentType: encoded.headers.get('content-type') ?? '',
+  };
 };
