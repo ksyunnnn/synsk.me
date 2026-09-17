@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  parseNoteId,
   toNoteSummaryDto,
   toEditableNoteDto,
   toPublishedDate,
@@ -175,4 +176,18 @@ describe('画面に渡す形', () => {
       status: 'draft',
     });
   });
+});
+
+describe('note の id', () => {
+  it('正の整数の文字列を id にする', () => {
+    expect(parseNoteId('1')).toBe(1);
+    expect(parseNoteId('9007199254740991')).toBe(9007199254740991);
+  });
+
+  it.each(['', '0', '-1', '01', '1.5', '1e3', 'abc', ' 1', '9007199254740992'])(
+    '%j は id でない',
+    (value) => {
+      expect(parseNoteId(value)).toBeNull();
+    },
+  );
 });

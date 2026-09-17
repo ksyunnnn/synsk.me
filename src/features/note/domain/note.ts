@@ -14,6 +14,13 @@ const SLUG_PATTERN = /^[a-z0-9-]+$/;
 
 export type NoteId = number;
 
+/** URL やフォームから受け取った文字列を note の id にする。正の整数でなければ null */
+export const parseNoteId = (value: string): NoteId | null => {
+  if (!/^[1-9][0-9]*$/.test(value)) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) ? id : null;
+};
+
 /** 下書きか公開か。`note_publication` に行があれば公開 */
 export type NoteStatus = 'draft' | 'published';
 
@@ -164,3 +171,25 @@ export const toEditableNoteDto = (note: EditableNote): EditableNoteDto => ({
   body: note.body,
   status: note.status,
 });
+
+/** 作る・編集のフォームに返す、操作の結果。入力の誤りは `errors` が持つ */
+export type NoteFormResult =
+  | 'published'
+  | 'slug-taken'
+  | 'slug-fixed'
+  | 'not-found'
+  | 'save-failed'
+  | 'publish-failed'
+  | 'forbidden';
+
+/** 作る・編集のフォームの状態。入力した値を持ち、誤りや失敗のときも画面に残す */
+export type NoteFormState = {
+  values: NoteContent;
+  errors: NoteContentErrors;
+  result: NoteFormResult | null;
+};
+
+/** 操作の前のフォームの状態。値を省くと空の入力 */
+export const toNoteFormState = (
+  { slug, title, body }: NoteContent = { slug: '', title: '', body: '' },
+): NoteFormState => ({ values: { slug, title, body }, errors: {}, result: null });
