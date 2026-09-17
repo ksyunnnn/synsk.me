@@ -1,9 +1,8 @@
 import { defineConfig } from 'vitest/config';
 import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin';
 
-const migrations = await readD1Migrations(
-  new URL('tests/fixtures/migrations', import.meta.url).pathname,
-);
+// 本番と同じ migrations/ を当てる（ADR-0035）
+const migrations = await readD1Migrations(new URL('migrations', import.meta.url).pathname);
 
 /**
  * workerd の中で走らせるテストの設定。
