@@ -32,6 +32,7 @@
 | [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
+| GitHub Pull Request | 何を変え、何を確かめたか | 完了 | 要件本文の再掲、設計の判断（`decisions/` と `spec.md` が持つ） |
 | GitHub Milestone | どのリリースに含めるか | — | 要件の定義 |
 | [../README.md](../README.md) | このリポジトリが何で、どう動かすか | 恒常 | 設計の判断基準、進捗 |
 | [CLAUDE.md](../CLAUDE.md) | プロジェクト固有の作業ルール | 恒常 | コードから導出できること |
