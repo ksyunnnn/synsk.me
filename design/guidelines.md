@@ -8,12 +8,23 @@
   - Accessibility
   - App icons
   - Branding
+    - Key visual
+    - Logos
+    - Illustrations
+    - Shape
   - Color
   - Dark Mode
+  - Design tokens
+    - Border
+    - Radius
+    - Shape
+  - Elevation
   - Icons
   - Images
   - Inclusion
   - Layout
+    - Spacing
+    - Shape
   - Materials
   - Motion
   - Privacy
@@ -25,6 +36,8 @@
   - Drag and drop
   - Entering data
   - Feedback
+    - Shape
+    - AI を使っている場所を知らせる
   - File management
   - Going full screen
   - Launching
