@@ -1,0 +1,87 @@
+# Guidelines
+
+> **WIP** — この文書は未完成である。いまあるのは目次と、各項目に入る内容の想定（「…」以降）だけで、各項目の置き場と中身は書いていない。
+>
+> 完成した姿では、デザインを構成する層ごとに、その役割と置き場を持つ。各層の中身は書かず、各層の置き場が持つ。
+
+## Contents
+
+- Getting started
+  - Design principles … Apple のプラットフォーム全体で設計を導く原則。Purpose / Agency / Responsibility / Familiarity / Flexibility / Simplicity / Craft / Delight の 8 つの節を持つ
+- Foundations
+  - Accessibility … 誰もが良い体験を得られるようにすること。視覚・聴覚・身体機能・発話・認知の節を持つ。#88 のコントラスト比はここで扱う（#102 本文）
+  - App icons … 独特で覚えられるアイコンで、アプリやゲームの目的と性格を表し、一目で見分けられるようにすること。favicon など Web で同じ役割を持つものに当てはめる（#102 本文）
+  - Branding … 一目で見分けられ、プラットフォームに馴染み、一貫した体験になるように、ブランドを表すこと
+    - Key visual … 「キービジュアルと UI の両方に使う」の受け皿（#102 本文）。HIG に項目はなく、Pajamas がブランドを UI と分けて持つ
+    - Logos … ブランドやアプリを表す視覚表現（Atlassian の Logos）
+    - Illustrations … 複雑な考えを簡単に伝える絵（Atlassian の Illustrations）
+    - Shape … 形でブランドを表す役割（Material 3 の Shape の express brand）
+  - Color … 色を選んで使えば、伝わりやすくなり、ブランドを想起させ、視覚の連続性を与え、状態と合図を伝え、情報の理解を助ける。#16 のアクセントカラーの要否と #88 のコントラスト比はここで扱う（#102 本文）
+  - Dark Mode … 暗い配色に切り替わるシステム全体の設定。暗い配色、アイコンと画像、文字の節を持つ
+  - Design tokens … デザインの決定に名前を付けて保管する唯一の正本（Atlassian の Tokens）。HIG に項目はなく、Material 3 と Pajamas は基礎の層に置き、Fluent 2 は層に分けずに並べている
+    - Border … 境界を定め、部品を分け、見た目の強弱を付けること（Atlassian の Border）
+    - Radius … 角の丸みをそろえる値（Atlassian の Radius）
+    - Shape … 角の丸みの段階の値（Material 3 の shape scale）
+  - Elevation … 面の重なりの高さ。Material 3 は「2 つの面の z 軸方向の距離」とする。透け方で作る奥行きは Materials が持つ。Fluent 2 も Material と別の項目に置く
+  - Icons … 1 つの概念を一目で伝える図。標準のアイコンの一覧を持つ
+  - Images … 画像を、端末ごとの倍率に合わせて用意すること。解像度と画像形式の節を持つ
+  - Inclusion … 敬意ある言葉と、誰もが受け取れる内容・機能。言葉、性の表し方、決めつけを避けること、言語の節を持つ
+  - Layout … 画面の大きさ・向き・マルチタスクの構成に合わせて一貫する配置。視覚の階層、適応、サイズクラス、ガイドと安全領域の節を持つ
+    - Spacing … 余白の刻み。Fluent 2 は Layout の中で刻み（spacing ramp）を扱う。HIG の Layout は標準の余白に触れるだけで、刻みは持たない
+    - Shape … 形で、どこに目を向けさせるかの役割（Material 3 の Shape の direct attention）
+  - Materials … 前景と背景の間に奥行き・重なり・階層を作る視覚効果。Liquid Glass と標準の素材の節を持つ。apple.com の Duo のページで見たすりガラスの奥行きはここで扱う（2026-09-18 にオーナーが決定）
+  - Motion … 動きで状態を伝え、合図と説明を与え、見た目を豊かにすること
+  - Privacy … 必要とするデータとリソースを明らかにし、預かったデータを守ること。権限の求め方と守り方の節を持つ
+  - Typography … 読みやすさ、情報の階層、重要な内容、ブランドや作風を、文字で表すこと
+  - Writing … アプリの中で選ぶ言葉
+- Patterns
+  - Charting data … 図でデータを伝えること。データ可視化はここで扱う（#102 本文）
+  - Collaboration and sharing … 内容に関わりながら、他の人とやり取りできる体験
+  - Drag and drop … 選んだ内容をつまんで移す、複製すること
+  - Entering data … 求める情報を、易しく間違いなく入力してもらう作り
+  - Feedback … 何が起きているか、次に何ができるか、操作の結果を知らせ、間違いを防ぐこと
+    - Shape … 形で状態を伝える役割（Material 3 の Shape の communicate state）
+    - AI を使っている場所を知らせる … HIG の Generative AI の Transparency の節「Communicate where your app uses AI」に当たる。補足として置く（2026-09-18 にオーナーが決定）
+  - File management … 文書とファイルを作る・開く・保存すること
+  - Going full screen … 画面いっぱいに広げ、システムの操作を隠す状態
+  - Launching … 起動してすぐ使い始められること
+  - Live-viewing apps … ライブ映像を見る体験。EPG と Cloud DVR の節を持つ
+  - Loading … 読み込みは、気づかれる前に終わるのが最善という立場。進み具合の見せ方の節を持つ
+  - Managing accounts … アカウントの作らせ方、ログインの求め方、削除のさせ方
+  - Managing notifications … 端末が使用中でも施錠中でも、必要な知らせを届けること
+  - Modality … 親の画面を操作できなくし、明示の操作で閉じる見せ方
+  - Multitasking … アプリを素早く行き来して、それぞれで作業すること
+  - Offering help … 必要なときだけ、その場の助けを出すこと
+  - Onboarding … 使い始めを素早くすること
+  - Playing audio … 状況が変わると自動で調整される音の体験
+  - Playing haptics … 触覚に働きかけ、現実世界での慣れを持ち込むこと
+  - Playing video … 動画を見る体験
+  - Printing … システムの印刷機能を組み込むこと
+  - Ratings and reviews … ダウンロードの前に見られるもの。評価を求める頃合いを扱う
+  - Searching … 端末の中、アプリの中、文書の中から内容を見つける手立て
+  - Settings … 自分に合うように設定を変えられること
+  - Undo and redo … 操作を戻す・やり直す手立て。新しい操作を安心して試せるようにもなる
+  - Workouts … 運動に取り組み、記録をたどる体験
+- Components
+  - Content … Charts / Image views / Text views / Web views
+  - Layout and organization … Boxes / Collections / Column views / Disclosure controls / Labels / Lists and tables / Lockups / Outline views / Split views / Tab views
+  - Menus and actions … Activity views / Buttons / Context menus / Dock menus / Edit menus / Home Screen quick actions / Menus / Ornaments / Pop-up buttons / Pull-down buttons / The menu bar / Toolbars
+  - Navigation and search … Path controls / Search fields / Sidebars / Tab bars / Token fields
+  - Presentation … Action sheets / Alerts / Page controls / Panels / Popovers / Scroll views / Sheets / Windows
+  - Selection and input … Color wells / Combo boxes / Digit entry views / Image wells / Pickers / Segmented controls / Sliders / Steppers / Text fields / Toggles / Virtual keyboards
+  - Status … Activity rings / Gauges / Progress indicators / Rating indicators
+  - System experiences … App Shortcuts / Complications / Controls / Live Activities / Notifications / Snippets / Status bars / Top Shelf / Watch faces / Widgets
+- Inputs
+  - Action button … 対応する iPhone と Apple Watch の Action ボタンから、お気に入りの機能に素早く入ること
+  - Apple Pencil and Scribble … Apple Pencil での描画・手書き・書き込みと、指し示す道具としての扱い
+  - Camera Control … アプリのカメラ体験へ直接入る操作
+  - Digital Crown … Apple Vision Pro と Apple Watch のハードウェア入力
+  - Eyes … visionOS で、見た対象を操作の相手として選ぶこと
+  - Focus and selection … 操作の対象がどれかを、目で確かめられるようにすること
+  - Game controls … 正確で直感的なゲームの操作が、遊びやすさと没入を高めること
+  - Gestures … アプリやゲームの中の対象に直接働きかける体の動き
+  - Gyroscope and accelerometer … 端末の物理的な動きのデータ
+  - Keyboards … 物理キーボードでの文字入力、ゲーム、アプリの操作
+  - Nearby interactions … 近くにいる人や物の存在を使う体験
+  - Pointing devices … トラックパッドやマウスでインターフェースを辿り、操作を始めること
+  - Remotes … Apple TV の主要な入力手段である Siri Remote での操作
