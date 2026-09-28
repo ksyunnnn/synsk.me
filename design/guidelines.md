@@ -9,7 +9,7 @@
 - Getting started
   - Design principles … Apple のプラットフォーム全体で設計を導く原則。Purpose / Agency / Responsibility / Familiarity / Flexibility / Simplicity / Craft / Delight の 8 つの節を持つ
 - Foundations
-  - Accessibility … 誰もが良い体験を得られるようにすること。視覚・聴覚・身体機能・発話・認知の節を持つ。#88 のコントラスト比はここで扱う（#102 本文）
+  - Accessibility … 誰もが良い体験を得られるようにすること。視覚・聴覚・身体機能・発話・認知の節を持つ。#88 のコントラスト比はここで扱う（#102 本文）。外した Technologies の層の VoiceOver はここで扱う
   - App icons … 独特で覚えられるアイコンで、アプリやゲームの目的と性格を表し、一目で見分けられるようにすること。favicon など Web で同じ役割を持つものに当てはめる（#102 本文）
   - Branding … 一目で見分けられ、プラットフォームに馴染み、一貫した体験になるように、ブランドを表すこと
     - Key visual … 「キービジュアルと UI の両方に使う」の受け皿（#102 本文）。HIG に項目はなく、Pajamas がブランドを UI と分けて持つ
@@ -26,7 +26,7 @@
   - Icons … 1 つの概念を一目で伝える図。標準のアイコンの一覧を持つ
   - Images … 画像を、端末ごとの倍率に合わせて用意すること。解像度と画像形式の節を持つ
   - Inclusion … 敬意ある言葉と、誰もが受け取れる内容・機能。言葉、性の表し方、決めつけを避けること、言語の節を持つ
-  - Layout … 画面の大きさ・向き・マルチタスクの構成に合わせて一貫する配置。視覚の階層、適応、サイズクラス、ガイドと安全領域の節を持つ。Getting started から外した Designing for iOS と Designing for iPhone Duo のうち、端末をまたいで成り立つ観点（安全領域の内側に内容を置く、大きさが変わっても組み替えずに小さく調整する、など）はここで扱う
+  - Layout … 画面の大きさ・向き・マルチタスクの構成に合わせて一貫する配置。視覚の階層、適応、サイズクラス、ガイドと安全領域の節を持つ。Getting started から外した Designing for iOS・iPadOS・macOS・visionOS と Designing for iPhone Duo のうち、端末をまたいで成り立つ観点（安全領域の内側に内容を置く、大きさが変わっても組み替えずに小さく調整する、など）はここで扱う
     - Spacing … 余白の刻み。Fluent 2 は Layout の中で刻み（spacing ramp）を扱う。HIG の Layout は標準の余白に触れるだけで、刻みは持たない
     - Shape … 形で、どこに目を向けさせるかの役割（Material 3 の Shape の direct attention）
   - Materials … 前景と背景の間に奥行き・重なり・階層を作る視覚効果。Liquid Glass と標準の素材の節を持つ。apple.com の Duo のページで見たすりガラスの奥行きはここで扱う（2026-09-18 にオーナーが決定）
