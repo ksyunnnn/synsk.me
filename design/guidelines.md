@@ -179,11 +179,16 @@
 - 気を引くための誇張をしない
 - 出典: PRINCIPLES の対話 over 展示・Anti-Principles、ADR-0024
 
+### HIG に従う項目
+
+ここに決まりを書いていない項目は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- App icons（独特で覚えられるアイコンで、目的と性格を表し、一目で見分けられるようにすること）: favicon など Web で同じ役割を持つものに当てはめる（ADR-0035）
+- Inclusion（敬意ある言葉と、誰もが受け取れる内容・機能）
+
 ### 未定の項目
 
-App icons / Elevation / Inclusion
-
-App icons は、favicon など Web で同じ役割を持つものに当てはめる（ADR-0035）。
+- Elevation（面の重なりの高さ）: HIG に同じ名前のページがない。Material 3 から足した項目（ADR-0035）
 
 ---
 
@@ -214,9 +219,27 @@ App icons は、favicon など Web で同じ役割を持つものに当てはめ
 - ログインは作り手だけが行い、判定はアプリケーションの外（Cloudflare Access）で行う。ログイン画面の見た目は作らない
 - 出典: ADR-0013
 
-### 未定の項目
+### HIG に従う項目
 
-Charting data / Collaboration and sharing / Drag and drop / Entering data / File management / Going full screen / Managing notifications / Modality / Offering help / Onboarding / Playing audio / Playing haptics / Playing video / Printing / Searching / Settings / Undo and redo
+ここに決まりを書いていない項目は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Charting data（図でデータを伝えること）
+- Collaboration and sharing（内容に関わりながら、他の人とやり取りできる体験）
+- Drag and drop（選んだ内容をつまんで移す、複製すること）
+- Entering data（求める情報を、易しく間違いなく入力してもらう作り）
+- File management（文書とファイルを作る・開く・保存すること）
+- Going full screen（画面いっぱいに広げ、システムの操作を隠す状態）
+- Managing notifications（端末が使用中でも施錠中でも、必要な知らせを届けること）
+- Modality（親の画面を操作できなくし、明示の操作で閉じる見せ方）
+- Offering help（必要なときだけ、その場の助けを出すこと）
+- Onboarding（使い始めを素早くすること）
+- Playing audio（状況が変わると自動で調整される音の体験）
+- Playing haptics（触覚に働きかけ、現実世界での慣れを持ち込むこと）
+- Playing video（動画を見る体験）
+- Printing（システムの印刷機能を組み込むこと）
+- Searching（端末の中、アプリの中、文書の中から内容を見つける手立て）
+- Settings（自分に合うように設定を変えられること）
+- Undo and redo（操作を戻す・やり直す手立て）
 
 ### 扱わない項目
 
@@ -236,7 +259,9 @@ Charting data / Collaboration and sharing / Drag and drop / Entering data / File
 - 操作・フォーカス・状態は headless のライブラリに任せ、見た目と動きをかぶせる
 - 出典: ADR-0032 の見た目と操作を分ける、ADR-0026
 
-### 未定の項目
+### HIG に従う項目
+
+ここに決まりを書いていない部品は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。
 
 - Content: Charts / Image views / Text views / Web views
 - Layout and organization: Boxes / Collections / Column views / Disclosure controls / Labels / Lists and tables / Lockups / Outline views / Split views / Tab views
@@ -266,9 +291,15 @@ Charting data / Collaboration and sharing / Drag and drop / Entering data / File
 - すべての操作をキーボードで行えるようにする
 - 出典: WCAG 2.2 SC 2.1.1
 
-### 未定の項目
+### HIG に従う項目
 
-Apple Pencil and Scribble / Eyes / Gestures / Gyroscope and accelerometer / Pointing devices
+ここに決まりを書いていない項目は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Apple Pencil and Scribble（Apple Pencil での描画・手書き・書き込みと、指し示す道具としての扱い）
+- Eyes（visionOS で、見た対象を操作の相手として選ぶこと）
+- Gestures（アプリやゲームの中の対象に直接働きかける体の動き）
+- Gyroscope and accelerometer（端末の物理的な動きのデータ）
+- Pointing devices（トラックパッドやマウスでインターフェースを辿り、操作を始めること）
 
 ### 扱わない項目
 
