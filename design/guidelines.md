@@ -103,6 +103,7 @@
 - 演出を通らずに、たどり着きたい情報へ行ける道を置く
 - 内容を安全領域の内側に置く。`viewport-fit=cover` と `env(safe-area-inset-*)` で受け取る
 - 画面の大きさが変わっても組み替えず、小さな調整で合わせる
+  - 上の 2 つは、HIG のアプリ向けのページ（Designing for iPhone Duo）の観点を、Web に当てはめて使っている
 - 折り目と開閉の状態は扱わない。Safari から取れない
 - Shape（注意を向ける）: 未定
 
@@ -200,6 +201,7 @@ App icons は、favicon など Web で同じ役割を持つものに当てはめ
 
 ### Loading
 
+- HIG の Launching（起動してすぐ使い始められること）は、Web では最初の表示までの時間に当たり、ここで扱う
 - 表示速度は ADR-0017 の値で測る。LCP 2,500ms・INP 200ms・CLS 0.1・TTFB 800ms・FCP 1,800ms を満たすべき値、LCP 1,100ms・INP 75ms・CLS 0・TTFB 450ms・FCP 900ms を目標値とする。モバイルとデスクトップそれぞれの 75 パーセンタイルで判定する
 - 満たすべき値を割るときは、表示速度を見た目・動き・機能より優先する。目標値を割るだけなら優先しない
 - 読み込みの後に要素の位置をずらさない（CLS の目標値 0）
@@ -218,11 +220,12 @@ Charting data / Collaboration and sharing / Drag and drop / Entering data / File
 
 ### 扱わない項目
 
-- Launching: Web のページは起動画面を持たない
-- Live-viewing apps: ライブ映像を配信しない
-- Multitasking: アプリを行き来する操作はブラウザと OS が持つ。画面の大きさの変化は Layout で扱う
-- Ratings and reviews: App Store に出さない
-- Workouts: 運動を記録しない
+括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Live-viewing apps（ライブ映像を見る体験）: ライブ映像を配信しないため扱わない
+- Multitasking（複数のアプリを行き来して作業すること）: 行き来はブラウザと OS が担うため扱わない。画面の大きさの変化は Layout で扱う
+- Ratings and reviews（App Store での評価の求め方）: App Store に出さないため扱わない
+- Workouts（運動の記録）: 運動を記録する機能を持たないため扱わない
 
 ---
 
@@ -265,14 +268,15 @@ Charting data / Collaboration and sharing / Drag and drop / Entering data / File
 
 ### 未定の項目
 
-Apple Pencil and Scribble / Gestures / Gyroscope and accelerometer / Pointing devices
+Apple Pencil and Scribble / Eyes / Gestures / Gyroscope and accelerometer / Pointing devices
 
 ### 扱わない項目
 
-- Action button / Camera Control / Digital Crown / Remotes: Apple の製品に固有のハードウェアの入力
-- Eyes: visionOS 専用
-- Game controls: ゲームを持たない
-- Nearby interactions: 近くの人や物を使う機能を持たない
+括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Action button / Camera Control / Digital Crown / Remotes（iPhone・Apple Watch・Apple Vision Pro・Apple TV の物理ボタンとリモコンでの操作）: 公式が示す手段はアプリ向けの API だけで、Web のページで受け取る手段は示されていないため扱わない（2026-10-06 に確認）
+- Game controls（ゲームの操作）: ゲームを持たないため扱わない
+- Nearby interactions（近くの人や物の存在を使う体験）: 近くの人や物の存在を使う機能を持たないため扱わない
 
 ---
 
