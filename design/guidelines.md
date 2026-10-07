@@ -52,7 +52,7 @@
 - 派手さで気を引かない。説得しようとしない
 - キービジュアルと UI の両方に同じ決まりを使う
 - Key visual / Logos / Illustrations / Shape（ブランドを表す）: 未定
-- 出典: VISION の Internal FAQ、PRINCIPLES の Anti-Principles、ADR-0035
+- 出典: VISION の Internal FAQ、PRINCIPLES の Anti-Principles、ADR-0037
 
 ### Color
 
@@ -114,7 +114,7 @@
 | `lg` | 976px | デスクトップ |
 | `xl` | 1440px | 大きなデスクトップ |
 
-- 出典: PRINCIPLES の余白 over 密度・たどり着きたい情報 over 演出、HIG Designing for iPhone Duo、WebKit: Designing Websites for iPhone X、ADR-0035、ADR-0005
+- 出典: PRINCIPLES の余白 over 密度・たどり着きたい情報 over 演出、HIG Designing for iPhone Duo、WebKit: Designing Websites for iPhone X、ADR-0037、ADR-0005
 
 #### Spacing
 
@@ -183,12 +183,12 @@
 
 ここに決まりを書いていない項目は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。括弧の中は、HIG の各ページの冒頭の 1 文による。
 
-- App icons（独特で覚えられるアイコンで、目的と性格を表し、一目で見分けられるようにすること）: favicon など Web で同じ役割を持つものに当てはめる（ADR-0035）
+- App icons（独特で覚えられるアイコンで、目的と性格を表し、一目で見分けられるようにすること）: favicon など Web で同じ役割を持つものに当てはめる（ADR-0037）
 - Inclusion（敬意ある言葉と、誰もが受け取れる内容・機能）
 
 ### 未定の項目
 
-- Elevation（面の重なりの高さ）: HIG に同じ名前のページがない。Material 3 から足した項目（ADR-0035）
+- Elevation（面の重なりの高さ）: HIG に同じ名前のページがない。Material 3 から足した項目（ADR-0037）
 
 ---
 
@@ -202,7 +202,7 @@
 - 一部が取れなかったときは、取れた部分を出し、欠けたことを示す
 - Shape（状態を伝える）: 未定
 - AI を使っている場所を知らせる: 見せ方は未定。知らせるかどうかはこの文書の外で決める
-- 出典: PRINCIPLES の息づき over 装飾、ADR-0032 の失敗の表し方、ADR-0035
+- 出典: PRINCIPLES の息づき over 装飾、ADR-0032 の失敗の表し方、ADR-0037
 
 ### Loading
 
@@ -324,7 +324,7 @@ synsk.me の記録
 - ADR-0024: [機械の読み手を歓迎し、キャッシュで受ける](../docs/decisions/0024-machine-readers.md)
 - ADR-0026: [コードの構成に ADOP を使う](../docs/decisions/0026-code-structure-adop.md)
 - ADR-0032: [デザインパターンの基本を 9 つ置き、中身が合うものだけ一般名で呼ぶ](../docs/decisions/0032-basic-design-patterns.md)
-- ADR-0035: [デザインガイドラインの層を Apple の Human Interface Guidelines に倣い、5 つ持つ](../docs/decisions/0035-design-guideline-layers-by-hig.md)
+- ADR-0037: [デザインガイドラインの層を Apple の Human Interface Guidelines に倣い、5 つ持つ](../docs/decisions/0037-design-guideline-layers-by-hig.md)
 
 公開されているガイドライン
 

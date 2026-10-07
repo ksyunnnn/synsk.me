@@ -43,7 +43,7 @@
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 
-入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。`CRAWLING.md` を入れ物に加えた根拠は [decisions/0025-crawling-document.md](./decisions/0025-crawling-document.md) にある。`design/guidelines.md` が持つ層の根拠は [decisions/0035-design-guideline-layers-by-hig.md](./decisions/0035-design-guideline-layers-by-hig.md) にある。
+入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。`CRAWLING.md` を入れ物に加えた根拠は [decisions/0025-crawling-document.md](./decisions/0025-crawling-document.md) にある。`design/guidelines.md` が持つ層の根拠は [decisions/0037-design-guideline-layers-by-hig.md](./decisions/0037-design-guideline-layers-by-hig.md) にある。
 
 外部ツールが配り、人が書き足さないファイルは、上の表の対象外とする。手で書き換えない。`.specify/templates/`、`.specify/scripts/`、`.claude/skills/speckit-*` がこれに当たる。`specs/` 配下と `.specify/memory/constitution.md` は人が書くため対象に含む。
 
