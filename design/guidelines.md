@@ -1,87 +1,334 @@
 # Guidelines
 
-> **WIP** — この文書は未完成である。いまあるのは目次と、各項目に入る内容の想定（「…」以降）だけで、各項目の置き場と中身は書いていない。
->
-> 完成した姿では、デザインを構成する層ごとに、その役割と置き場を持つ。各層の中身は書かず、各層の置き場が持つ。
+> この文書は、デザインを構成する 5 つの層ごとに役割を書き、各項目の決まり（値と方針）をこの 1 ファイルに置く。なぜそう決めたかは書かない。「未定」の項目は決まりを持たない。
 
 ## Contents
 
+- How to Use This Document
 - Getting started
-  - Design principles … Apple のプラットフォーム全体で設計を導く原則。Purpose / Agency / Responsibility / Familiarity / Flexibility / Simplicity / Craft / Delight の 8 つの節を持つ
 - Foundations
-  - Accessibility … 誰もが良い体験を得られるようにすること。視覚・聴覚・身体機能・発話・認知の節を持つ。#88 のコントラスト比はここで扱う（#102 本文）
-  - App icons … 独特で覚えられるアイコンで、アプリやゲームの目的と性格を表し、一目で見分けられるようにすること。favicon など Web で同じ役割を持つものに当てはめる（#102 本文）
-  - Branding … 一目で見分けられ、プラットフォームに馴染み、一貫した体験になるように、ブランドを表すこと
-    - Key visual … 「キービジュアルと UI の両方に使う」の受け皿（#102 本文）。HIG に項目はなく、Pajamas がブランドを UI と分けて持つ
-    - Logos … ブランドやアプリを表す視覚表現（Atlassian の Logos）
-    - Illustrations … 複雑な考えを簡単に伝える絵（Atlassian の Illustrations）
-    - Shape … 形でブランドを表す役割（Material 3 の Shape の express brand）
-  - Color … 色を選んで使えば、伝わりやすくなり、ブランドを想起させ、視覚の連続性を与え、状態と合図を伝え、情報の理解を助ける。#16 のアクセントカラーの要否と #88 のコントラスト比はここで扱う（#102 本文）
-  - Dark Mode … 暗い配色に切り替わるシステム全体の設定。暗い配色、アイコンと画像、文字の節を持つ
-  - Design tokens … デザインの決定に名前を付けて保管する唯一の正本（Atlassian の Tokens）。HIG に項目はなく、Material 3 と Pajamas は基礎の層に置き、Fluent 2 は層に分けずに並べている
-    - Border … 境界を定め、部品を分け、見た目の強弱を付けること（Atlassian の Border）
-    - Radius … 角の丸みをそろえる値（Atlassian の Radius）
-    - Shape … 角の丸みの段階の値（Material 3 の shape scale）
-  - Elevation … 面の重なりの高さ。Material 3 は「2 つの面の z 軸方向の距離」とする。透け方で作る奥行きは Materials が持つ。Fluent 2 も Material と別の項目に置く
-  - Icons … 1 つの概念を一目で伝える図。標準のアイコンの一覧を持つ
-  - Images … 画像を、端末ごとの倍率に合わせて用意すること。解像度と画像形式の節を持つ
-  - Inclusion … 敬意ある言葉と、誰もが受け取れる内容・機能。言葉、性の表し方、決めつけを避けること、言語の節を持つ
-  - Layout … 画面の大きさ・向き・マルチタスクの構成に合わせて一貫する配置。視覚の階層、適応、サイズクラス、ガイドと安全領域の節を持つ
-    - Spacing … 余白の刻み。Fluent 2 は Layout の中で刻み（spacing ramp）を扱う。HIG の Layout は標準の余白に触れるだけで、刻みは持たない
-    - Shape … 形で、どこに目を向けさせるかの役割（Material 3 の Shape の direct attention）
-  - Materials … 前景と背景の間に奥行き・重なり・階層を作る視覚効果。Liquid Glass と標準の素材の節を持つ。apple.com の Duo のページで見たすりガラスの奥行きはここで扱う（2026-09-18 にオーナーが決定）
-  - Motion … 動きで状態を伝え、合図と説明を与え、見た目を豊かにすること
-  - Privacy … 必要とするデータとリソースを明らかにし、預かったデータを守ること。権限の求め方と守り方の節を持つ
-  - Typography … 読みやすさ、情報の階層、重要な内容、ブランドや作風を、文字で表すこと
-  - Writing … アプリの中で選ぶ言葉
 - Patterns
-  - Charting data … 図でデータを伝えること。データ可視化はここで扱う（#102 本文）
-  - Collaboration and sharing … 内容に関わりながら、他の人とやり取りできる体験
-  - Drag and drop … 選んだ内容をつまんで移す、複製すること
-  - Entering data … 求める情報を、易しく間違いなく入力してもらう作り
-  - Feedback … 何が起きているか、次に何ができるか、操作の結果を知らせ、間違いを防ぐこと
-    - Shape … 形で状態を伝える役割（Material 3 の Shape の communicate state）
-    - AI を使っている場所を知らせる … HIG の Generative AI の Transparency の節「Communicate where your app uses AI」に当たる。補足として置く（2026-09-18 にオーナーが決定）
-  - File management … 文書とファイルを作る・開く・保存すること
-  - Going full screen … 画面いっぱいに広げ、システムの操作を隠す状態
-  - Launching … 起動してすぐ使い始められること
-  - Live-viewing apps … ライブ映像を見る体験。EPG と Cloud DVR の節を持つ
-  - Loading … 読み込みは、気づかれる前に終わるのが最善という立場。進み具合の見せ方の節を持つ
-  - Managing accounts … アカウントの作らせ方、ログインの求め方、削除のさせ方
-  - Managing notifications … 端末が使用中でも施錠中でも、必要な知らせを届けること
-  - Modality … 親の画面を操作できなくし、明示の操作で閉じる見せ方
-  - Multitasking … アプリを素早く行き来して、それぞれで作業すること
-  - Offering help … 必要なときだけ、その場の助けを出すこと
-  - Onboarding … 使い始めを素早くすること
-  - Playing audio … 状況が変わると自動で調整される音の体験
-  - Playing haptics … 触覚に働きかけ、現実世界での慣れを持ち込むこと
-  - Playing video … 動画を見る体験
-  - Printing … システムの印刷機能を組み込むこと
-  - Ratings and reviews … ダウンロードの前に見られるもの。評価を求める頃合いを扱う
-  - Searching … 端末の中、アプリの中、文書の中から内容を見つける手立て
-  - Settings … 自分に合うように設定を変えられること
-  - Undo and redo … 操作を戻す・やり直す手立て。新しい操作を安心して試せるようにもなる
-  - Workouts … 運動に取り組み、記録をたどる体験
 - Components
-  - Content … Charts / Image views / Text views / Web views
-  - Layout and organization … Boxes / Collections / Column views / Disclosure controls / Labels / Lists and tables / Lockups / Outline views / Split views / Tab views
-  - Menus and actions … Activity views / Buttons / Context menus / Dock menus / Edit menus / Home Screen quick actions / Menus / Ornaments / Pop-up buttons / Pull-down buttons / The menu bar / Toolbars
-  - Navigation and search … Path controls / Search fields / Sidebars / Tab bars / Token fields
-  - Presentation … Action sheets / Alerts / Page controls / Panels / Popovers / Scroll views / Sheets / Windows
-  - Selection and input … Color wells / Combo boxes / Digit entry views / Image wells / Pickers / Segmented controls / Sliders / Steppers / Text fields / Toggles / Virtual keyboards
-  - Status … Activity rings / Gauges / Progress indicators / Rating indicators
-  - System experiences … App Shortcuts / Complications / Controls / Live Activities / Notifications / Snippets / Status bars / Top Shelf / Watch faces / Widgets
 - Inputs
-  - Action button … 対応する iPhone と Apple Watch の Action ボタンから、お気に入りの機能に素早く入ること
-  - Apple Pencil and Scribble … Apple Pencil での描画・手書き・書き込みと、指し示す道具としての扱い
-  - Camera Control … アプリのカメラ体験へ直接入る操作
-  - Digital Crown … Apple Vision Pro と Apple Watch のハードウェア入力
-  - Eyes … visionOS で、見た対象を操作の相手として選ぶこと
-  - Focus and selection … 操作の対象がどれかを、目で確かめられるようにすること
-  - Game controls … 正確で直感的なゲームの操作が、遊びやすさと没入を高めること
-  - Gestures … アプリやゲームの中の対象に直接働きかける体の動き
-  - Gyroscope and accelerometer … 端末の物理的な動きのデータ
-  - Keyboards … 物理キーボードでの文字入力、ゲーム、アプリの操作
-  - Nearby interactions … 近くにいる人や物の存在を使う体験
-  - Pointing devices … トラックパッドやマウスでインターフェースを辿り、操作を始めること
-  - Remotes … Apple TV の主要な入力手段である Siri Remote での操作
+- References
+
+---
+
+## How to Use This Document
+
+- 各項目は、決まりと出典を持つ。決まりは「〜する」「〜しない」の形で書く。出典の略記は References にある
+- 値はトークンの名前で使い、色や寸法を直に書かない（Atlassian Tokens）
+- 「扱わない」項目は、synsk.me に当たる画面や入力がない
+- 「未定」の項目で判断が要るときは、Getting started の原則に照らす。決まったら、決まりと出典をここに書く（PRINCIPLES の How to Use This Document）
+
+---
+
+## Getting started
+
+原則の層。判断に迷ったときに立ち返る。
+
+### Design principles
+
+- [docs/PRINCIPLES.md](../docs/PRINCIPLES.md) の Design Principles に照らす。余白 over 密度 / 緩急 over 息づき / 息づき over 装飾 / 対話 over 展示 / たどり着きたい情報 over 演出
+- 原則が衝突したら、上位の原則を優先する
+- 出典: PRINCIPLES
+
+---
+
+## Foundations
+
+見た目と振る舞いの土台の層。値はここが持つ。
+
+### Accessibility
+
+- 文字と地のコントラスト比を 4.5:1 以上にする。大きな文字は 3:1 以上
+- UI 部品を見分けるのに要る境界と図形は、隣の色と 3:1 以上にする。`border` は `background` と 3:1 に届かないため、UI 部品を見分ける手がかりを `border` だけにしない
+- スクリーンリーダー（VoiceOver）: 未定
+- 出典: WCAG 2.2 SC 1.4.3・SC 1.4.11、ADR-0005 の値
+
+### Branding
+
+- 訪れた人に感じてほしいのは、有機的な息づきを感じる空間にいるときの感覚。ワクワクして何か始めたくなり、それでいて落ち着いている
+- 派手さで気を引かない。説得しようとしない
+- キービジュアルと UI の両方に同じ決まりを使う
+- Key visual / Logos / Illustrations / Shape（ブランドを表す）: 未定
+- 出典: VISION の Internal FAQ、PRINCIPLES の Anti-Principles、ADR-0037
+
+### Color
+
+- 無彩色のグレー（`hsl(0, 0%, x%)`）だけで構造を作る。色で印象を左右しない
+- `muted` の上に `muted-foreground` を置かない。ライトで 4.5:1 を満たさない
+- アクセントカラー: 未定
+
+| Token | Light | Dark | 使う場所 |
+|---|---|---|---|
+| `background` | hsl(0, 0%, 100%) | hsl(0, 0%, 3.9%) | ページの地 |
+| `foreground` | hsl(0, 0%, 3.9%) | hsl(0, 0%, 98%) | 本文 |
+| `muted` | hsl(0, 0%, 96.1%) | hsl(0, 0%, 14.9%) | 控えめな地 |
+| `muted-foreground` | hsl(0, 0%, 45.1%) | hsl(0, 0%, 63.9%) | 補足の文字 |
+| `border` | hsl(0, 0%, 89.8%) | hsl(0, 0%, 14.9%) | 境界線 |
+
+- 出典: ADR-0005、WCAG 2.2 SC 1.4.3
+
+### Dark Mode
+
+- ライトとダークの両方を持つ。値は Color の表の Dark の列
+- 切り替え方（端末の設定に従うか、切り替えを置くか）: 未定
+- 出典: ADR-0005
+
+### Design tokens
+
+- 色・文字・余白・ブレークポイントは、この文書のトークンの名前で使う。値の正本はこの文書
+- トークンは見た目が合うかでなく、名前と使う場所が合うかで選ぶ
+- Border: 境界線の色は `border`。太さは未定
+- Radius / Shape（角の丸みの段階の値）: 未定
+- 出典: Atlassian Tokens、ADR-0005
+
+### Icons
+
+- UI のアイコンは Phosphor Icons を使う
+- 外部プラットフォームを示すアイコンは Simple Icons を使う。Simple Icons にないものは Phosphor Icons の `Planet` を使う
+- Phosphor Icons のウェイト: 未定。Typography と合わせて決める
+- 出典: ADR-0004
+
+### Images
+
+- リンクが貼られたときのカード画像は、note ごとに「題を入れた自動生成」「note に追加した画像」「サイト共通のアイキャッチ」から選ぶ。既定は題を入れた自動生成
+- 解像度と画像形式: 未定
+- 出典: ADR-0024
+
+### Layout
+
+- 情報を詰め込まない。見る人が考える余地を残す
+- 演出を通らずに、たどり着きたい情報へ行ける道を置く
+- 内容を安全領域の内側に置く。`viewport-fit=cover` と `env(safe-area-inset-*)` で受け取る
+- 画面の大きさが変わっても組み替えず、小さな調整で合わせる
+  - 上の 2 つは、HIG のアプリ向けのページ（Designing for iPhone Duo）の観点を、Web に当てはめて使っている
+- 折り目と開閉の状態は扱わない。Safari から取れない
+- Shape（注意を向ける）: 未定
+
+| Breakpoint | 値 | 想定する端末 |
+|---|---|---|
+| `sm` | 480px | スマートフォンの横向き |
+| `md` | 768px | タブレット |
+| `lg` | 976px | デスクトップ |
+| `xl` | 1440px | 大きなデスクトップ |
+
+- 出典: PRINCIPLES の余白 over 密度・たどり着きたい情報 over 演出、HIG Designing for iPhone Duo、WebKit: Designing Websites for iPhone X、ADR-0037、ADR-0005
+
+#### Spacing
+
+- 8px を基準にし、次の 5 段だけを使う
+
+| Token | 値 | 使う場所 |
+|---|---|---|
+| `xs` | 8px | インライン要素の間、アイコンと文字の間 |
+| `sm` | 16px | 部品の内側の余白 |
+| `md` | 24px | カードの内側、フォームの要素の間 |
+| `lg` | 48px | セクションの間、大きなまとまりの間 |
+| `xl` | 96px | ページのセクションの間、ヒーロー領域 |
+
+- 出典: ADR-0005
+
+### Materials
+
+- すりガラスの効果（背景をぼかし、明るさを整えて奥行きを作る）は、操作の層にだけ使う。内容の層に使わない
+- 使う場所を、いちばん大事な操作に絞る
+- 出典: HIG Materials
+
+### Motion
+
+- スクロールを止めたら、動きも静まる。動き続けない
+- 息づきは残す。200〜500ms の微細な変化（scale 0.9→1.0 程度）で表す
+- 派手な動きで気を引かない
+- 動きを減らす設定（`prefers-reduced-motion: reduce`）では、自動で動くものと繰り返す動きを止める
+- 出典: PRINCIPLES の緩急 over 息づき・息づき over 装飾・Anti-Principles、HIG Accessibility
+
+### Privacy
+
+- リンクが貼られたときのカードに出す情報を、そのページを開いた人が見られる範囲に収める。限定公開のページのカードには中身を出さない
+- 権限の求め方: 未定
+- 出典: ADR-0024
+
+### Typography
+
+- 英語は Source Sans 3、日本語は Noto Sans JP。どちらも Google Fonts
+- 本文のウェイトは Light 300
+- 見出しはサイズの差で区別し、ウェイトの差に頼らない
+
+| Token | サイズ | 行の高さ | 使う場所 |
+|---|---|---|---|
+| `heading-1` | 32–36px | 1.3 | ページの題 |
+| `heading-2` | 24–28px | 1.4 | セクションの見出し |
+| `body` | 18px | 1.8 | 本文 |
+| `small` | 14px | 1.6 | 補足の文字 |
+| `caption` | 12px | 1.5 | キャプション、ラベル |
+
+| 使う場所 | letter-spacing | text-transform |
+|---|---|---|
+| 本文 | normal | none |
+| 見出し | -0.01em | none |
+| ラベル、ナビゲーション | 0.08–0.1em | uppercase |
+
+- 出典: ADR-0005
+
+### Writing
+
+- 作品を見せる語り口でなく、共に考える入り口として語る
+- 完璧な専門家像を演じない。説得しようとしない
+- 気を引くための誇張をしない
+- 出典: PRINCIPLES の対話 over 展示・Anti-Principles、ADR-0024
+
+### HIG に従う項目
+
+ここに決まりを書いていない項目は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- App icons（独特で覚えられるアイコンで、目的と性格を表し、一目で見分けられるようにすること）: favicon など Web で同じ役割を持つものに当てはめる（ADR-0037）
+- Inclusion（敬意ある言葉と、誰もが受け取れる内容・機能）
+
+### 未定の項目
+
+- Elevation（面の重なりの高さ）: HIG に同じ名前のページがない。Material 3 から足した項目（ADR-0037）
+
+---
+
+## Patterns
+
+よくある場面での振る舞いの層。
+
+### Feedback
+
+- 合図は、かすかに、しかしはっきり分かる動きで示す
+- 一部が取れなかったときは、取れた部分を出し、欠けたことを示す
+- Shape（状態を伝える）: 未定
+- AI を使っている場所を知らせる: 見せ方は未定。知らせるかどうかはこの文書の外で決める
+- 出典: PRINCIPLES の息づき over 装飾、ADR-0032 の失敗の表し方、ADR-0037
+
+### Loading
+
+- HIG の Launching（起動してすぐ使い始められること）は、Web では最初の表示までの時間に当たり、ここで扱う
+- 表示速度は ADR-0017 の値で測る
+- 満たすべき値を割るときは、表示速度を見た目・動き・機能より優先する。目標値を割るだけなら優先しない
+- 読み込みの後に要素の位置をずらさない
+- 進み具合の見せ方: 未定
+- 出典: ADR-0017
+
+### Managing accounts
+
+- 訪問者にアカウントを作らせない
+- ログインは作り手だけが行い、判定はアプリケーションの外（Cloudflare Access）で行う。ログイン画面の見た目は作らない
+- 出典: ADR-0013
+
+### HIG に従う項目
+
+ここに決まりを書いていない項目は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Charting data（図でデータを伝えること）
+- Collaboration and sharing（内容に関わりながら、他の人とやり取りできる体験）
+- Drag and drop（選んだ内容をつまんで移す、複製すること）
+- Entering data（求める情報を、易しく間違いなく入力してもらう作り）
+- File management（文書とファイルを作る・開く・保存すること）
+- Going full screen（画面いっぱいに広げ、システムの操作を隠す状態）
+- Managing notifications（端末が使用中でも施錠中でも、必要な知らせを届けること）
+- Modality（親の画面を操作できなくし、明示の操作で閉じる見せ方）
+- Offering help（必要なときだけ、その場の助けを出すこと）
+- Onboarding（使い始めを素早くすること）
+- Playing audio（状況が変わると自動で調整される音の体験）
+- Playing haptics（触覚に働きかけ、現実世界での慣れを持ち込むこと）
+- Playing video（動画を見る体験）
+- Printing（システムの印刷機能を組み込むこと）
+- Searching（端末の中、アプリの中、文書の中から内容を見つける手立て）
+- Settings（自分に合うように設定を変えられること）
+- Undo and redo（操作を戻す・やり直す手立て）
+
+### 扱わない項目
+
+括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Live-viewing apps（ライブ映像を見る体験）: ライブ映像を配信しないため扱わない
+- Multitasking（複数のアプリを行き来して作業すること）: 行き来はブラウザと OS が担うため扱わない。画面の大きさの変化は Layout で扱う
+- Ratings and reviews（App Store での評価の求め方）: App Store に出さないため扱わない
+- Workouts（運動の記録）: 運動を記録する機能を持たないため扱わない
+
+---
+
+## Components
+
+部品の層。
+
+- 操作・フォーカス・状態は headless のライブラリに任せ、見た目と動きをかぶせる
+- 出典: ADR-0032 の見た目と操作を分ける、ADR-0026
+
+### HIG に従う項目
+
+ここに決まりを書いていない部品は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。
+
+- Content: Charts / Image views / Text views / Web views
+- Layout and organization: Boxes / Collections / Column views / Disclosure controls / Labels / Lists and tables / Lockups / Outline views / Split views / Tab views
+- Menus and actions: Activity views / Buttons / Context menus / Dock menus / Edit menus / Home Screen quick actions / Menus / Ornaments / Pop-up buttons / Pull-down buttons / The menu bar / Toolbars
+- Navigation and search: Path controls / Search fields / Sidebars / Tab bars / Token fields
+- Presentation: Action sheets / Alerts / Page controls / Panels / Popovers / Scroll views / Sheets / Windows
+- Selection and input: Color wells / Combo boxes / Digit entry views / Image wells / Pickers / Segmented controls / Sliders / Steppers / Text fields / Toggles / Virtual keyboards
+- Status: Activity rings / Gauges / Progress indicators / Rating indicators
+
+### 扱わない項目
+
+- System experiences（App Shortcuts / Complications / Controls / Live Activities / Notifications / Snippets / Status bars / Top Shelf / Watch faces / Widgets）: OS が持つ場所に出す部品で、Web のページからは置けない
+
+---
+
+## Inputs
+
+入力の層。
+
+### Focus and selection
+
+- キーボードで操作しているとき、フォーカスの位置を目で確かめられるようにする
+- 出典: WCAG 2.2 SC 2.4.7
+
+### Keyboards
+
+- すべての操作をキーボードで行えるようにする
+- 出典: WCAG 2.2 SC 2.1.1
+
+### HIG に従う項目
+
+ここに決まりを書いていない項目は、HIG の同じ名前のページに従う。Web に当てはまらない部分は除く。括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Apple Pencil and Scribble（Apple Pencil での描画・手書き・書き込みと、指し示す道具としての扱い）
+- Eyes（visionOS で、見た対象を操作の相手として選ぶこと）
+- Gestures（アプリやゲームの中の対象に直接働きかける体の動き）
+- Gyroscope and accelerometer（端末の物理的な動きのデータ）
+- Pointing devices（トラックパッドやマウスでインターフェースを辿り、操作を始めること）
+
+### 扱わない項目
+
+括弧の中は、HIG の各ページの冒頭の 1 文による。
+
+- Action button / Camera Control / Digital Crown / Remotes（iPhone・Apple Watch・Apple Vision Pro・Apple TV の物理ボタンとリモコンでの操作）: 公式が示す手段はアプリ向けの API だけで、Web のページで受け取る手段は示されていないため扱わない（2026-10-06 に確認）
+- Game controls（ゲームの操作）: ゲームを持たないため扱わない
+- Nearby interactions（近くの人や物の存在を使う体験）: 近くの人や物の存在を使う機能を持たないため扱わない
+
+---
+
+## References
+
+synsk.me の記録
+
+- PRINCIPLES: [docs/PRINCIPLES.md](../docs/PRINCIPLES.md)
+- VISION: [docs/VISION.md](../docs/VISION.md)
+- ADR-0004: [アイコンシステム](../docs/decisions/0004-icon-system.md)
+- ADR-0005: [Design Tokens](../docs/decisions/0005-design-tokens.md)
+- ADR-0013: [認証をアプリケーションの外で行う](../docs/decisions/0013-access-authentication.md)
+- ADR-0017: [表示速度の指標と閾値](../docs/decisions/0017-display-speed-thresholds.md)
+- ADR-0024: [機械の読み手を歓迎し、キャッシュで受ける](../docs/decisions/0024-machine-readers.md)
+- ADR-0026: [コードの構成に ADOP を使う](../docs/decisions/0026-code-structure-adop.md)
+- ADR-0032: [デザインパターンの基本を 9 つ置き、中身が合うものだけ一般名で呼ぶ](../docs/decisions/0032-basic-design-patterns.md)
+- ADR-0037: [デザインガイドラインの層を Apple の Human Interface Guidelines に倣い、5 つ持つ](../docs/decisions/0037-design-guideline-layers-by-hig.md)
+
+公開されているガイドライン
+
+- HIG: [Apple Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/)（[Accessibility](https://developer.apple.com/design/human-interface-guidelines/accessibility)、[Designing for iPhone Duo](https://developer.apple.com/design/human-interface-guidelines/designing-for-iphone-duo)、[Materials](https://developer.apple.com/design/human-interface-guidelines/materials)）
+- Atlassian Tokens: [Design tokens](https://atlassian.design/foundations/tokens/design-tokens)
+- WCAG 2.2: [SC 1.4.3](https://www.w3.org/TR/WCAG22/#contrast-minimum)、[SC 1.4.11](https://www.w3.org/TR/WCAG22/#non-text-contrast)、[SC 2.1.1](https://www.w3.org/TR/WCAG22/#keyboard)、[SC 2.4.7](https://www.w3.org/TR/WCAG22/#focus-visible)
+- WebKit: [Designing Websites for iPhone X](https://webkit.org/blog/7929/designing-websites-for-iphone-x/)
