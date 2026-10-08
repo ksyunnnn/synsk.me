@@ -81,6 +81,6 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 - 採用が決まったら、採用した案を明示し、不要な派生版は整理する
 
 ### デザインファイルの読み書き
-- `.pen` は暗号化されている。Read と Grep では読めない。pencil MCP で読み書きする
+- `.pen` は平文の JSON で、Read と Grep で読める。書き込みは pencil MCP で行う。pencil MCP の instructions は「暗号化されている」とするが、2026-09-28 に git の全版と新しく保存したファイルが平文であることを確かめた（[#102 の調査記録](https://github.com/ksyunnnn/synsk.me/issues/102#issuecomment-6014618723)）
 - pencil MCP は起動中のアプリに接続する。`open -a Pen design/<file>.pen` で開いてから操作する
 - MCP の操作はアプリの中に留まる。ファイルへの書き込みは `pen interactive` の `save()` で行う。手順は [README.md](./README.md) の「開発」が持つ

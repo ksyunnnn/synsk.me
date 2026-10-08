@@ -28,10 +28,12 @@
 | `../specs/<機能ディレクトリ>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
 | `../specs/<機能ディレクトリ>/plan.md` | その機能をどう作るか | 現在形 | 機能をまたぐ決定（`decisions/` が持つ） |
 | `../specs/<機能ディレクトリ>/checklists/` | spec が満たすべき品質の検査項目 | 現在形 | 要件そのもの |
-| [../design/](../design/) | デザインの探索と、採用した案 | 現在形 | なぜその案にしたか（`decisions/` が持つ）、作業手順（`CLAUDE.md` が持つ） |
+| [../design/](../design/) | デザインの探索と、採用した案（`guidelines.md` を除く） | 現在形 | なぜその案にしたか（`decisions/` が持つ）、作業手順（`CLAUDE.md` が持つ） |
+| [../design/guidelines.md](../design/guidelines.md) | デザインの層ごとの役割と、各項目の決まり（値と方針） | 現在形 | なぜそう決めたか（`decisions/` が持つ）、進捗、Issue 番号、作業手順（`CLAUDE.md` が持つ） |
 | [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
+| GitHub Pull Request | 何を変え、何を確かめたか | 完了 | 要件本文の再掲、設計の判断（`decisions/` と `spec.md` が持つ） |
 | GitHub Milestone | どのリリースに含めるか | — | 要件の定義 |
 | [../README.md](../README.md) | このリポジトリが何で、どう動かすか | 恒常 | 設計の判断基準、進捗 |
 | [CLAUDE.md](../CLAUDE.md) | プロジェクト固有の作業ルール | 恒常 | コードから導出できること |
@@ -42,7 +44,7 @@
 
 `archive/` は書き換えない。規約から外れていても直さない。調べたことは決定の記録の Context が持つ。
 
-入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。`CRAWLING.md` を入れ物に加えた根拠は [decisions/0025-crawling-document.md](./decisions/0025-crawling-document.md) にある。
+入れ物ごとに役割と時制を定めるという方針の根拠は [decisions/0020-requirement-placement.md](./decisions/0020-requirement-placement.md) にある。`CRAWLING.md` を入れ物に加えた根拠は [decisions/0025-crawling-document.md](./decisions/0025-crawling-document.md) にある。`design/guidelines.md` が持つ層の根拠は [decisions/0037-design-guideline-layers-by-hig.md](./decisions/0037-design-guideline-layers-by-hig.md) にある。
 
 外部ツールが配り、人が書き足さないファイルは、上の表の対象外とする。手で書き換えない。`.specify/templates/`、`.specify/scripts/`、`.claude/skills/speckit-*` がこれに当たる。`specs/` 配下と `.specify/memory/constitution.md` は人が書くため対象に含む。
 
@@ -55,6 +57,7 @@
 ```
 Issue → spec.md → REQUIREMENTS.md → decisions/ → PRINCIPLES.md / VISION.md
 Issue → spec.md → CRAWLING.md → decisions/
+Issue → spec.md → design/guidelines.md → decisions/ → PRINCIPLES.md / VISION.md
 ```
 
 `spec.md` の位置は Spec Kit の公式に根拠を持たない。公式が定めるのは生成の順序（Spec → Plan → Tasks → Implement）であり、`spec.md` が機能をまたぐ要件文書を参照してよいかは書かれていない。

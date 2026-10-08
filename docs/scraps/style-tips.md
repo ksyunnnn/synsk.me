@@ -20,3 +20,13 @@
 - **用途**: 目次のハイライト、進捗インジケーター、ナビゲーションのアクティブ表示
 - **実装方法**: 親要素に `scroll-target-group: auto` を設定し、`<a href="#セクションID">` を配置
 - **メリット**: JSなしでIntersection Observer相当の機能を実現
+
+---
+
+## Font
+
+### WDXL Lubrifont JP N
+
+**サイトリニューアルで使いたい書体の候補**
+
+- **配布元**: [Google Fonts](https://fonts.google.com/specimen/WDXL+Lubrifont+JP+N)
