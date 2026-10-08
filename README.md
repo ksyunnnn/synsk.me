@@ -123,12 +123,20 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 
 ## 環境変数
 
-| 変数 | 用途 |
-|------|------|
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。`WORKERS_CI_BRANCH` が `main` のビルドでのみ埋め込む |
-| `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
-| `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
-| `CLOUDFLARE_API_TOKEN` | Workers Builds のビルドログを読む。user トークンで、権限は Workers スクリプト（読み取り）と Workers Builds 構成（編集）。`.env.local` に置く |
+手元で使う値は `.env.local` に置く（git が追跡しない）。要る変数と用途は
+`.env.example` が持つ。Cloudflare の資格情報は、呼び出し元と環境で分ける。デプロイを
+GitHub Actions へ移すときは、CI 用のトークンを別に作る。
+
+ビルドのときに決まる変数が2つある。どちらも `.env.local` には書かない。
+
+**`WORKERS_CI_BRANCH`** は、Workers Builds が渡すブランチ名。`next.config.js` がこれを
+見て、`main` なら本番、それ以外はプレビューと判定し、結果を `NEXT_PUBLIC_DEPLOY_ENV`
+として画面へ渡す。
+
+**`NEXT_PUBLIC_GA_MEASUREMENT_ID`** は、訪問者の数を Google アナリティクスで測るための
+Google タグ マネージャーのコンテナ ID。値は `.env`（git が追跡する）にある。画面に
+埋め込むのは本番の配信だけとする。プレビューにも埋め込むと、本番の訪問者の数に、
+自分がプレビューを見た分が混ざる。
 
 ## Workers Builds のビルド構成
 
@@ -141,7 +149,7 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 
 値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
 
-確認と変更は Builds API による。`CLOUDFLARE_API_TOKEN` が要る。
+確認と変更は Builds API による。`CLOUDFLARE_BUILDS_API_TOKEN` が要る。
 
 ```
 GET   /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/triggers
