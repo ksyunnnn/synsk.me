@@ -156,12 +156,12 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 
 ## Worker の secret
 
-`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、作り手であることを確かめられないとして拒む。本番とプレビュー配信の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
+`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、作り手であることを確かめられないとして拒む。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
 
 | 変数 | 用途 |
 |------|------|
 | `ACCESS_ISSUER` | Access の team domain（`https://<team-name>.cloudflareaccess.com`）。公開鍵を `<ACCESS_ISSUER>/cdn-cgi/access/certs` から取る |
-| `ACCESS_AUD` | Access のアプリケーションの AUD タグ。本番の `/dash` とプレビュー全体の 2 つを、カンマで区切って並べる |
+| `ACCESS_AUD` | Access のアプリケーションの AUD タグ。カンマで区切って複数並べられる。本番には `synsk.me dash`、Preview には `synsk.me preview` の AUD を置く |
 | `ACCESS_OWNER_EMAIL` | 作り手として認めるメールアドレス |
 
 ## Workers Builds のビルド構成
