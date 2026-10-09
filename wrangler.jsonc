@@ -38,4 +38,24 @@
   // vinext の CDN キャッシュ（vite.config.ts の cdnAdapter）が使う Workers Cache
   "cache": { "enabled": true },
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  // ブランチごとの Preview の設定。トップレベルの値は引き継がれないため、
+  // バインディングを並べ直す。データはプレビュー用の資源に分け、本番に触れない。
+  // D1 のマイグレーションは wrangler.preview-migrations.jsonc から当てる
+  "previews": {
+    "d1_databases": [
+      {
+        "binding": "DB",
+        "database_name": "synsk-me-preview",
+        "database_id": "18fc9308-c75a-43b6-ace2-29acc20615e8",
+      },
+    ],
+    "r2_buckets": [
+      {
+        "binding": "NOTE_IMAGES",
+        "bucket_name": "synsk-me-images-preview",
+      },
+    ],
+    "images": { "binding": "IMAGES" },
+    "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  },
 }
