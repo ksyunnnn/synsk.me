@@ -8,6 +8,8 @@
 //   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）
 // - アクセス解析のタグが埋まるか（#38。`next.config.js` の env が壊れると消える）
 // - HTML とクライアント JS が予算に収まるか
+// - 過去の版のサイトが読み込む帯（`public/archive-banner.js`）が返るか。
+//   このリポジトリの外から使われるため、コードを見ても消してよいかが分からない
 //
 // 使い方: node scripts/verify-deploy.mjs [URL]
 // 既定の対象は https://synsk.me。プレビュー URL を渡してもよい。
@@ -146,6 +148,21 @@ async function checkImageRoutes() {
       `${res.status} ${bytes.length} バイト`,
     );
   }
+}
+
+/** 過去の版のサイト（<年>.synsk.me）が `<script src>` で読み込む帯。 */
+async function checkArchiveBanner() {
+  console.log('アーカイブの帯');
+  const res = await getWhenReady(get, '/archive-banner.js');
+  const body = await res.text();
+  const type = res.headers.get('content-type') ?? '';
+  check(
+    res.status === 200 &&
+      type.includes('javascript') &&
+      body.includes("customElements.define('synsk-archive-banner'"),
+    '/archive-banner.js が帯の定義を 200 で返す',
+    `${res.status} ${type}`,
+  );
 }
 
 /** 2 回目の取得でエッジのキャッシュに当たることを見る。warm の直後は当たるまで
@@ -306,6 +323,7 @@ console.log(`検査の対象: ${BASE}\n`);
 
 const pages = await checkHtmlRoutes();
 await checkImageRoutes();
+await checkArchiveBanner();
 await checkEdgeCache();
 checkAnalytics(pages['/']);
 await checkBudget();
