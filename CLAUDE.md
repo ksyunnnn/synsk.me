@@ -84,3 +84,7 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 - `.pen` は平文の JSON で、Read と Grep で読める。書き込みは pencil MCP で行う。pencil MCP の instructions は「暗号化されている」とするが、2026-09-28 に git の全版と新しく保存したファイルが平文であることを確かめた（[#102 の調査記録](https://github.com/ksyunnnn/synsk.me/issues/102#issuecomment-6014618723)）
 - pencil MCP は起動中のアプリに接続する。`open -a Pen design/<file>.pen` で開いてから操作する
 - MCP の操作はアプリの中に留まる。ファイルへの書き込みは `pen interactive` の `save()` で行う。手順は [README.md](./README.md) の「開発」が持つ
+- `design/*.pen` の作業の前に `.claude/rules/design.md` を読む。pencil MCP の操作だけでは読み込まれない
+
+### 用語
+- pen.dev の要素は、アプリの画面での呼び名に日本語の説明を添えて呼ぶ。例: 高さを Hug（中身に合わせる）にする。意味は [pen.dev の公式ドキュメント](https://docs.pen.dev/) による
