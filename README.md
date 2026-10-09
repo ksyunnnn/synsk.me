@@ -22,7 +22,7 @@ npm run lint       # リンター
 npm run start      # ビルド出力をローカルで起動
 npm run preview    # ビルドして Workers ランタイムでローカル起動
 npm run deploy     # ビルド済みの dist をデプロイし、配信を検査する
-npm run upload     # ビルド済みの dist からバージョンだけ上げ、プレビュー URL を得る
+npm run preview:branch # ビルド済みの dist から、ブランチの Preview を作る
 npm run verify:deploy # 配信されているものを検査する（URL を渡すとその対象を見る）
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
@@ -74,10 +74,10 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 |------|------|
 | ビルド コマンド | `npm run build` |
 | デプロイ コマンド | `npm run deploy` |
-| バージョン コマンド | `npm run upload` |
+| バージョン コマンド | `npm run preview:branch` |
 | プロダクション ブランチ | `main` |
 
-**`deploy` と `upload` はビルドしない。** ビルド コマンドが作った `dist/` を前提にする。手元で使うときは `npm run build` を先に実行する。両方がビルドすると 1 回分（手元の実測で 8.6 秒）が無駄になる。
+**`deploy` と `preview:branch` はビルドしない。** ビルド コマンドが作った `dist/` を前提にする。手元で使うときは `npm run build` を先に実行する。両方がビルドすると 1 回分（手元の実測で 8.6 秒）が無駄になる。
 
 **3 欄は `npm run` を通す。** コマンドの実体を `package.json` に置き、リポジトリ側だけを読めば配信の手順が分かる状態にするため。ダッシュボードにコマンドを直接書くと、リポジトリの変更と食い違っても誰も気づけない。
 
@@ -145,7 +145,7 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 | trigger | build | deploy | 対象ブランチ |
 |---|---|---|---|
 | 本番 | `npm run build` | `npm run deploy` | `main` |
-| プレビュー | `npm run build` | `npm run upload` | `main` 以外 |
+| プレビュー | `npm run build` | `npm run preview:branch` | `main` 以外 |
 
 値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
 
