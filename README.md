@@ -97,6 +97,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | --- | --- |
 | 4 経路が 200 を返す | 経路の設定、ビルドの出力 |
 | `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
+| `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
 | `/` と `/archives/2024` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
