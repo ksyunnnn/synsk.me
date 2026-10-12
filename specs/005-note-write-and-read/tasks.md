@@ -131,8 +131,8 @@ description: "Task list for note を書いて公開し、読む"
 - [X] T041 [P] マイグレーションの作り方と適用の命令、JWT の検証の secret、service token の環境変数を書く in README.md
 - [X] T042 [P] デザインパターンの「手本のファイル」を、この機能で最初に書いたファイルで埋める（Repository、DTO、組み立て用の関数、Dependency Injection、ユースケースを単位にする、Anti-Corruption Layer） in docs/SOFTWARE_DESIGN.md
 - [X] T043 `npm test`、`npm run test:workers`、`npm run build`、`npx tsc --noEmit`、`npx tsc --noEmit -p tests/tsconfig.json`、`npm run lint`、`npm run format:check`、`npm run test:integration:only`、`npm run test:e2e:only` をすべて通す
-- [ ] T044 Cloudflare の設定: Access のアプリケーション2つ（本番の `/dash`、プレビュー全体）と service token を作り、Worker の secret を入れ、本番の D1 に `npx wrangler d1 migrations apply synsk-me --remote` を当てる。Zero Trust の組織が作られていることが前提
-- [ ] T045 quickstart.md の「プレビュー URL で確かめる」をスマートフォンを含めて実行し、結果を記録する
+- [X] T044 Cloudflare の設定: Access のアプリケーション2つ（本番の `/dash`、プレビュー全体）と service token を作り、Worker の secret を入れ、本番の D1 に `npx wrangler d1 migrations apply synsk-me --remote` を当てる。Zero Trust の組織が作られていることが前提
+- [X] T045 quickstart.md の「プレビュー URL で確かめる」をスマートフォンを含めて実行し、結果を記録する
 
 ---
 
