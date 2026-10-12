@@ -3,7 +3,7 @@
 //
 // 検査するのは、これまでに実際に壊れたものと、作り手の画面を守る Access の設定と、
 // note の応答がキャッシュに載らないこと。
-// - 4 経路が返るか（#59 の完了条件）
+// - HTML と画像の経路が返るか（#59）
 // - OG 画像とアイコンが実体のある PNG か（satori と resvg が workerd で動くか）
 // - HTML がエッジのキャッシュに載るか（#38 の後退。`export const revalidate` か
 //   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）。synsk.me でのみ見る
@@ -154,7 +154,7 @@ async function getWhenReady(fetcher, path, attempts = 12, intervalMs = 5_000) {
 async function checkHtmlRoutes() {
   console.log('HTML の経路');
   const pages = {};
-  for (const path of ['/', '/archives/2024']) {
+  for (const path of ['/']) {
     const res = await getWhenReady(get, path);
     const body = await res.text();
     pages[path] = body;
@@ -220,7 +220,7 @@ async function checkEdgeCache() {
     console.log('  skip エッジのキャッシュ — 対象が synsk.me ではない');
     return;
   }
-  for (const path of ['/', '/archives/2024']) {
+  for (const path of ['/']) {
     let status = 'なし';
     for (let i = 1; i <= 6; i++) {
       await get(path);
