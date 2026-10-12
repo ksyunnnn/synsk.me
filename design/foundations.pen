@@ -474,7 +474,7 @@
       "ref": "R4S4f4",
       "name": "instance: Design tokens",
       "x": 0,
-      "y": 481,
+      "y": 369,
       "descendants": {
         "FtVpy": {
           "content": "Design tokens"
@@ -710,7 +710,7 @@
       "ref": "R4S4f4",
       "name": "instance: HIG に従う項目",
       "x": 0,
-      "y": 1568,
+      "y": 1456,
       "descendants": {
         "FtVpy": {
           "content": "HIG に従う項目"
@@ -769,7 +769,7 @@
       "ref": "R4S4f4",
       "name": "instance: 未定の項目",
       "x": 0,
-      "y": 2156,
+      "y": 2044,
       "descendants": {
         "FtVpy": {
           "content": "未定の項目"
@@ -801,7 +801,7 @@
       "ref": "R4S4f4",
       "name": "instance: Color",
       "x": 800,
-      "y": 481,
+      "y": 369,
       "descendants": {
         "FtVpy": {
           "content": "Color"
@@ -1266,7 +1266,7 @@
       "ref": "R4S4f4",
       "name": "instance: Dark Mode",
       "x": 800,
-      "y": 1798,
+      "y": 1686,
       "descendants": {
         "FtVpy": {
           "content": "Dark Mode"
@@ -1340,7 +1340,7 @@
       "ref": "R4S4f4",
       "name": "instance: Typography",
       "x": 800,
-      "y": 2467,
+      "y": 2355,
       "descendants": {
         "FtVpy": {
           "content": "Typography"
@@ -1864,7 +1864,7 @@
       "ref": "R4S4f4",
       "name": "instance: Layout",
       "x": 800,
-      "y": 4055,
+      "y": 3943,
       "descendants": {
         "FtVpy": {
           "content": "Layout"
@@ -2539,7 +2539,7 @@
       "ref": "R4S4f4",
       "name": "instance: Icons",
       "x": 800,
-      "y": 6348,
+      "y": 6236,
       "descendants": {
         "FtVpy": {
           "content": "Icons"
@@ -2619,7 +2619,7 @@
       "ref": "R4S4f4",
       "name": "instance: Images",
       "x": 800,
-      "y": 7279,
+      "y": 7167,
       "descendants": {
         "FtVpy": {
           "content": "Images"
@@ -2683,7 +2683,7 @@
       "ref": "R4S4f4",
       "name": "instance: Branding",
       "x": 800,
-      "y": 7923,
+      "y": 7811,
       "descendants": {
         "FtVpy": {
           "content": "Branding"
@@ -2789,7 +2789,7 @@
       "ref": "R4S4f4",
       "name": "instance: Materials",
       "x": 800,
-      "y": 9104,
+      "y": 8992,
       "descendants": {
         "FtVpy": {
           "content": "Materials"
@@ -2862,7 +2862,7 @@
       "ref": "R4S4f4",
       "name": "instance: Accessibility",
       "x": 1600,
-      "y": 481,
+      "y": 369,
       "descendants": {
         "FtVpy": {
           "content": "Accessibility"
@@ -2945,7 +2945,7 @@
       "ref": "R4S4f4",
       "name": "instance: Motion",
       "x": 1600,
-      "y": 1429,
+      "y": 1317,
       "descendants": {
         "FtVpy": {
           "content": "Motion"
@@ -3063,7 +3063,7 @@
       "ref": "R4S4f4",
       "name": "instance: Privacy",
       "x": 1600,
-      "y": 2836,
+      "y": 2724,
       "descendants": {
         "FtVpy": {
           "content": "Privacy"
@@ -3136,7 +3136,7 @@
       "ref": "R4S4f4",
       "name": "instance: Writing",
       "x": 1600,
-      "y": 3497,
+      "y": 3385,
       "descendants": {
         "FtVpy": {
           "content": "Writing"
@@ -3223,126 +3223,114 @@
     },
     {
       "type": "frame",
-      "id": "OLRN0",
+      "id": "uVOLr",
       "x": 0,
       "y": 0,
-      "name": "Frame: Header",
-      "width": 640,
-      "fill": "#FFFFFF",
+      "name": "Frame: Title",
       "layout": "vertical",
-      "gap": 8,
-      "padding": 48,
+      "gap": 16,
       "children": [
         {
           "type": "text",
-          "id": "IHtgY",
+          "id": "c2e2p",
           "name": "Text: Title",
-          "fill": "#111111",
-          "textGrowth": "fixed-width",
-          "width": "fill_container",
-          "content": "Foundations（WIP）",
-          "fontFamily": "Noto Sans JP",
-          "fontSize": 36,
-          "fontWeight": "300"
+          "fill": "#D4D4D4",
+          "content": "Foundations",
+          "lineHeight": 1.2,
+          "fontFamily": "$font-en",
+          "fontSize": 72,
+          "fontWeight": "300",
+          "letterSpacing": -0.72
         },
         {
           "type": "text",
-          "id": "oeymH",
+          "id": "FSYyO",
           "name": "Text: Note",
-          "fill": "#333333",
-          "textGrowth": "fixed-width",
-          "width": "fill_container",
-          "content": "見た目と振る舞いの土台の層。値はここが持つ。",
-          "fontFamily": "Noto Sans JP",
-          "fontSize": 13,
-          "fontWeight": "300"
+          "fill": "#8A8A8A",
+          "content": "WIP · 見た目と振る舞いの土台の層。値はここが持つ。",
+          "lineHeight": 1.4,
+          "fontFamily": "$font-ja",
+          "fontSize": 24,
+          "fontWeight": "300",
+          "letterSpacing": -0.24
         },
         {
           "type": "text",
-          "id": "AmCrN",
+          "id": "X4ILMD",
           "name": "Text: Reference",
-          "fill": "#888888",
-          "textGrowth": "fixed-width",
-          "width": "fill_container",
+          "fill": "#8A8A8A",
           "content": "デザインガイドラインの層の 1 つ。全体の構成とほかの層は design/guidelines.md にある。",
-          "fontFamily": "Noto Sans JP",
-          "fontSize": 12,
-          "fontWeight": "300"
+          "lineHeight": 1.4,
+          "fontFamily": "$font-ja",
+          "fontSize": 24,
+          "fontWeight": "300",
+          "letterSpacing": -0.24
         }
       ]
     },
     {
       "type": "frame",
-      "id": "kHrMQ",
+      "id": "dAZCT",
       "x": 0,
-      "y": 360,
+      "y": 282,
       "name": "Frame: Heading Tokens",
-      "fill": "#FFFFFF",
       "layout": "vertical",
-      "padding": [
-        8,
-        24
-      ],
       "children": [
         {
           "type": "text",
-          "id": "qK2Fv",
+          "id": "O4rSz",
           "name": "Text: Heading",
-          "fill": "#111111",
+          "fill": "#8A8A8A",
           "content": "Tokens",
-          "fontFamily": "Noto Sans JP",
+          "lineHeight": 1.4,
+          "fontFamily": "$font-en",
           "fontSize": 28,
-          "fontWeight": "300"
+          "fontWeight": "300",
+          "letterSpacing": -0.28
         }
       ]
     },
     {
       "type": "frame",
-      "id": "XtdG0",
+      "id": "i9m0K",
       "x": 800,
-      "y": 360,
+      "y": 282,
       "name": "Frame: Heading Styles",
-      "fill": "#FFFFFF",
       "layout": "vertical",
-      "padding": [
-        8,
-        24
-      ],
       "children": [
         {
           "type": "text",
-          "id": "v1i7r",
+          "id": "m5DJJQ",
           "name": "Text: Heading",
-          "fill": "#111111",
+          "fill": "#8A8A8A",
           "content": "Styles",
-          "fontFamily": "Noto Sans JP",
+          "lineHeight": 1.4,
+          "fontFamily": "$font-en",
           "fontSize": 28,
-          "fontWeight": "300"
+          "fontWeight": "300",
+          "letterSpacing": -0.28
         }
       ]
     },
     {
       "type": "frame",
-      "id": "i69lh5",
+      "id": "j9Ctb",
       "x": 1600,
-      "y": 360,
+      "y": 282,
       "name": "Frame: Heading Guidelines",
-      "fill": "#FFFFFF",
       "layout": "vertical",
-      "padding": [
-        8,
-        24
-      ],
       "children": [
         {
           "type": "text",
-          "id": "SD4UD",
+          "id": "Gfapv",
           "name": "Text: Heading",
-          "fill": "#111111",
+          "fill": "#8A8A8A",
           "content": "Guidelines",
-          "fontFamily": "Noto Sans JP",
+          "lineHeight": 1.4,
+          "fontFamily": "$font-en",
           "fontSize": 28,
-          "fontWeight": "300"
+          "fontWeight": "300",
+          "letterSpacing": -0.28
         }
       ]
     }

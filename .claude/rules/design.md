@@ -26,7 +26,8 @@ paths:
 
 - 正本は `design/foundations.pen` で、`design/guidelines.md` の Foundations の章はこのファイルを指す
 - 列は Tokens / Styles / Guidelines の 3 つ。各列の頭に見出しを置き、その下にカードを縦に積む
-- 列の間とカードどうしの間は 160px、見出しとカードの間は 64px
+- いちばん上に Frame: Title（題と説明）を置く。Frame: Title と列の見出しは地を持たず、文字の大きさと明るさで階層を表す。白い地はカードだけが持つ
+- 列の間とカードどうしの間は 160px、Frame: Title と見出しの間は 96px、見出しとカードの間は 48px
 - Component は、一式の上の段に置く
 - カードは Component: Card の instance にする。Body の slot に見本・2 つ並べる・Do / Don't・注記をこの順で置き、Footer の slot に未定と出典を置く
 - 決まりの文は、見本の下に置く。未定のものは Component: Undecided で置く
