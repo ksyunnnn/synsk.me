@@ -48,7 +48,7 @@ npx wrangler d1 migrations create synsk-me <name>  # migrations/ に空のマイ
 npx wrangler d1 migrations apply synsk-me --remote # 本番の D1 に、まだ当てていないマイグレーションを当てる
 ```
 
-プレビュー配信も本番の D1 を使う。`npm run test:workers` と結合・E2E のテストは、`migrations/` を手元の D1 に当ててから走る。
+ブランチの Preview は、本番と分けた D1 `synsk-me-preview` を使う。`npm run test:workers` と結合・E2E のテストは、`migrations/` を手元の D1 に当ててから走る。
 
 ## テスト
 

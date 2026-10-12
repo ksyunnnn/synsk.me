@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { forbidden } from 'next/navigation';
+import { cache } from 'react';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getPublishedNote as getPublishedNoteUseCase } from '@/features/note/application/get-published-note';
 import { listNotes } from '@/features/note/application/list-notes';
@@ -31,9 +32,13 @@ export const requireAuthor = async (): Promise<Author> => {
   return author;
 };
 
-/** 訪問者に見せる note。下書きと存在しない slug は null */
-export const getPublishedNote = async (slug: string): Promise<PublishedNoteDto | null> =>
-  getPublishedNoteUseCase(await createNoteRepository(), slug);
+/**
+ * 訪問者に見せる note。下書きと存在しない slug は null。
+ * ページの本体とメタデータの両方が呼ぶため、1つの要求の中では D1 に1回だけ問い合わせる
+ */
+export const getPublishedNote = cache(async (slug: string): Promise<PublishedNoteDto | null> =>
+  getPublishedNoteUseCase(await createNoteRepository(), slug),
+);
 
 /** 作り手向けの一覧。作り手でなければ 403 */
 export const listNotesForAuthor = async (): Promise<NoteSummaryDto[]> => {

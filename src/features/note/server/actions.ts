@@ -98,8 +98,8 @@ export const editNoteAction = async (
 
   const values = readContent(formData);
   const intent = readIntent(formData);
-  // どちらのボタンで送られたか分からなければ、書き込まない
-  if (intent === null) return withResult(values, null);
+  // どちらのボタンで送られたか分からなければ、書き込まず、保存できなかったことを伝える
+  if (intent === null) return withResult(values, 'save-failed');
   const id = parseNoteId(readString(formData, NOTE_ID_FIELD));
   if (id === null) return withResult(values, 'not-found');
 

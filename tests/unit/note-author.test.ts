@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { verifyAuthor, type AccessSettings } from '@/features/note/server/author';
+import { toAccessSettings, verifyAuthor, type AccessSettings } from '@/features/note/server/author';
 import {
   ACCESS_CERTS_PATH,
   TEST_ACCESS_AUD,
@@ -123,5 +123,29 @@ describe('作り手であることを確かめる', () => {
     expect(
       await verifyAuthor(token, { ...settings, certsUrl: `${closed.issuer}${ACCESS_CERTS_PATH}` }),
     ).toBeNull();
+  });
+});
+
+describe('toAccessSettings', () => {
+  it('ACCESS_ISSUER の末尾の / を落とし、公開鍵の取得先と iss を揃える', () => {
+    expect(
+      toAccessSettings({
+        ACCESS_ISSUER: 'https://team.cloudflareaccess.com/',
+        ACCESS_AUD: 'aud',
+        ACCESS_OWNER_EMAIL: 'owner@example.com',
+      }),
+    ).toEqual({
+      certsUrl: 'https://team.cloudflareaccess.com/cdn-cgi/access/certs',
+      issuer: 'https://team.cloudflareaccess.com',
+      audience: 'aud',
+      ownerEmail: 'owner@example.com',
+    });
+  });
+
+  it('ACCESS_ISSUER がなければ、公開鍵の取得先も iss も持たない', () => {
+    expect(toAccessSettings({ ACCESS_ISSUER: '/' })).toMatchObject({
+      certsUrl: undefined,
+      issuer: undefined,
+    });
   });
 });

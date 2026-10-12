@@ -28,11 +28,18 @@ import type {
 const SLUG_TAKEN_MESSAGE = 'UNIQUE constraint failed: note.slug';
 const SLUG_FIXED_MESSAGE = 'note_slug_fixed_after_publication';
 
-const toUpdateFailure = (error: unknown): UpdateNoteResult => {
+/** 制約の違反の種類。制約の違反でなければ null */
+const toConstraintViolation = (error: unknown): 'slug-fixed' | 'slug-taken' | null => {
   const message = error instanceof Error ? error.message : '';
-  if (message.includes(SLUG_FIXED_MESSAGE)) return { ok: false, reason: 'slug-fixed' };
-  if (message.includes(SLUG_TAKEN_MESSAGE)) return { ok: false, reason: 'slug-taken' };
-  throw error;
+  if (message.includes(SLUG_FIXED_MESSAGE)) return 'slug-fixed';
+  if (message.includes(SLUG_TAKEN_MESSAGE)) return 'slug-taken';
+  return null;
+};
+
+const toUpdateFailure = (error: unknown): UpdateNoteResult => {
+  const reason = toConstraintViolation(error);
+  if (reason === null) throw error;
+  return { ok: false, reason };
 };
 
 type PublishedNoteRow = {
@@ -74,8 +81,9 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         if (!row) throw new Error('INSERT が id を返さなかった');
         return { ok: true, id: row.id };
       } catch (error) {
-        const message = error instanceof Error ? error.message : '';
-        if (message.includes(SLUG_TAKEN_MESSAGE)) return { ok: false, reason: 'slug-taken' };
+        // 作るときに起きうる違反は slug の重複だけ。公開後の slug の固定は note がまだないため起きない
+        if (toConstraintViolation(error) === 'slug-taken')
+          return { ok: false, reason: 'slug-taken' };
         throw error;
       }
     },

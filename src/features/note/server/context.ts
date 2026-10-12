@@ -2,7 +2,7 @@ import 'server-only';
 
 import { headers } from 'next/headers';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
-import { verifyAuthor, type Author } from '@/features/note/server/author';
+import { toAccessSettings, verifyAuthor, type Author } from '@/features/note/server/author';
 import { createD1NoteRepository } from '@/features/note/server/d1-note-repository';
 
 /**
@@ -31,13 +31,10 @@ const ACCESS_JWT_HEADER = 'cf-access-jwt-assertion';
 
 /** この要求を送ったのが作り手なら `Author` を、確かめられなければ null を返す */
 export const getCurrentAuthor = async (): Promise<Author | null> => {
-  const { ACCESS_ISSUER, ACCESS_AUD, ACCESS_OWNER_EMAIL } = (await readEnv()) as AccessEnv;
-  return verifyAuthor((await headers()).get(ACCESS_JWT_HEADER), {
-    certsUrl: ACCESS_ISSUER ? `${ACCESS_ISSUER}/cdn-cgi/access/certs` : undefined,
-    issuer: ACCESS_ISSUER,
-    audience: ACCESS_AUD,
-    ownerEmail: ACCESS_OWNER_EMAIL,
-  });
+  return verifyAuthor(
+    (await headers()).get(ACCESS_JWT_HEADER),
+    toAccessSettings((await readEnv()) as AccessEnv),
+  );
 };
 
 export const createNoteRepository = async (): Promise<NoteRepository> =>

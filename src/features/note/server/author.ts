@@ -13,6 +13,21 @@ import { createRemoteJWKSet, jwtVerify } from 'jose';
  * （constitution の VII. Boundary Translation）。
  */
 
+/**
+ * 公開鍵の取得先ごとの鍵の集まり。要求をまたいで使い回す。要求ごとに作ると、`jose` が
+ * 持つ鍵のキャッシュが効かず、毎回 Access へ取りに行き、一度の失敗で作り手を拒む
+ */
+const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
+
+const keySetFor = (certsUrl: string) => {
+  let keys = keySets.get(certsUrl);
+  if (!keys) {
+    keys = createRemoteJWKSet(new URL(certsUrl));
+    keySets.set(certsUrl, keys);
+  }
+  return keys;
+};
+
 /** 作り手 */
 export type Author = { email: string };
 
@@ -33,6 +48,24 @@ export type AccessSettings = {
 };
 
 /**
+ * Worker の secret から検証の設定値を作る。JWT の `iss` は末尾に `/` を持たないため、
+ * secret に `/` が付いていても落としてから使う
+ */
+export const toAccessSettings = (env: {
+  ACCESS_ISSUER?: string;
+  ACCESS_AUD?: string;
+  ACCESS_OWNER_EMAIL?: string;
+}): AccessSettings => {
+  const issuer = env.ACCESS_ISSUER?.replace(/\/+$/, '') || undefined;
+  return {
+    certsUrl: issuer ? `${issuer}/cdn-cgi/access/certs` : undefined,
+    issuer,
+    audience: env.ACCESS_AUD,
+    ownerEmail: env.ACCESS_OWNER_EMAIL,
+  };
+};
+
+/**
  * 作り手であることを確かめられれば `Author` を、確かめられなければ null を返す。
  * 設定値が欠けている、JWT がない、署名・`iss`・`aud`・期限のどれかが合わない、
  * メールアドレスがオーナーのものでない、公開鍵が取れない、のどれでも null
@@ -49,8 +82,7 @@ export const verifyAuthor = async (
 
   try {
     // 公開鍵は Access が入れ替えるため、埋め込まずに取りに行く
-    const keys = createRemoteJWKSet(new URL(certsUrl));
-    const { payload } = await jwtVerify(token, keys, {
+    const { payload } = await jwtVerify(token, keySetFor(certsUrl), {
       issuer,
       audience: audiences,
       algorithms: ['RS256'],

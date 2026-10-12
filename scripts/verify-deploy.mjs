@@ -274,7 +274,8 @@ async function checkAccess() {
 async function checkAbsentNoteCache() {
   console.log('存在しない note');
   const path = absentNotePath(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  await get(path);
+  // 1 回目の本文を読み切る。読まずに捨てると、接続が解放されるまで残る
+  await (await get(path)).arrayBuffer();
   const res = await get(path);
   const status = res.headers.get('cf-cache-status') ?? 'なし';
   check(
