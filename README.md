@@ -39,6 +39,17 @@ npm install -g @pen.dev/cli                      # 保存に使う。初回は p
 pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() がファイルへ書き込む
 ```
 
+## データベース
+
+Cloudflare D1 のデータベース `synsk-me`（binding `DB`）。スキーマはリポジトリ直下の `migrations/` の SQL が持つ。
+
+```bash
+npx wrangler d1 migrations create synsk-me <name>  # migrations/ に空のマイグレーションを作る。中身は手で書く
+npx wrangler d1 migrations apply synsk-me --remote # 本番の D1 に、まだ当てていないマイグレーションを当てる
+```
+
+ブランチの Preview は、本番と分けた D1 `synsk-me-preview` を使う。`npm run test:workers` と結合・E2E のテストは、`migrations/` を手元の D1 に当ててから走る。
+
 ## テスト
 
 ```bash
@@ -95,7 +106,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 ## 配信の検査
 
-`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものである。
+`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものと、作り手の画面を守る Access の設定と、note の応答がキャッシュに載らないことである。
 
 | 検査 | 落ちたときに疑うもの |
 | --- | --- |
@@ -105,12 +116,17 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
+| 認証なしの `/dash` と `/dash/notes/new` が Access のログイン（`*.cloudflareaccess.com`）へ移される | Access のアプリケーションの対象の経路 |
+| プレビュー配信では、認証なしの `/` も Access のログインへ移される | プレビュー全体を対象にする Access のアプリケーション |
+| `/notes/<存在しない slug>` の 2 回目が `cf-cache-status: HIT` を返さない | `src/app/notes/[slug]/page.tsx` の `export const dynamic` |
 
 プレビュー配信を見るときは URL を渡す。
 
 ```bash
 npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.dev
 ```
+
+プレビュー配信は全体が Access の後ろにあるため、Access のログインへの移動を見る検査のほかは、service token を `CF-Access-Client-Id` と `CF-Access-Client-Secret` のヘッダに付けて取る。`CLOUDFLARE_ACCESS_CLIENT_ID` と `CLOUDFLARE_ACCESS_CLIENT_SECRET` が欠けていれば検査は落ちる。本番には付けない。
 
 エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
 
@@ -143,18 +159,28 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 埋め込むのは本番の配信だけとする。プレビューにも埋め込むと、本番の訪問者の数に、
 自分がプレビューを見た分が混ざる。
 
+## Worker の secret
+
+`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、作り手であることを確かめられないとして拒む。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
+
+| 変数 | 用途 |
+|------|------|
+| `ACCESS_ISSUER` | Access の team domain（`https://<team-name>.cloudflareaccess.com`）。公開鍵を `<ACCESS_ISSUER>/cdn-cgi/access/certs` から取る |
+| `ACCESS_AUD` | Access のアプリケーションの AUD タグ。カンマで区切って複数並べられる。本番には `synsk.me dash`、Preview には `synsk.me preview` の AUD を置く |
+| `ACCESS_OWNER_EMAIL` | 作り手として認めるメールアドレス |
+
 ## Workers Builds のビルド構成
 
-リポジトリから読めない。Cloudflare のダッシュボードと API が持つ。trigger は 2 つあり、**ダッシュボードは本番の trigger しか編集できない。**プレビューの trigger は API でしか変えられない。
+リポジトリから読めない。Cloudflare のダッシュボードと API が持つ。trigger は本番の 1 つだけで、ダッシュボードと API のどちらでも編集できる。`main` 以外のブランチは trigger ではなく Worker Previews でビルドする。その Preview command はダッシュボードが持ち、Builds API の triggers には現れない。
 
-| trigger | build | deploy | 対象ブランチ |
+| 配信 | build | deploy / Preview command | 対象ブランチ |
 |---|---|---|---|
 | 本番 | `npm run build` | `npm run deploy` | `main` |
-| プレビュー | `npm run build` | `npm run preview:branch` | `main` 以外 |
+| Preview | `npm run build` | `npm run preview:branch` | `main` 以外 |
 
 値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
 
-確認と変更は Builds API による。`CLOUDFLARE_BUILDS_API_TOKEN` が要る。
+本番の trigger の確認と変更は、Builds API でも行える。`CLOUDFLARE_BUILDS_API_TOKEN` が要る。
 
 ```
 GET   /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/triggers

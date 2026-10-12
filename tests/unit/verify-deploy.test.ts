@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { bypassCacheUrl, extractChunkPaths, isPng } from '../../scripts/lib/verify-deploy.mjs';
+import {
+  absentNotePath,
+  accessHeadersFor,
+  bypassCacheUrl,
+  extractChunkPaths,
+  isAccessLoginRedirect,
+  isProductionBase,
+  isPng,
+} from '../../scripts/lib/verify-deploy.mjs';
+
+const PREVIEW = 'https://ea015945-synsk-me.is-syunsukekobashi.workers.dev';
 
 /**
  * `scripts/verify-deploy.mjs` が判定に使う材料を検査する。
@@ -71,5 +81,108 @@ describe('bypassCacheUrl', () => {
     expect(
       bypassCacheUrl('https://ea015945-synsk-me.is-syunsukekobashi.workers.dev', '/', 'x'),
     ).toBe('https://ea015945-synsk-me.is-syunsukekobashi.workers.dev/?__verify=x');
+  });
+});
+
+describe('isProductionBase', () => {
+  it('synsk.me なら true', () => {
+    expect(isProductionBase('https://synsk.me')).toBe(true);
+  });
+
+  it('プレビュー配信の URL なら false', () => {
+    expect(isProductionBase(PREVIEW)).toBe(false);
+  });
+
+  it('synsk.me を含むだけのホストは false', () => {
+    expect(isProductionBase('https://synsk.me.example.com')).toBe(false);
+  });
+});
+
+describe('accessHeadersFor', () => {
+  const token = {
+    CLOUDFLARE_ACCESS_CLIENT_ID: 'id.access',
+    CLOUDFLARE_ACCESS_CLIENT_SECRET: 'secret',
+  };
+
+  it('本番には service token を付けない。本番の Access は /dash だけを守るため', () => {
+    expect(accessHeadersFor('https://synsk.me', token)).toEqual({ ok: true, headers: {} });
+  });
+
+  it('プレビュー配信には service token をヘッダに付ける', () => {
+    expect(accessHeadersFor(PREVIEW, token)).toEqual({
+      ok: true,
+      headers: { 'CF-Access-Client-Id': 'id.access', 'CF-Access-Client-Secret': 'secret' },
+    });
+  });
+
+  it('プレビュー配信で service token が欠けていれば、欠けた変数の名前を返す', () => {
+    expect(accessHeadersFor(PREVIEW, {})).toEqual({
+      ok: false,
+      missing: ['CLOUDFLARE_ACCESS_CLIENT_ID', 'CLOUDFLARE_ACCESS_CLIENT_SECRET'],
+    });
+    expect(accessHeadersFor(PREVIEW, { CLOUDFLARE_ACCESS_CLIENT_ID: 'id.access' })).toEqual({
+      ok: false,
+      missing: ['CLOUDFLARE_ACCESS_CLIENT_SECRET'],
+    });
+  });
+
+  it('空の値は欠けているとみなす', () => {
+    expect(
+      accessHeadersFor(PREVIEW, {
+        CLOUDFLARE_ACCESS_CLIENT_ID: '',
+        CLOUDFLARE_ACCESS_CLIENT_SECRET: 'secret',
+      }),
+    ).toEqual({ ok: false, missing: ['CLOUDFLARE_ACCESS_CLIENT_ID'] });
+  });
+});
+
+describe('isAccessLoginRedirect', () => {
+  const login =
+    'https://example.cloudflareaccess.com/cdn-cgi/access/login/synsk.me?redirect_url=%2Fdash';
+
+  it('Access の team domain へ移す応答なら true', () => {
+    expect(isAccessLoginRedirect(302, login, 'https://synsk.me')).toBe(true);
+  });
+
+  it('移さない応答は false。Worker が 403 や 200 を返したとき', () => {
+    expect(isAccessLoginRedirect(403, null, 'https://synsk.me')).toBe(false);
+    expect(isAccessLoginRedirect(200, login, 'https://synsk.me')).toBe(false);
+  });
+
+  it('移し先がないか、Access の外なら false', () => {
+    expect(isAccessLoginRedirect(302, null, 'https://synsk.me')).toBe(false);
+    expect(isAccessLoginRedirect(302, '/login', 'https://synsk.me')).toBe(false);
+    expect(isAccessLoginRedirect(302, 'https://synsk.me/', 'https://synsk.me')).toBe(false);
+  });
+
+  it('cloudflareaccess.com を含むだけのホストは false', () => {
+    expect(
+      isAccessLoginRedirect(
+        302,
+        'https://example.cloudflareaccess.com.evil.example/login',
+        'https://synsk.me',
+      ),
+    ).toBe(false);
+    expect(isAccessLoginRedirect(302, 'https://cloudflareaccess.com/', 'https://synsk.me')).toBe(
+      false,
+    );
+  });
+
+  it('解釈できない移し先は false', () => {
+    expect(isAccessLoginRedirect(302, 'http://[', 'https://synsk.me')).toBe(false);
+  });
+});
+
+describe('absentNotePath', () => {
+  it('note の経路の下に、nonce を含む slug を作る', () => {
+    expect(absentNotePath('1788800000000-abc')).toBe(
+      '/notes/verify-deploy-absent-1788800000000-abc',
+    );
+  });
+
+  it('slug に使えない文字を除く。作り手が作りうる slug の形で確かめるため', () => {
+    const path = absentNotePath('1788800000000-A.b_c');
+    expect(path).toBe('/notes/verify-deploy-absent-1788800000000-bc');
+    expect(path.slice('/notes/'.length)).toMatch(/^[a-z0-9-]+$/);
   });
 });

@@ -52,3 +52,80 @@ export function bypassCacheUrl(base, path, nonce) {
   url.searchParams.set('__verify', nonce);
   return url.toString();
 }
+
+/** 本番のホスト名。これ以外はプレビュー配信とみなす。 */
+const PRODUCTION_HOSTNAME = 'synsk.me';
+
+/**
+ * 検査の対象が本番かを返す。
+ *
+ * @param {string} base
+ * @returns {boolean}
+ */
+export function isProductionBase(base) {
+  return new URL(base).hostname === PRODUCTION_HOSTNAME;
+}
+
+/** Access の service token を置く環境変数。wrangler が同じ名前で読む。 */
+const ACCESS_CLIENT_ID_ENV = 'CLOUDFLARE_ACCESS_CLIENT_ID';
+const ACCESS_CLIENT_SECRET_ENV = 'CLOUDFLARE_ACCESS_CLIENT_SECRET';
+
+/**
+ * 検査の要求に付ける、Access を通るためのヘッダを返す。
+ *
+ * 本番の Access は `/dash` だけを守るため、何も付けない。プレビュー配信は全体が
+ * Access の後ろにあるため、service token を `CF-Access-Client-Id` と
+ * `CF-Access-Client-Secret` に付ける。欠けていれば、欠けた環境変数の名前を返す。
+ *
+ * @param {string} base
+ * @param {Record<string, string | undefined>} env
+ * @returns {{ ok: true, headers: Record<string, string> } | { ok: false, missing: string[] }}
+ */
+export function accessHeadersFor(base, env) {
+  if (isProductionBase(base)) return { ok: true, headers: {} };
+  const clientId = env[ACCESS_CLIENT_ID_ENV];
+  const clientSecret = env[ACCESS_CLIENT_SECRET_ENV];
+  const missing = [];
+  if (!clientId) missing.push(ACCESS_CLIENT_ID_ENV);
+  if (!clientSecret) missing.push(ACCESS_CLIENT_SECRET_ENV);
+  if (missing.length > 0) return { ok: false, missing };
+  return {
+    ok: true,
+    headers: { 'CF-Access-Client-Id': clientId, 'CF-Access-Client-Secret': clientSecret },
+  };
+}
+
+/** Access の team domain は `<team-name>.cloudflareaccess.com` の形をとる。 */
+const ACCESS_TEAM_DOMAIN_SUFFIX = '.cloudflareaccess.com';
+
+/**
+ * 応答が Access のログインへの移動かを返す。
+ *
+ * ホスト名の末尾で見る。`cloudflareaccess.com` を含むだけの別のホストを通さない。
+ *
+ * @param {number} status
+ * @param {string | null} location
+ * @param {string} base 相対の `Location` を解決する基準
+ * @returns {boolean}
+ */
+export function isAccessLoginRedirect(status, location, base) {
+  if (status < 300 || status >= 400 || !location) return false;
+  try {
+    return new URL(location, base).hostname.endsWith(ACCESS_TEAM_DOMAIN_SUFFIX);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * 存在しない note の経路を作る。
+ *
+ * slug は、作り手が作りうる形（英小文字・数字・ハイフン）にそろえる。nonce を
+ * 含めるのは、同じ slug の note を作り手が作っていても当たらないようにするため。
+ *
+ * @param {string} nonce
+ * @returns {string}
+ */
+export function absentNotePath(nonce) {
+  return `/notes/verify-deploy-absent-${nonce.replace(/[^a-z0-9-]/g, '')}`;
+}

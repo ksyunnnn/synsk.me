@@ -37,3 +37,14 @@ Cloudflare Access で認証する構成を採っている。決定と理由は [
 2. `wrangler.jsonc` の `previews.d1_databases` と、`wrangler.preview-migrations.jsonc` の `d1_databases` の `database_name` と `database_id` を、1 の値に書き換える
 3. `npx wrangler d1 migrations apply synsk-me-preview-<ブランチ名> --remote --config wrangler.preview-migrations.jsonc` でマイグレーションを当てる
 4. main にマージする前に 2 を元に戻し、`npx wrangler d1 delete` で D1 を消す
+
+## Repository があるのに、ORM を使わないのはなぜか
+
+Repository と ORM は別のものである。Repository は設計のパターンで、データベースを機能のほかのコードから隠す。ORM はライブラリで、SQL とデータの変換を自動で作る。synsk.me は Repository の中身を、ORM ではなく手で書いた SQL で書く。決定と理由は [ADR-0035 D1 へは ORM を使わずに読み書きし、スキーマの正本を手で書く SQL のマイグレーションにする](./decisions/0035-d1-access-without-orm.md) にある。
+
+| | Repository（採用） | ORM |
+|---|---|---|
+| 正体 | 設計のパターン | ライブラリ |
+| ほかのコードからデータベースを隠す | する | する |
+| SQL を書くのは | 人（`src/features/<機能>/server/` の Repository の実装の中） | ライブラリ |
+| 行とコードの値の変換 | 人が書く | ライブラリが行う |
