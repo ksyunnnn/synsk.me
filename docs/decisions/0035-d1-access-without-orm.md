@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-09-17
 decision-makers: synsk
 consulted: Claude Code
@@ -85,3 +85,4 @@ Chosen option: "ORM を使わず、D1 の prepared statement を Repository の�
 - [Drizzle ORM: Cloudflare D1](https://orm.drizzle.team/docs/connect-cloudflare-d1)
 - [drizzle-team/drizzle-orm#4938](https://github.com/drizzle-team/drizzle-orm/issues/4938)
 - [ADR-0029: 公開してよい状態かは、データを取り出すとき（リポジトリの実装）に確かめる](./0029-visibility-check-at-retrieval.md)
+- 2026-10-12 に、Context の前提を確かめ直した。`@cloudflare/vitest-plugin` 1.2.0（2026-09-21、cloudflare/workers-sdk#15707）から、`readD1Migrations` は `{ migrationsDir, migrationsPattern }` を渡すと入れ子のマイグレーションも読める。このリポジトリの版（1.1.4）では、Context のとおり直下の `.sql` だけを読む。ほかの前提（D1 が `BEGIN` を受け付けない、Drizzle の D1 向け `transaction()` が `begin` を発行する、kysely-d1 0.4.0 がトランザクションを実装していない、drizzle-team/drizzle-orm#4938 が OPEN）は変わっていなかった
