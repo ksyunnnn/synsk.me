@@ -3,8 +3,6 @@
  * このリポジトリの外から https://synsk.me/archive-banner.js として読み込まれるため、パスを変えない・消さない。
  *
  * 使い方: <script src="https://synsk.me/archive-banner.js" defer></script> と <synsk-archive-banner></synsk-archive-banner>
- * type="module" を付けない。module は他のドメインから読み込むときに CORS を要するため。
- * @see https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/script
  */
 (() => {
   if (customElements.get('synsk-archive-banner')) return;

@@ -163,6 +163,12 @@ async function checkArchiveBanner() {
     '/archive-banner.js が帯の定義を 200 で返す',
     `${res.status} ${type}`,
   );
+  const allowOrigin = res.headers.get('access-control-allow-origin');
+  check(
+    allowOrigin === '*',
+    '/archive-banner.js がどのドメインからも読める',
+    `access-control-allow-origin: ${allowOrigin ?? 'なし'}`,
+  );
 }
 
 /** 2 回目の取得でエッジのキャッシュに当たることを見る。warm の直後は当たるまで

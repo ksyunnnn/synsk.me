@@ -1,3 +1,7 @@
 # https://developers.cloudflare.com/workers/static-assets/headers
 /_next/static/*
   Cache-Control: public,max-age=31536000,immutable
+
+# 過去の版のサイト（<年>.synsk.me）が読み込む帯。外から読まれるための公開ファイルなので、どこからでも読めるようにする
+/archive-banner.js
+  Access-Control-Allow-Origin: *
