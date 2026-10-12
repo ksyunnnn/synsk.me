@@ -9,9 +9,13 @@
 
 ## 技術スタック
 
-Next.js 16（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
+- 言語: TypeScript
+- フレームワーク: Next.js 16（App Router）。Cloudflare Workers 上では [vinext](https://vinext.dev/) を介して動く
+- スタイル: Tailwind CSS
+- 配信: Cloudflare Workers
+- サブドメインのサイトが読み込む部品: Web Components
 
-Workers 上では [`vinext`](https://vinext.dev/) を介して動く。vinext は Next.js の API を Vite プラグインとして再実装したもので、Next.js のビルド出力は使わない。Worker の設定は `wrangler.jsonc`、ビルドの設定は `vite.config.ts` が持つ。採用の理由は [ADR-0018](./docs/decisions/0018-vinext-runtime.md) にある。
+設定は `wrangler.jsonc`（Worker）と `vite.config.ts`（ビルド）が持つ。採用の理由は [docs/decisions/](./docs/decisions/) にある。
 
 ## 開発
 
@@ -108,6 +112,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | --- | --- |
 | 4 経路が 200 を返す | 経路の設定、ビルドの出力 |
 | `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
+| `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
 | `/` と `/archives/2024` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
