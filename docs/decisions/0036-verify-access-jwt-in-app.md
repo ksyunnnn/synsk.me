@@ -74,3 +74,4 @@ Chosen option: "Access で守り、アプリケーションの中でも Access �
 - [Cloudflare Access: Validate JWTs](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/)
 - [Workers: Cloudflare Access](https://developers.cloudflare.com/workers/configuration/cloudflare-access/)
 - [Next.js: Data Security](https://nextjs.org/docs/app/guides/data-security)
+- 2026-10-09 に、ブランチのプレビュー URL の配信を Worker Previews に替え、プレビューの版は本番の D1 ではなく D1 `synsk-me-preview` に書き込むようにした（PR #132「main 以外のブランチの配信を Worker Previews に替え、本番と分けた D1 と R2 を使う」）。Context の「ブランチごとのプレビュー URL の版は、本番と同じ D1 に書き込む」と、Consequences の「プレビュー URL から本番の D1 への書き込みも、同じ検証を通る」は、この日から成り立たない

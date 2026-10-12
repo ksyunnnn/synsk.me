@@ -171,16 +171,16 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 
 ## Workers Builds のビルド構成
 
-リポジトリから読めない。Cloudflare のダッシュボードと API が持つ。trigger は 2 つあり、**ダッシュボードは本番の trigger しか編集できない。**プレビューの trigger は API でしか変えられない。
+リポジトリから読めない。Cloudflare のダッシュボードと API が持つ。trigger は本番の 1 つだけで、ダッシュボードと API のどちらでも編集できる。`main` 以外のブランチは trigger ではなく Worker Previews でビルドする。その Preview command はダッシュボードが持ち、Builds API の triggers には現れない。
 
-| trigger | build | deploy | 対象ブランチ |
+| 配信 | build | deploy / Preview command | 対象ブランチ |
 |---|---|---|---|
 | 本番 | `npm run build` | `npm run deploy` | `main` |
-| プレビュー | `npm run build` | `npm run preview:branch` | `main` 以外 |
+| Preview | `npm run build` | `npm run preview:branch` | `main` 以外 |
 
 値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
 
-確認と変更は Builds API による。`CLOUDFLARE_BUILDS_API_TOKEN` が要る。
+本番の trigger の確認と変更は、Builds API でも行える。`CLOUDFLARE_BUILDS_API_TOKEN` が要る。
 
 ```
 GET   /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/triggers
