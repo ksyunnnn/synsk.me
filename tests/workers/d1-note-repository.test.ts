@@ -22,6 +22,8 @@ const content = (overrides: Partial<NoteContent> = {}): NoteContent => ({
 
 const FIRST_PUBLISHED_AT = '2026-09-16T15:30:00.000Z';
 const REPUBLISHED_AT = '2026-09-20T01:00:00.000Z';
+const DELETED_AT = '2026-10-01T03:00:00.000Z';
+const DELETED_LATER_AT = '2026-10-02T03:00:00.000Z';
 
 const createNote = async (overrides: Partial<NoteContent> = {}) => {
   const result = await notes.create(content(overrides));
@@ -192,33 +194,63 @@ describe('公開後の slug', () => {
 });
 
 describe('削除する', () => {
-  it('公開している内容も一緒に消え、訪問者向けの取り出しに出ない', async () => {
+  it('行を残したまま、訪問者向けの取り出しにも作り手の一覧にも出さない', async () => {
     const id = await createNote();
     await notes.publish(id, content(), FIRST_PUBLISHED_AT);
 
-    expect(await notes.delete(id)).toEqual({ ok: true });
+    expect(await notes.delete(id, DELETED_AT)).toEqual({ ok: true });
 
-    expect(await countRows('note')).toBe(0);
-    expect(await countRows('note_publication')).toBe(0);
+    expect(await countRows('note')).toBe(1);
+    expect(await countRows('note_publication')).toBe(1);
     expect(await notes.findPublishedBySlug('first-note')).toBeNull();
     expect(await notes.findForEdit(id)).toBeNull();
+    expect(await notes.listForAuthor()).toEqual([]);
   });
 
   it('存在しない note は削除しない', async () => {
-    expect(await notes.delete(999)).toEqual({ ok: false, reason: 'not-found' });
+    expect(await notes.delete(999, DELETED_AT)).toEqual({ ok: false, reason: 'not-found' });
   });
 
-  it('削除した note の slug を使い回せる', async () => {
+  it('削除した note をもう一度削除せず、削除した日時を変えない', async () => {
     const id = await createNote();
-    await notes.delete(id);
-    expect((await notes.create(content())).ok).toBe(true);
+    await notes.delete(id, DELETED_AT);
+
+    expect(await notes.delete(id, DELETED_LATER_AT)).toEqual({ ok: false, reason: 'not-found' });
+    const row = await env.DB.prepare('SELECT deleted_at FROM note WHERE id = ?')
+      .bind(id)
+      .first<{ deleted_at: string }>();
+    expect(row?.deleted_at).toBe(DELETED_AT);
+  });
+
+  it('削除した note の slug は、新しい note に使えない', async () => {
+    const id = await createNote();
+    await notes.delete(id, DELETED_AT);
+    expect(await notes.create(content())).toEqual({ ok: false, reason: 'slug-taken' });
+  });
+
+  it('削除した note は保存も公開もしない', async () => {
+    const id = await createNote();
+    await notes.delete(id, DELETED_AT);
+
+    expect(await notes.save(id, content({ title: '削除した後の保存' }))).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+    expect(await notes.publish(id, content(), FIRST_PUBLISHED_AT)).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+    expect(await countRows('note_publication')).toBe(0);
+    expect(await notes.listDeletedForAuthor()).toEqual([
+      { id, slug: 'first-note', title: '題', status: 'draft' },
+    ]);
   });
 
   it('削除した note の id を使い回さない', async () => {
     const deletedId = await createNote();
-    await notes.delete(deletedId);
+    await notes.delete(deletedId, DELETED_AT);
 
-    const id = await createNote();
+    const id = await createNote({ slug: 'second-note' });
     expect(id).toBeGreaterThan(deletedId);
     // 削除した note を開いたままの画面からの保存は、後から作った note を変えない
     expect(await notes.save(deletedId, content({ title: '古い画面からの保存' }))).toEqual({
@@ -226,6 +258,84 @@ describe('削除する', () => {
       reason: 'not-found',
     });
     expect(await notes.findForEdit(id)).toMatchObject({ title: '題' });
+  });
+});
+
+describe('削除した note を戻す', () => {
+  it('公開済みだった note は、公開している内容と初めて公開した日時を保って戻る', async () => {
+    const id = await createNote();
+    await notes.publish(id, content(), FIRST_PUBLISHED_AT);
+    await notes.save(id, content({ title: '公開し直していない題' }));
+    await notes.delete(id, DELETED_AT);
+
+    expect(await notes.restore(id)).toEqual({ ok: true });
+
+    expect(await notes.findPublishedBySlug('first-note')).toEqual({
+      slug: 'first-note',
+      title: '題',
+      body: '本文',
+      firstPublishedAt: FIRST_PUBLISHED_AT,
+    });
+    expect(await notes.listForAuthor()).toEqual([
+      {
+        id,
+        slug: 'first-note',
+        title: '公開し直していない題',
+        status: 'published',
+        hasUnpublishedChanges: true,
+      },
+    ]);
+    expect(await notes.listDeletedForAuthor()).toEqual([]);
+  });
+
+  it('下書きだった note は、下書きのまま戻る', async () => {
+    const id = await createNote();
+    await notes.delete(id, DELETED_AT);
+
+    expect(await notes.restore(id)).toEqual({ ok: true });
+
+    expect(await notes.findForEdit(id)).toEqual({
+      id,
+      slug: 'first-note',
+      title: '題',
+      body: '本文',
+      status: 'draft',
+    });
+    expect(await notes.findPublishedBySlug('first-note')).toBeNull();
+  });
+
+  it('削除していない note と存在しない note は戻さない', async () => {
+    const id = await createNote();
+    expect(await notes.restore(id)).toEqual({ ok: false, reason: 'not-found' });
+    expect(await notes.restore(999)).toEqual({ ok: false, reason: 'not-found' });
+  });
+
+  it('削除した note だけを、後から削除したものを先に一覧する', async () => {
+    const first = await createNote({ slug: 'deleted-first' });
+    const second = await createNote({ slug: 'deleted-second' });
+    await createNote({ slug: 'kept' });
+    await notes.publish(second, content({ slug: 'deleted-second' }), FIRST_PUBLISHED_AT);
+    await notes.delete(second, DELETED_AT);
+    await notes.delete(first, DELETED_LATER_AT);
+
+    expect(await notes.listDeletedForAuthor()).toEqual([
+      { id: first, slug: 'deleted-first', title: '題', status: 'draft' },
+      { id: second, slug: 'deleted-second', title: '題', status: 'published' },
+    ]);
+  });
+
+  it('削除した note だけを id で取り出す', async () => {
+    const id = await createNote();
+    expect(await notes.findDeleted(id)).toBeNull();
+
+    await notes.delete(id, DELETED_AT);
+    expect(await notes.findDeleted(id)).toEqual({
+      id,
+      slug: 'first-note',
+      title: '題',
+      status: 'draft',
+    });
+    expect(await notes.findDeleted(999)).toBeNull();
   });
 });
 

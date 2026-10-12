@@ -1,6 +1,14 @@
 import { expect, test } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { createNote, fitsViewportWidth, noteFields, tabTo, uniqueSlug } from './support/note';
+import {
+  createNote,
+  deletedNoteListItem,
+  fitsViewportWidth,
+  noteFields,
+  noteListItem,
+  tabTo,
+  uniqueSlug,
+} from './support/note';
 
 /**
  * 作り手の操作を、キーボードだけで、また幅 360px の画面で行えること
@@ -55,7 +63,7 @@ test.describe('キーボードだけ', () => {
     await expect(fields.title).toHaveValue('キーボードで保存した題');
   });
 
-  test('確認の画面を経て削除する', async ({ page }) => {
+  test('確認の画面を経て削除し、戻す', async ({ page }) => {
     const slug = uniqueSlug('keyboard-delete');
     await createNote(page, { slug, title: 'キーボードで削除する題', body: '本文' });
     await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
@@ -68,7 +76,21 @@ test.describe('キーボードだけ', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/dash\?deleted=1$/);
     await expect(page.getByText('note を削除しました')).toBeVisible();
-    await expect(page.getByRole('listitem').filter({ hasText: slug })).toHaveCount(0);
+    await expect(noteListItem(page, slug)).toHaveCount(0);
+
+    // 削除した note の一覧は、ほかのテストが削除した note も並べる。届くまでの Tab の回数に余裕を持たせる
+    const restoreLink = deletedNoteListItem(page, slug).getByRole('link', {
+      name: 'この note を戻す',
+    });
+    await tabTo(page, restoreLink, 2000);
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+\/restore$/);
+
+    await tabTo(page, page.getByRole('button', { name: '戻す' }));
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(/\/dash\?restored=1$/);
+    await expect(page.getByText('note を戻しました')).toBeVisible();
+    await expect(noteListItem(page, slug)).toHaveCount(1);
   });
 });
 
@@ -107,7 +129,7 @@ test.describe('幅 360px の画面', () => {
     await page.reload();
     await expect(fields.title).toHaveValue('狭い画面で保存した題');
   });
-  test('確認の画面を経て削除する', async ({ page }) => {
+  test('確認の画面を経て削除し、戻す', async ({ page }) => {
     const slug = uniqueSlug('narrow-delete');
     await createNote(page, { slug, title: '狭い画面で削除する題', body: '本文' });
     await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
@@ -119,7 +141,17 @@ test.describe('幅 360px の画面', () => {
     await page.getByRole('button', { name: '削除する' }).tap();
     await expect(page).toHaveURL(/\/dash\?deleted=1$/);
     await expect(page.getByText('note を削除しました')).toBeVisible();
-    await expect(page.getByRole('listitem').filter({ hasText: slug })).toHaveCount(0);
+    await expect(noteListItem(page, slug)).toHaveCount(0);
+    expect(await fitsViewportWidth(page)).toBe(true);
+
+    await deletedNoteListItem(page, slug).getByRole('link', { name: 'この note を戻す' }).tap();
+    await expect(page).toHaveURL(/\/dash\/notes\/\d+\/restore$/);
+    expect(await fitsViewportWidth(page)).toBe(true);
+
+    await page.getByRole('button', { name: '戻す' }).tap();
+    await expect(page).toHaveURL(/\/dash\?restored=1$/);
+    await expect(page.getByText('note を戻しました')).toBeVisible();
+    await expect(noteListItem(page, slug)).toHaveCount(1);
     expect(await fitsViewportWidth(page)).toBe(true);
   });
 });

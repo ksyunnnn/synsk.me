@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type {
+  DeletedNote,
   EditableNote,
   NoteContent,
   NoteId,
@@ -11,13 +12,15 @@ import type {
   CreateNoteResult,
   DeleteNoteResult,
   NoteRepository,
+  RestoreNoteResult,
   UpdateNoteResult,
 } from '@/features/note/domain/note-repository';
 
 /**
  * `NoteRepository` の D1 の実装。D1 の API はこのファイルの中だけで使う（ADR-0035）。
  *
- * 表の形は `migrations/0001_create_note.sql` にある。
+ * 表の形は `migrations/` にある。削除した note は `note.deleted_at` に日時を持つ。
+ * 戻す操作と削除した note の取り出しのほかは、どの文も `deleted_at IS NULL` で絞る。
  */
 
 /**
@@ -57,6 +60,20 @@ type EditableNoteRow = {
   published: 0 | 1;
 };
 
+type DeletedNoteRow = {
+  id: number;
+  slug: string;
+  title: string;
+  published: 0 | 1;
+};
+
+const toDeletedNote = (row: DeletedNoteRow): DeletedNote => ({
+  id: row.id,
+  slug: row.slug,
+  title: row.title,
+  status: row.published ? 'published' : 'draft',
+});
+
 type NoteSummaryRow = {
   id: number;
   slug: string;
@@ -68,7 +85,7 @@ type NoteSummaryRow = {
 export const createD1NoteRepository = (db: D1Database): NoteRepository => {
   const updateNote = (id: NoteId, { slug, title, body }: NoteContent) =>
     db
-      .prepare('UPDATE note SET slug = ?, title = ?, body = ? WHERE id = ?')
+      .prepare('UPDATE note SET slug = ?, title = ?, body = ? WHERE id = ? AND deleted_at IS NULL')
       .bind(slug, title, body, id);
 
   return {
@@ -108,7 +125,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
           db
             .prepare(
               `INSERT INTO note_publication (note_id, title, body, first_published_at)
-               SELECT id, title, body, ? FROM note WHERE id = ?
+               SELECT id, title, body, ? FROM note WHERE id = ? AND deleted_at IS NULL
                ON CONFLICT (note_id) DO UPDATE SET title = excluded.title, body = excluded.body`,
             )
             .bind(publishedAt, id),
@@ -119,9 +136,20 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       }
     },
 
-    async delete(id): Promise<DeleteNoteResult> {
-      // note_publication の行は、外部キーの ON DELETE CASCADE で一緒に消える
-      const { meta } = await db.prepare('DELETE FROM note WHERE id = ?').bind(id).run();
+    async delete(id, deletedAt): Promise<DeleteNoteResult> {
+      // 行を消さない。note_publication の行も残し、戻した note が公開に戻れるようにする
+      const { meta } = await db
+        .prepare('UPDATE note SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL')
+        .bind(deletedAt, id)
+        .run();
+      return meta.changes === 0 ? { ok: false, reason: 'not-found' } : { ok: true };
+    },
+
+    async restore(id): Promise<RestoreNoteResult> {
+      const { meta } = await db
+        .prepare('UPDATE note SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL')
+        .bind(id)
+        .run();
       return meta.changes === 0 ? { ok: false, reason: 'not-found' } : { ok: true };
     },
 
@@ -134,7 +162,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
                   note_publication.first_published_at
            FROM note_publication
            JOIN note ON note.id = note_publication.note_id
-           WHERE note.slug = ?`,
+           WHERE note.slug = ? AND note.deleted_at IS NULL`,
         )
         .bind(slug)
         .first<PublishedNoteRow>();
@@ -154,7 +182,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
                   note_publication.note_id IS NOT NULL AS published
            FROM note
            LEFT JOIN note_publication ON note_publication.note_id = note.id
-           WHERE note.id = ?`,
+           WHERE note.id = ? AND note.deleted_at IS NULL`,
         )
         .bind(id)
         .first<EditableNoteRow>();
@@ -179,6 +207,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
                       OR note_publication.body <> note.body)) AS has_unpublished_changes
            FROM note
            LEFT JOIN note_publication ON note_publication.note_id = note.id
+           WHERE note.deleted_at IS NULL
            ORDER BY note.id DESC`,
         )
         .all<NoteSummaryRow>();
@@ -189,6 +218,35 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         status: row.published ? 'published' : 'draft',
         hasUnpublishedChanges: row.has_unpublished_changes === 1,
       }));
+    },
+
+    async findDeleted(id): Promise<DeletedNote | null> {
+      const row = await db
+        .prepare(
+          `SELECT note.id, note.slug, note.title,
+                  note_publication.note_id IS NOT NULL AS published
+           FROM note
+           LEFT JOIN note_publication ON note_publication.note_id = note.id
+           WHERE note.id = ? AND note.deleted_at IS NOT NULL`,
+        )
+        .bind(id)
+        .first<DeletedNoteRow>();
+      return row && toDeletedNote(row);
+    },
+
+    async listDeletedForAuthor(): Promise<DeletedNote[]> {
+      // 後から削除した note を先に並べる
+      const { results } = await db
+        .prepare(
+          `SELECT note.id, note.slug, note.title,
+                  note_publication.note_id IS NOT NULL AS published
+           FROM note
+           LEFT JOIN note_publication ON note_publication.note_id = note.id
+           WHERE note.deleted_at IS NOT NULL
+           ORDER BY note.deleted_at DESC, note.id DESC`,
+        )
+        .all<DeletedNoteRow>();
+      return results.map(toDeletedNote);
     },
   };
 };

@@ -20,7 +20,10 @@ const Page = async ({ params }: Props) => {
   return (
     <main>
       <h1>note を削除する</h1>
-      <p>次の note を削除します。公開している内容も消え、元に戻せません。</p>
+      <p>
+        次の note を削除します。訪問者には見えなくなります。削除した note は、note
+        の一覧の画面から戻せます。
+      </p>
       <p>slug: {note.slug}</p>
       <p>題: {note.title === '' ? '（題なし）' : note.title}</p>
       <DeleteNoteForm action={deleteNoteAction} noteId={note.id} />

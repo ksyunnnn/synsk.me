@@ -2,7 +2,7 @@
  * note の規則と、画面に渡す形。
  *
  * 規則の正本は specs/005-note-write-and-read/data-model.md にある。同じ規則を
- * `migrations/0001_create_note.sql` の制約も持つ。ここで先に確かめるのは、
+ * `migrations/` の制約も持つ。ここで先に確かめるのは、
  * どの項目の何が合わないかを作り手に返すため。
  */
 
@@ -121,6 +121,16 @@ export type EditableNote = {
   status: NoteStatus;
 };
 
+/** 削除した note の1件 */
+export type DeletedNote = {
+  id: NoteId;
+  slug: string;
+  /** 書き換えている題 */
+  title: string;
+  /** 削除する前の状態。戻すとこの状態になる */
+  status: NoteStatus;
+};
+
 // ---------------------------------------------------------------------------
 // 画面に渡す形（DTO、ADR-0028）。出す項目を列挙して詰める
 // ---------------------------------------------------------------------------
@@ -149,6 +159,13 @@ export type EditableNoteDto = {
   status: NoteStatus;
 };
 
+export type DeletedNoteDto = {
+  id: NoteId;
+  slug: string;
+  title: string;
+  status: NoteStatus;
+};
+
 export const toPublishedNoteDto = (note: PublishedNote): PublishedNoteDto => ({
   slug: note.slug,
   title: note.title,
@@ -169,6 +186,13 @@ export const toEditableNoteDto = (note: EditableNote): EditableNoteDto => ({
   slug: note.slug,
   title: note.title,
   body: note.body,
+  status: note.status,
+});
+
+export const toDeletedNoteDto = (note: DeletedNote): DeletedNoteDto => ({
+  id: note.id,
+  slug: note.slug,
+  title: note.title,
   status: note.status,
 });
 
@@ -196,7 +220,7 @@ export const toNoteFormState = (
 ): NoteFormState => ({ values: { slug, title, body }, errors: {}, result: null });
 
 /**
- * 編集と削除のフォームで、note の id を送る入力の名前。`id` にしない。
+ * 編集・削除・戻すフォームで、note の id を送る入力の名前。`id` にしない。
  * `name="id"` の入力を持つフォームでは `form.id` がその入力を返し、JavaScript ありの
  * 送信で、React が押したボタンの name と value を足す入力に誤った `form` 属性が付いて
  * 送られなくなる（`react-dom` の `createFormDataWithSubmitter`）
@@ -207,3 +231,8 @@ export const NOTE_ID_FIELD = 'noteId';
 export type DeleteNoteFormState = { result: 'delete-failed' | 'forbidden' | null };
 
 export const INITIAL_DELETE_NOTE_FORM_STATE: DeleteNoteFormState = { result: null };
+
+/** 戻す確認のフォームの状態。戻せたときは一覧の画面へ移るため、状態を持たない */
+export type RestoreNoteFormState = { result: 'restore-failed' | 'forbidden' | null };
+
+export const INITIAL_RESTORE_NOTE_FORM_STATE: RestoreNoteFormState = { result: null };

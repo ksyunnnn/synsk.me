@@ -6,7 +6,7 @@ export const NoteList = ({ notes }: { notes: NoteSummaryDto[] }) => {
   if (notes.length === 0) return <p>note がありません</p>;
 
   return (
-    <ul>
+    <ul aria-label="note の一覧">
       {notes.map((note) => (
         <li key={note.id}>
           <Link href={`/dash/notes/${note.id}`}>

@@ -1,10 +1,17 @@
 import { expect, test } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { createNote, createPublishedNote, noteFields, uniqueSlug } from './support/note';
+import {
+  createNote,
+  createPublishedNote,
+  deletedNoteListItem,
+  noteFields,
+  noteListItem,
+  uniqueSlug,
+} from './support/note';
 
 /**
- * 作り手が確認の画面を経て note を削除する（specs/005-note-write-and-read/spec.md の
- * User Story 3）。
+ * 作り手が確認の画面を経て note を削除し、削除した note を戻す
+ * （specs/005-note-write-and-read/spec.md の User Story 3）。
  *
  * すべての画面と操作が JavaScript なしで動くことを求めるため、JavaScript を切って行う。
  * 状態コードと、書き込まないことは結合テストが持つ。
@@ -16,7 +23,7 @@ test.beforeEach(async ({ context }) => {
   await actAsAuthor(context);
 });
 
-test('確認の画面を経て削除すると、訪問者に note がないことが伝わり、同じ slug で作れる', async ({
+test('確認の画面を経て削除すると訪問者に note がないことが伝わり、戻すと再び読める', async ({
   page,
   browser,
 }) => {
@@ -36,7 +43,7 @@ test('確認の画面を経て削除すると、訪問者に note がないこ�
   await expect(page).toHaveURL(editUrl);
 
   await page.goto('/dash');
-  await expect(page.getByRole('listitem').filter({ hasText: slug })).toHaveCount(1);
+  await expect(noteListItem(page, slug)).toHaveCount(1);
   await visitorPage.goto(`/notes/${slug}`);
   await expect(visitorPage.getByRole('heading', { level: 1, name: title })).toBeVisible();
 
@@ -45,20 +52,45 @@ test('確認の画面を経て削除すると、訪問者に note がないこ�
   await page.getByRole('link', { name: 'この note を削除する' }).click();
   await page.getByRole('button', { name: '削除する' }).click();
 
-  // 一覧から消え、削除したことが出る
+  // note の一覧から外れて削除した note の一覧に並び、削除したことが出る
   await expect(page).toHaveURL(/\/dash\?deleted=1$/);
   await expect(page.getByText('note を削除しました')).toBeVisible();
-  await expect(page.getByRole('listitem').filter({ hasText: slug })).toHaveCount(0);
+  await expect(noteListItem(page, slug)).toHaveCount(0);
+  await expect(deletedNoteListItem(page, slug)).toHaveCount(1);
+  await expect(deletedNoteListItem(page, slug).getByText('削除する前の状態: 公開')).toBeVisible();
 
   // 訪問者に note がないことが伝わる
   await visitorPage.reload();
   await expect(visitorPage.getByRole('heading', { name: 'note が見つかりません' })).toBeVisible();
   await expect(visitorPage.getByText(title)).toHaveCount(0);
-  await visitor.close();
 
-  // 同じ slug で作れる
-  await createNote(page, { slug, title: '同じ slug で作り直した題', body: '' });
-  await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
+  // 削除した note の編集の画面は開けない
+  await page.goto(editUrl);
+  await expect(page.getByText('この note は存在しません')).toBeVisible();
+
+  // 削除した note の slug では作れない
+  await createNote(page, { slug, title: '同じ slug で作ろうとした題', body: '' });
+  await expect(page.getByText('削除した note の slug も使えません')).toBeVisible();
+
+  // 確認の画面を経て戻す
+  await page.goto('/dash');
+  await deletedNoteListItem(page, slug).getByRole('link', { name: 'この note を戻す' }).click();
+  await expect(page).toHaveURL(`${editUrl}/restore`);
+  await expect(page.getByText(`slug: ${slug}`)).toBeVisible();
+  await expect(page.getByText('訪問者が再び読めるようになります')).toBeVisible();
+  await page.getByRole('button', { name: '戻す' }).click();
+
+  // note の一覧に公開の状態で戻り、戻したことが出る
+  await expect(page).toHaveURL(/\/dash\?restored=1$/);
+  await expect(page.getByText('note を戻しました')).toBeVisible();
+  await expect(noteListItem(page, slug).getByText('状態: 公開')).toBeVisible();
+  await expect(deletedNoteListItem(page, slug)).toHaveCount(0);
+
+  // 訪問者が、削除する前と同じ題と本文を読める
+  await visitorPage.reload();
+  await expect(visitorPage.getByRole('heading', { level: 1, name: title })).toBeVisible();
+  await expect(visitorPage.getByText('削除する本文')).toBeVisible();
+  await visitor.close();
 });
 
 test('別のページで削除した note を保存すると、存在しないことが出る', async ({ page, context }) => {

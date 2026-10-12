@@ -47,9 +47,24 @@ export const SEEDED_NOTES = {
     title: '下書きの題',
     body: '下書きの本文',
   },
+  /** 公開済みのまま削除した */
+  deleted: {
+    id: 4,
+    slug: 'deleted-note',
+    title: '削除した題',
+    body: '削除した本文',
+    firstPublishedAt: '2026-09-12T00:00:00.000Z',
+    deletedAt: '2026-10-01T03:00:00.000Z',
+  },
 } as const;
 
-export type NoteRow = { id: number; slug: string; title: string; body: string };
+export type NoteRow = {
+  id: number;
+  slug: string;
+  title: string;
+  body: string;
+  deleted_at: string | null;
+};
 export type NotePublicationRow = {
   note_id: number;
   title: string;
@@ -58,7 +73,7 @@ export type NotePublicationRow = {
 };
 
 const seed = async (db: D1Database) => {
-  const { published, publishedWithChanges, draft } = SEEDED_NOTES;
+  const { published, publishedWithChanges, draft, deleted } = SEEDED_NOTES;
   const insertNote = (id: number, slug: string, title: string, body: string) =>
     db
       .prepare('INSERT INTO note (id, slug, title, body) VALUES (?, ?, ?, ?)')
@@ -86,6 +101,9 @@ const seed = async (db: D1Database) => {
       publishedWithChanges.firstPublishedAt,
     ),
     insertNote(draft.id, draft.slug, draft.title, draft.body),
+    insertNote(deleted.id, deleted.slug, deleted.title, deleted.body),
+    insertPublication(deleted.id, deleted.title, deleted.body, deleted.firstPublishedAt),
+    db.prepare('UPDATE note SET deleted_at = ? WHERE id = ?').bind(deleted.deletedAt, deleted.id),
   ]);
 };
 
@@ -154,7 +172,7 @@ export const startNoteTestServer = async ({
 /** note の行をすべて、id の順に読む。操作の前後で行が変わらないことを確かめるのに使う */
 export const readNoteRows = async (db: D1Database) => {
   const [notes, publications] = await db.batch([
-    db.prepare('SELECT id, slug, title, body FROM note ORDER BY id'),
+    db.prepare('SELECT id, slug, title, body, deleted_at FROM note ORDER BY id'),
     db.prepare(
       'SELECT note_id, title, body, first_published_at FROM note_publication ORDER BY note_id',
     ),

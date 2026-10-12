@@ -10,12 +10,13 @@ import { encodeForm, readActionFields } from './support/form';
  * 状態コードと D1 の行で確かめる。画面に出る文言と操作の連なりは E2E が持つ。
  */
 
-const { published, publishedWithChanges, draft } = SEEDED_NOTES;
+const { published, publishedWithChanges, draft, deleted } = SEEDED_NOTES;
 const SEEDED_TITLES = [
   published.title,
   publishedWithChanges.title,
   publishedWithChanges.draftTitle,
   draft.title,
+  deleted.title,
 ];
 
 /** 作り手が入力する値。応答に残ることを確かめるため、他の値と重ならないものにする */
@@ -89,6 +90,7 @@ describe('D1 から読める', () => {
       '/dash/notes/new',
       `/dash/notes/${draft.id}`,
       `/dash/notes/${draft.id}/delete`,
+      `/dash/notes/${deleted.id}/restore`,
     ])('%s は 403 で、画面の中身を返さない', async (path) => {
       const res = await ctx.server.fetch(path);
       expect(res.status).toBe(403);
@@ -151,6 +153,14 @@ describe('D1 から読める', () => {
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
+    it('「戻す」の操作は書き込まない', async () => {
+      const fields = await readFormOf(`/dash/notes/${deleted.id}/restore`);
+      const before = await readNoteRows(ctx.db);
+
+      await submit(`/dash/notes/${deleted.id}/restore`, fields, { noteId: deleted.id });
+      expect(await readNoteRows(ctx.db)).toEqual(before);
+    });
+
     it('操作は画面の経路の外へ送っても書き込まない', async () => {
       // Server Action は経路に縛られない。`/dash` の外への POST からも呼べる
       const fields = await readFormOf('/dash/notes/new');
@@ -201,6 +211,38 @@ describe('D1 から読める', () => {
       expect(res.status).toBe(404);
     });
 
+    it.each([`/dash/notes/${deleted.id}`, `/dash/notes/${deleted.id}/delete`])(
+      '削除した note の %s は 404',
+      async (path) => {
+        const res = await ctx.server.fetch(path, { headers: await authorHeaders() });
+        expect(res.status).toBe(404);
+        expect(await res.text()).not.toContain(deleted.title);
+      },
+    );
+
+    it('削除していない note の戻す確認の画面は 404', async () => {
+      const res = await ctx.server.fetch(`/dash/notes/${draft.id}/restore`, {
+        headers: await authorHeaders(),
+      });
+      expect(res.status).toBe(404);
+    });
+
+    it('削除した note の保存と公開は書き込まない', async () => {
+      // 別の画面で削除した note の、開いたままの編集の画面から送った操作にあたる
+      const fields = await readFormOf(`/dash/notes/${draft.id}`);
+      const before = await readNoteRows(ctx.db);
+
+      for (const intent of [SAVE, PUBLISH]) {
+        await submit(
+          `/dash/notes/${draft.id}`,
+          fields,
+          { ...intent, noteId: deleted.id, ...INPUT, slug: deleted.slug },
+          await authorHeaders(),
+        );
+      }
+      expect(await readNoteRows(ctx.db)).toEqual(before);
+    });
+
     describe('D1 に書き込めない', () => {
       beforeAll(async () => {
         // 読み出しは通し、書き込みだけを失敗させる
@@ -213,10 +255,6 @@ describe('D1 から読める', () => {
             `CREATE TRIGGER fail_note_update BEFORE UPDATE ON note
              BEGIN SELECT RAISE(ABORT, 'integration-write-failure'); END`,
           ),
-          ctx.db.prepare(
-            `CREATE TRIGGER fail_note_delete BEFORE DELETE ON note
-             BEGIN SELECT RAISE(ABORT, 'integration-write-failure'); END`,
-          ),
         ]);
       });
 
@@ -224,7 +262,6 @@ describe('D1 から読める', () => {
         await ctx.db.batch([
           ctx.db.prepare('DROP TRIGGER fail_note_insert'),
           ctx.db.prepare('DROP TRIGGER fail_note_update'),
-          ctx.db.prepare('DROP TRIGGER fail_note_delete'),
         ]);
       });
 
@@ -292,6 +329,21 @@ describe('D1 から読める', () => {
         expect(await res.text()).toContain('削除に失敗しました');
         expect(await readNoteRows(ctx.db)).toEqual(before);
       });
+
+      it('「戻す」は失敗を返す', async () => {
+        const fields = await readFormOf(`/dash/notes/${deleted.id}/restore`);
+        const before = await readNoteRows(ctx.db);
+
+        const res = await submit(
+          `/dash/notes/${deleted.id}/restore`,
+          fields,
+          { noteId: deleted.id },
+          await authorHeaders(),
+        );
+        expect(res.status).toBe(200);
+        expect(await res.text()).toContain('戻すのに失敗しました');
+        expect(await readNoteRows(ctx.db)).toEqual(before);
+      });
     });
 
     describe('対照: 同じ形の要求で書き込まれる', () => {
@@ -347,7 +399,7 @@ describe('D1 から読める', () => {
         expect(after.notePublication).toEqual(before.notePublication);
       });
 
-      it('「削除する」は note を削除し、一覧の画面へ移す', async () => {
+      it('「削除する」は note の行を残して削除し、一覧の画面へ移す', async () => {
         const created = await ctx.db
           .prepare('INSERT INTO note (slug, title, body) VALUES (?, ?, ?) RETURNING id')
           .bind('integration-delete', '削除する題', '削除する本文')
@@ -363,7 +415,37 @@ describe('D1 から読める', () => {
         );
         expect(res.status).toBe(303);
         expect(res.headers.get('location')).toMatch(/\/dash\?deleted=1$/);
-        expect((await readNoteRows(ctx.db)).note.find((row) => row.id === id)).toBeUndefined();
+        const row = (await readNoteRows(ctx.db)).note.find((note) => note.id === id);
+        expect(row).toMatchObject({ title: '削除する題', body: '削除する本文' });
+        expect(row?.deleted_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+      });
+
+      it('「戻す」は削除した note を戻し、一覧の画面へ移す', async () => {
+        const before = await readNoteRows(ctx.db);
+        const fields = await readFormOf(`/dash/notes/${deleted.id}/restore`);
+
+        const res = await submit(
+          `/dash/notes/${deleted.id}/restore`,
+          fields,
+          { noteId: deleted.id },
+          await authorHeaders(),
+        );
+        expect(res.status).toBe(303);
+        expect(res.headers.get('location')).toMatch(/\/dash\?restored=1$/);
+
+        const after = await readNoteRows(ctx.db);
+        expect(after.note.find((note) => note.id === deleted.id)).toEqual({
+          id: deleted.id,
+          slug: deleted.slug,
+          title: deleted.title,
+          body: deleted.body,
+          deleted_at: null,
+        });
+        expect(after.notePublication).toEqual(before.notePublication);
+        // 公開済みだった note は、戻すと訪問者が再び読める
+        const visitor = await ctx.server.fetch(`/notes/${deleted.slug}`);
+        expect(visitor.status).toBe(200);
+        expect(await visitor.text()).toContain(`<h1>${deleted.title}</h1>`);
       });
     });
   });
@@ -384,19 +466,21 @@ describe('D1 から読めない', () => {
     await ctx?.close();
   });
 
-  it.each(['/dash', `/dash/notes/${published.id}`, `/dash/notes/${published.id}/delete`])(
-    '作り手の JWT 付きの %s は 500 で、note の題と本文を含めない',
-    async (path) => {
-      const res = await ctx.server.fetch(path, {
-        headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
-      });
-      expect(res.status).toBe(500);
+  it.each([
+    '/dash',
+    `/dash/notes/${published.id}`,
+    `/dash/notes/${published.id}/delete`,
+    `/dash/notes/${deleted.id}/restore`,
+  ])('作り手の JWT 付きの %s は 500 で、note の題と本文を含めない', async (path) => {
+    const res = await ctx.server.fetch(path, {
+      headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
+    });
+    expect(res.status).toBe(500);
 
-      const html = await res.text();
-      expect(html).toContain('ページを読み出せませんでした');
-      for (const title of SEEDED_TITLES) expect(html).not.toContain(title);
-    },
-  );
+    const html = await res.text();
+    expect(html).toContain('ページを読み出せませんでした');
+    for (const title of SEEDED_TITLES) expect(html).not.toContain(title);
+  });
 
   it('作り手の JWT がなければ、D1 を読む前に 403', async () => {
     expect((await ctx.server.fetch('/dash')).status).toBe(403);

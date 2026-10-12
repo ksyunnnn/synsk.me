@@ -46,6 +46,19 @@ export const createPublishedNote = async (
   return page.url();
 };
 
+/** `/dash` の note の一覧のうち、slug の note の行 */
+export const noteListItem = (page: Page, slug: string) =>
+  page.getByRole('list', { name: 'note の一覧', exact: true }).getByRole('listitem').filter({
+    hasText: slug,
+  });
+
+/** `/dash` の削除した note の一覧のうち、slug の note の行 */
+export const deletedNoteListItem = (page: Page, slug: string) =>
+  page
+    .getByRole('list', { name: '削除した note の一覧', exact: true })
+    .getByRole('listitem')
+    .filter({ hasText: slug });
+
 /**
  * Tab キーだけで、要素にフォーカスを移す。マウスもフォーカスを移す API も使わない。
  * 届かなければ、キーボードで操作できないとして失敗する

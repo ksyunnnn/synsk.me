@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
+import { restoreNote } from '@/features/note/application/restore-note';
 import { getNoteForEdit } from '@/features/note/application/get-note-for-edit';
 import { getPublishedNote } from '@/features/note/application/get-published-note';
 import { listNotes } from '@/features/note/application/list-notes';
@@ -27,14 +28,18 @@ const fakeRepository = (overrides: Partial<NoteRepository> = {}): NoteRepository
   save: vi.fn(unexpected('save')),
   publish: vi.fn(unexpected('publish')),
   delete: vi.fn(unexpected('delete')),
+  restore: vi.fn(unexpected('restore')),
   findPublishedBySlug: vi.fn(unexpected('findPublishedBySlug')),
   findForEdit: vi.fn(unexpected('findForEdit')),
   listForAuthor: vi.fn(unexpected('listForAuthor')),
+  findDeleted: vi.fn(unexpected('findDeleted')),
+  listDeletedForAuthor: vi.fn(unexpected('listDeletedForAuthor')),
   ...overrides,
 });
 
 const content: NoteContent = { slug: 'first-note', title: '題', body: '本文' };
 const PUBLISHED_AT = '2026-09-16T15:30:00.000Z';
+const DELETED_AT = '2026-10-01T03:00:00.000Z';
 
 describe('作る', () => {
   it('規則に合う入力で note を作り、id を返す', async () => {
@@ -191,13 +196,15 @@ describe('公開する', () => {
 describe('削除する', () => {
   it('note の削除を頼む', async () => {
     const del = vi.fn(async () => ({ ok: true as const }));
-    expect(await deleteNote(fakeRepository({ delete: del }), 3)).toEqual({ ok: true });
-    expect(del).toHaveBeenCalledWith(3);
+    expect(await deleteNote(fakeRepository({ delete: del }), 3, DELETED_AT)).toEqual({
+      ok: true,
+    });
+    expect(del).toHaveBeenCalledWith(3, DELETED_AT);
   });
 
   it('存在しない note なら、そのことを返す', async () => {
     const del = vi.fn(async () => ({ ok: false as const, reason: 'not-found' as const }));
-    expect(await deleteNote(fakeRepository({ delete: del }), 3)).toEqual({
+    expect(await deleteNote(fakeRepository({ delete: del }), 3, DELETED_AT)).toEqual({
       ok: false,
       reason: 'not-found',
     });
@@ -207,7 +214,33 @@ describe('削除する', () => {
     const del = vi.fn(async () => {
       throw new Error('D1_ERROR: 書き込めない');
     });
-    expect(await deleteNote(fakeRepository({ delete: del }), 3)).toEqual({
+    expect(await deleteNote(fakeRepository({ delete: del }), 3, DELETED_AT)).toEqual({
+      ok: false,
+      reason: 'failed',
+    });
+  });
+});
+
+describe('削除した note を戻す', () => {
+  it('note を戻すことを頼む', async () => {
+    const restore = vi.fn(async () => ({ ok: true as const }));
+    expect(await restoreNote(fakeRepository({ restore }), 3)).toEqual({ ok: true });
+    expect(restore).toHaveBeenCalledWith(3);
+  });
+
+  it('削除した note が存在しなければ、そのことを返す', async () => {
+    const restore = vi.fn(async () => ({ ok: false as const, reason: 'not-found' as const }));
+    expect(await restoreNote(fakeRepository({ restore }), 3)).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('戻すのに失敗すれば、失敗を返す', async () => {
+    const restore = vi.fn(async () => {
+      throw new Error('D1_ERROR: 書き込めない');
+    });
+    expect(await restoreNote(fakeRepository({ restore }), 3)).toEqual({
       ok: false,
       reason: 'failed',
     });

@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
 import { publishNote } from '@/features/note/application/publish-note';
+import { restoreNote } from '@/features/note/application/restore-note';
 import { saveNote } from '@/features/note/application/save-note';
 import {
   NOTE_ID_FIELD,
@@ -16,6 +17,7 @@ import {
   type NoteContent,
   type NoteFormResult,
   type NoteFormState,
+  type RestoreNoteFormState,
 } from '@/features/note/domain/note';
 import { createNoteRepository, getCurrentAuthor } from '@/features/note/server/context';
 
@@ -126,8 +128,8 @@ export const editNoteAction = async (
 
 /**
  * note を削除し、一覧の画面へ移る。確認の画面（`/dash/notes/{id}/delete`）のフォームが呼ぶ。
- * note が存在しなければ、書き込まずに一覧の画面へ移る。削除に失敗すれば、確認の画面に
- * 失敗を返す
+ * note が存在しないか、すでに削除されていれば、書き込まずに一覧の画面へ移る。削除に
+ * 失敗すれば、確認の画面に失敗を返す
  */
 export const deleteNoteAction = async (
   _state: DeleteNoteFormState,
@@ -138,8 +140,28 @@ export const deleteNoteAction = async (
   const id = parseNoteId(readString(formData, NOTE_ID_FIELD));
   if (id === null) redirect('/dash');
 
-  const outcome = await deleteNote(await createNoteRepository(), id);
+  const outcome = await deleteNote(await createNoteRepository(), id, new Date().toISOString());
   if (outcome.ok) redirect('/dash?deleted=1');
   if (outcome.reason === 'not-found') redirect('/dash');
   return { result: 'delete-failed' };
+};
+
+/**
+ * 削除した note を戻し、一覧の画面へ移る。確認の画面（`/dash/notes/{id}/restore`）の
+ * フォームが呼ぶ。削除した note が存在しなければ、書き込まずに一覧の画面へ移る。
+ * 戻すのに失敗すれば、確認の画面に失敗を返す
+ */
+export const restoreNoteAction = async (
+  _state: RestoreNoteFormState,
+  formData: FormData,
+): Promise<RestoreNoteFormState> => {
+  if (!(await getCurrentAuthor())) return { result: 'forbidden' };
+
+  const id = parseNoteId(readString(formData, NOTE_ID_FIELD));
+  if (id === null) redirect('/dash');
+
+  const outcome = await restoreNote(await createNoteRepository(), id);
+  if (outcome.ok) redirect('/dash?restored=1');
+  if (outcome.reason === 'not-found') redirect('/dash');
+  return { result: 'restore-failed' };
 };

@@ -53,7 +53,7 @@ const ERROR_MESSAGES: {
 const RESULT_MESSAGES: Record<NoteFormResult, string> = {
   saved: '保存しました',
   published: '公開しました',
-  'slug-taken': 'この slug は他の note が使っています',
+  'slug-taken': 'この slug は他の note が使っています。削除した note の slug も使えません',
   'slug-fixed': '公開した note の slug は変えられません',
   'not-found': 'この note は存在しません',
   'save-failed': '保存に失敗しました。もう一度試してください',

@@ -2,11 +2,13 @@ import 'server-only';
 
 import { forbidden } from 'next/navigation';
 import { cache } from 'react';
+import { getDeletedNote as getDeletedNoteUseCase } from '@/features/note/application/get-deleted-note';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getPublishedNote as getPublishedNoteUseCase } from '@/features/note/application/get-published-note';
-import { listNotes } from '@/features/note/application/list-notes';
+import { listDeletedNotes, listNotes } from '@/features/note/application/list-notes';
 import {
   parseNoteId,
+  type DeletedNoteDto,
   type EditableNoteDto,
   type NoteSummaryDto,
   type PublishedNoteDto,
@@ -33,7 +35,7 @@ export const requireAuthor = async (): Promise<Author> => {
 };
 
 /**
- * 訪問者に見せる note。下書きと存在しない slug は null。
+ * 訪問者に見せる note。下書き・削除した note・存在しない slug は null。
  * ページの本体とメタデータの両方が呼ぶため、1つの要求の中では D1 に1回だけ問い合わせる
  */
 export const getPublishedNote = cache(async (slug: string): Promise<PublishedNoteDto | null> =>
@@ -46,9 +48,22 @@ export const listNotesForAuthor = async (): Promise<NoteSummaryDto[]> => {
   return listNotes(await createNoteRepository());
 };
 
-/** 作り手が編集する note。作り手でなければ 403。`id` の note がなければ null */
+/** 作り手向けの、削除した note の一覧。作り手でなければ 403 */
+export const listDeletedNotesForAuthor = async (): Promise<DeletedNoteDto[]> => {
+  await requireAuthor();
+  return listDeletedNotes(await createNoteRepository());
+};
+
+/** 作り手が編集する note。作り手でなければ 403。`id` の note がないか、削除した note なら null */
 export const getNoteForEdit = async (id: string): Promise<EditableNoteDto | null> => {
   await requireAuthor();
   const noteId = parseNoteId(id);
   return noteId === null ? null : getNoteForEditUseCase(await createNoteRepository(), noteId);
+};
+
+/** 作り手が戻す、削除した note。作り手でなければ 403。`id` が削除した note でなければ null */
+export const getDeletedNote = async (id: string): Promise<DeletedNoteDto | null> => {
+  await requireAuthor();
+  const noteId = parseNoteId(id);
+  return noteId === null ? null : getDeletedNoteUseCase(await createNoteRepository(), noteId);
 };
