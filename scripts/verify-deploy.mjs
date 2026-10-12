@@ -2,12 +2,14 @@
 // 本番へのデプロイ直後に走らせる検査。落ちたらデプロイを赤くする。
 //
 // 検査するのは、これまでに実際に壊れたもの。
-// - 4 経路が返るか（#59 の完了条件）
+// - HTML と画像の経路が返るか（#59）
 // - OG 画像とアイコンが実体のある PNG か（satori と resvg が workerd で動くか）
 // - HTML がエッジのキャッシュに載るか（#38 の後退。`export const revalidate` か
-//   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）
+//   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）。synsk.me でのみ見る
 // - アクセス解析のタグが埋まるか（#38。`next.config.js` の env が壊れると消える）
 // - HTML とクライアント JS が予算に収まるか
+// - 過去の版のサイトが読み込む帯（`public/archive-banner.js`）が返るか。
+//   このリポジトリの外から使われるため、コードを見ても消してよいかが分からない
 //
 // 使い方: node scripts/verify-deploy.mjs [URL]
 // 既定の対象は https://synsk.me。プレビュー URL を渡してもよい。
@@ -116,7 +118,7 @@ async function getWhenReady(fetcher, path, attempts = 12, intervalMs = 5_000) {
 async function checkHtmlRoutes() {
   console.log('HTML の経路');
   const pages = {};
-  for (const path of ['/', '/archives/2024']) {
+  for (const path of ['/']) {
     const res = await getWhenReady(get, path);
     const body = await res.text();
     pages[path] = body;
@@ -148,11 +150,41 @@ async function checkImageRoutes() {
   }
 }
 
+/** 過去の版のサイト（<年>.synsk.me）が `<script src>` で読み込む帯。 */
+async function checkArchiveBanner() {
+  console.log('アーカイブの帯');
+  const res = await getWhenReady(get, '/archive-banner.js');
+  const body = await res.text();
+  const type = res.headers.get('content-type') ?? '';
+  check(
+    res.status === 200 &&
+      type.includes('javascript') &&
+      body.includes("customElements.define('synsk-archive-banner'"),
+    '/archive-banner.js が帯の定義を 200 で返す',
+    `${res.status} ${type}`,
+  );
+  const allowOrigin = res.headers.get('access-control-allow-origin');
+  check(
+    allowOrigin === '*',
+    '/archive-banner.js がどのドメインからも読める',
+    `access-control-allow-origin: ${allowOrigin ?? 'なし'}`,
+  );
+}
+
 /** 2 回目の取得でエッジのキャッシュに当たることを見る。warm の直後は当たるまで
- *  間があるため待つ。 */
+ *  間があるため待つ。
+ *
+ *  ブランチの Preview では Workers Cache が有効にならず、`cf-cache-status` が付かない
+ *  （https://github.com/cloudflare/workers-sdk/issues/16218）。直るまで synsk.me でのみ見る。 */
 async function checkEdgeCache() {
   console.log('エッジのキャッシュ');
-  for (const path of ['/', '/archives/2024']) {
+  const isProductionHost = new URL(BASE).hostname === 'synsk.me';
+  if (!isProductionHost) {
+    notes.add('エッジのキャッシュの検査は synsk.me 以外では行わない');
+    console.log('  skip エッジのキャッシュ — 対象が synsk.me ではない');
+    return;
+  }
+  for (const path of ['/']) {
     let status = 'なし';
     for (let i = 1; i <= 6; i++) {
       await get(path);
@@ -306,6 +338,7 @@ console.log(`検査の対象: ${BASE}\n`);
 
 const pages = await checkHtmlRoutes();
 await checkImageRoutes();
+await checkArchiveBanner();
 await checkEdgeCache();
 checkAnalytics(pages['/']);
 await checkBudget();

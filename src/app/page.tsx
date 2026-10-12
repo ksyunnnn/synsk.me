@@ -7,7 +7,6 @@ import Image from 'next/image';
 import GlassesIcon from '@/app/asset/glasses.svg';
 import Link from 'next/link';
 import { Crane } from '@/icon';
-import { metadata } from './archives/2024/page';
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/synsk';
 
@@ -69,8 +68,8 @@ const Page = () => {
           <ul className="py-4">
             <li>
               <span className="mx-2">-</span>
-              <Link href="/archives/2024" className="underline">
-                {metadata.title?.toString().replace(' | synsk.me', '')}
+              <Link href="https://2024.synsk.me" className="underline">
+                2024年のデザイン / 2024 Website Design
               </Link>
             </li>
           </ul>

@@ -62,8 +62,8 @@ describe('bypassCacheUrl', () => {
   });
 
   it('経路を保つ', () => {
-    expect(bypassCacheUrl('https://synsk.me', '/archives/2024', 'x')).toBe(
-      'https://synsk.me/archives/2024?__verify=x',
+    expect(bypassCacheUrl('https://synsk.me', '/opengraph-image', 'x')).toBe(
+      'https://synsk.me/opengraph-image?__verify=x',
     );
   });
 

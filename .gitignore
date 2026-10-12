@@ -39,6 +39,8 @@ docs/.tmp/
 
 # Playwright MCP screenshots
 .playwright-mcp/
+# playwright-cli snapshots, screenshots and logs
+.playwright-cli/
 cloudflare-env.d.ts
 
 # wrangler files

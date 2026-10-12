@@ -24,13 +24,11 @@ test.describe('トップ', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
-  test('アーカイブへ移動できる', async ({ page }) => {
+  test('アーカイブへのリンクがサブドメインを指す', async ({ page }) => {
     await page.goto('/');
     const link = page.getByRole('link', { name: /2024/ });
     await expect(link).toBeVisible();
-    await link.click();
-    await expect(page).toHaveURL(/\/archives\/2024$/);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(link).toHaveAttribute('href', 'https://2024.synsk.me');
   });
 
   test('ハイドレーションが警告なく終わる', async ({ page }) => {

@@ -9,9 +9,13 @@
 
 ## 技術スタック
 
-Next.js 16（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
+- 言語: TypeScript
+- フレームワーク: Next.js 16（App Router）。Cloudflare Workers 上では [vinext](https://vinext.dev/) を介して動く
+- スタイル: Tailwind CSS
+- 配信: Cloudflare Workers
+- サブドメインのサイトが読み込む部品: Web Components
 
-Workers 上では [`vinext`](https://vinext.dev/) を介して動く。vinext は Next.js の API を Vite プラグインとして再実装したもので、Next.js のビルド出力は使わない。Worker の設定は `wrangler.jsonc`、ビルドの設定は `vite.config.ts` が持つ。採用の理由は [ADR-0018](./docs/decisions/0018-vinext-runtime.md) にある。
+設定は `wrangler.jsonc`（Worker）と `vite.config.ts`（ビルド）が持つ。採用の理由は [docs/decisions/](./docs/decisions/) にある。
 
 ## 開発
 
@@ -22,7 +26,7 @@ npm run lint       # リンター
 npm run start      # ビルド出力をローカルで起動
 npm run preview    # ビルドして Workers ランタイムでローカル起動
 npm run deploy     # ビルド済みの dist をデプロイし、配信を検査する
-npm run upload     # ビルド済みの dist からバージョンだけ上げ、プレビュー URL を得る
+npm run preview:branch # ビルド済みの dist から、ブランチの Preview を作る
 npm run verify:deploy # 配信されているものを検査する（URL を渡すとその対象を見る）
 npm run cf-typegen # binding の型を cloudflare-env.d.ts に生成
 ```
@@ -74,10 +78,10 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 |------|------|
 | ビルド コマンド | `npm run build` |
 | デプロイ コマンド | `npm run deploy` |
-| バージョン コマンド | `npm run upload` |
+| バージョン コマンド | `npm run preview:branch` |
 | プロダクション ブランチ | `main` |
 
-**`deploy` と `upload` はビルドしない。** ビルド コマンドが作った `dist/` を前提にする。手元で使うときは `npm run build` を先に実行する。両方がビルドすると 1 回分（手元の実測で 8.6 秒）が無駄になる。
+**`deploy` と `preview:branch` はビルドしない。** ビルド コマンドが作った `dist/` を前提にする。手元で使うときは `npm run build` を先に実行する。両方がビルドすると 1 回分（手元の実測で 8.6 秒）が無駄になる。
 
 **3 欄は `npm run` を通す。** コマンドの実体を `package.json` に置き、リポジトリ側だけを読めば配信の手順が分かる状態にするため。ダッシュボードにコマンドを直接書くと、リポジトリの変更と食い違っても誰も気づけない。
 
@@ -85,7 +89,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 **`--experimental-warm-cdn-cache` を外すと HTML がエッジのキャッシュに載らない。** vinext がページをキャッシュ可能と判定する manifest は、この二段アップロード（版を 0% で置いて経路を probe し、判定結果を載せた版を上げ直す）でしか作られない。外した版は全経路が `cache-control: no-store` になる。`--warm-cdn-target` には本番の URL が要る。warm に失敗した場合、新しい版は 0% のまま留まり、既存の版が 100% を保つ。その場合は `npx wrangler versions deploy` で昇格を選ぶ。
 
-`/` と `/archives/2024` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
+`/` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
 
@@ -95,9 +99,10 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 | 検査 | 落ちたときに疑うもの |
 | --- | --- |
-| 4 経路が 200 を返す | 経路の設定、ビルドの出力 |
+| `/`、`/icon`、`/opengraph-image` が 200 を返す | 経路の設定、ビルドの出力 |
 | `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
-| `/` と `/archives/2024` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
+| `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
+| `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
 
@@ -123,12 +128,20 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 
 ## 環境変数
 
-| 変数 | 用途 |
-|------|------|
-| `NEXT_PUBLIC_GA_MEASUREMENT_ID` | Google Tag Manager。`WORKERS_CI_BRANCH` が `main` のビルドでのみ埋め込む |
-| `WORKERS_CI_BRANCH` | Workers Builds がビルド時に渡すブランチ名。`next.config.js` が `NEXT_PUBLIC_DEPLOY_ENV` に写す |
-| `PAGESPEED_API_KEY` | PageSpeed Insights API と CrUX API。`.env` は git が追跡するため `.env.local` に置く |
-| `CLOUDFLARE_API_TOKEN` | Workers Builds のビルドログを読む。user トークンで、権限は Workers スクリプト（読み取り）と Workers Builds 構成（編集）。`.env.local` に置く |
+手元で使う値は `.env.local` に置く（git が追跡しない）。要る変数と用途は
+`.env.example` が持つ。Cloudflare の資格情報は、呼び出し元と環境で分ける。デプロイを
+GitHub Actions へ移すときは、CI 用のトークンを別に作る。
+
+ビルドのときに決まる変数が2つある。どちらも `.env.local` には書かない。
+
+**`WORKERS_CI_BRANCH`** は、Workers Builds が渡すブランチ名。`next.config.js` がこれを
+見て、`main` なら本番、それ以外はプレビューと判定し、結果を `NEXT_PUBLIC_DEPLOY_ENV`
+として画面へ渡す。
+
+**`NEXT_PUBLIC_GA_MEASUREMENT_ID`** は、訪問者の数を Google アナリティクスで測るための
+Google タグ マネージャーのコンテナ ID。値は `.env`（git が追跡する）にある。画面に
+埋め込むのは本番の配信だけとする。プレビューにも埋め込むと、本番の訪問者の数に、
+自分がプレビューを見た分が混ざる。
 
 ## Workers Builds のビルド構成
 
@@ -137,11 +150,11 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 | trigger | build | deploy | 対象ブランチ |
 |---|---|---|---|
 | 本番 | `npm run build` | `npm run deploy` | `main` |
-| プレビュー | `npm run build` | `npm run upload` | `main` 以外 |
+| プレビュー | `npm run build` | `npm run preview:branch` | `main` 以外 |
 
 値を書き写さず npm の script を呼ぶ形にしてある。コマンドの正本は `package.json` が持つ。
 
-確認と変更は Builds API による。`CLOUDFLARE_API_TOKEN` が要る。
+確認と変更は Builds API による。`CLOUDFLARE_BUILDS_API_TOKEN` が要る。
 
 ```
 GET   /client/v4/accounts/{account_id}/builds/workers/{worker_tag}/triggers

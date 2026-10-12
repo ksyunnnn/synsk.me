@@ -22,10 +22,11 @@ test.describe('JavaScript なし', () => {
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
-  test('アーカイブへ遷移できる', async ({ page }) => {
+  test('アーカイブへのリンクがサブドメインを指す', async ({ page }) => {
     await page.goto('/');
-    await page.getByRole('link', { name: /2024/ }).first().click();
-    await expect(page).toHaveURL(/\/archives\/2024$/);
-    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('link', { name: /2024/ }).first()).toHaveAttribute(
+      'href',
+      'https://2024.synsk.me',
+    );
   });
 });
