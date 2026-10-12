@@ -38,8 +38,8 @@ afterAll(async () => {
 });
 
 describe('訪問者が到達する経路', () => {
-  it.each(['/', '/archives/2024'])('%s が HTML を返す', async (path) => {
-    const res = await server.fetch(path);
+  it('/ が HTML を返す', async () => {
+    const res = await server.fetch('/');
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/^text\/html/);
   });

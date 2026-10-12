@@ -89,7 +89,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 **`--experimental-warm-cdn-cache` を外すと HTML がエッジのキャッシュに載らない。** vinext がページをキャッシュ可能と判定する manifest は、この二段アップロード（版を 0% で置いて経路を probe し、判定結果を載せた版を上げ直す）でしか作られない。外した版は全経路が `cache-control: no-store` になる。`--warm-cdn-target` には本番の URL が要る。warm に失敗した場合、新しい版は 0% のまま留まり、既存の版が 100% を保つ。その場合は `npx wrangler versions deploy` で昇格を選ぶ。
 
-`/` と `/archives/2024` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
+`/` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
 
@@ -99,10 +99,10 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 | 検査 | 落ちたときに疑うもの |
 | --- | --- |
-| 4 経路が 200 を返す | 経路の設定、ビルドの出力 |
+| `/`、`/icon`、`/opengraph-image` が 200 を返す | 経路の設定、ビルドの出力 |
 | `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
 | `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
-| `/` と `/archives/2024` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
+| `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
 
