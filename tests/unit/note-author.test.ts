@@ -173,6 +173,9 @@ describe('isSameMailbox', () => {
     ['owner@example.com', 'other@example.com', false],
     ['owner', 'owner', false],
     ['@example.com', '@example.com', false],
+    // ケルビン記号（U+212A）は toLowerCase() で k になる。別のドメインとして扱う
+    ['owner@example.com', 'owner@example.\u212Aom', false],
+    ['owner@\u212A.example', 'owner@\u212A.example', false],
   ])('%s と %s は %s', (a, b, expected) => {
     expect(isSameMailbox(a, b)).toBe(expected);
   });

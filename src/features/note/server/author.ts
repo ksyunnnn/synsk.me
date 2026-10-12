@@ -31,16 +31,22 @@ const keySetFor = (certsUrl: string) => {
 /**
  * 2つのメールアドレスが同じ宛先かを比べる。`@` より前（ローカル部）は大文字と小文字を
  * 区別し、`@` より後（ドメイン）は区別しない。RFC 5321 の 2.4 節が「The local-part of a
- * mailbox MUST BE treated as case sensitive.」「Mailbox domains ... are hence not case
- * sensitive.」と定めるため
+ * mailbox MUST BE treated as case sensitive.」「Mailbox domains follow normal DNS rules and
+ * are hence not case sensitive.」と定めるため。
+ *
+ * DNS が大文字と小文字を区別しないのは ASCII の英字だけである（RFC 4343）。`toLowerCase()`
+ * は ASCII 以外も畳み、ケルビン記号（U+212A）を `k` にするなど、別のドメインを同じと
+ * みなしうる。そのため ASCII の英字だけを畳み、ASCII 以外を含むドメインは一致させない
  */
 export const isSameMailbox = (a: string, b: string): boolean => {
   const at = (address: string) => address.lastIndexOf('@');
   const [ia, ib] = [at(a), at(b)];
   if (ia <= 0 || ib <= 0) return false;
-  return (
-    a.slice(0, ia) === b.slice(0, ib) && a.slice(ia).toLowerCase() === b.slice(ib).toLowerCase()
-  );
+  const [domainA, domainB] = [a.slice(ia + 1), b.slice(ib + 1)];
+  const isAsciiDomain = (domain: string) => /^[\x21-\x7e]+$/.test(domain);
+  if (!isAsciiDomain(domainA) || !isAsciiDomain(domainB)) return false;
+  const foldAscii = (domain: string) => domain.replace(/[A-Z]/g, (c) => c.toLowerCase());
+  return a.slice(0, ia) === b.slice(0, ib) && foldAscii(domainA) === foldAscii(domainB);
 };
 
 /** 作り手 */
