@@ -39,3 +39,11 @@ cp -R .next/static out/_next/static
 cp .next/server/app/index.html out/index.html
 cp .next/server/app/_not-found.html out/404.html
 ```
+
+### デプロイ
+
+設定は [2024.synsk.me/wrangler.jsonc](./2024.synsk.me/wrangler.jsonc) にある。このリポジトリの直下で実行する。
+
+```bash
+npx wrangler deploy --config deploy/2024.synsk.me/wrangler.jsonc --assets <2024.synsk.me を clone した場所>/out
+```
