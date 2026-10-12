@@ -3,6 +3,10 @@ const PRODUCTION_BRANCH = 'main';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // #105 の実験用。マージしない。`vinext build`（vinext 1.0.0-beta.9）は、
+  // `export const revalidate` と `export const dynamic` を残したページがあっても通る。
+  // `next build`（Next.js 16.3.4）は同じ状態でエラーにする
+  cacheComponents: true,
   env: {
     // WORKERS_CI_BRANCH は Cloudflare Workers Builds がビルド時に渡すブランチ名。
     // 手元のビルドでは未定義になり、preview に落ちる。
