@@ -634,7 +634,7 @@
                   ]
                 },
                 "oYJvX": {
-                  "content": "色・文字・余白・ブレークポイントは、この文書のトークンの名前で使う。値の正本はこの文書"
+                  "content": "色・文字・余白・ブレークポイントは、このファイルのトークンの名前で使う。値の正本はこのファイル"
                 }
               }
             },
@@ -649,7 +649,7 @@
                   "content": "境界線の見本"
                 },
                 "oYJvX": {
-                  "content": "Border: 境界線の色は `border`。太さは未定"
+                  "content": "Border: 境界線の色は border。太さは未定"
                 }
               }
             },
@@ -758,38 +758,6 @@
               "fontFamily": "Noto Sans JP",
               "fontSize": 13,
               "fontWeight": "normal"
-            }
-          ]
-        }
-      }
-    },
-    {
-      "id": "rXs3a",
-      "type": "ref",
-      "ref": "R4S4f4",
-      "name": "instance: 未定の項目",
-      "x": 0,
-      "y": 2044,
-      "descendants": {
-        "FtVpy": {
-          "content": "未定の項目"
-        },
-        "pve67": {
-          "enabled": false
-        },
-        "Kg2mY": {
-          "children": [
-            {
-              "id": "v41Bn",
-              "type": "ref",
-              "ref": "IkC35",
-              "name": "instance: Undecided",
-              "width": "fill_container",
-              "descendants": {
-                "wSga8": {
-                  "content": "Elevation（面の重なりの高さ）: HIG に同じ名前のページがない。Material 3 から足した項目（ADR-0037）"
-                }
-              }
             }
           ]
         }
@@ -1187,7 +1155,7 @@
                   ]
                 },
                 "oYJvX": {
-                  "content": "表: Token / Light / Dark / 使う場所"
+                  "content": "Token ごとの値と使う場所"
                 }
               }
             },
@@ -1205,7 +1173,7 @@
                   "content": "色で印象を左右した構造"
                 },
                 "LX4u5": {
-                  "content": "無彩色のグレー（`hsl(0, 0%, x%)`）だけで構造を作る。色で印象を左右しない"
+                  "content": "無彩色のグレー（hsl(0, 0%, x%)）だけで構造を作る。色で印象を左右しない"
                 }
               }
             },
@@ -1223,7 +1191,7 @@
                   "content": "置いた例"
                 },
                 "LX4u5": {
-                  "content": "`muted` の上に `muted-foreground` を置かない。ライトで 4.5:1 を満たさない"
+                  "content": "muted の上に muted-foreground を置かない。ライトで 4.5:1 を満たさない"
                 }
               }
             }
@@ -1297,7 +1265,7 @@
                   "content": "見せるもの"
                 },
                 "o4cpsY": {
-                  "content": "ライトとダークの両方を持つ。値は Color の表の Dark の列"
+                  "content": "ライトとダークの両方を持つ。値は Color の見本の Dark"
                 }
               }
             }
@@ -1686,7 +1654,7 @@
                   ]
                 },
                 "oYJvX": {
-                  "content": "表: Token / サイズ / 行の高さ / 使う場所"
+                  "content": "Token ごとのサイズ・行の高さと使う場所"
                 }
               }
             },
@@ -1815,7 +1783,7 @@
                   ]
                 },
                 "oYJvX": {
-                  "content": "表: 使う場所 / letter-spacing / text-transform"
+                  "content": "使う場所ごとの letter-spacing と text-transform"
                 }
               }
             },
@@ -2096,7 +2064,7 @@
                   ]
                 },
                 "oYJvX": {
-                  "content": "表: Breakpoint / 値 / 想定する端末"
+                  "content": "Breakpoint ごとの値と想定する端末"
                 }
               }
             },
@@ -2111,7 +2079,7 @@
                   "content": "端末の安全領域と内容の位置"
                 },
                 "oYJvX": {
-                  "content": "内容を安全領域の内側に置く。`viewport-fit=cover` と `env(safe-area-inset-*)` で受け取る"
+                  "content": "内容を安全領域の内側に置く。viewport-fit=cover と env(safe-area-inset-*) で受け取る"
                 }
               }
             },
@@ -2173,7 +2141,7 @@
               "fill": "#888888",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "上の 2 つは、HIG のアプリ向けのページ（Designing for iPhone Duo）の観点を、Web に当てはめて使っている",
+              "content": "「安全領域の内側に置く」と「小さな調整で合わせる」は、HIG のアプリ向けのページ（Designing for iPhone Duo）の観点を、Web に当てはめて使っている",
               "lineHeight": 1.6,
               "fontFamily": "Noto Sans JP",
               "fontSize": 12,
@@ -2483,7 +2451,7 @@
                   ]
                 },
                 "oYJvX": {
-                  "content": "8px を基準にし、次の 5 段だけを使う（表: Token / 値 / 使う場所）"
+                  "content": "8px を基準にし、この 5 段だけを使う"
                 }
               }
             },
@@ -2576,7 +2544,7 @@
                   "content": "外部プラットフォームのアイコンと Planet"
                 },
                 "oYJvX": {
-                  "content": "外部プラットフォームを示すアイコンは Simple Icons を使う。Simple Icons にないものは Phosphor Icons の `Planet` を使う"
+                  "content": "外部プラットフォームを示すアイコンは Simple Icons を使う。Simple Icons にないものは Phosphor Icons の Planet を使う"
                 }
               }
             }
@@ -3697,7 +3665,7 @@
                   ]
                 },
                 "LX4u5": {
-                  "content": "UI 部品を見分けるのに要る境界と図形は、隣の色と 3:1 以上にする。`border` は `background` と 3:1 に届かないため、UI 部品を見分ける手がかりを `border` だけにしない"
+                  "content": "UI 部品を見分けるのに要る境界と図形は、隣の色と 3:1 以上にする。border は background と 3:1 に届かないため、UI 部品を見分ける手がかりを border だけにしない"
                 }
               }
             }
@@ -3740,7 +3708,7 @@
       "ref": "R4S4f4",
       "name": "instance: Motion",
       "x": 1600,
-      "y": 1322,
+      "y": 1301,
       "descendants": {
         "FtVpy": {
           "content": "Motion"
@@ -4172,7 +4140,7 @@
                   ]
                 },
                 "o4cpsY": {
-                  "content": "動きを減らす設定（`prefers-reduced-motion: reduce`）では、自動で動くものと繰り返す動きを止める"
+                  "content": "動きを減らす設定（prefers-reduced-motion: reduce）では、自動で動くものと繰り返す動きを止める"
                 }
               }
             },
@@ -4329,7 +4297,7 @@
       "ref": "R4S4f4",
       "name": "instance: Privacy",
       "x": 1600,
-      "y": 2709,
+      "y": 2688,
       "descendants": {
         "FtVpy": {
           "content": "Privacy"
@@ -4510,7 +4478,7 @@
       "ref": "R4S4f4",
       "name": "instance: Writing",
       "x": 1600,
-      "y": 3370,
+      "y": 3349,
       "descendants": {
         "FtVpy": {
           "content": "Writing"
@@ -4857,6 +4825,55 @@
           "letterSpacing": -0.28
         }
       ]
+    },
+    {
+      "id": "pTNAs",
+      "type": "ref",
+      "ref": "R4S4f4",
+      "name": "instance: Elevation",
+      "x": 800,
+      "y": 9879,
+      "descendants": {
+        "FtVpy": {
+          "content": "Elevation"
+        },
+        "pve67": {
+          "enabled": false
+        },
+        "yKbOU": {
+          "children": [
+            {
+              "type": "text",
+              "id": "m79FH",
+              "name": "Text: Note",
+              "fill": "#888888",
+              "textGrowth": "fixed-width",
+              "width": "fill_container",
+              "content": "面の重なりの高さ。HIG に同じ名前のページがない。Material 3 から足した項目（ADR-0037）",
+              "lineHeight": 1.6,
+              "fontFamily": "Noto Sans JP",
+              "fontSize": 12,
+              "fontWeight": "normal"
+            }
+          ]
+        },
+        "Kg2mY": {
+          "children": [
+            {
+              "id": "IehKi",
+              "type": "ref",
+              "ref": "IkC35",
+              "name": "instance: Undecided",
+              "width": "fill_container",
+              "descendants": {
+                "wSga8": {
+                  "content": "Elevation（面の重なりの高さ）: 未定"
+                }
+              }
+            }
+          ]
+        }
+      }
     }
   ],
   "themes": {
