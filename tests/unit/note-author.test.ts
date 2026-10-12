@@ -1,5 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { toAccessSettings, verifyAuthor, type AccessSettings } from '@/features/note/server/author';
+import {
+  isSameMailbox,
+  toAccessSettings,
+  verifyAuthor,
+  type AccessSettings,
+} from '@/features/note/server/author';
 import {
   ACCESS_CERTS_PATH,
   TEST_ACCESS_AUD,
@@ -43,6 +48,12 @@ const sign = (overrides: { audience?: string; email?: string; expiresAt?: number
 describe('作り手であることを確かめる', () => {
   it('オーナーの正しい JWT は作り手として通る', async () => {
     expect(await verifyAuthor(await sign(), settings)).toEqual({ email: TEST_OWNER_EMAIL });
+  });
+
+  it('ドメインの大文字と小文字だけが違う JWT は作り手として通る', async () => {
+    expect(await verifyAuthor(await sign({ email: 'owner@Synsk.TEST' }), settings)).toEqual({
+      email: TEST_OWNER_EMAIL,
+    });
   });
 
   describe('AUD タグをカンマで区切って複数持つ', () => {
@@ -102,6 +113,10 @@ describe('作り手であることを確かめる', () => {
     it('メールアドレスがオーナーのものでない', async () => {
       expect(await verifyAuthor(await sign({ email: 'visitor@synsk.test' }), settings)).toBeNull();
     });
+
+    it('メールアドレスのローカル部の大文字と小文字が違う', async () => {
+      expect(await verifyAuthor(await sign({ email: 'Owner@synsk.test' }), settings)).toBeNull();
+    });
   });
 
   describe('設定値が欠けていれば拒む', () => {
@@ -147,5 +162,18 @@ describe('toAccessSettings', () => {
       certsUrl: undefined,
       issuer: undefined,
     });
+  });
+});
+
+describe('isSameMailbox', () => {
+  it.each([
+    ['owner@example.com', 'owner@example.com', true],
+    ['owner@example.com', 'owner@EXAMPLE.com', true],
+    ['owner@example.com', 'Owner@example.com', false],
+    ['owner@example.com', 'other@example.com', false],
+    ['owner', 'owner', false],
+    ['@example.com', '@example.com', false],
+  ])('%s と %s は %s', (a, b, expected) => {
+    expect(isSameMailbox(a, b)).toBe(expected);
   });
 });

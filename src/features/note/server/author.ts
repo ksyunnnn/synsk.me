@@ -28,6 +28,21 @@ const keySetFor = (certsUrl: string) => {
   return keys;
 };
 
+/**
+ * 2つのメールアドレスが同じ宛先かを比べる。`@` より前（ローカル部）は大文字と小文字を
+ * 区別し、`@` より後（ドメイン）は区別しない。RFC 5321 の 2.4 節が「The local-part of a
+ * mailbox MUST BE treated as case sensitive.」「Mailbox domains ... are hence not case
+ * sensitive.」と定めるため
+ */
+export const isSameMailbox = (a: string, b: string): boolean => {
+  const at = (address: string) => address.lastIndexOf('@');
+  const [ia, ib] = [at(a), at(b)];
+  if (ia <= 0 || ib <= 0) return false;
+  return (
+    a.slice(0, ia) === b.slice(0, ib) && a.slice(ia).toLowerCase() === b.slice(ib).toLowerCase()
+  );
+};
+
 /** 作り手 */
 export type Author = { email: string };
 
@@ -87,8 +102,9 @@ export const verifyAuthor = async (
       audience: audiences,
       algorithms: ['RS256'],
     });
-    // 大文字と小文字を区別して比べる。緩めると、オーナーでない人を通しうる
-    return payload.email === ownerEmail ? { email: ownerEmail } : null;
+    return typeof payload.email === 'string' && isSameMailbox(payload.email, ownerEmail)
+      ? { email: ownerEmail }
+      : null;
   } catch {
     return null;
   }
