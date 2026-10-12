@@ -28,8 +28,8 @@
 | `../specs/<機能ディレクトリ>/spec.md` | その機能で満たすべきこと | 現在形 | 機能をまたぐ要件（`REQUIREMENTS.md` が持つ） |
 | `../specs/<機能ディレクトリ>/plan.md` | その機能をどう作るか | 現在形 | 機能をまたぐ決定（`decisions/` が持つ） |
 | `../specs/<機能ディレクトリ>/checklists/` | spec が満たすべき品質の検査項目 | 現在形 | 要件そのもの |
-| [../design/](../design/) | デザインの探索と、採用した案（`guidelines.md` を除く） | 現在形 | なぜその案にしたか（`decisions/` が持つ）、作業手順（`CLAUDE.md` が持つ） |
-| [../design/guidelines.md](../design/guidelines.md) | デザインの層ごとの役割と、各項目の決まり（値と方針） | 現在形 | なぜそう決めたか（`decisions/` が持つ）、進捗、Issue 番号、作業手順（`CLAUDE.md` が持つ） |
+| [../design/](../design/) | デザインの探索と、採用した案、図で書いた決まり（`guidelines.md` を除く） | 現在形 | なぜその案にしたか（`decisions/` が持つ）、作業手順（`CLAUDE.md` が持つ） |
+| [../design/guidelines.md](../design/guidelines.md) | デザインの層ごとの役割と、各項目の決まり（この文書かリンク先） | 現在形 | なぜそう決めたか（`decisions/` が持つ）、進捗、Issue 番号、作業手順（`CLAUDE.md` が持つ） |
 | [archive/](./archive/) | 過去の記録 | — | — |
 | [scraps/](./scraps/) | それ以外 | 制約なし | — |
 | GitHub Issue | 何をやるか | 未完了 | 要件本文の再掲 |
