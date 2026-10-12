@@ -2739,11 +2739,136 @@
               "name": "instance: Compare",
               "width": "fill_container",
               "descendants": {
-                "w0dTl": {
-                  "content": "落ち着いた例"
+                "ZgnLg": {
+                  "type": "frame",
+                  "id": "BgL1M",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "j2n49V",
+                      "x": 16,
+                      "y": 20,
+                      "name": "Text: Sample",
+                      "fill": "#0A0A0A",
+                      "content": "synsk.me",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 14,
+                      "fontWeight": "300"
+                    },
+                    {
+                      "type": "text",
+                      "id": "NkjVl",
+                      "x": 16,
+                      "y": 52,
+                      "name": "Text: Sample",
+                      "fill": "#0A0A0A",
+                      "content": "共に考える入り口",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 18,
+                      "fontWeight": "300"
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "p3ytok",
+                      "x": 16,
+                      "y": 92,
+                      "name": "Rectangle: Line",
+                      "fill": "#E5E5E5",
+                      "width": 120,
+                      "height": 6
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "gg1B2",
+                      "x": 16,
+                      "y": 106,
+                      "name": "Rectangle: Line",
+                      "fill": "#E5E5E5",
+                      "width": 90,
+                      "height": 6
+                    }
+                  ]
                 },
-                "cFPUR": {
-                  "content": "派手な例"
+                "LSSRP": {
+                  "type": "frame",
+                  "id": "T6IJO",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "w5TzFr",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Rectangle: Banner",
+                      "fill": "#E53935",
+                      "width": 300,
+                      "height": 44
+                    },
+                    {
+                      "type": "text",
+                      "id": "TtOM9",
+                      "x": 12,
+                      "y": 10,
+                      "name": "Text: Sample",
+                      "fill": "#FFFFFF",
+                      "content": "今すぐチェック！",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 16,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "text",
+                      "id": "uPI74",
+                      "x": 12,
+                      "y": 56,
+                      "name": "Text: Sample",
+                      "fill": "#0A0A0A",
+                      "content": "最強のエンジニア",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 22,
+                      "fontWeight": "700"
+                    },
+                    {
+                      "type": "frame",
+                      "id": "EkF3k",
+                      "x": 12,
+                      "y": 96,
+                      "name": "Frame: Button",
+                      "fill": "#FFB300",
+                      "cornerRadius": 16,
+                      "padding": [
+                        6,
+                        12
+                      ],
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "u1lYP",
+                          "name": "Text: Sample",
+                          "fill": "#0A0A0A",
+                          "content": "無料で相談 ▶",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 12,
+                          "fontWeight": "700"
+                        }
+                      ]
+                    }
+                  ]
                 },
                 "LX4u5": {
                   "content": "派手さで気を引かない。説得しようとしない"
@@ -2806,11 +2931,223 @@
               "name": "instance: Compare",
               "width": "fill_container",
               "descendants": {
-                "w0dTl": {
-                  "content": "操作の層に使う"
+                "ZgnLg": {
+                  "type": "frame",
+                  "id": "BaedG",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "UPEwf",
+                      "x": 16,
+                      "y": 16,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "C09p7T",
+                      "x": 16,
+                      "y": 46,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "oW6y8",
+                      "x": 16,
+                      "y": 76,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "I6TZ73",
+                      "x": 16,
+                      "y": 106,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "n2ZA1M",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Rectangle: Glass Nav",
+                      "fill": "#FFFFFFB3",
+                      "width": 300,
+                      "height": 28,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "A0wbbJ",
+                      "x": 12,
+                      "y": 7,
+                      "name": "Text: Label",
+                      "fill": "#0A0A0A",
+                      "content": "ナビゲーション（操作）",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 },
-                "cFPUR": {
-                  "content": "内容の層に使う"
+                "LSSRP": {
+                  "type": "frame",
+                  "id": "ktBDa",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "CSjCe",
+                      "x": 16,
+                      "y": 16,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "LzzDS",
+                      "x": 16,
+                      "y": 46,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "vfw8S",
+                      "x": 16,
+                      "y": 76,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "fF6gs",
+                      "x": 16,
+                      "y": 106,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "J4pBi",
+                      "x": 16,
+                      "y": 16,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFF99",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "k2PYC8",
+                      "x": 16,
+                      "y": 46,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFF99",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "i1j2A",
+                      "x": 16,
+                      "y": 76,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFF99",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "V5gPMx",
+                      "x": 16,
+                      "y": 106,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFF99",
+                      "width": 200,
+                      "height": 20,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 6
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "mZQHb",
+                      "x": 22,
+                      "y": 19,
+                      "name": "Text: Label",
+                      "fill": "#0A0A0A",
+                      "content": "内容",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 },
                 "LX4u5": {
                   "content": "すりガラスの効果（背景をぼかし、明るさを整えて奥行きを作る）は、操作の層にだけ使う。内容の層に使わない"
@@ -2824,11 +3161,280 @@
               "name": "instance: Compare",
               "width": "fill_container",
               "descendants": {
-                "w0dTl": {
-                  "content": "いちばん大事な操作に絞る"
+                "ZgnLg": {
+                  "type": "frame",
+                  "id": "Z04P9",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "wlEFc",
+                      "x": 16,
+                      "y": 16,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "elUhb",
+                      "x": 16,
+                      "y": 46,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "dWEyd",
+                      "x": 16,
+                      "y": 76,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "AViMH",
+                      "x": 16,
+                      "y": 106,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 14,
+                      "id": "LJvJ0",
+                      "x": 150,
+                      "y": 100,
+                      "name": "Rectangle: Glass Action",
+                      "fill": "#FFFFFFB3",
+                      "width": 96,
+                      "height": 28,
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "L88j7",
+                      "x": 168,
+                      "y": 107,
+                      "name": "Text: Label",
+                      "fill": "#0A0A0A",
+                      "content": "主な操作",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 },
-                "cFPUR": {
-                  "content": "多くの場所に使う"
+                "LSSRP": {
+                  "type": "frame",
+                  "id": "f0r8l",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "none",
+                  "children": [
+                    {
+                      "type": "rectangle",
+                      "id": "VjP1q",
+                      "x": 16,
+                      "y": 16,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "hNBdZ",
+                      "x": 16,
+                      "y": 46,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "C6WGZn",
+                      "x": 16,
+                      "y": 76,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "id": "Q0wfeC",
+                      "x": 16,
+                      "y": 106,
+                      "name": "Rectangle: Content",
+                      "fill": "#D4D4D4",
+                      "width": 200,
+                      "height": 20
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 6,
+                      "id": "OzHXt",
+                      "x": 0,
+                      "y": 0,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFFB3",
+                      "width": 300,
+                      "height": 28,
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 6,
+                      "id": "PkQrQ",
+                      "x": 16,
+                      "y": 40,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFFB3",
+                      "width": 90,
+                      "height": 40,
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 6,
+                      "id": "X1Pgv",
+                      "x": 120,
+                      "y": 40,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFFB3",
+                      "width": 90,
+                      "height": 40,
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 6,
+                      "id": "Kiw2V",
+                      "x": 16,
+                      "y": 96,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFFB3",
+                      "width": 60,
+                      "height": 24,
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 6,
+                      "id": "DdJ18",
+                      "x": 90,
+                      "y": 96,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFFB3",
+                      "width": 60,
+                      "height": 24,
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "rectangle",
+                      "cornerRadius": 6,
+                      "id": "Hy7aw",
+                      "x": 164,
+                      "y": 96,
+                      "name": "Rectangle: Glass",
+                      "fill": "#FFFFFFB3",
+                      "width": 60,
+                      "height": 24,
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "effect": {
+                        "type": "background_blur",
+                        "radius": 8
+                      }
+                    },
+                    {
+                      "type": "text",
+                      "id": "cUgMm",
+                      "x": 12,
+                      "y": 7,
+                      "name": "Text: Label",
+                      "fill": "#0A0A0A",
+                      "content": "操作",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "DsIo0",
+                      "x": 22,
+                      "y": 52,
+                      "name": "Text: Label",
+                      "fill": "#0A0A0A",
+                      "content": "内容",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    },
+                    {
+                      "type": "text",
+                      "id": "A8e5jP",
+                      "x": 22,
+                      "y": 101,
+                      "name": "Text: Label",
+                      "fill": "#0A0A0A",
+                      "content": "操作",
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 10,
+                      "fontWeight": "normal"
+                    }
+                  ]
                 },
                 "LX4u5": {
                   "content": "使う場所を、いちばん大事な操作に絞る"
