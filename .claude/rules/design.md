@@ -26,6 +26,8 @@ paths:
 
 - 正本は `design/foundations.pen` で、`design/guidelines.md` の Foundations の章はこのファイルを指す
 - 列は Tokens / Styles / Guidelines の 3 つ。各列の頭に見出しを置き、その下にカードを縦に積む
-- 列の間とカードどうしの間は 160px、見出しとカードの間は 40px
+- 列の間とカードどうしの間は 160px、見出しとカードの間は 64px
 - Component は、一式の上の段に置く
-- 決まりの文はカードの中で、見本の下に置く。未定のものは Component: Undecided で置く
+- カードは Component: Card の instance にする。Body の slot に見本・2 つ並べる・Do / Don't・注記をこの順で置き、Footer の slot に未定と出典を置く
+- 決まりの文は、見本の下に置く。未定のものは Component: Undecided で置く
+- 方針の 1 行は「プリンシプルの名前：どう落としたか」の形で書く。プリンシプルとの結び付きが決まっていないカードでは非表示にする
