@@ -19,8 +19,8 @@ npm run test:e2e          # 作り手と訪問者の操作
 
 前提:
 - Cloudflare Access の2つのアプリケーション（本番の `/dash`、プレビュー全体）が作られている（[research.md](./research.md) の R2）
-- Worker の secret に、JWT の検証の設定値が入っている
-- 本番の D1 に `migrations/` が適用されている: `npx wrangler d1 migrations apply synsk-me --remote`
+- Preview の base config に、JWT の検証の設定値が入っている: `npx wrangler preview base-config secret put <変数>`
+- Preview の D1 `synsk-me-preview` に `migrations/` が適用されている: `npx wrangler d1 migrations apply synsk-me-preview --remote --config wrangler.preview-migrations.jsonc`
 - PR のブランチを push し、Workers Builds がプレビュー URL をコメントしている
 
 | # | 操作 | 期待する結果 | 対応 |

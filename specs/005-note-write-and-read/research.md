@@ -56,7 +56,7 @@
    - 検証する項目: 署名（RS256、`kid` に合う公開鍵）、`iss`、`aud`、`exp`、`nbf`、`email` がオーナーのものと一致すること
    - 公開鍵は `<issuer>/cdn-cgi/access/certs` から実行時に取る
    - 設定値（issuer、aud、オーナーのメールアドレス）は Worker の secret に置き、リポジトリに書かない
-   - aud は、本番の `/dash` とプレビュー全体の2つの Access のアプリケーションの AUD タグを、カンマで区切って1つの secret `ACCESS_AUD` に持つ。Cloudflare の公式は、アプリケーションごとに固有の AUD タグを割り当てると書いており、プレビュー URL の版も本番と同じ secret を読むため、どちらか1つだけでは片方の JWT が検証を通らない。`jose` の `jwtVerify` の `audience` は配列を受け付ける
+   - aud は、本番の `/dash` とプレビュー全体の2つの Access のアプリケーションの AUD タグを、カンマで区切って1つの secret `ACCESS_AUD` に持つ。Cloudflare の公式は、アプリケーションごとに固有の AUD タグを割り当てると書いており、プレビュー URL の版も本番と同じ secret を読むため、どちらか1つだけでは片方の JWT が検証を通らない。`jose` の `jwtVerify` の `audience` は配列を受け付ける。2026-10-09 に、プレビューの版は本番の secret ではなく Preview の base config の secret を読むよう替えた（PR #132「main 以外のブランチの配信を Worker Previews に替え、本番と分けた D1 と R2 を使う」）。`ACCESS_AUD` は、本番が `synsk.me dash`、Preview が `synsk.me preview` の AUD を1つずつ持つ
    - 次のどれかに当たれば止める: JWT がない、検証に失敗する、設定値が欠けている
    - 止めるとき、画面はページの中で `forbidden()`（403）を返し、操作は何も書き込まずに失敗を返す（R7）。vinext の `forbidden()` は設定なしで使え、403 を返す（`vinext/dist/shims/navigation-errors.js`、ビルド出力で確認）
    - D1 から読み出せないとき、ページは例外をそのまま投げ、`src/app/global-error.tsx` が 500 で描画する。vinext は `error.tsx` で描画した応答を 200 に、`global-error.tsx` で描画した応答を 500 にする（`vinext/dist/server/app-page-boundary-render.js` の `renderAppPageErrorBoundary`）
@@ -69,7 +69,7 @@
 - `ctx.access` は使えない。公式は、静的アセットを持つ Worker では `ctx.access` が渡らないと書いている。`wrangler.jsonc` は `assets` を持つ
 - 公開鍵は6週ごとに入れ替わる。コードに埋め込まない
 - `/dash` の対象に `synsk.me/dash` を別に並べるのは、公式が `example.com/alpha/*` は `example.com/alpha` を含まないとするため。`synsk.me/dash*` は `/dashboard` のような経路まで含む
-- プレビュー URL はパス単位で守れない。プレビューの版も本番と同じ D1 に書き込むため、全体を閉じる
+- プレビュー URL はパス単位で守れない。プレビューの版も本番と同じ D1 に書き込むため、全体を閉じる。2026-10-09 に、プレビューの版は本番の D1 ではなく D1 `synsk-me-preview` に書き込むよう替えた（PR #132「main 以外のブランチの配信を Worker Previews に替え、本番と分けた D1 と R2 を使う」）
 - `jose` は Cloudflare の公式の Workers の例が使う。Web Crypto だけでも書けるが、公開鍵の取得と `kid` の照合と時刻の検査を自分で持つことになり、設計原則3「少なく正しく」に反する
 
 **Alternatives considered**:
