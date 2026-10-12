@@ -13,6 +13,8 @@ Next.js 16（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
 
 Workers 上では [`vinext`](https://vinext.dev/) を介して動く。vinext は Next.js の API を Vite プラグインとして再実装したもので、Next.js のビルド出力は使わない。Worker の設定は `wrangler.jsonc`、ビルドの設定は `vite.config.ts` が持つ。採用の理由は [ADR-0018](./docs/decisions/0018-vinext-runtime.md) にある。
 
+過去の版のサイトが読み込む帯（`public/archive-banner.js`）は Web Components で書く。過去の版はそれぞれ別のフレームワークで作られているため、どのサイトでもタグ 1 つで読み込めるようにする。使い方は [deploy/archives.md](./deploy/archives.md) にある。
+
 ## 開発
 
 ```bash
