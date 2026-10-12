@@ -6,9 +6,10 @@
 
 ## Summary
 
-作り手が `/dash` で note を作り、保存し、公開し、書き換え、削除する。訪問者は `/notes/{slug}` で公開された note を読む。
+作り手が `/dash` で note を作り、保存し、公開し、書き換え、削除し、削除した note を戻す。訪問者は `/notes/{slug}` で公開された note を読む。
 
 - データは D1 の2つの表に持つ。書き換えている内容（`note`）と、訪問者に見せている内容（`note_publication`）。ORM は使わない（[research.md](./research.md) の R1）
+- 削除は行を消さず、`note.deleted_at` に日時を入れる。戻すときは空に戻す（[data-model.md](./data-model.md) の「状態の移り変わり」）
 - `/dash` は Cloudflare Access とアプリケーションの中の JWT の検証の2段で守る（R2）
 - 訪問者の画面も作り手の画面もキャッシュに載せず、要求のたびに D1 から描画する（R3）
 - 書き込みは JavaScript なしで動くフォームと Server Action で作る（R4、R5）
@@ -90,14 +91,15 @@ src/
 │           ├── new/page.tsx               作る
 │           └── [id]/
 │               ├── page.tsx               保存する・公開する
-│               └── delete/page.tsx        削除の確認
+│               ├── delete/page.tsx        削除の確認
+│               └── restore/page.tsx       戻す確認
 └── features/
     └── note/
         ├── domain/
         │   ├── note.ts                    slug・題・本文の規則、状態、型
         │   └── note-repository.ts         NoteRepository のインタフェース
         ├── application/
-        │   └── *.ts                       ユースケース（作る、保存する、公開する、削除する、読む、一覧する）
+        │   └── *.ts                       ユースケース（作る、保存する、公開する、削除する、戻す、読む、一覧する）
         ├── components/
         │   └── *.tsx                      フォームと表示。'use client' はフォームの状態を持つものだけ
         └── server/
