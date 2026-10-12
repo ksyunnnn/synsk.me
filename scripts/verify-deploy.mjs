@@ -5,7 +5,7 @@
 // - 4 経路が返るか（#59 の完了条件）
 // - OG 画像とアイコンが実体のある PNG か（satori と resvg が workerd で動くか）
 // - HTML がエッジのキャッシュに載るか（#38 の後退。`export const revalidate` か
-//   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）
+//   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）。synsk.me でのみ見る
 // - アクセス解析のタグが埋まるか（#38。`next.config.js` の env が壊れると消える）
 // - HTML とクライアント JS が予算に収まるか
 // - 過去の版のサイトが読み込む帯（`public/archive-banner.js`）が返るか。
@@ -172,9 +172,18 @@ async function checkArchiveBanner() {
 }
 
 /** 2 回目の取得でエッジのキャッシュに当たることを見る。warm の直後は当たるまで
- *  間があるため待つ。 */
+ *  間があるため待つ。
+ *
+ *  ブランチの Preview では Workers Cache が有効にならず、`cf-cache-status` が付かない
+ *  （https://github.com/cloudflare/workers-sdk/issues/16218）。直るまで synsk.me でのみ見る。 */
 async function checkEdgeCache() {
   console.log('エッジのキャッシュ');
+  const isProductionHost = new URL(BASE).hostname === 'synsk.me';
+  if (!isProductionHost) {
+    notes.add('エッジのキャッシュの検査は synsk.me 以外では行わない');
+    console.log('  skip エッジのキャッシュ — 対象が synsk.me ではない');
+    return;
+  }
   for (const path of ['/', '/archives/2024']) {
     let status = 'なし';
     for (let i = 1; i <= 6; i++) {
