@@ -9,9 +9,13 @@
 
 ## 技術スタック
 
-Next.js 16（App Router）/ TypeScript / Tailwind CSS / Cloudflare Workers
+- 言語: TypeScript
+- フレームワーク: Next.js 16（App Router）。Cloudflare Workers 上では [vinext](https://vinext.dev/) を介して動く
+- スタイル: Tailwind CSS
+- 配信: Cloudflare Workers
+- サブドメインのサイトが読み込む部品: Web Components
 
-Workers 上では [`vinext`](https://vinext.dev/) を介して動く。vinext は Next.js の API を Vite プラグインとして再実装したもので、Next.js のビルド出力は使わない。Worker の設定は `wrangler.jsonc`、ビルドの設定は `vite.config.ts` が持つ。採用の理由は [ADR-0018](./docs/decisions/0018-vinext-runtime.md) にある。
+設定は `wrangler.jsonc`（Worker）と `vite.config.ts`（ビルド）が持つ。採用の理由は [docs/decisions/](./docs/decisions/) にある。
 
 ## 開発
 
