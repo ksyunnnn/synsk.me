@@ -22,12 +22,12 @@
 - 本番へ適用する命令: `npx wrangler d1 migrations apply synsk-me --remote`
 - `wrangler.jsonc` に `migrations_dir` と `migrations_pattern` を書かない。既定の `migrations/` 直下の `.sql` を読む
 - workerd のテストは `vitest.workers.config.ts` の `readD1Migrations` を `migrations/` に向け、本番と同じマイグレーションを当てる
-- 表は `note`（書き換えている内容）と `note_publication`（見せている内容）の2つ。形は [data-model.md](./data-model.md)
-- 公開してよいかは、Repository の実装が取り出すときに確かめる。訪問者向けの取り出しは `note_publication` の列だけを列挙して SELECT する
+- 表は `note`（状態と、最後に公開した版）と `note_revision`（題と本文の版）の2つ。形は [data-model.md](./data-model.md)
+- 公開してよいかは、Repository の実装が取り出すときに確かめる。訪問者向けの取り出しは、`note.published_revision_id` の版の列だけを列挙して SELECT する
 
 **Rationale**:
 - D1 は SQL の `BEGIN` を受け付けない。ローカルで実行し、`D1_ERROR: To execute a transaction, please use the state.storage.transaction() ...` で拒まれることを確かめた。Drizzle の D1 向け `transaction()` は `begin` を発行し（`drizzle-orm/d1/session.js`）、kysely-d1 は `Transactions are not supported yet.` を投げる。どの案でも複数の文をまとめるには `db.batch()` を使うことになり、ORM を入れても差がない
-- この機能の書き込みは、保存と削除が1文、公開が2文で済む。保存は `UPDATE` の1文、削除は外部キーの `ON DELETE CASCADE` による1文。公開は、入力した内容を保存する `UPDATE` と、`note_publication` へ写す `INSERT ... SELECT ... ON CONFLICT DO UPDATE` の2文を、`db.batch()` にまとめる。公式は batch を「SQL transactions」とし、途中の文が失敗すると全体を巻き戻すと書いている。ローカルの D1 で、2文目が制約に反すると1文目も残らないことを確かめた
+- この機能の書き込みは、削除と戻すが1文、作る・保存が2文、公開が3文で済む。削除と戻すは `note` を書き換える `UPDATE` の1文。作るは `note` と最初の版の `INSERT` の2文。保存は slug を書き換える `UPDATE` と、版を足す `INSERT ... SELECT` の2文。公開は保存の2文に、公開する版を指す `UPDATE` を足した3文。2文以上は `db.batch()` にまとめる。公式は batch を「SQL transactions」とし、途中の文が失敗すると全体を巻き戻すと書いている。ローカルの D1 で、後の文が制約に反すると前の文も残らないことを確かめた（`tests/workers/d1-note-repository.test.ts` の「公開の途中の文が失敗すると、足した版も slug の変更も残らない」）
 - `@cloudflare/vitest-plugin` の `readD1Migrations` はディレクトリ直下の `.sql` だけを読む。Drizzle の生成物は入れ子（`<ts>_name/migration.sql`）で、既存のテスト基盤のままでは読めない
 - 設計原則9「単純さ over 先回りの構造」: クエリは5種類で、ORM を入れる具体的な理由（差し替え、2つ目の使い道）がない
 - 設計原則8「置き場を選ばない」: D1 に固有の API は Repository の実装に閉じる。Drizzle もスキーマの定義が方言ごとに別で、D1 から移るときの書き直しは避けられない
@@ -115,6 +115,7 @@
 - 作る: `redirect()` で `/dash/notes/{id}` へ移る
 - 保存する、公開する、公開し直す: 移らない。`useActionState` の結果として、したことを同じ画面に出す
 - 削除する: `redirect()` で `/dash?deleted=1` へ移り、一覧の画面が削除したことを出す
+- 戻す: `redirect()` で `/dash?restored=1` へ移り、一覧の画面が戻したことを出す
 
 編集の画面の「保存する」と「公開する」は、1つの Server Action `editNoteAction` にまとめ、押したボタンの `intent`（`save` か `publish`）で分ける。1つのフォームに `useActionState` の操作を2つ置くと、JavaScript なしの送信で結果を返す先を取り違えるため。`react-server-dom-webpack` の `decodeFormState` は、返す先の目印 `$ACTION_KEY` をフォームの最初の要素から読み、押したボタンのものを選ばない。note の id を送る入力の名前は `id` にしない。`name="id"` の入力があると `form.id` がその要素を返し、React が押したボタンの値を足す仮の入力がフォームから外れて、JavaScript ありの送信で `intent` が送られない。保存と公開が書き込めたら `refresh()`（`next/cache`）を呼び、ボタンの呼び名と slug の入力の状態を描画し直す。
 
@@ -135,7 +136,7 @@ Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` �
 
 ## R5. 削除の確認の作り方
 
-**Decision**: 削除の確認は、別の画面（`/dash/notes/{id}/delete`）にフォームを置いて行う。ダイアログにしない。
+**Decision**: 削除の確認は、別の画面（`/dash/notes/{id}/delete`）にフォームを置いて行う。ダイアログにしない。削除した note を戻す確認も、同じ形の別の画面（`/dash/notes/{id}/restore`）で行う。公開だった note は戻すと訪問者に再び見えるため、戻す前に、どの状態に戻るかを出す。
 
 **Rationale**:
 - JavaScript なしで動き、キーボード・読み上げ・スマートフォンで同じ操作ができる（設計原則5、constitution V）
@@ -151,9 +152,9 @@ Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` �
 | 段階 | 確かめること |
 |---|---|
 | 単体（`npm test`） | slug・題・本文の規則（文字数の境界）、公開日を日本時間の日付に直すこと、ユースケースの規則と結果（偽の Repository を渡す。入力の誤り、slug の重複、公開後の slug の変更、存在しない note、保存の失敗）、JWT の検証（テスト用の鍵で署名したもの） |
-| workerd（`npm run test:workers`） | D1 の Repository の実装を本物のマイグレーションに当てたもの。下書きが訪問者向けの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開が原子的に行われる、削除で公開の行も消える、削除した id を使い回さない、データベースの制約 |
-| 結合（`npm run test:integration`） | ビルド出力に、マイグレーションと行を入れた D1 と、テスト用の公開鍵を向けた設定値を付けて起動したもの。`/notes/{slug}` の 200 と中身（改行が保たれ、HTML の文字列が文字のまま）、下書き・存在しない slug の 404 が同じ中身で下書きの題と本文を含まない、D1 が読めないときの訪問者と作り手の画面が 500 で note の題と本文を含まない、JWT のない `/dash` 配下の画面が 403、JWT のない操作と Origin が異なる操作の前後で行が変わらない、作り手の操作が D1 の失敗で失敗を返し入力した値を含む、`/dash` 配下がデプロイ時のキャッシュ判定の対象に入らない（R7） |
-| E2E（`npm run test:e2e`） | JavaScript を切ったブラウザで、作り手として作る → 公開する → 訪問者として読む → 書き換えて公開し直す → 削除する。入力の誤り（空の slug、使えない slug、重複した slug、長すぎる題と本文、空の題での公開）の文言が出て入力が残ること。0件の一覧の文言。確認の画面から戻ると削除されないこと。作成・保存・公開・削除を、キーボードだけで、また幅 360px の画面で行えること |
+| workerd（`npm run test:workers`） | D1 の Repository の実装を本物のマイグレーションに当てたもの。下書きが訪問者向けの取り出しに出ない、公開し直しても初めて公開した日時が変わらない、公開が原子的に行われる、削除で行が残り訪問者向けの取り出しと作り手の一覧に出ない、削除した note の slug を新しい note に使えない、削除した note を保存も公開もしない、戻した note が状態・公開している内容・初めて公開した日時を保つ、id を使い回さない、データベースの制約 |
+| 結合（`npm run test:integration`） | ビルド出力に、マイグレーションと行を入れた D1 と、テスト用の公開鍵を向けた設定値を付けて起動したもの。`/notes/{slug}` の 200 と中身（改行が保たれ、HTML の文字列が文字のまま）、下書き・削除した note・存在しない slug の 404 が同じ中身と同じヘッダで題と本文を含まない、削除した note の編集と削除の確認の画面が 404、「削除する」が行を残し「戻す」が訪問者に再び読めるようにする、D1 が読めないときの訪問者と作り手の画面が 500 で note の題と本文を含まない、JWT のない `/dash` 配下の画面が 403、JWT のない操作と Origin が異なる操作の前後で行が変わらない、作り手の操作が D1 の失敗で失敗を返し入力した値を含む、`/dash` 配下がデプロイ時のキャッシュ判定の対象に入らない（R7） |
+| E2E（`npm run test:e2e`） | JavaScript を切ったブラウザで、作り手として作る → 公開する → 訪問者として読む → 書き換えて公開し直す → 削除する → 戻す。削除した note の slug で作れないこと。入力の誤り（空の slug、使えない slug、重複した slug、長すぎる題と本文、空の題での公開）の文言が出て入力が残ること。0件の一覧の文言。確認の画面から戻ると削除されないこと。作成・保存・公開・削除・戻すを、キーボードだけで、また幅 360px の画面で行えること |
 | 静的な検査（`npm run lint`） | 操作できる要素にラベルなどの情報があること（`eslint-plugin-jsx-a11y`、ADR-0033） |
 | 配信後（`npm run verify:deploy`） | 本番の `/dash` と `/dash/notes/new` が Access のログインへ移される。service token を付けないプレビュー URL の `/` が Access のログインへ移される。`/notes/<存在しない slug>` を2回取っても `cf-cache-status` が `HIT` にならない |
 

@@ -18,13 +18,13 @@
 
 - [x] CHK004 「訪問者が到達できるどの経路」が列挙または定義されているか。`/notes/{slug}` の本文のほかに、エラーの表示、ページのメタデータ、機械の読み手向けの出力を含むかが読めるか [Ambiguity, Spec §FR-005, Spec §SC-003]
 - [x] CHK005 「完全に削除」が、書き換え中の内容・公開中の内容・データベースのバックアップのどこまでを消すことを指すか定められているか [Ambiguity, Spec §FR-009]
-- [ ] CHK006 下書きと存在しない note を「区別できる違いを見せない」の対象（状態コード、本文、応答のヘッダ）が定められているか [Clarity, Spec §FR-011]
+- [x] CHK006 下書きと存在しない note を「区別できる違いを見せない」の対象（状態コード、本文、応答のヘッダ）が定められているか [Clarity, Spec §FR-011]
 - [x] CHK007 削除や公開の後、訪問者の画面に反映されるまでの時間の上限が定められているか [Gap, Spec §SC-005]
 
 ## Requirement Consistency
 
 - [x] CHK008 「公開し直すまで書き換えは見えない」（FR-008）と、公開の操作が入力した内容を保存してから公開すること（Contract §「公開する」「公開し直す」操作）が、食い違わずに書かれているか [Consistency, Spec §FR-008]
-- [ ] CHK009 note を完全に削除できること（FR-009）と、`docs/REQUIREMENTS.md` の NFR-01（永続化したデータ全体を復元できる）の関係が書かれているか [Conflict, Spec §FR-009]
+- [x] CHK009 note を完全に削除できること（FR-009）と、`docs/REQUIREMENTS.md` の NFR-01（永続化したデータ全体を復元できる）の関係が書かれているか [Conflict, Spec §FR-009]
 
 ## Acceptance Criteria Quality
 

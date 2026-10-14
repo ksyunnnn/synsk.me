@@ -47,45 +47,78 @@ export const SEEDED_NOTES = {
     title: '下書きの題',
     body: '下書きの本文',
   },
+  /** 公開済みのまま削除した */
+  deleted: {
+    id: 4,
+    slug: 'deleted-note',
+    title: '削除した題',
+    body: '削除した本文',
+    firstPublishedAt: '2026-09-12T00:00:00.000Z',
+    deletedAt: '2026-10-01T03:00:00.000Z',
+  },
 } as const;
 
-export type NoteRow = { id: number; slug: string; title: string; body: string };
-export type NotePublicationRow = {
+export type NoteRow = {
+  id: number;
+  slug: string;
+  status: 'draft' | 'published';
+  published_revision_id: number | null;
+  published_at: string | null;
+  deleted_at: string | null;
+};
+export type NoteRevisionRow = {
+  id: number;
   note_id: number;
   title: string;
   body: string;
-  first_published_at: string;
+  created_at: string;
 };
 
+/** 版を作った日時。入れておく note の版は、どれもこの日時に作ったことにする */
+const SEEDED_REVISION_CREATED_AT = '2026-09-01T00:00:00.000Z';
+
 const seed = async (db: D1Database) => {
-  const { published, publishedWithChanges, draft } = SEEDED_NOTES;
-  const insertNote = (id: number, slug: string, title: string, body: string) =>
-    db
-      .prepare('INSERT INTO note (id, slug, title, body) VALUES (?, ?, ?, ?)')
-      .bind(id, slug, title, body);
-  const insertPublication = (id: number, title: string, body: string, at: string) =>
+  const { published, publishedWithChanges, draft, deleted } = SEEDED_NOTES;
+  const insertNote = (id: number, slug: string) =>
+    db.prepare('INSERT INTO note (id, slug) VALUES (?, ?)').bind(id, slug);
+  const insertRevision = (id: number, noteId: number, title: string, body: string) =>
     db
       .prepare(
-        'INSERT INTO note_publication (note_id, title, body, first_published_at) VALUES (?, ?, ?, ?)',
+        'INSERT INTO note_revision (id, note_id, title, body, created_at) VALUES (?, ?, ?, ?, ?)',
       )
-      .bind(id, title, body, at);
+      .bind(id, noteId, title, body, SEEDED_REVISION_CREATED_AT);
+  const publish = (noteId: number, revisionId: number, at: string) =>
+    db
+      .prepare(
+        "UPDATE note SET status = 'published', published_revision_id = ?, published_at = ? WHERE id = ?",
+      )
+      .bind(revisionId, at, noteId);
 
   await db.batch([
-    insertNote(published.id, published.slug, published.title, published.body),
-    insertPublication(published.id, published.title, published.body, published.firstPublishedAt),
-    insertNote(
-      publishedWithChanges.id,
-      publishedWithChanges.slug,
-      publishedWithChanges.draftTitle,
-      publishedWithChanges.draftBody,
-    ),
-    insertPublication(
+    insertNote(published.id, published.slug),
+    insertRevision(1, published.id, published.title, published.body),
+    publish(published.id, 1, published.firstPublishedAt),
+    insertNote(publishedWithChanges.id, publishedWithChanges.slug),
+    insertRevision(
+      2,
       publishedWithChanges.id,
       publishedWithChanges.title,
       publishedWithChanges.body,
-      publishedWithChanges.firstPublishedAt,
     ),
-    insertNote(draft.id, draft.slug, draft.title, draft.body),
+    publish(publishedWithChanges.id, 2, publishedWithChanges.firstPublishedAt),
+    // 公開した後に保存した、公開し直していない版
+    insertRevision(
+      3,
+      publishedWithChanges.id,
+      publishedWithChanges.draftTitle,
+      publishedWithChanges.draftBody,
+    ),
+    insertNote(draft.id, draft.slug),
+    insertRevision(4, draft.id, draft.title, draft.body),
+    insertNote(deleted.id, deleted.slug),
+    insertRevision(5, deleted.id, deleted.title, deleted.body),
+    publish(deleted.id, 5, deleted.firstPublishedAt),
+    db.prepare('UPDATE note SET deleted_at = ? WHERE id = ?').bind(deleted.deletedAt, deleted.id),
   ]);
 };
 
@@ -151,22 +184,29 @@ export const startNoteTestServer = async ({
   }
 };
 
-/** note の行をすべて、id の順に読む。操作の前後で行が変わらないことを確かめるのに使う */
+/** note と版の行をすべて、id の順に読む。操作の前後で行が変わらないことを確かめるのに使う */
 export const readNoteRows = async (db: D1Database) => {
-  const [notes, publications] = await db.batch([
-    db.prepare('SELECT id, slug, title, body FROM note ORDER BY id'),
+  const [notes, revisions] = await db.batch([
     db.prepare(
-      'SELECT note_id, title, body, first_published_at FROM note_publication ORDER BY note_id',
+      'SELECT id, slug, status, published_revision_id, published_at, deleted_at FROM note ORDER BY id',
     ),
+    db.prepare('SELECT id, note_id, title, body, created_at FROM note_revision ORDER BY id'),
   ]);
   return {
     note: notes.results as NoteRow[],
-    notePublication: publications.results as NotePublicationRow[],
+    noteRevision: revisions.results as NoteRevisionRow[],
   };
 };
 
+/** note の最新の版を読む */
+export const readLatestRevision = async (db: D1Database, noteId: number) =>
+  db
+    .prepare('SELECT title, body FROM note_revision WHERE note_id = ? ORDER BY id DESC LIMIT 1')
+    .bind(noteId)
+    .first<{ title: string; body: string }>();
+
 /** 表の行の数を読む */
-export const countRows = async (db: D1Database, table: 'note' | 'note_publication') => {
+export const countRows = async (db: D1Database, table: 'note' | 'note_revision') => {
   const row = await db.prepare(`SELECT count(*) AS n FROM ${table}`).first<{ n: number }>();
   return row?.n ?? 0;
 };

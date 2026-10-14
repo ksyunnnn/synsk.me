@@ -2,7 +2,7 @@
  * note の規則と、画面に渡す形。
  *
  * 規則の正本は specs/005-note-write-and-read/data-model.md にある。同じ規則を
- * `migrations/0001_create_note.sql` の制約も持つ。ここで先に確かめるのは、
+ * `migrations/` の制約も持つ。ここで先に確かめるのは、
  * どの項目の何が合わないかを作り手に返すため。
  */
 
@@ -21,8 +21,15 @@ export const parseNoteId = (value: string): NoteId | null => {
   return Number.isSafeInteger(id) ? id : null;
 };
 
-/** 下書きか公開か。`note_publication` に行があれば公開 */
+/** 下書きか公開か */
 export type NoteStatus = 'draft' | 'published';
+
+/** 削除した note を、下書きと公開のどちらで戻すか */
+export type RestoreAs = NoteStatus;
+
+/** フォームから受け取った文字列を `RestoreAs` にする。どちらでもなければ null */
+export const parseRestoreAs = (value: string): RestoreAs | null =>
+  value === 'draft' || value === 'published' ? value : null;
 
 /** 作り手が入力する値 */
 export type NoteContent = {
@@ -92,33 +99,47 @@ export const toPublishedDate = (isoDateTime: string): string => {
 // 取り出した note。Repository が返す
 // ---------------------------------------------------------------------------
 
-/** 訪問者に見せている note。値はすべて `note_publication` のもの */
+/** 訪問者に見せている note。題と本文は最後に公開した版のもの */
 export type PublishedNote = {
   slug: string;
   title: string;
   body: string;
   /** 初めて公開した日時（UTC、`Date.prototype.toISOString()` の形） */
-  firstPublishedAt: string;
+  publishedAt: string;
 };
 
 /** 作り手の一覧の1件 */
 export type NoteSummary = {
   id: NoteId;
   slug: string;
-  /** 書き換えている題 */
+  /** 最新の版の題 */
   title: string;
   status: NoteStatus;
-  /** 公開済みで、書き換えている題か本文が公開しているものと異なる */
+  /** 公開済みで、最新の版の題か本文が、公開している版と異なる */
   hasUnpublishedChanges: boolean;
 };
 
-/** 作り手が編集する note。値は書き換えているもの */
+/** 作り手が編集する note。題と本文は最新の版のもの */
 export type EditableNote = {
   id: NoteId;
   slug: string;
   title: string;
   body: string;
   status: NoteStatus;
+  /** 公開したことがあり、slug を変えられない */
+  slugFixed: boolean;
+};
+
+/** 削除した note の1件 */
+export type DeletedNote = {
+  id: NoteId;
+  slug: string;
+  /** 最新の版の題 */
+  title: string;
+  /** 削除する前の状態 */
+  status: NoteStatus;
+  /** 公開したことがある。公開で戻せるのは、公開したことのある note だけ */
+  hasBeenPublished: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -147,13 +168,22 @@ export type EditableNoteDto = {
   title: string;
   body: string;
   status: NoteStatus;
+  slugFixed: boolean;
+};
+
+export type DeletedNoteDto = {
+  id: NoteId;
+  slug: string;
+  title: string;
+  status: NoteStatus;
+  hasBeenPublished: boolean;
 };
 
 export const toPublishedNoteDto = (note: PublishedNote): PublishedNoteDto => ({
   slug: note.slug,
   title: note.title,
   body: note.body,
-  publishedOn: toPublishedDate(note.firstPublishedAt),
+  publishedOn: toPublishedDate(note.publishedAt),
 });
 
 export const toNoteSummaryDto = (note: NoteSummary): NoteSummaryDto => ({
@@ -170,6 +200,15 @@ export const toEditableNoteDto = (note: EditableNote): EditableNoteDto => ({
   title: note.title,
   body: note.body,
   status: note.status,
+  slugFixed: note.slugFixed,
+});
+
+export const toDeletedNoteDto = (note: DeletedNote): DeletedNoteDto => ({
+  id: note.id,
+  slug: note.slug,
+  title: note.title,
+  status: note.status,
+  hasBeenPublished: note.hasBeenPublished,
 });
 
 /** 作る・編集のフォームに返す、操作の結果。入力の誤りは `errors` が持つ */
@@ -196,7 +235,7 @@ export const toNoteFormState = (
 ): NoteFormState => ({ values: { slug, title, body }, errors: {}, result: null });
 
 /**
- * 編集と削除のフォームで、note の id を送る入力の名前。`id` にしない。
+ * 編集・削除・戻すフォームで、note の id を送る入力の名前。`id` にしない。
  * `name="id"` の入力を持つフォームでは `form.id` がその入力を返し、JavaScript ありの
  * 送信で、React が押したボタンの name と value を足す入力に誤った `form` 属性が付いて
  * 送られなくなる（`react-dom` の `createFormDataWithSubmitter`）
@@ -207,3 +246,13 @@ export const NOTE_ID_FIELD = 'noteId';
 export type DeleteNoteFormState = { result: 'delete-failed' | 'forbidden' | null };
 
 export const INITIAL_DELETE_NOTE_FORM_STATE: DeleteNoteFormState = { result: null };
+
+/**
+ * 戻す確認のフォームで、下書きと公開のどちらで戻すかを送るボタンの名前。値は `RestoreAs`
+ */
+export const RESTORE_AS_FIELD = 'restoreAs';
+
+/** 戻す確認のフォームの状態。戻せたときは一覧の画面へ移るため、状態を持たない */
+export type RestoreNoteFormState = { result: 'restore-failed' | 'forbidden' | null };
+
+export const INITIAL_RESTORE_NOTE_FORM_STATE: RestoreNoteFormState = { result: null };

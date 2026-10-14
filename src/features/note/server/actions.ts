@@ -7,15 +7,19 @@ import { redirect } from 'next/navigation';
 import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
 import { publishNote } from '@/features/note/application/publish-note';
+import { restoreNote } from '@/features/note/application/restore-note';
 import { saveNote } from '@/features/note/application/save-note';
 import {
   NOTE_ID_FIELD,
   parseNoteId,
+  parseRestoreAs,
+  RESTORE_AS_FIELD,
   type DeleteNoteFormState,
   toNoteFormState,
   type NoteContent,
   type NoteFormResult,
   type NoteFormState,
+  type RestoreNoteFormState,
 } from '@/features/note/domain/note';
 import { createNoteRepository, getCurrentAuthor } from '@/features/note/server/context';
 
@@ -59,7 +63,7 @@ export const createNoteAction = async (
   if (!(await getCurrentAuthor())) return FORBIDDEN_STATE;
 
   const values = readContent(formData);
-  const outcome = await createNote(await createNoteRepository(), values);
+  const outcome = await createNote(await createNoteRepository(), values, new Date().toISOString());
   if (!outcome.ok) {
     switch (outcome.reason) {
       case 'invalid':
@@ -104,10 +108,11 @@ export const editNoteAction = async (
   if (id === null) return withResult(values, 'not-found');
 
   const notes = await createNoteRepository();
+  const now = new Date().toISOString();
   const outcome =
     intent === 'save'
-      ? await saveNote(notes, id, values)
-      : await publishNote(notes, id, values, new Date().toISOString());
+      ? await saveNote(notes, id, values, now)
+      : await publishNote(notes, id, values, now);
   if (outcome.ok) {
     // 画面の状態（下書きか公開か）と、slug を変えられるかを、JavaScript ありの
     // 送信でも描画し直す。JavaScript なしの送信は、ページ全体を描画し直す
@@ -126,8 +131,8 @@ export const editNoteAction = async (
 
 /**
  * note を削除し、一覧の画面へ移る。確認の画面（`/dash/notes/{id}/delete`）のフォームが呼ぶ。
- * note が存在しなければ、書き込まずに一覧の画面へ移る。削除に失敗すれば、確認の画面に
- * 失敗を返す
+ * note が存在しないか、すでに削除されていれば、書き込まずに一覧の画面へ移る。削除に
+ * 失敗すれば、確認の画面に失敗を返す
  */
 export const deleteNoteAction = async (
   _state: DeleteNoteFormState,
@@ -138,8 +143,31 @@ export const deleteNoteAction = async (
   const id = parseNoteId(readString(formData, NOTE_ID_FIELD));
   if (id === null) redirect('/dash');
 
-  const outcome = await deleteNote(await createNoteRepository(), id);
+  const outcome = await deleteNote(await createNoteRepository(), id, new Date().toISOString());
   if (outcome.ok) redirect('/dash?deleted=1');
   if (outcome.reason === 'not-found') redirect('/dash');
   return { result: 'delete-failed' };
+};
+
+/**
+ * 削除した note を、押したボタン（`restoreAs`）の状態で戻し、一覧の画面へ移る。確認の画面
+ * （`/dash/notes/{id}/restore`）のフォームが呼ぶ。削除した note が存在しないか、公開した
+ * ことのない note を公開で戻そうとすれば、書き込まずに一覧の画面へ移る。どちらのボタンで
+ * 送られたか分からないときと、戻すのに失敗したときは、確認の画面に失敗を返す
+ */
+export const restoreNoteAction = async (
+  _state: RestoreNoteFormState,
+  formData: FormData,
+): Promise<RestoreNoteFormState> => {
+  if (!(await getCurrentAuthor())) return { result: 'forbidden' };
+
+  const id = parseNoteId(readString(formData, NOTE_ID_FIELD));
+  if (id === null) redirect('/dash');
+  const as = parseRestoreAs(readString(formData, RESTORE_AS_FIELD));
+  if (as === null) return { result: 'restore-failed' };
+
+  const outcome = await restoreNote(await createNoteRepository(), id, as);
+  if (outcome.ok) redirect('/dash?restored=1');
+  if (outcome.reason === 'not-found') redirect('/dash');
+  return { result: 'restore-failed' };
 };

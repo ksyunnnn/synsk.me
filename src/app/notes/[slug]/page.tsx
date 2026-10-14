@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic';
 
 type Props = { params: Promise<{ slug: string }> };
 
-// メタデータは公開している値だけから作る。下書きと存在しない slug は、本文と同じく 404
+// メタデータは公開している値だけから作る。下書き・削除した note・存在しない slug は、
+// 本文と同じく 404
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
   const note = await getPublishedNote((await params).slug);
   if (!note) notFound();

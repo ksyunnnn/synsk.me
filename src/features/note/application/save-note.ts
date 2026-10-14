@@ -20,19 +20,20 @@ export type SaveNoteOutcome =
   | { ok: false; reason: 'failed' };
 
 /**
- * 書き換えている内容を保存する。公開している内容は変えない。
- * 入力が規則に合わなければ書き込まない
+ * 入力した内容を版として保存する。公開している版は変えない。
+ * 入力が規則に合わなければ書き込まない。`savedAt` を版を作った日時にする
  */
 export const saveNote = async (
   notes: NoteRepository,
   id: NoteId,
   content: NoteContent,
+  savedAt: string,
 ): Promise<SaveNoteOutcome> => {
   const validation = validateDraft(content);
   if (!validation.ok) return { ok: false, reason: 'invalid', errors: validation.errors };
 
   try {
-    return await notes.save(id, validation.content);
+    return await notes.save(id, validation.content, savedAt);
   } catch {
     return { ok: false, reason: 'failed' };
   }

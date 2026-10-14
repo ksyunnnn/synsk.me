@@ -133,5 +133,6 @@ test.describe('入力の誤り', () => {
 test('note が0件なら、一覧は空であることを伝える', { tag: '@empty-db' }, async ({ page }) => {
   await page.goto('/dash');
   await expect(page.getByText('note がありません')).toBeVisible();
+  await expect(page.getByText('削除した note はありません')).toBeVisible();
   await expect(page.getByRole('link', { name: '新しい note を作る' })).toBeVisible();
 });

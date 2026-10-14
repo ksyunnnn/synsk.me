@@ -7,7 +7,7 @@ import { SEEDED_NOTES, startNoteTestServer, type NoteTestServer } from './suppor
  * 状態コードと応答の中身を確かめる。画面に出る文言と操作の連なりは E2E が持つ。
  */
 
-const { published, publishedWithChanges, draft } = SEEDED_NOTES;
+const { published, publishedWithChanges, draft, deleted } = SEEDED_NOTES;
 
 describe('D1 から読める', () => {
   let ctx: NoteTestServer;
@@ -57,19 +57,45 @@ describe('D1 から読める', () => {
     });
   });
 
-  describe('下書きと存在しない slug', () => {
+  describe('下書き・削除した note・存在しない slug', () => {
     const MISSING_SLUG = 'missing-note';
+    const SLUGS = [draft.slug, deleted.slug, MISSING_SLUG];
 
-    it('どちらも 404 を返す', async () => {
-      expect((await ctx.server.fetch(`/notes/${draft.slug}`)).status).toBe(404);
-      expect((await ctx.server.fetch(`/notes/${MISSING_SLUG}`)).status).toBe(404);
+    it.each(SLUGS)('/notes/%s は 404 を返す', async (slug) => {
+      expect((await ctx.server.fetch(`/notes/${slug}`)).status).toBe(404);
     });
 
-    it('応答から両者を区別できない', async () => {
+    it('表示から三者を区別できない', async () => {
       // 要求した slug は応答に入る（経路の情報）。slug を伏せると同じ中身になる
       const normalize = async (slug: string) =>
         (await (await ctx.server.fetch(`/notes/${slug}`)).text()).replaceAll(slug, '<slug>');
-      expect(await normalize(draft.slug)).toBe(await normalize(MISSING_SLUG));
+      const missing = await normalize(MISSING_SLUG);
+      expect(await normalize(draft.slug)).toBe(missing);
+      expect(await normalize(deleted.slug)).toBe(missing);
+    });
+
+    it('応答のヘッダから三者を区別できない', async () => {
+      // ヘッダの名前と値を比べる。値は slug を伏せる。note の状態によらず変わる値
+      // （slug の長さで変わる content-length、要求の時刻で変わる date）は除く
+      const readHeaders = async (slug: string) => {
+        const res = await ctx.server.fetch(`/notes/${slug}`);
+        await res.arrayBuffer();
+        return [...res.headers]
+          .filter(([name]) => name !== 'content-length' && name !== 'date')
+          .map(([name, value]) => [name, value.replaceAll(slug, '<slug>')])
+          .sort(([a], [b]) => a.localeCompare(b));
+      };
+      const missing = await readHeaders(MISSING_SLUG);
+      // 比べる対象が空になっていないこと
+      expect(missing.map(([name]) => name)).toContain('content-type');
+      expect(await readHeaders(draft.slug)).toEqual(missing);
+      expect(await readHeaders(deleted.slug)).toEqual(missing);
+    });
+
+    it('削除した note の題と本文を、本文にもメタデータにも含めない', async () => {
+      const html = await (await ctx.server.fetch(`/notes/${deleted.slug}`)).text();
+      expect(html).not.toContain(deleted.title);
+      expect(html).not.toContain(deleted.body);
     });
 
     it('下書きの題と本文を、本文にもメタデータにも含めない', async () => {
@@ -87,8 +113,9 @@ describe('D1 から読めない', () => {
     ctx = await startNoteTestServer();
     // 表を消し、訪問者の要求が D1 から読み出せない状態を作る
     await ctx.db.batch([
-      ctx.db.prepare('DROP TABLE note_publication'),
+      // note を先に消す。版は外部キーの ON DELETE CASCADE で消え、版を指す note の行は残らない
       ctx.db.prepare('DROP TABLE note'),
+      ctx.db.prepare('DROP TABLE note_revision'),
     ]);
   }, 60_000);
 
@@ -102,7 +129,7 @@ describe('D1 から読めない', () => {
 
     const html = await res.text();
     expect(html).toContain('ページを読み出せませんでした');
-    for (const note of [published, publishedWithChanges, draft]) {
+    for (const note of [published, publishedWithChanges, draft, deleted]) {
       expect(html).not.toContain(note.title);
     }
     expect(html).not.toContain('1行目の本文');
