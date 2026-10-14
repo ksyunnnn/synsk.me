@@ -1,0 +1,13 @@
+// 2024.synsk.me の配信設定。凍結したリポジトリに設定を足さないため、ここに置く。
+// 手順は deploy/archives.md にある。
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "synsk-me-2024",
+  "compatibility_date": "2026-08-29",
+  // 配信するフォルダはデプロイのときに --assets で渡す
+  "assets": {
+    "not_found_handling": "404-page",
+  },
+  "routes": [{ "pattern": "2024.synsk.me", "custom_domain": true }],
+  "workers_dev": false,
+}

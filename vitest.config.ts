@@ -12,6 +12,17 @@ import { defineConfig } from 'vitest/config';
  * 根拠は docs/decisions/0019-testing-strategy.md にある。
  */
 export default defineConfig({
+  resolve: {
+    alias: {
+      // tsconfig.json の paths と同じ。src のコードが `@/` で読み込み合う
+      '@': new URL('src', import.meta.url).pathname,
+      // `server-only` の既定の入口は、読み込んだだけで例外を投げる。Server
+      // Component の外（クライアントの bundle）に混ざったことを知らせるための
+      // もので、Node で走る単体テストには当たらない。React Server Components の
+      // 環境で解決される空の入口に向ける
+      'server-only': new URL('node_modules/server-only/empty.js', import.meta.url).pathname,
+    },
+  },
   test: {
     include: ['tests/unit/**/*.test.ts'],
     environment: 'node',

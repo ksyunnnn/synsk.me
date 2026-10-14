@@ -15,7 +15,8 @@
       "binding": "DB",
       "database_name": "synsk-me-test",
       "database_id": "synsk-me-test",
-      "migrations_dir": "fixtures/migrations",
+      // 本番と同じ migrations/ を読む。このファイルからの相対パス
+      "migrations_dir": "../migrations",
     },
   ],
 }

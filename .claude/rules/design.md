@@ -1,0 +1,35 @@
+---
+paths:
+  - "design/**"
+---
+
+# デザインファイルの作り方
+
+`design/*.pen` を作る・直すときの決まり。用語は CLAUDE.md の「デザイン作業 > 用語」に従う。
+
+## 名前
+
+- すべての要素の名前の頭に、pen.dev の種類を付ける。`Frame: ` `Text: ` `Rectangle: ` `Component: ` `instance: `
+
+## 構造
+
+- Frame は、見える面（地か枠線がある）を作るときと、Component の中で要素を並べるときだけ使う。意味のまとまりを囲うだけの Frame を作らない
+- 2 回以上使う形は Component にし、instance で置く。instance を Detach しない
+- canvas の最上位には、Frame と Component だけを置く。Text を直接置かない
+
+## 枠組みの見た目
+
+- 枠組み（Header・見出し・カード・見本の場所）はライトの 1 系統にする。暗い地は、見本として入れるデザインにだけ使う
+- 文字の大きさ・色・余白は、すでに使っている値から選ぶ。余白は 8 の倍数にする
+
+## design/foundations.pen
+
+- 正本は `design/foundations.pen` で、`design/guidelines.md` の Foundations の章はこのファイルを指す
+- 列は Tokens / Styles / Guidelines の 3 つ。各列の頭に見出しを置き、その下にカードを縦に積む
+- いちばん上に Frame: Title（題と説明）を置く。Frame: Title と列の見出しは地を持たず、文字の大きさと明るさで階層を表す。白い地はカードだけが持つ
+- 列の間とカードどうしの間は 160px、Frame: Title と見出しの間は 96px、見出しとカードの間は 48px
+- Component は、一式の上の段に置く
+- カードは Component: Card の instance にする。Body の slot に見本・2 つ並べる・Do / Don't・注記をこの順で置き、Footer の slot に未定と出典を置く
+- 決まりの文は、見本の下に置く。未定のものは Component: Undecided で置く
+- Foundations の項目は、決まっていなくてもその項目のカードに未定の札で置く。どのカードにも当てはまらない項目は、カードを新しく作る。決まったら、札を見本か Do / Don't に置き換える
+- 方針の 1 行は「プリンシプルの名前：どう落としたか」の形で書く。プリンシプルとの結び付きが決まっていないカードでは非表示にする

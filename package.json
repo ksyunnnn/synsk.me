@@ -13,7 +13,7 @@
     "preview": "vinext build && wrangler dev --config dist/server/wrangler.json",
     "deploy": "vinext-cloudflare deploy --skip-build --config dist/server/wrangler.json --name synsk-me --experimental-warm-cdn-cache --warm-cdn-target https://synsk.me && npm run verify:deploy",
     "verify:deploy": "node scripts/verify-deploy.mjs",
-    "upload": "wrangler versions upload --config dist/server/wrangler.json",
+    "preview:branch": "wrangler preview --config dist/server/wrangler.json",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -30,10 +30,12 @@
     "@vinext/cloudflare": "^1.0.0-beta.7",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jose": "^6.2.12",
     "next": "16.3.4",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-server-dom-webpack": "^19.2.8",
+    "server-only": "^0.0.1",
     "tailwind-merge": "^3.6.0",
     "vinext": "^1.0.0-beta.9"
   },
@@ -57,7 +59,7 @@
     "typescript": "~6.0.3",
     "vite": "^8.2.2",
     "vitest": "4.1.11",
-    "wrangler": "^4.128.0"
+    "wrangler": "^4.149.0"
   },
   "overrides": {
     "@types/react": "19.2.18",

@@ -1,20 +1,45 @@
 #!/usr/bin/env node
 // 本番へのデプロイ直後に走らせる検査。落ちたらデプロイを赤くする。
 //
-// 検査するのは、これまでに実際に壊れたもの。
-// - 4 経路が返るか（#59 の完了条件）
+// 検査するのは、これまでに実際に壊れたものと、作り手の画面を守る Access の設定と、
+// note の応答がキャッシュに載らないこと。
+// - HTML と画像の経路が返るか（#59）
 // - OG 画像とアイコンが実体のある PNG か（satori と resvg が workerd で動くか）
 // - HTML がエッジのキャッシュに載るか（#38 の後退。`export const revalidate` か
-//   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）
+//   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）。synsk.me でのみ見る
 // - アクセス解析のタグが埋まるか（#38。`next.config.js` の env が壊れると消える）
 // - HTML とクライアント JS が予算に収まるか
+// - 作り手の画面が Access の後ろにあり、存在しない note がキャッシュに載らないか
+//   （specs/005-note-write-and-read/research.md の R2、R6）
+// - 過去の版のサイトが読み込む帯（`public/archive-banner.js`）が返るか。
+//   このリポジトリの外から使われるため、コードを見ても消してよいかが分からない
 //
 // 使い方: node scripts/verify-deploy.mjs [URL]
-// 既定の対象は https://synsk.me。プレビュー URL を渡してもよい。
+// 既定の対象は https://synsk.me。プレビュー URL を渡してもよい。プレビュー URL は
+// 全体が Access の後ろにあるため、`.env.local` の service token を付けて検査する。
 
 import { readFile } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
-import { bypassCacheUrl, extractChunkPaths, isPng } from './lib/verify-deploy.mjs';
+import {
+  absentNotePath,
+  accessHeadersFor,
+  bypassCacheUrl,
+  extractChunkPaths,
+  isAccessLoginRedirect,
+  isProductionBase,
+  isPng,
+} from './lib/verify-deploy.mjs';
+
+/**
+ * 手元から走らせるときの秘密の値（service token）を `.env.local` から読む。
+ * Workers Builds の中にはファイルがないため、ないことを失敗にしない。すでに
+ * 環境変数にある値は上書きされない。
+ */
+try {
+  process.loadEnvFile('.env.local');
+} catch (error) {
+  if (error?.code !== 'ENOENT') throw error;
+}
 
 const BASE = (process.argv[2] ?? process.env.VERIFY_BASE_URL ?? 'https://synsk.me').replace(
   /\/$/,
@@ -58,6 +83,10 @@ const notes = new Set();
 /** キャッシュから返ってきた HTML の版。`cf-cache-status: HIT` のときだけ持つ。 */
 let cachedBuildId = null;
 
+/** 検査の要求が Access を通るためのヘッダ。本番では空。 */
+const ACCESS = accessHeadersFor(BASE, process.env);
+const ACCESS_HEADERS = ACCESS.ok ? ACCESS.headers : {};
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const check = (ok, label, detail) => {
@@ -70,7 +99,16 @@ const check = (ok, label, detail) => {
 };
 
 async function get(path, init = {}) {
-  return fetch(`${BASE}${path}`, { headers: BROWSER_HEADERS, redirect: 'manual', ...init });
+  return fetch(`${BASE}${path}`, {
+    headers: { ...BROWSER_HEADERS, ...ACCESS_HEADERS },
+    redirect: 'manual',
+    ...init,
+  });
+}
+
+/** Access を通るためのヘッダを付けずに取る。Access が止めることを確かめるため。 */
+async function getWithoutAccess(path) {
+  return fetch(`${BASE}${path}`, { headers: BROWSER_HEADERS, redirect: 'manual' });
 }
 
 /**
@@ -83,7 +121,7 @@ async function get(path, init = {}) {
 async function getFromOrigin(path) {
   const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
   return fetch(bypassCacheUrl(BASE, path, nonce), {
-    headers: BROWSER_HEADERS,
+    headers: { ...BROWSER_HEADERS, ...ACCESS_HEADERS },
     redirect: 'manual',
   });
 }
@@ -116,7 +154,7 @@ async function getWhenReady(fetcher, path, attempts = 12, intervalMs = 5_000) {
 async function checkHtmlRoutes() {
   console.log('HTML の経路');
   const pages = {};
-  for (const path of ['/', '/archives/2024']) {
+  for (const path of ['/']) {
     const res = await getWhenReady(get, path);
     const body = await res.text();
     pages[path] = body;
@@ -148,11 +186,41 @@ async function checkImageRoutes() {
   }
 }
 
+/** 過去の版のサイト（<年>.synsk.me）が `<script src>` で読み込む帯。 */
+async function checkArchiveBanner() {
+  console.log('アーカイブの帯');
+  const res = await getWhenReady(get, '/archive-banner.js');
+  const body = await res.text();
+  const type = res.headers.get('content-type') ?? '';
+  check(
+    res.status === 200 &&
+      type.includes('javascript') &&
+      body.includes("customElements.define('synsk-archive-banner'"),
+    '/archive-banner.js が帯の定義を 200 で返す',
+    `${res.status} ${type}`,
+  );
+  const allowOrigin = res.headers.get('access-control-allow-origin');
+  check(
+    allowOrigin === '*',
+    '/archive-banner.js がどのドメインからも読める',
+    `access-control-allow-origin: ${allowOrigin ?? 'なし'}`,
+  );
+}
+
 /** 2 回目の取得でエッジのキャッシュに当たることを見る。warm の直後は当たるまで
- *  間があるため待つ。 */
+ *  間があるため待つ。
+ *
+ *  ブランチの Preview では Workers Cache が有効にならず、`cf-cache-status` が付かない
+ *  （https://github.com/cloudflare/workers-sdk/issues/16218）。直るまで synsk.me でのみ見る。 */
 async function checkEdgeCache() {
   console.log('エッジのキャッシュ');
-  for (const path of ['/', '/archives/2024']) {
+  const isProductionHost = new URL(BASE).hostname === 'synsk.me';
+  if (!isProductionHost) {
+    notes.add('エッジのキャッシュの検査は synsk.me 以外では行わない');
+    console.log('  skip エッジのキャッシュ — 対象が synsk.me ではない');
+    return;
+  }
+  for (const path of ['/']) {
     let status = 'なし';
     for (let i = 1; i <= 6; i++) {
       await get(path);
@@ -165,12 +233,63 @@ async function checkEdgeCache() {
   }
 }
 
+/**
+ * 作り手の画面と、プレビュー URL の全体が、Access の後ろにあるか。
+ *
+ * 認証を付けずに取り、Access のログイン（`<team-name>.cloudflareaccess.com`）へ
+ * 移されることを見る。Worker の 403 が返るなら、Access が守っていない。
+ */
+async function checkAccess() {
+  console.log('Access');
+  const paths = isProductionBase(BASE)
+    ? ['/dash', '/dash/notes/new']
+    : ['/', '/dash', '/dash/notes/new'];
+  for (const path of paths) {
+    let res;
+    try {
+      res = await getWithoutAccess(path);
+    } catch (error) {
+      check(
+        false,
+        `認証なしの ${path} が Access のログインへ移される`,
+        error instanceof Error ? error.message : '',
+      );
+      continue;
+    }
+    const location = res.headers.get('location');
+    check(
+      isAccessLoginRedirect(res.status, location, BASE),
+      `認証なしの ${path} が Access のログインへ移される`,
+      `${res.status} ${location ?? 'Location なし'}`,
+    );
+  }
+}
+
+/**
+ * 存在しない note の応答がエッジのキャッシュに載らないか。
+ *
+ * 載ると、後から同じ slug で公開した note が、キャッシュが切れるまで見えない。
+ * 経路は実行ごとに変え、前回の検査の応答に当たらないようにする。
+ */
+async function checkAbsentNoteCache() {
+  console.log('存在しない note');
+  const path = absentNotePath(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  // 1 回目の本文を読み切る。読まずに捨てると、接続が解放されるまで残る
+  await (await get(path)).arrayBuffer();
+  const res = await get(path);
+  const status = res.headers.get('cf-cache-status') ?? 'なし';
+  check(
+    status !== 'HIT',
+    '/notes/<存在しない slug> の 2 回目が HIT を返さない',
+    `${res.status} cf-cache-status: ${status}`,
+  );
+}
+
 /** `next.config.js` の env が `src/app/Analytics.tsx` に届いているか。
  *  プロダクション ブランチのビルドでのみ埋まる。 */
 function checkAnalytics(html) {
   console.log('アクセス解析');
-  const isProductionHost = new URL(BASE).hostname === 'synsk.me';
-  if (!isProductionHost) {
+  if (!isProductionBase(BASE)) {
     notes.add('アクセス解析の検査は synsk.me 以外では行わない');
     console.log('  skip アクセス解析のタグ — 対象が synsk.me ではない');
     return;
@@ -304,11 +423,23 @@ async function checkBudget() {
 
 console.log(`検査の対象: ${BASE}\n`);
 
-const pages = await checkHtmlRoutes();
-await checkImageRoutes();
-await checkEdgeCache();
-checkAnalytics(pages['/']);
-await checkBudget();
+await checkAccess();
+if (ACCESS.ok) {
+  const pages = await checkHtmlRoutes();
+  await checkImageRoutes();
+  await checkArchiveBanner();
+  await checkEdgeCache();
+  await checkAbsentNoteCache();
+  checkAnalytics(pages['/']);
+  await checkBudget();
+} else {
+  // service token がなければ、プレビュー URL のほかの検査はすべて Access に止められる
+  check(
+    false,
+    'プレビュー URL の検査に使う service token がある',
+    `${ACCESS.missing.join('、')} を .env.local に置く`,
+  );
+}
 
 console.log('');
 for (const note of notes) console.log(`note: ${note}`);

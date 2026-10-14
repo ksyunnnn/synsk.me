@@ -1,0 +1,15 @@
+// プレビュー用の D1 にマイグレーションを当てるための設定。Worker の配信には使わない。
+// database_name と database_id は wrangler.jsonc の previews.d1_databases と揃える
+// npx wrangler d1 migrations apply synsk-me-preview --remote --config wrangler.preview-migrations.jsonc
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "synsk-me",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "synsk-me-preview",
+      "database_id": "18fc9308-c75a-43b6-ace2-29acc20615e8",
+      "migrations_dir": "migrations",
+    },
+  ],
+}

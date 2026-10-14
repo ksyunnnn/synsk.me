@@ -116,4 +116,6 @@
 
 ---
 
-**注記（2026-09-09）**: このドラフトは旧称 Pencil と旧いツール名で書かれている。2026-09-09 時点でアプリ名は `Pen.app`、製品名の表記は pen.dev、MCP のツールは `get_app_state` / `execute` / `browser` / `get_style` / `read_skill` であり、`open_document` は存在しない。`.pen` は暗号化されており、上の「JSON ベースで透明性がある」は事実と異なる。
+**注記（2026-09-09）**: このドラフトは旧称 Pencil と旧いツール名で書かれている。2026-09-09 時点でアプリ名は `Pen.app`、製品名の表記は pen.dev、MCP のツールは `get_app_state` / `execute` / `browser` / `get_style` / `read_skill` であり、`open_document` は存在しない。
+
+**注記（2026-10-06）**: 2026-09-09 の注記にあった「`.pen` は暗号化されており、上の「JSON ベースで透明性がある」は事実と異なる」は誤りだった。2026-09-28 に、`.pen` が平文の JSON であることを確かめた。
