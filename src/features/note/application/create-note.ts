@@ -15,16 +15,20 @@ export type CreateNoteOutcome =
   /** データベースに届かないなどで、保存できなかった */
   | { ok: false; reason: 'failed' };
 
-/** 下書きの note を作る。入力が規則に合わなければ書き込まない */
+/**
+ * 下書きの note を作る。入力が規則に合わなければ書き込まない。
+ * `createdAt` を最初の版を作った日時にする
+ */
 export const createNote = async (
   notes: NoteRepository,
   content: NoteContent,
+  createdAt: string,
 ): Promise<CreateNoteOutcome> => {
   const validation = validateDraft(content);
   if (!validation.ok) return { ok: false, reason: 'invalid', errors: validation.errors };
 
   try {
-    return await notes.create(validation.content);
+    return await notes.create(validation.content, createdAt);
   } catch {
     return { ok: false, reason: 'failed' };
   }

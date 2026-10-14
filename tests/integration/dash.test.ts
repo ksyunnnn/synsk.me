@@ -1,6 +1,12 @@
 import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { SEEDED_NOTES, readNoteRows, startNoteTestServer, type NoteTestServer } from './support/d1';
+import {
+  SEEDED_NOTES,
+  readLatestRevision,
+  readNoteRows,
+  startNoteTestServer,
+  type NoteTestServer,
+} from './support/d1';
 import { encodeForm, readActionFields } from './support/form';
 
 /**
@@ -34,6 +40,10 @@ const inputWithSlug = (slug: string) => ({ ...INPUT, slug });
  */
 const SAVE = { intent: 'save' };
 const PUBLISH = { intent: 'publish' };
+
+/** 戻す確認の画面のフォームは、押したボタンの `restoreAs` で、下書きと公開のどちらで戻すかを分ける */
+const RESTORE_AS_DRAFT = { restoreAs: 'draft' };
+const RESTORE_AS_PUBLISHED = { restoreAs: 'published' };
 
 /** 要求先のホストと異なる Origin。別のサイトから送られた操作 */
 const FOREIGN_ORIGIN = 'https://attacker.example';
@@ -157,7 +167,10 @@ describe('D1 から読める', () => {
       const fields = await readFormOf(`/dash/notes/${deleted.id}/restore`);
       const before = await readNoteRows(ctx.db);
 
-      await submit(`/dash/notes/${deleted.id}/restore`, fields, { noteId: deleted.id });
+      await submit(`/dash/notes/${deleted.id}/restore`, fields, {
+        ...RESTORE_AS_PUBLISHED,
+        noteId: deleted.id,
+      });
       expect(await readNoteRows(ctx.db)).toEqual(before);
     });
 
@@ -337,7 +350,7 @@ describe('D1 から読める', () => {
         const res = await submit(
           `/dash/notes/${deleted.id}/restore`,
           fields,
-          { noteId: deleted.id },
+          { ...RESTORE_AS_PUBLISHED, noteId: deleted.id },
           await authorHeaders(),
         );
         expect(res.status).toBe(200);
@@ -356,7 +369,11 @@ describe('D1 から読める', () => {
 
         const { note } = await readNoteRows(ctx.db);
         const created = note.find((row) => row.slug === INPUT.slug);
-        expect(created).toMatchObject(INPUT);
+        expect(created).toMatchObject({ status: 'draft', published_revision_id: null });
+        expect(await readLatestRevision(ctx.db, created?.id ?? 0)).toEqual({
+          title: INPUT.title,
+          body: INPUT.body,
+        });
         expect(res.headers.get('location')).toMatch(new RegExp(`/dash/notes/${created?.id}$`));
       });
 
@@ -371,11 +388,12 @@ describe('D1 から読める', () => {
         );
         expect(res.status).toBe(200);
 
-        const { notePublication } = await readNoteRows(ctx.db);
-        expect(notePublication.find((row) => row.note_id === draft.id)).toMatchObject({
-          title: draft.title,
-          body: draft.body,
-        });
+        const { note, noteRevision } = await readNoteRows(ctx.db);
+        const row = note.find((n) => n.id === draft.id);
+        expect(row).toMatchObject({ status: 'published' });
+        expect(
+          noteRevision.find((revision) => revision.id === row?.published_revision_id),
+        ).toMatchObject({ note_id: draft.id, title: draft.title, body: draft.body });
       });
 
       it('「保存する」は note を保存し、公開している内容を変えない', async () => {
@@ -390,21 +408,31 @@ describe('D1 から読める', () => {
         );
         expect(res.status).toBe(200);
 
+        // 版を1つ足し、公開している版と前の版は変えない
         const after = await readNoteRows(ctx.db);
-        expect(after.note.find((row) => row.id === published.id)).toMatchObject({
-          slug: published.slug,
+        expect(after.note).toEqual(before.note);
+        expect(after.noteRevision.slice(0, before.noteRevision.length)).toEqual(
+          before.noteRevision,
+        );
+        expect(after.noteRevision).toHaveLength(before.noteRevision.length + 1);
+        expect(await readLatestRevision(ctx.db, published.id)).toEqual({
           title: INPUT.title,
           body: INPUT.body,
         });
-        expect(after.notePublication).toEqual(before.notePublication);
       });
 
       it('「削除する」は note の行を残して削除し、一覧の画面へ移す', async () => {
         const created = await ctx.db
-          .prepare('INSERT INTO note (slug, title, body) VALUES (?, ?, ?) RETURNING id')
-          .bind('integration-delete', '削除する題', '削除する本文')
+          .prepare("INSERT INTO note (slug) VALUES ('integration-delete') RETURNING id")
           .first<{ id: number }>();
         const id = created?.id ?? 0;
+        await ctx.db
+          .prepare(
+            'INSERT INTO note_revision (note_id, title, body, created_at) VALUES (?, ?, ?, ?)',
+          )
+          .bind(id, '削除する題', '削除する本文', '2026-09-01T00:00:00.000Z')
+          .run();
+        const before = await readNoteRows(ctx.db);
         const fields = await readFormOf(`/dash/notes/${id}/delete`);
 
         const res = await submit(
@@ -415,19 +443,60 @@ describe('D1 から読める', () => {
         );
         expect(res.status).toBe(303);
         expect(res.headers.get('location')).toMatch(/\/dash\?deleted=1$/);
-        const row = (await readNoteRows(ctx.db)).note.find((note) => note.id === id);
-        expect(row).toMatchObject({ title: '削除する題', body: '削除する本文' });
+        const after = await readNoteRows(ctx.db);
+        const row = after.note.find((note) => note.id === id);
         expect(row?.deleted_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
+        expect(after.noteRevision).toEqual(before.noteRevision);
       });
 
-      it('「戻す」は削除した note を戻し、一覧の画面へ移す', async () => {
+      it('「下書きで戻す」は削除した note を下書きで戻し、公開した版と公開日を残す', async () => {
+        // 公開してから削除した note を、この検査のために作る
+        const created = await ctx.db
+          .prepare("INSERT INTO note (slug) VALUES ('integration-restore-draft') RETURNING id")
+          .first<{ id: number }>();
+        const id = created?.id ?? 0;
+        const revision = await ctx.db
+          .prepare(
+            'INSERT INTO note_revision (note_id, title, body, created_at) VALUES (?, ?, ?, ?) RETURNING id',
+          )
+          .bind(id, '下書きで戻す題', '本文', '2026-09-01T00:00:00.000Z')
+          .first<{ id: number }>();
+        await ctx.db
+          .prepare(
+            "UPDATE note SET status = 'published', published_revision_id = ?, published_at = ?, deleted_at = ? WHERE id = ?",
+          )
+          .bind(revision?.id, '2026-09-02T00:00:00.000Z', '2026-09-03T00:00:00.000Z', id)
+          .run();
+        const before = await readNoteRows(ctx.db);
+        const fields = await readFormOf(`/dash/notes/${id}/restore`);
+
+        const res = await submit(
+          `/dash/notes/${id}/restore`,
+          fields,
+          { ...RESTORE_AS_DRAFT, noteId: id },
+          await authorHeaders(),
+        );
+        expect(res.status).toBe(303);
+        expect(res.headers.get('location')).toMatch(/\/dash\?restored=1$/);
+
+        const after = await readNoteRows(ctx.db);
+        expect(after.note.find((note) => note.id === id)).toEqual({
+          ...before.note.find((note) => note.id === id),
+          status: 'draft',
+          deleted_at: null,
+        });
+        expect(after.noteRevision).toEqual(before.noteRevision);
+        expect((await ctx.server.fetch('/notes/integration-restore-draft')).status).toBe(404);
+      });
+
+      it('「公開で戻す」は削除した note を公開で戻し、一覧の画面へ移す', async () => {
         const before = await readNoteRows(ctx.db);
         const fields = await readFormOf(`/dash/notes/${deleted.id}/restore`);
 
         const res = await submit(
           `/dash/notes/${deleted.id}/restore`,
           fields,
-          { noteId: deleted.id },
+          { ...RESTORE_AS_PUBLISHED, noteId: deleted.id },
           await authorHeaders(),
         );
         expect(res.status).toBe(303);
@@ -435,14 +504,11 @@ describe('D1 から読める', () => {
 
         const after = await readNoteRows(ctx.db);
         expect(after.note.find((note) => note.id === deleted.id)).toEqual({
-          id: deleted.id,
-          slug: deleted.slug,
-          title: deleted.title,
-          body: deleted.body,
+          ...before.note.find((note) => note.id === deleted.id),
           deleted_at: null,
         });
-        expect(after.notePublication).toEqual(before.notePublication);
-        // 公開済みだった note は、戻すと訪問者が再び読める
+        expect(after.noteRevision).toEqual(before.noteRevision);
+        // 公開済みだった note は、公開で戻すと訪問者が再び読める
         const visitor = await ctx.server.fetch(`/notes/${deleted.slug}`);
         expect(visitor.status).toBe(200);
         expect(await visitor.text()).toContain(`<h1>${deleted.title}</h1>`);
@@ -457,8 +523,9 @@ describe('D1 から読めない', () => {
   beforeAll(async () => {
     ctx = await startServer();
     await ctx.db.batch([
-      ctx.db.prepare('DROP TABLE note_publication'),
+      // note を先に消す。版は外部キーの ON DELETE CASCADE で消え、版を指す note の行は残らない
       ctx.db.prepare('DROP TABLE note'),
+      ctx.db.prepare('DROP TABLE note_revision'),
     ]);
   }, 60_000);
 

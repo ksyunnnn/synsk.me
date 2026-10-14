@@ -28,7 +28,7 @@ const Page = async ({ params }: Props) => {
       <NoteForm
         action={editNoteAction}
         initialState={toNoteFormState(note)}
-        note={{ id: note.id, status: note.status }}
+        note={{ id: note.id, status: note.status, slugFixed: note.slugFixed }}
       />
       <p>
         <Link href={`/dash/notes/${note.id}/delete`}>この note を削除する</Link>

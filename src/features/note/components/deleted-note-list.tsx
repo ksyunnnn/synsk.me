@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { DeletedNoteDto } from '@/features/note/domain/note';
 
-/** 作り手向けの、削除した note の一覧。戻すとどの状態になるかを出す */
+/** 作り手向けの、削除した note の一覧。削除する前の状態を出す */
 export const DeletedNoteList = ({ notes }: { notes: DeletedNoteDto[] }) => {
   if (notes.length === 0) return <p>削除した note はありません</p>;
 

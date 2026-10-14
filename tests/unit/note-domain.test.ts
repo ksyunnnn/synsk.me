@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   parseNoteId,
+  parseRestoreAs,
   toNoteSummaryDto,
   toEditableNoteDto,
   toPublishedDate,
@@ -130,7 +131,7 @@ describe('画面に渡す形', () => {
       slug: 'a',
       title: '題',
       body: '本文',
-      firstPublishedAt: '2026-09-16T15:30:00.000Z',
+      publishedAt: '2026-09-16T15:30:00.000Z',
       draftTitle: '下書きの題',
     };
     expect(toPublishedNoteDto(note)).toEqual({
@@ -159,14 +160,15 @@ describe('画面に渡す形', () => {
     });
   });
 
-  it('編集する note は、書き換えている値と状態だけを持つ', () => {
+  it('編集する note は、最新の版の値と状態と slug を変えられるかだけを持つ', () => {
     const note = {
       id: 1,
       slug: 'a',
       title: '題',
       body: '本文',
       status: 'draft' as const,
-      firstPublishedAt: null,
+      slugFixed: true,
+      publishedAt: '2026-09-16T15:30:00.000Z',
     };
     expect(toEditableNoteDto(note)).toEqual({
       id: 1,
@@ -174,6 +176,7 @@ describe('画面に渡す形', () => {
       title: '題',
       body: '本文',
       status: 'draft',
+      slugFixed: true,
     });
   });
 });
@@ -190,4 +193,14 @@ describe('note の id', () => {
       expect(parseNoteId(value)).toBeNull();
     },
   );
+});
+
+describe('戻すときの状態', () => {
+  it.each(['draft', 'published'] as const)('%s を受け付ける', (value) => {
+    expect(parseRestoreAs(value)).toBe(value);
+  });
+
+  it.each(['', 'Draft', 'deleted'])('%j は受け付けない', (value) => {
+    expect(parseRestoreAs(value)).toBeNull();
+  });
 });

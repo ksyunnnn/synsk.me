@@ -29,9 +29,10 @@ type Props = {
   initialState: NoteFormState;
   /**
    * 編集する note。持たなければ作るフォームで、「作る」のボタンを置く。持てば編集の
-   * フォームで、「保存する」と「公開する」のボタンを置き、押したボタンを `intent` で送る
+   * フォームで、「保存する」と「公開する」のボタンを置き、押したボタンを `intent` で送る。
+   * `slugFixed` は、公開したことがあり slug を変えられないこと
    */
-  note?: { id: NoteId; status: NoteStatus };
+  note?: { id: NoteId; status: NoteStatus; slugFixed: boolean };
 };
 
 const ERROR_MESSAGES: {
@@ -67,10 +68,11 @@ const SUCCEEDED: ReadonlySet<NoteFormResult> = new Set(['saved', 'published']);
 export const NoteForm = ({ action, initialState, note }: Props) => {
   const [{ values, errors, result }, formAction] = useActionState(action, initialState);
   const published = note?.status === 'published';
+  const slugFixed = note?.slugFixed ?? false;
   const slugError = errors.slug && ERROR_MESSAGES.slug[errors.slug];
   // 公開した note の slug を変えられないことを、入力の説明として読み上げにも伝える
   const slugDescription =
-    [slugError && 'note-slug-error', published && 'note-slug-fixed'].filter(Boolean).join(' ') ||
+    [slugError && 'note-slug-error', slugFixed && 'note-slug-fixed'].filter(Boolean).join(' ') ||
     undefined;
   const titleError = errors.title && ERROR_MESSAGES.title[errors.title];
   const bodyError = errors.body && ERROR_MESSAGES.body[errors.body];
@@ -98,12 +100,12 @@ export const NoteForm = ({ action, initialState, note }: Props) => {
           id="note-slug"
           name="slug"
           defaultValue={values.slug}
-          readOnly={published}
+          readOnly={slugFixed}
           autoComplete="off"
           aria-invalid={slugError ? true : undefined}
           aria-describedby={slugDescription}
         />
-        {published && <p id="note-slug-fixed">公開した note の slug は変えられません</p>}
+        {slugFixed && <p id="note-slug-fixed">公開した note の slug は変えられません</p>}
         {slugError && <p id="note-slug-error">{slugError}</p>}
       </div>
 

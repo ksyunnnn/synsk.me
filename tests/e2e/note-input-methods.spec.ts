@@ -86,7 +86,9 @@ test.describe('キーボードだけ', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/dash\/notes\/\d+\/restore$/);
 
-    await tabTo(page, page.getByRole('button', { name: '戻す' }));
+    // 一度も公開していない note は、下書きで戻すことだけを選べる
+    await expect(page.getByRole('button', { name: '公開で戻す' })).toHaveCount(0);
+    await tabTo(page, page.getByRole('button', { name: '下書きで戻す' }));
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/\/dash\?restored=1$/);
     await expect(page.getByText('note を戻しました')).toBeVisible();
@@ -148,7 +150,7 @@ test.describe('幅 360px の画面', () => {
     await expect(page).toHaveURL(/\/dash\/notes\/\d+\/restore$/);
     expect(await fitsViewportWidth(page)).toBe(true);
 
-    await page.getByRole('button', { name: '戻す' }).tap();
+    await page.getByRole('button', { name: '下書きで戻す' }).tap();
     await expect(page).toHaveURL(/\/dash\?restored=1$/);
     await expect(page.getByText('note を戻しました')).toBeVisible();
     await expect(noteListItem(page, slug)).toHaveCount(1);

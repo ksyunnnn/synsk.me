@@ -113,8 +113,9 @@ describe('D1 から読めない', () => {
     ctx = await startNoteTestServer();
     // 表を消し、訪問者の要求が D1 から読み出せない状態を作る
     await ctx.db.batch([
-      ctx.db.prepare('DROP TABLE note_publication'),
+      // note を先に消す。版は外部キーの ON DELETE CASCADE で消え、版を指す note の行は残らない
       ctx.db.prepare('DROP TABLE note'),
+      ctx.db.prepare('DROP TABLE note_revision'),
     ]);
   }, 60_000);
 

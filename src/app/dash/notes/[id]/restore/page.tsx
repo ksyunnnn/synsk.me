@@ -21,13 +21,18 @@ const Page = async ({ params }: Props) => {
     <main>
       <h1>note を戻す</h1>
       <p>
-        {note.status === 'published'
-          ? '次の note を戻します。公開の状態に戻り、訪問者が再び読めるようになります。'
-          : '次の note を戻します。下書きの状態に戻ります。'}
+        {note.hasBeenPublished
+          ? '次の note を戻します。下書きで戻すと訪問者には見えません。公開で戻すと、最後に公開した内容を訪問者が再び読めるようになります。'
+          : '次の note を下書きで戻します。一度も公開していないため、公開では戻せません。'}
       </p>
+      <p>削除する前の状態: {note.status === 'published' ? '公開' : '下書き'}</p>
       <p>slug: {note.slug}</p>
       <p>題: {note.title === '' ? '（題なし）' : note.title}</p>
-      <RestoreNoteForm action={restoreNoteAction} noteId={note.id} />
+      <RestoreNoteForm
+        action={restoreNoteAction}
+        noteId={note.id}
+        hasBeenPublished={note.hasBeenPublished}
+      />
       <p>
         <Link href="/dash">note の一覧へ戻る</Link>
       </p>

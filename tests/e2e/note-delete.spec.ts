@@ -23,7 +23,7 @@ test.beforeEach(async ({ context }) => {
   await actAsAuthor(context);
 });
 
-test('確認の画面を経て削除すると訪問者に note がないことが伝わり、戻すと再び読める', async ({
+test('確認の画面を経て削除すると訪問者に note がないことが伝わり、公開で戻すと再び読める', async ({
   page,
   browser,
 }) => {
@@ -78,7 +78,7 @@ test('確認の画面を経て削除すると訪問者に note がないこと�
   await expect(page).toHaveURL(`${editUrl}/restore`);
   await expect(page.getByText(`slug: ${slug}`)).toBeVisible();
   await expect(page.getByText('訪問者が再び読めるようになります')).toBeVisible();
-  await page.getByRole('button', { name: '戻す' }).click();
+  await page.getByRole('button', { name: '公開で戻す' }).click();
 
   // note の一覧に公開の状態で戻り、戻したことが出る
   await expect(page).toHaveURL(/\/dash\?restored=1$/);
@@ -90,6 +90,51 @@ test('確認の画面を経て削除すると訪問者に note がないこと�
   await visitorPage.reload();
   await expect(visitorPage.getByRole('heading', { level: 1, name: title })).toBeVisible();
   await expect(visitorPage.getByText('削除する本文')).toBeVisible();
+  await visitor.close();
+});
+
+test('公開した note を下書きで戻すと訪問者に見えず、公開し直すと公開日は変わらない', async ({
+  page,
+  browser,
+}) => {
+  const slug = uniqueSlug('restore-draft');
+  const title = `下書きで戻す題 ${slug}`;
+  const editUrl = await createPublishedNote(page, { slug, title, body: '下書きで戻す本文' });
+
+  const visitor = await browser.newContext({ javaScriptEnabled: false });
+  const visitorPage = await visitor.newPage();
+  await visitorPage.goto(`/notes/${slug}`);
+  const publishedOn = await visitorPage.locator('time').textContent();
+
+  await page.goto(`${editUrl}/delete`);
+  await page.getByRole('button', { name: '削除する' }).click();
+  await expect(page).toHaveURL(/\/dash\?deleted=1$/);
+
+  // 下書きで戻す
+  await page.goto(`${editUrl}/restore`);
+  await expect(page.getByRole('button', { name: '公開で戻す' })).toBeVisible();
+  await page.getByRole('button', { name: '下書きで戻す' }).click();
+  await expect(page).toHaveURL(/\/dash\?restored=1$/);
+  await expect(noteListItem(page, slug).getByText('状態: 下書き')).toBeVisible();
+
+  // 訪問者に note がないことが伝わる
+  await visitorPage.reload();
+  await expect(visitorPage.getByRole('heading', { name: 'note が見つかりません' })).toBeVisible();
+  await expect(visitorPage.getByText(title)).toHaveCount(0);
+
+  // 一度公開した note の slug は、下書きで戻しても変えられない
+  await page.goto(editUrl);
+  await expect(page.getByText('公開した note の slug は変えられません')).toBeVisible();
+
+  // 直して公開し直すと、直した題が出て、公開日は初めて公開した日のまま
+  const fixedTitle = `直した題 ${slug}`;
+  await noteFields(page).title.fill(fixedTitle);
+  await page.getByRole('button', { name: '公開する' }).click();
+  await expect(page.getByText('公開しました')).toBeVisible();
+
+  await visitorPage.reload();
+  await expect(visitorPage.getByRole('heading', { level: 1, name: fixedTitle })).toBeVisible();
+  await expect(visitorPage.locator('time')).toHaveText(publishedOn ?? '');
   await visitor.close();
 });
 

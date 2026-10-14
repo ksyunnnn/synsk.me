@@ -38,19 +38,24 @@ const fakeRepository = (overrides: Partial<NoteRepository> = {}): NoteRepository
 });
 
 const content: NoteContent = { slug: 'first-note', title: '題', body: '本文' };
+const CREATED_AT = '2026-09-16T15:00:00.000Z';
+const SAVED_AT = '2026-09-16T15:10:00.000Z';
 const PUBLISHED_AT = '2026-09-16T15:30:00.000Z';
 const DELETED_AT = '2026-10-01T03:00:00.000Z';
 
 describe('作る', () => {
   it('規則に合う入力で note を作り、id を返す', async () => {
     const create = vi.fn(async () => ({ ok: true as const, id: 7 }));
-    expect(await createNote(fakeRepository({ create }), content)).toEqual({ ok: true, id: 7 });
-    expect(create).toHaveBeenCalledWith(content);
+    expect(await createNote(fakeRepository({ create }), content, CREATED_AT)).toEqual({
+      ok: true,
+      id: 7,
+    });
+    expect(create).toHaveBeenCalledWith(content, CREATED_AT);
   });
 
   it('入力が規則に合わなければ、書き込まずに誤りを返す', async () => {
     const notes = fakeRepository();
-    expect(await createNote(notes, { ...content, slug: 'Bad Slug' })).toEqual({
+    expect(await createNote(notes, { ...content, slug: 'Bad Slug' }, CREATED_AT)).toEqual({
       ok: false,
       reason: 'invalid',
       errors: { slug: 'invalid' },
@@ -60,7 +65,9 @@ describe('作る', () => {
 
   it('題が空でも作れる', async () => {
     const create = vi.fn(async () => ({ ok: true as const, id: 1 }));
-    expect(await createNote(fakeRepository({ create }), { ...content, title: '' })).toEqual({
+    expect(
+      await createNote(fakeRepository({ create }), { ...content, title: '' }, CREATED_AT),
+    ).toEqual({
       ok: true,
       id: 1,
     });
@@ -68,7 +75,7 @@ describe('作る', () => {
 
   it('slug が他の note と重なれば、そのことを返す', async () => {
     const create = vi.fn(async () => ({ ok: false as const, reason: 'slug-taken' as const }));
-    expect(await createNote(fakeRepository({ create }), content)).toEqual({
+    expect(await createNote(fakeRepository({ create }), content, CREATED_AT)).toEqual({
       ok: false,
       reason: 'slug-taken',
     });
@@ -78,7 +85,7 @@ describe('作る', () => {
     const create = vi.fn(async () => {
       throw new Error('D1_ERROR: 書き込めない');
     });
-    expect(await createNote(fakeRepository({ create }), content)).toEqual({
+    expect(await createNote(fakeRepository({ create }), content, CREATED_AT)).toEqual({
       ok: false,
       reason: 'failed',
     });
@@ -88,20 +95,22 @@ describe('作る', () => {
 describe('保存する', () => {
   it('規則に合う入力で、保存を頼む', async () => {
     const save = vi.fn(async () => ({ ok: true as const }));
-    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({ ok: true });
-    expect(save).toHaveBeenCalledWith(3, content);
+    expect(await saveNote(fakeRepository({ save }), 3, content, SAVED_AT)).toEqual({ ok: true });
+    expect(save).toHaveBeenCalledWith(3, content, SAVED_AT);
   });
 
   it('題が空でも保存できる', async () => {
     const save = vi.fn(async () => ({ ok: true as const }));
-    expect(await saveNote(fakeRepository({ save }), 3, { ...content, title: '' })).toEqual({
+    expect(
+      await saveNote(fakeRepository({ save }), 3, { ...content, title: '' }, SAVED_AT),
+    ).toEqual({
       ok: true,
     });
   });
 
   it('入力が規則に合わなければ、書き込まずに誤りを返す', async () => {
     const notes = fakeRepository();
-    expect(await saveNote(notes, 3, { ...content, title: 'あ'.repeat(201) })).toEqual({
+    expect(await saveNote(notes, 3, { ...content, title: 'あ'.repeat(201) }, SAVED_AT)).toEqual({
       ok: false,
       reason: 'invalid',
       errors: { title: 'too-long' },
@@ -111,7 +120,7 @@ describe('保存する', () => {
 
   it('公開済みの note の slug を変えようとすれば、そのことを返す', async () => {
     const save = vi.fn(async () => ({ ok: false as const, reason: 'slug-fixed' as const }));
-    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
+    expect(await saveNote(fakeRepository({ save }), 3, content, SAVED_AT)).toEqual({
       ok: false,
       reason: 'slug-fixed',
     });
@@ -119,7 +128,7 @@ describe('保存する', () => {
 
   it('存在しない note は保存せず、そのことを返す', async () => {
     const save = vi.fn(async () => ({ ok: false as const, reason: 'not-found' as const }));
-    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
+    expect(await saveNote(fakeRepository({ save }), 3, content, SAVED_AT)).toEqual({
       ok: false,
       reason: 'not-found',
     });
@@ -127,7 +136,7 @@ describe('保存する', () => {
 
   it('slug が他の note と重なれば、そのことを返す', async () => {
     const save = vi.fn(async () => ({ ok: false as const, reason: 'slug-taken' as const }));
-    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
+    expect(await saveNote(fakeRepository({ save }), 3, content, SAVED_AT)).toEqual({
       ok: false,
       reason: 'slug-taken',
     });
@@ -137,7 +146,7 @@ describe('保存する', () => {
     const save = vi.fn(async () => {
       throw new Error('D1_ERROR: 書き込めない');
     });
-    expect(await saveNote(fakeRepository({ save }), 3, content)).toEqual({
+    expect(await saveNote(fakeRepository({ save }), 3, content, SAVED_AT)).toEqual({
       ok: false,
       reason: 'failed',
     });
@@ -222,15 +231,15 @@ describe('削除する', () => {
 });
 
 describe('削除した note を戻す', () => {
-  it('note を戻すことを頼む', async () => {
+  it.each(['draft', 'published'] as const)('note を %s で戻すことを頼む', async (as) => {
     const restore = vi.fn(async () => ({ ok: true as const }));
-    expect(await restoreNote(fakeRepository({ restore }), 3)).toEqual({ ok: true });
-    expect(restore).toHaveBeenCalledWith(3);
+    expect(await restoreNote(fakeRepository({ restore }), 3, as)).toEqual({ ok: true });
+    expect(restore).toHaveBeenCalledWith(3, as);
   });
 
   it('削除した note が存在しなければ、そのことを返す', async () => {
     const restore = vi.fn(async () => ({ ok: false as const, reason: 'not-found' as const }));
-    expect(await restoreNote(fakeRepository({ restore }), 3)).toEqual({
+    expect(await restoreNote(fakeRepository({ restore }), 3, 'draft')).toEqual({
       ok: false,
       reason: 'not-found',
     });
@@ -240,7 +249,7 @@ describe('削除した note を戻す', () => {
     const restore = vi.fn(async () => {
       throw new Error('D1_ERROR: 書き込めない');
     });
-    expect(await restoreNote(fakeRepository({ restore }), 3)).toEqual({
+    expect(await restoreNote(fakeRepository({ restore }), 3, 'draft')).toEqual({
       ok: false,
       reason: 'failed',
     });
@@ -253,7 +262,7 @@ describe('公開済みを読む', () => {
       slug: 'first-note',
       title: '題',
       body: '本文',
-      firstPublishedAt: PUBLISHED_AT,
+      publishedAt: PUBLISHED_AT,
     }));
     expect(await getPublishedNote(fakeRepository({ findPublishedBySlug }), 'first-note')).toEqual({
       slug: 'first-note',
@@ -281,7 +290,14 @@ describe('公開済みを読む', () => {
 
 describe('編集する note を読む', () => {
   it('note を画面に渡す形で返す', async () => {
-    const note = { id: 3, slug: 'first-note', title: '題', body: '本文', status: 'draft' as const };
+    const note = {
+      id: 3,
+      slug: 'first-note',
+      title: '題',
+      body: '本文',
+      status: 'draft' as const,
+      slugFixed: false,
+    };
     const findForEdit = vi.fn(async () => note);
     expect(await getNoteForEdit(fakeRepository({ findForEdit }), 3)).toEqual(note);
     expect(findForEdit).toHaveBeenCalledWith(3);
