@@ -212,12 +212,28 @@ spec の Session 2026-10-12 による。Phase 5 の T034〜T039 が作った削�
 
 ### Implementation
 
-- [X] T053 [US3] `note.deleted_at` を足すマイグレーション in migrations/0002_add_note_deleted_at.sql
+- [X] T053 [US3] `note.deleted_at` を足すマイグレーション。T062 が `migrations/0002_keep_note_revisions.sql` に置き換えた
 - [X] T054 [US3] Repository の `delete` を `deleted_at` の書き込みに替え、`restore`・`findDeleted`・`listDeletedForAuthor` を足す。ほかの文を `deleted_at IS NULL` で絞る in src/features/note/domain/note-repository.ts と src/features/note/server/d1-note-repository.ts
 - [X] T055 [US3] ユースケース「戻す」と、削除した note の取り出し・一覧 in src/features/note/application/restore-note.ts、get-deleted-note.ts、list-notes.ts
 - [X] T056 [US3] Server Action `restoreNoteAction`（成功は `/dash?restored=1` へ `redirect()`）、戻す確認の画面、一覧の画面の削除した note の一覧と戻したことの表示 in src/features/note/server/actions.ts、src/app/dash/notes/[id]/restore/page.tsx、src/app/dash/page.tsx
 
+## Phase 9: 版を残し、戻すときに下書きか公開かを選ぶ
+
+spec の Session 2026-10-14 による。題と本文を `note` と `note_publication` に持つ形を、`note` と版の表 `note_revision` に替える。Phase 8 の「戻すと削除する前の状態になる」は、「作り手が下書きか公開かを選ぶ」に替わる。
+
+### Tests
+
+- [X] T059 [P] [US2] [US3] workerd のテスト。保存と公開のたびに版を足し、同じ内容では足さない。下書きで戻すと訪問者に見えず、公開し直しても初めて公開した日時を保つ。公開したことのない note は公開で戻せない。下書きで戻した note の slug を変えられない。データベースが止める規則（版の書き換え、別の note の版や空の題の版の公開、初めて公開した日時の変更、公開した版と初めて公開した日時の片方だけ） in tests/workers/d1-note-repository.test.ts
+- [X] T060 [P] [US3] 単体テスト。ユースケースが日時と戻す状態を渡すこと、`parseRestoreAs` in tests/unit/note-usecases.test.ts と tests/unit/note-domain.test.ts
+- [X] T061 [P] [US3] 結合テストと E2E。「下書きで戻す」と「公開で戻す」、公開したことのない note に「公開で戻す」が出ないこと、下書きで戻して公開し直すと公開日が変わらないこと in tests/integration/dash.test.ts、tests/e2e/note-delete.spec.ts、tests/e2e/note-input-methods.spec.ts
+
+### Implementation
+
+- [X] T062 [US2] [US3] `0001` の表を作り直し、`note` と `note_revision` とトリガを作るマイグレーション。データは移さない（本番の D1 の note は捨ててよいとオーナーが決めた） in migrations/0002_keep_note_revisions.sql
+- [X] T063 [US2] [US3] Repository を版の表に合わせ、`create`・`save` に版を作った日時、`restore` に戻す状態を渡す in src/features/note/domain/note-repository.ts と src/features/note/server/d1-note-repository.ts
+- [X] T064 [US3] 戻す確認の画面に「下書きで戻す」と「公開で戻す」のボタンを置き、編集の画面の slug を変えられるかを公開したことがあるかで決める in src/features/note/components/restore-note-form.tsx、src/features/note/components/note-form.tsx、src/features/note/server/actions.ts、src/app/dash/notes/[id]/restore/page.tsx
+
 ### 配信の前に要ること
 
-- [ ] T057 Preview の D1 `synsk-me-preview` に `migrations/0002_add_note_deleted_at.sql` を適用し、プレビュー URL で quickstart.md の 8〜10 を通す
-- [ ] T058 本番の D1 `synsk-me` に `migrations/0002_add_note_deleted_at.sql` を適用する。マージの前に行う。列がないまま新しいコードが配信されると、note の読み出しが失敗する
+- [ ] T057 Preview の D1 `synsk-me-preview` に `migrations/0002_keep_note_revisions.sql` を適用し、プレビュー URL で quickstart.md の 8〜11 を通す
+- [ ] T058 本番の D1 `synsk-me` に `migrations/0002_keep_note_revisions.sql` を適用する。本番の note はすべて消える。マージの前に行う。表を作り直す前に新しいコードが配信されると、note の読み書きが失敗する

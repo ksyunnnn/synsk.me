@@ -22,12 +22,12 @@
 - 本番へ適用する命令: `npx wrangler d1 migrations apply synsk-me --remote`
 - `wrangler.jsonc` に `migrations_dir` と `migrations_pattern` を書かない。既定の `migrations/` 直下の `.sql` を読む
 - workerd のテストは `vitest.workers.config.ts` の `readD1Migrations` を `migrations/` に向け、本番と同じマイグレーションを当てる
-- 表は `note`（書き換えている内容）と `note_publication`（見せている内容）の2つ。形は [data-model.md](./data-model.md)
-- 公開してよいかは、Repository の実装が取り出すときに確かめる。訪問者向けの取り出しは `note_publication` の列だけを列挙して SELECT する
+- 表は `note`（状態と、最後に公開した版）と `note_revision`（題と本文の版）の2つ。形は [data-model.md](./data-model.md)
+- 公開してよいかは、Repository の実装が取り出すときに確かめる。訪問者向けの取り出しは、`note.published_revision_id` の版の列だけを列挙して SELECT する
 
 **Rationale**:
 - D1 は SQL の `BEGIN` を受け付けない。ローカルで実行し、`D1_ERROR: To execute a transaction, please use the state.storage.transaction() ...` で拒まれることを確かめた。Drizzle の D1 向け `transaction()` は `begin` を発行し（`drizzle-orm/d1/session.js`）、kysely-d1 は `Transactions are not supported yet.` を投げる。どの案でも複数の文をまとめるには `db.batch()` を使うことになり、ORM を入れても差がない
-- この機能の書き込みは、保存・削除・戻すが1文、公開が2文で済む。保存は `UPDATE` の1文、削除と戻すは `note.deleted_at` を書き換える `UPDATE` の1文。公開は、入力した内容を保存する `UPDATE` と、`note_publication` へ写す `INSERT ... SELECT ... ON CONFLICT DO UPDATE` の2文を、`db.batch()` にまとめる。公式は batch を「SQL transactions」とし、途中の文が失敗すると全体を巻き戻すと書いている。ローカルの D1 で、2文目が制約に反すると1文目も残らないことを確かめた
+- この機能の書き込みは、削除と戻すが1文、作る・保存が2文、公開が3文で済む。削除と戻すは `note` を書き換える `UPDATE` の1文。作るは `note` と最初の版の `INSERT` の2文。保存は slug を書き換える `UPDATE` と、版を足す `INSERT ... SELECT` の2文。公開は保存の2文に、公開する版を指す `UPDATE` を足した3文。2文以上は `db.batch()` にまとめる。公式は batch を「SQL transactions」とし、途中の文が失敗すると全体を巻き戻すと書いている。ローカルの D1 で、後の文が制約に反すると前の文も残らないことを確かめた（`tests/workers/d1-note-repository.test.ts` の「公開の途中の文が失敗すると、足した版も slug の変更も残らない」）
 - `@cloudflare/vitest-plugin` の `readD1Migrations` はディレクトリ直下の `.sql` だけを読む。Drizzle の生成物は入れ子（`<ts>_name/migration.sql`）で、既存のテスト基盤のままでは読めない
 - 設計原則9「単純さ over 先回りの構造」: クエリは5種類で、ORM を入れる具体的な理由（差し替え、2つ目の使い道）がない
 - 設計原則8「置き場を選ばない」: D1 に固有の API は Repository の実装に閉じる。Drizzle もスキーマの定義が方言ごとに別で、D1 から移るときの書き直しは避けられない
