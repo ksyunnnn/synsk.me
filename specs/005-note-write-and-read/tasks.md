@@ -236,4 +236,4 @@ spec の Session 2026-10-14 による。題と本文を `note` と `note_publica
 ### 配信の前に要ること
 
 - [X] T057 Preview の D1 `synsk-me-preview` に `migrations/0002_keep_note_revisions.sql` を適用し、プレビュー URL で quickstart.md の 8〜11 を通す
-- [ ] T058 本番の D1 `synsk-me` に `migrations/0002_keep_note_revisions.sql` を適用する。本番の note はすべて消える。マージの前に行う。表を作り直す前に新しいコードが配信されると、note の読み書きが失敗する
+- [X] T058 本番の D1 `synsk-me` に `migrations/0002_keep_note_revisions.sql` を適用する。本番の note はすべて消える。マージの前に行う。表を作り直す前に新しいコードが配信されると、note の読み書きが失敗する
