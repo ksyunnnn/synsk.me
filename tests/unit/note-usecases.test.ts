@@ -4,7 +4,7 @@ import { deleteNote } from '@/features/note/application/delete-note';
 import { restoreNote } from '@/features/note/application/restore-note';
 import { getNoteForEdit } from '@/features/note/application/get-note-for-edit';
 import { getPublishedNote } from '@/features/note/application/get-published-note';
-import { listNotes } from '@/features/note/application/list-notes';
+import { listNoteDashboard, listNotes } from '@/features/note/application/list-notes';
 import { publishNote } from '@/features/note/application/publish-note';
 import { saveNote } from '@/features/note/application/save-note';
 import type { NoteContent } from '@/features/note/domain/note';
@@ -322,5 +322,49 @@ describe('一覧する', () => {
   it('note が0件なら空の一覧', async () => {
     const listForAuthor = vi.fn(async () => []);
     expect(await listNotes(fakeRepository({ listForAuthor }))).toEqual([]);
+  });
+});
+
+describe('/dash の2つの一覧を読む', () => {
+  const summaries = [
+    { id: 1, slug: 'a', title: '題', status: 'draft' as const, hasUnpublishedChanges: false },
+  ];
+  const deletedNotes = [
+    { id: 2, slug: 'b', title: '題', status: 'published' as const, hasBeenPublished: true },
+  ];
+  const fail = async () => {
+    throw new Error('D1_ERROR: 読めない');
+  };
+
+  it('両方を読み出せれば、両方を返す', async () => {
+    const notes = fakeRepository({
+      listForAuthor: vi.fn(async () => summaries),
+      listDeletedForAuthor: vi.fn(async () => deletedNotes),
+    });
+    expect(await listNoteDashboard(notes)).toEqual({ notes: summaries, deletedNotes });
+  });
+
+  it('削除した note の一覧だけを読み出せなければ、削除していない note の一覧を返す', async () => {
+    const notes = fakeRepository({
+      listForAuthor: vi.fn(async () => summaries),
+      listDeletedForAuthor: vi.fn(fail),
+    });
+    expect(await listNoteDashboard(notes)).toEqual({ notes: summaries, deletedNotes: null });
+  });
+
+  it('削除していない note の一覧だけを読み出せなければ、削除した note の一覧を返す', async () => {
+    const notes = fakeRepository({
+      listForAuthor: vi.fn(fail),
+      listDeletedForAuthor: vi.fn(async () => deletedNotes),
+    });
+    expect(await listNoteDashboard(notes)).toEqual({ notes: null, deletedNotes });
+  });
+
+  it('両方とも読み出せなければ投げる。画面が読み出せなかったことを返す', async () => {
+    const notes = fakeRepository({
+      listForAuthor: vi.fn(fail),
+      listDeletedForAuthor: vi.fn(fail),
+    });
+    await expect(listNoteDashboard(notes)).rejects.toThrow('D1_ERROR');
   });
 });

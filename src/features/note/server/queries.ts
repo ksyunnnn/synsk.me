@@ -5,12 +5,11 @@ import { cache } from 'react';
 import { getDeletedNote as getDeletedNoteUseCase } from '@/features/note/application/get-deleted-note';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getPublishedNote as getPublishedNoteUseCase } from '@/features/note/application/get-published-note';
-import { listDeletedNotes, listNotes } from '@/features/note/application/list-notes';
+import { listNoteDashboard, type NoteDashboard } from '@/features/note/application/list-notes';
 import {
   parseNoteId,
   type DeletedNoteDto,
   type EditableNoteDto,
-  type NoteSummaryDto,
   type PublishedNoteDto,
 } from '@/features/note/domain/note';
 import type { Author } from '@/features/note/server/author';
@@ -42,16 +41,13 @@ export const getPublishedNote = cache(async (slug: string): Promise<PublishedNot
   getPublishedNoteUseCase(await createNoteRepository(), slug),
 );
 
-/** 作り手向けの一覧。作り手でなければ 403 */
-export const listNotesForAuthor = async (): Promise<NoteSummaryDto[]> => {
+/**
+ * 作り手向けの、削除していない note と削除した note の一覧。作り手でなければ 403。
+ * 片方だけ読み出せなければ、その一覧を null にする
+ */
+export const getNoteDashboard = async (): Promise<NoteDashboard> => {
   await requireAuthor();
-  return listNotes(await createNoteRepository());
-};
-
-/** 作り手向けの、削除した note の一覧。作り手でなければ 403 */
-export const listDeletedNotesForAuthor = async (): Promise<DeletedNoteDto[]> => {
-  await requireAuthor();
-  return listDeletedNotes(await createNoteRepository());
+  return listNoteDashboard(await createNoteRepository());
 };
 
 /** 作り手が編集する note。作り手でなければ 403。`id` の note がないか、削除した note なら null */

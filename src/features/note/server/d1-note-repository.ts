@@ -48,9 +48,14 @@ const toUpdateFailure = (error: unknown): UpdateNoteResult => {
   return { ok: false, reason };
 };
 
+/**
+ * `note` の行の、最新の版の id を求める式。作り手が書き換えている内容は最新の版で、
+ * 保存・公開・一覧のどれもこの式で最新の版を決める
+ */
+const LATEST_REVISION_ID = '(SELECT max(id) FROM note_revision WHERE note_id = note.id)';
+
 /** note ごとの最新の版を、`latest` の名前で結ぶ */
-const JOIN_LATEST_REVISION = `JOIN note_revision AS latest
-  ON latest.id = (SELECT max(id) FROM note_revision WHERE note_id = note.id)`;
+const JOIN_LATEST_REVISION = `JOIN note_revision AS latest ON latest.id = ${LATEST_REVISION_ID}`;
 
 type PublishedNoteRow = {
   slug: string;
@@ -105,7 +110,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
          WHERE note.id = ? AND note.deleted_at IS NULL
            AND NOT EXISTS (
              SELECT 1 FROM note_revision AS latest
-             WHERE latest.id = (SELECT max(id) FROM note_revision WHERE note_id = note.id)
+             WHERE latest.id = ${LATEST_REVISION_ID}
                AND latest.title = ? AND latest.body = ?
            )`,
       )
@@ -159,8 +164,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
             .prepare(
               `UPDATE note SET
                  status = 'published',
-                 published_revision_id =
-                   (SELECT max(id) FROM note_revision WHERE note_id = note.id),
+                 published_revision_id = ${LATEST_REVISION_ID},
                  published_at = coalesce(published_at, ?)
                WHERE id = ? AND deleted_at IS NULL`,
             )
