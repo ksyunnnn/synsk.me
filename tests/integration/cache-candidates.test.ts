@@ -11,7 +11,8 @@ import { describe, expect, it } from 'vitest';
  * 起きないため（`routes.test.ts`）、載りうる経路の一覧をここで確かめる。
  *
  * キャッシュしてよいのは、誰が要求しても同じになる応答だけ。作り手の画面と note の
- * 画面がこの一覧に入ると、作り手の画面や、削除した note が訪問者に返りうる。
+ * 画面がこの一覧に入ると、作り手の画面や、削除した note が訪問者に返りうる。`/dash`
+ * 配下が判定から外れることは `dash.test.ts` が確かめる。
  */
 
 const PRERENDER_PATHS = './dist/server/vinext-prerender-paths.json';
@@ -19,17 +20,10 @@ const PRERENDER_PATHS = './dist/server/vinext-prerender-paths.json';
 const readPrerenderPaths = async () =>
   JSON.parse(await readFile(PRERENDER_PATHS, 'utf8')) as {
     paths: string[];
-    excludedWarmPaths: string[];
   };
 
 describe('エッジのキャッシュに載りうる経路', () => {
   it('誰が要求しても同じになる / だけ', async () => {
     expect((await readPrerenderPaths()).paths).toEqual(['/']);
-  });
-
-  it('作り手の画面は判定から外れる', async () => {
-    const { paths, excludedWarmPaths } = await readPrerenderPaths();
-    expect(paths.filter((path) => path.startsWith('/dash'))).toEqual([]);
-    expect(excludedWarmPaths).toContain('/dash');
   });
 });

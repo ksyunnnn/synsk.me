@@ -55,7 +55,7 @@
 | IX. Simplicity | 通る | 足すインタフェースは `NoteRepository` の1つ。差し替えの対象は、単体テストの偽の実装。JWT の検証は、2つ目の機能が使うまで `features/note/server/` に置き、`shared/` に出さない |
 | Test Layering | 通る | R6 |
 | Display Speed | 反する（確かめないまま進める） | この機能の中では計測できない。Complexity Tracking に書く |
-| Cacheability | 反する | `force-dynamic` のページを置く。Complexity Tracking に書く |
+| Cacheability | 通る | ページは `export const revalidate` と `export const dynamic` を宣言せず、`'use cache'` を使わない。データを読んでから決まる 404 と 403 は `src/proxy.ts` が描画の前に決める（R3、ADR-0040） |
 | Allowlist Visibility | 通る | 訪問者向けの取り出しは、出す列を SELECT で列挙する。画面に渡す形（DTO）も出す項目だけを持つ |
 
 ## Project Structure
@@ -124,5 +124,4 @@ tests/
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
-| Cacheability: `/notes/[slug]` と `/dash` 配下のページが正の `revalidate` を持たず、`force-dynamic` を宣言する | `/dash` はキャッシュに載ると作り手の画面が訪問者に返りうる。`/notes/[slug]` は、公開と削除を直後に反映するために、キャッシュの削除に頼らない（R3） | `revalidate` を付けてキャッシュに載せ、`revalidatePath` で消す案は、削除が失敗したときに削除した note が長く出続ける。constitution の文面と `tests/unit/cacheability.test.ts` が食い違っており、検査は `force-dynamic` を認めている。文面と検査のどちらに揃えるかの決定は `/speckit-constitution` による |
 | Display Speed: `/notes/{slug}` が NFR-03〜NFR-07 の閾値を満たすことを、この機能の中で確かめない | プレビュー URL は Access の後ろにあり、外部の計測（PageSpeed Insights、Web Analytics）が届かない。本番に出るのは main へのマージの後である | プレビュー URL の Access を外して計測する案は、プレビューの版が本番の D1 に書き込めるため、作り手以外に書き込みの画面を開く。本番へのマージの後に計測し、閾値を割ったら R3 のキャッシュの判断に戻る。2026-10-09 に、プレビューの版は本番の D1 ではなく D1 `synsk-me-preview` に書き込むよう替えた（PR #132「main 以外のブランチの配信を Worker Previews に替え、本番と分けた D1 と R2 を使う」） |

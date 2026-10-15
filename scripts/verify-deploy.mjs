@@ -5,7 +5,7 @@
 // note の応答がキャッシュに載らないこと。
 // - HTML と画像の経路が返るか（#59）
 // - OG 画像とアイコンが実体のある PNG か（satori と resvg が workerd で動くか）
-// - HTML がエッジのキャッシュに載るか（#38 の後退。`export const revalidate` か
+// - HTML がエッジのキャッシュに載るか（#38 の後退。`/` の `'use cache'` か
 //   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）。synsk.me でのみ見る
 // - アクセス解析のタグが埋まるか（#38。`next.config.js` の env が壊れると消える）
 // - HTML とクライアント JS が予算に収まるか
