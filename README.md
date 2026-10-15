@@ -118,7 +118,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
 | 認証なしの `/dash` と `/dash/notes/new` が Access のログイン（`*.cloudflareaccess.com`）へ移される | Access のアプリケーションの対象の経路 |
 | プレビュー配信では、認証なしの `/` も Access のログインへ移される | プレビュー全体を対象にする Access のアプリケーション |
-| `/notes/<存在しない slug>` の 2 回目が `cf-cache-status: HIT` を返さない | `src/app/notes/[slug]/page.tsx` の `export const dynamic` |
+| `/notes/<存在しない slug>` の 2 回目が `cf-cache-status: HIT` を返さない | `src/proxy.ts` の `matcher` |
 
 プレビュー配信を見るときは URL を渡す。
 
@@ -126,7 +126,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.dev
 ```
 
-プレビュー配信は全体が Access の後ろにあるため、Access のログインへの移動を見る検査のほかは、service token を `CF-Access-Client-Id` と `CF-Access-Client-Secret` のヘッダに付けて取る。`CLOUDFLARE_ACCESS_CLIENT_ID` と `CLOUDFLARE_ACCESS_CLIENT_SECRET` が欠けていれば検査は落ちる。本番には付けない。
+プレビュー配信は全体が Access の後ろにあるため、Access のログインへの移動を見る検査のほかは、service token を `CF-Access-Client-Id` と `CF-Access-Client-Secret` のヘッダに付けて取る。`CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW` と `CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW` が欠けていれば検査は落ちる。本番には付けない。本番の Access は `/dash` だけを守り、検査は `/dash` がログインへ移されることを鍵なしで確かめるため、本番の service token は持たない。
 
 エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
 

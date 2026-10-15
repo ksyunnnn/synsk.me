@@ -100,8 +100,8 @@ describe('isProductionBase', () => {
 
 describe('accessHeadersFor', () => {
   const token = {
-    CLOUDFLARE_ACCESS_CLIENT_ID: 'id.access',
-    CLOUDFLARE_ACCESS_CLIENT_SECRET: 'secret',
+    CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW: 'id.access',
+    CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW: 'secret',
   };
 
   it('本番には service token を付けない。本番の Access は /dash だけを守るため', () => {
@@ -118,21 +118,23 @@ describe('accessHeadersFor', () => {
   it('プレビュー配信で service token が欠けていれば、欠けた変数の名前を返す', () => {
     expect(accessHeadersFor(PREVIEW, {})).toEqual({
       ok: false,
-      missing: ['CLOUDFLARE_ACCESS_CLIENT_ID', 'CLOUDFLARE_ACCESS_CLIENT_SECRET'],
+      missing: ['CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW', 'CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW'],
     });
-    expect(accessHeadersFor(PREVIEW, { CLOUDFLARE_ACCESS_CLIENT_ID: 'id.access' })).toEqual({
-      ok: false,
-      missing: ['CLOUDFLARE_ACCESS_CLIENT_SECRET'],
-    });
+    expect(accessHeadersFor(PREVIEW, { CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW: 'id.access' })).toEqual(
+      {
+        ok: false,
+        missing: ['CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW'],
+      },
+    );
   });
 
   it('空の値は欠けているとみなす', () => {
     expect(
       accessHeadersFor(PREVIEW, {
-        CLOUDFLARE_ACCESS_CLIENT_ID: '',
-        CLOUDFLARE_ACCESS_CLIENT_SECRET: 'secret',
+        CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW: '',
+        CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW: 'secret',
       }),
-    ).toEqual({ ok: false, missing: ['CLOUDFLARE_ACCESS_CLIENT_ID'] });
+    ).toEqual({ ok: false, missing: ['CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW'] });
   });
 });
 

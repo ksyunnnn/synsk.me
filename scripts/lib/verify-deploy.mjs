@@ -66,9 +66,9 @@ export function isProductionBase(base) {
   return new URL(base).hostname === PRODUCTION_HOSTNAME;
 }
 
-/** Access の service token を置く環境変数。wrangler が同じ名前で読む。 */
-const ACCESS_CLIENT_ID_ENV = 'CLOUDFLARE_ACCESS_CLIENT_ID';
-const ACCESS_CLIENT_SECRET_ENV = 'CLOUDFLARE_ACCESS_CLIENT_SECRET';
+/** プレビュー配信を通る Access の service token を置く環境変数。本番には使わない。 */
+const ACCESS_CLIENT_ID_ENV = 'CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW';
+const ACCESS_CLIENT_SECRET_ENV = 'CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW';
 
 /**
  * 検査の要求に付ける、Access を通るためのヘッダを返す。
