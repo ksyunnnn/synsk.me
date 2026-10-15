@@ -21,7 +21,7 @@ consulted: Claude Code
 - Cache Components では、ストリーミングを始めた後の `notFound()` と `forbidden()` は状態コードを 200 のままにする（[Streaming](https://nextjs.org/docs/app/guides/streaming) の「The HTTP contract」）。`next build` と `next start` で、D1 の代わりに 50 ミリ秒待ってから `notFound()` を呼ぶページを作ると、`export const instant = false` を付けても 200 と `<meta name="robots" content="noindex">` を返した。`forbidden()` も 200 だった
 - 公式は、描画の前に proxy で確かめる形を示す（[loading.js の Status codes](https://nextjs.org/docs/app/api-reference/file-conventions/loading#status-codes)）。同じ形を `next build` で作ると、404 と 403 を返した
 - vinext 1.0.0-beta.9 は、ストリーミングを始めずに描画を終えるため、proxy がなくても 404 と 403 を返す
-- vinext は、デプロイのときに `dist/server/vinext-prerender-paths.json` の `paths` にある URL だけをキャッシュできるか判定し、判定の結果に載らない経路を `no-store` にする。proxy の `matcher` に当たる経路は、判定で dynamic に固定する（`vinext/dist/server/app-rsc-handler.js` の `markRouteCacheabilityDynamic`）
+- vinext は、デプロイのときに `dist/server/vinext-prerender-paths.json` の `paths`・`rscPaths`・`loadingShellPaths`・`pagesDataPaths`・`routeHandlerPaths` にある URL をキャッシュできるか判定し（`@vinext/cloudflare/dist/cdn-warm.js` の `createCdnWarmTargets`）、判定の結果に載らない経路を `no-store` にする。proxy の `matcher` に当たる経路は、判定で dynamic に固定する（`vinext/dist/server/app-rsc-handler.js` の `markRouteCacheabilityDynamic`）
 
 `specs/005-note-write-and-read/spec.md` は、存在しない note・下書きの note・削除した note の `/notes/{slug}` を 404 で区別なく返すこと（FR-011）と、作り手以外に `/dash` 配下を見せないこと（FR-010）を求める。
 
