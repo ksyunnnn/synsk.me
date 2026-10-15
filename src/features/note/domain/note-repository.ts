@@ -79,4 +79,13 @@ export interface NoteRepository {
 
   /** 作り手向けに、削除した note を一覧する */
   listDeletedForAuthor(): Promise<DeletedNote[]>;
+
+  /** `findPublishedBySlug` が note を返す slug か。題と本文を読まない */
+  hasPublished(slug: string): Promise<boolean>;
+
+  /** `findForEdit` が note を返す id か。題と本文を読まない */
+  hasEditable(id: NoteId): Promise<boolean>;
+
+  /** `findDeleted` が note を返す id か。題と本文を読まない */
+  hasDeleted(id: NoteId): Promise<boolean>;
 }

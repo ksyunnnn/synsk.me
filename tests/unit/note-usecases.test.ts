@@ -34,6 +34,9 @@ const fakeRepository = (overrides: Partial<NoteRepository> = {}): NoteRepository
   listForAuthor: vi.fn(unexpected('listForAuthor')),
   findDeleted: vi.fn(unexpected('findDeleted')),
   listDeletedForAuthor: vi.fn(unexpected('listDeletedForAuthor')),
+  hasPublished: vi.fn(unexpected('hasPublished')),
+  hasEditable: vi.fn(unexpected('hasEditable')),
+  hasDeleted: vi.fn(unexpected('hasDeleted')),
   ...overrides,
 });
 

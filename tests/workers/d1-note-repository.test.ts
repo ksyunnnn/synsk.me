@@ -702,3 +702,49 @@ describe('データベースの制約', () => {
     });
   });
 });
+
+describe('有無だけを確かめる', () => {
+  /** 状態の違う note を 4 つ作り、存在しない id と slug を 1 つずつ加える */
+  const createNotesInEveryState = async () => {
+    const draft = await createNote({ slug: 'draft' });
+    const published = await createNote({ slug: 'published' });
+    await notes.publish(published, content({ slug: 'published' }), FIRST_PUBLISHED_AT);
+    const deletedDraft = await createNote({ slug: 'deleted-draft' });
+    await notes.delete(deletedDraft, DELETED_AT);
+    const deletedPublished = await createNote({ slug: 'deleted-published' });
+    await notes.publish(
+      deletedPublished,
+      content({ slug: 'deleted-published' }),
+      FIRST_PUBLISHED_AT,
+    );
+    await notes.delete(deletedPublished, DELETED_AT);
+    return {
+      ids: [draft, published, deletedDraft, deletedPublished, 999_999],
+      slugs: ['draft', 'published', 'deleted-draft', 'deleted-published', 'nothing'],
+    };
+  };
+
+  it('hasPublished は、findPublishedBySlug が note を返す slug でだけ true', async () => {
+    const { slugs } = await createNotesInEveryState();
+    for (const slug of slugs) {
+      expect(await notes.hasPublished(slug)).toBe((await notes.findPublishedBySlug(slug)) !== null);
+    }
+    expect(await notes.hasPublished('published')).toBe(true);
+  });
+
+  it('hasEditable は、findForEdit が note を返す id でだけ true', async () => {
+    const { ids } = await createNotesInEveryState();
+    for (const id of ids) {
+      expect(await notes.hasEditable(id)).toBe((await notes.findForEdit(id)) !== null);
+    }
+    expect(await notes.hasEditable(ids[0])).toBe(true);
+  });
+
+  it('hasDeleted は、findDeleted が note を返す id でだけ true', async () => {
+    const { ids } = await createNotesInEveryState();
+    for (const id of ids) {
+      expect(await notes.hasDeleted(id)).toBe((await notes.findDeleted(id)) !== null);
+    }
+    expect(await notes.hasDeleted(ids[2])).toBe(true);
+  });
+});
