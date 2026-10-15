@@ -11,8 +11,6 @@ export const contentType = 'image/png';
 const url =
   'https://api.open-meteo.com/v1/forecast?latitude=35.6895&longitude=139.6917&current=weathercode&timezone=Asia%2FTokyo&forecast_days=1';
 
-export const dynamic = 'force-dynamic';
-
 async function isFineInTokyo(): Promise<boolean> {
   try {
     const res = await fetch(url, { cache: 'no-store' });

@@ -29,13 +29,19 @@ type AccessEnv = {
 /** Cloudflare Access が JWT を入れるヘッダ */
 const ACCESS_JWT_HEADER = 'cf-access-jwt-assertion';
 
-/** この要求を送ったのが作り手なら `Author` を、確かめられなければ null を返す */
-export const getCurrentAuthor = async (): Promise<Author | null> => {
-  return verifyAuthor(
-    (await headers()).get(ACCESS_JWT_HEADER),
+/**
+ * 要求のヘッダから、作り手なら `Author` を、確かめられなければ null を返す。`proxy` は
+ * 描画の前に動き、`headers()` を使えないため、要求のヘッダを直接渡す
+ */
+export const getAuthorFromHeaders = async (requestHeaders: Headers): Promise<Author | null> =>
+  verifyAuthor(
+    requestHeaders.get(ACCESS_JWT_HEADER),
     toAccessSettings((await readEnv()) as AccessEnv),
   );
-};
+
+/** この要求を送ったのが作り手なら `Author` を、確かめられなければ null を返す */
+export const getCurrentAuthor = async (): Promise<Author | null> =>
+  getAuthorFromHeaders(await headers());
 
 export const createNoteRepository = async (): Promise<NoteRepository> =>
   createD1NoteRepository((await readEnv()).DB);

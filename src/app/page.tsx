@@ -1,16 +1,18 @@
-// vinext の cdnAdapter がエッジのキャッシュに載せる対象は ISR に分類された
-// 経路に限る。この値がないと dynamic として扱われ、毎リクエスト描画される。
-// 内容が変わるのはデプロイの時だけなので、値そのものに意味はない。
-export const revalidate = 3600;
+'use cache';
+
+// 誰が要求しても同じ内容のため、描画の結果をキャッシュする。内容が変わるのは
+// デプロイの時だけなので、cacheLife の値そのものに意味はない
 
 import Image from 'next/image';
 import GlassesIcon from '@/app/asset/glasses.svg';
 import Link from 'next/link';
 import { Crane } from '@/icon';
+import { cacheLife } from 'next/cache';
 
 const LINKEDIN_URL = 'https://www.linkedin.com/in/synsk';
 
-const Page = () => {
+const Page = async () => {
+  cacheLife('hours');
   return (
     <main className="pt-16 pb-32 sm:pt-[18vh] sm:pb-[18vh] px-[4vw]">
       <div className="container m-auto">

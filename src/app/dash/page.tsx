@@ -4,9 +4,9 @@ import { DeletedNoteList } from '@/features/note/components/deleted-note-list';
 import { NoteList } from '@/features/note/components/note-list';
 import { getNoteDashboard } from '@/features/note/server/queries';
 
-// 作り手の画面をエッジのキャッシュに載せない。キャッシュのキーはホスト名を含まず、
-// 作り手の画面が訪問者に返りうる（specs/005-note-write-and-read/research.md の R3）
-export const dynamic = 'force-dynamic';
+// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
+export const instant = false;
 
 export const metadata: Metadata = { title: 'note の一覧 | synsk.me' };
 

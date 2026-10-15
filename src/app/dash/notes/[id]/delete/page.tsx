@@ -5,8 +5,9 @@ import { DeleteNoteForm } from '@/features/note/components/delete-note-form';
 import { deleteNoteAction } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
 
-// 作り手の画面をエッジのキャッシュに載せない（specs/005-note-write-and-read/research.md の R3）
-export const dynamic = 'force-dynamic';
+// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
+export const instant = false;
 
 export const metadata: Metadata = { title: 'note を削除する | synsk.me' };
 

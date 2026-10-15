@@ -3,10 +3,9 @@ import { notFound } from 'next/navigation';
 import { PublishedNote } from '@/features/note/components/published-note';
 import { getPublishedNote } from '@/features/note/server/queries';
 
-// エッジのキャッシュに載せず、要求のたびに D1 から描画する。公開と削除を、
-// キャッシュの削除に頼らずに次の要求から反映するため
-// （specs/005-note-write-and-read/research.md の R3）
-export const dynamic = 'force-dynamic';
+// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
+export const instant = false;
 
 type Props = { params: Promise<{ slug: string }> };
 

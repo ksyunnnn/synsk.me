@@ -100,7 +100,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 **`--experimental-warm-cdn-cache` を外すと HTML がエッジのキャッシュに載らない。** vinext がページをキャッシュ可能と判定する manifest は、この二段アップロード（版を 0% で置いて経路を probe し、判定結果を載せた版を上げ直す）でしか作られない。外した版は全経路が `cache-control: no-store` になる。`--warm-cdn-target` には本番の URL が要る。warm に失敗した場合、新しい版は 0% のまま留まり、既存の版が 100% を保つ。その場合は `npx wrangler versions deploy` で昇格を選ぶ。
 
-`/` の `export const revalidate` は、この判定で ISR に分類されるために要る。落とすと dynamic として扱われ、キャッシュに載らない。
+`/` をキャッシュに載せるのは、ページの `'use cache'` と `cacheLife()` である。キャッシュは Cache Components で作り、`export const revalidate` と `export const dynamic` は書かない（ADR-0040）。
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
 
@@ -113,12 +113,13 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | `/`、`/icon`、`/opengraph-image` が 200 を返す | 経路の設定、ビルドの出力 |
 | `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
 | `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
-| `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `export const revalidate`、デプロイの `--experimental-warm-cdn-cache` |
+| `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `'use cache'` と `cacheLife()`、デプロイの `--experimental-warm-cdn-cache` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
 | 認証なしの `/dash` と `/dash/notes/new` が Access のログイン（`*.cloudflareaccess.com`）へ移される | Access のアプリケーションの対象の経路 |
 | プレビュー配信では、認証なしの `/` も Access のログインへ移される | プレビュー全体を対象にする Access のアプリケーション |
-| `/notes/<存在しない slug>` の 2 回目が `cf-cache-status: HIT` を返さない | `src/app/notes/[slug]/page.tsx` の `export const dynamic` |
+| `/notes/<存在しない slug>` が 404 を返す | `src/proxy.ts` の rewrite、`src/app/notes/[slug]/missing/page.tsx` |
+| `/notes/<存在しない slug>` の 2 回目が `cf-cache-status: HIT` を返さない | `src/proxy.ts` の `matcher` |
 
 プレビュー配信を見るときは URL を渡す。
 
@@ -126,7 +127,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.dev
 ```
 
-プレビュー配信は全体が Access の後ろにあるため、Access のログインへの移動を見る検査のほかは、service token を `CF-Access-Client-Id` と `CF-Access-Client-Secret` のヘッダに付けて取る。`CLOUDFLARE_ACCESS_CLIENT_ID` と `CLOUDFLARE_ACCESS_CLIENT_SECRET` が欠けていれば検査は落ちる。本番には付けない。
+プレビュー配信は全体が Access の後ろにあるため、Access のログインへの移動を見る検査のほかは、service token を `CF-Access-Client-Id` と `CF-Access-Client-Secret` のヘッダに付けて取る。`CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW` と `CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW` が欠けていれば検査は落ちる。本番には付けない。本番の Access は `/dash` だけを守り、検査は `/dash` がログインへ移されることを鍵なしで確かめるため、本番の service token は持たない。
 
 エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
 
@@ -145,8 +146,12 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 ## 環境変数
 
 手元で使う値は `.env.local` に置く（git が追跡しない）。要る変数と用途は
-`.env.example` が持つ。Cloudflare の資格情報は、呼び出し元と環境で分ける。デプロイを
-GitHub Actions へ移すときは、CI 用のトークンを別に作る。
+`.env.example` が持つ。デプロイを GitHub Actions へ移すときは、CI 用のトークンを別に作る。
+
+Cloudflare の資格情報の名前は `synsk.me - <呼び出し元>: <用途> (<環境>)` とする。環境は
+`production`（`main`）か `preview`（`main` 以外のブランチ）で、両方に使うものには付けない。
+名前と権限は `.env.example` のコメントが持つ。手元に置かない
+`synsk.me - Workers Builds: deploy (production)` は、Workers Builds が `main` をデプロイするときに使う。
 
 ビルドのときに決まる変数が2つある。どちらも `.env.local` には書かない。
 

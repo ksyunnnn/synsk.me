@@ -40,11 +40,13 @@ export const metadata: Metadata = {
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
     <html lang="en">
-      <Suspense>
-        <Analytics />
-      </Suspense>
-      <Script src="https://kit.fontawesome.com/fa9c201f80.js" crossOrigin="anonymous"></Script>
-      <body className={lato.className}>{children}</body>
+      <body className={lato.className}>
+        <Suspense>
+          <Analytics />
+        </Suspense>
+        <Script src="https://kit.fontawesome.com/fa9c201f80.js" crossOrigin="anonymous"></Script>
+        {children}
+      </body>
     </html>
   );
 };

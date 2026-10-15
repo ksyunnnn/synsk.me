@@ -88,18 +88,18 @@
 
 ## R3. 公開した直後に訪問者の画面へ反映する
 
-**Decision**: `/notes/[slug]` と `/dash` 配下のページは `export const dynamic = 'force-dynamic'` とし、エッジのキャッシュに載せない。要求のたびに D1 から描画する。`generateStaticParams` を置かない。
+**Decision**: `/notes/[slug]` と `/dash` 配下のページは `'use cache'` を使わず、エッジのキャッシュに載せない。要求のたびに D1 から描画する。`generateStaticParams` を置かない。データを読んでから決まる 404 と 403 は、`src/proxy.ts` が描画の前に決める（ADR-0040）。`src/proxy.ts` の `matcher` に当たる経路は、デプロイ時のキャッシュ判定で dynamic に固定される（`vinext/dist/server/app-rsc-handler.js` の `markRouteCacheabilityDynamic`）
 
 **Rationale**:
 - `docs/REQUIREMENTS.md` の FR-17（公開の後に別の工程を挟まずに反映）を、キャッシュの削除なしで満たせる。キャッシュに載せると `revalidatePath` による削除が要り、削除が失敗すると `stale-while-revalidate`（1年）の間、削除した note まで出続けうる。設計原則2「止まる over 危ない方へ進む」
 - `/dash` の HTML をキャッシュに載せると、キャッシュのキーはホスト名を含まず、Worker より先に引かれる（公式の cache-keys）。作り手の画面が訪問者に返りうる。設計原則1
 - 表示速度（NFR-03〜NFR-07）のために `/notes/[slug]` をキャッシュに載せるかは、計測してから決める。設計原則6「測って直す over 先回りで速くする」
-- `vinext build` は、ページのモジュールをビルド時に Node で読み込む。動的セグメントを持つページ（`/notes/[slug]`）は、`force-dynamic` でも `generateStaticParams` を探すために読み込まれる（`vinext/dist/build/prerender.js` の `prerenderApp`）。モジュールの先頭で `cloudflare:workers` を import すると、Node が `ERR_UNSUPPORTED_ESM_URL_SCHEME` で読めずにビルドが落ちる。このため `cloudflare:workers` は、`src/features/note/server/context.ts` の関数の中で、使うときに `await import('cloudflare:workers')` で読み込む
+- `vinext build` は、ページのモジュールをビルド時に Node で読み込む。動的セグメントを持つページ（`/notes/[slug]`）は、`generateStaticParams` を探すために読み込まれる（`vinext/dist/build/prerender.js` の `prerenderApp`）。モジュールの先頭で `cloudflare:workers` を import すると、Node が `ERR_UNSUPPORTED_ESM_URL_SCHEME` で読めずにビルドが落ちる。このため `cloudflare:workers` は、`src/features/note/server/context.ts` の関数の中で、使うときに `await import('cloudflare:workers')` で読み込む
 
 **Alternatives considered**:
 - `revalidate` と `generateStaticParams() { return [] }` でキャッシュに載せ、公開・削除のたびに `revalidatePath` で消す: タグでの削除は本番でしか確かめられず、失敗したときに古い内容が長く残る
 
-**Constitution との関係**: constitution の Cacheability は「すべての `page.tsx` は正の `export const revalidate` を持つ」と書く。`tests/unit/cacheability.test.ts` は `force-dynamic` のページを除外して通す。文面と検査が食い違っており、この機能のページは検査には通るが文面に反する。[plan.md](./plan.md) の Complexity Tracking に書く。
+**Constitution との関係**: constitution の Cacheability の形に従う（3.0.0）。
 
 **Sources**:
 - https://developers.cloudflare.com/workers/cache/cache-keys/
@@ -167,13 +167,13 @@ Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` �
 
 **Decision**:
 - `next.config.js` の `rewrites()` の `fallback` に、`/dash/:path*` から同じ経路への rewrite を置き、`/dash` 配下をデプロイ時のキャッシュ判定の対象から外す
-- 作り手であることを確かめられないとき、画面はページの中で `forbidden()`（403）を返す。middleware で拒まず、例外を投げない
+- 作り手であることを確かめられないとき、`src/proxy.ts` が `forbidden()` を呼ぶだけのページ（`/dash/forbidden`）へ rewrite し、403 を返す。proxy から 403 の応答を直接返さず、例外を投げない。ページも `forbidden()` で作り手を確かめる
 - ビルド出力の `dist/server/vinext-prerender-paths.json` に `/dash` 配下が入らないことを、結合テストで確かめる
 
 **Rationale**:
 - `npm run deploy` は、配信の前に `https://synsk.me` の各経路へ要求を送り、キャッシュしてよいかを判定する。応答が 2xx でない経路があると、デプロイ全体が止まる（`@vinext/cloudflare/dist/cacheability-probe.js` の 121〜141行、`deploy.js` の 864行）
 - 判定の要求は本番のホストへの通常の要求である。Access が `/dash` を守ると、Worker より前にログインへの移動を返し、デプロイが止まる見込み。Access が Worker より前に応答するという順序は、公式の文書で確かめきれていない（推測）
-- `force-dynamic` にしても、動的セグメントを持たない経路（`/dash`、`/dash/notes/new`）は判定の対象に残る（`vinext/dist/build/prerender-paths.js` の 420〜422行）
+- 動的セグメントを持たない経路（`/dash`、`/dash/notes/new`）は判定の対象に残る（`vinext/dist/build/prerender-paths.js` の 420〜422行）
 - next.config の rewrites の source に当たる経路は、判定の対象から外れる（`prerender-paths.js` の 635〜647行）。scratchpad でビルドし、`excludedWarmPaths` が `["/dash","/dash/notes/new"]` になり、判定の対象が `/` と `/archives/2024` だけになることを確かめた
 - 判定の表に載らない経路は、実行時に `no-store` になる（`vinext/dist/server/cacheability-request.js` の 376・384行）。作り手の画面がキャッシュに載らない。設計原則1
 - ページの中の `forbidden()` は、判定の要求に届いた場合も `dynamic` と分類され、デプロイを止めない。middleware の 403 とページの例外（500）は、判定に失敗してデプロイを止める。手元の `wrangler dev` に判定の要求を送って確かめた

@@ -1,28 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 2.0.0
-- Modified principles:
-  - I. Test Layering → Decided Constraints の「Test Layering」へ移した
-  - II. Display Speed → Decided Constraints の「Display Speed」へ移した。
-    閾値の数値を転記せず、NFR-03〜NFR-07 の ID で参照する形に再定義した
-  - III. Cacheability → Decided Constraints の「Cacheability」へ移した
-  - IV. Allowlist Visibility → Decided Constraints の「Allowlist Visibility」へ移した
-- Added principles（Core Principles を docs/SOFTWARE_DESIGN.md の設計原則 1〜9 から導いた）:
-  - I. Protected Values
-  - II. Stop on Missing Input
-  - III. Verified Scope
-  - IV. Partial Availability
-  - V. Accessible Controls
-  - VI. Measure Before Optimizing
-  - VII. Boundary Translation
-  - VIII. Portable Core
-  - IX. Simplicity
-- Added sections: Decided Constraints（テンプレートの [SECTION_2_NAME]）
-- Removed sections: [SECTION_3_NAME]。作業手順は CLAUDE.md が持つため置かない
-- Templates requiring updates:
-  - .specify/templates/plan-template.md の `## Constitution Check` は
-    `[Gates determined based on constitution file]` のままでよい。ゲートの中身は
-    この文書から導く
+- Version change: 2.0.0 → 3.0.0
+- Modified constraints:
+  - Cacheability: 「すべての `page.tsx` は正の `export const revalidate` を持つ」を、
+    キャッシュを Cache Components で作り、`export const revalidate` と
+    `export const dynamic` を書かない制約に再定義した。データを読んでから決まる
+    404 と 403 を `src/proxy.ts` が描画の前に決めることを加えた。根拠に ADR-0040 を加えた
+- Added sections: なし
+- Removed sections: なし
+- Templates requiring updates: なし
 - Follow-up TODOs: なし
 -->
 
@@ -115,10 +101,14 @@ Sync Impact Report
 
 ### Cacheability
 
-すべての `page.tsx` は正の `export const revalidate` を持つ。
+キャッシュは Cache Components で作る。キャッシュするものは `'use cache'` で選び、
+`export const revalidate` と `export const dynamic` は書かない。
 `tests/unit/cacheability.test.ts` が `src/app` を走査して検査する。
 
-根拠: ADR-0018
+データを読んでから決まる 404 と 403 は、`src/proxy.ts` が描画の前に決める。
+`tests/unit/proxy.test.ts` が検査する。
+
+根拠: ADR-0018、ADR-0040
 
 ### Allowlist Visibility
 
@@ -142,4 +132,4 @@ Decided Constraints の根拠は `docs/decisions/` が持つ。根拠を転記�
 修正は `/speckit-constitution` による。手で書き換えない。版は semver で付ける。
 原則の削除と再定義は MAJOR、原則と節の追加は MINOR、字句の修正は PATCH とする。
 
-**Version**: 2.0.0 | **Ratified**: 2026-09-08 | **Last Amended**: 2026-09-16
+**Version**: 3.0.0 | **Ratified**: 2026-09-08 | **Last Amended**: 2026-10-15

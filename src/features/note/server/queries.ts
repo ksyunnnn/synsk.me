@@ -13,7 +13,11 @@ import {
   type PublishedNoteDto,
 } from '@/features/note/domain/note';
 import type { Author } from '@/features/note/server/author';
-import { createNoteRepository, getCurrentAuthor } from '@/features/note/server/context';
+import {
+  createNoteRepository,
+  getAuthorFromHeaders,
+  getCurrentAuthor,
+} from '@/features/note/server/context';
 
 /**
  * note の画面が呼ぶ組み立て用の関数（ADR-0030）。
@@ -62,4 +66,29 @@ export const getDeletedNote = async (id: string): Promise<DeletedNoteDto | null>
   await requireAuthor();
   const noteId = parseNoteId(id);
   return noteId === null ? null : getDeletedNoteUseCase(await createNoteRepository(), noteId);
+};
+
+/*
+ * 以下は `src/proxy.ts` が描画の前に呼ぶ。題と本文を読まず、有無だけを返す。
+ * D1 から読み出せなければ投げる
+ */
+
+/** 要求を送ったのが作り手か */
+export const isAuthorRequest = async (requestHeaders: Headers): Promise<boolean> =>
+  (await getAuthorFromHeaders(requestHeaders)) !== null;
+
+/** 訪問者に見せる note がある slug か。`getPublishedNote` が null を返さない slug と一致する */
+export const hasPublishedNote = async (slug: string): Promise<boolean> =>
+  (await createNoteRepository()).hasPublished(slug);
+
+/** 作り手が編集できる note がある id か。`getNoteForEdit` が null を返さない id と一致する */
+export const hasEditableNote = async (id: string): Promise<boolean> => {
+  const noteId = parseNoteId(id);
+  return noteId !== null && (await createNoteRepository()).hasEditable(noteId);
+};
+
+/** 作り手が戻せる、削除した note がある id か。`getDeletedNote` が null を返さない id と一致する */
+export const hasDeletedNote = async (id: string): Promise<boolean> => {
+  const noteId = parseNoteId(id);
+  return noteId !== null && (await createNoteRepository()).hasDeleted(noteId);
 };

@@ -297,5 +297,39 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         .all<DeletedNoteRow>();
       return results.map(toDeletedNote);
     },
+
+    // 有無だけを確かめる。FROM・JOIN・WHERE は対応する取り出しと同じにし、
+    // 「ある」の判定を取り出しと一致させる
+    async hasPublished(slug): Promise<boolean> {
+      const row = await db
+        .prepare(
+          `SELECT 1 FROM note
+           JOIN note_revision AS published ON published.id = note.published_revision_id
+           WHERE note.slug = ? AND note.status = 'published' AND note.deleted_at IS NULL`,
+        )
+        .bind(slug)
+        .first();
+      return row !== null;
+    },
+
+    async hasEditable(id): Promise<boolean> {
+      const row = await db
+        .prepare(
+          `SELECT 1 FROM note ${JOIN_LATEST_REVISION} WHERE note.id = ? AND note.deleted_at IS NULL`,
+        )
+        .bind(id)
+        .first();
+      return row !== null;
+    },
+
+    async hasDeleted(id): Promise<boolean> {
+      const row = await db
+        .prepare(
+          `SELECT 1 FROM note ${JOIN_LATEST_REVISION} WHERE note.id = ? AND note.deleted_at IS NOT NULL`,
+        )
+        .bind(id)
+        .first();
+      return row !== null;
+    },
   };
 };
