@@ -5,10 +5,11 @@ import { describe, expect, it } from 'vitest';
 /**
  * キャッシュを Cache Components で作る形を守る。
  *
- * キャッシュするものは `'use cache'` で選ぶ。ルートの設定の `export const revalidate`
- * （ISR）と `export const dynamic` は書かない。Cache Components はこれらと両立せず、
+ * キャッシュするものは `'use cache'` で選ぶ。ルートの設定の `revalidate`（ISR）・
+ * `dynamic`・`fetchCache`・`dynamicParams` は書かない。Cache Components はこれらと両立せず、
  * `next build`（Next.js 16.3.4）は `Route segment config "revalidate" is not compatible
- * with \`nextConfig.cacheComponents\`. Please remove it.` で止まる（`dynamic` も同じ）。
+ * with \`nextConfig.cacheComponents\`. Please remove it.` で止まる（ほかの 3 つも同じ。
+ * `node_modules/next/dist/docs/01-app/02-guides/migrating-to-cache-components.md`）。
  * `vinext build` は止まらないため、ここで落とす。
  */
 
@@ -28,7 +29,13 @@ async function findSources(dir: string): Promise<string[]> {
   return found;
 }
 
-const DECLARES_SEGMENT_CACHE_CONFIG = /^\s*export\s+const\s+(revalidate|dynamic)\s*=/m;
+const SEGMENT_CACHE_CONFIG = 'revalidate|dynamic|fetchCache|dynamicParams';
+
+/** `export const revalidate = 60`、型注釈つき、`export { revalidate }` の形を拾う。 */
+const DECLARES_SEGMENT_CACHE_CONFIG = [
+  new RegExp(`^\\s*export\\s+(const|let|var)\\s+(${SEGMENT_CACHE_CONFIG})\\s*[:=]`, 'm'),
+  new RegExp(`^\\s*export\\s*\\{[^}]*\\b(${SEGMENT_CACHE_CONFIG})\\b[^}]*\\}`, 'm'),
+];
 
 describe('キャッシュを Cache Components で作る', () => {
   it('next.config.js が cacheComponents を有効にする', async () => {
@@ -36,12 +43,13 @@ describe('キャッシュを Cache Components で作る', () => {
     expect(source).toMatch(/^\s*cacheComponents\s*:\s*true\s*,/m);
   });
 
-  it('src/app のどのファイルも revalidate と dynamic を宣言しない', async () => {
+  it('src/app のどのファイルも revalidate・dynamic・fetchCache・dynamicParams を宣言しない', async () => {
     const sources = await findSources(APP_DIR);
     expect(sources.length).toBeGreaterThan(0);
     const declaring: string[] = [];
     for (const path of sources) {
-      if (DECLARES_SEGMENT_CACHE_CONFIG.test(await readFile(path, 'utf8'))) {
+      const source = await readFile(path, 'utf8');
+      if (DECLARES_SEGMENT_CACHE_CONFIG.some((pattern) => pattern.test(source))) {
         declaring.push(relative(process.cwd(), path));
       }
     }
