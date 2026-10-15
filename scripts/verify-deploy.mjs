@@ -278,6 +278,7 @@ async function checkAbsentNoteCache() {
   await (await get(path)).arrayBuffer();
   const res = await get(path);
   const status = res.headers.get('cf-cache-status') ?? 'なし';
+  check(res.status === 404, '/notes/<存在しない slug> が 404 を返す', `${res.status}`);
   check(
     status !== 'HIT',
     '/notes/<存在しない slug> の 2 回目が HIT を返さない',
