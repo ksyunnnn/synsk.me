@@ -147,12 +147,10 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 手元で使う値は `.env.local` に置く（git が追跡しない）。要る変数と用途は
 `.env.example` が持つ。デプロイを GitHub Actions へ移すときは、CI 用のトークンを別に作る。
 
-Cloudflare の資格情報は、呼び出し元と用途で分ける。環境は本番（`main`）とプレビュー
-（`main` 以外のブランチ）の 2 つで、範囲が環境で分かれるものだけ環境でも分ける。
-Cloudflare 上の名前は `synsk.me - <呼び出し元>: <用途> (<環境>)` とし、環境にまたがるものは
-`(<環境>)` を付けない。名前と権限は `.env.example` のコメントが持つ。手元に置かない
-`synsk.me - Workers Builds: deploy (production)` だけはここに書く。Workers Builds が `main` を
-ビルドしてデプロイするときに使う。
+Cloudflare の資格情報の名前は `synsk.me - <呼び出し元>: <用途> (<環境>)` とする。環境は
+`production`（`main`）か `preview`（`main` 以外のブランチ）で、両方に使うものには付けない。
+名前と権限は `.env.example` のコメントが持つ。手元に置かない
+`synsk.me - Workers Builds: deploy (production)` は、Workers Builds が `main` をデプロイするときに使う。
 
 ビルドのときに決まる変数が2つある。どちらも `.env.local` には書かない。
 
