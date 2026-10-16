@@ -31,6 +31,9 @@ const expectNoStore = (res: { headers: { get: (name: string) => string | null } 
   expect(isNoStore(res.headers), `cache-control: ${res.headers.get('cache-control')}`).toBe(true);
 };
 
+/** プレビュー配信の URL の形（`<branch>-synsk-me.<account>.workers.dev`） */
+const PREVIEW_ORIGIN = 'https://feature-test-synsk-me.is-syunsukekobashi.workers.dev';
+
 /** 作り手の画面。編集の画面は、公開済み・公開し直していない書き換えがある・下書きの 3 つ */
 const AUTHOR_PAGES = [
   '/dash',
@@ -147,6 +150,17 @@ describe('D1 から読める', () => {
     expect(res.status).toBe(404);
     expect(text).not.toContain(note.title);
     expect(text).not.toContain(note.body);
+  });
+
+  it('プレビュー配信では、キャッシュしてよい / の RSC も、どのキャッシュにも残らない', async () => {
+    // Worker の入口 src/worker.ts が、ホスト名でプレビュー配信を見分ける
+    const res = await ctx.server.fetch(`${PREVIEW_ORIGIN}/${AS_RSC.query}`, {
+      headers: AS_RSC.headers,
+      redirect: 'manual',
+    });
+    await res.arrayBuffer();
+    expect(res.status).toBe(200);
+    expectNoStore(res);
   });
 
   it('対照: キャッシュしてよい / の RSC は、no-store を返さない', async () => {

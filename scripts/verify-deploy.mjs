@@ -292,8 +292,10 @@ async function checkAbsentNoteCache() {
 /**
  * プレビュー配信で、Worker が返す応答がどのキャッシュにも残らないか（NFR-09）。
  *
- * プレビュー配信は全体が Access の後ろにあり、どの応答も認証を要する。静的ファイル
- * （`/_next/static/` と `public/`）は Worker を通らず、誰が要求しても同じなので見ない。
+ * プレビュー配信は全体が Access の後ろにあり、どの応答も認証を要する。Worker が返す
+ * 応答は `src/worker.ts`、静的ファイルは `public/_headers` が `no-store` にする。
+ * 静的ファイルはエッジのキャッシュが `Cache-Control` と別に動きうるため、2 回目が
+ * HIT を返さないことも見る。
  */
 async function checkPreviewNoStore() {
   console.log('プレビュー配信のキャッシュ');
@@ -302,13 +304,19 @@ async function checkPreviewNoStore() {
     return;
   }
   const absent = absentNotePath(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  for (const path of ['/', '/icon', '/opengraph-image', '/dash', absent]) {
+  const chunk = extractChunkPaths(await (await get('/')).text())[0];
+  const paths = ['/', '/icon', '/opengraph-image', '/dash', absent, '/archive-banner.js'];
+  if (chunk) paths.push(chunk);
+  else check(false, 'HTML がクライアント JS を参照している', '0 本');
+  for (const path of paths) {
+    await (await get(path)).arrayBuffer();
     const res = await get(path);
     await res.arrayBuffer();
+    const status = res.headers.get('cf-cache-status') ?? 'なし';
     check(
-      isNoStore(res.headers),
+      isNoStore(res.headers) && status !== 'HIT',
       `${path} がどのキャッシュにも残らない`,
-      `${res.status} cache-control: ${res.headers.get('cache-control') ?? 'なし'}`,
+      `${res.status} cache-control: ${res.headers.get('cache-control') ?? 'なし'} cf-cache-status: ${status}`,
     );
   }
 }

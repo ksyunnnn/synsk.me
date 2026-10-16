@@ -120,7 +120,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | プレビュー配信では、認証なしの `/` も Access のログインへ移される | プレビュー全体を対象にする Access のアプリケーション |
 | `/notes/<存在しない slug>` が 404 を返す | `src/proxy.ts` の rewrite、`src/app/notes/[slug]/missing/page.tsx` |
 | `/notes/<存在しない slug>` の 2 回目が `cf-cache-status: HIT` を返さない | `src/proxy.ts` の `matcher` |
-| プレビュー配信では、`/`、`/icon`、`/opengraph-image`、`/dash`、`/notes/<存在しない slug>` が `no-store` を返し、`CDN-Cache-Control` を返さない | vinext のキャッシュの判定、`'use cache'` を足したページ |
+| プレビュー配信では、`/`、`/icon`、`/opengraph-image`、`/dash`、`/notes/<存在しない slug>`、`/archive-banner.js`、クライアント JS が `no-store` を返し、`CDN-Cache-Control` を返さず、2 回目が `cf-cache-status: HIT` を返さない | `src/worker.ts`、`public/_headers` のプレビューの規則 |
 
 プレビュー配信を見るときは URL を渡す。
 
