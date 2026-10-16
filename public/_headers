@@ -5,3 +5,10 @@
 # 過去の版のサイト（<年>.synsk.me）が読み込む帯。外から読まれるための公開ファイルなので、どこからでも読めるようにする
 /archive-banner.js
   Access-Control-Allow-Origin: *
+
+# プレビュー配信（<branch>-synsk-me と <version>-synsk-me）は全体が Access の後ろにあり、
+# どの応答も認証を要する。静的ファイルも、どのキャッシュにも残さない（docs/REQUIREMENTS.md の NFR-09）。
+# 本番の synsk.me には当たらない。Worker が返す応答は worker/index.ts が書き換える
+https://:host.is-syunsukekobashi.workers.dev/*
+  ! Cache-Control
+  Cache-Control: no-store, must-revalidate

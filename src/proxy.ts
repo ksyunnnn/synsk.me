@@ -50,7 +50,15 @@ const decide = async (request: NextRequest): Promise<string | null> => {
   return exists ? null : dashNoteMissing(id);
 };
 
-export const proxy = async (request: NextRequest) => {
+/**
+ * 作り手の経路の応答を、どのキャッシュにも残さない（docs/REQUIREMENTS.md の NFR-09）。
+ * 画面は vinext が `no-store` を付けるが、JavaScript なしの操作の結果の 303 には何も
+ * 付けない。vinext は proxy の応答ヘッダを 303 に写す
+ * （`vinext/dist/server/app-server-action-execution.js` の `mergeMiddlewareResponseHeaders`）
+ */
+const NO_STORE = 'no-store, must-revalidate';
+
+const respond = async (request: NextRequest) => {
   let path: string | null;
   try {
     path = await decide(request);
@@ -58,4 +66,12 @@ export const proxy = async (request: NextRequest) => {
     return NextResponse.next();
   }
   return path ? rewrite(request, path) : NextResponse.next();
+};
+
+export const proxy = async (request: NextRequest) => {
+  const response = await respond(request);
+  if (request.nextUrl.pathname.split('/')[1] === 'dash') {
+    response.headers.set('Cache-Control', NO_STORE);
+  }
+  return response;
 };

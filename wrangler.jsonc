@@ -1,8 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "synsk-me",
-  // vinext の fetch ハンドラ。ビルド出力ではなくパッケージの実体を指す
-  "main": "vinext/server/fetch-handler",
+  // vinext の fetch ハンドラを呼ぶ入口。プレビュー配信の応答だけを書き換える
+  "main": "./worker/index.ts",
   // synsk.me だけを入口にする。workers.dev で同じ内容が配信されると
   // 検索エンジンから見て重複する
   "workers_dev": false,

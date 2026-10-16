@@ -95,6 +95,27 @@ export function accessHeadersFor(base, env) {
   };
 }
 
+/**
+ * 応答が、どのキャッシュにも残らない形かを返す。
+ *
+ * `no-store` はブラウザと共有のキャッシュの両方に保存を禁じる（RFC 9111 の 5.2.2.5）。
+ * Cloudflare は `CDN-Cache-Control` と `Cloudflare-CDN-Cache-Control` を `Cache-Control`
+ * より優先するため、どちらも付いていないことを見る。
+ *
+ * @param {{ get: (name: string) => string | null }} headers
+ * @returns {boolean}
+ */
+export function isNoStore(headers) {
+  const directives = (headers.get('cache-control') ?? '')
+    .split(',')
+    .map((directive) => directive.trim().toLowerCase());
+  return (
+    directives.includes('no-store') &&
+    headers.get('cdn-cache-control') === null &&
+    headers.get('cloudflare-cdn-cache-control') === null
+  );
+}
+
 /** Access の team domain は `<team-name>.cloudflareaccess.com` の形をとる。 */
 const ACCESS_TEAM_DOMAIN_SUFFIX = '.cloudflareaccess.com';
 

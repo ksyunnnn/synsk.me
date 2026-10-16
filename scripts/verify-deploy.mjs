@@ -11,6 +11,8 @@
 // - HTML とクライアント JS が予算に収まるか
 // - 作り手の画面が Access の後ろにあり、存在しない note がキャッシュに載らないか
 //   （specs/005-note-write-and-read/research.md の R2、R6）
+// - プレビュー配信で、Worker が返す応答がどのキャッシュにも残らないか
+//   （docs/REQUIREMENTS.md の NFR-09）
 // - 過去の版のサイトが読み込む帯（`public/archive-banner.js`）が返るか。
 //   このリポジトリの外から使われるため、コードを見ても消してよいかが分からない
 //
@@ -26,6 +28,7 @@ import {
   bypassCacheUrl,
   extractChunkPaths,
   isAccessLoginRedirect,
+  isNoStore,
   isProductionBase,
   isPng,
 } from './lib/verify-deploy.mjs';
@@ -286,6 +289,49 @@ async function checkAbsentNoteCache() {
   );
 }
 
+/**
+ * プレビュー配信で、応答がどのキャッシュにも残らないか（NFR-09）。
+ *
+ * プレビュー配信は全体が Access の後ろにあり、どの応答も認証を要する。Worker が返す
+ * 応答は `worker/index.ts`、静的ファイルは `public/_headers` が `no-store` にする。
+ * Worker が返す応答は、2 回目が HIT を返さないことも見る。静的ファイルは、Cloudflare の
+ * 静的ファイルの配信が `Cache-Control` と別にエッジに持つため、HIT を見ない
+ * （NFR-09 の例外）。
+ *
+ * エッジは `CDN-Cache-Control` を落として返すことがある。外し忘れは
+ * `tests/integration/private-responses.test.ts` が Worker の応答で確かめる。
+ */
+async function checkPreviewNoStore() {
+  console.log('プレビュー配信のキャッシュ');
+  if (isProductionBase(BASE)) {
+    console.log('  skip プレビュー配信のキャッシュ — 対象が本番');
+    return;
+  }
+  const absent = absentNotePath(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  for (const path of ['/', '/icon', '/opengraph-image', '/dash', absent]) {
+    await (await get(path)).arrayBuffer();
+    const res = await get(path);
+    await res.arrayBuffer();
+    const status = res.headers.get('cf-cache-status') ?? 'なし';
+    check(
+      isNoStore(res.headers) && status !== 'HIT',
+      `${path} がどのキャッシュにも残らない`,
+      `${res.status} cache-control: ${res.headers.get('cache-control') ?? 'なし'} cf-cache-status: ${status}`,
+    );
+  }
+  const chunk = extractChunkPaths(await (await get('/')).text())[0];
+  if (!chunk) check(false, 'HTML がクライアント JS を参照している', '0 本');
+  for (const path of chunk ? ['/archive-banner.js', chunk] : ['/archive-banner.js']) {
+    const res = await get(path);
+    await res.arrayBuffer();
+    check(
+      isNoStore(res.headers),
+      `${path} がブラウザのキャッシュに残らない`,
+      `${res.status} cache-control: ${res.headers.get('cache-control') ?? 'なし'}`,
+    );
+  }
+}
+
 /** `next.config.js` の env が `src/app/Analytics.tsx` に届いているか。
  *  プロダクション ブランチのビルドでのみ埋まる。 */
 function checkAnalytics(html) {
@@ -431,6 +477,7 @@ if (ACCESS.ok) {
   await checkArchiveBanner();
   await checkEdgeCache();
   await checkAbsentNoteCache();
+  await checkPreviewNoStore();
   checkAnalytics(pages['/']);
   await checkBudget();
 } else {

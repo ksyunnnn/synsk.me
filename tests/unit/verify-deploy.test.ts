@@ -6,6 +6,7 @@ import {
   bypassCacheUrl,
   extractChunkPaths,
   isAccessLoginRedirect,
+  isNoStore,
   isProductionBase,
   isPng,
 } from '../../scripts/lib/verify-deploy.mjs';
@@ -187,4 +188,26 @@ describe('absentNotePath', () => {
     expect(path).toBe('/notes/verify-deploy-absent-1788800000000-bc');
     expect(path.slice('/notes/'.length)).toMatch(/^[a-z0-9-]+$/);
   });
+});
+
+describe('isNoStore', () => {
+  it('no-store を含み、CDN 向けの指定がなければ真', () => {
+    expect(isNoStore(new Headers({ 'cache-control': 'no-store, must-revalidate' }))).toBe(true);
+    expect(isNoStore(new Headers({ 'cache-control': 'Private, No-Store' }))).toBe(true);
+  });
+
+  it('no-store がなければ偽', () => {
+    expect(isNoStore(new Headers({ 'cache-control': 'public, max-age=0, must-revalidate' }))).toBe(
+      false,
+    );
+    expect(isNoStore(new Headers())).toBe(false);
+  });
+
+  it.each(['cdn-cache-control', 'cloudflare-cdn-cache-control'])(
+    '%s があれば、no-store があっても偽',
+    (name) => {
+      const headers = new Headers({ 'cache-control': 'no-store', [name]: 'public, max-age=3600' });
+      expect(isNoStore(headers)).toBe(false);
+    },
+  );
 });

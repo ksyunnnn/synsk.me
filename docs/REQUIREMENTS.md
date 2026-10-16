@@ -76,5 +76,5 @@
 ## NFR-08: 公開していない内容は、その公開範囲の外の人への応答に含まれない
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
 
-## NFR-09: 認証を要する応答と、公開していない内容を含む応答は、どのキャッシュにも残らない。認証には、配信の環境全体にかける認証を含む
-根拠: [ADR-0040](./decisions/0040-cache-components.md)
+## NFR-09: 認証を要する応答と、公開していない内容を含む応答は、どのキャッシュにも残らない。認証には、配信の環境全体にかける認証を含む。ただし、静的ファイルを、Cloudflare の静的ファイルの配信がエッジに持つことは除く
+根拠: [ADR-0040](./decisions/0040-cache-components.md)、[ADR-0041](./decisions/0041-preview-no-store.md)

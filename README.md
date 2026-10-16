@@ -104,6 +104,8 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 `main` 以外のブランチはバージョン コマンドでビルドされ、PR にプレビュー URL がコメントされる。
 
+**プレビュー配信は、どの応答もキャッシュに残さない。** 全体が Access の後ろにあり、どの応答も認証を要するため（NFR-09）。Worker の入口 `worker/index.ts` が `*.workers.dev` への応答を `no-store` にし、静的ファイルは `public/_headers` のプレビューの規則が `no-store` にする（[ADR-0041](./docs/decisions/0041-preview-no-store.md)）。エッジのキャッシュに当たるかは、本番で確かめる。
+
 ## 配信の検査
 
 `npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものと、作り手の画面を守る Access の設定と、note の応答がキャッシュに載らないことである。
@@ -120,6 +122,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | プレビュー配信では、認証なしの `/` も Access のログインへ移される | プレビュー全体を対象にする Access のアプリケーション |
 | `/notes/<存在しない slug>` が 404 を返す | `src/proxy.ts` の rewrite、`src/app/notes/[slug]/missing/page.tsx` |
 | `/notes/<存在しない slug>` の 2 回目が `cf-cache-status: HIT` を返さない | `src/proxy.ts` の `matcher` |
+| プレビュー配信では、`/`、`/icon`、`/opengraph-image`、`/dash`、`/notes/<存在しない slug>` が `no-store` を返し、`CDN-Cache-Control` を返さず、2 回目が `cf-cache-status: HIT` を返さない。`/archive-banner.js` とクライアント JS が `no-store` を返す | `worker/index.ts`、`public/_headers` のプレビューの規則 |
 
 プレビュー配信を見るときは URL を渡す。
 
