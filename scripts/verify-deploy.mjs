@@ -11,6 +11,8 @@
 // - HTML とクライアント JS が予算に収まるか
 // - 作り手の画面が Access の後ろにあり、存在しない note がキャッシュに載らないか
 //   （specs/005-note-write-and-read/research.md の R2、R6）
+// - プレビュー配信で、Worker が返す応答がどのキャッシュにも残らないか
+//   （docs/REQUIREMENTS.md の NFR-09）
 // - 過去の版のサイトが読み込む帯（`public/archive-banner.js`）が返るか。
 //   このリポジトリの外から使われるため、コードを見ても消してよいかが分からない
 //
@@ -26,6 +28,7 @@ import {
   bypassCacheUrl,
   extractChunkPaths,
   isAccessLoginRedirect,
+  isNoStore,
   isProductionBase,
   isPng,
 } from './lib/verify-deploy.mjs';
@@ -286,6 +289,30 @@ async function checkAbsentNoteCache() {
   );
 }
 
+/**
+ * プレビュー配信で、Worker が返す応答がどのキャッシュにも残らないか（NFR-09）。
+ *
+ * プレビュー配信は全体が Access の後ろにあり、どの応答も認証を要する。静的ファイル
+ * （`/_next/static/` と `public/`）は Worker を通らず、誰が要求しても同じなので見ない。
+ */
+async function checkPreviewNoStore() {
+  console.log('プレビュー配信のキャッシュ');
+  if (isProductionBase(BASE)) {
+    console.log('  skip プレビュー配信のキャッシュ — 対象が本番');
+    return;
+  }
+  const absent = absentNotePath(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  for (const path of ['/', '/icon', '/opengraph-image', '/dash', absent]) {
+    const res = await get(path);
+    await res.arrayBuffer();
+    check(
+      isNoStore(res.headers),
+      `${path} がどのキャッシュにも残らない`,
+      `${res.status} cache-control: ${res.headers.get('cache-control') ?? 'なし'}`,
+    );
+  }
+}
+
 /** `next.config.js` の env が `src/app/Analytics.tsx` に届いているか。
  *  プロダクション ブランチのビルドでのみ埋まる。 */
 function checkAnalytics(html) {
@@ -431,6 +458,7 @@ if (ACCESS.ok) {
   await checkArchiveBanner();
   await checkEdgeCache();
   await checkAbsentNoteCache();
+  await checkPreviewNoStore();
   checkAnalytics(pages['/']);
   await checkBudget();
 } else {

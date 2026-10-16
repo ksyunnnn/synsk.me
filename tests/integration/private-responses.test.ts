@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { SEEDED_NOTES, startNoteTestServer, type NoteTestServer } from './support/d1';
+import { SEEDED_NOTES, readNoteRows, startNoteTestServer, type NoteTestServer } from './support/d1';
+import { isNoStore } from '../../scripts/lib/verify-deploy.mjs';
 import { encodeActionCall, encodeForm, readActionFields } from './support/form';
 
 /**
@@ -7,8 +8,9 @@ import { encodeActionCall, encodeForm, readActionFields } from './support/form';
  * （docs/REQUIREMENTS.md の NFR-09）。公開していない内容を、作り手以外への応答に
  * 含めない（NFR-08）。
  *
- * 状態コードと応答の中身は notes.test.ts と dash.test.ts が持つ。ここではヘッダと、
- * それらが見ない RSC の応答を確かめる。
+ * 状態コードと HTML の応答の中身は notes.test.ts と dash.test.ts が持つ。ここではヘッダと、
+ * それらが見ない RSC の応答の中身を確かめる。状態コードは、検査する応答が意図した
+ * 応答であることの前提として見る。
  */
 
 const { published, publishedWithChanges, draft, deleted } = SEEDED_NOTES;
@@ -16,23 +18,17 @@ const { published, publishedWithChanges, draft, deleted } = SEEDED_NOTES;
 /** 作り手が入力する値。応答に残ることを確かめるため、他の値と重ならないものにする */
 const INPUT = { title: 'キャッシュの検査で入力した題', body: 'キャッシュの検査で入力した本文' };
 
-/** 画面の要求は、HTML と、画面の間を移るときの RSC の 2 通りで送られる */
-const AS_HTML = {};
-const AS_RSC = { rsc: '1' };
-
 /**
- * どのキャッシュにも残らない形であることを確かめる。`no-store` はブラウザと共有の
- * キャッシュの両方に保存を禁じる（RFC 9111 の 5.2.2.5）。Cloudflare は
- * `CDN-Cache-Control` と `Cloudflare-CDN-Cache-Control` を `Cache-Control` より
- * 優先するため、どちらも付いていないことを見る
+ * 画面の要求は、HTML と、画面の間を移るときの RSC の 2 通りで送られる。RSC の要求に
+ * `_rsc` がないと、vinext は `_rsc` を付けた URL へ 307 で移す
+ * （`vinext/dist/server/app-rsc-cache-busting.js`）。ブラウザと同じく初めから付ける
  */
-const expectNoStore = (res: Response) => {
-  const directives = (res.headers.get('cache-control') ?? '')
-    .split(',')
-    .map((directive) => directive.trim().toLowerCase());
-  expect(directives).toContain('no-store');
-  expect(res.headers.get('cdn-cache-control')).toBeNull();
-  expect(res.headers.get('cloudflare-cdn-cache-control')).toBeNull();
+const AS_HTML = { headers: {}, query: '' };
+const AS_RSC = { headers: { rsc: '1' }, query: '?_rsc' };
+
+/** どのキャッシュにも残らない形であることを確かめる。判定は `verify:deploy` と同じものを使う */
+const expectNoStore = (res: { headers: { get: (name: string) => string | null } }) => {
+  expect(isNoStore(res.headers), `cache-control: ${res.headers.get('cache-control')}`).toBe(true);
 };
 
 /** 作り手の画面。編集の画面は、公開済み・公開し直していない書き換えがある・下書きの 3 つ */
@@ -99,15 +95,19 @@ describe('D1 から読める', () => {
     ['RSC', AS_RSC],
   ])('画面の要求（%s）', (_, as) => {
     it.each(AUTHOR_PAGES)('作り手の %s は、どのキャッシュにも残らない', async (path) => {
-      const res = await ctx.server.fetch(path, { headers: { ...(await authorHeaders()), ...as } });
+      const res = await ctx.server.fetch(`${path}${as.query}`, {
+        headers: { ...(await authorHeaders()), ...as.headers },
+        redirect: 'manual',
+      });
       await res.arrayBuffer();
       expect(res.status).toBe(200);
       expectNoStore(res);
     });
 
     it('作り手の、存在しない id の画面は、どのキャッシュにも残らない', async () => {
-      const res = await ctx.server.fetch('/dash/notes/999', {
-        headers: { ...(await authorHeaders()), ...as },
+      const res = await ctx.server.fetch(`/dash/notes/999${as.query}`, {
+        headers: { ...(await authorHeaders()), ...as.headers },
+        redirect: 'manual',
       });
       await res.arrayBuffer();
       expect(res.status).toBe(404);
@@ -115,23 +115,49 @@ describe('D1 から読める', () => {
     });
 
     it.each(AUTHOR_PAGES)('作り手の JWT がない %s は、どのキャッシュにも残らない', async (path) => {
-      const res = await ctx.server.fetch(path, { headers: as });
+      const res = await ctx.server.fetch(`${path}${as.query}`, {
+        headers: as.headers,
+        redirect: 'manual',
+      });
       await res.arrayBuffer();
       expect(res.status).toBe(403);
       expectNoStore(res);
     });
 
     it.each([draft, deleted])(
-      '訪問者の /notes/$slug は、どのキャッシュにも残らず、題と本文を含めない',
+      '訪問者の /notes/$slug は、どのキャッシュにも残らない',
       async (note) => {
-        const res = await ctx.server.fetch(`/notes/${note.slug}`, { headers: as });
-        const text = await res.text();
+        const res = await ctx.server.fetch(`/notes/${note.slug}${as.query}`, {
+          headers: as.headers,
+          redirect: 'manual',
+        });
+        await res.arrayBuffer();
         expect(res.status).toBe(404);
         expectNoStore(res);
-        expect(text).not.toContain(note.title);
-        expect(text).not.toContain(note.body);
       },
     );
+  });
+
+  it.each([draft, deleted])('訪問者の /notes/$slug の RSC は、題と本文を含めない', async (note) => {
+    const res = await ctx.server.fetch(`/notes/${note.slug}${AS_RSC.query}`, {
+      headers: AS_RSC.headers,
+      redirect: 'manual',
+    });
+    const text = await res.text();
+    expect(res.status).toBe(404);
+    expect(text).not.toContain(note.title);
+    expect(text).not.toContain(note.body);
+  });
+
+  it('対照: キャッシュしてよい / の RSC は、no-store を返さない', async () => {
+    // 上の検査が、どの応答にも no-store が付く状態で素通りしていないことを確かめる
+    const res = await ctx.server.fetch(`/${AS_RSC.query}`, {
+      headers: AS_RSC.headers,
+      redirect: 'manual',
+    });
+    await res.arrayBuffer();
+    expect(res.status).toBe(200);
+    expect(() => expectNoStore(res)).toThrow();
   });
 
   describe.each([
@@ -169,6 +195,73 @@ describe('D1 から読める', () => {
       expectNoStore(res);
     });
 
+    /**
+     * 削除と戻すの検査のための note を作る。種の note を書き換えると、ほかの検査の前提が崩れる。
+     * `deletedAt` を渡すと、公開してから削除した note にする
+     */
+    const createNote = async (slug: string, deletedAt?: string) => {
+      const note = await ctx.db
+        .prepare('INSERT INTO note (slug) VALUES (?) RETURNING id')
+        .bind(slug)
+        .first<{ id: number }>();
+      const id = note?.id ?? 0;
+      const revision = await ctx.db
+        .prepare(
+          'INSERT INTO note_revision (note_id, title, body, created_at) VALUES (?, ?, ?, ?) RETURNING id',
+        )
+        .bind(id, INPUT.title, INPUT.body, '2026-09-01T00:00:00.000Z')
+        .first<{ id: number }>();
+      if (deletedAt) {
+        await ctx.db
+          .prepare(
+            "UPDATE note SET status = 'published', published_revision_id = ?, published_at = ?, deleted_at = ? WHERE id = ?",
+          )
+          .bind(revision?.id, '2026-09-02T00:00:00.000Z', deletedAt, id)
+          .run();
+      }
+      return id;
+    };
+
+    /** 操作が書き込んだ note の行。応答が要求の形の誤りで返ったものでないことを確かめる */
+    const readNote = async (id: number) =>
+      (await readNoteRows(ctx.db)).note.find((note) => note.id === id);
+
+    it('「作る」の結果は、どのキャッシュにも残らない', async () => {
+      const slug = `cache-create-${how}`;
+      const res = await send('/dash/notes/new', { slug, ...INPUT }, await authorHeaders());
+      await res.arrayBuffer();
+      expect((await readNoteRows(ctx.db)).note.some((note) => note.slug === slug)).toBe(true);
+      expectNoStore(res);
+    });
+
+    it('「削除する」の結果は、どのキャッシュにも残らない', async () => {
+      const id = await createNote(`cache-delete-${how}`);
+      const res = await send(`/dash/notes/${id}/delete`, { noteId: id }, await authorHeaders());
+      await res.arrayBuffer();
+      expect((await readNote(id))?.deleted_at).not.toBeNull();
+      expectNoStore(res);
+    });
+
+    it.each(['draft', 'published'])(
+      '「戻す」（%s）の結果は、どのキャッシュにも残らない',
+      async (restoreAs) => {
+        const id = await createNote(
+          `cache-restore-${restoreAs}-${how}`,
+          '2026-09-03T00:00:00.000Z',
+        );
+        const res = await send(
+          `/dash/notes/${id}/restore`,
+          { restoreAs, noteId: id },
+          await authorHeaders(),
+        );
+        await res.arrayBuffer();
+        expect(await readNote(id)).toMatchObject({ status: restoreAs, deleted_at: null });
+        expectNoStore(res);
+      },
+    );
+
+    // 状態コードは見ない。JavaScript なしの送信は 403 を返す（dash.test.ts）。要求の形が
+    // 正しいことは、同じ `send` で送る上の検査が書き込みを確かめて示す
     it('作り手の JWT がない「保存する」の結果は、どのキャッシュにも残らない', async () => {
       const res = await send(
         `/dash/notes/${draft.id}`,
