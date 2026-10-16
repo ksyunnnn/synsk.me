@@ -35,7 +35,8 @@ const readWarmedPaths = async () => {
 };
 
 describe('エッジのキャッシュに載りうる経路', () => {
-  it('誰が要求しても同じになる / だけ', async () => {
-    expect(await readWarmedPaths()).toEqual(['/']);
+  // /top-draft と、そのリンク先のモック（/about・/contact・/resume）は、データも認証も使わない
+  it('誰が要求しても同じになる経路だけ', async () => {
+    expect(await readWarmedPaths()).toEqual(['/', '/about', '/contact', '/resume', '/top-draft']);
   });
 });
