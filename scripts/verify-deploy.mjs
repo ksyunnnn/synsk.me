@@ -290,12 +290,16 @@ async function checkAbsentNoteCache() {
 }
 
 /**
- * プレビュー配信で、Worker が返す応答がどのキャッシュにも残らないか（NFR-09）。
+ * プレビュー配信で、応答がどのキャッシュにも残らないか（NFR-09）。
  *
  * プレビュー配信は全体が Access の後ろにあり、どの応答も認証を要する。Worker が返す
- * 応答は `src/worker.ts`、静的ファイルは `public/_headers` が `no-store` にする。
- * 静的ファイルはエッジのキャッシュが `Cache-Control` と別に動きうるため、2 回目が
- * HIT を返さないことも見る。
+ * 応答は `worker/index.ts`、静的ファイルは `public/_headers` が `no-store` にする。
+ * Worker が返す応答は、2 回目が HIT を返さないことも見る。静的ファイルは、Cloudflare の
+ * 静的ファイルの配信が `Cache-Control` と別にエッジに持つため、HIT を見ない
+ * （NFR-09 の例外）。
+ *
+ * エッジは `CDN-Cache-Control` を落として返すことがある。外し忘れは
+ * `tests/integration/private-responses.test.ts` が Worker の応答で確かめる。
  */
 async function checkPreviewNoStore() {
   console.log('プレビュー配信のキャッシュ');
@@ -304,11 +308,7 @@ async function checkPreviewNoStore() {
     return;
   }
   const absent = absentNotePath(`${Date.now()}-${Math.random().toString(36).slice(2)}`);
-  const chunk = extractChunkPaths(await (await get('/')).text())[0];
-  const paths = ['/', '/icon', '/opengraph-image', '/dash', absent, '/archive-banner.js'];
-  if (chunk) paths.push(chunk);
-  else check(false, 'HTML がクライアント JS を参照している', '0 本');
-  for (const path of paths) {
+  for (const path of ['/', '/icon', '/opengraph-image', '/dash', absent]) {
     await (await get(path)).arrayBuffer();
     const res = await get(path);
     await res.arrayBuffer();
@@ -317,6 +317,17 @@ async function checkPreviewNoStore() {
       isNoStore(res.headers) && status !== 'HIT',
       `${path} がどのキャッシュにも残らない`,
       `${res.status} cache-control: ${res.headers.get('cache-control') ?? 'なし'} cf-cache-status: ${status}`,
+    );
+  }
+  const chunk = extractChunkPaths(await (await get('/')).text())[0];
+  if (!chunk) check(false, 'HTML がクライアント JS を参照している', '0 本');
+  for (const path of chunk ? ['/archive-banner.js', chunk] : ['/archive-banner.js']) {
+    const res = await get(path);
+    await res.arrayBuffer();
+    check(
+      isNoStore(res.headers),
+      `${path} がブラウザのキャッシュに残らない`,
+      `${res.status} cache-control: ${res.headers.get('cache-control') ?? 'なし'}`,
     );
   }
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isPreviewRequest, withNoStore } from '@/lib/preview-no-store';
+import { isPreviewRequest, withNoStore } from '@/shared/server/preview-no-store';
 
 describe('isPreviewRequest', () => {
   it.each([

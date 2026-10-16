@@ -153,7 +153,7 @@ describe('D1 から読める', () => {
   });
 
   it('プレビュー配信では、キャッシュしてよい / の RSC も、どのキャッシュにも残らない', async () => {
-    // Worker の入口 src/worker.ts が、ホスト名でプレビュー配信を見分ける
+    // Worker の入口 worker/index.ts が、ホスト名でプレビュー配信を見分ける
     const res = await ctx.server.fetch(`${PREVIEW_ORIGIN}/${AS_RSC.query}`, {
       headers: AS_RSC.headers,
       redirect: 'manual',

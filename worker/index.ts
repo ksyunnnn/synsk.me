@@ -1,9 +1,9 @@
 import handler from 'vinext/server/fetch-handler';
-import { isPreviewRequest, withNoStore } from '@/lib/preview-no-store';
+import { isPreviewRequest, withNoStore } from '@/shared/server/preview-no-store';
 
 /**
  * Worker の入口。vinext の fetch ハンドラに任せ、プレビュー配信の応答だけを
- * どのキャッシュにも残さない形にする（src/lib/preview-no-store.ts）。
+ * どのキャッシュにも残さない形にする（src/shared/server/preview-no-store.ts）。
  *
  * vinext は、自前の入口から fetch ハンドラを呼ぶ形を示す
  * （`vinext/dist/server/fetch-handler.js` の注記）。
