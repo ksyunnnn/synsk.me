@@ -23,8 +23,6 @@ const ENTRIES = [
   { date: '2026-08-02', width: 'w-3/5', project: 'project ラベル' },
 ];
 
-const PROJECTS = ['project A', 'project B', 'project C'];
-
 const Label = ({ children, dummy = false }: { children: React.ReactNode; dummy?: boolean }) => (
   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
     {children}
@@ -88,14 +86,6 @@ const Page = () => {
         <section className="grid gap-4">
           <Label>職務経歴書へのリンク</Label>
           <TextLink href="/resume">職務経歴書を見る →</TextLink>
-          <Label dummy>project ラベルの一覧</Label>
-          <ul className="flex flex-wrap gap-2">
-            {PROJECTS.map((project) => (
-              <li key={project} className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
-                {project}
-              </li>
-            ))}
-          </ul>
           <Label>自己紹介へのリンク</Label>
           <TextLink href="/about">自己紹介へ →</TextLink>
         </section>
