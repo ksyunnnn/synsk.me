@@ -2,6 +2,7 @@
 // データとはつながず、値はすべてダミー。完成したら中身を `/` に移し、このフォルダを消す。
 import type { Metadata } from 'next';
 import { Noto_Sans_JP, Source_Sans_3 } from 'next/font/google';
+import Link from 'next/link';
 
 const sourceSans = Source_Sans_3({ subsets: ['latin'], weight: ['300', '400', '600'] });
 const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false });
@@ -15,6 +16,11 @@ const ENTRIES = [
   { date: '2026-10-12', width: 'w-4/5', project: 'project ラベル' },
   { date: '2026-10-05', width: 'w-3/5', project: null },
   { date: '2026-09-28', width: 'w-4/5', project: null },
+  { date: '2026-09-20', width: 'w-2/3', project: 'project ラベル' },
+  { date: '2026-09-11', width: 'w-3/5', project: null },
+  { date: '2026-08-30', width: 'w-4/5', project: null },
+  { date: '2026-08-17', width: 'w-2/3', project: null },
+  { date: '2026-08-02', width: 'w-3/5', project: 'project ラベル' },
 ];
 
 const PROJECTS = ['project A', 'project B', 'project C'];
@@ -26,9 +32,10 @@ const Label = ({ children, dummy = false }: { children: React.ReactNode; dummy?:
   </div>
 );
 
-// 行き先が決まるまでは、リンクの見た目だけを持たせる
-const TextLink = ({ children }: { children: React.ReactNode }) => (
-  <span className="w-fit font-normal underline underline-offset-4">{children}</span>
+const TextLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <Link href={href} className="w-fit font-normal underline underline-offset-4">
+    {children}
+  </Link>
 );
 
 const Page = () => {
@@ -51,7 +58,7 @@ const Page = () => {
         </section>
 
         <section className="grid gap-4">
-          <Label dummy>timeline の新着</Label>
+          <Label dummy>timeline（全件。ページネーションか別ページかは未定）</Label>
           <ul className="grid gap-4">
             {ENTRIES.map((entry) => (
               <li key={entry.date} className="grid gap-1.5 border-b border-border pb-4 last:border-b-0 last:pb-0">
@@ -67,8 +74,6 @@ const Page = () => {
               </li>
             ))}
           </ul>
-          <Label>timeline 全体へのリンク</Label>
-          <TextLink>すべて見る →</TextLink>
         </section>
 
         <section className="grid gap-4">
@@ -82,7 +87,7 @@ const Page = () => {
 
         <section className="grid gap-4">
           <Label>職務経歴書へのリンク</Label>
-          <TextLink>職務経歴書を見る →</TextLink>
+          <TextLink href="/resume">職務経歴書を見る →</TextLink>
           <Label dummy>project ラベルの一覧</Label>
           <ul className="flex flex-wrap gap-2">
             {PROJECTS.map((project) => (
@@ -92,14 +97,17 @@ const Page = () => {
             ))}
           </ul>
           <Label>自己紹介へのリンク</Label>
-          <TextLink>自己紹介へ →</TextLink>
+          <TextLink href="/about">自己紹介へ →</TextLink>
         </section>
 
         <section id="contact" className="grid gap-4">
           <Label>連絡の入口</Label>
-          <span className="inline-flex h-11 w-fit items-center rounded-full border border-foreground px-6 font-normal">
+          <Link
+            href="/contact"
+            className="inline-flex h-11 w-fit items-center rounded-full border border-foreground px-6 font-normal"
+          >
             連絡する
-          </span>
+          </Link>
           <Label>SNS へのリンク</Label>
           <ul className="flex gap-3">
             {[1, 2, 3, 4].map((key) => (
