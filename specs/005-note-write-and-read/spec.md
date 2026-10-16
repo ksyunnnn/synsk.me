@@ -50,6 +50,10 @@
 - Q: 過去の版を作り手が見る画面と、過去の版に戻す操作を、この spec で扱うか → A: 扱わない。別の issue で扱う
 - Q: 初めて公開した日とは別に、更新日を持つか → A: この spec では扱わない。Session 2026-09-17 の「更新日は出さない」は、別の issue で見直す
 
+### Session 2026-10-16
+
+- Q: `docs/REQUIREMENTS.md` の NFR-08 と NFR-09 を、この spec は満たすか → A: 満たす。Session 2026-09-17 の「FR-05・FR-11・FR-16・FR-17 を満たす」に、NFR-08 と NFR-09 を足す
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - note を書いて公開し、訪問者が読む (Priority: P1)
