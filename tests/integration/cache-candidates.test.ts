@@ -34,9 +34,21 @@ const readWarmedPaths = async () => {
   return [...new Set(WARMED_KEYS.flatMap((key) => manifest[key] ?? []))].sort();
 };
 
+/**
+ * キャッシュに載ってよい経路のホワイトリスト。誰が要求しても同じ応答になるものだけを置く。
+ * 経路を足すときは、データや認証によって応答が変わらないことを確かめてから足す。
+ */
+const CACHEABLE_PATHS = [
+  '/',
+  // トップの下書きと、そのリンク先のモック。データも認証も使わない（#148）
+  '/top-draft',
+  '/about',
+  '/contact',
+  '/resume',
+];
+
 describe('エッジのキャッシュに載りうる経路', () => {
-  // /top-draft と、そのリンク先のモック（/about・/contact・/resume）は、データも認証も使わない
   it('誰が要求しても同じになる経路だけ', async () => {
-    expect(await readWarmedPaths()).toEqual(['/', '/about', '/contact', '/resume', '/top-draft']);
+    expect(await readWarmedPaths()).toEqual([...CACHEABLE_PATHS].sort());
   });
 });
