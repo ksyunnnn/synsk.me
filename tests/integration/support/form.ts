@@ -1,9 +1,11 @@
+import { encodeReply } from 'react-server-dom-webpack/client.edge';
+
 /**
- * JavaScript なしのブラウザがフォームを送るのと同じ要求を、結合テストから組み立てる。
+ * ブラウザがフォームを送るのと同じ要求を、結合テストから組み立てる。
  *
  * Server Action を `<form action>` に渡すと、React は操作を指す hidden の入力
- * （名前が `$ACTION_` で始まる）をフォームの中に描画する。ブラウザは入力した値と
- * ともにそれを multipart で、画面と同じ経路へ POST する。
+ * （名前が `$ACTION_` で始まる）をフォームの中に描画する。JavaScript なしのブラウザは
+ * 入力した値とともにそれを multipart で、画面と同じ経路へ POST する。
  */
 
 const decodeEntities = (value: string) =>
@@ -53,5 +55,40 @@ export const encodeForm = async (
   return {
     body: await encoded.arrayBuffer(),
     contentType: encoded.headers.get('content-type') ?? '',
+  };
+};
+
+/** 操作を指す hidden の入力から、Server Action の id と、`useActionState` が渡す直前の状態を取り出す */
+const readBoundAction = (actionFields: Record<string, string>) => {
+  const reference = Object.entries(actionFields).find(([name]) => /^\$ACTION_\d+:0$/.test(name));
+  const bound = Object.entries(actionFields).find(([name]) => /^\$ACTION_\d+:1$/.test(name));
+  if (!reference || !bound) throw new Error('Server Action の id と状態がない');
+  const { id } = JSON.parse(reference[1]) as { id: string };
+  const [previousState] = JSON.parse(bound[1]) as [unknown];
+  return { id, previousState };
+};
+
+/**
+ * JavaScript のあるブラウザがフォームを送るのと同じ要求を組み立てる。
+ * ハイドレーションの後、React は Server Action を `x-rsc-action` のヘッダで呼び、
+ * 引数（直前の状態と入力した値）を `encodeReply` で本文にする
+ * （`vinext/dist/server/app-browser-server-action-client.js` の `invokeClientServerAction`）
+ */
+export const encodeActionCall = async (
+  actionFields: Record<string, string>,
+  values: Record<string, string | number>,
+) => {
+  const { id, previousState } = readBoundAction(actionFields);
+  const form = new FormData();
+  for (const [name, value] of Object.entries(values)) form.append(name, String(value));
+  const encoded = new Response(await encodeReply([previousState, form]));
+  return {
+    body: await encoded.arrayBuffer(),
+    headers: {
+      'content-type': encoded.headers.get('content-type') ?? '',
+      rsc: '1',
+      'x-rsc-action': id,
+      'next-action': id,
+    },
   };
 };
