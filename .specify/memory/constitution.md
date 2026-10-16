@@ -1,9 +1,8 @@
 <!--
 Sync Impact Report
-- Version change: 3.0.0 → 3.1.0
+- Version change: 3.1.0 → 3.1.1
 - Modified constraints:
-  - Cacheability: 応答が `docs/REQUIREMENTS.md` の NFR-08 と NFR-09 を満たすことを加えた。
-    根拠に ADR-0008 を加えた
+  - Cacheability: NFR-08 と NFR-09 の文の書き写しをやめ、ID で参照するようにした。意味は変えない
 - Added sections: なし
 - Removed sections: なし
 - Templates requiring updates: なし
@@ -106,9 +105,7 @@ Sync Impact Report
 データを読んでから決まる 404 と 403 は、`src/proxy.ts` が描画の前に決める。
 `tests/unit/proxy.test.ts` が検査する。
 
-応答は、`docs/REQUIREMENTS.md` の NFR-08（公開していない内容は、その公開範囲の外の人への応答に
-含まれない）と NFR-09（認証を要する応答と、公開していない内容を含む応答は、どのキャッシュにも
-残らない）を満たす。
+応答は、`docs/REQUIREMENTS.md` の NFR-08 と NFR-09 を満たす。
 
 根拠: ADR-0008、ADR-0018、ADR-0040
 
@@ -134,4 +131,4 @@ Decided Constraints の根拠は `docs/decisions/` が持つ。根拠を転記�
 修正は `/speckit-constitution` による。手で書き換えない。版は semver で付ける。
 原則の削除と再定義は MAJOR、原則と節の追加は MINOR、字句の修正は PATCH とする。
 
-**Version**: 3.1.0 | **Ratified**: 2026-09-08 | **Last Amended**: 2026-10-16
+**Version**: 3.1.1 | **Ratified**: 2026-09-08 | **Last Amended**: 2026-10-16
