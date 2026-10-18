@@ -132,7 +132,7 @@ npm run verify:deploy -- https://<version>-synsk-me.is-syunsukekobashi.workers.d
 
 プレビュー配信は全体が Access の後ろにあるため、Access のログインへの移動を見る検査のほかは、service token を `CF-Access-Client-Id` と `CF-Access-Client-Secret` のヘッダに付けて取る。`CLOUDFLARE_ACCESS_CLIENT_ID_PREVIEW` と `CLOUDFLARE_ACCESS_CLIENT_SECRET_PREVIEW` が欠けていれば検査は落ちる。本番には付けない。本番の Access は `/dash` だけを守り、検査は `/dash` がログインへ移されることを鍵なしで確かめるため、本番の service token は持たない。
 
-エッジのキャッシュの検査はブラウザ相当のヘッダで行う。vinext の manifest は warm 時に確認した識別子だけを許可するため、素の `curl` では `BYPASS` が返る。
+エッジのキャッシュの検査は、訪問者のブラウザと同じ形のヘッダで行う。
 
 **予算の検査は、HTML もチャンクもキャッシュを迂回して取る。** 昇格の直後、キャッシュには新しい版の HTML があり、Worker はまだ古い版で応答しうる。キャッシュ済みの HTML が参照するチャンクを古い版に求めると 404 になる（[ADR-0022](./docs/decisions/0022-deploy-version-window.md)）。
 

@@ -22,7 +22,7 @@ vinext 1.0.0-beta.9 から 1.2.1 に上げて、2026-10-17 から 2026-10-18 に
 ## Decision Drivers
 
 * vinext の脆弱性を、修正のある版で塞ぐ
-* 下書き・削除した note を、作り手以外に見せない（`specs/005-note-write-and-read/spec.md` の FR-005、FR-011）
+* 下書き・削除した note を、作り手以外に見せない
 * デプロイが Access で止まらない
 
 ## Considered Options
