@@ -40,7 +40,8 @@ const TextLink = ({ href, children }: { href: string; children: React.ReactNode 
   </Link>
 );
 
-const Page = () => {
+const Page = async () => {
+  'use cache';
   return (
     <div
       className={`${sourceSans.className} min-h-screen bg-background text-foreground`}

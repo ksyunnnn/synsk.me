@@ -5,8 +5,8 @@
 // note の応答がキャッシュに載らないこと。
 // - HTML と画像の経路が返るか（#59）
 // - OG 画像とアイコンが実体のある PNG か（satori と resvg が workerd で動くか）
-// - HTML がエッジのキャッシュに載るか（#38 の後退。`/` の `'use cache'` か
-//   デプロイの `--experimental-warm-cdn-cache` が落ちると当たらなくなる）。synsk.me でのみ見る
+// - HTML がエッジのキャッシュに載るか（#38 の後退。`/` の `'use cache'` が落ちると
+//   当たらなくなる）。synsk.me でのみ見る
 // - アクセス解析のタグが埋まるか（#38。`next.config.js` の env が壊れると消える）
 // - HTML とクライアント JS が予算に収まるか
 // - 作り手の画面が Access の後ろにあり、存在しない note がキャッシュに載らないか
@@ -52,8 +52,7 @@ const BASE = (process.argv[2] ?? process.env.VERIFY_BASE_URL ?? 'https://synsk.m
 /** gzip 後のバイト数の上限。2026-09-04 の実測は HTML 4.6 KB、JS 157 KB。 */
 const BUDGET = { html: 8_000, js: 200_000 };
 
-/** キャッシュの判定はブラウザ相当のヘッダでないと通らない。vinext の manifest が
- *  warm 時に確認した識別子だけを許可するため。 */
+/** 訪問者のブラウザと同じ形の要求で、エッジのキャッシュを見る。 */
 const BROWSER_HEADERS = {
   'User-Agent':
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',
@@ -210,7 +209,7 @@ async function checkArchiveBanner() {
   );
 }
 
-/** 2 回目の取得でエッジのキャッシュに当たることを見る。warm の直後は当たるまで
+/** 2 回目の取得でエッジのキャッシュに当たることを見る。デプロイの直後は当たるまで
  *  間があるため待つ。
  *
  *  ブランチの Preview では Workers Cache が有効にならず、`cf-cache-status` が付かない

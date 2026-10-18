@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   SEEDED_NOTES,
@@ -551,28 +550,5 @@ describe('D1 から読めない', () => {
 
   it('作り手の JWT がなければ、D1 を読む前に 403', async () => {
     expect((await ctx.server.fetch('/dash')).status).toBe(403);
-  });
-});
-
-describe('デプロイ時のキャッシュ判定', () => {
-  it('ビルド出力の判定の対象に /dash 配下が入らない', async () => {
-    // specs/005-note-write-and-read/research.md の R7
-    const manifest = JSON.parse(
-      await readFile('./dist/server/vinext-prerender-paths.json', 'utf8'),
-    ) as {
-      paths: string[];
-      appPaths: string[];
-      rscPaths: string[];
-      routePatterns: Record<string, unknown>;
-    };
-    const probed = [
-      ...manifest.paths,
-      ...manifest.appPaths,
-      ...manifest.rscPaths,
-      ...Object.keys(manifest.routePatterns),
-    ];
-    // 判定の対象がビルドの誤りで空になっていないこと
-    expect(probed).toContain('/');
-    expect(probed.filter((path) => path === '/dash' || path.startsWith('/dash/'))).toEqual([]);
   });
 });

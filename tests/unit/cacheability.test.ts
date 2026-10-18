@@ -65,8 +65,8 @@ describe('エッジのキャッシュに載る条件（設定側）', () => {
    * 1 つでも欠けると全経路が `cf-cache-status: BYPASS` になる。静的に確かめられるので、
    * この層に置く。
    *
-   * 3 つ目（`--experimental-warm-cdn-cache` の二段アップロード）はデプロイの
-   * 経路にあり、ここでは確かめられない。`scripts/verify-deploy.mjs` が持つ。
+   * 3 つ目（デプロイ時の判定）は ADR-0042 で外した。エッジのキャッシュに当たるかは
+   * `scripts/verify-deploy.mjs` が本番で確かめる。
    */
   it('vite.config.ts が cdnAdapter を使う', async () => {
     const source = await readFile(join(process.cwd(), 'vite.config.ts'), 'utf8');
@@ -78,5 +78,20 @@ describe('エッジのキャッシュに載る条件（設定側）', () => {
     const source = await readFile(join(process.cwd(), 'wrangler.jsonc'), 'utf8');
     expect(source).toMatch(/"cache"\s*:\s*\{[^}]*"enabled"\s*:\s*true/);
     expect(source).toMatch(/"version_metadata"\s*:\s*\{[^}]*"binding"/);
+  });
+});
+
+describe('デプロイ時のキャッシュ判定', () => {
+  it('デプロイは本番の /dash へ判定の要求を送らない', async () => {
+    // 判定の要求は本番の URL へ送られ、Access が守る /dash は 302 を返してデプロイを止める。
+    // vinext 1.2 には /dash を判定から外す手段がないため、判定そのものを行わない（ADR-0042）。
+    // 判定を起動するフラグは `@vinext/cloudflare/dist/deploy.js` の `warming` が決める
+    const { scripts } = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as {
+      scripts: Record<string, string>;
+    };
+    expect(scripts.deploy).toContain('vinext-cloudflare deploy');
+    expect(scripts.deploy).not.toMatch(
+      /--(experimental-)?(traffic-aware-)?warm-(cdn-)?cache|--experimental-tpr/,
+    );
   });
 });

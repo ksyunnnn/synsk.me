@@ -9,12 +9,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * `src/proxy.ts` が、描画の前に 404 と 403 の画面へ rewrite するかを確かめる。
  *
- * vinext 1.0.0-beta.9 は、ストリーミングを始めずに描画を終えるため、`proxy` がなくても
+ * vinext は、HTML の要求ではストリーミングを始めずに描画を終えるため、`proxy` がなくても
  * ページの `notFound()` と `forbidden()` で 404 と 403 になる。結合テストでは `proxy` が
  * 働いたかを見分けられないため、ここで判定そのものを確かめる。
  *
- * 経路の照合には Next.js 16.3.4 の `unstable_doesMiddlewareMatch` を使う。公式の文書は
- * `unstable_doesProxyMatch` と書くが、16.3.4 にはまだない
+ * 経路の照合には `unstable_doesMiddlewareMatch` を使う。公式の文書は
+ * `unstable_doesProxyMatch` と書くが、Next.js 16.4.2 にはまだない
  */
 
 const queries = vi.hoisted(() => ({
