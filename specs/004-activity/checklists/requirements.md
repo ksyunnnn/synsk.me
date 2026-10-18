@@ -1,4 +1,4 @@
-# Specification Quality Checklist: timeline
+# Specification Quality Checklist: activity
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-09-08
