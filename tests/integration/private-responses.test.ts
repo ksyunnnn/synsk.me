@@ -31,7 +31,11 @@ const AS_RSC = { headers: { rsc: '1' }, query: '?_rsc' };
  * 403 と 404 を決めるため、状態コードは 200 のまま、本文に
  * `NEXT_HTTP_ERROR_FALLBACK;<状態コード>` を含める（ADR-0042）
  */
-const readExpected = async (res: Response, as: typeof AS_HTML, status: number) => {
+const readExpected = async (
+  res: { status: number; text: () => Promise<string> },
+  as: typeof AS_HTML,
+  status: number,
+) => {
   const text = await res.text();
   if (as === AS_RSC && status !== 200) {
     expect(res.status).toBe(200);
