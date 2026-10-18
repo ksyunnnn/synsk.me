@@ -1,4 +1,3 @@
-import { readFile } from 'node:fs/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import {
   SEEDED_NOTES,
@@ -551,17 +550,5 @@ describe('D1 から読めない', () => {
 
   it('作り手の JWT がなければ、D1 を読む前に 403', async () => {
     expect((await ctx.server.fetch('/dash')).status).toBe(403);
-  });
-});
-
-describe('デプロイ時のキャッシュ判定', () => {
-  it('デプロイは本番の /dash へ判定の要求を送らない', async () => {
-    // 判定の要求は本番の URL へ送られ、Access が守る /dash は 302 を返してデプロイを止める。
-    // vinext 1.2 には /dash を判定から外す手段がないため、判定そのものを行わない（ADR-0042）
-    const { scripts } = JSON.parse(await readFile('./package.json', 'utf8')) as {
-      scripts: Record<string, string>;
-    };
-    expect(scripts.deploy).toContain('vinext-cloudflare deploy');
-    expect(scripts.deploy).not.toMatch(/--(experimental-)?warm-(cdn-)?cache/);
   });
 });

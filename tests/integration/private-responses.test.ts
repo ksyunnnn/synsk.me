@@ -42,6 +42,8 @@ const readExpected = async (
     expect(text).toContain(`NEXT_HTTP_ERROR_FALLBACK;${status}`);
   } else {
     expect(res.status).toBe(status);
+    // RSC の要求では 403 と 404 も 200 で返るため、本文で拒否でないことを見る
+    if (as === AS_RSC) expect(text).not.toContain('NEXT_HTTP_ERROR_FALLBACK');
   }
   return text;
 };
@@ -141,6 +143,16 @@ describe('D1 から読める', () => {
         redirect: 'manual',
       });
       await readExpected(res, as, 403);
+      expectNoStore(res);
+    });
+
+    it('訪問者の、公開中の /notes/$slug は、どのキャッシュにも残らない', async () => {
+      // 保存すると、削除や下書きへの戻しの後も、題と本文が返り続ける
+      const res = await ctx.server.fetch(`/notes/${published.slug}${as.query}`, {
+        headers: as.headers,
+        redirect: 'manual',
+      });
+      expect(await readExpected(res, as, 200)).toContain(published.title);
       expectNoStore(res);
     });
 

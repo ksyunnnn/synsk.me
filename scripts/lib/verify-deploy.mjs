@@ -39,8 +39,9 @@ export function isPng(bytes) {
  *
  * 昇格の直後、キャッシュには新しい版の HTML があり、Worker はまだ古い版で
  * 応答することがある。キャッシュ済みの HTML から抽出したチャンクを古い版に
- * 求めると 404 になる（#71）。クエリを一意にすると vinext の cacheability
- * manifest が許可する識別子から外れ、配信中の版そのものが応答する。
+ * 求めると 404 になる（#71）。vinext は URL 全体をキャッシュのキーに含めるため
+ * （`@vinext/cloudflare/dist/cache/cdn-adapter.worker.js` の `createCacheFacingRequest`）、
+ * クエリを一意にすると保存された応答に当たらず、配信中の版そのものが応答する。
  *
  * @param {string} base
  * @param {string} path

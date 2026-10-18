@@ -8,9 +8,9 @@ import { isNoStore } from '../../scripts/lib/verify-deploy.mjs';
  *
  * vinext 1.2 は、ページの応答を Workers Cache を通して返し、応答のキャッシュの指示で
  * 保存するかを決める（`@vinext/cloudflare/dist/cache/cdn-adapter.worker.js` の
- * `forbidsSharedStorage`）。保存できる応答は、外に出るときに
- * `private, max-age=0, must-revalidate` に書き換わり、保存できない応答は `no-store` のまま
- * 出る。保存そのものは手元の workerd で起きないため、ここでは外に出る指示を見る。
+ * `forbidsSharedStorage`）。保存できない応答は `no-store` のまま外に出る。保存そのものは
+ * 手元の workerd で起きないため、ここでは外に出る指示を見て、`no-store` でないものを
+ * 保存できる応答とみなす。
  *
  * キャッシュしてよいのは、誰が要求しても同じになる応答だけ。作り手の画面と note の
  * 画面がキャッシュに載ると、作り手の画面や、削除した note が訪問者に返りうる。
@@ -18,7 +18,7 @@ import { isNoStore } from '../../scripts/lib/verify-deploy.mjs';
 
 const CONFIG = './dist/server/wrangler.json';
 
-/** `vinext build` が見つけた、動的なセグメントを持たない経路 */
+/** `vinext build` が見つけた、動的なセグメントを持たない経路（HTML と RSC） */
 const PRERENDER_PATHS = './dist/server/vinext-prerender-paths.json';
 
 /**
@@ -34,8 +34,15 @@ const CACHEABLE_PATHS = [
   '/resume',
 ];
 
-/** 外に出る指示が、Workers Cache に保存できた応答のもの */
-const STORABLE_CACHE_CONTROL = 'private, max-age=0, must-revalidate';
+/**
+ * ビルドの経路の一覧に載らない、画像を返す経路。データも認証も使わず、誰が要求しても
+ * 同じ画像になるため、キャッシュに載ってよい。Next.js の既定の
+ * `public, max-age=0, must-revalidate` を返す
+ */
+const IMAGE_PATHS = ['/icon', '/opengraph-image'];
+
+/** 画面の間を移るときの RSC の要求（`tests/integration/private-responses.test.ts` と同じ形） */
+const AS_RSC = { headers: { rsc: '1' }, query: '?_rsc' };
 
 let server: ReturnType<typeof createTestHarness>;
 
@@ -53,20 +60,29 @@ afterAll(async () => {
   await server?.close();
 });
 
-const isStorable = async (path: string) => {
-  const res = await server.fetch(path, { redirect: 'manual' });
+const isStorable = async (path: string, init: { headers?: Record<string, string> } = {}) => {
+  const res = await server.fetch(path, { ...init, redirect: 'manual' });
   await res.arrayBuffer();
-  return !isNoStore(res.headers) && res.headers.get('cache-control') === STORABLE_CACHE_CONTROL;
+  return !isNoStore(res.headers);
 };
 
 describe('エッジのキャッシュに載りうる経路', () => {
   it('誰が要求しても同じになる経路だけ', async () => {
-    const { paths } = JSON.parse(await readFile(PRERENDER_PATHS, 'utf8')) as { paths: string[] };
+    const { paths, rscPaths } = JSON.parse(await readFile(PRERENDER_PATHS, 'utf8')) as {
+      paths: string[];
+      rscPaths: string[];
+    };
     // 一覧の経路がビルドから消えていないこと
     expect(paths).toEqual(expect.arrayContaining(CACHEABLE_PATHS));
 
     const storable = [];
-    for (const path of paths) if (await isStorable(path)) storable.push(path);
-    expect(storable.sort()).toEqual([...CACHEABLE_PATHS].sort());
+    for (const path of [...paths, ...IMAGE_PATHS]) if (await isStorable(path)) storable.push(path);
+    expect(storable.sort()).toEqual([...CACHEABLE_PATHS, ...IMAGE_PATHS].sort());
+
+    const storableRsc = [];
+    for (const path of rscPaths)
+      if (await isStorable(`${path}${AS_RSC.query}`, { headers: AS_RSC.headers }))
+        storableRsc.push(path);
+    expect(CACHEABLE_PATHS).toEqual(expect.arrayContaining(storableRsc));
   });
 });

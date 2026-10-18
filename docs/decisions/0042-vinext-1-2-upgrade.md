@@ -51,8 +51,8 @@ vinext 1.0.0-beta.9 から 1.2.1 に上げて、2026-10-17 から 2026-10-18 に
 ### Confirmation
 
 - `tests/integration/private-responses.test.ts` が、RSC の要求の 403 と 404 が状態コード 200 と本文の `NEXT_HTTP_ERROR_FALLBACK` で返り、`no-store` で、題と本文を含めないことを検査する
-- `tests/integration/dash.test.ts` が、`package.json` の `deploy` がデプロイ時の判定を使わないことを検査する
-- `tests/integration/cache-candidates.test.ts` が、`/` が保存できる応答になることを検査する
+- `tests/unit/cacheability.test.ts` が、`package.json` の `deploy` がデプロイ時の判定を使わないことを検査する
+- `tests/integration/cache-candidates.test.ts` が、保存できる応答の経路（HTML・RSC・画像）が `CACHEABLE_PATHS` の中に収まることを検査する
 - `scripts/verify-deploy.mjs` が、本番で `/` の 2 回目が HIT を返すことを検査する
 
 ## Pros and Cons of the Options
