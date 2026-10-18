@@ -98,7 +98,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 **デプロイとバージョンのコマンドは `dist/server/wrangler.json` を指す。** `vinext build` はリポジトリ直下の `wrangler.jsonc` を読み、binding とアセットの位置を解決した設定を `dist/server/wrangler.json` に書き出す。直下の `wrangler.jsonc` を渡すと `dist/client` が未解決のまま扱われる。`--skip-build` はビルド コマンドとの二重ビルドを避ける。この欄はリポジトリから読めないため、デプロイの挙動が説明と合わないときは実装より先にここを見る。
 
-**デプロイ時のキャッシュ判定（`--warm-cache`）を使わない。** 判定は本番の URL の各経路へ要求を送り、Access が守る `/dash` は 302 を返してデプロイを止める。判定を使わなくても、`/` はエッジのキャッシュに載る（[ADR-0042](./docs/decisions/0042-vinext-1-2-upgrade.md)）。
+**デプロイ時のキャッシュ判定（`--warm-cache`）を使わない。** 判定は本番の URL の各経路へ要求を送り、Access が守る `/dash` は 302 を返してデプロイを止める。キャッシュに載せるページは `'use cache'` で選ぶ（[ADR-0042](./docs/decisions/0042-vinext-1-2-upgrade.md)）。
 
 `/` をキャッシュに載せるのは、ページの `'use cache'` と `cacheLife()` である。キャッシュは Cache Components で作り、`export const revalidate` と `export const dynamic` は書かない（ADR-0040）。
 
