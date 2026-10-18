@@ -13,7 +13,7 @@
 - `/dash` は Cloudflare Access とアプリケーションの中の JWT の検証の2段で守る（R2）
 - 訪問者の画面も作り手の画面もキャッシュに載せず、要求のたびに D1 から描画する（R3）
 - 書き込みは JavaScript なしで動くフォームと Server Action で作る（R4、R5）
-- `/dash` 配下を、デプロイ時のキャッシュ判定の対象から外す（R7）
+- デプロイ時のキャッシュ判定を使わず、Access の後ろの `/dash` でデプロイが止まらないようにする（R7、ADR-0042）
 
 ## Technical Context
 

@@ -65,8 +65,8 @@ describe('エッジのキャッシュに載る条件（設定側）', () => {
    * 1 つでも欠けると全経路が `cf-cache-status: BYPASS` になる。静的に確かめられるので、
    * この層に置く。
    *
-   * 3 つ目（`--experimental-warm-cdn-cache` の二段アップロード）はデプロイの
-   * 経路にあり、ここでは確かめられない。`scripts/verify-deploy.mjs` が持つ。
+   * 3 つ目（デプロイ時の判定）は ADR-0042 で外した。エッジのキャッシュに当たるかは
+   * `scripts/verify-deploy.mjs` が本番で確かめる。
    */
   it('vite.config.ts が cdnAdapter を使う', async () => {
     const source = await readFile(join(process.cwd(), 'vite.config.ts'), 'utf8');

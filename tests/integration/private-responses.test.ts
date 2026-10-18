@@ -26,6 +26,22 @@ const INPUT = { title: 'キャッシュの検査で入力した題', body: 'キ�
 const AS_HTML = { headers: {}, query: '' };
 const AS_RSC = { headers: { rsc: '1' }, query: '?_rsc' };
 
+/**
+ * 意図した応答であることを確かめ、本文を返す。RSC の要求では、vinext は描画を始めてから
+ * 403 と 404 を決めるため、状態コードは 200 のまま、本文に
+ * `NEXT_HTTP_ERROR_FALLBACK;<状態コード>` を含める（ADR-0042）
+ */
+const readExpected = async (res: Response, as: typeof AS_HTML, status: number) => {
+  const text = await res.text();
+  if (as === AS_RSC && status !== 200) {
+    expect(res.status).toBe(200);
+    expect(text).toContain(`NEXT_HTTP_ERROR_FALLBACK;${status}`);
+  } else {
+    expect(res.status).toBe(status);
+  }
+  return text;
+};
+
 /** どのキャッシュにも残らない形であることを確かめる。判定は `verify:deploy` と同じものを使う */
 const expectNoStore = (res: { headers: { get: (name: string) => string | null } }) => {
   expect(isNoStore(res.headers), `cache-control: ${res.headers.get('cache-control')}`).toBe(true);
@@ -102,8 +118,7 @@ describe('D1 から読める', () => {
         headers: { ...(await authorHeaders()), ...as.headers },
         redirect: 'manual',
       });
-      await res.arrayBuffer();
-      expect(res.status).toBe(200);
+      await readExpected(res, as, 200);
       expectNoStore(res);
     });
 
@@ -112,8 +127,7 @@ describe('D1 から読める', () => {
         headers: { ...(await authorHeaders()), ...as.headers },
         redirect: 'manual',
       });
-      await res.arrayBuffer();
-      expect(res.status).toBe(404);
+      await readExpected(res, as, 404);
       expectNoStore(res);
     });
 
@@ -122,8 +136,7 @@ describe('D1 から読める', () => {
         headers: as.headers,
         redirect: 'manual',
       });
-      await res.arrayBuffer();
-      expect(res.status).toBe(403);
+      await readExpected(res, as, 403);
       expectNoStore(res);
     });
 
@@ -134,8 +147,7 @@ describe('D1 から読める', () => {
           headers: as.headers,
           redirect: 'manual',
         });
-        await res.arrayBuffer();
-        expect(res.status).toBe(404);
+        await readExpected(res, as, 404);
         expectNoStore(res);
       },
     );
@@ -146,8 +158,7 @@ describe('D1 から読める', () => {
       headers: AS_RSC.headers,
       redirect: 'manual',
     });
-    const text = await res.text();
-    expect(res.status).toBe(404);
+    const text = await readExpected(res, AS_RSC, 404);
     expect(text).not.toContain(note.title);
     expect(text).not.toContain(note.body);
   });

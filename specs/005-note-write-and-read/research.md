@@ -165,6 +165,8 @@ Server Action は `src/features/note/server/actions.ts` に置き、`page.tsx` �
 
 ## R7. デプロイ時のキャッシュ判定と `/dash`
 
+> ADR-0042 で置き換えた。vinext 1.2 ではこの除外が効かないため、デプロイ時の判定そのものを使わない。以下は vinext 1.0.0-beta.9 での決定の記録。
+
 **Decision**:
 - `next.config.js` の `rewrites()` の `fallback` に、`/dash/:path*` から同じ経路への rewrite を置き、`/dash` 配下をデプロイ時のキャッシュ判定の対象から外す
 - 作り手であることを確かめられないとき、`src/proxy.ts` が `forbidden()` を呼ぶだけのページ（`/dash/forbidden`）へ rewrite し、403 を返す。proxy から 403 の応答を直接返さず、例外を投げない。ページも `forbidden()` で作り手を確かめる

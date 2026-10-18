@@ -13,9 +13,8 @@ import { createTestHarness } from 'wrangler';
  * 環境と設定が原因の欠陥を、こちらは変更が原因の欠陥を担う。Google SRE Book が
  * traditional test と production test を別系統と定義するのに従う。
  *
- * エッジのキャッシュはここで検査しない。ADR-0018 が定める 3 つ目の条件は
- * `--experimental-warm-cdn-cache` の二段アップロードで、ローカルの workerd では
- * 起きない。ここに書けば通るが何も守らない。
+ * エッジのキャッシュそのものはここで検査しない。Workers Cache への保存は、ローカルの
+ * workerd では起きない。外に出る指示は `cache-candidates.test.ts` が見る。
  */
 
 const CONFIG = './dist/server/wrangler.json';

@@ -555,24 +555,13 @@ describe('D1 から読めない', () => {
 });
 
 describe('デプロイ時のキャッシュ判定', () => {
-  it('ビルド出力の判定の対象に /dash 配下が入らない', async () => {
-    // specs/005-note-write-and-read/research.md の R7
-    const manifest = JSON.parse(
-      await readFile('./dist/server/vinext-prerender-paths.json', 'utf8'),
-    ) as {
-      paths: string[];
-      appPaths: string[];
-      rscPaths: string[];
-      routePatterns: Record<string, unknown>;
+  it('デプロイは本番の /dash へ判定の要求を送らない', async () => {
+    // 判定の要求は本番の URL へ送られ、Access が守る /dash は 302 を返してデプロイを止める。
+    // vinext 1.2 には /dash を判定から外す手段がないため、判定そのものを行わない（ADR-0042）
+    const { scripts } = JSON.parse(await readFile('./package.json', 'utf8')) as {
+      scripts: Record<string, string>;
     };
-    const probed = [
-      ...manifest.paths,
-      ...manifest.appPaths,
-      ...manifest.rscPaths,
-      ...Object.keys(manifest.routePatterns),
-    ];
-    // 判定の対象がビルドの誤りで空になっていないこと
-    expect(probed).toContain('/');
-    expect(probed.filter((path) => path === '/dash' || path.startsWith('/dash/'))).toEqual([]);
+    expect(scripts.deploy).toContain('vinext-cloudflare deploy');
+    expect(scripts.deploy).not.toMatch(/--(experimental-)?warm-(cdn-)?cache/);
   });
 });

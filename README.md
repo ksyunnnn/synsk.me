@@ -98,7 +98,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 **デプロイとバージョンのコマンドは `dist/server/wrangler.json` を指す。** `vinext build` はリポジトリ直下の `wrangler.jsonc` を読み、binding とアセットの位置を解決した設定を `dist/server/wrangler.json` に書き出す。直下の `wrangler.jsonc` を渡すと `dist/client` が未解決のまま扱われる。`--skip-build` はビルド コマンドとの二重ビルドを避ける。この欄はリポジトリから読めないため、デプロイの挙動が説明と合わないときは実装より先にここを見る。
 
-**`--experimental-warm-cdn-cache` を外すと HTML がエッジのキャッシュに載らない。** vinext がページをキャッシュ可能と判定する manifest は、この二段アップロード（版を 0% で置いて経路を probe し、判定結果を載せた版を上げ直す）でしか作られない。外した版は全経路が `cache-control: no-store` になる。`--warm-cdn-target` には本番の URL が要る。warm に失敗した場合、新しい版は 0% のまま留まり、既存の版が 100% を保つ。その場合は `npx wrangler versions deploy` で昇格を選ぶ。
+**デプロイ時のキャッシュ判定（`--warm-cache`）を使わない。** 判定は本番の URL の各経路へ要求を送り、Access が守る `/dash` は 302 を返してデプロイを止める。判定を使わなくても、`/` はエッジのキャッシュに載る（[ADR-0042](./docs/decisions/0042-vinext-1-2-upgrade.md)）。
 
 `/` をキャッシュに載せるのは、ページの `'use cache'` と `cacheLife()` である。キャッシュは Cache Components で作り、`export const revalidate` と `export const dynamic` は書かない（ADR-0040）。
 
@@ -115,7 +115,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | `/`、`/icon`、`/opengraph-image` が 200 を返す | 経路の設定、ビルドの出力 |
 | `/icon` と `/opengraph-image` が実体のある PNG を返す | `workerd` 上の satori と resvg |
 | `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
-| `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `'use cache'` と `cacheLife()`、デプロイの `--experimental-warm-cdn-cache` |
+| `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `'use cache'` と `cacheLife()` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
 | 認証なしの `/dash` と `/dash/notes/new` が Access のログイン（`*.cloudflareaccess.com`）へ移される | Access のアプリケーションの対象の経路 |
