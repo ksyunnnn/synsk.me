@@ -64,7 +64,7 @@ def kinds_note(x, y):
     out.append(f'<text x="{x + 16}" y="{y + 76 + len(rows) * 20 + 4}" fill="{MUTED}" font-size="9" font-family="{SANS}">source の値と kind は activity_source に持ち、外部キーで指す</text>')
     out.append(f'<text x="{x + 16}" y="{y + 76 + len(rows) * 20 + 20}" fill="{MUTED}" font-size="9" font-family="{SANS}">行の種類ごとの決まり（url・note_id の有無）は CHECK で守る</text>')
     out.append(f'<text x="{x + 16}" y="{y + 76 + len(rows) * 20 + 36}" fill="{MUTED}" font-size="9" font-family="{SANS}">note の行の題と可視性は持たず、読むときに note から取る</text>')
-    out.append(f'<text x="{x + 16}" y="{y + 76 + len(rows) * 20 + 52}" fill="{MUTED}" font-size="9" font-family="{SANS}">索引: (visibility, sort_at, id)</text>')
+    out.append(f'<text x="{x + 16}" y="{y + 76 + len(rows) * 20 + 52}" fill="{MUTED}" font-size="9" font-family="{SANS}">索引: (sort_at, id)</text>')
     return out
 
 
@@ -110,9 +110,8 @@ activity = [
     ("# id", "integer"), ("→ source", "text"),
     ("source_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
     ("description", "text · 空可"), ("thumbnail_url", "text · 空可"), ("published_at", "text · 空可"),
-    ("sort_at", "生成列（VIRTUAL）"), ("visibility", "text（問い 5）· 空可"),
+    ("sort_at", "生成列（VIRTUAL）"),
     ("→ project_id", "integer · unique · 空可"), ("→ note_id", "integer · unique · 空可"),
-    ("gone_at", "text · 空可（外部）"),
     ("happened_on", "text · 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"),
 ] + TS
 fetch = [("# → source", "text"), ("fetched_at", "text"), ("ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可")]
@@ -174,10 +173,10 @@ el += label(840, 422, "0..1") + label(1140, 422, "0..1")
 el += path("M 1460,300 H 1500")
 el += label(1472, 282, "0..N") + label(1492, 318, "1")
 # timeline → note
-el += path("M 1290,476 V 656")
+el += path("M 1290,436 V 656")
 el += path("M 1600,236 V 260")
 el += label(1618, 250, "0..1") + label(1588, 250, "1")
-el += label(1312, 482, "0..1") + label(1312, 638, "0..1")
+el += label(1312, 442, "0..1") + label(1312, 638, "0..1")
 # note の中
 el += path("M 1420,716 H 1480")
 el += label(1432, 698, "1") + label(1460, 698, "1..N")
