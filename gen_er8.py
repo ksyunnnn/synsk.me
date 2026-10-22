@@ -110,8 +110,8 @@ activity = [
     ("# id", "integer"), ("→ source", "text"),
     ("source_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
     ("description", "text · 空可"), ("thumbnail_url", "text · 空可"), ("published_at", "text · 空可"),
-    ("collected_at", "text"), ("sort_at_override", "text · 空可"), ("sort_at", "生成列（VIRTUAL）"),
-    ("comment", "text · 空可"), ("category_override", "text（問い 9）"), ("visibility", "text（問い 5）· 空可"),
+    ("collected_at", "text"), ("sort_at", "生成列（VIRTUAL）"),
+    ("category_override", "text（問い 9）"), ("visibility", "text（問い 5）· 空可"),
     ("→ project_id", "integer · unique · 空可"), ("→ note_id", "integer · unique · 空可"),
     ("happened_on", "text · 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"),
 ] + TS
@@ -174,10 +174,10 @@ el += label(840, 422, "0..1") + label(1140, 422, "0..1")
 el += path("M 1460,300 H 1500")
 el += label(1472, 282, "0..N") + label(1492, 318, "1")
 # timeline → note
-el += path("M 1290,536 V 656")
+el += path("M 1290,496 V 656")
 el += path("M 1600,236 V 260")
 el += label(1618, 250, "0..1") + label(1588, 250, "1")
-el += label(1312, 542, "0..1") + label(1312, 638, "0..1")
+el += label(1312, 502, "0..1") + label(1312, 638, "0..1")
 # note の中
 el += path("M 1420,716 H 1480")
 el += label(1432, 698, "1") + label(1460, 698, "1..N")
