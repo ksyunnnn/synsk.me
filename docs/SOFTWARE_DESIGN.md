@@ -26,6 +26,7 @@
   - Anti-Corruption Layer
   - 失敗の表し方
   - 見た目と操作を分ける
+  - 列の名前を意味ごとに1つにする
 
 ---
 
@@ -307,4 +308,33 @@ const view = (
 一般名: headless UI。ライブラリの分類として通じる呼び名で、提唱者による定義はない。
 
 もとにした原則: 5、9
+手本のファイル: 未定（その形を最初に書いたときに足す）
+
+### 列の名前を意味ごとに1つにする
+
+同じ意味の列に表ごとに別の名前を付けたり、同じ値を表ごとに違う意味で使ったりすると、条件を書き違える。ある表の `public` が実際の値を出し、別の表の `public` が秘匿化した値を出すなら、実名を出す条件を逆に書ける。1つの意味に1つの名前を当て、列の性質は接尾辞と接頭辞で表す。
+
+- 外部キーは `<指す表>_id` にする。外部キーでない列に `_id` を付けない
+- 真偽の列は `is_` で始める
+- 年月と日付の列は `_on`、日時の列は `_at` で終える
+- 秘匿化した値の列は `_masked` で終える
+- 「公開」は、訪問者に見せることだけを指す。訪問者に見せるかは `status`（`draft`・`published`）で表す
+
+Bad: 外部キーでない列に `_id` を付け、秘匿化するかを公開範囲の名前で表す。
+
+```sql
+CREATE TABLE activity (source_id TEXT);              -- 取得元での記事の ID
+CREATE TABLE project (visibility TEXT);              -- 'public' なら実際の値で出す
+```
+
+Good: 名前から列の性質が読める。
+
+```sql
+CREATE TABLE activity (external_id TEXT);
+CREATE TABLE project (is_masked INTEGER NOT NULL CHECK (is_masked IN (0, 1)));
+```
+
+一般名との違い: ユビキタス言語（Evans、Domain-Driven Design）は、話す言葉とコードの言葉を1つに揃えるところまで。接尾辞と接頭辞で列の性質を表す決まりは、synsk.me が足したもの。
+
+もとにした原則: 1
 手本のファイル: 未定（その形を最初に書いたときに足す）
