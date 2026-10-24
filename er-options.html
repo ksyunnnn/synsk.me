@@ -61,8 +61,7 @@
       <h1>synsk.me の DB 設計案（20 の表と 1 つのビュー）</h1>
       <p class="note">
         列の名前は仮。どの表にも割り当てていないデータ（プロフィール系・note
-        の更新日など）は図にない。origin は外部か synsk.me
-        の中か（external・internal）。職歴のスキルは表に持たず、同じ組織で期間が重なる実績から求める。link_preview
+        の更新日など）は図にない。職歴のスキルは表に持たず、同じ組織で期間が重なる実績から求める。link_preview
         は版の外に持ち、外部キーでつながない（本文の URL で引く）。media は
         note・project・career・activity（life event）の画像を持ち、図では note
         との線だけを描く。activity の一覧は activity_feed のビューで読み、note と project は
@@ -818,7 +817,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            visibility
+            status
           </text>
           <text
             x="284"
@@ -1244,7 +1243,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            type
+            kind
           </text>
           <text
             x="529"
@@ -1881,7 +1880,7 @@
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
             text-anchor="end"
           >
-            text · CHECK
+            text · CHECK（意味は未決）
           </text>
           <text
             x="596"
@@ -1961,7 +1960,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            実績。type: application・talk・event・other
+            実績。kind: application・talk・event・other
           </text>
           <text
             x="596"
@@ -2008,7 +2007,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            type
+            kind
           </text>
           <text
             x="804"
@@ -2084,7 +2083,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            visibility
+            is_masked
           </text>
           <text
             x="804"
@@ -2094,7 +2093,7 @@
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
             text-anchor="end"
           >
-            text · CHECK
+            integer
           </text>
           <text
             x="596"
@@ -2421,7 +2420,7 @@
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
             text-anchor="end"
           >
-            text · CHECK
+            text · CHECK（意味は未決）
           </text>
           <text
             x="596"
@@ -2786,7 +2785,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            source_id
+            external_id
           </text>
           <text
             x="1444"
@@ -2862,7 +2861,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            thumbnail_url
+            image_url
           </text>
           <text
             x="1444"
@@ -3082,7 +3081,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            ok
+            is_ok
           </text>
           <text
             x="1684"
@@ -3136,7 +3135,7 @@
             x="1500"
             y="260"
             width="200"
-            height="136"
+            height="116"
             rx="6"
             fill="#ffffff"
             stroke="#2d3142"
@@ -3207,30 +3206,11 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            origin
-          </text>
-          <text
-            x="1684"
-            y="356"
-            fill="#4f5d75"
-            font-size="10"
-            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
-            text-anchor="end"
-          >
-            text · CHECK
-          </text>
-          <text
-            x="1516"
-            y="376"
-            fill="#2d3142"
-            font-size="10"
-            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
-          >
             kind
           </text>
           <text
             x="1684"
-            y="376"
+            y="356"
             fill="#4f5d75"
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -4317,7 +4297,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            source_id
+            external_id
           </text>
           <text
             x="56"
@@ -4466,8 +4446,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            公開範囲と状態の列（*.visibility・note.status・note.card_image・activity_source.kind）は
-            CHECK で値を閉じる
+            状態と分類の列（*.status・*.visibility・*.kind・note.card_image）は CHECK で値を閉じる
           </text>
           <text
             x="416"
@@ -4525,7 +4504,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            activity: UNIQUE(source, source_id)。source_id が空の行は UNIQUE(source, url)
+            activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)
           </text>
           <text
             x="416"
@@ -4623,7 +4602,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            # name
+            # skill_name
           </text>
           <text
             x="529"
@@ -4703,7 +4682,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            # name
+            # skill_name
           </text>
           <text
             x="284"
@@ -4722,7 +4701,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            years
+            years_override
           </text>
           <text
             x="284"

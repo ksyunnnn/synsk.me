@@ -41,7 +41,7 @@ def rel_label(cx, y_top, text):
 
 def kinds_note(x, y):
     rows = [
-        ("外部の項目", "zenn など", "article など", "source_id"),
+        ("外部の項目", "zenn など", "article など", "external_id"),
         ("life event", "life_event", "life_event", "id"),
         ("想定外のサイト", "unlisted", "article", "url"),
     ]
@@ -68,13 +68,13 @@ def kinds_note(x, y):
 def rules_note(x, y):
     lines = [
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
-        "公開範囲と状態の列（*.visibility・note.status・note.card_image・activity_source.kind）は CHECK で値を閉じる",
+        "状態と分類の列（*.status・*.visibility・*.kind・note.card_image）は CHECK で値を閉じる",
         "年月・日付の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",
         "note.status が公開なら、note.published_revision_id と note.published_at は空でない（CHECK）",
         "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガーで拒む",
-        "activity: UNIQUE(source, source_id)。source_id が空の行は UNIQUE(source, url)",
+        "activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）",
         "id は DB の外に出さない（URL は slug、R2 は storage_key）。R2 のバケットは公開せず、Worker を通して配る",
@@ -113,29 +113,29 @@ organization = [("# id", "integer"), ("name", "text · unique"), ("name_masked",
 career = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月）"),
     ("ended_on", "text（年月）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
-    ("visibility", "text · CHECK"),
+    ("visibility", "text · CHECK（意味は未決）"),
 ] + TS
 project = [
-    ("# id", "integer"), ("→ organization_id", "integer"), ("type", "text · CHECK"),
-    ("slug", "text · unique"), ("title", "text"), ("title_masked", "text"), ("visibility", "text · CHECK"),
+    ("# id", "integer"), ("→ organization_id", "integer"), ("kind", "text · CHECK"),
+    ("slug", "text · unique"), ("title", "text"), ("title_masked", "text"), ("is_masked", "integer"),
     ("is_highlighted", "integer"), ("→ card_media_id", "integer · 空可"), ("started_on", "text（年月）"),
     ("ended_on", "text（年月）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
 ] + TS
 education = [
     ("# id", "integer"), ("school", "text"), ("department", "text · 空可"),
     ("started_on", "text（年月）"), ("ended_on", "text（年月）· 空可"), ("remarks", "text · 空可"),
-    ("visibility", "text · CHECK"),
+    ("visibility", "text · CHECK（意味は未決）"),
 ] + TS
 skill = [("# id", "integer"), ("name", "text · unique · NOCASE"), ("years_override", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
     ("# id", "integer"), ("→ source", "text"),
-    ("source_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
-    ("description", "text · 空可"), ("thumbnail_url", "text · 空可"), ("published_at", "text · 空可"),
+    ("external_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
+    ("description", "text · 空可"), ("image_url", "text · 空可"), ("published_at", "text · 空可"),
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
     ("happened_on", "text · 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"),
 ] + TS
-fetch = [("# → source", "text"), ("fetched_at", "text"), ("ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可")]
+fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可")]
 note = [
     ("# id", "integer"), ("slug", "text · unique"), ("status", "text · CHECK"),
     ("→ published_revision_id", "integer · 空可"), ("published_at", "text · 空可"),
@@ -146,12 +146,12 @@ media = [("# id", "integer"), ("→ note_id", "integer · 空可"), ("→ projec
 synd = [("# id", "integer"), ("→ note_id", "integer"), ("url", "text · unique")] + C
 link_preview = [("# id", "integer"), ("url", "text · unique"), ("title", "text · 空可"), ("image_url", "text · 空可"), ("fetched_at", "text")]
 resume = [
-    ("# id", "integer"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("visibility", "text · CHECK"),
+    ("# id", "integer"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),
     ("limited_token_hash", "text · unique · 空可"), ("limited_expires_at", "text · 空可"),
 ] + TS
 YM = [("started_on", "text（年月）"), ("ended_on", "text（年月）· 空可")]
 resume_career = [("# id", "integer"), ("→ resume_id", "integer"), ("→ career_id", "integer · 空可"), ("organization_name", "text"), ("role", "text")] + YM + [("description", "text · 空可"), ("url", "text · 空可")]
-resume_project = [("# id", "integer"), ("→ resume_id", "integer"), ("→ project_id", "integer · 空可"), ("organization_name", "text"), ("type", "text · CHECK"), ("title", "text")] + YM + [("description", "text · 空可"), ("url", "text · 空可")]
+resume_project = [("# id", "integer"), ("→ resume_id", "integer"), ("→ project_id", "integer · 空可"), ("organization_name", "text"), ("kind", "text · CHECK"), ("title", "text")] + YM + [("description", "text · 空可"), ("url", "text · 空可")]
 resume_education = [("# id", "integer"), ("→ resume_id", "integer"), ("→ education_id", "integer · 空可"), ("school", "text"), ("department", "text · 空可")] + YM + [("remarks", "text · 空可")]
 
 el = []
@@ -215,13 +215,13 @@ el += entity(335, 330, 210, "resume_project", "職務経歴書に写した実績
 el += entity(335, 780, 210, "resume_education", "職務経歴書に写した学歴", resume_education)
 el += entity(880, 60, 200, "organization", "組織。会社・団体・自営業（個人）", organization)
 el += entity(580, 60, 240, "career", "職歴。組織にオーナーが所属した履歴", career)
-el += entity(580, 416, 240, "project", "実績。type: application・talk・event・other", project)
+el += entity(580, 416, 240, "project", "実績。kind: application・talk・event・other", project)
 el += entity(580, 832, 240, "education", "学歴", education)
 el += entity(880, 480, 200, "skill", "スキル。経験年数は実績から計算", skill)
 el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", project_skill)
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
-el += entity(1500, 260, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("origin", "text · CHECK"), ("kind", "text · CHECK")])
+el += entity(1500, 260, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
 el += entity(1500, 404, 200, "activity_feed", "一覧。3 つの表を UNION ALL でつなぐ", [("activity", "外部・life event"), ("note", "公開中だけ"), ("project", "非公開は秘匿化"), ("並び", "(日付, 種類, id)")], kind="VIEW")
 el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
 el += entity(1480, 656, 220, "note_revision", "note の版。保存と公開のたびに 1 行", revision)
@@ -230,8 +230,8 @@ el += entity(1480, 880, 220, "syndication", "note を転載した先の URL（PO
 el += entity(1480, 1056, 220, "link_preview", "URL カードの情報。本文の URL で引く", link_preview)
 el += kinds_note(40, 1060)
 el += rules_note(400, 1120)
-el += entity(335, 640, 210, "resume_project_skill", "写した実績で使ったスキル", [("# → resume_project_id", "integer"), ("# name", "text")])
-el += entity(40, 400, 260, "resume_skill_override", "写した経験年数の上書き（上書きしたものだけ）", [("# → resume_id", "integer"), ("# name", "text"), ("years", "integer")])
+el += entity(335, 640, 210, "resume_project_skill", "写した実績で使ったスキル", [("# → resume_project_id", "integer"), ("# skill_name", "text")])
+el += entity(40, 400, 260, "resume_skill_override", "写した経験年数の上書き（上書きしたものだけ）", [("# → resume_id", "integer"), ("# skill_name", "text"), ("years_override", "integer")])
 el += legend()
 body = "\n      ".join(el)
 svg = (
@@ -265,7 +265,7 @@ html = f'''<!DOCTYPE html>
   <div class="frame">
     <p class="eyebrow">ER · #72</p>
     <h1>synsk.me の DB 設計案（20 の表と 1 つのビュー）</h1>
-    <p class="note">列の名前は仮。どの表にも割り当てていないデータ（プロフィール系・note の更新日など）は図にない。origin は外部か synsk.me の中か（external・internal）。職歴のスキルは表に持たず、同じ組織で期間が重なる実績から求める。link_preview は版の外に持ち、外部キーでつながない（本文の URL で引く）。media は note・project・career・activity（life event）の画像を持ち、図では note との線だけを描く。activity の一覧は activity_feed のビューで読み、note と project は activity に行を持たない。外部キーの線は、物理削除のときの扱いをすべて NO ACTION とする。</p>
+    <p class="note">列の名前は仮。どの表にも割り当てていないデータ（プロフィール系・note の更新日など）は図にない。職歴のスキルは表に持たず、同じ組織で期間が重なる実績から求める。link_preview は版の外に持ち、外部キーでつながない（本文の URL で引く）。media は note・project・career・activity（life event）の画像を持ち、図では note との線だけを描く。activity の一覧は activity_feed のビューで読み、note と project は activity に行を持たない。外部キーの線は、物理削除のときの扱いをすべて NO ACTION とする。</p>
     {svg}
   </div>
 </body>
