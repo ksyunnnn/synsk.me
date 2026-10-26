@@ -221,7 +221,7 @@ el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", proj
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
 el += entity(1500, 260, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
-el += entity(1500, 404, 200, "activity_feed", "一覧。4 つの表を UNION ALL でつなぐ", [("activity", "外部・life event"), ("note", "公開中だけ"), ("project", "is_masked なら秘匿化"), ("career", "is_masked なら秘匿化"), ("career の日付", "未決"), ("並び", "(日付, 種類, id)")], kind="VIEW")
+el += entity(1500, 404, 200, "activity_feed", "一覧。4 つの表を UNION ALL でつなぐ", [("activity", "外部・life event"), ("note", "公開中だけ"), ("project", "is_masked なら秘匿化"), ("career", "is_masked なら秘匿化"), ("career の日付", "started_on"), ("並び", "(日付, 種類, id)")], kind="VIEW")
 el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
 el += entity(1480, 656, 220, "note_revision", "note の版。保存と公開のたびに 1 行", revision)
 el += entity(1160, 1012, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)
