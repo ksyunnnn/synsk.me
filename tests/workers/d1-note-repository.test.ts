@@ -53,8 +53,12 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  // note_revision は外部キーの ON DELETE CASCADE で一緒に消える
-  await env.DB.prepare('DELETE FROM note').run();
+  // 外部キーは NO ACTION なので、版を先に消す。note から版を指す外部キーは検査を
+  // トランザクションの終わりに送るため、1 つの batch で消す（migrations/0005）
+  await env.DB.batch([
+    env.DB.prepare('DELETE FROM note_revision'),
+    env.DB.prepare('DELETE FROM note'),
+  ]);
 });
 
 describe('作る', () => {
@@ -690,12 +694,34 @@ describe('データベースの制約', () => {
       await expect(insertRevision(999)).rejects.toThrow(/FOREIGN KEY constraint failed/);
     });
 
-    it('note の行を消すと、公開した版を含めて版も消える', async () => {
+    it('版が残っている note の行を消すことを拒む', async () => {
+      const { noteId } = await draftWithRevision();
+
+      await expect(
+        env.DB.prepare('DELETE FROM note WHERE id = ?').bind(noteId).run(),
+      ).rejects.toThrow(/FOREIGN KEY constraint failed/);
+      expect(await countRows('note')).toBe(1);
+    });
+
+    it('公開した版だけを消すことを拒む', async () => {
+      const { noteId, revisionId } = await draftWithRevision();
+      await setPublication(noteId, revisionId, FIRST_PUBLISHED_AT);
+
+      await expect(
+        env.DB.prepare('DELETE FROM note_revision WHERE id = ?').bind(revisionId).run(),
+      ).rejects.toThrow();
+      expect(await countRows('note_revision')).toBe(1);
+    });
+
+    it('公開した note は、版と note の行を 1 つのトランザクションで消せる', async () => {
       const { noteId, revisionId } = await draftWithRevision();
       await setPublication(noteId, revisionId, FIRST_PUBLISHED_AT);
       await insertRevision(noteId, '2つ目');
 
-      await env.DB.prepare('DELETE FROM note WHERE id = ?').bind(noteId).run();
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(noteId),
+        env.DB.prepare('DELETE FROM note WHERE id = ?').bind(noteId),
+      ]);
 
       expect(await countRows('note')).toBe(0);
       expect(await countRows('note_revision')).toBe(0);
