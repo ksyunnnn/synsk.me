@@ -64,7 +64,7 @@
         の更新日など）は図にない。職歴のスキルは表に持たず、同じ組織で期間が重なる実績から求める。link_preview
         は版の外に持ち、外部キーでつながない（本文の URL で引く）。media は
         note・project・career・activity（life event）の画像を持ち、図では note
-        との線だけを描く。activity の一覧は activity_feed のビューで読み、note と project は
+        との線だけを描く。activity の一覧は activity_feed のビューで読み、note・project・career は
         activity に行を持たない。外部キーの線は、物理削除のときの扱いをすべて NO ACTION とする。
       </p>
       <div class="scroll">
@@ -126,7 +126,7 @@
             x="1120"
             y="20"
             width="600"
-            height="552"
+            height="584"
             rx="8"
             fill="rgba(45,49,66,0.03)"
             stroke="rgba(45,49,66,0.18)"
@@ -145,9 +145,9 @@
           </text>
           <rect
             x="1120"
-            y="576"
+            y="608"
             width="600"
-            height="716"
+            height="684"
             rx="8"
             fill="rgba(45,49,66,0.03)"
             stroke="rgba(45,49,66,0.18)"
@@ -156,7 +156,7 @@
           />
           <text
             x="1136"
-            y="600"
+            y="632"
             fill="#4f5d75"
             font-size="11"
             font-weight="600"
@@ -1692,7 +1692,7 @@
             x="580"
             y="60"
             width="240"
-            height="256"
+            height="276"
             rx="6"
             fill="#ffffff"
             stroke="#2d3142"
@@ -1870,7 +1870,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            created_at
+            is_masked
           </text>
           <text
             x="804"
@@ -1880,7 +1880,7 @@
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
             text-anchor="end"
           >
-            text
+            integer
           </text>
           <text
             x="596"
@@ -1889,11 +1889,30 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            updated_at
+            created_at
           </text>
           <text
             x="804"
             y="296"
+            fill="#4f5d75"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+            text-anchor="end"
+          >
+            text
+          </text>
+          <text
+            x="596"
+            y="316"
+            fill="#2d3142"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+          >
+            updated_at
+          </text>
+          <text
+            x="804"
+            y="316"
             fill="#4f5d75"
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -3184,7 +3203,7 @@
             x="1500"
             y="404"
             width="200"
-            height="156"
+            height="196"
             rx="6"
             fill="#ffffff"
             stroke="#2d3142"
@@ -3227,7 +3246,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            一覧。3 つの表を UNION ALL でつなぐ
+            一覧。4 つの表を UNION ALL でつなぐ
           </text>
           <text
             x="1516"
@@ -3284,7 +3303,7 @@
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
             text-anchor="end"
           >
-            非公開は秘匿化
+            is_masked なら秘匿化
           </text>
           <text
             x="1516"
@@ -3293,11 +3312,49 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            並び
+            career
           </text>
           <text
             x="1684"
             y="540"
+            fill="#4f5d75"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+            text-anchor="end"
+          >
+            is_masked なら秘匿化
+          </text>
+          <text
+            x="1516"
+            y="560"
+            fill="#2d3142"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+          >
+            career の日付
+          </text>
+          <text
+            x="1684"
+            y="560"
+            fill="#4f5d75"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+            text-anchor="end"
+          >
+            未決
+          </text>
+          <text
+            x="1516"
+            y="580"
+            fill="#2d3142"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+          >
+            並び
+          </text>
+          <text
+            x="1684"
+            y="580"
             fill="#4f5d75"
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -4358,7 +4415,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            note と project は activity に行を持たず、ビューでつなぐ
+            note・project・career は activity に行を持たず、ビューでつなぐ
           </text>
           <rect
             x="400"
