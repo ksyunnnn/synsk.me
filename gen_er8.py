@@ -68,7 +68,7 @@ def kinds_note(x, y):
 def rules_note(x, y):
     lines = [
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
-        "状態と分類の列（*.status・*.visibility・*.kind・note.card_image）は CHECK で値を閉じる",
+        "状態と分類の列（*.status・*.kind・resume.audience・note.card_image）は CHECK で値を閉じる",
         "年月・日付の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",
@@ -113,7 +113,6 @@ organization = [("# id", "integer"), ("name", "text · unique"), ("name_masked",
 career = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月）"),
     ("ended_on", "text（年月）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
-    ("visibility", "text · CHECK（意味は未決）"),
 ] + TS
 project = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("kind", "text · CHECK"),
@@ -124,7 +123,6 @@ project = [
 education = [
     ("# id", "integer"), ("school", "text"), ("department", "text · 空可"),
     ("started_on", "text（年月）"), ("ended_on", "text（年月）· 空可"), ("remarks", "text · 空可"),
-    ("visibility", "text · CHECK（意味は未決）"),
 ] + TS
 skill = [("# id", "integer"), ("name", "text · unique · NOCASE"), ("years_override", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
