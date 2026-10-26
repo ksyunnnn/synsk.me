@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 1740
-H = 1490
+H = 1544
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -68,6 +68,9 @@ def kinds_note(x, y):
 def rules_note(x, y):
     lines = [
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
+        "互いを指す外部キー（note.published_revision_id・*.card_media_id）は、検査をトランザクションの終わりに送る（DEFERRABLE）",
+        "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガーが入れ直す",
+        "activity_feed のビューは、並べる列を UI で決めてから作る",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public。project.kind は application・talk・event・other",
         "CHECK の値: activity_source.kind は article・life_event。note.card_image は generated・media・site",
         "年月・日付の列は、形と「終わり ≥ 始まり」を CHECK で守る",
