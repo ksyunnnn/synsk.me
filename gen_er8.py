@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 1740
-H = 1460
+H = 1490
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -41,7 +41,7 @@ def rel_label(cx, y_top, text):
 
 def kinds_note(x, y):
     rows = [
-        ("外部の項目", "zenn など", "article など", "external_id"),
+        ("外部の項目", "zenn など", "article", "external_id"),
         ("life event", "life_event", "life_event", "id"),
         ("想定外のサイト", "unlisted", "article", "url"),
     ]
@@ -68,7 +68,8 @@ def kinds_note(x, y):
 def rules_note(x, y):
     lines = [
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
-        "状態と分類の列（*.status・*.kind・resume.audience・note.card_image）は CHECK で値を閉じる",
+        "CHECK の値: *.status は draft・published。resume.audience は limited・public。project.kind は application・talk・event・other",
+        "CHECK の値: activity_source.kind は article・life_event。note.card_image は generated・media・site",
         "年月・日付の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",
