@@ -77,7 +77,7 @@ def rules_note(x, y):
         "activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）",
-        "訪問者の URL は slug、R2 は storage_key で指す。編集の画面は id を使う。AUTOINCREMENT にする表は未決。R2 のバケットは公開せず、Worker を通して配る",
+        "訪問者の URL は slug、R2 は storage_key で指す。編集の画面は id を使うので、id はすべて AUTOINCREMENT（削除した id を使い回さない）。R2 のバケットは公開せず、Worker を通して配る",
     ]
     w, h = 720, 48 + len(lines) * 18 + 8
     out = [

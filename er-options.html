@@ -4551,8 +4551,9 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            訪問者の URL は slug、R2 は storage_key で指す。編集の画面は id を使う。AUTOINCREMENT
-            にする表は未決。R2 のバケットは公開せず、Worker を通して配る
+            訪問者の URL は slug、R2 は storage_key で指す。編集の画面は id を使うので、id はすべて
+            AUTOINCREMENT（削除した id を使い回さない）。R2 のバケットは公開せず、Worker
+            を通して配る
           </text>
           <rect
             x="335"
