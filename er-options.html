@@ -4421,7 +4421,7 @@
             x="400"
             y="1120"
             width="720"
-            height="254"
+            height="272"
             rx="6"
             fill="#ffffff"
             stroke="#4f5d75"
@@ -4551,8 +4551,16 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            訪問者の URL は slug、R2 は storage_key で指す。編集の画面は id を使うので、id はすべて
-            AUTOINCREMENT（削除した id を使い回さない）。R2 のバケットは公開せず、Worker
+            id はすべて AUTOINCREMENT（削除した id を使い回さない）。編集の画面は id で行を指すため
+          </text>
+          <text
+            x="416"
+            y="1376"
+            fill="#2d3142"
+            font-size="9"
+            font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
+          >
+            訪問者の URL は slug、R2 は storage_key で指す。R2 のバケットは公開せず、Worker
             を通して配る
           </text>
           <rect
