@@ -137,7 +137,7 @@ activity = [
     ("external_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
     ("description", "text · 空可"), ("image_url", "text · 空可"), ("published_at", "text · 空可"),
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
-    ("happened_on", "text · 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"),
+    ("happened_on", "text（年月日）· 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"),
 ] + TS
 fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可")]
 note = [
