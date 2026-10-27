@@ -116,15 +116,15 @@ C = [("created_at", "text")]
 
 organization = [("# id", "integer"), ("name", "text · unique"), ("name_masked", "text")] + TS
 career = [
-    ("# id", "integer"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月）"),
-    ("ended_on", "text（年月）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
+    ("# id", "integer"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月日）"),
+    ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
     ("is_masked", "integer"),
 ] + TS
 project = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("kind", "text · CHECK"),
     ("slug", "text · unique"), ("title", "text"), ("title_masked", "text"), ("is_masked", "integer"),
-    ("is_highlighted", "integer"), ("→ card_media_id", "integer · 空可"), ("started_on", "text（年月）"),
-    ("ended_on", "text（年月）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
+    ("is_highlighted", "integer"), ("→ card_media_id", "integer · 空可"), ("started_on", "text（年月日）"),
+    ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
 ] + TS
 education = [
     ("# id", "integer"), ("school", "text"), ("department", "text · 空可"),
