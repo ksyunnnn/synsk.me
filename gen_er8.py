@@ -73,7 +73,7 @@ def rules_note(x, y):
         "activity_feed のビューは、並べる列を UI で決めてから作る",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public。project.kind は application・talk・event・other",
         "CHECK の値: activity_source.kind は article・life_event。note.card_image は generated・media・site",
-        "年月・日付の列は、形と「終わり ≥ 始まり」を CHECK で守る",
+        "年月日の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",
         "note.status が公開なら、note.published_revision_id と note.published_at は空でない（CHECK）",
@@ -128,7 +128,7 @@ project = [
 ] + TS
 education = [
     ("# id", "integer"), ("school", "text"), ("department", "text · 空可"),
-    ("started_on", "text（年月）"), ("ended_on", "text（年月）· 空可"), ("remarks", "text · 空可"),
+    ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"), ("remarks", "text · 空可"),
 ] + TS
 skill = [("# id", "integer"), ("name", "text · unique · NOCASE"), ("years_override", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
@@ -153,11 +153,10 @@ resume = [
     ("# id", "integer"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),
     ("limited_token_hash", "text · unique · 空可"), ("limited_expires_at", "text · 空可"),
 ] + TS
-YM = [("started_on", "text（年月）"), ("ended_on", "text（年月）· 空可")]
 YMD = [("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可")]
 resume_career = [("# id", "integer"), ("→ resume_id", "integer"), ("→ career_id", "integer · 空可"), ("organization_name", "text"), ("role", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可")]
 resume_project = [("# id", "integer"), ("→ resume_id", "integer"), ("→ project_id", "integer · 空可"), ("organization_name", "text"), ("kind", "text · CHECK"), ("title", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可")]
-resume_education = [("# id", "integer"), ("→ resume_id", "integer"), ("→ education_id", "integer · 空可"), ("school", "text"), ("department", "text · 空可")] + YM + [("remarks", "text · 空可")]
+resume_education = [("# id", "integer"), ("→ resume_id", "integer"), ("→ education_id", "integer · 空可"), ("school", "text"), ("department", "text · 空可")] + YMD + [("remarks", "text · 空可")]
 
 el = []
 el += zone(20, 20, 535, 1010, "職務経歴書")
