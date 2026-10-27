@@ -2,7 +2,6 @@
 --
 -- activity が持つのは、外部の取得元から取った項目と、life event だけである。
 -- note・project・career は activity に行を持たない。一覧はそれぞれの表から読む
--- （#72 の 2026-10-24 と 2026-10-26 の決定）
 
 -- activity の出どころ。1 つのサービスから複数の種類を取り込むときは、source を分ける
 -- （例: zenn_article・zenn_book）
@@ -12,7 +11,7 @@ CREATE TABLE activity_source (
   kind TEXT NOT NULL CHECK (kind IN ('article', 'life_event'))
 ) STRICT;
 
--- activity の CHECK が値を名指しする 2 つの出どころ。外部の取得元は、取得を作るときに足す
+-- activity の CHECK が値を名指しする 2 つの出どころ。外部の取得元の行は、取得の処理と一緒に入れる
 -- - life_event: オーナーが手で書く出来事
 -- - unlisted: 取得元として登録していないサイトの記事。URL で同じ記事かを判定する
 INSERT INTO activity_source (source, kind) VALUES

@@ -1,16 +1,14 @@
 -- 組織・職歴・実績・学歴・スキルの表を作る（#72 の ER 図）。
 --
--- 書き方は 0002 に合わせる。0004〜0006 もこの決まりに従う。
+-- 0002〜0006 の表は、次の決まりで書く。
 -- - 外部キーは、物理削除のときの扱いを書かない（NO ACTION）。子の行が残っていれば
 --   削除はエラーで止まる。表を作り直す migration で、子の行が黙って消えないため
---   （#72 の 2026-10-24 の決定）
 -- - id は AUTOINCREMENT にする。削除した行の id を使い回すと、別に開いたままの
---   編集の画面からの保存が、後から作った別の行を上書きする（#72 の 2026-10-26 の決定）。
+--   編集の画面からの保存が、後から作った別の行を上書きする。
 --   訪問者に見せる URL は id でなく slug で作る
 -- - 暦の日付は YYYY-MM-DD、日時は Date.prototype.toISOString() の形（UTC）。
 --   形を strftime() で確かめる。読めない値は strftime() が NULL を返すため IS で比べる。
 --   暦の日付は時刻もタイムゾーンも持たない。日が分からないときは便宜的な日を入れる
---   （#72 の 2026-10-26・2026-10-27 の決定）
 -- - created_at と updated_at は DB が入れる。updated_at は行を書き換えたときに
 --   トリガーが入れ直す。アプリケーションが入れ忘れないため
 -- - 真偽は 0 と 1 の INTEGER。名前は is_ で始める（ADR-0043）
@@ -117,7 +115,7 @@ CREATE TABLE project (
 
 CREATE INDEX project_organization_id ON project (organization_id);
 
--- 学歴。職務経歴書を通してだけ出す（#72 の 2026-10-26 の決定）
+-- 学歴。職務経歴書を通してだけ出す
 CREATE TABLE education (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   school TEXT NOT NULL,
@@ -140,7 +138,7 @@ CREATE TABLE education (
   )
 ) STRICT;
 
--- スキル。実績の「使った技術」につなぐ。職歴のスキルは、その職歴に属する実績のスキルを
+-- スキル。project_skill で実績につなぐ。職歴のスキルは、その職歴に属する実績のスキルを
 -- 合わせて求める
 CREATE TABLE skill (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

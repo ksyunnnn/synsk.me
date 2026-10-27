@@ -1,14 +1,13 @@
 -- note と note_revision を作り直し、画像・転載先・URL カードの表を作る（#72 の ER 図）。
 -- 書き方の決まりは 0003 の冒頭にある。
 --
--- 0002 の表のデータは移さない。本番の D1 に残すデータはないと、オーナーが確かめた
--- （#72、2026-10-24）。
+-- 0002 の表のデータは移さない。
 --
--- 作り直す理由:
--- - note_revision.note_id の ON DELETE CASCADE をやめ、NO ACTION にする（#72 の 2026-10-24 の決定）
--- - note にカードの画像（card_image・card_media_id）と created_at・updated_at を、
---   note_revision に description を足す
--- - note.published_revision_id を、同じ note の版だけを指す複合の外部キーにする
+-- 作り直した表の形:
+-- - note_revision.note_id は NO ACTION（決まりは 0003 の冒頭）
+-- - note はカードの画像（card_image・card_media_id）と created_at・updated_at を持ち、
+--   note_revision は description を持つ
+-- - note.published_revision_id は、同じ note の版だけを指す複合の外部キー
 --
 -- note と note_revision、note と media は互いを指す。公開した note を完全に消すには、
 -- 同じトランザクションで media・syndication・note_revision・note の順に消す。
@@ -34,7 +33,7 @@ CREATE TABLE note (
   ),
   -- draft は下書き、published は訪問者に見せる。作ったときは下書き
   status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
-  -- 最後に公開した版。下書きで戻した note でも残す（spec の FR-018）
+  -- 最後に公開した版。下書きで戻した note でも残す（specs/005-note-write-and-read の FR-018）
   published_revision_id INTEGER,
   -- 初めて公開した日時。一度入れたら変えない（下のトリガ）
   published_at TEXT CHECK (
@@ -83,7 +82,7 @@ CREATE TABLE note_revision (
   title TEXT NOT NULL CHECK (length(title) <= 200),
   -- 説明の文。題・本文と同じく、公開し直すまで訪問者に見えない
   description TEXT,
-  -- 本文。書式は暫定で Markdown（#72）
+  -- 本文。書式は Markdown
   body TEXT NOT NULL CHECK (length(body) <= 100000),
   -- 版を作った日時
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) CHECK (
@@ -152,14 +151,14 @@ CREATE TABLE link_preview (
   )
 ) STRICT;
 
--- 版を書き換えない（spec の FR-021）
+-- 版を書き換えない（specs/005-note-write-and-read の FR-021）
 CREATE TRIGGER note_revision_immutable
 BEFORE UPDATE ON note_revision
 BEGIN
   SELECT RAISE(ABORT, 'note_revision_immutable');
 END;
 
--- 公開した note の slug を変えない。公開した URL を変えないため（spec の FR-007）
+-- 公開した note の slug を変えない。公開した URL を変えないため（specs/005-note-write-and-read の FR-007）
 CREATE TRIGGER note_slug_fixed_after_publication
 BEFORE UPDATE OF slug ON note
 FOR EACH ROW
@@ -168,7 +167,7 @@ BEGIN
   SELECT RAISE(ABORT, 'note_slug_fixed_after_publication');
 END;
 
--- 初めて公開した日時を変えない。公開し直しても公開日は変わらない（spec の FR-004）
+-- 初めて公開した日時を変えない。公開し直しても公開日は変わらない（specs/005-note-write-and-read の FR-004）
 CREATE TRIGGER note_published_at_fixed
 BEFORE UPDATE OF published_at ON note
 FOR EACH ROW
