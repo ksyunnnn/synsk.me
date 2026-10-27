@@ -69,7 +69,7 @@ def rules_note(x, y):
     lines = [
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
         "互いを指す外部キー（note.published_revision_id・*.card_media_id）は、検査をトランザクションの終わりに送る（DEFERRABLE）",
-        "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガーが入れ直す",
+        "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガが入れ直す",
         "activity_feed のビューは、並べる列を UI で決めてから作る",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public。project.kind は application・talk・event・other",
         "CHECK の値: activity_source.kind は article・life_event。note.card_image は generated・media・site",
@@ -78,7 +78,7 @@ def rules_note(x, y):
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",
         "note.status が公開なら、note.published_revision_id と note.published_at は空でない（CHECK）",
         "note.card_media_id は、note.card_image が media のときだけ入る（CHECK）",
-        "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガーで拒む",
+        "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガで拒む",
         "activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）",
