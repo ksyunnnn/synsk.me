@@ -84,7 +84,7 @@ CREATE TABLE project (
   -- 1 なら、訪問者には title_masked と organization.name_masked で出し、description を伏せる。
   -- 既定値を置かず、作る画面で選ばせる
   is_masked INTEGER NOT NULL CHECK (is_masked IN (0, 1)),
-  -- 1 ならハイライトとして表示する（ADR-0003）。既定値を置かず、作る画面で選ばせる
+  -- 1 ならハイライトとして表示する（ADR-0044）。既定値を置かず、作る画面で選ばせる
   is_highlighted INTEGER NOT NULL CHECK (is_highlighted IN (0, 1)),
   -- 代表画像。この実績が持つ media だけを指す（下の複合の外部キー）
   card_media_id INTEGER,
