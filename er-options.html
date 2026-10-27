@@ -4421,7 +4421,7 @@
             x="400"
             y="1120"
             width="720"
-            height="344"
+            height="362"
             rx="6"
             fill="#ffffff"
             stroke="#4f5d75"
@@ -4552,8 +4552,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            resume: 公開用は 1 つだけ（部分 UNIQUE
-            索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガーで拒む
+            note.card_media_id は、note.card_image が media のときだけ入る（CHECK）
           </text>
           <text
             x="416"
@@ -4562,7 +4561,8 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)
+            resume: 公開用は 1 つだけ（部分 UNIQUE
+            索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガーで拒む
           </text>
           <text
             x="416"
@@ -4571,7 +4571,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            activity.sort_at は published_at か happened_on から求め、NOT NULL
+            activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)
           </text>
           <text
             x="416"
@@ -4580,7 +4580,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            skill.name は COLLATE NOCASE（大文字と小文字を区別しない）
+            activity.sort_at は published_at か happened_on から求め、NOT NULL
           </text>
           <text
             x="416"
@@ -4589,11 +4589,20 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            id はすべて AUTOINCREMENT（削除した id を使い回さない）。編集の画面は id で行を指すため
+            skill.name は COLLATE NOCASE（大文字と小文字を区別しない）
           </text>
           <text
             x="416"
             y="1448"
+            fill="#2d3142"
+            font-size="9"
+            font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
+          >
+            id はすべて AUTOINCREMENT（削除した id を使い回さない）。編集の画面は id で行を指すため
+          </text>
+          <text
+            x="416"
+            y="1466"
             fill="#2d3142"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
