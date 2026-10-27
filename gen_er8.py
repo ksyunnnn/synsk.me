@@ -154,8 +154,9 @@ resume = [
     ("limited_token_hash", "text · unique · 空可"), ("limited_expires_at", "text · 空可"),
 ] + TS
 YM = [("started_on", "text（年月）"), ("ended_on", "text（年月）· 空可")]
-resume_career = [("# id", "integer"), ("→ resume_id", "integer"), ("→ career_id", "integer · 空可"), ("organization_name", "text"), ("role", "text")] + YM + [("description", "text · 空可"), ("url", "text · 空可")]
-resume_project = [("# id", "integer"), ("→ resume_id", "integer"), ("→ project_id", "integer · 空可"), ("organization_name", "text"), ("kind", "text · CHECK"), ("title", "text")] + YM + [("description", "text · 空可"), ("url", "text · 空可")]
+YMD = [("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可")]
+resume_career = [("# id", "integer"), ("→ resume_id", "integer"), ("→ career_id", "integer · 空可"), ("organization_name", "text"), ("role", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可")]
+resume_project = [("# id", "integer"), ("→ resume_id", "integer"), ("→ project_id", "integer · 空可"), ("organization_name", "text"), ("kind", "text · CHECK"), ("title", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可")]
 resume_education = [("# id", "integer"), ("→ resume_id", "integer"), ("→ education_id", "integer · 空可"), ("school", "text"), ("department", "text · 空可")] + YM + [("remarks", "text · 空可")]
 
 el = []
