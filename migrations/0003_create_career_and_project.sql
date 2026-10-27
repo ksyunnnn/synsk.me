@@ -138,8 +138,8 @@ CREATE TABLE education (
   )
 ) STRICT;
 
--- スキル。project_skill で実績につなぐ。職歴のスキルは、その職歴に属する実績のスキルを
--- 合わせて求める
+-- スキル。project_skill で実績につなぐ。職歴のスキルは、同じ組織で期間が重なる実績の
+-- スキルを合わせて求める
 CREATE TABLE skill (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   -- 大文字と小文字の違いだけの重複を拒む（TypeScript と typescript）。重複すると、

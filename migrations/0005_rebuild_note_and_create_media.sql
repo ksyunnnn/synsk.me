@@ -5,7 +5,7 @@
 --
 -- 作り直した表の形:
 -- - note_revision.note_id は NO ACTION（決まりは 0003 の冒頭）
--- - note はカードの画像（card_image・card_media_id）と created_at・updated_at を持ち、
+-- - note は代表画像（card_image・card_media_id）と created_at・updated_at を持ち、
 --   note_revision は description を持つ
 -- - note.published_revision_id は、同じ note の版だけを指す複合の外部キー
 --
@@ -46,12 +46,12 @@ CREATE TABLE note (
     deleted_at IS NULL
     OR strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at) IS deleted_at
   ),
-  -- カードの画像の出どころ。generated は題を入れて自動で作る画像、media は note に
+  -- 代表画像の出どころ。generated は題を入れて自動で作る画像、media は note に
   -- 上げた画像、site はサイト共通の画像（docs/CRAWLING.md）
   card_image TEXT NOT NULL DEFAULT 'generated' CHECK (
     card_image IN ('generated', 'media', 'site')
   ),
-  -- 上げたカードの画像。この note が持つ media だけを指す（下の複合の外部キー）
+  -- 上げた代表画像。この note が持つ media だけを指す（下の複合の外部キー）
   card_media_id INTEGER,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) CHECK (
     strftime('%Y-%m-%dT%H:%M:%fZ', created_at) IS created_at
@@ -143,7 +143,7 @@ CREATE TABLE link_preview (
   url TEXT NOT NULL UNIQUE,
   -- 参照先から取った題
   title TEXT,
-  -- 参照先から取った画像の URL。画像の出し方は #186 が持つ
+  -- 参照先の代表の画像の URL。画像の出し方は #186 が持つ
   image_url TEXT,
   -- 参照先から取った日時
   fetched_at TEXT NOT NULL CHECK (
