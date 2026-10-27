@@ -11,7 +11,7 @@
 根拠: [ADR-0009](./decisions/0009-external-data-sync.md)
 
 ## FR-03: career と project を永続化する
-根拠: [ADR-0003](./decisions/0003-content-data-model.md)
+根拠: [ADR-0044](./decisions/0044-content-data-model-by-organization.md)
 
 ## FR-05: note に、公開前の下書き状態を持てる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)

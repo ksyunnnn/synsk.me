@@ -24,7 +24,7 @@ note の題と本文の版。保存と公開のたびに1行足す。題と本�
 | 項目 | 型 | 規則 | 出典 |
 |---|---|---|---|
 | id | 整数 | 主キー。大きいほど新しい版（SQLite の `AUTOINCREMENT`） | FR-021 |
-| note_id | 整数 | `note.id` を指す。`note` の行を Cloudflare の管理画面から消すと一緒に消える（外部キーの `ON DELETE CASCADE`） | FR-020 |
+| note_id | 整数 | `note.id` を指す。`note` の行を完全に消すときは、同じトランザクションで版を先に消す（外部キーは NO ACTION） | FR-020 |
 | title | 文字列 | 0〜200文字。下書きのうちは空でよい。空の題の版は公開できない | FR-001、FR-015、spec の Edge Cases |
 | body | 文字列 | 0〜100,000文字 | FR-012、FR-015 |
 | created_at | 日時 | 版を作った日時 | FR-021 |
