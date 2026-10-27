@@ -1,6 +1,6 @@
 ---
 status: accepted
-date: 2026-10-24
+date: 2026-10-26
 decision-makers: synsk
 consulted: Claude Code
 ---
@@ -9,7 +9,7 @@ consulted: Claude Code
 
 ## Context and Problem Statement
 
-D1 のスキーマの設計図（20 の表）で CHECK に入れる値を決める途中で、列の名前に次の揺れと競合が見つかった（2026-10-24）。
+D1 のスキーマ（20 の表）の CHECK に入れる値を決めるときに、列の名前に次の揺れと競合が見つかった（2026-10-24）。
 
 - `public` が表ごとに逆の意味だった。project の `visibility = 'public'` は実際の値で出し、resume の `audience = 'public'` は秘匿化した値で載せる
 - 訪問者に見せるかを、`status`（note）と `visibility`（resume など）の2つの名前で表していた
@@ -17,12 +17,12 @@ D1 のスキーマの設計図（20 の表）で CHECK に入れる値を決め�
 - 分類を `type`（project）と `kind`（activity_source）、代表の画像の URL を `thumbnail_url` と `image_url`、経験年数の上書きを `years_override` と `years` の、それぞれ2つの名前で呼んでいた
 - 真偽の列に、`is_` で始まるもの（`is_highlighted`）と始まらないもの（`ok`）が混ざっていた
 
-スキーマはまだ本番のデータを持たず、どの列の名前も変えられる。列の名前をどう決めるかは、note・timeline・career と project のすべての表に効く。
+本番のデータを持たないスキーマでは、どの列の名前もマイグレーションの書き換えで変えられる。2026-10-24 の時点で、このスキーマは本番に出していない。列の名前をどう決めるかは、activity・note・project・career・resume のすべての表に効く。
 
 ## Decision Drivers
 
 * 守る over 手軽さ（[SOFTWARE_DESIGN.md](../SOFTWARE_DESIGN.md#1-守る-over-手軽さ)）。`public` の意味を取り違えると、実名を出す条件を逆に書く
-* 1つの意味に1つの名前を当てる。ユビキタス言語（https://martinfowler.com/bliki/UbiquitousLanguage.html ）と、文章ルールの S4「用語を1つに固定する」
+* 1つの意味に1つの名前を当てる。ユビキタス言語（https://martinfowler.com/bliki/UbiquitousLanguage.html ）と、文章ルールの S4
 
 ## Considered Options
 
@@ -47,10 +47,11 @@ Chosen option: "列の名前の決まりを定め、すべての列を揃える"
 | activity.thumbnail_url | activity.image_url |
 | resume_project_skill.name・resume_skill_override.name | skill_name |
 | resume_skill_override.years | years_override |
+| career.visibility | career.is_masked |
 
-activity_source.origin（外部か内部か）は外す。activity に note と project の行を持たなくなり、区別する相手が life event だけになったため、activity.source で足りる。
+activity_source.origin（外部か内部か）は外す。activity は外部の取得元から取った項目と life event だけを持つ（ADR-0044）。区別する相手は life event だけなので、activity.source で足りる。
 
-career.visibility と education.visibility は、何を分ける列かが決まっていない。訪問者に見せるかを分けるなら `status` にする。
+education.visibility は外す。education は職務経歴書を通してだけ出し、見せるかどうかは resume.status と resume.audience が決める。
 
 ### Consequences
 
@@ -67,7 +68,7 @@ career.visibility と education.visibility は、何を分ける列かが決ま�
 ### 列の名前の決まりを定め、すべての列を揃える
 
 * Good, because 新しい表を足すときも、同じ決まりで名前を付けられる
-* Bad, because 既に付けた名前を変える手間がかかる。スキーマがまだ本番のデータを持たないので、手間はマイグレーションの書き換えに限られる
+* Bad, because 既に付けた名前を変える手間がかかる。本番のデータを持たないスキーマでは、手間はマイグレーションの書き換えに限られる
 
 ### 表ごとの名前を残し、意味の違いを注記で補う
 
