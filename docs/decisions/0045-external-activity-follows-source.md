@@ -31,10 +31,6 @@ consulted: Claude Code
 
 > ※根拠: 72コメント「取得元で消えたものの扱い（対象を広げた調査）」の型の表から、型ごとに例を 1〜2 つ選んだ: https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6333150214
 
-フィードの 1 回の応答は、全件とは限らない（[RFC 5005](https://www.rfc-editor.org/rfc/rfc5005.txt) の 1.2 節 "may or may not be a complete representation of the logical feed"）。Zenn の RSS は 20 件、Medium の RSS は 10 件を返す。
-
-> ※根拠: RFC の引用は、72コメント「工程 5 の専門家レビューの結果」の 2-2 の根拠から: https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6367923023 。件数は、72コメント「工程 4 の決定の補足（ADR の材料）」から: https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6335216179
-
 ## Decision Drivers
 
 * 外部のデータの公開範囲は、外部のサービス側で決める
