@@ -1,8 +1,10 @@
 // 新しいトップの下書き。#148 のローデザイン（配置と呼び名だけ）をそのまま書いたもの。
-// データとはつながず、値はすべてダミー。完成したら中身を `/` に移し、このフォルダを消す。
+// timeline は mock-data.json（値はすべて作り物）から読む。完成したら中身を `/` に移し、このフォルダを消す。
 import type { Metadata } from 'next';
 import { Noto_Sans_JP, Source_Sans_3 } from 'next/font/google';
 import Link from 'next/link';
+
+import { type EntryKind, getTimeline } from './mockTimeline';
 
 const sourceSans = Source_Sans_3({ subsets: ['latin'], weight: ['300', '400', '600'] });
 const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false });
@@ -12,16 +14,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-const ENTRIES = [
-  { date: '2026-10-12', width: 'w-4/5', project: 'project ラベル' },
-  { date: '2026-10-05', width: 'w-3/5', project: null },
-  { date: '2026-09-28', width: 'w-4/5', project: null },
-  { date: '2026-09-20', width: 'w-2/3', project: 'project ラベル' },
-  { date: '2026-09-11', width: 'w-3/5', project: null },
-  { date: '2026-08-30', width: 'w-4/5', project: null },
-  { date: '2026-08-17', width: 'w-2/3', project: null },
-  { date: '2026-08-02', width: 'w-3/5', project: 'project ラベル' },
-];
+const KIND_LABEL: Record<EntryKind, string> = {
+  note: 'note',
+  project: '実績',
+  career: '職歴',
+  article: '記事',
+  life_event: 'life event',
+};
 
 const Label = ({ children, dummy = false }: { children: React.ReactNode; dummy?: boolean }) => (
   <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -65,19 +64,39 @@ const Page = async () => {
         <section className="grid gap-4">
           <Label dummy>timeline（全件。ページネーションか別ページかは未定）</Label>
           <ul className="grid gap-4">
-            {ENTRIES.map((entry) => (
+            {getTimeline().map((entry) => (
               <li
-                key={entry.date}
+                key={entry.key}
                 className="grid gap-1.5 border-b border-border pb-4 last:border-b-0 last:pb-0"
               >
-                <span className="text-xs text-muted-foreground tabular-nums">{entry.date}</span>
-                <div className={`h-2.5 rounded-full bg-muted ${entry.width}`} />
-                {entry.project ? (
-                  <span className="w-fit rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground">
-                    {entry.project}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <span className="tabular-nums">{entry.date}</span>
+                  <span className="rounded-full border border-border px-2 py-0.5">
+                    {KIND_LABEL[entry.kind]}
                   </span>
+                  {entry.source && <span>{entry.source}</span>}
+                </div>
+                {entry.href ? (
+                  <a href={entry.href} className="font-normal underline underline-offset-4">
+                    {entry.title}
+                  </a>
                 ) : (
-                  <span className="text-xs text-muted-foreground">ラベルなし</span>
+                  <span className="font-normal">{entry.title}</span>
+                )}
+                {(entry.kind === 'note' || entry.kind === 'life_event') && entry.description && (
+                  <p className="text-sm text-muted-foreground">{entry.description}</p>
+                )}
+                {entry.imageUrl && (
+                  // ダミー画像は外部のサービスから直接読む。最適化はデザインが決まってから考える
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={entry.imageUrl}
+                    alt=""
+                    width={1200}
+                    height={630}
+                    loading="lazy"
+                    className="aspect-[1200/630] w-full rounded-md object-cover"
+                  />
                 )}
               </li>
             ))}

@@ -1,5 +1,5 @@
 {
-  "_note": "トップのデザイン用のモックデータ。値はすべて作り物。形は migrations/0003〜0005 の表の行に合わせる",
+  "_note": "トップのデザイン用のモックデータ。値はすべて作り物。形は migrations/0003〜0006 の表の行に合わせる。media.storage_key はモックに限り画像の URL を入れる",
   "organization": [
     {
       "id": 1,
@@ -49,7 +49,7 @@
       "role": "デザインエンジニア",
       "started_on": "2023-10-01",
       "ended_on": null,
-      "description": "デザインと実装の橋渡しとして、プロトタイプとコンポーネントを作っている。",
+      "description": "デザインと実装の橋渡しとして、プロトタイプとコンポーネントを作っている。\n\n![作業の机](https://picsum.photos/id/9/1200/630?mock=media-18)",
       "url": "https://example.com/company-b",
       "is_masked": 0,
       "created_at": "2026-10-20T10:36:44.226Z",
@@ -78,7 +78,7 @@
       "title_masked": "社内向け管理画面の刷新",
       "is_masked": 1,
       "is_highlighted": 0,
-      "card_media_id": null,
+      "card_media_id": 1,
       "started_on": "2021-12-01",
       "ended_on": "2022-06-30",
       "description": "管理画面の刷新について、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -95,7 +95,7 @@
       "title_masked": "デザイントークンの導入",
       "is_masked": 0,
       "is_highlighted": 0,
-      "card_media_id": null,
+      "card_media_id": 2,
       "started_on": "2022-04-01",
       "ended_on": "2022-09-30",
       "description": "デザイントークンの導入について、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -129,7 +129,7 @@
       "title_masked": "EC サイトの購入画面の改善",
       "is_masked": 1,
       "is_highlighted": 1,
-      "card_media_id": null,
+      "card_media_id": 3,
       "started_on": "2022-10-01",
       "ended_on": "2023-03-31",
       "description": "EC サイトの購入画面の改善について、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -146,7 +146,7 @@
       "title_masked": "CSS 設計の話",
       "is_masked": 0,
       "is_highlighted": 0,
-      "card_media_id": null,
+      "card_media_id": 4,
       "started_on": "2023-02-18",
       "ended_on": "2023-02-18",
       "description": "CSS 設計の話について、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -180,7 +180,7 @@
       "title_masked": "アクセシビリティの点検",
       "is_masked": 1,
       "is_highlighted": 0,
-      "card_media_id": null,
+      "card_media_id": 5,
       "started_on": "2023-06-01",
       "ended_on": "2023-08-31",
       "description": "アクセシビリティの点検について、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -197,7 +197,7 @@
       "title_masked": "コーポレートサイトの制作",
       "is_masked": 0,
       "is_highlighted": 1,
-      "card_media_id": null,
+      "card_media_id": 6,
       "started_on": "2023-11-01",
       "ended_on": "2024-03-31",
       "description": "コーポレートサイトの制作について、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -231,7 +231,7 @@
       "title_masked": "小規模店舗のサイト制作",
       "is_masked": 1,
       "is_highlighted": 0,
-      "card_media_id": null,
+      "card_media_id": 7,
       "started_on": "2024-07-01",
       "ended_on": "2024-09-30",
       "description": "小さな店のサイト制作について、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -248,7 +248,7 @@
       "title_masked": "社内コンポーネントライブラリ",
       "is_masked": 0,
       "is_highlighted": 1,
-      "card_media_id": null,
+      "card_media_id": 8,
       "started_on": "2024-10-01",
       "ended_on": null,
       "description": "社内コンポーネントライブラリについて、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -282,7 +282,7 @@
       "title_masked": "モーションの指針づくり",
       "is_masked": 0,
       "is_highlighted": 0,
-      "card_media_id": null,
+      "card_media_id": 9,
       "started_on": "2025-05-01",
       "ended_on": "2025-09-30",
       "description": "モーションの指針づくりについて、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -299,7 +299,7 @@
       "title_masked": "View Transitions を実務で使う",
       "is_masked": 0,
       "is_highlighted": 0,
-      "card_media_id": null,
+      "card_media_id": 10,
       "started_on": "2025-11-15",
       "ended_on": "2025-11-15",
       "description": "View Transitions を実務で使うについて、担当した範囲と工夫したことを書く説明文の作り物。",
@@ -488,6 +488,28 @@
       "skill_id": 2
     }
   ],
+  "education": [
+    {
+      "id": 1,
+      "school": "例示大学",
+      "department": "情報デザイン学部",
+      "started_on": "2015-04-01",
+      "ended_on": "2019-03-31",
+      "remarks": "卒業",
+      "created_at": "2026-10-20T03:52:56.559Z",
+      "updated_at": "2026-10-20T03:52:56.559Z"
+    },
+    {
+      "id": 2,
+      "school": "サンプル専門学校",
+      "department": "Web デザイン科",
+      "started_on": "2019-04-01",
+      "ended_on": "2021-03-31",
+      "remarks": "修了",
+      "created_at": "2026-10-20T10:54:45.641Z",
+      "updated_at": "2026-10-20T10:54:45.641Z"
+    }
+  ],
   "activity_source": [
     {
       "source": "life_event",
@@ -514,7 +536,7 @@
       "url": "https://example.com/zenn/articles/mock-0001",
       "title": "CSS の論理プロパティに置き換えた",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/0/1200/630",
       "published_at": "2021-11-21T03:35:20.811Z",
       "happened_on": null,
       "card_media_id": null,
@@ -528,7 +550,7 @@
       "url": "https://example.com/qiita/articles/mock-0002",
       "title": "React Server Components の境界の引き方",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/1/1200/630",
       "published_at": "2021-12-29T00:15:19.850Z",
       "happened_on": null,
       "card_media_id": null,
@@ -542,7 +564,7 @@
       "url": "https://example.com/zenn/articles/mock-0003",
       "title": "Figma の変数を実装に持ち込む",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/2/1200/630",
       "published_at": "2022-02-23T12:40:51.145Z",
       "happened_on": null,
       "card_media_id": null,
@@ -556,7 +578,7 @@
       "url": "https://example.com/blog/articles/mock-0004",
       "title": "フォームのエラー表示を見直す",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/3/1200/630",
       "published_at": "2022-03-18T12:30:52.498Z",
       "happened_on": null,
       "card_media_id": null,
@@ -584,7 +606,7 @@
       "url": "https://example.com/qiita/articles/mock-0006",
       "title": "アニメーションと prefers-reduced-motion",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/6/1200/630",
       "published_at": "2022-07-09T07:09:05.857Z",
       "happened_on": null,
       "card_media_id": null,
@@ -598,7 +620,7 @@
       "url": "https://example.com/zenn/articles/mock-0007",
       "title": "Storybook でデザインレビューをする",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/8/1200/630",
       "published_at": "2022-08-28T04:15:45.623Z",
       "happened_on": null,
       "card_media_id": null,
@@ -612,7 +634,7 @@
       "url": "https://example.com/blog/articles/mock-0008",
       "title": "色のコントラストを測る",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/9/1200/630",
       "published_at": "2022-09-19T05:30:31.407Z",
       "happened_on": null,
       "card_media_id": null,
@@ -626,7 +648,7 @@
       "url": "https://example.com/zenn/articles/mock-0009",
       "title": "日本語の約物と行間",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/48/1200/630",
       "published_at": "2022-11-28T01:41:31.998Z",
       "happened_on": null,
       "card_media_id": null,
@@ -654,7 +676,7 @@
       "url": "https://example.com/zenn/articles/mock-0011",
       "title": "Cloudflare Workers で画像を配る",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/180/1200/630",
       "published_at": "2023-02-19T14:11:23.622Z",
       "happened_on": null,
       "card_media_id": null,
@@ -668,7 +690,7 @@
       "url": "https://example.com/blog/articles/mock-0012",
       "title": "デザイントークンの名前の付け方",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/119/1200/630",
       "published_at": "2023-03-22T02:14:26.320Z",
       "happened_on": null,
       "card_media_id": null,
@@ -682,7 +704,7 @@
       "url": "https://example.com/zenn/articles/mock-0013",
       "title": "フォーカスリングを消さない",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/160/1200/630",
       "published_at": "2023-06-02T09:28:22.071Z",
       "happened_on": null,
       "card_media_id": null,
@@ -696,7 +718,7 @@
       "url": "https://example.com/qiita/articles/mock-0014",
       "title": "スクロール連動の演出を軽くする",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/26/1200/630",
       "published_at": "2023-06-22T10:49:17.152Z",
       "happened_on": null,
       "card_media_id": null,
@@ -724,7 +746,7 @@
       "url": "https://example.com/blog/articles/mock-0016",
       "title": "可変フォントで太さを揃える",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/20/1200/630",
       "published_at": "2023-09-28T09:54:00.462Z",
       "happened_on": null,
       "card_media_id": null,
@@ -738,7 +760,7 @@
       "url": "https://example.com/zenn/articles/mock-0017",
       "title": "TypeScript の型で状態を表す",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/0/1200/630",
       "published_at": "2023-11-19T06:15:36.490Z",
       "happened_on": null,
       "card_media_id": null,
@@ -752,7 +774,7 @@
       "url": "https://example.com/qiita/articles/mock-0018",
       "title": "モーダルとダイアログの違い",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/1/1200/630",
       "published_at": "2024-01-12T03:29:50.097Z",
       "happened_on": null,
       "card_media_id": null,
@@ -766,7 +788,7 @@
       "url": "https://example.com/zenn/articles/mock-0019",
       "title": "余白の段階を決める",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/2/1200/630",
       "published_at": "2024-02-21T02:39:56.681Z",
       "happened_on": null,
       "card_media_id": null,
@@ -794,7 +816,7 @@
       "url": "https://example.com/zenn/articles/mock-0021",
       "title": "SVG の viewBox を理解する",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/5/1200/630",
       "published_at": "2024-05-21T03:42:58.315Z",
       "happened_on": null,
       "card_media_id": null,
@@ -808,7 +830,7 @@
       "url": "https://example.com/qiita/articles/mock-0022",
       "title": "レイアウトのずれを測る",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/6/1200/630",
       "published_at": "2024-06-15T14:46:26.777Z",
       "happened_on": null,
       "card_media_id": null,
@@ -822,7 +844,7 @@
       "url": "https://example.com/zenn/articles/mock-0023",
       "title": "ダークモードの色を作る",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/8/1200/630",
       "published_at": "2024-08-22T05:32:31.474Z",
       "happened_on": null,
       "card_media_id": null,
@@ -836,7 +858,7 @@
       "url": "https://example.com/blog/articles/mock-0024",
       "title": "テーブルを小さい画面で見せる",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/9/1200/630",
       "published_at": "2024-10-12T11:07:43.557Z",
       "happened_on": null,
       "card_media_id": null,
@@ -864,7 +886,7 @@
       "url": "https://example.com/qiita/articles/mock-0026",
       "title": "記事の目次を自動で作る",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/60/1200/630",
       "published_at": "2024-12-21T00:37:29.985Z",
       "happened_on": null,
       "card_media_id": null,
@@ -878,7 +900,7 @@
       "url": "https://example.com/zenn/articles/mock-0027",
       "title": "ボタンの押した感じを作る",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/180/1200/630",
       "published_at": "2025-02-24T03:08:49.370Z",
       "happened_on": null,
       "card_media_id": null,
@@ -892,7 +914,7 @@
       "url": "https://example.com/blog/articles/mock-0028",
       "title": "ページ遷移の待ち時間を見せる",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/119/1200/630",
       "published_at": "2025-04-19T14:25:34.629Z",
       "happened_on": null,
       "card_media_id": null,
@@ -906,7 +928,7 @@
       "url": "https://example.com/zenn/articles/mock-0029",
       "title": "リンクの下線を整える",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/160/1200/630",
       "published_at": "2025-06-03T00:57:00.181Z",
       "happened_on": null,
       "card_media_id": null,
@@ -934,7 +956,7 @@
       "url": "https://example.com/zenn/articles/mock-0031",
       "title": "検索フォームのアクセシビリティ",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/36/1200/630",
       "published_at": "2025-08-29T09:01:04.182Z",
       "happened_on": null,
       "card_media_id": null,
@@ -948,7 +970,7 @@
       "url": "https://example.com/blog/articles/mock-0032",
       "title": "見出しの階層を守る",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/20/1200/630",
       "published_at": "2025-10-16T08:03:50.067Z",
       "happened_on": null,
       "card_media_id": null,
@@ -962,7 +984,7 @@
       "url": "https://example.com/zenn/articles/mock-0033",
       "title": "スケルトン表示の是非",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/0/1200/630",
       "published_at": "2025-11-06T09:41:24.617Z",
       "happened_on": null,
       "card_media_id": null,
@@ -976,7 +998,7 @@
       "url": "https://example.com/qiita/articles/mock-0034",
       "title": "トーストを使わない通知",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/1/1200/630",
       "published_at": "2026-01-14T13:11:23.029Z",
       "happened_on": null,
       "card_media_id": null,
@@ -1004,7 +1026,7 @@
       "url": "https://example.com/blog/articles/mock-0036",
       "title": "数字の等幅表示",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/3/1200/630",
       "published_at": "2026-03-22T09:40:36.756Z",
       "happened_on": null,
       "card_media_id": null,
@@ -1018,7 +1040,7 @@
       "url": "https://example.com/zenn/articles/mock-0037",
       "title": "ホバーのない端末を想定する",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/5/1200/630",
       "published_at": "2026-05-29T02:41:39.728Z",
       "happened_on": null,
       "card_media_id": null,
@@ -1032,7 +1054,7 @@
       "url": "https://example.com/qiita/articles/mock-0038",
       "title": "日付の表示形式を決める",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/6/1200/630",
       "published_at": "2026-06-17T04:23:14.836Z",
       "happened_on": null,
       "card_media_id": null,
@@ -1046,7 +1068,7 @@
       "url": "https://example.com/zenn/articles/mock-0039",
       "title": "カードの角丸の半径",
       "description": null,
-      "image_url": null,
+      "image_url": "https://picsum.photos/id/8/1200/630",
       "published_at": "2026-08-27T14:53:41.748Z",
       "happened_on": null,
       "card_media_id": null,
@@ -1077,7 +1099,7 @@
       "image_url": null,
       "published_at": null,
       "happened_on": "2022-03-12",
-      "card_media_id": null,
+      "card_media_id": 11,
       "created_at": "2022-03-13T10:53:40.074Z",
       "updated_at": "2022-03-13T10:53:40.074Z"
     },
@@ -1091,7 +1113,7 @@
       "image_url": null,
       "published_at": null,
       "happened_on": "2022-11-03",
-      "card_media_id": null,
+      "card_media_id": 12,
       "created_at": "2022-11-04T09:55:50.570Z",
       "updated_at": "2022-11-04T09:55:50.570Z"
     },
@@ -1105,7 +1127,7 @@
       "image_url": null,
       "published_at": null,
       "happened_on": "2023-07-22",
-      "card_media_id": null,
+      "card_media_id": 13,
       "created_at": "2023-07-23T10:15:31.884Z",
       "updated_at": "2023-07-23T10:15:31.884Z"
     },
@@ -1119,7 +1141,7 @@
       "image_url": null,
       "published_at": null,
       "happened_on": "2024-01-08",
-      "card_media_id": null,
+      "card_media_id": 14,
       "created_at": "2024-01-09T11:56:59.846Z",
       "updated_at": "2024-01-09T11:56:59.846Z"
     },
@@ -1133,7 +1155,7 @@
       "image_url": null,
       "published_at": null,
       "happened_on": "2024-09-15",
-      "card_media_id": null,
+      "card_media_id": 15,
       "created_at": "2024-09-16T00:42:26.711Z",
       "updated_at": "2024-09-16T00:42:26.711Z"
     },
@@ -1161,7 +1183,7 @@
       "image_url": null,
       "published_at": null,
       "happened_on": "2025-12-24",
-      "card_media_id": null,
+      "card_media_id": 16,
       "created_at": "2025-12-25T07:42:46.186Z",
       "updated_at": "2025-12-25T07:42:46.186Z"
     },
@@ -1175,9 +1197,67 @@
       "image_url": null,
       "published_at": null,
       "happened_on": "2026-06-10",
-      "card_media_id": null,
+      "card_media_id": 17,
       "created_at": "2026-06-11T06:04:08.073Z",
       "updated_at": "2026-06-11T06:04:08.073Z"
+    },
+    {
+      "id": 49,
+      "source": "zenn_article",
+      "external_id": "mock-syndicated-005",
+      "url": "https://example.com/zenn/articles/syndicated-005",
+      "title": "手帳の使い方",
+      "description": null,
+      "image_url": null,
+      "published_at": "2022-07-13T13:36:58.557Z",
+      "happened_on": null,
+      "card_media_id": null,
+      "created_at": "2022-07-13T13:36:58.557Z",
+      "updated_at": "2022-07-13T13:36:58.557Z"
+    },
+    {
+      "id": 50,
+      "source": "zenn_article",
+      "external_id": "mock-syndicated-010",
+      "url": "https://example.com/zenn/articles/syndicated-010",
+      "title": "猫の寝相",
+      "description": null,
+      "image_url": null,
+      "published_at": "2023-05-20T13:18:12.719Z",
+      "happened_on": null,
+      "card_media_id": null,
+      "created_at": "2023-05-20T13:18:12.719Z",
+      "updated_at": "2023-05-20T13:18:12.719Z"
+    },
+    {
+      "id": 51,
+      "source": "zenn_article",
+      "external_id": "mock-syndicated-021",
+      "url": "https://example.com/zenn/articles/syndicated-021",
+      "title": "睡眠を記録してみた",
+      "description": null,
+      "image_url": null,
+      "published_at": "2025-03-29T13:02:17.684Z",
+      "happened_on": null,
+      "card_media_id": null,
+      "created_at": "2025-03-29T13:02:17.684Z",
+      "updated_at": "2025-03-29T13:02:17.684Z"
+    }
+  ],
+  "fetch_result": [
+    {
+      "source": "zenn_article",
+      "fetched_at": "2026-10-27T00:27:59.685Z",
+      "is_ok": 1,
+      "reason": null,
+      "last_succeeded_at": "2026-10-27T00:27:59.685Z"
+    },
+    {
+      "source": "qiita_article",
+      "fetched_at": "2026-10-27T00:52:14.900Z",
+      "is_ok": 0,
+      "reason": "取得元が 503 を返した（作り物）",
+      "last_succeeded_at": "2026-10-20T00:41:05.220Z"
     }
   ],
   "note": [
@@ -1200,8 +1280,8 @@
       "published_revision_id": 4,
       "published_at": "2022-01-04T13:12:42.573Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 19,
       "created_at": "2022-01-02T10:36:54.382Z",
       "updated_at": "2022-01-23T02:33:37.049Z"
     },
@@ -1212,8 +1292,8 @@
       "published_revision_id": 7,
       "published_at": "2022-04-05T12:47:08.128Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 20,
       "created_at": "2022-04-04T08:20:25.753Z",
       "updated_at": "2022-05-31T10:02:57.072Z"
     },
@@ -1236,8 +1316,8 @@
       "published_revision_id": 11,
       "published_at": "2022-07-13T13:36:58.557Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 21,
       "created_at": "2022-07-10T10:08:04.958Z",
       "updated_at": "2022-07-21T02:06:42.986Z"
     },
@@ -1248,8 +1328,8 @@
       "published_revision_id": 13,
       "published_at": "2022-09-26T01:30:13.613Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 22,
       "created_at": "2022-09-26T13:11:32.172Z",
       "updated_at": "2022-10-23T07:21:35.475Z"
     },
@@ -1260,8 +1340,8 @@
       "published_revision_id": 16,
       "published_at": "2022-12-11T03:32:26.149Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 23,
       "created_at": "2022-12-09T07:16:30.263Z",
       "updated_at": "2023-02-03T02:03:24.417Z"
     },
@@ -1272,8 +1352,8 @@
       "published_revision_id": 17,
       "published_at": "2023-01-31T03:54:43.710Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 24,
       "created_at": "2023-01-29T05:08:05.706Z",
       "updated_at": "2023-01-31T03:54:43.710Z"
     },
@@ -1284,8 +1364,8 @@
       "published_revision_id": 18,
       "published_at": "2023-03-25T02:39:25.807Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 25,
       "created_at": "2023-03-24T10:17:38.645Z",
       "updated_at": "2023-03-25T02:39:25.807Z"
     },
@@ -1296,8 +1376,8 @@
       "published_revision_id": 21,
       "published_at": "2023-05-20T13:18:12.719Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 26,
       "created_at": "2023-05-19T06:24:55.680Z",
       "updated_at": "2023-07-01T11:27:49.202Z"
     },
@@ -1308,8 +1388,8 @@
       "published_revision_id": 23,
       "published_at": "2023-07-26T04:12:20.850Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 27,
       "created_at": "2023-07-26T11:25:31.604Z",
       "updated_at": "2023-08-25T09:26:44.186Z"
     },
@@ -1332,8 +1412,8 @@
       "published_revision_id": 25,
       "published_at": "2023-11-13T07:05:32.312Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 28,
       "created_at": "2023-11-10T07:06:26.885Z",
       "updated_at": "2023-11-13T07:05:32.312Z"
     },
@@ -1344,8 +1424,8 @@
       "published_revision_id": 26,
       "published_at": "2024-01-19T07:27:28.652Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 29,
       "created_at": "2024-01-16T08:42:01.400Z",
       "updated_at": "2024-01-19T07:27:28.652Z"
     },
@@ -1356,7 +1436,7 @@
       "published_revision_id": 28,
       "published_at": "2024-04-09T06:12:16.792Z",
       "deleted_at": null,
-      "card_image": "generated",
+      "card_image": "site",
       "card_media_id": null,
       "created_at": "2024-04-07T12:46:16.007Z",
       "updated_at": "2024-05-09T00:41:32.161Z"
@@ -1404,8 +1484,8 @@
       "published_revision_id": 33,
       "published_at": "2024-12-06T05:31:33.618Z",
       "deleted_at": "2025-01-15T00:19:13.506Z",
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 30,
       "created_at": "2024-12-05T12:31:32.393Z",
       "updated_at": "2024-12-06T05:31:33.618Z"
     },
@@ -1464,8 +1544,8 @@
       "published_revision_id": 40,
       "published_at": "2025-09-13T07:02:25.508Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 31,
       "created_at": "2025-09-11T10:58:07.671Z",
       "updated_at": "2025-09-13T07:02:25.508Z"
     },
@@ -1488,8 +1568,8 @@
       "published_revision_id": 44,
       "published_at": "2026-01-05T12:44:55.162Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 32,
       "created_at": "2026-01-02T11:00:38.273Z",
       "updated_at": "2026-01-05T12:44:55.162Z"
     },
@@ -1512,8 +1592,8 @@
       "published_revision_id": 47,
       "published_at": "2026-05-26T04:34:56.489Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 33,
       "created_at": "2026-05-23T01:07:10.387Z",
       "updated_at": "2026-06-07T04:18:02.905Z"
     },
@@ -1524,8 +1604,8 @@
       "published_revision_id": 48,
       "published_at": "2026-07-07T09:46:41.199Z",
       "deleted_at": null,
-      "card_image": "generated",
-      "card_media_id": null,
+      "card_image": "media",
+      "card_media_id": 34,
       "created_at": "2026-07-06T13:15:18.696Z",
       "updated_at": "2026-07-07T09:46:41.199Z"
     },
@@ -1564,7 +1644,7 @@
       "note_id": 2,
       "title": "朝の散歩の記録",
       "description": "朝の散歩の記録についての短い説明の作り物。",
-      "body": "# 朝の散歩の記録\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 朝の散歩の記録\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![朝の散歩の記録](https://picsum.photos/id/17/1200/630?mock=media-19)",
       "created_at": "2022-01-04T13:12:42.573Z"
     },
     {
@@ -1572,7 +1652,7 @@
       "note_id": 2,
       "title": "朝の散歩の記録",
       "description": "朝の散歩の記録についての短い説明の作り物。",
-      "body": "# 朝の散歩の記録\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 朝の散歩の記録\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![朝の散歩の記録](https://picsum.photos/id/17/1200/630?mock=media-19)",
       "created_at": "2022-01-23T02:33:37.049Z"
     },
     {
@@ -1580,7 +1660,7 @@
       "note_id": 3,
       "title": "読んだ本のメモ",
       "description": "読んだ本のメモについての短い説明の作り物。",
-      "body": "# 読んだ本のメモ\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 読んだ本のメモ\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![読んだ本のメモ](https://picsum.photos/id/24/1200/630?mock=media-20)",
       "created_at": "2022-04-05T12:47:08.128Z"
     },
     {
@@ -1588,7 +1668,7 @@
       "note_id": 3,
       "title": "読んだ本のメモ",
       "description": "読んだ本のメモについての短い説明の作り物。",
-      "body": "# 読んだ本のメモ\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 読んだ本のメモ\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![読んだ本のメモ](https://picsum.photos/id/24/1200/630?mock=media-20)",
       "created_at": "2022-04-16T08:32:13.743Z"
     },
     {
@@ -1596,7 +1676,7 @@
       "note_id": 3,
       "title": "読んだ本のメモ",
       "description": "読んだ本のメモについての短い説明の作り物。",
-      "body": "# 読んだ本のメモ\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 読んだ本のメモ\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![読んだ本のメモ](https://picsum.photos/id/24/1200/630?mock=media-20)",
       "created_at": "2022-05-31T10:02:57.072Z"
     },
     {
@@ -1604,7 +1684,7 @@
       "note_id": 4,
       "title": "道具を減らす",
       "description": "道具を減らすについての短い説明の作り物。",
-      "body": "# 道具を減らす\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 道具を減らす\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n参考: https://example.com/tools/notebook",
       "created_at": "2022-06-07T07:33:40.267Z"
     },
     {
@@ -1612,7 +1692,7 @@
       "note_id": 5,
       "title": "手帳の使い方",
       "description": "手帳の使い方についての短い説明の作り物。",
-      "body": "# 手帳の使い方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 手帳の使い方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![手帳の使い方](https://picsum.photos/id/4/1200/630?mock=media-21)",
       "created_at": "2022-07-13T13:36:58.557Z"
     },
     {
@@ -1620,7 +1700,7 @@
       "note_id": 5,
       "title": "手帳の使い方",
       "description": "手帳の使い方についての短い説明の作り物。",
-      "body": "# 手帳の使い方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 手帳の使い方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![手帳の使い方](https://picsum.photos/id/4/1200/630?mock=media-21)",
       "created_at": "2022-07-16T07:36:06.087Z"
     },
     {
@@ -1628,7 +1708,7 @@
       "note_id": 5,
       "title": "手帳の使い方",
       "description": "手帳の使い方についての短い説明の作り物。",
-      "body": "# 手帳の使い方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 手帳の使い方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![手帳の使い方](https://picsum.photos/id/4/1200/630?mock=media-21)",
       "created_at": "2022-07-21T02:06:42.986Z"
     },
     {
@@ -1636,7 +1716,7 @@
       "note_id": 6,
       "title": "雨の日の過ごし方",
       "description": "雨の日の過ごし方についての短い説明の作り物。",
-      "body": "# 雨の日の過ごし方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 雨の日の過ごし方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![雨の日の過ごし方](https://picsum.photos/id/171/1200/630?mock=media-22)",
       "created_at": "2022-09-26T01:30:13.613Z"
     },
     {
@@ -1644,7 +1724,7 @@
       "note_id": 6,
       "title": "雨の日の過ごし方",
       "description": "雨の日の過ごし方についての短い説明の作り物。",
-      "body": "# 雨の日の過ごし方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 雨の日の過ごし方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![雨の日の過ごし方](https://picsum.photos/id/171/1200/630?mock=media-22)",
       "created_at": "2022-10-23T07:21:35.475Z"
     },
     {
@@ -1652,7 +1732,7 @@
       "note_id": 7,
       "title": "仕事の机を整えた",
       "description": "仕事の机を整えたについての短い説明の作り物。",
-      "body": "# 仕事の机を整えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 仕事の机を整えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![仕事の机を整えた](https://picsum.photos/id/9/1200/630?mock=media-23)",
       "created_at": "2022-12-11T03:32:26.149Z"
     },
     {
@@ -1660,7 +1740,7 @@
       "note_id": 7,
       "title": "仕事の机を整えた",
       "description": "仕事の机を整えたについての短い説明の作り物。",
-      "body": "# 仕事の机を整えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 仕事の机を整えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![仕事の机を整えた](https://picsum.photos/id/9/1200/630?mock=media-23)",
       "created_at": "2023-01-02T05:06:00.433Z"
     },
     {
@@ -1668,7 +1748,7 @@
       "note_id": 7,
       "title": "仕事の机を整えた",
       "description": "仕事の机を整えたについての短い説明の作り物。",
-      "body": "# 仕事の机を整えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 仕事の机を整えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![仕事の机を整えた](https://picsum.photos/id/9/1200/630?mock=media-23)",
       "created_at": "2023-02-03T02:03:24.417Z"
     },
     {
@@ -1676,7 +1756,7 @@
       "note_id": 8,
       "title": "ギターの練習の記録",
       "description": "ギターの練習の記録についての短い説明の作り物。",
-      "body": "# ギターの練習の記録\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# ギターの練習の記録\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![ギターの練習の記録](https://picsum.photos/id/145/1200/630?mock=media-24)\n\n参考: https://example.com/shop/coffee-dripper",
       "created_at": "2023-01-31T03:54:43.710Z"
     },
     {
@@ -1684,7 +1764,7 @@
       "note_id": 9,
       "title": "畑で育てた野菜",
       "description": "畑で育てた野菜についての短い説明の作り物。",
-      "body": "# 畑で育てた野菜\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 畑で育てた野菜\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![畑で育てた野菜](https://picsum.photos/id/102/1200/630?mock=media-25)",
       "created_at": "2023-03-25T02:39:25.807Z"
     },
     {
@@ -1692,7 +1772,7 @@
       "note_id": 10,
       "title": "猫の寝相",
       "description": "猫の寝相についての短い説明の作り物。",
-      "body": "# 猫の寝相\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 猫の寝相\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![猫の寝相](https://picsum.photos/id/40/1200/630?mock=media-26)",
       "created_at": "2023-05-20T13:18:12.719Z"
     },
     {
@@ -1700,7 +1780,7 @@
       "note_id": 10,
       "title": "猫の寝相",
       "description": "猫の寝相についての短い説明の作り物。",
-      "body": "# 猫の寝相\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 猫の寝相\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![猫の寝相](https://picsum.photos/id/40/1200/630?mock=media-26)",
       "created_at": "2023-06-09T00:54:36.027Z"
     },
     {
@@ -1708,7 +1788,7 @@
       "note_id": 10,
       "title": "猫の寝相",
       "description": "猫の寝相についての短い説明の作り物。",
-      "body": "# 猫の寝相\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 猫の寝相\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![猫の寝相](https://picsum.photos/id/40/1200/630?mock=media-26)",
       "created_at": "2023-07-01T11:27:49.202Z"
     },
     {
@@ -1716,7 +1796,7 @@
       "note_id": 11,
       "title": "冬の旅のこと",
       "description": "冬の旅のことについての短い説明の作り物。",
-      "body": "# 冬の旅のこと\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 冬の旅のこと\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![冬の旅のこと](https://picsum.photos/id/166/1200/630?mock=media-27)",
       "created_at": "2023-07-26T04:12:20.850Z"
     },
     {
@@ -1724,7 +1804,7 @@
       "note_id": 11,
       "title": "冬の旅のこと",
       "description": "冬の旅のことについての短い説明の作り物。",
-      "body": "# 冬の旅のこと\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 冬の旅のこと\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![冬の旅のこと](https://picsum.photos/id/166/1200/630?mock=media-27)",
       "created_at": "2023-08-25T09:26:44.186Z"
     },
     {
@@ -1732,7 +1812,7 @@
       "note_id": 12,
       "title": "好きな書体",
       "description": "好きな書体についての短い説明の作り物。",
-      "body": "# 好きな書体\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 好きな書体\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n参考: https://example.com/news/city-garden",
       "created_at": "2023-10-12T01:13:30.700Z"
     },
     {
@@ -1740,7 +1820,7 @@
       "note_id": 13,
       "title": "写真の整理",
       "description": "写真の整理についての短い説明の作り物。",
-      "body": "# 写真の整理\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 写真の整理\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![写真の整理](https://picsum.photos/id/91/1200/630?mock=media-28)",
       "created_at": "2023-11-13T07:05:32.312Z"
     },
     {
@@ -1748,7 +1828,7 @@
       "note_id": 14,
       "title": "コーヒーの淹れ方を変えた",
       "description": "コーヒーの淹れ方を変えたについての短い説明の作り物。",
-      "body": "# コーヒーの淹れ方を変えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# コーヒーの淹れ方を変えた\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![コーヒーの淹れ方を変えた](https://picsum.photos/id/63/1200/630?mock=media-29)",
       "created_at": "2024-01-19T07:27:28.652Z"
     },
     {
@@ -1772,7 +1852,7 @@
       "note_id": 16,
       "title": "年の振り返り",
       "description": "年の振り返りについての短い説明の作り物。",
-      "body": "# 年の振り返り\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 年の振り返り\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n参考: https://example.com/blog/no-image",
       "created_at": "2024-05-29T05:37:17.755Z"
     },
     {
@@ -1780,7 +1860,7 @@
       "note_id": 16,
       "title": "年の振り返り",
       "description": "年の振り返りについての短い説明の作り物。",
-      "body": "# 年の振り返り\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 年の振り返り\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n参考: https://example.com/blog/no-image",
       "created_at": "2024-06-10T13:57:18.142Z"
     },
     {
@@ -1804,7 +1884,7 @@
       "note_id": 19,
       "title": "近所の古本屋",
       "description": "近所の古本屋についての短い説明の作り物。",
-      "body": "# 近所の古本屋\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 近所の古本屋\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![近所の古本屋](https://picsum.photos/id/20/1200/630?mock=media-30)",
       "created_at": "2024-12-06T05:31:33.618Z"
     },
     {
@@ -1812,7 +1892,7 @@
       "note_id": 20,
       "title": "週末の料理",
       "description": "週末の料理についての短い説明の作り物。",
-      "body": "# 週末の料理\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 週末の料理\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n参考: https://example.com/music/guitar-lessons",
       "created_at": "2025-01-11T10:35:38.202Z"
     },
     {
@@ -1820,7 +1900,7 @@
       "note_id": 20,
       "title": "週末の料理",
       "description": "週末の料理についての短い説明の作り物。",
-      "body": "# 週末の料理\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 週末の料理\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n参考: https://example.com/music/guitar-lessons",
       "created_at": "2025-01-18T00:41:50.076Z"
     },
     {
@@ -1860,7 +1940,7 @@
       "note_id": 24,
       "title": "夏の終わり",
       "description": "夏の終わりについての短い説明の作り物。",
-      "body": "# 夏の終わり\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 夏の終わり\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![夏の終わり](https://picsum.photos/id/112/1200/630?mock=media-31)\n\n参考: https://example.com/blog/typography-basics",
       "created_at": "2025-09-13T07:02:25.508Z"
     },
     {
@@ -1892,7 +1972,7 @@
       "note_id": 26,
       "title": "旅先で見た看板",
       "description": "旅先で見た看板についての短い説明の作り物。",
-      "body": "# 旅先で見た看板\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 旅先で見た看板\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![旅先で見た看板](https://picsum.photos/id/57/1200/630?mock=media-32)",
       "created_at": "2026-01-05T12:44:55.162Z"
     },
     {
@@ -1908,7 +1988,7 @@
       "note_id": 28,
       "title": "机の上の植物",
       "description": "机の上の植物についての短い説明の作り物。",
-      "body": "# 机の上の植物\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 机の上の植物\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![机の上の植物](https://picsum.photos/id/159/1200/630?mock=media-33)\n\n参考: https://example.com/tools/notebook",
       "created_at": "2026-05-26T04:34:56.489Z"
     },
     {
@@ -1916,7 +1996,7 @@
       "note_id": 28,
       "title": "机の上の植物",
       "description": "机の上の植物についての短い説明の作り物。",
-      "body": "# 机の上の植物\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 机の上の植物\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![机の上の植物](https://picsum.photos/id/159/1200/630?mock=media-33)\n\n参考: https://example.com/tools/notebook",
       "created_at": "2026-06-07T04:18:02.905Z"
     },
     {
@@ -1924,7 +2004,7 @@
       "note_id": 29,
       "title": "電車での読書",
       "description": "電車での読書についての短い説明の作り物。",
-      "body": "# 電車での読書\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
+      "body": "# 電車での読書\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。\n\n![電車での読書](https://picsum.photos/id/69/1200/630?mock=media-34)",
       "created_at": "2026-07-07T09:46:41.199Z"
     },
     {
@@ -1950,6 +2030,1033 @@
       "description": "ひとりの時間の使い方についての短い説明の作り物。",
       "body": "# ひとりの時間の使い方\n\n本文の作り物。段落が続く。\n\n- 箇条書きの 1 つ目\n- 箇条書きの 2 つ目\n\nもう 1 つの段落。",
       "created_at": "2026-10-27T00:20:00.277Z"
+    }
+  ],
+  "media": [
+    {
+      "id": 1,
+      "note_id": null,
+      "project_id": 1,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/60/1200/630?mock=media-1",
+      "created_at": "2026-10-20T00:24:21.822Z"
+    },
+    {
+      "id": 2,
+      "note_id": null,
+      "project_id": 2,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/20/1200/630?mock=media-2",
+      "created_at": "2026-10-20T11:19:01.265Z"
+    },
+    {
+      "id": 3,
+      "note_id": null,
+      "project_id": 4,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/3/1200/630?mock=media-3",
+      "created_at": "2026-10-20T10:36:11.520Z"
+    },
+    {
+      "id": 4,
+      "note_id": null,
+      "project_id": 5,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/36/1200/630?mock=media-4",
+      "created_at": "2026-10-20T01:17:15.444Z"
+    },
+    {
+      "id": 5,
+      "note_id": null,
+      "project_id": 7,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/8/1200/630?mock=media-5",
+      "created_at": "2026-10-20T10:29:47.130Z"
+    },
+    {
+      "id": 6,
+      "note_id": null,
+      "project_id": 8,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/119/1200/630?mock=media-6",
+      "created_at": "2026-10-20T06:33:53.898Z"
+    },
+    {
+      "id": 7,
+      "note_id": null,
+      "project_id": 10,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/163/1200/630?mock=media-7",
+      "created_at": "2026-10-20T11:26:36.482Z"
+    },
+    {
+      "id": 8,
+      "note_id": null,
+      "project_id": 11,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/26/1200/630?mock=media-8",
+      "created_at": "2026-10-20T03:02:41.672Z"
+    },
+    {
+      "id": 9,
+      "note_id": null,
+      "project_id": 13,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/56/1200/630?mock=media-9",
+      "created_at": "2026-10-20T12:30:17.966Z"
+    },
+    {
+      "id": 10,
+      "note_id": null,
+      "project_id": 14,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/0/1200/630?mock=media-10",
+      "created_at": "2026-10-20T07:50:59.246Z"
+    },
+    {
+      "id": 11,
+      "note_id": null,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": 41,
+      "storage_key": "https://picsum.photos/id/74/1200/630?mock=media-11",
+      "created_at": "2022-03-13T10:53:40.074Z"
+    },
+    {
+      "id": 12,
+      "note_id": null,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": 42,
+      "storage_key": "https://picsum.photos/id/173/1200/630?mock=media-12",
+      "created_at": "2022-11-04T09:55:50.570Z"
+    },
+    {
+      "id": 13,
+      "note_id": null,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": 43,
+      "storage_key": "https://picsum.photos/id/40/1200/630?mock=media-13",
+      "created_at": "2023-07-23T10:15:31.884Z"
+    },
+    {
+      "id": 14,
+      "note_id": null,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": 44,
+      "storage_key": "https://picsum.photos/id/145/1200/630?mock=media-14",
+      "created_at": "2024-01-09T11:56:59.846Z"
+    },
+    {
+      "id": 15,
+      "note_id": null,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": 45,
+      "storage_key": "https://picsum.photos/id/177/1200/630?mock=media-15",
+      "created_at": "2024-09-16T00:42:26.711Z"
+    },
+    {
+      "id": 16,
+      "note_id": null,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": 47,
+      "storage_key": "https://picsum.photos/id/143/1200/630?mock=media-16",
+      "created_at": "2025-12-25T07:42:46.186Z"
+    },
+    {
+      "id": 17,
+      "note_id": null,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": 48,
+      "storage_key": "https://picsum.photos/id/107/1200/630?mock=media-17",
+      "created_at": "2026-06-11T06:04:08.073Z"
+    },
+    {
+      "id": 18,
+      "note_id": null,
+      "project_id": null,
+      "career_id": 2,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/9/1200/630?mock=media-18",
+      "created_at": "2026-10-20T10:36:44.226Z"
+    },
+    {
+      "id": 19,
+      "note_id": 2,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/17/1200/630?mock=media-19",
+      "created_at": "2022-01-02T10:36:54.382Z"
+    },
+    {
+      "id": 20,
+      "note_id": 3,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/24/1200/630?mock=media-20",
+      "created_at": "2022-04-04T08:20:25.753Z"
+    },
+    {
+      "id": 21,
+      "note_id": 5,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/4/1200/630?mock=media-21",
+      "created_at": "2022-07-10T10:08:04.958Z"
+    },
+    {
+      "id": 22,
+      "note_id": 6,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/171/1200/630?mock=media-22",
+      "created_at": "2022-09-26T13:11:32.172Z"
+    },
+    {
+      "id": 23,
+      "note_id": 7,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/9/1200/630?mock=media-23",
+      "created_at": "2022-12-09T07:16:30.263Z"
+    },
+    {
+      "id": 24,
+      "note_id": 8,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/145/1200/630?mock=media-24",
+      "created_at": "2023-01-29T05:08:05.706Z"
+    },
+    {
+      "id": 25,
+      "note_id": 9,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/102/1200/630?mock=media-25",
+      "created_at": "2023-03-24T10:17:38.645Z"
+    },
+    {
+      "id": 26,
+      "note_id": 10,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/40/1200/630?mock=media-26",
+      "created_at": "2023-05-19T06:24:55.680Z"
+    },
+    {
+      "id": 27,
+      "note_id": 11,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/166/1200/630?mock=media-27",
+      "created_at": "2023-07-26T11:25:31.604Z"
+    },
+    {
+      "id": 28,
+      "note_id": 13,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/91/1200/630?mock=media-28",
+      "created_at": "2023-11-10T07:06:26.885Z"
+    },
+    {
+      "id": 29,
+      "note_id": 14,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/63/1200/630?mock=media-29",
+      "created_at": "2024-01-16T08:42:01.400Z"
+    },
+    {
+      "id": 30,
+      "note_id": 19,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/20/1200/630?mock=media-30",
+      "created_at": "2024-12-05T12:31:32.393Z"
+    },
+    {
+      "id": 31,
+      "note_id": 24,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/112/1200/630?mock=media-31",
+      "created_at": "2025-09-11T10:58:07.671Z"
+    },
+    {
+      "id": 32,
+      "note_id": 26,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/57/1200/630?mock=media-32",
+      "created_at": "2026-01-02T11:00:38.273Z"
+    },
+    {
+      "id": 33,
+      "note_id": 28,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/159/1200/630?mock=media-33",
+      "created_at": "2026-05-23T01:07:10.387Z"
+    },
+    {
+      "id": 34,
+      "note_id": 29,
+      "project_id": null,
+      "career_id": null,
+      "activity_id": null,
+      "storage_key": "https://picsum.photos/id/69/1200/630?mock=media-34",
+      "created_at": "2026-07-06T13:15:18.696Z"
+    }
+  ],
+  "syndication": [
+    {
+      "id": 1,
+      "note_id": 5,
+      "url": "https://example.com/zenn/articles/syndicated-005",
+      "created_at": "2022-07-13T13:36:58.557Z"
+    },
+    {
+      "id": 2,
+      "note_id": 10,
+      "url": "https://example.com/zenn/articles/syndicated-010",
+      "created_at": "2023-05-20T13:18:12.719Z"
+    },
+    {
+      "id": 3,
+      "note_id": 21,
+      "url": "https://example.com/zenn/articles/syndicated-021",
+      "created_at": "2025-03-29T13:02:17.684Z"
+    }
+  ],
+  "link_preview": [
+    {
+      "id": 1,
+      "url": "https://example.com/blog/typography-basics",
+      "title": "文字組みの基本",
+      "image_url": "https://picsum.photos/id/24/1200/630",
+      "fetched_at": "2026-10-02T10:25:51.314Z"
+    },
+    {
+      "id": 2,
+      "url": "https://example.com/tools/notebook",
+      "title": "方眼の手帳",
+      "image_url": "https://picsum.photos/id/4/1200/630",
+      "fetched_at": "2026-10-03T11:40:54.099Z"
+    },
+    {
+      "id": 3,
+      "url": "https://example.com/shop/coffee-dripper",
+      "title": "コーヒードリッパー",
+      "image_url": "https://picsum.photos/id/30/1200/630",
+      "fetched_at": "2026-10-04T10:58:39.163Z"
+    },
+    {
+      "id": 4,
+      "url": "https://example.com/news/city-garden",
+      "title": "市民農園の募集",
+      "image_url": "https://picsum.photos/id/85/1200/630",
+      "fetched_at": "2026-10-05T12:49:30.711Z"
+    },
+    {
+      "id": 5,
+      "url": "https://example.com/blog/no-image",
+      "title": null,
+      "image_url": null,
+      "fetched_at": "2026-10-06T09:05:04.077Z"
+    },
+    {
+      "id": 6,
+      "url": "https://example.com/music/guitar-lessons",
+      "title": "ギターの練習曲",
+      "image_url": "https://picsum.photos/id/145/1200/630",
+      "fetched_at": "2026-10-07T07:30:53.792Z"
+    }
+  ],
+  "resume": [
+    {
+      "id": 1,
+      "slug": "public",
+      "title": "職務経歴書",
+      "audience": "public",
+      "status": "published",
+      "limited_token_hash": null,
+      "limited_expires_at": null,
+      "created_at": "2026-10-21T07:07:58.799Z",
+      "updated_at": "2026-10-21T07:07:58.799Z"
+    },
+    {
+      "id": 2,
+      "slug": "for-company-x",
+      "title": "職務経歴書（例示株式会社 様）",
+      "audience": "limited",
+      "status": "published",
+      "limited_token_hash": "0000000000000000000000000000000000000000000000000000000000000001",
+      "limited_expires_at": "2026-12-31T14:59:59.000Z",
+      "created_at": "2026-10-21T14:47:37.128Z",
+      "updated_at": "2026-10-21T14:47:37.128Z"
+    },
+    {
+      "id": 3,
+      "slug": "for-company-y",
+      "title": "職務経歴書（作成中）",
+      "audience": "limited",
+      "status": "draft",
+      "limited_token_hash": null,
+      "limited_expires_at": null,
+      "created_at": "2026-10-21T00:44:21.528Z",
+      "updated_at": "2026-10-21T00:44:21.528Z"
+    }
+  ],
+  "resume_career": [
+    {
+      "id": 1,
+      "resume_id": 1,
+      "career_id": 1,
+      "organization_name": "Web サービス企業 A",
+      "role": "フロントエンドエンジニア",
+      "started_on": "2021-04-01",
+      "ended_on": "2023-09-30",
+      "description": null,
+      "url": null
+    },
+    {
+      "id": 2,
+      "resume_id": 1,
+      "career_id": 2,
+      "organization_name": "株式会社ダミーデザイン",
+      "role": "デザインエンジニア",
+      "started_on": "2023-10-01",
+      "ended_on": null,
+      "description": "デザインと実装の橋渡しとして、プロトタイプとコンポーネントを作っている。\n\n![作業の机](https://picsum.photos/id/9/1200/630?mock=media-18)",
+      "url": "https://example.com/company-b"
+    },
+    {
+      "id": 3,
+      "resume_id": 1,
+      "career_id": 3,
+      "organization_name": "個人",
+      "role": "個人事業主",
+      "started_on": "2024-06-01",
+      "ended_on": null,
+      "description": "副業で小規模なサイト制作を受けている。",
+      "url": null
+    },
+    {
+      "id": 4,
+      "resume_id": 2,
+      "career_id": 1,
+      "organization_name": "株式会社サンプルテック",
+      "role": "フロントエンドエンジニア",
+      "started_on": "2021-04-01",
+      "ended_on": "2023-09-30",
+      "description": "Web サービスの画面の実装と、デザインシステムの整備を担当した。",
+      "url": null
+    },
+    {
+      "id": 5,
+      "resume_id": 2,
+      "career_id": 2,
+      "organization_name": "株式会社ダミーデザイン",
+      "role": "デザインエンジニア",
+      "started_on": "2023-10-01",
+      "ended_on": null,
+      "description": "デザインと実装の橋渡しとして、プロトタイプとコンポーネントを作っている。\n\n![作業の机](https://picsum.photos/id/9/1200/630?mock=media-18)",
+      "url": "https://example.com/company-b"
+    },
+    {
+      "id": 6,
+      "resume_id": 2,
+      "career_id": 3,
+      "organization_name": "個人",
+      "role": "個人事業主",
+      "started_on": "2024-06-01",
+      "ended_on": null,
+      "description": "副業で小規模なサイト制作を受けている。",
+      "url": null
+    },
+    {
+      "id": 7,
+      "resume_id": 3,
+      "career_id": 1,
+      "organization_name": "株式会社サンプルテック",
+      "role": "フロントエンドエンジニア",
+      "started_on": "2021-04-01",
+      "ended_on": "2023-09-30",
+      "description": "Web サービスの画面の実装と、デザインシステムの整備を担当した。",
+      "url": null
+    },
+    {
+      "id": 8,
+      "resume_id": 3,
+      "career_id": 2,
+      "organization_name": "株式会社ダミーデザイン",
+      "role": "デザインエンジニア",
+      "started_on": "2023-10-01",
+      "ended_on": null,
+      "description": "デザインと実装の橋渡しとして、プロトタイプとコンポーネントを作っている。\n\n![作業の机](https://picsum.photos/id/9/1200/630?mock=media-18)",
+      "url": "https://example.com/company-b"
+    },
+    {
+      "id": 9,
+      "resume_id": 3,
+      "career_id": 3,
+      "organization_name": "個人",
+      "role": "個人事業主",
+      "started_on": "2024-06-01",
+      "ended_on": null,
+      "description": "副業で小規模なサイト制作を受けている。",
+      "url": null
+    }
+  ],
+  "resume_project": [
+    {
+      "id": 1,
+      "resume_id": 1,
+      "project_id": 4,
+      "organization_name": "Web サービス企業 A",
+      "kind": "application",
+      "title": "EC サイトの購入画面の改善",
+      "started_on": "2022-10-01",
+      "ended_on": "2023-03-31",
+      "description": null,
+      "url": null
+    },
+    {
+      "id": 2,
+      "resume_id": 1,
+      "project_id": 6,
+      "organization_name": "個人",
+      "kind": "application",
+      "title": "習慣記録アプリ",
+      "started_on": "2023-05-01",
+      "ended_on": "2023-08-31",
+      "description": "習慣記録アプリについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/habit-tracker"
+    },
+    {
+      "id": 3,
+      "resume_id": 1,
+      "project_id": 8,
+      "organization_name": "株式会社ダミーデザイン",
+      "kind": "application",
+      "title": "コーポレートサイトの制作",
+      "started_on": "2023-11-01",
+      "ended_on": "2024-03-31",
+      "description": "コーポレートサイトの制作について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/brand-site"
+    },
+    {
+      "id": 4,
+      "resume_id": 1,
+      "project_id": 11,
+      "organization_name": "株式会社ダミーデザイン",
+      "kind": "application",
+      "title": "社内コンポーネントライブラリ",
+      "started_on": "2024-10-01",
+      "ended_on": null,
+      "description": "社内コンポーネントライブラリについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/component-library"
+    },
+    {
+      "id": 5,
+      "resume_id": 1,
+      "project_id": 15,
+      "organization_name": "個人",
+      "kind": "application",
+      "title": "個人サイトの作り直し",
+      "started_on": "2026-03-01",
+      "ended_on": null,
+      "description": "個人サイトの作り直しについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/synsk-me-renewal"
+    },
+    {
+      "id": 6,
+      "resume_id": 2,
+      "project_id": 1,
+      "organization_name": "株式会社サンプルテック",
+      "kind": "application",
+      "title": "管理画面の刷新",
+      "started_on": "2021-12-01",
+      "ended_on": "2022-06-30",
+      "description": "管理画面の刷新について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": null
+    },
+    {
+      "id": 7,
+      "resume_id": 2,
+      "project_id": 2,
+      "organization_name": "株式会社サンプルテック",
+      "kind": "application",
+      "title": "デザイントークンの導入",
+      "started_on": "2022-04-01",
+      "ended_on": "2022-09-30",
+      "description": "デザイントークンの導入について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/design-tokens"
+    },
+    {
+      "id": 8,
+      "resume_id": 2,
+      "project_id": 3,
+      "organization_name": "例示コミュニティ",
+      "kind": "event",
+      "title": "フロントエンド勉強会の開催",
+      "started_on": "2022-05-14",
+      "ended_on": "2022-05-14",
+      "description": "フロントエンド勉強会の開催について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/frontend-meetup-2022"
+    },
+    {
+      "id": 9,
+      "resume_id": 2,
+      "project_id": 4,
+      "organization_name": "株式会社サンプルテック",
+      "kind": "application",
+      "title": "EC サイトの購入画面の改善",
+      "started_on": "2022-10-01",
+      "ended_on": "2023-03-31",
+      "description": "EC サイトの購入画面の改善について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": null
+    },
+    {
+      "id": 10,
+      "resume_id": 2,
+      "project_id": 5,
+      "organization_name": "例示コミュニティ",
+      "kind": "talk",
+      "title": "CSS 設計の話",
+      "started_on": "2023-02-18",
+      "ended_on": "2023-02-18",
+      "description": "CSS 設計の話について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/talk-css-architecture"
+    },
+    {
+      "id": 11,
+      "resume_id": 2,
+      "project_id": 6,
+      "organization_name": "個人",
+      "kind": "application",
+      "title": "習慣記録アプリ",
+      "started_on": "2023-05-01",
+      "ended_on": "2023-08-31",
+      "description": "習慣記録アプリについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/habit-tracker"
+    },
+    {
+      "id": 12,
+      "resume_id": 2,
+      "project_id": 7,
+      "organization_name": "株式会社サンプルテック",
+      "kind": "other",
+      "title": "アクセシビリティの点検",
+      "started_on": "2023-06-01",
+      "ended_on": "2023-08-31",
+      "description": "アクセシビリティの点検について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": null
+    },
+    {
+      "id": 13,
+      "resume_id": 2,
+      "project_id": 8,
+      "organization_name": "株式会社ダミーデザイン",
+      "kind": "application",
+      "title": "コーポレートサイトの制作",
+      "started_on": "2023-11-01",
+      "ended_on": "2024-03-31",
+      "description": "コーポレートサイトの制作について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/brand-site"
+    },
+    {
+      "id": 14,
+      "resume_id": 2,
+      "project_id": 9,
+      "organization_name": "例示コミュニティ",
+      "kind": "talk",
+      "title": "動くプロトタイプで合意を取る",
+      "started_on": "2024-04-20",
+      "ended_on": "2024-04-20",
+      "description": "動くプロトタイプで合意を取るについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/talk-prototyping"
+    },
+    {
+      "id": 15,
+      "resume_id": 2,
+      "project_id": 10,
+      "organization_name": "個人",
+      "kind": "application",
+      "title": "小さな店のサイト制作",
+      "started_on": "2024-07-01",
+      "ended_on": "2024-09-30",
+      "description": "小さな店のサイト制作について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": null
+    },
+    {
+      "id": 16,
+      "resume_id": 2,
+      "project_id": 11,
+      "organization_name": "株式会社ダミーデザイン",
+      "kind": "application",
+      "title": "社内コンポーネントライブラリ",
+      "started_on": "2024-10-01",
+      "ended_on": null,
+      "description": "社内コンポーネントライブラリについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/component-library"
+    },
+    {
+      "id": 17,
+      "resume_id": 2,
+      "project_id": 12,
+      "organization_name": "例示コミュニティ",
+      "kind": "event",
+      "title": "デザインエンジニアリングの夜",
+      "started_on": "2025-02-08",
+      "ended_on": "2025-02-08",
+      "description": "デザインエンジニアリングの夜について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/design-engineering-night"
+    },
+    {
+      "id": 18,
+      "resume_id": 2,
+      "project_id": 13,
+      "organization_name": "株式会社ダミーデザイン",
+      "kind": "application",
+      "title": "モーションの指針づくり",
+      "started_on": "2025-05-01",
+      "ended_on": "2025-09-30",
+      "description": "モーションの指針づくりについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/motion-guidelines"
+    },
+    {
+      "id": 19,
+      "resume_id": 2,
+      "project_id": 14,
+      "organization_name": "例示コミュニティ",
+      "kind": "talk",
+      "title": "View Transitions を実務で使う",
+      "started_on": "2025-11-15",
+      "ended_on": "2025-11-15",
+      "description": "View Transitions を実務で使うについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/talk-view-transitions"
+    },
+    {
+      "id": 20,
+      "resume_id": 2,
+      "project_id": 15,
+      "organization_name": "個人",
+      "kind": "application",
+      "title": "個人サイトの作り直し",
+      "started_on": "2026-03-01",
+      "ended_on": null,
+      "description": "個人サイトの作り直しについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/synsk-me-renewal"
+    },
+    {
+      "id": 21,
+      "resume_id": 3,
+      "project_id": 4,
+      "organization_name": "株式会社サンプルテック",
+      "kind": "application",
+      "title": "EC サイトの購入画面の改善",
+      "started_on": "2022-10-01",
+      "ended_on": "2023-03-31",
+      "description": "EC サイトの購入画面の改善について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": null
+    },
+    {
+      "id": 22,
+      "resume_id": 3,
+      "project_id": 6,
+      "organization_name": "個人",
+      "kind": "application",
+      "title": "習慣記録アプリ",
+      "started_on": "2023-05-01",
+      "ended_on": "2023-08-31",
+      "description": "習慣記録アプリについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/habit-tracker"
+    },
+    {
+      "id": 23,
+      "resume_id": 3,
+      "project_id": 8,
+      "organization_name": "株式会社ダミーデザイン",
+      "kind": "application",
+      "title": "コーポレートサイトの制作",
+      "started_on": "2023-11-01",
+      "ended_on": "2024-03-31",
+      "description": "コーポレートサイトの制作について、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/brand-site"
+    },
+    {
+      "id": 24,
+      "resume_id": 3,
+      "project_id": 11,
+      "organization_name": "株式会社ダミーデザイン",
+      "kind": "application",
+      "title": "社内コンポーネントライブラリ",
+      "started_on": "2024-10-01",
+      "ended_on": null,
+      "description": "社内コンポーネントライブラリについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/component-library"
+    },
+    {
+      "id": 25,
+      "resume_id": 3,
+      "project_id": 15,
+      "organization_name": "個人",
+      "kind": "application",
+      "title": "個人サイトの作り直し",
+      "started_on": "2026-03-01",
+      "ended_on": null,
+      "description": "個人サイトの作り直しについて、担当した範囲と工夫したことを書く説明文の作り物。",
+      "url": "https://example.com/projects/synsk-me-renewal"
+    }
+  ],
+  "resume_project_skill": [
+    {
+      "resume_project_id": 1,
+      "skill_name": "Node.js"
+    },
+    {
+      "resume_project_id": 2,
+      "skill_name": "Figma"
+    },
+    {
+      "resume_project_id": 3,
+      "skill_name": "TypeScript"
+    },
+    {
+      "resume_project_id": 4,
+      "skill_name": "Cloudflare Workers"
+    },
+    {
+      "resume_project_id": 5,
+      "skill_name": "React"
+    },
+    {
+      "resume_project_id": 6,
+      "skill_name": "TypeScript"
+    },
+    {
+      "resume_project_id": 6,
+      "skill_name": "Node.js"
+    },
+    {
+      "resume_project_id": 7,
+      "skill_name": "TypeScript"
+    },
+    {
+      "resume_project_id": 7,
+      "skill_name": "Storybook"
+    },
+    {
+      "resume_project_id": 8,
+      "skill_name": "React"
+    },
+    {
+      "resume_project_id": 8,
+      "skill_name": "Figma"
+    },
+    {
+      "resume_project_id": 9,
+      "skill_name": "Node.js"
+    },
+    {
+      "resume_project_id": 10,
+      "skill_name": "React"
+    },
+    {
+      "resume_project_id": 11,
+      "skill_name": "Figma"
+    },
+    {
+      "resume_project_id": 12,
+      "skill_name": "Next.js"
+    },
+    {
+      "resume_project_id": 12,
+      "skill_name": "Figma"
+    },
+    {
+      "resume_project_id": 13,
+      "skill_name": "TypeScript"
+    },
+    {
+      "resume_project_id": 14,
+      "skill_name": "React"
+    },
+    {
+      "resume_project_id": 14,
+      "skill_name": "Figma"
+    },
+    {
+      "resume_project_id": 14,
+      "skill_name": "Node.js"
+    },
+    {
+      "resume_project_id": 15,
+      "skill_name": "Next.js"
+    },
+    {
+      "resume_project_id": 16,
+      "skill_name": "Cloudflare Workers"
+    },
+    {
+      "resume_project_id": 17,
+      "skill_name": "React"
+    },
+    {
+      "resume_project_id": 17,
+      "skill_name": "Accessibility"
+    },
+    {
+      "resume_project_id": 18,
+      "skill_name": "React"
+    },
+    {
+      "resume_project_id": 18,
+      "skill_name": "CSS"
+    },
+    {
+      "resume_project_id": 19,
+      "skill_name": "CSS"
+    },
+    {
+      "resume_project_id": 19,
+      "skill_name": "Cloudflare Workers"
+    },
+    {
+      "resume_project_id": 20,
+      "skill_name": "React"
+    },
+    {
+      "resume_project_id": 21,
+      "skill_name": "Node.js"
+    },
+    {
+      "resume_project_id": 22,
+      "skill_name": "Figma"
+    },
+    {
+      "resume_project_id": 23,
+      "skill_name": "TypeScript"
+    },
+    {
+      "resume_project_id": 24,
+      "skill_name": "Cloudflare Workers"
+    },
+    {
+      "resume_project_id": 25,
+      "skill_name": "React"
+    }
+  ],
+  "resume_education": [
+    {
+      "id": 1,
+      "resume_id": 1,
+      "education_id": 1,
+      "school": "例示大学",
+      "department": "情報デザイン学部",
+      "started_on": "2015-04-01",
+      "ended_on": "2019-03-31",
+      "remarks": "卒業"
+    },
+    {
+      "id": 2,
+      "resume_id": 1,
+      "education_id": 2,
+      "school": "サンプル専門学校",
+      "department": "Web デザイン科",
+      "started_on": "2019-04-01",
+      "ended_on": "2021-03-31",
+      "remarks": "修了"
+    },
+    {
+      "id": 3,
+      "resume_id": 2,
+      "education_id": 1,
+      "school": "例示大学",
+      "department": "情報デザイン学部",
+      "started_on": "2015-04-01",
+      "ended_on": "2019-03-31",
+      "remarks": "卒業"
+    },
+    {
+      "id": 4,
+      "resume_id": 2,
+      "education_id": 2,
+      "school": "サンプル専門学校",
+      "department": "Web デザイン科",
+      "started_on": "2019-04-01",
+      "ended_on": "2021-03-31",
+      "remarks": "修了"
+    },
+    {
+      "id": 5,
+      "resume_id": 3,
+      "education_id": 1,
+      "school": "例示大学",
+      "department": "情報デザイン学部",
+      "started_on": "2015-04-01",
+      "ended_on": "2019-03-31",
+      "remarks": "卒業"
+    },
+    {
+      "id": 6,
+      "resume_id": 3,
+      "education_id": 2,
+      "school": "サンプル専門学校",
+      "department": "Web デザイン科",
+      "started_on": "2019-04-01",
+      "ended_on": "2021-03-31",
+      "remarks": "修了"
+    }
+  ],
+  "resume_skill_override": [
+    {
+      "resume_id": 1,
+      "skill_name": "CSS",
+      "years_override": 5
+    },
+    {
+      "resume_id": 2,
+      "skill_name": "CSS",
+      "years_override": 5
+    },
+    {
+      "resume_id": 3,
+      "skill_name": "CSS",
+      "years_override": 5
     }
   ]
 }
