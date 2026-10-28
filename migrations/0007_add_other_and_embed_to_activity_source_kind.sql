@@ -1,4 +1,4 @@
--- activity_source.kind に other を足す。書き方の決まりは 0003 の冒頭にある。
+-- activity_source.kind に other と embed を足す。書き方の決まりは 0003 の冒頭にある。
 --
 -- CHECK の値は ALTER TABLE で変えられないため、表を作り直す。行はそのまま移す。
 --
@@ -20,8 +20,9 @@ DROP TABLE activity_source;
 CREATE TABLE activity_source (
   source TEXT PRIMARY KEY,
   -- 一覧での分類。UI はこの値で表示を分ける。article は記事、life_event は life event、
+  -- embed は各サービスの埋め込みで見せる（どの埋め込みかは source で決める）、
   -- other はその他。値の名前は project.kind の other に合わせる
-  kind TEXT NOT NULL CHECK (kind IN ('article', 'life_event', 'other'))
+  kind TEXT NOT NULL CHECK (kind IN ('article', 'embed', 'life_event', 'other'))
 ) STRICT;
 
 INSERT INTO activity_source (source, kind) SELECT source, kind FROM activity_source_copy;
