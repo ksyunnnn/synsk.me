@@ -5,6 +5,7 @@ import { Noto_Sans_JP, Source_Sans_3 } from 'next/font/google';
 import Link from 'next/link';
 
 import { getTimeline } from './mockTimeline';
+import { Embed } from './Embed';
 import { SourceIcon } from './SourceIcon';
 
 const sourceSans = Source_Sans_3({ subsets: ['latin'], weight: ['300', '400', '600'] });
@@ -54,30 +55,41 @@ const Page = async () => {
                   <span>{entry.label}</span>
                   {entry.kind && <span>{entry.kind}</span>}
                 </div>
-                {entry.href ? (
-                  <a href={entry.href} className="font-normal underline underline-offset-4">
-                    {entry.title}
-                  </a>
-                ) : (
-                  <span className="font-normal">{entry.title}</span>
-                )}
-                {entry.organization && <span className="text-sm">{entry.organization}</span>}
-                {entry.description && (
-                  <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                    {entry.description}
-                  </p>
-                )}
-                {entry.imageUrl && (
-                  // ダミー画像は外部のサービスから直接読む。最適化はデザインが決まってから考える
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={entry.imageUrl}
-                    alt=""
-                    width={1200}
-                    height={630}
-                    loading="lazy"
-                    className="aspect-[1200/630] w-full rounded-md object-cover"
+                {entry.kind === 'embed' && entry.href ? (
+                  <Embed
+                    source={entry.label}
+                    url={entry.href}
+                    title={entry.title}
+                    api={entry.api}
                   />
+                ) : (
+                  <>
+                    {entry.href ? (
+                      <a href={entry.href} className="font-normal underline underline-offset-4">
+                        {entry.title}
+                      </a>
+                    ) : (
+                      <span className="font-normal">{entry.title}</span>
+                    )}
+                    {entry.organization && <span className="text-sm">{entry.organization}</span>}
+                    {entry.description && (
+                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">
+                        {entry.description}
+                      </p>
+                    )}
+                    {entry.imageUrl && (
+                      // ダミー画像は外部のサービスから直接読む。最適化はデザインが決まってから考える
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={entry.imageUrl}
+                        alt=""
+                        width={1200}
+                        height={630}
+                        loading="lazy"
+                        className="aspect-[1200/630] w-full rounded-md object-cover"
+                      />
+                    )}
+                  </>
                 )}
               </li>
             ))}

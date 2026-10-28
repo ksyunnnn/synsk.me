@@ -16,6 +16,8 @@ export type TimelineEntry = {
   description: string | null;
   imageUrl: string | null;
   href: string | null;
+  // スキーマに列がなく API が返す値（mock-data.json の _api）
+  api: Record<string, unknown> | null;
 };
 
 // モックに限り、media.storage_key は画像の URL を持つ
@@ -45,6 +47,7 @@ export const getTimeline = (): TimelineEntry[] => {
         description: revision?.description ?? null,
         imageUrl: n.card_image === 'media' ? mediaUrl(n.card_media_id) : null,
         href: null,
+        api: null,
       };
     });
 
@@ -60,6 +63,7 @@ export const getTimeline = (): TimelineEntry[] => {
       description: masked ? null : p.description,
       imageUrl: mediaUrl(p.card_media_id),
       href: p.url,
+      api: null,
     };
   });
 
@@ -75,6 +79,7 @@ export const getTimeline = (): TimelineEntry[] => {
       description: masked ? null : c.description,
       imageUrl: null,
       href: c.url,
+      api: null,
     };
   });
 
@@ -92,6 +97,7 @@ export const getTimeline = (): TimelineEntry[] => {
         description: a.description,
         imageUrl: isLifeEvent ? mediaUrl(a.card_media_id) : a.image_url,
         href: a.url,
+        api: '_api' in a ? (a._api as Record<string, unknown>) : null,
       };
     });
 
