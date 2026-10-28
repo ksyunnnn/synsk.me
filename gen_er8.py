@@ -41,7 +41,8 @@ def rel_label(cx, y_top, text):
 
 def kinds_note(x, y):
     rows = [
-        ("外部の項目", "zenn など", "article", "external_id"),
+        ("外部の記事", "zenn など", "article", "external_id"),
+        ("記事でない項目", "取得元ごと", "other", "external_id"),
         ("life event", "life_event", "life_event", "id"),
         ("想定外のサイト", "unlisted", "article", "url"),
     ]
@@ -72,7 +73,7 @@ def rules_note(x, y):
         "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガが入れ直す",
         "activity_feed のビューは、並べる列を UI で決めてから作る",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public。project.kind は application・talk・event・other",
-        "CHECK の値: activity_source.kind は article・life_event。note.card_image は generated・media・site",
+        "CHECK の値: activity_source.kind は article・life_event・other。note.card_image は generated・media・site",
         "年月日の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",
