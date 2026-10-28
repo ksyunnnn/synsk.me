@@ -20,8 +20,7 @@ DROP TABLE activity_source;
 CREATE TABLE activity_source (
   source TEXT PRIMARY KEY,
   -- 一覧での分類。UI はこの値で表示を分ける。article は記事、life_event は life event、
-  -- other は記事でないもの（曲・投稿・動画・リポジトリ・イベント・スライドなど）。
-  -- 値の名前は、どれにも当たらないものを受ける project.kind の other に合わせる
+  -- other はその他。値の名前は project.kind の other に合わせる
   kind TEXT NOT NULL CHECK (kind IN ('article', 'life_event', 'other'))
 ) STRICT;
 

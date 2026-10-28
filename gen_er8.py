@@ -41,8 +41,8 @@ def rel_label(cx, y_top, text):
 
 def kinds_note(x, y):
     rows = [
-        ("外部の記事", "zenn など", "article", "external_id"),
-        ("記事でない項目", "取得元ごと", "other", "external_id"),
+        ("外部の項目", "zenn など", "article", "external_id"),
+        ("その他", "取得元ごと", "other", "external_id"),
         ("life event", "life_event", "life_event", "id"),
         ("想定外のサイト", "unlisted", "article", "url"),
     ]
