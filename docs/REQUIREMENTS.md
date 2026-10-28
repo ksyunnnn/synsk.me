@@ -10,26 +10,17 @@
 ## FR-02: 外部 activity を自動で取得し、永続化する
 根拠: [ADR-0045](./decisions/0045-external-activity-follows-source.md)
 
-> ※根拠: 根拠を ADR-0009 から ADR-0045 に替えた。ADR-0045 が ADR-0009 を置き換え、「外部 activity を自動で取得して永続化し」を引き継いでいる。要件の文は変えていない。
-
 ## FR-03: career と project を永続化する
 根拠: [ADR-0044](./decisions/0044-content-data-model-by-organization.md)
 
 ## FR-05: note に、公開前の下書き状態を持てる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
 
-> ※削除: FR-06「公開済みの activity を、データを保持したまま非公開にできる」を消した。
-> ※根拠: 72コメント「取得元で消えた activity は黙って一覧から消す」で、オーナーが決めた。外部の activity は外部のサービス側で非公開にし、synsk.me に隠す列を持たない。life event の行も隠さない（出したくないときは行を消す）: https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6334302040 。ADR-0045 の Decision Outcome に書いた。非公開にできる activity が残らないので、spec へ移さずに消した。ID は使い回さない。FR-04 と FR-12 も、spec へ移したあと（コミット c94aab8）番号を使い回していない。
-> ※確かめてほしいこと: 根拠の ADR-0008 の「公開済みのものは、削除せずに非公開へ戻せる」は、activity に限らない文なので直していない。note は FR-05 と spec が非公開に戻すことを扱う。
-
 ## FR-07: career と project は、公開・限定公開・非公開の3段階を区別して保持できる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
 
 ## FR-08: career と project は、公開できる値と公開できない値の両方を保持できる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
-
-> ※削除: FR-09「外部 activity を再取得しても、手で付けた情報が保持される」を消した。
-> ※根拠: 外部の activity にオーナーが手で付ける値（コメント・表示の分類の上書き・非公開への切り替え）を、オーナーがすべて外した。72コメント 6334302040 に「これで、外部の activity にオーナーが手で付ける値は無くなった」とある: https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6334302040 。ADR-0045 の Decision Outcome に書いた。保つ値がないので、spec へ移さずに消した。
 
 ## FR-10: note の過去の版を保持し、任意の版に戻せる
 根拠: [ADR-0010](./decisions/0010-content-storage-scope.md)
