@@ -41,7 +41,7 @@
   },
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.64.0",
-    "@cloudflare/vitest-plugin": "^1.4.4",
+    "@cloudflare/vitest-plugin": "^1.4.9",
     "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^24",
@@ -57,9 +57,9 @@
     "prettier": "3.9.6",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.3",
-    "vite": "^8.2.2",
-    "vitest": "4.1.11",
-    "wrangler": "^4.151.1"
+    "vite": "^8.2.4",
+    "vitest": "4.1.12",
+    "wrangler": "^4.154.0"
   },
   "overrides": {
     "@types/react": "19.3.0",

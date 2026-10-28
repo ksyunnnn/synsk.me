@@ -21,9 +21,12 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # check-latest がないと、ランナーのキャッシュにある古い版が使われ、
+      # セキュリティリリースが入らない
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
+          check-latest: true
           cache: npm
 
       - run: npm ci
