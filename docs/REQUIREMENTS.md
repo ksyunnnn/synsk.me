@@ -5,10 +5,10 @@
 ---
 
 ## FR-01: activity を永続化する
-根拠: [ADR-0009](./decisions/0009-external-data-sync.md)
+根拠: [ADR-0045](./decisions/0045-external-activity-follows-source.md)
 
 ## FR-02: 外部 activity を自動で取得し、永続化する
-根拠: [ADR-0009](./decisions/0009-external-data-sync.md)
+根拠: [ADR-0045](./decisions/0045-external-activity-follows-source.md)
 
 ## FR-03: career と project を永続化する
 根拠: [ADR-0044](./decisions/0044-content-data-model-by-organization.md)
@@ -16,17 +16,11 @@
 ## FR-05: note に、公開前の下書き状態を持てる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
 
-## FR-06: 公開済みの activity を、データを保持したまま非公開にできる
-根拠: [ADR-0008](./decisions/0008-content-visibility.md)
-
 ## FR-07: career と project は、公開・限定公開・非公開の3段階を区別して保持できる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
 
 ## FR-08: career と project は、公開できる値と公開できない値の両方を保持できる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
-
-## FR-09: 外部 activity を再取得しても、手で付けた情報が保持される
-根拠: [ADR-0009](./decisions/0009-external-data-sync.md)
 
 ## FR-10: note の過去の版を保持し、任意の版に戻せる
 根拠: [ADR-0010](./decisions/0010-content-storage-scope.md)
