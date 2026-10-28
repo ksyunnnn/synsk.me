@@ -27,3 +27,6 @@ CREATE TABLE activity_source (
 INSERT INTO activity_source (source, kind) SELECT source, kind FROM activity_source_copy;
 
 DROP TABLE activity_source_copy;
+
+-- unlisted は取得元として登録していないサイトで、記事に限らないため other にする
+UPDATE activity_source SET kind = 'other' WHERE source = 'unlisted';

@@ -44,7 +44,7 @@ def kinds_note(x, y):
         ("外部の項目", "zenn など", "article", "external_id"),
         ("その他", "取得元ごと", "other", "external_id"),
         ("life event", "life_event", "life_event", "id"),
-        ("想定外のサイト", "unlisted", "article", "url"),
+        ("想定外のサイト", "unlisted", "other", "url"),
     ]
     w, h = 340, 60 + len(rows) * 20 + 72
     out = [
