@@ -26,6 +26,7 @@ export const ScrollDelayPage = ({
   const [bandHeight, setBandHeight] = useState(160);
   const [shift, setShift] = useState(8);
   const [guides, setGuides] = useState(false);
+  const [finished, setFinished] = useState(false);
 
   useEffect(() => {
     const element = baseRef.current;
@@ -72,7 +73,9 @@ export const ScrollDelayPage = ({
   const u = (revealY - bandTop) / bandHeight;
   // u = 0 で上に最大ずれ、u = 1 で揃う
   const offset = shift * (1 - u);
-  const done = revealY >= h;
+  // 一度ページの最後まで進んだら、上へ戻っても表現を戻さない
+  if (!finished && h > 0 && revealY >= h) setFinished(true);
+  const done = finished || revealY >= h;
   // 縞は画面の下端までで止める
   const streakBottom = Math.min(h, view.bottom);
   const copyProps = { 'aria-hidden': true, inert: true } as const;

@@ -5,7 +5,8 @@ import { fontFamily, sourceSans } from '@/lib/fonts';
 import entries from './entries.json';
 import { SourceIcon } from './SourceIcon';
 
-export const MockTop = () => (
+// articleHref を渡すと、リンクを持つ行（記事ページへの行）のリンク先をそれに替える
+export const MockTop = ({ articleHref }: { articleHref?: string } = {}) => (
   <div
     className={`${sourceSans.className} bg-background text-foreground`}
     style={{
@@ -37,7 +38,10 @@ export const MockTop = () => (
                 {entry.kind && <span>{entry.kind}</span>}
               </div>
               {entry.href ? (
-                <a href={entry.href} className="font-normal underline underline-offset-4">
+                <a
+                  href={articleHref ?? entry.href}
+                  className="font-normal underline underline-offset-4"
+                >
                   {entry.title}
                 </a>
               ) : (

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { MockTop } from '../v3.1/MockTop';
 import { ScrollDelayPage } from './ScrollDelayPage';
 
+const ARTICLE = '/lab/delay-visuals/v4.2/rebuild';
+
 const Page = () => (
   <>
     <div className="mx-auto grid max-w-[480px] gap-2 px-6 pt-16 pb-8">
@@ -19,7 +21,11 @@ const Page = () => (
         画面ぶんスクロールするあいだに 64% へ動く。設定は画面の下にある。
       </p>
     </div>
-    <ScrollDelayPage base={<MockTop />} band={<MockTop />} streak={<MockTop />} />
+    <ScrollDelayPage
+      base={<MockTop articleHref={ARTICLE} />}
+      band={<MockTop articleHref={ARTICLE} />}
+      streak={<MockTop articleHref={ARTICLE} />}
+    />
   </>
 );
 
