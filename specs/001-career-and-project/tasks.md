@@ -38,19 +38,19 @@ description: "職歴と実績の実装タスク"
 
 **Purpose**: feature/72-rebuild の `npm run build`・型検査・検査の土台を通す。作り手の判定は ADR-0013・ADR-0036 に沿って作り直す。note に固有の部分（`/notes/*`、`/dash/notes/*`、note の作り物の行）は 003 が持つため作らない
 
-- [ ] T001 ブランチ `feature/72-schema-adjustments` の `migrations/0008_rebuild_career_and_project.sql`（コミット `4704df4`）が feature/72-rebuild に入っていることを確かめる。入っていなければ PM に伝え、D1 を使う検査のタスク（workerd・結合・E2E）を止める（research.md の R1）
-- [ ] T002 `cloudflare:workers` の env を使うときに読み込む関数を src/shared/server/env.ts に作る。先頭で `import 'server-only'`。モジュールの先頭で `cloudflare:workers` を読み込まない（`vinext build` が Node で読み込むため）。Access の設定値（`ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL`）の型をここに置く
-- [ ] T003 Access の JWT を `jose` で検証して `Author` を返す関数（要求のヘッダから・`headers()` から）を src/shared/server/author.ts に作る。署名・発行元・aud（カンマ区切りの複数）・期限・メールアドレス（ローカル部は大文字と小文字を区別し、ドメインは ASCII の英字だけ畳む）を確かめ、設定値が欠ければ null。JWT の型をファイルの外に出さない（constitution VII）
-- [ ] T004 [P] T003 の分岐（JWT なし・署名違い・発行元違い・aud 違い・期限切れ・別のメールアドレス・設定値の欠け・正しい JWT）を tests/unit/author.test.ts で確かめる。鍵は tests/support/access.ts の `createAccessTestKeys` を使う
-- [ ] T005 src/proxy.ts を作り直す。matcher は `/dash` と `/dash/:path*`。作り手でなければ `/dash/forbidden` へ rewrite し、`/dash` 配下の応答に `Cache-Control: no-store, must-revalidate` を付ける。判定は T003 の関数を呼ぶ。D1 や設定値の読み出しで例外が出たら判定せずに通す（`/dash` のページが作り手を確かめる）。`@/features/note/*` を読まない
-- [ ] T006 tests/unit/proxy.test.ts を T005 に合わせて書き直す。`@/features/note/server/queries` のモックを外し、T003 の関数をモックする。matcher・403 の rewrite・`no-store` を確かめる
-- [ ] T007 [P] tests/e2e/support/author.ts を作り直す。playwright.config.ts が読む `ACCESS_CERTS_URL` と `D1_PERSIST_DIR` と、tests/e2e/forbidden-navigation.spec.ts が読む `actAsAuthor` を持つ。tests/support/access.ts を使う
-- [ ] T008 tests/e2e/forbidden-navigation.spec.ts のリンク名「新しい note を作る」を、src/app/dash/page.tsx（T014）の入口のリンクに合わせる
-- [ ] T009 [P] tests/integration/support/d1.ts を、note に依らない形で作り直す。本番ビルドを `createTestHarness()` で起動し、手元の D1 に `migrations/` を当て、作り物の行を入れる関数を持つ
-- [ ] T010 tests/integration/private-responses.test.ts から note の検査を外し、JWT のない `/dash` が 403 で `no-store` を持つこと（NFR-09）を T009 で確かめる形にする。note の検査は 003 が持つ
-- [ ] T011 [P] tests/workers/migrations.test.ts を作り、`TEST_MIGRATIONS` を当てた D1 に 0008 の後の表（`organization.name_masked` が NULL 可、`skill.months_override`、`project.is_highlighted` が無い）があることを確かめる。`npm run test:workers` が「テストが無い」で落ちないようにする
-- [ ] T012 `npx tsc --noEmit` の誤りを無くす。src/app/page.tsx の `cacheLife` の import と、`.next/types` に残った消したページ（`src/app/archives/*`）の型を調べ、直す
-- [ ] T013 `npm run build`・`npx tsc --noEmit`・`npm run lint`・`npm run format:check`・`npm test`・`npm run test:workers` が通ることを確かめる
+- [X] T001 ブランチ `feature/72-schema-adjustments` の `migrations/0008_rebuild_career_and_project.sql`（コミット `4704df4`）が feature/72-rebuild に入っていることを確かめる。入っていなければ PM に伝え、D1 を使う検査のタスク（workerd・結合・E2E）を止める（research.md の R1）
+- [X] T002 `cloudflare:workers` の env を使うときに読み込む関数を src/shared/server/env.ts に作る。先頭で `import 'server-only'`。モジュールの先頭で `cloudflare:workers` を読み込まない（`vinext build` が Node で読み込むため）。Access の設定値（`ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL`）の型をここに置く
+- [X] T003 Access の JWT を `jose` で検証して `Author` を返す関数（要求のヘッダから・`headers()` から）を src/shared/server/author.ts に作る。署名・発行元・aud（カンマ区切りの複数）・期限・メールアドレス（ローカル部は大文字と小文字を区別し、ドメインは ASCII の英字だけ畳む）を確かめ、設定値が欠ければ null。JWT の型をファイルの外に出さない（constitution VII）
+- [X] T004 [P] T003 の分岐（JWT なし・署名違い・発行元違い・aud 違い・期限切れ・別のメールアドレス・設定値の欠け・正しい JWT）を tests/unit/author.test.ts で確かめる。鍵は tests/support/access.ts の `createAccessTestKeys` を使う
+- [X] T005 src/proxy.ts を作り直す。matcher は `/dash` と `/dash/:path*`。作り手でなければ `/dash/forbidden` へ rewrite し、`/dash` 配下の応答に `Cache-Control: no-store, must-revalidate` を付ける。判定は T003 の関数を呼ぶ。D1 や設定値の読み出しで例外が出たら判定せずに通す（`/dash` のページが作り手を確かめる）。`@/features/note/*` を読まない
+- [X] T006 tests/unit/proxy.test.ts を T005 に合わせて書き直す。`@/features/note/server/queries` のモックを外し、T003 の関数をモックする。matcher・403 の rewrite・`no-store` を確かめる
+- [X] T007 [P] tests/e2e/support/author.ts を作り直す。playwright.config.ts が読む `ACCESS_CERTS_URL` と `D1_PERSIST_DIR` と、tests/e2e/forbidden-navigation.spec.ts が読む `actAsAuthor` を持つ。tests/support/access.ts を使う
+- [X] T008 tests/e2e/forbidden-navigation.spec.ts のリンク名「新しい note を作る」を、src/app/dash/page.tsx（T014）の入口のリンクに合わせる
+- [X] T009 [P] tests/integration/support/d1.ts を、note に依らない形で作り直す。本番ビルドを `createTestHarness()` で起動し、手元の D1 に `migrations/` を当て、作り物の行を入れる関数を持つ
+- [X] T010 tests/integration/private-responses.test.ts から note の検査を外し、JWT のない `/dash` が 403 で `no-store` を持つこと（NFR-09）を T009 で確かめる形にする。note の検査は 003 が持つ
+- [X] T011 [P] tests/workers/migrations.test.ts を作り、`TEST_MIGRATIONS` を当てた D1 に 0008 の後の表（`organization.name_masked` が NULL 可、`skill.months_override`、`project.is_highlighted` が無い）があることを確かめる。`npm run test:workers` が「テストが無い」で落ちないようにする
+- [X] T012 `npx tsc --noEmit` の誤りを無くす。src/app/page.tsx の `cacheLife` の import と、`.next/types` に残った消したページ（`src/app/archives/*`）の型を調べ、直す
+- [X] T013 `npm run build`・`npx tsc --noEmit`・`npm run lint`・`npm run format:check`・`npm test`・`npm run test:workers` が通ることを確かめる
 
 ---
 
@@ -58,7 +58,7 @@ description: "職歴と実績の実装タスク"
 
 **Purpose**: どの User Story も使う管理画面の入口・期間・組織・入力の部品
 
-- [ ] T014 管理画面の入口を src/app/dash/page.tsx に作る。描画の前に src/shared/server/author.ts で作り手を確かめ、作り手でなければ `forbidden()`。職歴・実績・学歴・スキル・組織の一覧へのリンクを置く（contracts/dash.md）
+- [X] T014 管理画面の入口を src/app/dash/page.tsx に作る。描画の前に src/shared/server/author.ts で作り手を確かめ、作り手でなければ `forbidden()`。職歴・実績・学歴・スキル・組織の一覧へのリンクを置く（contracts/dash.md）
 - [ ] T015 [P] 期間の型と、日付の形（`YYYY-MM-DD`）・終わりの日が始まりの日より前でないことの判定を src/shared/domain/period.ts に作る（FR-038・FR-039）。経験年数と重なりの計算はここに置くが、U6 が解けるまで書かない
 - [ ] T016 [P] T015 を tests/unit/period.test.ts で確かめる（終わりの日が空・同じ日・逆の日・読めない日付）
 - [ ] T017 [P] 組織の型と、秘匿化した職歴・実績が指す組織は秘匿化した組織名を持つという判定（FR-001）と、個人の組織の id の定数（値は T073 で入れる。それまでは誰も指さない値）を src/shared/domain/organization.ts に作る
