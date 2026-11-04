@@ -67,16 +67,16 @@ description: "職務経歴書の実装タスク"
 
 **Purpose**: どの User Story も使う職務経歴書の型・鍵・Repository のインタフェース・管理画面の入口
 
-- [ ] T004 [P] 職務経歴書の型、`ResumeAudience`・`ResumeStatus` の `as const` の配列、識別子の決まり（uid の生成は `crypto.randomUUID()`、FR-002 の形の判定、限定公開用の書き換えを拒む、公開用の書き換えを許す）を src/features/resume/domain/resume.ts に作る（FR-001・FR-002・FR-037・FR-039）
-- [ ] T005 [P] T004 を tests/unit/resume-domain.test.ts で確かめる（uid の形、101 文字・大文字・記号を拒む、限定公開用の識別子の書き換えを拒む）
-- [ ] T006 [P] 限定公開用の鍵（`crypto.getRandomValues` の 32 バイトを base64url にする、SHA-256 の 16 進を作る、`crypto.subtle.timingSafeEqual` で比べる）を src/features/resume/domain/limited-key.ts に作る（FR-011・FR-012、research.md の R5）
-- [ ] T007 [P] T006 を tests/unit/limited-key.test.ts で確かめる（43 文字の base64url、同じ鍵は同じハッシュ、1 文字違う鍵は一致しない、ハッシュに鍵の平文が含まれない）
-- [ ] T008 職務経歴書の Repository のインタフェース（写し元の読み出し・作成・一覧・編集用に id で読む・訪問者向けに読む・設定と状態と写した行の開いたときの更新日時つきの編集・削除・id と写した行の有無）を src/features/resume/domain/resume-repository.ts に作る
-- [ ] T009 [P] 職務経歴書の写した行の型（`ResumeCareer`・`ResumeProject`・`ResumeEducation`）を src/features/resume/domain/resume.ts に足す（data-model.md の「domain の型」）
-- [ ] T010 D1 の実装の骨組み（行の型と domain の型への詰め替え、id と写した行の有無）を src/features/resume/server/d1-resume-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
-- [ ] T011 組み立て用の関数の骨組み（`hasResumeId`・`hasResumeRow`）を src/features/resume/server/queries.ts に作る
-- [ ] T012 src/app/dash/page.tsx に職務経歴書の一覧（`/dash/resumes`）へのリンクを足す
-- [ ] T013 src/proxy.ts の `DASH_ROW_EXISTS` に `resumes` を足し、`/dash/resumes/{id}` と `/dash/resumes/{id}/{careers,projects,educations}/{rowId}` の有無で 404 の rewrite を足す。tests/unit/proxy.test.ts に確かめを足す（contracts/dash.md の共通）。001 の T034 の後に行う
+- [X] T004 [P] 職務経歴書の型、`ResumeAudience`・`ResumeStatus` の `as const` の配列、識別子の決まり（uid の生成は `crypto.randomUUID()`、FR-002 の形の判定、限定公開用の書き換えを拒む、公開用の書き換えを許す）を src/features/resume/domain/resume.ts に作る（FR-001・FR-002・FR-037・FR-039）
+- [X] T005 [P] T004 を tests/unit/resume-domain.test.ts で確かめる（uid の形、101 文字・大文字・記号を拒む、限定公開用の識別子の書き換えを拒む）
+- [X] T006 [P] 限定公開用の鍵（`crypto.getRandomValues` の 32 バイトを base64url にする、SHA-256 の 16 進を作る、`crypto.subtle.timingSafeEqual` で比べる）を src/features/resume/domain/limited-key.ts に作る（FR-011・FR-012、research.md の R5）
+- [X] T007 [P] T006 を tests/unit/limited-key.test.ts で確かめる（43 文字の base64url、同じ鍵は同じハッシュ、1 文字違う鍵は一致しない、ハッシュに鍵の平文が含まれない）
+- [X] T008 職務経歴書の Repository のインタフェース（写し元の読み出し・作成・一覧・編集用に id で読む・訪問者向けに読む・設定と状態と写した行の開いたときの更新日時つきの編集・削除・id と写した行の有無）を src/features/resume/domain/resume-repository.ts に作る
+- [X] T009 [P] 職務経歴書の写した行の型（`ResumeCareer`・`ResumeProject`・`ResumeEducation`）を src/features/resume/domain/resume.ts に足す（data-model.md の「domain の型」）
+- [X] T010 D1 の実装の骨組み（行の型と domain の型への詰め替え、id と写した行の有無）を src/features/resume/server/d1-resume-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
+- [X] T011 組み立て用の関数の骨組み（`hasResumeId`・`hasResumeRow`）を src/features/resume/server/queries.ts に作る
+- [X] T012 src/app/dash/page.tsx に職務経歴書の一覧（`/dash/resumes`）へのリンクを足す
+- [X] T013 src/proxy.ts の `DASH_ROW_EXISTS` に `resumes` を足し、`/dash/resumes/{id}` と `/dash/resumes/{id}/{careers,projects,educations}/{rowId}` の有無で 404 の rewrite を足す。tests/unit/proxy.test.ts に確かめを足す（contracts/dash.md の共通）。001 の T034 の後に行う
 
 **Checkpoint**: Phase 1 と 2 が終われば、User Story を始められる
 
@@ -119,14 +119,14 @@ description: "職務経歴書の実装タスク"
 ### Tests for User Story 2
 
 - [ ] T026 [P] [US2] 訪問者向けの取り出し（訪問者に見せる状態で鍵が合い期限の前か期限が無いときだけ返す、下書き・期限切れ・鍵違い・公開用の識別子で返さない）を tests/workers/resume-visitor.test.ts で確かめる（FR-011・FR-013・FR-014・FR-022・FR-023、research.md の R6）
-- [ ] T027 [P] [US2] tests/unit/proxy.test.ts に、条件に合わない `/resume/{slug}/{key}` を `/resume/{slug}/missing` へ rewrite すること、鍵を含む経路のすべての応答（200・404・判定できないとき）に `Cache-Control: no-store, must-revalidate`・`X-Robots-Tag: noindex`・`Referrer-Policy: no-referrer` を付けることを足す（FR-015、research.md の R7）
+- [X] T027 [P] [US2] tests/unit/proxy.test.ts に、条件に合わない `/resume/{slug}/{key}` を `/resume/{slug}/missing` へ rewrite すること、鍵を含む経路のすべての応答（200・404・判定できないとき）に `Cache-Control: no-store, must-revalidate`・`X-Robots-Tag: noindex`・`Referrer-Policy: no-referrer` を付けることを足す（FR-015、research.md の R7）
 - [ ] T028 [P] [US2] 限定公開用の 4 つの状態の応答が 404 で写した値を含まないこと、200 の応答に秘匿化した写し元の実際の題・組織名・本文が出ること、すべての応答が 3 つのヘッダを持つこと、期限を過ぎた後に期限を延ばすと同じ URL が 200 になること、JWT のない `changeResumeStatus`・`editResumeSettings` が D1 を変えないことを tests/integration/resume-limited.test.ts で確かめる（SC-003・SC-004・SC-005・FR-010・FR-033、User Story 2 の 1〜6）
 
 ### Implementation for User Story 2
 
 - [ ] T029 [US2] 訪問者向けの取り出しを src/features/resume/server/d1-resume-repository.ts に足す。鍵のほかの条件を WHERE に入れ、返った `limited_token_hash` を src/features/resume/domain/limited-key.ts で比べ、一致したときだけ写した行を読み、contracts/visitor-resume.md の DTO に詰める
 - [ ] T030 [US2] ユースケース get-visitor-resume.ts・change-resume-status.ts・edit-resume-settings.ts（題と期限。限定公開用の識別子の書き換えを拒む）を src/features/resume/application/ に作り、組み立て用の関数（`hasVisitorResume`）を src/features/resume/server/queries.ts に、Server Action `changeResumeStatus`・`editResumeSettings` を src/features/resume/server/actions.ts に足す。どれも research.md の R8 の楽観ロックを付ける
-- [ ] T031 [US2] src/proxy.ts の matcher に `/resume/:path*` を足し、`hasVisitorResume` で 404 の rewrite と、鍵を含む経路のヘッダを足す（research.md の R7）
+- [X] T031 [US2] src/proxy.ts の matcher に `/resume/:path*` を足し、`hasVisitorResume` で 404 の rewrite と、鍵を含む経路のヘッダを足す（research.md の R7）
 - [ ] T032 [P] [US2] 訪問者向けの職務経歴書の表示（職歴・実績・学歴・スキルの名前。秘匿化しない形だけ）を src/features/resume/components/visitor-resume.tsx に作る。本文は U4 が解けるまで出さない
 - [ ] T033 [US2] 訪問者のページを src/app/resume/[slug]/[key]/page.tsx と src/app/resume/[slug]/missing/page.tsx（`notFound()` だけ）に作る。`generateMetadata` は職務経歴書の中身を使わない（ADR-0024）
 - [ ] T034 [US2] 設定の画面に、状態の切り替えと題の入力を足す（src/features/resume/components/resume-settings-form.tsx）。限定公開用の識別子を読み取りだけで出す（FR-037）

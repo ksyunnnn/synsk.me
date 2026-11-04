@@ -1,0 +1,111 @@
+import 'server-only';
+
+import { cache } from 'react';
+import { getResumeForEdit as getResumeForEditUseCase } from '@/features/resume/application/get-resume-for-edit';
+import {
+  getResumePreview as getResumePreviewUseCase,
+  getVisitorLimitedResume as getVisitorLimitedResumeUseCase,
+} from '@/features/resume/application/get-visitor-resume';
+import { listResumeSources as listResumeSourcesUseCase } from '@/features/resume/application/list-resume-sources';
+import { listResumes as listResumesUseCase } from '@/features/resume/application/list-resumes';
+import { toProfile } from '@/features/resume/domain/profile';
+import {
+  isResumeRowKind,
+  parseResumeId,
+  parseResumeRowId,
+  type Resume,
+  type ResumeForEdit,
+  type ResumeSources,
+} from '@/features/resume/domain/resume';
+import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
+import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
+import { createD1ResumeRepository } from '@/features/resume/server/d1-resume-repository';
+import { requireAuthor } from '@/shared/server/author';
+import { readEnv } from '@/shared/server/env';
+
+/**
+ * 職務経歴書の画面・Server Action・`src/proxy.ts` が呼ぶ組み立て用の関数（ADR-0030）。
+ * D1 から読み出せなければ投げる。画面は投げられた例外で 500 を返す
+ */
+
+export const createResumeRepository = async (): Promise<ResumeRepository> =>
+  createD1ResumeRepository((await readEnv()).DB);
+
+/** プロフィールは写さず、要求のたびに定数と環境変数から作る（FR-036、research.md の R10） */
+const readProfile = async () => toProfile((await readEnv()).RESUME_EMAIL);
+
+/** 作り手の一覧。作り手でなければ 403 */
+export const listResumes = async (): Promise<Resume[]> => {
+  await requireAuthor();
+  return listResumesUseCase(await createResumeRepository());
+};
+
+/** 作成の画面の選択肢。作り手でなければ 403 */
+export const listResumeSources = async (): Promise<ResumeSources> => {
+  await requireAuthor();
+  return listResumeSourcesUseCase(await createResumeRepository());
+};
+
+/** 作り手が編集する職務経歴書。作り手でなければ 403。無い id なら null */
+export const getResumeForEdit = async (id: string): Promise<ResumeForEdit | null> => {
+  await requireAuthor();
+  const resumeId = parseResumeId(id);
+  return resumeId === null
+    ? null
+    : getResumeForEditUseCase(await createResumeRepository(), resumeId);
+};
+
+/** 訪問者に見せたときの見た目。作り手でなければ 403。無い id なら null */
+export const getResumePreview = async (id: string): Promise<VisitorResume | null> => {
+  await requireAuthor();
+  const resumeId = parseResumeId(id);
+  return resumeId === null
+    ? null
+    : getResumePreviewUseCase(await createResumeRepository(), {
+        id: resumeId,
+        profile: await readProfile(),
+        now: new Date(),
+      });
+};
+
+/**
+ * 訪問者に見せる限定公開用。条件に合わなければ null。ページの本体とメタデータの両方が呼ぶため、
+ * 1 つの要求の中では D1 に 1 回だけ問い合わせる
+ */
+export const getVisitorLimitedResume = cache(
+  async (slug: string, key: string): Promise<VisitorResume | null> =>
+    getVisitorLimitedResumeUseCase(await createResumeRepository(), {
+      slug,
+      key,
+      profile: await readProfile(),
+      now: new Date(),
+    }),
+);
+
+/*
+ * 以下は `src/proxy.ts` が描画の前に呼ぶ。中身を読まず、有無だけを返す
+ */
+
+/** 訪問者に中身を返してよい限定公開用か。`getVisitorLimitedResume` が null を返さない組と一致する */
+export const hasVisitorResume = async (slug: string, key: string): Promise<boolean> =>
+  (await (
+    await createResumeRepository()
+  ).findLimitedIdForVisitor(slug, key, new Date().toISOString())) !== null;
+
+/** 作り手が編集できる職務経歴書がある id か */
+export const hasResumeId = async (id: string): Promise<boolean> => {
+  const resumeId = parseResumeId(id);
+  return resumeId !== null && (await createResumeRepository()).hasId(resumeId);
+};
+
+/** 職務経歴書に属する写した行がある id か。`kind` は経路の名前（careers・projects・educations） */
+export const hasResumeRow = async (id: string, kind: string, rowId: string): Promise<boolean> => {
+  const resumeId = parseResumeId(id);
+  const row = parseResumeRowId(rowId);
+  return (
+    resumeId !== null &&
+    row !== null &&
+    isResumeRowKind(kind) &&
+    (await createResumeRepository()).hasRow(resumeId, kind, row)
+  );
+};
