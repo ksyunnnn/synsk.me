@@ -217,6 +217,7 @@
 - 画像を収める仕組みは [003 の spec](../003-note/spec.md) が持つ。この spec は life event の画像の要件だけを持つ
 - 外部のサービスから受け取ったデータは、受け取った処理の中で synsk.me の形に詰め替える（[SOFTWARE_DESIGN.md](../../docs/SOFTWARE_DESIGN.md) の設計原則 7）
 - 取得元から外へ要求を出す処理は、量と回数に上限を設ける（SOFTWARE_DESIGN.md の設計原則 2）。上限の値は plan が持つ
+- 管理画面は `/dash/` 配下に置く（[ADR-0016](../../docs/decisions/0016-url-conventions.md)）。オーナーであることは、アプリケーションの外で Cloudflare Access が判定する（[ADR-0013](../../docs/decisions/0013-access-authentication.md)）
 - 取得元ごとに取れるもの・取れないものは、PR #47 の検証記録（`docs/scraps/external-api-verification.md`、ブランチ `feature/external-api-verification`、2026-09-02 実測）による
 
 **取得元と分類（#148 の 6465973173、2026-10-28 にオーナーが採った）**
@@ -239,9 +240,8 @@
 
 **決定が無く、この spec では決めない**
 
-- 管理画面の場所と、オーナーであることの判定の仕方（材料: [ADR-0013](../../docs/decisions/0013-access-authentication.md)）
 - 取得の結果をオーナーに見せる画面を持つか
-- 取得を走らせる時機と頻度
+- 取得を走らせる時機
 - 外部の activity の代表の画像の出し方（材料: #186）
 - life event の題を必ず入れるか
 - life event の説明の書式と、説明の中に画像を置けるか
