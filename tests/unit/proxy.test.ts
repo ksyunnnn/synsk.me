@@ -44,6 +44,13 @@ vi.mock('@/features/skill/server/queries', () => ({ hasSkillId: rows.hasSkillId 
 vi.mock('@/features/career/server/queries', () => ({ hasCareerId: rows.hasCareerId }));
 vi.mock('@/features/education/server/queries', () => ({ hasEducationId: rows.hasEducationId }));
 
+const resumes = vi.hoisted(() => ({
+  hasVisitorResume: vi.fn<(slug: string, key: string) => Promise<boolean>>(),
+  hasResumeId: vi.fn<(id: string) => Promise<boolean>>(),
+  hasResumeRow: vi.fn<(id: string, kind: string, rowId: string) => Promise<boolean>>(),
+}));
+vi.mock('@/features/resume/server/queries', () => resumes);
+
 const { config, proxy } = await import('@/proxy');
 
 const OWNER: Author = { email: 'owner@synsk.test' };
@@ -63,15 +70,19 @@ beforeEach(() => {
   projects.hasProjectSlug.mockResolvedValue(true);
   projects.hasProjectId.mockResolvedValue(true);
   for (const has of Object.values(rows)) has.mockResolvedValue(true);
+  for (const has of Object.values(resumes)) has.mockResolvedValue(true);
 });
 
 describe('対象の経路', () => {
-  it.each(['/projects/a-slug', '/dash', '/dash/projects', '/dash/projects/1/delete'])(
-    '%s で動く',
-    (url) => {
-      expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
-    },
-  );
+  it.each([
+    '/projects/a-slug',
+    '/resume/a-slug/a-key',
+    '/dash',
+    '/dash/projects',
+    '/dash/projects/1/delete',
+  ])('%s で動く', (url) => {
+    expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
+  });
 
   it.each(['/', '/about', '/opengraph-image', '/dashboard', '/projects/a-slug/missing'])(
     '%s では動かない',
@@ -186,5 +197,98 @@ describe.each([
 
   it('ある id は rewrite しない', async () => {
     expect(await rewrittenPath(`/dash/${collection}/5`)).toBeNull();
+  });
+});
+
+/**
+ * 限定公開用の職務経歴書（specs/002-resume/research.md の R6・R7）。中身を返さない要求は
+ * `/resume/{slug}/missing` へ移し、すべての応答に 3 つのヘッダを付ける（FR-015）
+ */
+describe('/resume/{slug}/{key}', () => {
+  const KEY = 'k'.repeat(43);
+  const LIMITED_HEADERS = {
+    'cache-control': 'no-store, must-revalidate',
+    'x-robots-tag': 'noindex',
+    'referrer-policy': 'no-referrer',
+  };
+  const expectLimitedHeaders = (response: Response) => {
+    for (const [name, value] of Object.entries(LIMITED_HEADERS)) {
+      expect(response.headers.get(name), name).toBe(value);
+    }
+  };
+
+  it('中身を返してよい組は rewrite せず、3 つのヘッダを付ける', async () => {
+    const response = await proxy(request(`/resume/a-slug/${KEY}`));
+    expect(isRewrite(response)).toBe(false);
+    expect(resumes.hasVisitorResume).toHaveBeenCalledWith('a-slug', KEY);
+    expectLimitedHeaders(response);
+  });
+
+  it('下書き・期限切れ・鍵違いは 404 の画面へ rewrite し、3 つのヘッダを付ける', async () => {
+    resumes.hasVisitorResume.mockResolvedValue(false);
+    const response = await proxy(request(`/resume/a-slug/${KEY}`));
+    expect(new URL(getRewrittenUrl(response)!).pathname).toBe('/resume/a-slug/missing');
+    expectLimitedHeaders(response);
+  });
+
+  it('判定できないときは通し、3 つのヘッダを付ける', async () => {
+    resumes.hasVisitorResume.mockRejectedValue(new Error('D1_ERROR'));
+    const response = await proxy(request(`/resume/a-slug/${KEY}`));
+    expect(isRewrite(response)).toBe(false);
+    expectLimitedHeaders(response);
+  });
+
+  it('作り手かを確かめない', async () => {
+    await proxy(request(`/resume/a-slug/${KEY}`));
+    expect(author.getAuthorFromHeaders).not.toHaveBeenCalled();
+  });
+
+  it('鍵の無い /resume/{slug} は判定しない', async () => {
+    expect(await rewrittenPath('/resume/a-slug')).toBeNull();
+    expect(resumes.hasVisitorResume).not.toHaveBeenCalled();
+  });
+
+  it('/resume/{slug}/missing は判定しない', async () => {
+    resumes.hasVisitorResume.mockResolvedValue(false);
+    const response = await proxy(request('/resume/a-slug/missing'));
+    expect(isRewrite(response)).toBe(false);
+    expectLimitedHeaders(response);
+  });
+});
+
+describe('/dash/resumes/{id}/<種類>/{rowId}（specs/002-resume/contracts/dash.md）', () => {
+  it('無い職務経歴書は、職務経歴書の 404 の画面へ rewrite する', async () => {
+    resumes.hasResumeId.mockResolvedValue(false);
+    expect(await rewrittenPath('/dash/resumes/3/careers/7')).toBe('/dash/resumes/3/missing');
+  });
+
+  it.each(['careers', 'projects', 'educations'])(
+    '無い %s の行は、行の 404 の画面へ rewrite する',
+    async (kind) => {
+      resumes.hasResumeRow.mockResolvedValue(false);
+      expect(await rewrittenPath(`/dash/resumes/3/${kind}/7`)).toBe(
+        `/dash/resumes/3/${kind}/7/missing`,
+      );
+      expect(resumes.hasResumeRow).toHaveBeenCalledWith('3', kind, '7');
+    },
+  );
+
+  it('ある行は rewrite しない', async () => {
+    expect(await rewrittenPath('/dash/resumes/3/projects/7')).toBeNull();
+  });
+
+  it.each([
+    '/dash/resumes/3/skills',
+    '/dash/resumes/3/preview',
+    '/dash/resumes/3/projects/7/missing',
+  ])('%s は行の有無を見ない', async (path) => {
+    resumes.hasResumeRow.mockResolvedValue(false);
+    expect(await rewrittenPath(path)).toBeNull();
+    expect(resumes.hasResumeRow).not.toHaveBeenCalled();
+  });
+
+  it('無い職務経歴書の id は 404 の画面へ rewrite する', async () => {
+    resumes.hasResumeId.mockResolvedValue(false);
+    expect(await rewrittenPath('/dash/resumes/3')).toBe('/dash/resumes/3/missing');
   });
 });

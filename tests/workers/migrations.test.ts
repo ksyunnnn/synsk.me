@@ -39,4 +39,31 @@ describe('migration 0008 の後の表', () => {
     expect(names).not.toContain('is_highlighted');
     expect(names).toContain('is_masked');
   });
+
+  it('resume.audience の既定値は limited（specs/002-resume/spec.md の FR-003）', async () => {
+    const column = await env.DB.prepare(
+      'SELECT dflt_value FROM pragma_table_info(?) WHERE name = ?',
+    )
+      .bind('resume', 'audience')
+      .first<{ dflt_value: string }>();
+    expect(column?.dflt_value).toBe("'limited'");
+  });
+
+  it('resume_skill_override は months_override を持ち、years_override を持たない', async () => {
+    const names = (await columnsOf('resume_skill_override')).map((c) => c.name);
+    expect(names).toContain('months_override');
+    expect(names).not.toContain('years_override');
+  });
+
+  it.each(['resume_career', 'resume_project'])(
+    '%s.is_masked の既定値は 1（specs/002-resume/plan.md の U2）',
+    async (table) => {
+      const column = await env.DB.prepare(
+        'SELECT dflt_value FROM pragma_table_info(?) WHERE name = ?',
+      )
+        .bind(table, 'is_masked')
+        .first<{ dflt_value: string }>();
+      expect(column?.dflt_value).toBe('1');
+    },
+  );
 });
