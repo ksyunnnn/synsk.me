@@ -5,7 +5,7 @@ decision-makers: synsk
 consulted: Claude Code
 ---
 
-# URL の規則（実績の識別子は既定で uid）
+# URL の規則（実績と life event の識別子は既定で uid）
 
 ## Context and Problem Statement
 
@@ -16,6 +16,7 @@ consulted: Claude Code
 - 全表の主キーを連番の整数にする。note・project・resume の URL には主キーとは別の slug を出し、主キーは出さない。slug を決めないときに何を入れるかは実装のときに決める（[6334856341](https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6334856341)）
 - 実績は slug の URL で個別のページを持つ。秘匿化した実績も個別のページを持つ（2026-11-04）
 - 実績の slug は既定で uid にする。オーナーは読みやすい slug に書き換えられる。秘匿化した実績の slug は uid のまま固定する。秘匿化していない実績を秘匿化に切り替えると、slug は新しい uid に戻る（2026-11-04）
+- life event は slug の URL で個別のページを持つ。slug は既定で uid にし、オーナーは書き換えられる。外部から取り込んだ activity は slug を持たない（2026-11-04）
 
 実績の個別のページは、2026-10-23 に「slug の扱いも含めて保留」とされていた（[6331022192](https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6331022192)）。2026-11-04 の決定で、ADR-0016 の「permalink を持つのは project」は保たれる。
 
@@ -45,7 +46,7 @@ URL を変えると、外部プラットフォームへ転載した記事から 
 * 題をそのまま識別子にする
 * 題を URL に含め、末尾のハッシュで解決する
 * 題とは別に識別子を持つ。候補は題から作る（ADR-0016 の形）
-* 題とは別に識別子を持つ。実績の既定は uid にする
+* 題とは別に識別子を持つ。実績と life event の既定は uid にする
 
 管理画面の位置
 
@@ -65,7 +66,8 @@ URL を変えると、外部プラットフォームへ転載した記事から 
 - 識別子は英数字の slug とする。主キーは URL に出さない
 - note と職務経歴書の slug は、題から候補を提示し、作り手が確定させる
 - 実績の slug は、既定で uid とする。uid は題や組織名から推測できない。オーナーは、秘匿化していない実績の slug を書き換えられる。秘匿化した実績の slug は uid から変えられない。秘匿化していない実績を秘匿化に切り替えると、slug は新しい uid に戻る
-- permalink を持つのは note、実績、職務経歴書とする。秘匿化した実績も permalink を持つ
+- life event の slug は、既定で uid とする。オーナーは書き換えられる
+- permalink を持つのは note、実績、life event、職務経歴書とする。秘匿化した実績も permalink を持つ
 - 外部から取得した activity は synsk.me 上に URL を持たず、取得元へ直接リンクする
 - 管理画面は `/dash/` 配下に置く
 - 表示の絞り込みを URL に書き込まない。クエリ文字列で指定された場合は初期状態として読む
@@ -82,12 +84,11 @@ URL を変えると、外部プラットフォームへ転載した記事から 
 * Bad, because 公開ページの URL を書き換えないと編集画面に入れない
 * Bad, because **同じ slug を二度使えない。** 過去に使った識別子は、その記事が存在する限り再利用できない
 * Bad, because **実績を秘匿化に切り替えると、その実績の URL が変わる。** 切り替える前の URL を共有した相手は、その実績に辿り着けない
-* Bad, because **life event が permalink を持つかを決めていない。** ADR-0016 の「internal コンテンツ」に当たるかが、`platform` の値が無くなって読めなくなった
 * Bad, because **絞り込んだ状態を共有したあと、相手の操作は URL に反映されない。** 送った URL と、相手が見ているものがずれる
 
 ### Confirmation
 
-project の slug が一意であることは、`migrations/` の CREATE TABLE で確かめられる。
+project の slug が一意であることは、`migrations/` の CREATE TABLE で確かめられる。life event の slug が一意であること、life event だけが slug を持つことは、`migrations/` の activity の CHECK と部分 UNIQUE 索引で確かめられる。
 
 秘匿化した実績の slug が uid から変わらないこと、主キーが URL に出ないことは、判定手段を定めていない。実績の画面は、この記録の時点でリポジトリにない。
 
@@ -101,7 +102,7 @@ project の slug が一意であることは、`migrations/` の CREATE TABLE �
 
 **題とは別に識別子を持つ。候補は題から作る（ADR-0016 の形）** — 題を自由に直せる。URL は変わらない。ただし秘匿化した実績では、題から作った候補が実際の題を URL に出す。Zenn がこの形。
 
-**題とは別に識別子を持つ。実績の既定は uid にする — 採用** — 題を自由に直せる。秘匿化した実績の URL に実際の題が出ない。秘匿化していない実績は、読みやすい slug に書き換えられる。
+**題とは別に識別子を持つ。実績と life event の既定は uid にする — 採用** — 題を自由に直せる。秘匿化した実績の URL に実際の題が出ない。秘匿化していない実績と life event は、読みやすい slug に書き換えられる。
 
 ### 管理画面の位置
 

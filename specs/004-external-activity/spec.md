@@ -26,7 +26,7 @@
 - **登録していないサイト**: 取得元として登録していないサイト。そこの単発の記事などは、1 つの取得元「登録していないサイト」にまとめる
 - **分類**: 一覧での見せ方を分ける値。記事・埋め込み・life event・その他の 4 つ。取得元ごとに 1 つ決まる
 - **取得の結果**: 取得元ごとの、最後に取り直した日時・成否・成否の理由・最後に成功した日時
-- **life event**: synsk.me の中で作る、人生の出来事の 1 件。題・説明・起きた日・代表画像を持ち、リンク先を持たない
+- **life event**: synsk.me の中で作る、人生の出来事の 1 件。題・説明・起きた日・代表画像・識別子を持ち、リンク先を持たない。識別子を含む URL で個別のページを持つ
 - **起きた日**: life event の暦の日付（年月日）
 
 ## User Scenarios & Testing *(mandatory)*
@@ -99,13 +99,13 @@
 
 ---
 
-### User Story 5 - life event を書き、一覧に並べる (Priority: P2)
+### User Story 5 - life event を書き、一覧に並べ、個別のページで見せる (Priority: P2)
 
-オーナーは管理画面で life event を作り、題・説明・起きた日・代表画像を入れる。期間のある出来事は、始まりと終わりの 2 件の life event で表す。出したくない life event は削除する。
+オーナーは管理画面で life event を作り、題・説明・起きた日・代表画像を入れる。期間のある出来事は、始まりと終わりの 2 件の life event で表す。出したくない life event は削除する。訪問者は、life event の識別子を含む URL で、その life event の個別のページを開ける。
 
 **Why this priority**: 外部のサービスに残らない出来事（入学・転居など）を一覧に置く手段は life event だけである。外部の activity より件数が少なく、無くても一覧は成り立つ。
 
-**Independent Test**: life event を 1 件作り、題・説明・起きた日・代表画像が保存されることを確かめる。その life event を削除し、life event と代表画像のデータが残らないことを確かめる。
+**Independent Test**: life event を 1 件作り、題・説明・起きた日・代表画像が保存されることと、訪問者としてその識別子の URL で個別のページを開けることを確かめる。その life event を削除し、life event と代表画像のデータが残らないことを確かめる。
 
 **Acceptance Scenarios**:
 
@@ -116,6 +116,9 @@
 5. **Given** life event A と life event B, **When** オーナーが A の代表画像に B の画像を選ぼうとする, **Then** 選べない
 6. **Given** 代表画像を持つ life event, **When** オーナーがその life event を削除する, **Then** life event と、その life event の画像のデータが残らない
 7. **Given** life event の入力の画面, **When** オーナーがリンク先を入れようとする, **Then** リンク先を入れる項目が無い
+8. **Given** life event の作成の画面, **When** オーナーが識別子を入れずに保存する, **Then** 題や起きた日から推測できない uid が識別子になる
+9. **Given** life event が 1 件ある, **When** 訪問者がその識別子の URL を開く, **Then** その life event の個別のページが表示される
+10. **Given** life event が 1 件ある, **When** オーナーが別の life event の識別子を同じ値に書き換えて保存する, **Then** 保存されない
 
 ---
 
@@ -177,6 +180,8 @@
 - **FR-025**: 起きた日は年月日で、必ず入れる。日の分からない出来事は、オーナーが便宜的な日を入れる
 - **FR-026**: life event は、訪問者に見せない状態を持たない。保存した life event はすべて一覧の対象になる
 - **FR-027**: life event を削除すると、その life event と、その life event の画像のデータを一緒に消し、一部だけが残る状態にしない
+- **FR-034**: 訪問者は、life event の識別子を含む URL で、その life event の個別のページを開ける。URL に主キーを含めない。外部の activity は個別のページを持たない
+- **FR-035**: life event の識別子は 1〜100 文字の英小文字・数字・ハイフンで、ほかの life event と重ならない。作ったときの識別子は、題や起きた日から推測できない uid である。オーナーは識別子を書き換えられる。外部の activity は識別子を持たない
 
 **画像**
 
@@ -193,7 +198,7 @@
 ### Key Entities *(include if feature involves data)*
 
 - **取得元**: 取得元の名前と分類を持つ。外部の activity と取得の結果から指される。life event と「登録していないサイト」も、それぞれ 1 つの取得元として持つ
-- **activity**: 外部の activity と life event の 1 件。取得元を 1 つ指す。外部の activity は URL・題・公開日を持ち、取得元での ID と代表の画像の URL を持てる。life event は題・説明・起きた日を持ち、代表画像を持てる。初めて保存した日時と最後に書き換えた日時を持つ
+- **activity**: 外部の activity と life event の 1 件。取得元を 1 つ指す。外部の activity は URL・題・公開日を持ち、取得元での ID と代表の画像の URL を持てる。life event は題・説明・起きた日・識別子を持ち、代表画像を持てる。初めて保存した日時と最後に書き換えた日時を持つ
 - **取得の結果**: 取得元ごとに 1 つ。取り直した日時・成否・成否の理由・最後に成功した日時を持つ
 - **画像**: life event の代表画像。持ち主は 1 つの life event だけである
 
@@ -207,6 +212,7 @@
 - **SC-004**: 1 回の取得で返す件数が決まっている取得元で、取り直した一覧に無いことだけを理由に一覧から消えた activity が 0 件である
 - **SC-005**: 公開日を返さない取得元の activity のすべてで、取り直したあとも、オーナーが登録した日付が変わらない
 - **SC-006**: 削除した life event のすべてで、その life event と画像のデータが 0 件残る
+- **SC-007**: すべての life event について、訪問者がその識別子の URL で個別のページを開ける
 
 ## Assumptions
 
@@ -245,5 +251,6 @@
 - 外部の activity の代表の画像の出し方（材料: #186）
 - life event の題を必ず入れるか
 - life event の説明の書式と、説明の中に画像を置けるか
+- life event の個別のページに出す値と見せ方
 - 取得元が題を返さない URL を指名したときの扱い
 - 取得元の分類を変える手順
