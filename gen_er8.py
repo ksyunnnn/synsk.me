@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 1740
-H = 1544
+H = 1564
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -81,6 +81,7 @@ def rules_note(x, y):
         "note.card_media_id は、note.card_image が media のときだけ入る（CHECK）",
         "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガで拒む",
         "activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)",
+        "activity.slug は life event の行だけが持つ（CHECK）。空でない行で UNIQUE（部分 UNIQUE 索引）",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
         "id はすべて AUTOINCREMENT（削除した id を使い回さない）。編集の画面は id で行を指すため",
@@ -120,13 +121,14 @@ organization = [("# id", "integer"), ("name", "text · unique"), ("name_masked",
 career = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月日）"),
     ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
-    ("is_masked", "integer · 既定 1"),
+    ("is_masked", "integer · 既定 1"), ("status", "text · CHECK · 既定 draft"),
 ] + TS
 project = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("kind", "text · CHECK"),
     ("slug", "text · unique"), ("title", "text"), ("title_masked", "text"), ("is_masked", "integer · 既定 1"),
     ("→ card_media_id", "integer · 空可"), ("started_on", "text（年月日）"),
     ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
+    ("status", "text · CHECK · 既定 draft"),
 ] + TS
 education = [
     ("# id", "integer"), ("school", "text"), ("department", "text · 空可"),
@@ -135,7 +137,7 @@ education = [
 skill = [("# id", "integer"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
-    ("# id", "integer"), ("→ source", "text"),
+    ("# id", "integer"), ("→ source", "text"), ("slug", "text · unique · life event だけ"),
     ("external_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
     ("description", "text · 空可"), ("image_url", "text · 空可"), ("published_at", "text · 空可"),
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
@@ -228,7 +230,7 @@ el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", proj
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
 el += entity(1500, 260, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
-el += entity(1500, 404, 200, "activity_feed", "一覧。4 つの表を UNION ALL でつなぐ", [("activity", "外部・life event"), ("note", "公開中だけ"), ("project", "is_masked なら秘匿化"), ("career", "is_masked なら秘匿化"), ("career の日付", "started_on"), ("並び", "(日付, 種類, id)")], kind="VIEW")
+el += entity(1500, 404, 200, "activity_feed", "一覧。4 つの表を UNION ALL でつなぐ", [("activity", "外部・life event"), ("note", "公開中だけ"), ("project", "published・秘匿化"), ("career", "published・秘匿化"), ("career の日付", "started_on"), ("並び", "(日付, 種類, id)")], kind="VIEW")
 el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
 el += entity(1480, 656, 220, "note_revision", "note の版。保存と公開のたびに 1 行", revision)
 el += entity(1160, 1012, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)

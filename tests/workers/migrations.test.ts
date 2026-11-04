@@ -67,3 +67,66 @@ describe('migration 0008 の後の表', () => {
     },
   );
 });
+
+describe('migration 0009 の後の表', () => {
+  it.each(['career', 'project'])(
+    '%s.status は NOT NULL で、既定値は draft（specs/001-career-and-project/spec.md の FR-044）',
+    async (table) => {
+      const column = await env.DB.prepare(
+        'SELECT "notnull", dflt_value FROM pragma_table_info(?) WHERE name = ?',
+      )
+        .bind(table, 'status')
+        .first<{ notnull: number; dflt_value: string }>();
+      expect(column).toEqual({ notnull: 1, dflt_value: "'draft'" });
+    },
+  );
+
+  it.each(['career', 'project'])('%s.status は draft と published のほかを拒む', async (table) => {
+    const organization = await env.DB.prepare(
+      "INSERT INTO organization (name, name_masked) VALUES ('作り物の 0009 の組織', 'ある組織') RETURNING id",
+    ).first<{ id: number }>();
+    const insert =
+      table === 'career'
+        ? env.DB.prepare(
+            "INSERT INTO career (organization_id, role, started_on, status) VALUES (?, '作り物', '2020-04-01', 'hidden')",
+          )
+        : env.DB.prepare(
+            "INSERT INTO project (organization_id, kind, slug, title, title_masked, started_on, status) VALUES (?, 'other', 'migration-0009', '作り物', '作り物', '2020-04-01', 'hidden')",
+          );
+    await expect(insert.bind(organization?.id).run()).rejects.toThrow(/CHECK constraint failed/);
+    await env.DB.prepare('DELETE FROM organization WHERE id = ?').bind(organization?.id).run();
+  });
+});
+
+describe('migration 0009 の activity.slug（specs/004-external-activity/spec.md の FR-034）', () => {
+  const insertLifeEvent = (slug: string | null) =>
+    env.DB.prepare(
+      "INSERT INTO activity (source, happened_on, title, slug) VALUES ('life_event', '2026-01-01', '作り物の出来事', ?)",
+    )
+      .bind(slug)
+      .run();
+
+  it('life event は識別子を持たなければならない', async () => {
+    await expect(insertLifeEvent(null)).rejects.toThrow(/CHECK constraint failed/);
+  });
+
+  it('識別子は英小文字・数字・ハイフンに限る', async () => {
+    await expect(insertLifeEvent('Bad_Slug')).rejects.toThrow(/CHECK constraint failed/);
+  });
+
+  it('life event どうしで識別子を重ねられない', async () => {
+    await insertLifeEvent('migration-0009-life-event');
+    await expect(insertLifeEvent('migration-0009-life-event')).rejects.toThrow(
+      /UNIQUE constraint failed: activity.slug/,
+    );
+    await env.DB.prepare("DELETE FROM activity WHERE slug = 'migration-0009-life-event'").run();
+  });
+
+  it('外部から取り込んだ行は識別子を持てない', async () => {
+    await expect(
+      env.DB.prepare(
+        "INSERT INTO activity (source, url, title, published_at, slug) VALUES ('unlisted', 'https://example.com/0009', '作り物', '2026-01-01T00:00:00.000Z', 'external')",
+      ).run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
+  });
+});
