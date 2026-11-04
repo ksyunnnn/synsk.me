@@ -4,6 +4,7 @@
 -- - project.is_highlighted を外す
 -- - skill.years_override を月数の months_override にする。写した resume_skill_override も合わせる
 -- - resume.audience の既定値を limited にする
+-- - resume_career と resume_project に、写し元が秘匿化していたかを表す is_masked を足す
 --
 -- 0006 の resume_career.organization_name と resume_project.title の注釈は、公開用が常に
 -- 秘匿化した値を写すと読める。写し方は、下で作り直す resume.audience の注釈のとおり。
@@ -303,3 +304,19 @@ WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
   UPDATE resume SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = NEW.id;
 END;
+
+-- 職務経歴書を作ったときの、写し元の職歴の career.is_masked を写す。1 なら、公開用では
+-- organization_name に秘匿化した値を写し、description と url を訪問者に出さない。
+-- オーナーが職務経歴書の中で description を書き足しても出さない。限定公開用はすべて
+-- 実際の値で載せるため、この列を使わない。
+-- 既定は 1 で、この列を足す前に写した行も 1 になる。秘匿化していなかった行を 1 と
+-- 読んでも本文を伏せるだけで、秘匿化していた行の本文を出すことはないため。
+-- 既定値があるため、表を作り直さず ALTER TABLE で足せる
+ALTER TABLE resume_career
+ADD COLUMN is_masked INTEGER NOT NULL DEFAULT 1 CHECK (is_masked IN (0, 1));
+
+-- 職務経歴書を作ったときの、写し元の実績の project.is_masked を写す。1 なら、公開用では
+-- organization_name と title に秘匿化した値を写し、description と url を訪問者に出さない。
+-- 既定値と限定公開用での扱いは resume_career.is_masked と同じ
+ALTER TABLE resume_project
+ADD COLUMN is_masked INTEGER NOT NULL DEFAULT 1 CHECK (is_masked IN (0, 1));
