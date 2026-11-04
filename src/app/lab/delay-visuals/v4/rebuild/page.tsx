@@ -13,7 +13,9 @@ const Page = () => (
       >
         v4
       </Link>
-      <p className="text-sm text-muted-foreground">v4 の表現を記事ページにかけた。本文は作り物。</p>
+      <p className="text-sm text-muted-foreground">
+        v4 の表現を記事ページにかけた。本文は夏目漱石『吾輩は猫である』の冒頭（青空文庫）。
+      </p>
     </div>
     <ScrollDelayPage base={<Article />} band={<Article />} streak={<Article />} />
   </>
