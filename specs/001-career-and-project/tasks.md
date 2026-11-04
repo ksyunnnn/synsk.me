@@ -81,24 +81,24 @@ description: "職歴と実績の実装タスク"
 
 ### Tests for User Story 1
 
-- [ ] T024 [P] [US1] 実績の domain（登録の識別子が uid で FR-013 の形、識別子の形の判定、種類の 4 値、期間）を tests/unit/project-domain.test.ts で確かめる
-- [ ] T025 [P] [US1] 実績のユースケース（登録・編集・削除・作り手でない呼び出しを拒む）を、Repository の作り物の実装を渡して tests/unit/project-usecases.test.ts で確かめる
-- [ ] T026 [P] [US1] 実績の D1 の実装（登録・同じ識別子の拒否・編集・楽観ロックで先に書き換えられていたら何も書かない・削除の順序で `resume_project.project_id` を空にしてから消す）を tests/workers/project-repository.test.ts で確かめる（FR-011・FR-013・FR-042、research.md の R7・R8）
-- [ ] T027 [P] [US1] `/projects/{slug}` の 200 と、無い識別子の 404、JWT のない実績の Server Action が 403 の結果で D1 を変えないことを tests/integration/projects.test.ts で確かめる（FR-014・FR-040・SC-002）
-- [ ] T028 [P] [US1] tests/unit/proxy.test.ts に、無い識別子の `/projects/{slug}` を `/projects/{slug}/missing` へ、無い id の `/dash/projects/{id}` を `/dash/projects/{id}/missing` へ rewrite することを足す
+- [X] T024 [P] [US1] 実績の domain（登録の識別子が uid で FR-013 の形、識別子の形の判定、種類の 4 値、期間）を tests/unit/project-domain.test.ts で確かめる
+- [X] T025 [P] [US1] 実績のユースケース（登録・編集・削除・作り手でない呼び出しを拒む）を、Repository の作り物の実装を渡して tests/unit/project-usecases.test.ts で確かめる
+- [X] T026 [P] [US1] 実績の D1 の実装（登録・同じ識別子の拒否・編集・楽観ロックで先に書き換えられていたら何も書かない・削除の順序で `resume_project.project_id` を空にしてから消す）を tests/workers/project-repository.test.ts で確かめる（FR-011・FR-013・FR-042、research.md の R7・R8）
+- [X] T027 [P] [US1] `/projects/{slug}` の 200 と、無い識別子の 404、JWT のない実績の Server Action が 403 の結果で D1 を変えないことを tests/integration/projects.test.ts で確かめる（FR-014・FR-040・SC-002）
+- [X] T028 [P] [US1] tests/unit/proxy.test.ts に、無い識別子の `/projects/{slug}` を `/projects/{slug}/missing` へ、無い id の `/dash/projects/{id}` を `/dash/projects/{id}/missing` へ rewrite することを足す
 
 ### Implementation for User Story 1
 
-- [ ] T029 [P] [US1] 実績の型・種類の `as const` の配列・識別子の決まり（uid の生成は `crypto.randomUUID()`）を src/features/project/domain/project.ts に作る
-- [ ] T030 [P] [US1] 実績の Repository のインタフェース（訪問者向けに識別子で読む・編集用に id で読む・一覧・登録・開いたときの更新日時つきの編集・削除・識別子と id の有無）を src/features/project/domain/project-repository.ts に作る
-- [ ] T031 [US1] ユースケースを src/features/project/application/ に 1 つずつ作る: register-project.ts・edit-project.ts・delete-project.ts・get-visitor-project.ts・get-project-for-edit.ts・list-projects.ts。読む→計算→書くの順（docs/SOFTWARE_DESIGN.md）
-- [ ] T032 [US1] D1 の実装を src/features/project/server/d1-project-repository.ts に作る。編集は research.md の R7、削除は R8 の順で 1 つの `batch()`。組織は src/shared/server/organization-repository.ts で探すか作る
-- [ ] T033 [US1] 組み立て用の関数（訪問者向けの取り出し、識別子と id の有無）を src/features/project/server/queries.ts に、Server Action（`registerProject`・`editProject`・`deleteProject`）を src/features/project/server/actions.ts に作る。Server Action は先頭で作り手を確かめる
-- [ ] T034 [US1] src/proxy.ts の matcher に `/projects/:slug` を足し、T033 の有無の関数で 404 の rewrite を足す。`/dash/projects/{id}` の有無も見る
-- [ ] T035 [P] [US1] 訪問者向けの実績の表示（秘匿化しない側）を src/features/project/components/visitor-project.tsx に作る。本文は U4 が解けるまで出さない
-- [ ] T036 [P] [US1] 実績の入力（組織名・種類・題・秘匿化した題・秘匿化するか・期間・本文・関連 URL）を src/features/project/components/project-form.tsx に作る。組織名は U3 が解けるまでネイティブの `input type="text"`。失敗の結果では送られた値を残す
-- [ ] T037 [US1] 訪問者のページを src/app/projects/[slug]/page.tsx（`generateMetadata` も DTO の値だけを使う）と src/app/projects/[slug]/missing/page.tsx（`notFound()` だけ）に作る
-- [ ] T038 [US1] 管理画面のページを src/app/dash/projects/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作る。各ページは描画の前に作り手を確かめる
+- [X] T029 [P] [US1] 実績の型・種類の `as const` の配列・識別子の決まり（uid の生成は `crypto.randomUUID()`）を src/features/project/domain/project.ts に作る
+- [X] T030 [P] [US1] 実績の Repository のインタフェース（訪問者向けに識別子で読む・編集用に id で読む・一覧・登録・開いたときの更新日時つきの編集・削除・識別子と id の有無）を src/features/project/domain/project-repository.ts に作る
+- [X] T031 [US1] ユースケースを src/features/project/application/ に 1 つずつ作る: register-project.ts・edit-project.ts・delete-project.ts・get-visitor-project.ts・get-project-for-edit.ts・list-projects.ts。読む→計算→書くの順（docs/SOFTWARE_DESIGN.md）
+- [X] T032 [US1] D1 の実装を src/features/project/server/d1-project-repository.ts に作る。編集は research.md の R7、削除は R8 の順で 1 つの `batch()`。組織は src/shared/server/organization-repository.ts で探すか作る
+- [X] T033 [US1] 組み立て用の関数（訪問者向けの取り出し、識別子と id の有無）を src/features/project/server/queries.ts に、Server Action（`registerProject`・`editProject`・`deleteProject`）を src/features/project/server/actions.ts に作る。Server Action は先頭で作り手を確かめる
+- [X] T034 [US1] src/proxy.ts の matcher に `/projects/:slug` を足し、T033 の有無の関数で 404 の rewrite を足す。`/dash/projects/{id}` の有無も見る
+- [X] T035 [P] [US1] 訪問者向けの実績の表示（秘匿化しない側）を src/features/project/components/visitor-project.tsx に作る。本文は U4 が解けるまで出さない
+- [X] T036 [P] [US1] 実績の入力（組織名・種類・題・秘匿化した題・秘匿化するか・期間・本文・関連 URL）を src/features/project/components/project-form.tsx に作る。組織名は U3 が解けるまでネイティブの `input type="text"`。失敗の結果では送られた値を残す
+- [X] T037 [US1] 訪問者のページを src/app/projects/[slug]/page.tsx（`generateMetadata` も DTO の値だけを使う）と src/app/projects/[slug]/missing/page.tsx（`notFound()` だけ）に作る
+- [X] T038 [US1] 管理画面のページを src/app/dash/projects/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作る。各ページは描画の前に作り手を確かめる
 
 **Checkpoint**: User Story 1 が単独で動く
 

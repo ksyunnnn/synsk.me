@@ -61,9 +61,11 @@ const hasMaskedName = ({ nameMasked }: Pick<Organization, 'nameMasked'>) =>
 export type OrganizationRepository = {
   /** 組織名の一覧。名前の順。組織名の入力の選択肢に使う（FR-002） */
   listNames: () => Promise<string[]>;
+  /** 組織名で読む。無ければ null */
+  findByName: (name: string) => Promise<Organization | null>;
   /**
-   * 組織名で探し、無ければ作る（FR-002・FR-003）。作るときだけ `nameMasked` を使い、
-   * 既にある組織の秘匿化した組織名は変えない
+   * 組織名で探し、無ければ作る（FR-002・FR-003）。既にある組織が秘匿化した組織名を
+   * 持たなければ `nameMasked` を入れ、持っていれば変えない
    */
   findOrCreateByName: (name: string, nameMasked: string | null) => Promise<Organization>;
   /** id で読む。無ければ null */

@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { forbidden } from 'next/navigation';
-import { getCurrentAuthor } from '@/shared/server/author';
+import { requireAuthor } from '@/shared/server/author';
 
 // 要求時のデータ（作り手の確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -20,7 +19,7 @@ const SECTIONS = [
 
 const Page = async () => {
   // `src/proxy.ts` も確かめるが、ページは proxy に頼らずに確かめる（ADR-0036）
-  if (!(await getCurrentAuthor())) forbidden();
+  await requireAuthor();
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12">

@@ -1,7 +1,9 @@
 import 'server-only';
 
 import { headers } from 'next/headers';
+import { forbidden } from 'next/navigation';
 import { createRemoteJWKSet, jwtVerify } from 'jose';
+import type { Author } from '@/shared/domain/author';
 import { readEnv, type AccessEnv } from '@/shared/server/env';
 
 /**
@@ -15,8 +17,7 @@ import { readEnv, type AccessEnv } from '@/shared/server/env';
  * （constitution の VII. Boundary Translation）。
  */
 
-/** 作り手 */
-export type Author = { email: string };
+export type { Author };
 
 /** Cloudflare Access が JWT を入れるヘッダ */
 const ACCESS_JWT_HEADER = 'cf-access-jwt-assertion';
@@ -127,3 +128,13 @@ export const getAuthorFromHeaders = async (requestHeaders: Headers): Promise<Aut
 /** この要求を送ったのが作り手なら `Author` を、確かめられなければ null を返す */
 export const getCurrentAuthor = async (): Promise<Author | null> =>
   getAuthorFromHeaders(await headers());
+
+/**
+ * 作り手であることを確かめる。確かめられなければ `forbidden()` で、画面の中身を返さずに
+ * 403 にする。`/dash` 配下の画面は、何かを読む前にこれを通す（ADR-0036）
+ */
+export const requireAuthor = async (): Promise<Author> => {
+  const author = await getCurrentAuthor();
+  if (!author) forbidden();
+  return author;
+};

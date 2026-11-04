@@ -29,6 +29,31 @@ const toOrganization = (row: OrganizationRow): Organization => ({
   updatedAt: row.updated_at,
 });
 
+/**
+ * 組織名で探し、無ければ作る文。既にある組織が秘匿化した組織名を持たなければ `nameMasked`
+ * を入れる。組織名の UNIQUE（FR-003）に当たれば作らない。職歴・実績の保存が、同じ
+ * `batch()` の中で組織を指す行を書く前に並べる。後の文は組織を
+ * `(SELECT id FROM organization WHERE name = ?)` で指す
+ */
+export const findOrCreateOrganizationStatements = (
+  db: D1Database,
+  name: string,
+  nameMasked: string | null,
+): D1PreparedStatement[] => [
+  db
+    .prepare(
+      'INSERT INTO organization (name, name_masked) VALUES (?, ?) ON CONFLICT (name) DO NOTHING',
+    )
+    .bind(name, nameMasked),
+  ...(nameMasked === null
+    ? []
+    : [
+        db
+          .prepare('UPDATE organization SET name_masked = ? WHERE name = ? AND name_masked IS NULL')
+          .bind(nameMasked, name),
+      ]),
+];
+
 export const createD1OrganizationRepository = (db: D1Database): OrganizationRepository => ({
   listNames: async () => {
     const { results } = await db
@@ -37,18 +62,22 @@ export const createD1OrganizationRepository = (db: D1Database): OrganizationRepo
     return results.map((row) => row.name);
   },
 
+  findByName: async (name) => {
+    const row = await db
+      .prepare(`SELECT ${COLUMNS} FROM organization WHERE name = ?`)
+      .bind(name)
+      .first<OrganizationRow>();
+    return row ? toOrganization(row) : null;
+  },
+
   findOrCreateByName: async (name, nameMasked) => {
-    // 組織名の UNIQUE（FR-003）に当たれば作らずに既にある行を読む。2 文を 1 つの
-    // トランザクションで送る（https://developers.cloudflare.com/d1/worker-api/d1-database/）
-    const [, selected] = await db.batch<OrganizationRow>([
-      db
-        .prepare(
-          'INSERT INTO organization (name, name_masked) VALUES (?, ?) ON CONFLICT (name) DO NOTHING',
-        )
-        .bind(name, nameMasked),
+    // 探す・作る・読むを 1 つのトランザクションで送る
+    // （https://developers.cloudflare.com/d1/worker-api/d1-database/）
+    const results = await db.batch<OrganizationRow>([
+      ...findOrCreateOrganizationStatements(db, name, nameMasked),
       db.prepare(`SELECT ${COLUMNS} FROM organization WHERE name = ?`).bind(name),
     ]);
-    const row = selected.results[0];
+    const row = results.at(-1)?.results[0];
     if (!row) throw new Error('組織を作った後に読めなかった');
     return toOrganization(row);
   },

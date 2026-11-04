@@ -46,9 +46,25 @@ describe('findOrCreateByName', () => {
     expect(found.nameMasked).toBe('ある会社');
   });
 
+  it('既にある組織が秘匿化した組織名を持たなければ入れる', async () => {
+    await insertOrganization(env.DB, { name: '作り物株式会社', nameMasked: null });
+    const found = await organizations.findOrCreateByName('作り物株式会社', 'ある会社');
+    expect(found.nameMasked).toBe('ある会社');
+  });
+
   it('秘匿化した組織名を空にして作れる（FR-001）', async () => {
     const created = await organizations.findOrCreateByName('作り物合同会社', null);
     expect(created.nameMasked).toBeNull();
+  });
+});
+
+describe('findByName', () => {
+  it('組織名で読み、無ければ null', async () => {
+    await insertOrganization(env.DB, { name: '作り物株式会社' });
+    expect(await organizations.findByName('作り物株式会社')).toMatchObject({
+      name: '作り物株式会社',
+    });
+    expect(await organizations.findByName('無い組織')).toBeNull();
   });
 });
 
