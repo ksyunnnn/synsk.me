@@ -1,9 +1,11 @@
 import 'server-only';
 
-import type {
-  Organization,
-  OrganizationId,
-  OrganizationRepository,
+import {
+  PERSONAL_ORGANIZATION_ID,
+  isPersonalOrganization,
+  type Organization,
+  type OrganizationId,
+  type OrganizationRepository,
 } from '@/shared/domain/organization';
 
 /**
@@ -21,6 +23,17 @@ type OrganizationRow = {
 };
 
 const COLUMNS = 'id, name, name_masked, updated_at';
+
+/** 職歴か実績がこの組織（id）を指す */
+const REFERENCED = `(EXISTS (SELECT 1 FROM career WHERE organization_id = organization.id)
+  OR EXISTS (SELECT 1 FROM project WHERE organization_id = organization.id))`;
+
+/** 秘匿化した職歴か実績がこの組織（id）を指す */
+const REFERENCED_BY_MASKED = `(EXISTS (SELECT 1 FROM career WHERE organization_id = organization.id AND is_masked = 1)
+  OR EXISTS (SELECT 1 FROM project WHERE organization_id = organization.id AND is_masked = 1))`;
+
+const isNameTaken = (error: unknown) =>
+  error instanceof Error && error.message.includes('UNIQUE constraint failed: organization.name');
 
 const toOrganization = (row: OrganizationRow): Organization => ({
   id: row.id,
@@ -88,5 +101,57 @@ export const createD1OrganizationRepository = (db: D1Database): OrganizationRepo
       .bind(id)
       .first<OrganizationRow>();
     return row ? toOrganization(row) : null;
+  },
+
+  list: async () => {
+    const { results } = await db
+      .prepare(`SELECT ${COLUMNS} FROM organization ORDER BY name`)
+      .all<OrganizationRow>();
+    return results.map(toOrganization);
+  },
+
+  findReferences: async (id) => {
+    const row = await db
+      .prepare(
+        `SELECT ${REFERENCED} AS referenced, ${REFERENCED_BY_MASKED} AS referenced_by_masked
+         FROM organization WHERE id = ?`,
+      )
+      .bind(id)
+      .first<{ referenced: 0 | 1; referenced_by_masked: 0 | 1 }>();
+    return {
+      isReferenced: row?.referenced === 1,
+      isReferencedByMasked: row?.referenced_by_masked === 1,
+    };
+  },
+
+  edit: async (id, { name, nameMasked }) => {
+    let changes: number;
+    try {
+      const result = await db
+        .prepare(
+          `UPDATE organization SET name = ?, name_masked = ?
+           WHERE id = ? AND (? IS NOT NULL OR NOT ${REFERENCED_BY_MASKED})`,
+        )
+        .bind(name, nameMasked, id, nameMasked)
+        .run();
+      changes = result.meta.changes;
+    } catch (error) {
+      if (isNameTaken(error)) return { ok: false, reason: 'name-taken' };
+      throw error;
+    }
+    if (changes > 0) return { ok: true };
+    const exists = await db.prepare('SELECT 1 FROM organization WHERE id = ?').bind(id).first();
+    return { ok: false, reason: exists ? 'masked-name-required' : 'not-found' };
+  },
+
+  delete: async (id) => {
+    if (isPersonalOrganization(id)) return { ok: false, reason: 'personal' };
+    const result = await db
+      .prepare(`DELETE FROM organization WHERE id = ? AND id != ? AND NOT ${REFERENCED}`)
+      .bind(id, PERSONAL_ORGANIZATION_ID)
+      .run();
+    if (result.meta.changes > 0) return { ok: true };
+    const exists = await db.prepare('SELECT 1 FROM organization WHERE id = ?').bind(id).first();
+    return { ok: false, reason: exists ? 'referenced' : 'not-found' };
   },
 });

@@ -136,15 +136,15 @@ description: "職歴と実績の実装タスク"
 
 ### Tests for User Story 3
 
-- [ ] T047 [P] [US3] 組織の編集と削除（同じ名前の拒否、指されている組織と個人の組織を消せない、秘匿化した職歴・実績が指すのに秘匿化した組織名を空にできない）を tests/workers/organization-edit.test.ts で確かめる（FR-001・FR-003・FR-006・FR-041）
-- [ ] T048 [P] [US3] 組織名を直した直後に、実績のページが直した組織名を出すことと、JWT のない組織の Server Action が D1 を変えないことを tests/integration/organizations.test.ts で確かめる（FR-004・SC-003・FR-040）
+- [X] T047 [P] [US3] 組織の編集と削除（同じ名前の拒否、指されている組織と個人の組織を消せない、秘匿化した職歴・実績が指すのに秘匿化した組織名を空にできない）を tests/workers/organization-edit.test.ts で確かめる（FR-001・FR-003・FR-006・FR-041）
+- [X] T048 [P] [US3] 組織名を直した直後に、実績のページが直した組織名を出すことと、JWT のない組織の Server Action が D1 を変えないことを tests/integration/organizations.test.ts で確かめる（FR-004・SC-003・FR-040）
 
 ### Implementation for User Story 3
 
-- [ ] T049 [US3] src/shared/server/organization-repository.ts に、組織名と秘匿化した組織名の編集・削除・指している職歴と実績の有無を足す
-- [ ] T050 [US3] 組織のユースケース（edit-organization.ts・delete-organization.ts・list-organizations.ts）を src/features/organization/application/ に、組み立て用の関数と Server Action を src/features/organization/server/queries.ts・actions.ts に作る
-- [ ] T051 [P] [US3] 組織の編集の入力を src/features/organization/components/organization-form.tsx に作る
-- [ ] T052 [US3] 管理画面のページを src/app/dash/organizations/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/organizations/{id}` の有無を足す
+- [X] T049 [US3] src/shared/server/organization-repository.ts に、組織名と秘匿化した組織名の編集・削除・指している職歴と実績の有無を足す
+- [X] T050 [US3] 組織のユースケース（edit-organization.ts・delete-organization.ts・list-organizations.ts）を src/features/organization/application/ に、組み立て用の関数と Server Action を src/features/organization/server/queries.ts・actions.ts に作る
+- [X] T051 [P] [US3] 組織の編集の入力を src/features/organization/components/organization-form.tsx に作る
+- [X] T052 [US3] 管理画面のページを src/app/dash/organizations/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/organizations/{id}` の有無を足す
 - [ ] T053 [US3] 組織名の選択肢を出す入力の部品を src/shared/components/ に作り、src/features/project/components/project-form.tsx と src/features/career/components/career-form.tsx の組織名に使う。E2E で選択肢が出ることとキーボードで選べることを tests/e2e/organization-input.spec.ts で確かめる（FR-002）。**止める未決: U3**
 
 ---

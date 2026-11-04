@@ -70,4 +70,27 @@ export type OrganizationRepository = {
   findOrCreateByName: (name: string, nameMasked: string | null) => Promise<Organization>;
   /** id で読む。無ければ null */
   findById: (id: OrganizationId) => Promise<Organization | null>;
+  /** 組織の一覧。名前の順 */
+  list: () => Promise<Organization[]>;
+  /** 職歴・実績がこの組織を指しているか。秘匿化した職歴・実績が指しているかも返す */
+  findReferences: (
+    id: OrganizationId,
+  ) => Promise<{ isReferenced: boolean; isReferencedByMasked: boolean }>;
+  /**
+   * 組織名と秘匿化した組織名を直す（FR-004）。秘匿化した職歴・実績が指しているのに
+   * 秘匿化した組織名を空にする書き込みは、SQL の条件でも止める（FR-001）
+   */
+  edit: (
+    id: OrganizationId,
+    values: { name: string; nameMasked: string | null },
+  ) => Promise<
+    { ok: true } | { ok: false; reason: 'name-taken' | 'masked-name-required' | 'not-found' }
+  >;
+  /**
+   * 組織を消す。職歴・実績が指している組織と個人の組織は消さない（FR-006・FR-041）。
+   * どちらの条件も SQL で確かめる
+   */
+  delete: (
+    id: OrganizationId,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'referenced' | 'personal' | 'not-found' }>;
 };

@@ -30,6 +30,14 @@ const projects = vi.hoisted(() => ({
 }));
 vi.mock('@/features/project/server/queries', () => projects);
 
+/** 行の有無を見る、管理画面のコレクションごとの関数 */
+const rows = vi.hoisted(() => ({
+  hasOrganizationId: vi.fn<(id: string) => Promise<boolean>>(),
+}));
+vi.mock('@/features/organization/server/queries', () => ({
+  hasOrganizationId: rows.hasOrganizationId,
+}));
+
 const { config, proxy } = await import('@/proxy');
 
 const OWNER: Author = { email: 'owner@synsk.test' };
@@ -48,6 +56,7 @@ beforeEach(() => {
   author.getAuthorFromHeaders.mockResolvedValue(OWNER);
   projects.hasProjectSlug.mockResolvedValue(true);
   projects.hasProjectId.mockResolvedValue(true);
+  for (const has of Object.values(rows)) has.mockResolvedValue(true);
 });
 
 describe('対象の経路', () => {
@@ -154,3 +163,20 @@ describe('作り手を確かめられない', () => {
     expect(response.headers.get('cache-control')).toBe('no-store, must-revalidate');
   });
 });
+
+describe.each([['organizations', rows.hasOrganizationId]] as const)(
+  '/dash/%s/{id}',
+  (collection, has) => {
+    it('無い id は 404 の画面へ rewrite する', async () => {
+      has.mockResolvedValue(false);
+      expect(await rewrittenPath(`/dash/${collection}/5/delete`)).toBe(
+        `/dash/${collection}/5/missing`,
+      );
+      expect(has).toHaveBeenCalledWith('5');
+    });
+
+    it('ある id は rewrite しない', async () => {
+      expect(await rewrittenPath(`/dash/${collection}/5`)).toBeNull();
+    });
+  },
+);
