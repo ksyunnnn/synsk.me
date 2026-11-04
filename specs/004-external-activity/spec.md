@@ -95,7 +95,7 @@
 2. **Given** 公開日を返さない取得元の activity に、オーナーが日付を登録した, **When** 取り直す, **Then** 登録した日付は変わらない
 3. **Given** 公開日を返さない取得元, **When** オーナーが日付を入れずに URL を登録する, **Then** 保存されず、日付を入れるよう示される
 4. **Given** 登録していないサイトの記事, **When** オーナーがその URL を登録する, **Then** 取得元「登録していないサイト」の activity として保存される
-5. **Given** URL を指名する取得元に登録した activity, **When** オーナーがその activity を一覧から外したい, **Then** [NEEDS CLARIFICATION: URL を指名した activity と手で入力した activity を、オーナーが synsk.me の側で取り消せるか。ADR-0045 は外部の activity を隠すのは「外部のサービス側で非公開にする」とするが、サーバーから取れない取得元（CodePen）は取得元で消えたことを確かめられず、一覧から消える経路が無い]
+5. **Given** URL を指名して登録した activity か、手で入力して登録した activity, **When** オーナーが synsk.me の側でその activity を削除する, **Then** その activity は削除され、一覧に出ない
 
 ---
 
@@ -168,7 +168,7 @@
 **手で付ける値**
 
 - **FR-021**: 外部の activity に、オーナーが手で付ける値（コメント・分類の上書き・非公開への切り替え）を持たない
-- **FR-022**: オーナーが外部の activity を一覧に出したくないときは、外部のサービス側で非公開にする。synsk.me の側に 1 件ずつ隠す操作を持たない
+- **FR-022**: オーナーが外部の activity を一覧に出したくないときは、外部のサービス側で非公開にする。synsk.me の側に 1 件ずつ隠す操作を持たない。URL を指名した activity と手で入力した activity の削除は FR-033 による
 
 **life event**
 
@@ -188,6 +188,7 @@
 
 - **FR-031**: life event と、URL を指名した・手で入力した外部の activity を書き換えられるのはオーナーだけである。訪問者は activity・取得元・取得の結果を書き換えられない
 - **FR-032**: 取得元から取り込む処理は、外部の activity と取得の結果だけを書き換える。life event を書き換えない
+- **FR-033**: オーナーは、URL を指名して登録した activity と手で入力して登録した activity を、synsk.me の側で削除できる（[REQUIREMENTS.md](../../docs/REQUIREMENTS.md) の FR-11）。サーバーから取れない取得元では取得元で消えたことを確かめられず、ほかに一覧から消える経路が無いため
 
 ### Key Entities *(include if feature involves data)*
 
@@ -224,7 +225,8 @@
 - その他: GitHub のリポジトリ・connpass のイベント・登録していないサイト
 - life event: life event
 - 記事: 上の 3 つに挙がらない取得元。ADR-0045 の挙げる取得元では Zenn・Qiita・dev.to・Medium が当たる（6465973173 は記事の取得元を名指ししていない）
-- 取り込み方は ADR-0045 による。一覧を取る: Zenn・Qiita・dev.to・Medium・GitHub・Speaker Deck・connpass。URL を指名する: Spotify・X・CodeSandbox。すべて手で入力する: CodePen。YouTube の取り込み方は [NEEDS CLARIFICATION: YouTube の動画を、システムが一覧を取るか、オーナーが URL を指名するか。6465973173 は YouTube を埋め込みの取得元に挙げるが、ADR-0045 と PR #47 の検証記録に YouTube が無い]
+- 取り込み方は ADR-0045 による。一覧を取る: Zenn・Qiita・dev.to・Medium・GitHub・Speaker Deck・connpass。URL を指名する: Spotify・X・CodeSandbox・YouTube。すべて手で入力する: CodePen
+- YouTube は URL を指名する（2026-11-04 の PM の判断。ADR-0045 と PR #47 の検証記録は YouTube を挙げない）。チャンネルの動画一覧を取る公式の手段は YouTube Data API v3 で、API キーが要り、既定の割り当ては 1 日 10,000 単位、超えた要求は拒まれる（[Getting Started](https://developers.google.com/youtube/v3/getting-started)、[Errors](https://developers.google.com/youtube/v3/docs/errors)）。料金を公式の文書で確かめられないため、外への要求の費用を確かめられない（SOFTWARE_DESIGN.md の設計原則 2）。チャンネルの RSS フィード（`https://www.youtube.com/feeds/videos.xml?channel_id=<ID>`）は公式の文書に無く、15 件を返す（2026-11-04 実測）。URL から題を取る oEmbed（`https://www.youtube.com/oembed?url=<URL>`）は公開日を返さない（2026-11-04 実測）ので、日付はオーナーが登録する
 
 **決まっていて、実装のときに詰めるもの**
 

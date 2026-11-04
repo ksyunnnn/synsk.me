@@ -95,7 +95,7 @@
 
 1. **Given** 公開の note に転載先の URL を記録し、同じ URL の外部の activity を取り込んだ, **When** 訪問者が一覧を開く, **Then** note は並び、その外部の activity は並ばない
 2. **Given** 転載先の URL と一致しない外部の activity, **When** 訪問者が一覧を開く, **Then** その外部の activity は並ぶ
-3. **Given** 転載先の URL を記録した note を、下書きに戻すか削除した, **When** 訪問者が一覧を開く, **Then** [NEEDS CLARIFICATION: 転載元の note が一覧に並ばないとき、転載先の URL と一致する外部の activity を一覧に並べるか。[ADR-0006](../../docs/decisions/0006-posse-publishing-strategy.md) は「internal エントリの syndicatedTo に含まれる URL を持つ外部エントリを除外する」とだけ書き、note の状態との関係を決めていない。並べなければその記事は一覧から消え、並べれば note を引っ込めても転載先の記事は一覧に残る]
+3. **Given** 転載先の URL を記録した note を、下書きに戻すか削除した, **When** 訪問者が一覧を開く, **Then** 転載先の URL と一致する外部の activity は一覧に並ぶ
 
 ---
 
@@ -139,7 +139,7 @@
 
 **重なりの除外**
 
-- **FR-016**: note の転載先として記録した URL と一致する URL を持つ外部の activity は、一覧に並べない（[ADR-0006](../../docs/decisions/0006-posse-publishing-strategy.md)）。転載元の note が並ばないときの扱いは、User Story 4 の Acceptance Scenario 3 による
+- **FR-016**: note の転載先として記録した URL と一致する URL を持つ外部の activity は、一覧に並べない（[ADR-0006](../../docs/decisions/0006-posse-publishing-strategy.md)）。転載元の note が下書きか削除で一覧に並ばないときは除かない。除くのは重なりを避けるためで、note が並ばなければ重なりは無い
 - **FR-017**: 転載先の URL と一致しない外部の activity は、FR-016 で除かない
 
 **種類とリンク**
