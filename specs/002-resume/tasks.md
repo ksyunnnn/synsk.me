@@ -215,7 +215,7 @@ description: "職務経歴書の実装タスク"
 - [ ] T067 [US5] src/features/resume/domain/build-resume.ts に公開用の分岐を足し、src/features/resume/server/d1-resume-repository.ts の訪問者向けの取り出しを、秘匿化した行で `description`・`url` を SELECT しない形にする（contracts/visitor-resume.md）
 - [ ] T068 [US5] src/features/resume/components/resume-create-form.tsx に公開用の選択肢を出し、create-resume.ts で 2 つ目の公開用を保存の前に拒む（FR-019）。edit-resume-settings.ts と resume-settings-form.tsx で公開用の識別子を書き換えられるようにする（FR-039）
 - [ ] T069 [US5] src/features/resume/components/visitor-resume.tsx に秘匿化した行の表示を足し、公開用のページを src/app/resume/[slug]/page.tsx に作る。`generateMetadata` は DTO の値だけを使う
-- [ ] T070 [US5] 秘匿化した行の本文を伏せた見た目を visitor-resume.tsx に作る（FR-017）。**止める未決: U5**
+- [ ] T070 [US5] 秘匿化した行の本文の場所に「非公開」と出す見た目を visitor-resume.tsx に作る（FR-017、plan.md の U5）。contact へのリンクは T077 で足す
 - [ ] T071 [US5] 公開用のページに「PDF で保存」のボタンを置く（FR-029）
 
 ---
@@ -227,6 +227,7 @@ description: "職務経歴書の実装タスク"
 - [ ] T074 PR の CI が 10 分以内に収まることを GitHub Actions のステップの所要時間で確かめる（ADR-0019）
 - [ ] T075 quickstart.md の手順をブランチの Preview で行う
 - [ ] T076 `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行し、出力が無いことを確かめる
+- [ ] T077 contact のページができたら、T070 の「非公開」の横に contact へのリンクを足す（FR-017、plan.md の U5）
 
 ---
 
@@ -255,7 +256,6 @@ description: "職務経歴書の実装タスク"
 | 未決 | 止めるタスク |
 |---|---|
 | U4 | T037。T032 の本文の表示 |
-| U5 | T070 |
 | U8 | T036 のメールアドレス・T072 |
 | U9 | T035 |
 | U11 | T044・T045 |

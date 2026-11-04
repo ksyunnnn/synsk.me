@@ -54,7 +54,7 @@ Repository の実装が R6（research.md）の条件で読み、写した行を�
 
 ### 公開用で秘匿化した職歴・実績（`isMasked: true`）
 
-上の表から `body` と `url` を除いた形。SQL も `description`・`url` を読まない（FR-017・FR-018）。伏せた見た目の形は plan.md の U5。どの行が秘匿化した行かは `resume_career.is_masked`・`resume_project.is_masked` で見分ける。
+上の表から `body` と `url` を除いた形。SQL も `description`・`url` を読まない（FR-017・FR-018）。伏せた見た目は、本文の場所に「非公開」と出す形（spec の FR-017、plan.md の U5）。どの行が秘匿化した行かは `resume_career.is_masked`・`resume_project.is_masked` で見分ける。
 
 限定公開用の DTO は、すべての写した職歴・実績を `isMasked: false` の形で返す（FR-010）。
 
