@@ -10,6 +10,7 @@ import type {
 } from '@/features/project/domain/project';
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
 import type { CalendarDate } from '@/shared/domain/period';
+import type { SiteStatus } from '@/shared/domain/site-status';
 import { findOrCreateOrganizationStatements } from '@/shared/server/organization-repository';
 
 /**
@@ -28,6 +29,7 @@ type ProjectRow = {
   title: string;
   title_masked: string;
   is_masked: 0 | 1;
+  status: SiteStatus;
   started_on: string;
   ended_on: string | null;
   description: string | null;
@@ -78,6 +80,7 @@ const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
   title: row.title,
   titleMasked: row.title_masked,
   isMasked: row.is_masked === 1,
+  status: row.status,
   period: toPeriod(row),
   description: row.description,
   url: row.url,
@@ -88,7 +91,7 @@ const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
 const EDIT_COLUMNS = `
   p.id, p.slug, p.organization_id, o.name AS organization_name,
   o.name_masked AS organization_name_masked, p.kind, p.title, p.title_masked, p.is_masked,
-  p.started_on, p.ended_on, p.description, p.url, p.updated_at`;
+  p.status, p.started_on, p.ended_on, p.description, p.url, p.updated_at`;
 
 /** 組織名から組織の id を読む部分。組織の行は同じ batch の先の文が作る */
 const ORGANIZATION_ID_BY_NAME = '(SELECT id FROM organization WHERE name = ?)';
@@ -101,11 +104,13 @@ const MASKING_ALLOWED =
   '(? = 0 OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))';
 
 /**
- * 訪問者に出してよい実績の条件。秘匿化した実績は、組織が秘匿化した組織名を持つときだけ出す。
- * 持たなければ、実際の組織名を出す代わりに出さない（plan.md の U2 の決定、research.md の R5）。
- * 保存のときにも止めるが、DB のトリガは無いため、取り出すときにも条件にする
+ * 訪問者に出してよい実績の条件。サイトに載せる実績だけを出す（spec の FR-045）。秘匿化した
+ * 実績は、組織が秘匿化した組織名を持つときだけ出す。持たなければ、実際の組織名を出す代わりに
+ * 出さない（plan.md の U2 の決定、research.md の R5）。保存のときにも止めるが、DB のトリガは
+ * 無いため、取り出すときにも条件にする
  */
-const VISITOR_VISIBLE = '(p.is_masked = 0 OR o.name_masked IS NOT NULL)';
+const VISITOR_VISIBLE =
+  "(p.status = 'published' AND (p.is_masked = 0 OR o.name_masked IS NOT NULL))";
 
 const isSlugTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: project.slug');
@@ -124,6 +129,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     content.title,
     content.titleMasked,
     content.isMasked ? 1 : 0,
+    content.status,
     content.period.startedOn,
     content.period.endedOn,
     content.description,
@@ -132,7 +138,8 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
 
   return {
     findVisitorBySlug: async (slug) => {
-      // 秘匿化するかで、読む列を分ける。どちらか一方だけが行を返す（research.md の R5）
+      // 秘匿化するかで、読む列を分ける。どちらか一方だけが行を返す（research.md の R5）。
+      // サイトに載せない実績は、どちらも返さない（spec の FR-045）
       const [unmasked, masked, skills] = await db.batch<
         UnmaskedVisitorRow | MaskedVisitorRow | { name: string }
       >([
@@ -141,7 +148,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
             `SELECT p.slug, p.kind, p.title, o.name AS organization_name, p.started_on,
                p.ended_on, p.description, p.url
              FROM project p JOIN organization o ON o.id = p.organization_id
-             WHERE p.slug = ? AND p.is_masked = 0`,
+             WHERE p.slug = ? AND p.status = 'published' AND p.is_masked = 0`,
           )
           .bind(slug),
         db
@@ -149,7 +156,8 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
             `SELECT p.slug, p.kind, p.title_masked, o.name_masked AS organization_name_masked,
                p.started_on, p.ended_on
              FROM project p JOIN organization o ON o.id = p.organization_id
-             WHERE p.slug = ? AND p.is_masked = 1 AND o.name_masked IS NOT NULL`,
+             WHERE p.slug = ? AND p.status = 'published' AND p.is_masked = 1
+               AND o.name_masked IS NOT NULL`,
           )
           .bind(slug),
         db
@@ -221,7 +229,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     list: async () => {
       const { results } = await db
         .prepare(
-          `SELECT p.id, p.slug, p.kind, p.title, p.is_masked, p.started_on, p.ended_on,
+          `SELECT p.id, p.slug, p.kind, p.title, p.is_masked, p.status, p.started_on, p.ended_on,
              o.name AS organization_name
            FROM project p JOIN organization o ON o.id = p.organization_id
            ORDER BY p.started_on DESC, p.id DESC`,
@@ -229,7 +237,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         .all<
           Pick<
             ProjectRow,
-            'id' | 'slug' | 'kind' | 'title' | 'is_masked' | 'started_on' | 'ended_on'
+            'id' | 'slug' | 'kind' | 'title' | 'is_masked' | 'status' | 'started_on' | 'ended_on'
           > & {
             organization_name: string;
           }
@@ -240,6 +248,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         kind: row.kind,
         title: row.title,
         isMasked: row.is_masked === 1,
+        status: row.status,
         period: toPeriod(row),
         organizationName: row.organization_name,
       }));
@@ -249,8 +258,8 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       const insert = db
         .prepare(
           `INSERT INTO project (organization_id, kind, slug, title, title_masked, is_masked,
-             started_on, ended_on, description, url)
-           SELECT ${ORGANIZATION_ID_BY_NAME}, ?, ?, ?, ?, ?, ?, ?, ?, ?
+             status, started_on, ended_on, description, url)
+           SELECT ${ORGANIZATION_ID_BY_NAME}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
            WHERE ${MASKING_ALLOWED}
            RETURNING id`,
         )
@@ -284,7 +293,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       const update = db
         .prepare(
           `UPDATE project SET organization_id = ${ORGANIZATION_ID_BY_NAME}, kind = ?, slug = ?,
-             title = ?, title_masked = ?, is_masked = ?, started_on = ?, ended_on = ?,
+             title = ?, title_masked = ?, is_masked = ?, status = ?, started_on = ?, ended_on = ?,
              description = ?, url = ?, updated_at = ?
            WHERE id = ? AND updated_at = ? AND ${MASKING_ALLOWED}`,
         )

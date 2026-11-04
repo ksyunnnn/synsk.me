@@ -29,6 +29,7 @@ const content = (overrides: Partial<ProjectContent & { slug: string }> = {}) => 
   title: '作り物の受託開発',
   titleMasked: '業務システムの開発',
   isMasked: true,
+  status: 'draft' as const,
   period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
   description: '作り物の本文',
   url: 'https://example.com/fake',
@@ -101,6 +102,29 @@ describe('register', () => {
   it('秘匿化しない実績は、秘匿化した組織名の無い組織を指して登録できる', async () => {
     const id = await register({ isMasked: false, organizationNameMasked: null });
     expect((await projects.findForEdit(id))?.organization.nameMasked).toBeNull();
+  });
+});
+
+describe('サイトに載せるか（FR-044・FR-043）', () => {
+  it('登録した値を持ち、編集で切り替えると訪問者への取り出しが変わる', async () => {
+    const id = await register({ slug: 'switch-status', isMasked: false });
+    expect(await projects.findForEdit(id)).toMatchObject({ status: 'draft' });
+    expect(await projects.hasSlug('switch-status')).toBe(false);
+
+    await setUpdatedAt(id, OPENED_AT);
+    expect(
+      await projects.edit(
+        id,
+        content({ slug: 'switch-status', isMasked: false, status: 'published' }),
+        {
+          openedUpdatedAt: OPENED_AT,
+          now: NOW,
+        },
+      ),
+    ).toEqual({ ok: true });
+    expect(await projects.findForEdit(id)).toMatchObject({ status: 'published' });
+    expect((await projects.list()).find((p) => p.id === id)).toMatchObject({ status: 'published' });
+    expect(await projects.hasSlug('switch-status')).toBe(true);
   });
 });
 
@@ -205,7 +229,7 @@ describe('一覧と有無', () => {
   });
 
   it('識別子と id の有無を返す', async () => {
-    const id = await register({ slug: 'exists' });
+    const id = await register({ slug: 'exists', status: 'published' });
     expect(await projects.hasSlug('exists')).toBe(true);
     expect(await projects.hasSlug('absent')).toBe(false);
     expect(await projects.hasId(id)).toBe(true);

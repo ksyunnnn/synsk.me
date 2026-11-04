@@ -108,6 +108,63 @@ describe('readSources', () => {
   });
 });
 
+describe('サイトに載せない写し元（specs/002-resume/spec.md の FR-005・FR-010）', () => {
+  it('限定公開用の作成の選択肢に、サイトに載せない職歴・実績も出て、写せる', async () => {
+    const org = await insertOrganization(env.DB, { name: '載せるかを分ける作り物の組織' });
+    const publishedProject = await insertProject(env.DB, {
+      organizationId: org,
+      title: 'サイトに載せる作り物の実績',
+      status: 'published',
+    });
+    const draftProject = await insertProject(env.DB, {
+      organizationId: org,
+      title: 'サイトに載せない作り物の実績',
+      status: 'draft',
+    });
+    const publishedCareer = await insertCareer(env.DB, {
+      organizationId: org,
+      role: 'サイトに載せる肩書',
+      status: 'published',
+    });
+    const draftCareer = await insertCareer(env.DB, {
+      organizationId: org,
+      role: 'サイトに載せない肩書',
+      status: 'draft',
+    });
+
+    const options = await resumes.readSources('all');
+    expect(options.projects.map((p) => p.id)).toEqual(
+      expect.arrayContaining([publishedProject, draftProject]),
+    );
+    expect(options.careers.map((c) => c.id)).toEqual(
+      expect.arrayContaining([publishedCareer, draftCareer]),
+    );
+
+    const selection: ResumeSelection = {
+      careerIds: [publishedCareer, draftCareer],
+      projectIds: [publishedProject, draftProject],
+      educationIds: [],
+    };
+    const built = buildResumeContent(await resumes.readSources(selection), selection, 'limited');
+    if (!built.ok) throw new Error(built.reason);
+    const { id } = await resumes.create({
+      slug: crypto.randomUUID(),
+      title: '作り物の提出先',
+      audience: 'limited',
+      limitedTokenHash: randomHash(),
+      limitedExpiresAt: null,
+      content: built.content,
+    });
+    const resume = await resumes.findForEdit(id);
+    expect(resume?.projects.map((p) => p.title).sort()).toEqual(
+      ['サイトに載せない作り物の実績', 'サイトに載せる作り物の実績'].sort(),
+    );
+    expect(resume?.careers.map((c) => c.role).sort()).toEqual(
+      ['サイトに載せない肩書', 'サイトに載せる肩書'].sort(),
+    );
+  });
+});
+
 describe('create', () => {
   it('resume と写した行が入り、下書きで、写した行が始まりの日の新しい順で読める（FR-009・FR-021）', async () => {
     const { id } = await resumes.create(await newResume());

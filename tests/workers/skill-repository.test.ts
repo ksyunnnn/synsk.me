@@ -30,6 +30,7 @@ const projectContent = (skillIds: number[]): ProjectContent & { slug: string } =
   title: '作り物の受託開発',
   titleMasked: '業務システムの開発',
   isMasked: true,
+  status: 'draft',
   period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
   description: null,
   url: null,
@@ -115,7 +116,7 @@ describe('listWithPeriods', () => {
       endedOn: '2021-03-31',
     });
     await linkProjectSkill(env.DB, p1, ts);
-    expect(await skills.listWithPeriods()).toEqual([
+    expect(await skills.listWithPeriods('all')).toEqual([
       { id: expect.any(Number), name: 'Go', monthsOverride: null, periods: [] },
       {
         id: ts,
@@ -124,6 +125,36 @@ describe('listWithPeriods', () => {
         periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],
       },
     ]);
+  });
+
+  it('published は、サイトに載せる実績の期間だけを返し、all はすべての実績の期間を返す（FR-033）', async () => {
+    const organizationId = await insertOrganization(env.DB);
+    const ts = await insertSkill(env.DB, { name: 'TypeScript' });
+    const published = await insertProject(env.DB, {
+      organizationId,
+      startedOn: '2020-04-01',
+      endedOn: '2021-03-31',
+      status: 'published',
+    });
+    const draft = await insertProject(env.DB, {
+      organizationId,
+      startedOn: '2022-04-01',
+      endedOn: '2023-03-31',
+    });
+    await linkProjectSkill(env.DB, published, ts);
+    await linkProjectSkill(env.DB, draft, ts);
+
+    const periodsOf = async (projects: 'all' | 'published') =>
+      (await skills.listWithPeriods(projects)).find((skill) => skill.id === ts)?.periods;
+    expect(await periodsOf('published')).toEqual([
+      { startedOn: '2020-04-01', endedOn: '2021-03-31' },
+    ]);
+    expect(await periodsOf('all')).toEqual(
+      expect.arrayContaining([
+        { startedOn: '2020-04-01', endedOn: '2021-03-31' },
+        { startedOn: '2022-04-01', endedOn: '2023-03-31' },
+      ]),
+    );
   });
 });
 

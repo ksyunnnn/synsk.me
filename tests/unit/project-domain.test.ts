@@ -11,7 +11,7 @@ import {
 
 /**
  * 実績の domain の決まり（specs/001-career-and-project/spec.md の FR-011〜FR-013・FR-015・
- * FR-038・FR-039）。秘匿化の決まりは tests/unit/project-masking.test.ts が持つ。
+ * FR-038・FR-039・FR-044）。秘匿化の決まりは tests/unit/project-masking.test.ts が持つ。
  */
 
 const values = (overrides: Partial<ProjectFormValues> = {}): ProjectFormValues => ({
@@ -76,6 +76,7 @@ describe('parseProjectContent', () => {
         title: '作り物の受託開発',
         titleMasked: '業務システムの開発',
         isMasked: true,
+        status: 'draft',
         period: { startedOn: '2021-04-01', endedOn: null },
         description: '1行目\n2行目',
         url: 'https://example.com/x',
@@ -107,6 +108,26 @@ describe('parseProjectContent', () => {
     expect(parseProjectContent(values(overrides))).toEqual({
       ok: false,
       errors: { [field]: error },
+    });
+  });
+});
+
+describe('サイトに載せるか（FR-044）', () => {
+  it('登録の画面の初めの値は、サイトに載せない', () => {
+    expect(toProjectFormValues().status).toBe('draft');
+  });
+
+  it('published を送ったときだけ、サイトに載せる', () => {
+    expect(parseProjectContent(values({ status: 'published' }))).toMatchObject({
+      ok: true,
+      content: { status: 'published' },
+    });
+  });
+
+  it.each(['', 'draft', 'public'])('%j を送ると、サイトに載せない', (status) => {
+    expect(parseProjectContent(values({ status }))).toMatchObject({
+      ok: true,
+      content: { status: 'draft' },
     });
   });
 });

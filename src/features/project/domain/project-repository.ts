@@ -24,7 +24,7 @@ export type ProjectWriteFailure =
 export type ProjectRepository = {
   /**
    * 訪問者に見せる実績。秘匿化した実績では、隠す列を読まない（research.md の R5）。
-   * 無い識別子なら null
+   * 無い識別子と、サイトに載せない実績の識別子なら null（spec の FR-014・FR-045）
    */
   findVisitorBySlug: (slug: string) => Promise<VisitorProject | null>;
   /** 作り手が編集する実績。無い id なら null */

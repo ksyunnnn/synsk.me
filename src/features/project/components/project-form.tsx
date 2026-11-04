@@ -14,6 +14,7 @@ import {
 } from '@/features/project/domain/project';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
+import { SiteStatusField } from '@/shared/components/site-status-field';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -52,6 +53,7 @@ const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, str
   title: { missing: '題を入力してください' },
   titleMasked: { missing: '秘匿化した題を入力してください' },
   isMasked: {},
+  status: {},
   startedOn: {
     missing: '始まりの日を入力してください',
     invalid: '始まりの日を年月日で入力してください',
@@ -104,6 +106,8 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
           {RESULT_MESSAGES[result.status]}
         </p>
       )}
+
+      <SiteStatusField status={values.status} />
 
       <MaskingField
         isMasked={values.isMasked}

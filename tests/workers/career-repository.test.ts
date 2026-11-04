@@ -24,6 +24,7 @@ const content = (overrides: Partial<CareerContent> = {}): CareerContent => ({
   organizationNameMasked: 'ある会社',
   role: '作り物の肩書',
   isMasked: true,
+  status: 'draft',
   period: { startedOn: '2020-04-01' as CalendarDate, endedOn: null },
   description: null,
   url: null,
@@ -79,6 +80,26 @@ describe('register', () => {
   it('秘匿化しない職歴は、秘匿化した組織名の無い組織を指せる', async () => {
     const id = await register({ isMasked: false, organizationNameMasked: null });
     expect((await careers.findForEdit(id))?.organization.nameMasked).toBeNull();
+  });
+});
+
+describe('サイトに載せるか（FR-044）', () => {
+  it('サイトに載せるかを指定せずに入れた職歴は、サイトに載せない', async () => {
+    const id = await insertCareer(env.DB, { organizationId: await insertOrganization(env.DB) });
+    expect((await careers.findForEdit(id))?.status).toBe('draft');
+  });
+
+  it('登録と編集で保存し、一覧にも出す', async () => {
+    const id = await register({ status: 'published' });
+    expect(await careers.findForEdit(id)).toMatchObject({ status: 'published' });
+    await setUpdatedAt(id, OPENED_AT);
+    expect(
+      await careers.edit(id, content({ status: 'draft' }), {
+        openedUpdatedAt: OPENED_AT,
+        now: NOW,
+      }),
+    ).toEqual({ ok: true });
+    expect((await careers.list()).find((c) => c.id === id)).toMatchObject({ status: 'draft' });
   });
 });
 

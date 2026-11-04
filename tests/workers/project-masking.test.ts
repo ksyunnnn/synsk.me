@@ -11,7 +11,8 @@ import {
 
 /**
  * 訪問者向けの実績の取り出しが、秘匿化した実績で隠す値を返さないこと（specs/001-career-and-project/
- * spec.md の FR-015・FR-026、contracts/visitor-project.md）。
+ * spec.md の FR-015・FR-026、contracts/visitor-project.md）と、サイトに載せない実績を返さないこと
+ * （FR-014・FR-045）。
  */
 
 const projects = createD1ProjectRepository(env.DB);
@@ -31,7 +32,7 @@ beforeEach(async () => {
   await deleteCareerAndProjectRows(env.DB);
 });
 
-const seed = async (isMasked: boolean | undefined) => {
+const seed = async (isMasked: boolean | undefined, status: 'draft' | 'published' = 'published') => {
   const organizationId = await insertOrganization(env.DB, {
     name: REAL.organization,
     nameMasked: 'ある会社',
@@ -46,6 +47,7 @@ const seed = async (isMasked: boolean | undefined) => {
     startedOn: '2021-04-01',
     endedOn: '2022-03-31',
     isMasked,
+    status,
   });
   await linkProjectSkill(env.DB, id, await insertSkill(env.DB, { name: 'TypeScript' }));
 };
@@ -91,6 +93,7 @@ describe('秘匿化した組織名の無い組織を指す、秘匿化した実�
       slug: 'no-masked-name',
       title: REAL.title,
       isMasked,
+      status: 'published',
     });
   };
 
@@ -124,6 +127,23 @@ describe('秘匿化しない実績', () => {
       body: REAL.description,
       url: REAL.url,
     });
+  });
+});
+
+describe('サイトに載せない実績（FR-014・FR-045）', () => {
+  it.each([true, false])(
+    '秘匿化するか（%s）に関わらず、訪問者に出さず、識別子も無いものとする',
+    async (isMasked) => {
+      await seed(isMasked, 'draft');
+      expect(await projects.findVisitorBySlug('the-project')).toBeNull();
+      expect(await projects.hasSlug('the-project')).toBe(false);
+    },
+  );
+
+  it('サイトに載せるかを指定せずに入れた実績は、訪問者に出さない（FR-044）', async () => {
+    const organizationId = await insertOrganization(env.DB);
+    await insertProject(env.DB, { organizationId, slug: 'no-status', isMasked: false });
+    expect(await projects.findVisitorBySlug('no-status')).toBeNull();
   });
 });
 

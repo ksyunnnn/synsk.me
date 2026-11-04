@@ -1,10 +1,11 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
+import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
- * 職歴の型と決まり（specs/001-career-and-project/spec.md の FR-007・FR-008・FR-010）。
+ * 職歴の型と決まり（specs/001-career-and-project/spec.md の FR-007・FR-008・FR-010・FR-044）。
  * 訪問者に職歴を出すのは一覧（005）と職務経歴書（002）で、001 は訪問者向けの形を持たない
  * （research.md の R15）
  */
@@ -20,6 +21,8 @@ export type Career = {
   organization: Pick<Organization, 'id' | 'name' | 'nameMasked'>;
   role: string;
   isMasked: boolean;
+  /** サイトに載せるか（FR-044） */
+  status: SiteStatus;
   period: Period;
   description: string | null;
   url: string | null;
@@ -27,7 +30,7 @@ export type Career = {
   updatedAt: string;
 };
 
-export type CareerSummary = Pick<Career, 'id' | 'role' | 'isMasked' | 'period'> & {
+export type CareerSummary = Pick<Career, 'id' | 'role' | 'isMasked' | 'status' | 'period'> & {
   organizationName: string;
 };
 
@@ -37,6 +40,7 @@ export type CareerContent = {
   organizationNameMasked: string | null;
   role: string;
   isMasked: boolean;
+  status: SiteStatus;
   period: Period;
   description: string | null;
   url: string | null;
@@ -47,6 +51,7 @@ export const CAREER_FIELDS = [
   'organizationNameMasked',
   'role',
   'isMasked',
+  'status',
   'startedOn',
   'endedOn',
   'description',
@@ -66,7 +71,10 @@ export const IS_MASKED_VALUES = { masked: '1', unmasked: '0' } as const;
 
 const emptyToNull = (value: string) => (value.trim() === '' ? null : value);
 
-/** フォームの値を保存する内容に読み替える。秘匿化するかは、既定で秘匿化する（FR-010） */
+/**
+ * フォームの値を保存する内容に読み替える。秘匿化するかは、既定で秘匿化する（FR-010）。
+ * サイトに載せるかは、既定で載せない（FR-044）
+ */
 export const parseCareerContent = (
   values: CareerFormValues,
 ):
@@ -99,6 +107,7 @@ export const parseCareerContent = (
       organizationNameMasked: emptyToNull(values.organizationNameMasked)?.trim() ?? null,
       role: values.role.trim(),
       isMasked: values.isMasked !== IS_MASKED_VALUES.unmasked,
+      status: parseSiteStatus(values.status),
       period: period.period,
       description: emptyToNull(values.description.replace(/\r\n?/g, '\n')),
       url: url?.trim() ?? null,
@@ -113,6 +122,7 @@ export const toCareerFormValues = (career?: Career): CareerFormValues =>
         organizationNameMasked: career.organization.nameMasked ?? '',
         role: career.role,
         isMasked: career.isMasked ? IS_MASKED_VALUES.masked : IS_MASKED_VALUES.unmasked,
+        status: career.status,
         startedOn: career.period.startedOn,
         endedOn: career.period.endedOn ?? '',
         description: career.description ?? '',
@@ -123,6 +133,7 @@ export const toCareerFormValues = (career?: Career): CareerFormValues =>
         organizationNameMasked: '',
         role: '',
         isMasked: IS_MASKED_VALUES.masked,
+        status: 'draft',
         startedOn: '',
         endedOn: '',
         description: '',

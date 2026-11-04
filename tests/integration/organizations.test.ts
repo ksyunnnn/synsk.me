@@ -18,7 +18,12 @@ beforeAll(async () => {
     seed: async (db) => {
       organizationId = await insertOrganization(db, { name: '直す前の作り物の組織' });
       unusedId = await insertOrganization(db, { name: 'どこからも指されない作り物の組織' });
-      await insertProject(db, { organizationId, slug: PROJECT_SLUG, isMasked: false });
+      await insertProject(db, {
+        organizationId,
+        slug: PROJECT_SLUG,
+        isMasked: false,
+        status: 'published',
+      });
     },
   });
 }, 60_000);

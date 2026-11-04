@@ -51,6 +51,7 @@ beforeAll(async () => {
         slug: UNMASKED.slug,
         title: UNMASKED.title,
         isMasked: false,
+        status: 'published',
       });
     },
   });

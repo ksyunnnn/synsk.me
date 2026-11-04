@@ -5,8 +5,12 @@ import type { Skill, SkillId, SkillWithPeriods } from '@/features/skill/domain/s
  * D1 の実装は src/features/skill/server/d1-skill-repository.ts にある
  */
 export type SkillRepository = {
-  /** スキルと、つないだ実績の期間。名前の順 */
-  listWithPeriods: () => Promise<SkillWithPeriods[]>;
+  /**
+   * スキルと、つないだ実績の期間。名前の順。`published` はサイトに載せる実績の期間だけを読み、
+   * サイトで訪問者に出す経験年数に使う。`all` はすべての実績の期間を読み、管理画面に使う
+   * （specs/001-career-and-project/spec.md の FR-033）
+   */
+  listWithPeriods: (projects: 'all' | 'published') => Promise<SkillWithPeriods[]>;
   findById: (id: SkillId) => Promise<Skill | null>;
   /** 大文字と小文字だけ違う名前のスキルがあれば登録しない（FR-031） */
   register: (

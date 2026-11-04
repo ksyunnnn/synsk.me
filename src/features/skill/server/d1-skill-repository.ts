@@ -13,15 +13,18 @@ const isNameTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: skill.name');
 
 export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
-  listWithPeriods: async () => {
+  listWithPeriods: async (projects) => {
     const [skills, periods] = await db.batch<
       SkillRow | { skill_id: number; started_on: string; ended_on: string | null }
     >([
       db.prepare('SELECT id, name, months_override FROM skill ORDER BY name'),
-      db.prepare(
-        `SELECT ps.skill_id, p.started_on, p.ended_on
-         FROM project_skill ps JOIN project p ON p.id = ps.project_id`,
-      ),
+      db
+        .prepare(
+          `SELECT ps.skill_id, p.started_on, p.ended_on
+           FROM project_skill ps JOIN project p ON p.id = ps.project_id
+           WHERE ? = 'all' OR p.status = 'published'`,
+        )
+        .bind(projects),
     ]);
     const periodRows = periods.results as {
       skill_id: number;

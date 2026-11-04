@@ -1,10 +1,11 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
+import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
- * 実績の型と決まり（specs/001-career-and-project/spec.md の FR-011〜FR-019・FR-026、
+ * 実績の型と決まり（specs/001-career-and-project/spec.md の FR-011〜FR-019・FR-026・FR-044、
  * data-model.md の「アプリケーションが守る決まり」）。
  */
 
@@ -49,6 +50,8 @@ export type Project = {
   title: string;
   titleMasked: string;
   isMasked: boolean;
+  /** サイトに載せるか（FR-044） */
+  status: SiteStatus;
   period: Period;
   description: string | null;
   url: string | null;
@@ -61,7 +64,7 @@ export type Project = {
 /** 作り手の一覧の 1 行 */
 export type ProjectSummary = Pick<
   Project,
-  'id' | 'slug' | 'kind' | 'title' | 'isMasked' | 'period'
+  'id' | 'slug' | 'kind' | 'title' | 'isMasked' | 'status' | 'period'
 > & {
   organizationName: string;
 };
@@ -77,6 +80,7 @@ export type ProjectContent = {
   title: string;
   titleMasked: string;
   isMasked: boolean;
+  status: SiteStatus;
   period: Period;
   description: string | null;
   url: string | null;
@@ -92,6 +96,7 @@ export const PROJECT_FIELDS = [
   'title',
   'titleMasked',
   'isMasked',
+  'status',
   'startedOn',
   'endedOn',
   'description',
@@ -125,7 +130,8 @@ const emptyToNull = (value: string) => (value.trim() === '' ? null : value);
 
 /**
  * フォームの値を保存する内容に読み替える。秘匿化するかは、秘匿化しないと選んだときだけ
- * false にし、値が無いか読めなければ秘匿化する（FR-015）。識別子はここで読まない
+ * false にし、値が無いか読めなければ秘匿化する（FR-015）。サイトに載せるかは、載せると選んだ
+ * ときだけ載せる（FR-044）。識別子はここで読まない
  */
 export const parseProjectContent = (
   values: ProjectFormValues,
@@ -167,6 +173,7 @@ export const parseProjectContent = (
       title: values.title.trim(),
       titleMasked: values.titleMasked.trim(),
       isMasked: values.isMasked !== IS_MASKED_VALUES.unmasked,
+      status: parseSiteStatus(values.status),
       period: period.period,
       description: emptyToNull(values.description.replace(/\r\n?/g, '\n')),
       url: url?.trim() ?? null,
@@ -198,7 +205,7 @@ export const decideProjectSlug = (
     : { ok: false, error: 'invalid' };
 };
 
-/** フォームの初めの値。登録の画面は空で、秘匿化する（FR-015） */
+/** フォームの初めの値。登録の画面は空で、秘匿化し、サイトに載せない（FR-015・FR-044） */
 export const toProjectFormValues = (project?: Project): ProjectFormValues =>
   project
     ? {
@@ -208,6 +215,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
         title: project.title,
         titleMasked: project.titleMasked,
         isMasked: project.isMasked ? IS_MASKED_VALUES.masked : IS_MASKED_VALUES.unmasked,
+        status: project.status,
         startedOn: project.period.startedOn,
         endedOn: project.period.endedOn ?? '',
         description: project.description ?? '',
@@ -222,6 +230,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
         title: '',
         titleMasked: '',
         isMasked: IS_MASKED_VALUES.masked,
+        status: 'draft',
         startedOn: '',
         endedOn: '',
         description: '',

@@ -81,6 +81,12 @@ describe('listSkills', () => {
     ]);
   });
 
+  it('管理画面の一覧は、サイトに載せない実績の期間も数える（FR-033）', async () => {
+    const skills = fakeSkills();
+    await listSkills(skills, NOW);
+    expect(skills.listWithPeriods).toHaveBeenCalledWith('all');
+  });
+
   it('上書きの月数があれば、求めた月数の代わりに使う（FR-034）', async () => {
     const skills = fakeSkills({
       listWithPeriods: vi.fn(async () => [{ id: 1, name: 'Go', monthsOverride: 71, periods }]),

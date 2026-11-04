@@ -51,6 +51,8 @@ export type CareerRowInput = {
   url?: string | null;
   /** 省くと列の既定（秘匿化する）で入れる */
   isMasked?: boolean;
+  /** 省くと列の既定（サイトに載せない）で入れる */
+  status?: 'draft' | 'published';
 };
 
 export const insertCareer = (
@@ -63,6 +65,7 @@ export const insertCareer = (
     description = null,
     url = null,
     isMasked,
+    status,
   }: CareerRowInput,
 ) =>
   insertReturningId(db, 'career', {
@@ -73,6 +76,7 @@ export const insertCareer = (
     description,
     url,
     ...(isMasked === undefined ? {} : { is_masked: isMasked ? 1 : 0 }),
+    ...(status === undefined ? {} : { status }),
   });
 
 export type ProjectRowInput = {
@@ -87,6 +91,8 @@ export type ProjectRowInput = {
   url?: string | null;
   /** 省くと列の既定（秘匿化する）で入れる */
   isMasked?: boolean;
+  /** 省くと列の既定（サイトに載せない）で入れる */
+  status?: 'draft' | 'published';
 };
 
 export const insertProject = (
@@ -102,6 +108,7 @@ export const insertProject = (
     description = null,
     url = null,
     isMasked,
+    status,
   }: ProjectRowInput,
 ) =>
   insertReturningId(db, 'project', {
@@ -115,6 +122,7 @@ export const insertProject = (
     description,
     url,
     ...(isMasked === undefined ? {} : { is_masked: isMasked ? 1 : 0 }),
+    ...(status === undefined ? {} : { status }),
   });
 
 export type EducationRowInput = {

@@ -32,6 +32,7 @@ const project = (overrides: Partial<Project> = {}): Project => ({
   title: '作り物の受託開発',
   titleMasked: '業務システムの開発',
   isMasked: true,
+  status: 'draft',
   period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
   description: null,
   url: null,

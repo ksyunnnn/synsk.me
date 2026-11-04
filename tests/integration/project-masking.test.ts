@@ -74,6 +74,7 @@ beforeAll(async () => {
         description: HIDDEN.description,
         url: HIDDEN.url,
         isMasked: true,
+        status: 'published',
       });
       // 代表画像も持たせる。秘匿化した実績では、画像を指す値も応答に含めない（FR-030）
       const media = await db
@@ -94,6 +95,7 @@ beforeAll(async () => {
         slug: NO_MASKED_NAME.slug,
         title: NO_MASKED_NAME.title,
         isMasked: true,
+        status: 'published',
       });
 
       const openOrg = await insertOrganization(db, {
@@ -105,6 +107,7 @@ beforeAll(async () => {
         slug: UNMASKED.slug,
         title: UNMASKED.title,
         isMasked: false,
+        status: 'published',
       });
       toggleId = await insertProject(db, {
         organizationId: openOrg,
@@ -112,6 +115,7 @@ beforeAll(async () => {
         title: '切り替える作り物のアプリ',
         titleMasked: '切り替える秘匿化した題',
         isMasked: false,
+        status: 'published',
       });
     },
   });
@@ -203,6 +207,7 @@ describe('秘匿化を切り替えた直後の要求（FR-043）', () => {
       description: row?.description ?? '',
       url: row?.url ?? '',
       slug: row?.slug ?? '',
+      status: row?.status ?? '',
       ...values,
     });
     const res = await ctx.server.fetch(path, {

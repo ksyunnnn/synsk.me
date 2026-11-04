@@ -8,7 +8,7 @@ import { actAsAuthor } from './support/author';
  *
  * 作り手としての職歴と学歴の登録・編集・削除と、同じ職歴を 2 つのタブで開いたときに後から
  * 保存した側が止まり入力が残ること（specs/001-career-and-project/spec.md の FR-007・FR-036・
- * FR-042）。HTTP の状態コードと D1 の行は結合の検査が持つ。
+ * FR-042・FR-044）。HTTP の状態コードと D1 の行は結合の検査が持つ。
  *
  * テストは同じ手元の D1 を並行して使う。名前は、ほかのテストと重ならない値にする。
  */
@@ -27,11 +27,14 @@ test('職歴を登録・編集・削除できる', async ({ page, context }) => 
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
   await expect(page.getByRole('radio', { name: '秘匿化する', exact: true })).toBeChecked();
+  await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
 
   await page.getByRole('textbox', { name: '肩書' }).fill('E2E で直した肩書');
+  await page.getByRole('radio', { name: 'サイトに載せる', exact: true }).check();
   await page.getByRole('button', { name: '保存する' }).click();
   await expect(page.getByRole('textbox', { name: '肩書' })).toHaveValue('E2E で直した肩書');
   await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
 
   await page.getByRole('link', { name: 'この職歴を削除する' }).click();
   await page.getByRole('button', { name: '削除する' }).click();

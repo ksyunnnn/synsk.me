@@ -48,7 +48,12 @@ beforeAll(async () => {
       careerId = await insertCareer(db, { organizationId });
       educationId = await insertEducation(db, { school: SCHOOL });
       skillId = await insertSkill(db, { name: 'Go' });
-      await insertProject(db, { organizationId, slug: PROJECT_SLUG, isMasked: false });
+      await insertProject(db, {
+        organizationId,
+        slug: PROJECT_SLUG,
+        isMasked: false,
+        status: 'published',
+      });
     },
   });
 }, 60_000);

@@ -11,6 +11,7 @@ import {
 } from '@/features/career/domain/career';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
+import { SiteStatusField } from '@/shared/components/site-status-field';
 
 /**
  * 職歴を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -34,6 +35,7 @@ const ERROR_MESSAGES: Record<CareerField, Partial<Record<CareerFieldError, strin
   },
   role: { missing: '肩書を入力してください' },
   isMasked: {},
+  status: {},
   startedOn: {
     missing: '始まりの日を入力してください',
     invalid: '始まりの日を年月日で入力してください',
@@ -76,6 +78,7 @@ export const CareerForm = ({ action, initialValues, career }: Props) => {
           {RESULT_MESSAGES[result.status]}
         </p>
       )}
+      <SiteStatusField status={values.status} />
       <MaskingField
         isMasked={values.isMasked}
         description="秘匿化すると、訪問者には秘匿化した組織名で出し、本文と画像を出しません"

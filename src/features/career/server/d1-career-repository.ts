@@ -3,6 +3,7 @@ import 'server-only';
 import type { Career, CareerContent } from '@/features/career/domain/career';
 import type { CareerRepository } from '@/features/career/domain/career-repository';
 import type { CalendarDate } from '@/shared/domain/period';
+import type { SiteStatus } from '@/shared/domain/site-status';
 import { findOrCreateOrganizationStatements } from '@/shared/server/organization-repository';
 
 /**
@@ -17,6 +18,7 @@ type CareerRow = {
   organization_name_masked: string | null;
   role: string;
   is_masked: 0 | 1;
+  status: SiteStatus;
   started_on: string;
   ended_on: string | null;
   description: string | null;
@@ -38,6 +40,7 @@ const toCareer = (row: CareerRow): Career => ({
   },
   role: row.role,
   isMasked: row.is_masked === 1,
+  status: row.status,
   period: toPeriod(row),
   description: row.description,
   url: row.url,
@@ -61,6 +64,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
   const contentValues = (content: CareerContent) => [
     content.role,
     content.isMasked ? 1 : 0,
+    content.status,
     content.period.startedOn,
     content.period.endedOn,
     content.description,
@@ -76,7 +80,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
       const row = await db
         .prepare(
           `SELECT c.id, c.organization_id, o.name AS organization_name,
-             o.name_masked AS organization_name_masked, c.role, c.is_masked, c.started_on,
+             o.name_masked AS organization_name_masked, c.role, c.is_masked, c.status, c.started_on,
              c.ended_on, c.description, c.url, c.updated_at
            FROM career c JOIN organization o ON o.id = c.organization_id WHERE c.id = ?`,
         )
@@ -88,13 +92,13 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
     list: async () => {
       const { results } = await db
         .prepare(
-          `SELECT c.id, c.role, c.is_masked, c.started_on, c.ended_on,
+          `SELECT c.id, c.role, c.is_masked, c.status, c.started_on, c.ended_on,
              o.name AS organization_name
            FROM career c JOIN organization o ON o.id = c.organization_id
            ORDER BY c.started_on DESC, c.id DESC`,
         )
         .all<
-          Pick<CareerRow, 'id' | 'role' | 'is_masked' | 'started_on' | 'ended_on'> & {
+          Pick<CareerRow, 'id' | 'role' | 'is_masked' | 'status' | 'started_on' | 'ended_on'> & {
             organization_name: string;
           }
         >();
@@ -102,6 +106,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
         id: row.id,
         role: row.role,
         isMasked: row.is_masked === 1,
+        status: row.status,
         period: toPeriod(row),
         organizationName: row.organization_name,
       }));
@@ -110,9 +115,9 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
     register: async (content) => {
       const insert = db
         .prepare(
-          `INSERT INTO career (organization_id, role, is_masked, started_on, ended_on,
+          `INSERT INTO career (organization_id, role, is_masked, status, started_on, ended_on,
              description, url)
-           SELECT ${ORGANIZATION_ID_BY_NAME}, ?, ?, ?, ?, ?, ?
+           SELECT ${ORGANIZATION_ID_BY_NAME}, ?, ?, ?, ?, ?, ?, ?
            WHERE ${MASKING_ALLOWED}
            RETURNING id`,
         )
@@ -126,7 +131,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
       const update = db
         .prepare(
           `UPDATE career SET organization_id = ${ORGANIZATION_ID_BY_NAME}, role = ?,
-             is_masked = ?, started_on = ?, ended_on = ?, description = ?, url = ?,
+             is_masked = ?, status = ?, started_on = ?, ended_on = ?, description = ?, url = ?,
              updated_at = ?
            WHERE id = ? AND updated_at = ? AND ${MASKING_ALLOWED}`,
         )
