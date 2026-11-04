@@ -79,6 +79,37 @@ describe('秘匿化した実績', () => {
   });
 });
 
+describe('秘匿化した組織名の無い組織を指す、秘匿化した実績（plan.md の U2）', () => {
+  // 保存のときにアプリケーションが止めるが、DB のトリガは無い。行を直に入れて確かめる
+  const seedWithoutMaskedName = async (isMasked: boolean) => {
+    const organizationId = await insertOrganization(env.DB, {
+      name: REAL.organization,
+      nameMasked: null,
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      slug: 'no-masked-name',
+      title: REAL.title,
+      isMasked,
+    });
+  };
+
+  it('訪問者に出さず、識別子も無いものとする', async () => {
+    await seedWithoutMaskedName(true);
+    expect(await projects.findVisitorBySlug('no-masked-name')).toBeNull();
+    expect(await projects.hasSlug('no-masked-name')).toBe(false);
+  });
+
+  it('対照: 秘匿化しない実績は、秘匿化した組織名が無くても出す', async () => {
+    await seedWithoutMaskedName(false);
+    expect(await projects.findVisitorBySlug('no-masked-name')).toMatchObject({
+      isMasked: false,
+      organizationName: REAL.organization,
+    });
+    expect(await projects.hasSlug('no-masked-name')).toBe(true);
+  });
+});
+
 describe('秘匿化しない実績', () => {
   it('実際の値を返す（FR-023）', async () => {
     await seed(false);

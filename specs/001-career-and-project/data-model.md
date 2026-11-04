@@ -35,7 +35,7 @@
 
 | 決まり | 要件 | 置き場 |
 |---|---|---|
-| `is_masked = 1` の職歴・実績は、`name_masked` が NULL の組織を指せない。指している組織の `name_masked` を空にできない | FR-001 | `src/shared/domain/organization.ts` の判定と、職歴・実績・組織の保存のユースケース。DB のトリガで止めるかは未決（plan.md の U2） |
+| `is_masked = 1` の職歴・実績は、`name_masked` が NULL の組織を指せない。指している組織の `name_masked` を空にできない | FR-001 | `src/shared/domain/organization.ts` の判定と、職歴・実績・組織の保存のユースケース。DB のトリガは足さない（plan.md の U2）。訪問者向けの取り出しは、秘匿化した組織名の無い組織を指す秘匿化した行を出さない |
 | 秘匿化した実績の識別子は書き換えを拒む。秘匿化に切り替えたら新しい uid にする | FR-013 | `src/features/project/domain/` |
 | 登録のときの識別子は uid（research.md の R6） | FR-013 | 同上 |
 | 職歴・実績の保存は、開いたときの `updated_at` と一致するときだけ書く | FR-042 | Repository の実装（research.md の R7） |

@@ -5,7 +5,7 @@
 | 要求 | 応答 |
 |---|---|
 | `GET /projects/{slug}`、実績がある | 200。下の DTO の値だけで描画する |
-| `GET /projects/{slug}`、実績が無い（秘匿化に切り替えて変わった古い識別子を含む） | 404。`src/proxy.ts` が描画の前に `/projects/{slug}/missing` へ rewrite する |
+| `GET /projects/{slug}`、実績が無い（秘匿化に切り替えて変わった古い識別子と、秘匿化した組織名の無い組織を指す秘匿化した実績を含む） | 404。`src/proxy.ts` が描画の前に `/projects/{slug}/missing` へ rewrite する |
 | `GET /projects/{slug}`、D1 から読めない | proxy は判定せずに通し、ページが 500 の画面を返す |
 
 キャッシュの指定（`'use cache'`・`revalidate`・`dynamic`）を持たない。

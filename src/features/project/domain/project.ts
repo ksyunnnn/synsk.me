@@ -255,8 +255,8 @@ export type MaskedVisitorProject = {
   slug: string;
   kind: ProjectKind;
   title: string;
-  /** 秘匿化した組織名。FR-001 により持つが、欠けていれば null */
-  organizationName: string | null;
+  /** 秘匿化した組織名。持たない組織を指す秘匿化した実績は、訪問者に出さない（plan.md の U2） */
+  organizationName: string;
   period: Period;
   skills: string[];
 };

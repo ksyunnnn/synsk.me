@@ -25,6 +25,13 @@ const HIDDEN = {
 const SHOWN = { organizationName: '見せる作り物の会社', title: '見せる業務システムの開発' };
 
 const MASKED_SLUG = '5d0e6c2a-7b1f-4c3d-9e8f-0a1b2c3d4e5f';
+
+/** 秘匿化した組織名の無い組織を指す、秘匿化した実績。保存のときに止めるため、行を直に入れる */
+const NO_MASKED_NAME = {
+  slug: '9a8b7c6d-1111-4222-8333-444455556666',
+  organizationName: '秘匿化した組織名の無い作り物の組織',
+  title: '秘匿化した組織名の無い組織の題',
+};
 const UNMASKED = {
   slug: 'fake-open-app',
   organizationName: '公開する作り物の個人',
@@ -78,6 +85,17 @@ beforeAll(async () => {
         .bind(media?.id, maskedId)
         .run();
 
+      const noMaskedNameOrg = await insertOrganization(db, {
+        name: NO_MASKED_NAME.organizationName,
+        nameMasked: null,
+      });
+      await insertProject(db, {
+        organizationId: noMaskedNameOrg,
+        slug: NO_MASKED_NAME.slug,
+        title: NO_MASKED_NAME.title,
+        isMasked: true,
+      });
+
       const openOrg = await insertOrganization(db, {
         name: UNMASKED.organizationName,
         nameMasked: '個人',
@@ -113,6 +131,17 @@ describe.each([
     expect(text).toContain(SHOWN.title);
     expect(text).toContain(SHOWN.organizationName);
     expectNoHiddenValues(text);
+  });
+
+  it('秘匿化した組織名の無い組織を指す秘匿化した実績は、出さずに 404（plan.md の U2）', async () => {
+    const { status, text } = await fetchVisitor(NO_MASKED_NAME.slug, as);
+    if (as === AS_RSC) {
+      expect(text).toContain('NEXT_HTTP_ERROR_FALLBACK;404');
+    } else {
+      expect(status).toBe(404);
+    }
+    expect(text).not.toContain(NO_MASKED_NAME.organizationName);
+    expect(text).not.toContain(NO_MASKED_NAME.title);
   });
 
   it('秘匿化しない実績は、実際の題と組織名で出す（FR-023）', async () => {

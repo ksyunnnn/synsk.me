@@ -55,7 +55,8 @@ type MaskedVisitorRow = {
   slug: string;
   kind: ProjectKind;
   title_masked: string;
-  organization_name_masked: string | null;
+  /** 取り出しの条件で、NULL の行を読まない */
+  organization_name_masked: string;
   started_on: string;
   ended_on: string | null;
 };
@@ -99,6 +100,13 @@ const ORGANIZATION_ID_BY_NAME = '(SELECT id FROM organization WHERE name = ?)';
 const MASKING_ALLOWED =
   '(? = 0 OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))';
 
+/**
+ * 訪問者に出してよい実績の条件。秘匿化した実績は、組織が秘匿化した組織名を持つときだけ出す。
+ * 持たなければ、実際の組織名を出す代わりに出さない（plan.md の U2 の決定、research.md の R5）。
+ * 保存のときにも止めるが、DB のトリガは無いため、取り出すときにも条件にする
+ */
+const VISITOR_VISIBLE = '(p.is_masked = 0 OR o.name_masked IS NOT NULL)';
+
 const isSlugTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: project.slug');
 
@@ -141,7 +149,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
             `SELECT p.slug, p.kind, p.title_masked, o.name_masked AS organization_name_masked,
                p.started_on, p.ended_on
              FROM project p JOIN organization o ON o.id = p.organization_id
-             WHERE p.slug = ? AND p.is_masked = 1`,
+             WHERE p.slug = ? AND p.is_masked = 1 AND o.name_masked IS NOT NULL`,
           )
           .bind(slug),
         db
@@ -341,8 +349,13 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     },
 
     hasSlug: async (slug) =>
-      (await db.prepare('SELECT 1 AS found FROM project WHERE slug = ?').bind(slug).first()) !==
-      null,
+      (await db
+        .prepare(
+          `SELECT 1 AS found FROM project p JOIN organization o ON o.id = p.organization_id
+           WHERE p.slug = ? AND ${VISITOR_VISIBLE}`,
+        )
+        .bind(slug)
+        .first()) !== null,
 
     hasId: async (id) =>
       (await db.prepare('SELECT 1 AS found FROM project WHERE id = ?').bind(id).first()) !== null,
