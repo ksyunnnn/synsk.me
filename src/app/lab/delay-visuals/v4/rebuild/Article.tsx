@@ -20,12 +20,37 @@ export const Article = () => (
       fontFamily: `${sourceSans.style.fontFamily}, ${notoSansJp.style.fontFamily}, sans-serif`,
     }}
   >
-    <article className="mx-auto grid max-w-[560px] gap-8 px-6 pt-8 pb-24 font-light">
-      <header className="grid gap-3">
-        <p className="text-sm text-muted-foreground tabular-nums">2026-10-20</p>
-        <h1 className="text-2xl leading-snug font-semibold">サイトを作り直すことにした</h1>
+    {/* 文字と余白は design/foundations.pen の Typography と space トークンに合わせる。
+        新しく書いた Tailwind のクラスの CSS が出ないことがあったので、値は要素に直接書く */}
+    <article
+      style={{
+        maxWidth: 560,
+        margin: '0 auto',
+        display: 'grid',
+        gap: 48, // space-lg
+        padding: '48px 24px 96px', // space-lg / space-md / space-xl
+        fontWeight: 300,
+      }}
+    >
+      <header style={{ display: 'grid', gap: 16 /* space-sm */ }}>
+        {/* caption: 12px・1.5 */}
+        <p className="text-muted-foreground tabular-nums" style={{ fontSize: 12, lineHeight: 1.5 }}>
+          2026-10-20
+        </p>
+        {/* heading-1: 32–36px・1.3・Light 300・見出しの字間 -0.01em */}
+        <h1
+          style={{
+            fontSize: 'clamp(32px, 4vw + 16px, 36px)',
+            lineHeight: 1.3,
+            fontWeight: 300,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          サイトを作り直すことにした
+        </h1>
       </header>
-      <div className="grid gap-6 text-lg leading-loose">
+      {/* body: 18px・1.8・Light 300 */}
+      <div style={{ display: 'grid', gap: 24 /* space-md */, fontSize: 18, lineHeight: 1.8 }}>
         {PARAGRAPHS.map((paragraph) => (
           <p key={paragraph.slice(0, 12)}>{paragraph}</p>
         ))}
