@@ -1,15 +1,13 @@
 // 新しいトップの下書き。#148 のローデザイン（配置と呼び名だけ）をそのまま書いたもの。
 // timeline は mock-data.json（値はすべて作り物）から読み、列の値をそのまま出す。完成したら中身を `/` に移し、このフォルダを消す。
 import type { Metadata } from 'next';
-import { Noto_Sans_JP, Source_Sans_3 } from 'next/font/google';
 import Link from 'next/link';
+
+import { fontFamily, sourceSans } from '@/lib/fonts';
 
 import { getTimeline } from './mockTimeline';
 import { Embed } from './Embed';
 import { SourceIcon } from './SourceIcon';
-
-const sourceSans = Source_Sans_3({ subsets: ['latin'], weight: ['300', '400', '600'] });
-const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false });
 
 export const metadata: Metadata = {
   title: 'トップの下書き | synsk.me',
@@ -27,9 +25,7 @@ const Page = async () => {
   return (
     <div
       className={`${sourceSans.className} min-h-screen bg-background text-foreground`}
-      style={{
-        fontFamily: `${sourceSans.style.fontFamily}, ${notoSansJp.style.fontFamily}, sans-serif`,
-      }}
+      style={{ fontFamily }}
     >
       <main className="mx-auto grid max-w-[480px] gap-12 px-6 pt-4 pb-24 font-light">
         <div className="flex items-center justify-end gap-2">

@@ -1,18 +1,15 @@
 // トップの下書き（src/app/top-draft/page.tsx）を写したもの。埋め込みと下のほうの節は入れない。
 // timeline は entries.json（top-draft の並べ方で並べた、埋め込みを除く新しい 10 件）から読む
-import { Noto_Sans_JP, Source_Sans_3 } from 'next/font/google';
+import { fontFamily, sourceSans } from '@/lib/fonts';
 
 import entries from './entries.json';
 import { SourceIcon } from './SourceIcon';
-
-const sourceSans = Source_Sans_3({ subsets: ['latin'], weight: ['300', '400', '600'] });
-const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false });
 
 export const MockTop = () => (
   <div
     className={`${sourceSans.className} bg-background text-foreground`}
     style={{
-      fontFamily: `${sourceSans.style.fontFamily}, ${notoSansJp.style.fontFamily}, sans-serif`,
+      fontFamily,
     }}
   >
     <div className="mx-auto grid max-w-[480px] gap-12 px-6 pt-4 pb-24 font-light">

@@ -1,9 +1,6 @@
 // 記事ページのモック。timeline の「サイトを作り直すことにした」の行から飛ぶ先。
 // 本文は夏目漱石『吾輩は猫である』の冒頭 5 段落（青空文庫 https://www.aozora.gr.jp/cards/000148/card789.html 、ルビを除いた）
-import { Noto_Sans_JP, Source_Sans_3 } from 'next/font/google';
-
-const sourceSans = Source_Sans_3({ subsets: ['latin'], weight: ['300', '400', '600'] });
-const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false });
+import { fontFamily, sourceSans } from '@/lib/fonts';
 
 const PARAGRAPHS = [
   '吾輩は猫である。名前はまだ無い。',
@@ -17,7 +14,7 @@ export const Article = () => (
   <div
     className={`${sourceSans.className} bg-background text-foreground`}
     style={{
-      fontFamily: `${sourceSans.style.fontFamily}, ${notoSansJp.style.fontFamily}, sans-serif`,
+      fontFamily,
     }}
   >
     {/* 文字と余白は design/foundations.pen の Typography と space トークンに合わせる。
