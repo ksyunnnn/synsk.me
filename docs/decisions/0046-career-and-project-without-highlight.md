@@ -26,6 +26,7 @@ ADR-0044 が挙げた要求と事実は、次のとおり変わっていない�
 ## Decision Drivers
 
 * 同じ値を 2 か所に持たない。2 か所に持つと、片方を直したときにもう片方が古くなる
+* 単純さ over 先回りの構造（[SOFTWARE_DESIGN.md](../SOFTWARE_DESIGN.md#9-単純さ-over-先回りの構造)）。見せ方が決まっていない構造を先に持たない
 
 ## Considered Options
 
@@ -45,7 +46,7 @@ Chosen option: "職歴と実績が組織を指し、一覧は元の表を UNION 
 - project（実績）: いずれかの組織で実際に担当した仕事・企画と、活動（勉強会の開催・登壇など）。organization を 1 つ必ず指す。種類は project.kind で分ける
 - career と project は直接つながらない。職歴のスキルと、職歴ごとの実績は、同じ組織で期間が重なる実績から求める
 - activity: 外部の取得元から取った項目と、life event だけを持つ。note・project・career は activity に行を持たない
-- 実績のハイライトは持たない。実績を選んでハイライトとして表示する列（project.is_highlighted）を持たない
+- 実績のハイライトは持たない。実績を選んでハイライトとして表示する列（project.is_highlighted）を持たない。ハイライトの見せ方が決まっておらず、要るとなったときに足せば済むため（[SOFTWARE_DESIGN.md](../SOFTWARE_DESIGN.md#9-単純さ-over-先回りの構造) の設計原則 9「単純さ over 先回りの構造」）
 
 ### 一覧
 
