@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 import { getVersions } from './registry';
 
-export const VersionList = ({ name }: { name: string }) => (
+export const VersionList = ({ name, description }: { name: string; description?: string }) => (
   <main className="mx-auto grid min-h-screen max-w-[480px] content-center gap-8 px-6 py-16">
     <div className="grid gap-1">
       <Link
@@ -12,6 +12,7 @@ export const VersionList = ({ name }: { name: string }) => (
         lab
       </Link>
       <h1 className="text-lg font-semibold">{name}</h1>
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
     </div>
     <ul className="grid gap-4">
       {getVersions(name).map(({ version, href, summary }) => (
