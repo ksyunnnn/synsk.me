@@ -72,7 +72,7 @@ def rules_note(x, y):
         "互いを指す外部キー（note.published_revision_id・*.card_media_id）は、検査をトランザクションの終わりに送る（DEFERRABLE）",
         "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガが入れ直す",
         "activity_feed のビューは、並べる列を UI で決めてから作る",
-        "CHECK の値: *.status は draft・published。resume.audience は limited・public。project.kind は application・talk・event・other",
+        "CHECK の値: *.status は draft・published。resume.audience は limited・public（既定は limited）。project.kind は application・talk・event・other",
         "CHECK の値: activity_source.kind は article・embed・life_event・other。note.card_image は generated・media・site",
         "年月日の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",

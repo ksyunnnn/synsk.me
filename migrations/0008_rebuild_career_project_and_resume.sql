@@ -1,8 +1,13 @@
--- 組織・職歴・実績・スキルの列を直す。書き方の決まりは 0003 の冒頭にある。
+-- 組織・職歴・実績・スキル・職務経歴書の列を直す。書き方の決まりは 0003 の冒頭にある。
 -- - organization.name_masked を空にできるようにする
 -- - career.is_masked と project.is_masked の既定値を 1 にする
 -- - project.is_highlighted を外す
 -- - skill.years_override を月数の months_override にする。写した resume_skill_override も合わせる
+-- - resume.audience の既定値を limited にする
+--
+-- 0006 の resume_career.organization_name と resume_project.title の注釈は、公開用が常に
+-- 秘匿化した値を写すと読める。写し方は、下で作り直す resume.audience の注釈のとおり。
+-- resume_career と resume_project は作り直さないため、ここに書く
 --
 -- NOT NULL・DEFAULT・CHECK は ALTER TABLE で変えられないため、表を作り直す。行はそのまま移す。
 -- 外部キーで指されている表の作り直し方は 0007 と同じ。行を別の表に写してから消し、
@@ -14,15 +19,17 @@ PRAGMA defer_foreign_keys = on;
 
 CREATE TABLE sequence_copy AS
 SELECT name, seq FROM sqlite_sequence
-WHERE name IN ('organization', 'career', 'project', 'skill');
+WHERE name IN ('organization', 'career', 'project', 'skill', 'resume');
 
 CREATE TABLE organization_copy AS SELECT * FROM organization;
 CREATE TABLE career_copy AS SELECT * FROM career;
 CREATE TABLE project_copy AS SELECT * FROM project;
 CREATE TABLE skill_copy AS SELECT * FROM skill;
 CREATE TABLE resume_skill_override_copy AS SELECT * FROM resume_skill_override;
+CREATE TABLE resume_copy AS SELECT * FROM resume;
 
 DROP TABLE resume_skill_override;
+DROP TABLE resume;
 DROP TABLE skill;
 DROP TABLE project;
 DROP TABLE career;
@@ -143,6 +150,42 @@ CREATE TABLE skill (
   )
 ) STRICT;
 
+-- 職務経歴書の版。複数持つ。限定公開用は提出先ごとに作って渡し、公開用はサイトで公開する
+CREATE TABLE resume (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  -- URL に出す識別子。note.slug と同じ形
+  slug TEXT NOT NULL UNIQUE CHECK (
+    length(slug) BETWEEN 1 AND 100
+    AND slug NOT GLOB '*[^a-z0-9-]*'
+  ),
+  title TEXT NOT NULL,
+  -- limited は限定公開用で、職歴と実績をすべて実際の値で写す。public は公開用で、
+  -- 職務経歴書を作ったときに秘匿化していた職歴と実績は秘匿化した値を、それ以外は実際の値を写す。
+  -- 既定は limited。作った後に変えない（下のトリガ）
+  audience TEXT NOT NULL DEFAULT 'limited' CHECK (audience IN ('limited', 'public')),
+  -- draft は下書き、published は読み手に見せる
+  status TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  -- 限定公開用の URL の鍵のハッシュ。DB が漏れても URL が漏れないよう、平文で持たない
+  limited_token_hash TEXT UNIQUE,
+  -- 限定公開用の URL の期限。NULL なら期限を設けない。期限が切れたら読めなくなるが、
+  -- 行は消さない。期限を延ばせば、もう一度読める
+  limited_expires_at TEXT CHECK (
+    limited_expires_at IS NULL
+    OR strftime('%Y-%m-%dT%H:%M:%fZ', limited_expires_at) IS limited_expires_at
+  ),
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) CHECK (
+    strftime('%Y-%m-%dT%H:%M:%fZ', created_at) IS created_at
+  ),
+  updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) CHECK (
+    strftime('%Y-%m-%dT%H:%M:%fZ', updated_at) IS updated_at
+  ),
+  -- 公開用は鍵と期限を持たない
+  CHECK (
+    audience = 'limited'
+    OR (limited_token_hash IS NULL AND limited_expires_at IS NULL)
+  )
+) STRICT;
+
 -- 写した経験年数の上書き。上書きしたスキルだけ持つ
 CREATE TABLE resume_skill_override (
   resume_id INTEGER NOT NULL REFERENCES resume (id),
@@ -178,11 +221,20 @@ FROM project_copy;
 INSERT INTO skill (id, name, months_override, created_at, updated_at)
 SELECT id, name, years_override * 12, created_at, updated_at FROM skill_copy;
 
+INSERT INTO resume (
+  id, slug, title, audience, status, limited_token_hash, limited_expires_at,
+  created_at, updated_at
+)
+SELECT
+  id, slug, title, audience, status, limited_token_hash, limited_expires_at,
+  created_at, updated_at
+FROM resume_copy;
+
 INSERT INTO resume_skill_override (resume_id, skill_name, months_override)
 SELECT resume_id, skill_name, years_override * 12 FROM resume_skill_override_copy;
 
 DELETE FROM sqlite_sequence
-WHERE name IN ('organization', 'career', 'project', 'skill');
+WHERE name IN ('organization', 'career', 'project', 'skill', 'resume');
 
 INSERT INTO sqlite_sequence (name, seq) SELECT name, seq FROM sequence_copy;
 
@@ -192,8 +244,9 @@ DROP TABLE career_copy;
 DROP TABLE project_copy;
 DROP TABLE skill_copy;
 DROP TABLE resume_skill_override_copy;
+DROP TABLE resume_copy;
 
--- 索引とトリガは DROP TABLE で消えるため、0003 と同じものを作り直す
+-- 索引とトリガは DROP TABLE で消えるため、0003 と 0006 と同じものを作り直す
 CREATE INDEX career_organization_id ON career (organization_id);
 
 CREATE INDEX project_organization_id ON project (organization_id);
@@ -228,4 +281,25 @@ FOR EACH ROW
 WHEN NEW.updated_at IS OLD.updated_at
 BEGIN
   UPDATE skill SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = NEW.id;
+END;
+
+-- 公開用の職務経歴書は 1 つだけ
+CREATE UNIQUE INDEX resume_public ON resume (audience) WHERE audience = 'public';
+
+-- 公開用と限定公開用は、載せる値が違う。作った後に入れ替えると、限定公開用に
+-- 載せた実際の値が公開用として出る
+CREATE TRIGGER resume_audience_fixed
+BEFORE UPDATE OF audience ON resume
+FOR EACH ROW
+WHEN NEW.audience IS NOT OLD.audience
+BEGIN
+  SELECT RAISE(ABORT, 'resume_audience_fixed');
+END;
+
+CREATE TRIGGER resume_updated_at
+AFTER UPDATE ON resume
+FOR EACH ROW
+WHEN NEW.updated_at IS OLD.updated_at
+BEGIN
+  UPDATE resume SET updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now') WHERE id = NEW.id;
 END;
