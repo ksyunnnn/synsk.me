@@ -112,16 +112,16 @@ description: "職歴と実績の実装タスク"
 
 ### Tests for User Story 2
 
-- [ ] T039 [P] [US2] 秘匿化の決まり（秘匿化した実績の識別子の書き換えを拒む、秘匿化に切り替えると新しい uid、秘匿化した組織名の無い組織で秘匿化しない）を tests/unit/project-masking.test.ts で確かめる（FR-001・FR-013）
-- [ ] T040 [P] [US2] 訪問者向けの取り出しが、秘匿化した実績で `title`・`organization.name`・`description`・`url`・代表画像を返さないこと、秘匿化を指定しない登録が秘匿化されることを tests/workers/project-masking.test.ts で確かめる（FR-015・FR-026）
-- [ ] T041 [P] [US2] 秘匿化した実績のページの HTML と RSC の応答（`<title>`・OGP を含む）に隠す値が 0 件であること、秘匿化しない実績では実際の値が出ること、秘匿化を切り替えた直後の要求で新しい状態が出ること（古い識別子は 404）を tests/integration/project-masking.test.ts で確かめる（SC-001・FR-023・FR-043）
+- [X] T039 [P] [US2] 秘匿化の決まり（秘匿化した実績の識別子の書き換えを拒む、秘匿化に切り替えると新しい uid、秘匿化した組織名の無い組織で秘匿化しない）を tests/unit/project-masking.test.ts で確かめる（FR-001・FR-013）
+- [X] T040 [P] [US2] 訪問者向けの取り出しが、秘匿化した実績で `title`・`organization.name`・`description`・`url`・代表画像を返さないこと、秘匿化を指定しない登録が秘匿化されることを tests/workers/project-masking.test.ts で確かめる（FR-015・FR-026）
+- [X] T041 [P] [US2] 秘匿化した実績のページの HTML と RSC の応答（`<title>`・OGP を含む）に隠す値が 0 件であること、秘匿化しない実績では実際の値が出ること、秘匿化を切り替えた直後の要求で新しい状態が出ること（古い識別子は 404）を tests/integration/project-masking.test.ts で確かめる（SC-001・FR-023・FR-043）
 
 ### Implementation for User Story 2
 
-- [ ] T042 [US2] src/features/project/server/d1-project-repository.ts の訪問者向けの取り出しを、`is_masked` で SELECT する列を分ける形にし、contracts/visitor-project.md の 2 つの DTO に詰める
-- [ ] T043 [US2] src/features/project/application/edit-project.ts に、秘匿化に切り替えたときの新しい uid、秘匿化した実績の識別子の書き換えの拒否、FR-001 の判定（src/shared/domain/organization.ts）を足す。register-project.ts にも FR-001 の判定を足す
-- [ ] T044 [US2] src/features/project/components/visitor-project.tsx に秘匿化した側の表示を足す。本文を伏せた見た目は U7 が解けるまで出さない
-- [ ] T045 [US2] src/features/project/components/project-form.tsx で、秘匿化するときに組織の秘匿化した組織名を入れられるようにし、秘匿化した実績の識別子の入力を読み取りだけにする
+- [X] T042 [US2] src/features/project/server/d1-project-repository.ts の訪問者向けの取り出しを、`is_masked` で SELECT する列を分ける形にし、contracts/visitor-project.md の 2 つの DTO に詰める
+- [X] T043 [US2] src/features/project/application/edit-project.ts に、秘匿化に切り替えたときの新しい uid、秘匿化した実績の識別子の書き換えの拒否、FR-001 の判定（src/shared/domain/organization.ts）を足す。register-project.ts にも FR-001 の判定を足す
+- [X] T044 [US2] src/features/project/components/visitor-project.tsx に秘匿化した側の表示を足す。本文を伏せた見た目は U7 が解けるまで出さない
+- [X] T045 [US2] src/features/project/components/project-form.tsx で、秘匿化するときに組織の秘匿化した組織名を入れられるようにし、秘匿化した実績の識別子の入力を読み取りだけにする
 - [ ] T046 [US2] 本文を伏せた見た目を src/features/project/components/visitor-project.tsx に作る。**止める未決: U7**
 
 **Checkpoint**: User Story 1 と 2 が単独で動く

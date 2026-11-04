@@ -169,7 +169,7 @@ export const ProjectForm = ({ action, initialValues, project }: Props) => {
           label="識別子"
           hint={
             project.isMasked
-              ? '秘匿化した実績の識別子は変えられません。秘匿化に切り替えると、新しい識別子になります'
+              ? '秘匿化した実績の識別子は変えられません。秘匿化を外して保存した後に変えられます'
               : 'URL に出ます。英小文字・数字・ハイフンで、100 文字まで。秘匿化に切り替えると、新しい識別子になります'
           }
           defaultValue={values.slug}
