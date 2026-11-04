@@ -59,15 +59,15 @@ description: "職歴と実績の実装タスク"
 **Purpose**: どの User Story も使う管理画面の入口・期間・組織・入力の部品
 
 - [X] T014 管理画面の入口を src/app/dash/page.tsx に作る。描画の前に src/shared/server/author.ts で作り手を確かめ、作り手でなければ `forbidden()`。職歴・実績・学歴・スキル・組織の一覧へのリンクを置く（contracts/dash.md）
-- [ ] T015 [P] 期間の型と、日付の形（`YYYY-MM-DD`）・終わりの日が始まりの日より前でないことの判定を src/shared/domain/period.ts に作る（FR-038・FR-039）。経験年数と重なりの計算はここに置くが、U6 が解けるまで書かない
-- [ ] T016 [P] T015 を tests/unit/period.test.ts で確かめる（終わりの日が空・同じ日・逆の日・読めない日付）
-- [ ] T017 [P] 組織の型と、秘匿化した職歴・実績が指す組織は秘匿化した組織名を持つという判定（FR-001）と、個人の組織の id の定数（値は T073 で入れる。それまでは誰も指さない値）を src/shared/domain/organization.ts に作る
-- [ ] T018 [P] T017 の判定を tests/unit/organization.test.ts で確かめる
-- [ ] T019 組織の Repository のインタフェース（組織名の一覧・名前で探して無ければ作る・id で読む）を src/shared/domain/organization.ts に、D1 の実装を src/shared/server/organization-repository.ts に作る。行の型は実装のファイルの中だけに置く（research.md の R3）
-- [ ] T020 T019 を tests/workers/organization-repository.test.ts で確かめる（同じ名前で探すと同じ行、新しい名前で作る、秘匿化した組織名は空で作れる）
-- [ ] T021 [P] workerd と結合の検査が作り物の組織・職歴・実績・学歴・スキルの行を入れる関数を tests/support/career-and-project-rows.ts に作る。個人の組織は T017 の定数の id で入れる
-- [ ] T022 [P] ネイティブの入力の要素に、ラベル・項目ごとの誤りの表示・フォーカスの見た目をかぶせた部品を src/shared/components/field.tsx に作る（`design/guidelines.md` の Inputs、トークンの名前で値を使う）
-- [ ] T023 Server Action の結果の型（成功・作り手でない・項目ごとの誤りと送られた値・先に書き換えられていた）を src/shared/domain/action-result.ts に作る（contracts/dash.md の共通）
+- [X] T015 [P] 期間の型と、日付の形（`YYYY-MM-DD`）・終わりの日が始まりの日より前でないことの判定を src/shared/domain/period.ts に作る（FR-038・FR-039）。経験年数と重なりの計算はここに置くが、U6 が解けるまで書かない
+- [X] T016 [P] T015 を tests/unit/period.test.ts で確かめる（終わりの日が空・同じ日・逆の日・読めない日付）
+- [X] T017 [P] 組織の型と、秘匿化した職歴・実績が指す組織は秘匿化した組織名を持つという判定（FR-001）と、個人の組織の id の定数（値は T073 で入れる。それまでは誰も指さない値）を src/shared/domain/organization.ts に作る
+- [X] T018 [P] T017 の判定を tests/unit/organization.test.ts で確かめる
+- [X] T019 組織の Repository のインタフェース（組織名の一覧・名前で探して無ければ作る・id で読む）を src/shared/domain/organization.ts に、D1 の実装を src/shared/server/organization-repository.ts に作る。行の型は実装のファイルの中だけに置く（research.md の R3）
+- [X] T020 T019 を tests/workers/organization-repository.test.ts で確かめる（同じ名前で探すと同じ行、新しい名前で作る、秘匿化した組織名は空で作れる）
+- [X] T021 [P] workerd と結合の検査が作り物の組織・職歴・実績・学歴・スキルの行を入れる関数を tests/support/career-and-project-rows.ts に作る。個人の組織は T017 の定数の id で入れる
+- [X] T022 [P] ネイティブの入力の要素に、ラベル・項目ごとの誤りの表示・フォーカスの見た目をかぶせた部品を src/shared/components/field.tsx に作る（`design/guidelines.md` の Inputs、トークンの名前で値を使う）
+- [X] T023 Server Action の結果の型（成功・作り手でない・項目ごとの誤りと送られた値・先に書き換えられていた）を src/shared/domain/action-result.ts に作る（contracts/dash.md の共通）
 
 **Checkpoint**: Phase 1 と 2 が終われば、User Story を並べて始められる
 

@@ -1,0 +1,171 @@
+import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import { cn } from '@/lib/utils';
+
+/**
+ * ネイティブの入力の要素に、ラベル・項目ごとの誤りの表示・フォーカスの見た目をかぶせる
+ * （design/guidelines.md の Inputs）。操作はブラウザのネイティブの要素が持ち、ここは
+ * 見た目と、ラベル・誤りと要素のつながりだけを持つ。値はトークンの名前で使う。
+ *
+ * 使い手は 001 の職歴・実績・学歴・スキル・組織の入力（specs/001-career-and-project/research.md の R11）。
+ */
+
+/** キーボードで操作しているときに、フォーカスの位置を目で確かめられる見た目（WCAG 2.2 SC 2.4.7） */
+const FOCUS_VISIBLE =
+  'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+
+const CONTROL =
+  'w-full rounded-md border border-input bg-background px-3 py-2 text-foreground aria-invalid:border-destructive';
+
+type ControlProps = {
+  /** 項目の名前。フォームの値の名前と、要素の id に使う */
+  name: string;
+  label: ReactNode;
+  /** 入力の補足。ラベルの下に出す */
+  hint?: ReactNode;
+  /** 項目ごとの誤り。あれば要素を `aria-invalid` にし、読み上げでつなぐ */
+  error?: ReactNode;
+};
+
+/** 要素の id と、補足と誤りの id。ラベルと `aria-describedby` でつなぐ */
+const idsOf = (name: string) => ({
+  control: `field-${name}`,
+  hint: `field-${name}-hint`,
+  error: `field-${name}-error`,
+});
+
+const describedBy = (name: string, { hint, error }: Pick<ControlProps, 'hint' | 'error'>) => {
+  const ids = idsOf(name);
+  const list = [hint ? ids.hint : null, error ? ids.error : null].filter(Boolean);
+  return list.length > 0 ? list.join(' ') : undefined;
+};
+
+const FieldFrame = ({
+  name,
+  label,
+  hint,
+  error,
+  children,
+}: ControlProps & { children: ReactNode }) => {
+  const ids = idsOf(name);
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={ids.control} className="font-bold">
+        {label}
+      </label>
+      {hint && (
+        <p id={ids.hint} className="text-sm text-muted-foreground">
+          {hint}
+        </p>
+      )}
+      {children}
+      {error && (
+        <p id={ids.error} className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+};
+
+type InputFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'input'>, 'name' | 'id'>;
+
+export const InputField = ({ name, label, hint, error, className, ...props }: InputFieldProps) => (
+  <FieldFrame name={name} label={label} hint={hint} error={error}>
+    <input
+      {...props}
+      id={idsOf(name).control}
+      name={name}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy(name, { hint, error })}
+      className={cn(CONTROL, FOCUS_VISIBLE, className)}
+    />
+  </FieldFrame>
+);
+
+type TextareaFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'textarea'>, 'name' | 'id'>;
+
+export const TextareaField = ({
+  name,
+  label,
+  hint,
+  error,
+  className,
+  ...props
+}: TextareaFieldProps) => (
+  <FieldFrame name={name} label={label} hint={hint} error={error}>
+    <textarea
+      {...props}
+      id={idsOf(name).control}
+      name={name}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy(name, { hint, error })}
+      className={cn(CONTROL, FOCUS_VISIBLE, className)}
+    />
+  </FieldFrame>
+);
+
+type SelectFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'select'>, 'name' | 'id'>;
+
+export const SelectField = ({
+  name,
+  label,
+  hint,
+  error,
+  className,
+  children,
+  ...props
+}: SelectFieldProps) => (
+  <FieldFrame name={name} label={label} hint={hint} error={error}>
+    <select
+      {...props}
+      id={idsOf(name).control}
+      name={name}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={describedBy(name, { hint, error })}
+      className={cn(CONTROL, FOCUS_VISIBLE, className)}
+    >
+      {children}
+    </select>
+  </FieldFrame>
+);
+
+type CheckboxFieldProps = ControlProps &
+  Omit<ComponentPropsWithoutRef<'input'>, 'name' | 'id' | 'type'>;
+
+/** チェックボックスは、要素をラベルの前に置く */
+export const CheckboxField = ({
+  name,
+  label,
+  hint,
+  error,
+  className,
+  ...props
+}: CheckboxFieldProps) => {
+  const ids = idsOf(name);
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="flex items-center gap-2">
+        <input
+          {...props}
+          type="checkbox"
+          id={ids.control}
+          name={name}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={describedBy(name, { hint, error })}
+          className={cn('size-4 accent-primary', FOCUS_VISIBLE, className)}
+        />
+        <label htmlFor={ids.control}>{label}</label>
+      </div>
+      {hint && (
+        <p id={ids.hint} className="text-sm text-muted-foreground">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p id={ids.error} className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+};
