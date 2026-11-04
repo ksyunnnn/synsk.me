@@ -5,8 +5,8 @@ import type { Period } from '@/shared/domain/period';
  * 訪問者に見せる実績（specs/001-career-and-project/contracts/visitor-project.md）。
  * 受け取った DTO の値だけを描画する。秘匿化した実績の DTO は、本文・関連 URL・画像を持たない。
  *
- * 本文は、書式が決まるまで出さない（plan.md の U4）。秘匿化した実績の本文を伏せた見た目は、
- * 形が決まるまで出さない（plan.md の U7）。代表画像は、配る経路が決まるまで出さない（U5）
+ * 本文は、書式が決まるまで出さない（plan.md の U4）。秘匿化した実績は、本文の場所に「非公開」と
+ * 出す（FR-021）。代表画像は、配る経路が決まるまで出さない（U5）
  */
 
 const PeriodText = ({ period }: { period: Period }) => (
@@ -41,6 +41,14 @@ export const VisitorProjectView = ({ project }: { project: VisitorProject }) => 
         )}
       </dl>
     </header>
+    {project.isMasked && (
+      <section aria-labelledby="project-body-heading" className="flex flex-col gap-2">
+        <h2 id="project-body-heading" className="text-sm text-muted-foreground">
+          本文
+        </h2>
+        <p>非公開</p>
+      </section>
+    )}
     {!project.isMasked && project.url && (
       <p>
         <a

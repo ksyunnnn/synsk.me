@@ -122,7 +122,7 @@ description: "職歴と実績の実装タスク"
 - [X] T043 [US2] src/features/project/application/edit-project.ts に、秘匿化に切り替えたときの新しい uid、秘匿化した実績の識別子の書き換えの拒否、FR-001 の判定（src/shared/domain/organization.ts）を足す。register-project.ts にも FR-001 の判定を足す
 - [X] T044 [US2] src/features/project/components/visitor-project.tsx に秘匿化した側の表示を足す。本文を伏せた見た目は U7 が解けるまで出さない
 - [X] T045 [US2] src/features/project/components/project-form.tsx で、秘匿化するときに組織の秘匿化した組織名を入れられるようにし、秘匿化した実績の識別子の入力を読み取りだけにする
-- [ ] T046 [US2] 本文を伏せた見た目を src/features/project/components/visitor-project.tsx に作る。**止める未決: U7**
+- [X] T046 [US2] 本文を伏せた見た目を src/features/project/components/visitor-project.tsx に作る。本文の場所に「非公開」と出す（FR-021）
 
 **Checkpoint**: User Story 1 と 2 が単独で動く
 
@@ -207,6 +207,7 @@ description: "職歴と実績の実装タスク"
 - [ ] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース・失敗の表し方・見た目と操作を分ける）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
 - [ ] T080 PR の CI が 10 分以内に収まることを GitHub Actions のステップの所要時間で確かめる（ADR-0019）
 - [ ] T081 quickstart.md の手順をブランチの Preview で行う
+- [ ] T082 問い合わせの場所のページ（別の spec）ができたら、秘匿化した実績の「非公開」の近くに、そのページへのリンクを src/features/project/components/visitor-project.tsx に足す（FR-021、plan.md の U7）。**止める依存: 問い合わせの場所のページ**
 
 ---
 
@@ -235,7 +236,6 @@ description: "職歴と実績の実装タスク"
 | U4 | T077。T035 の本文の表示 |
 | U5 | T075・T076 |
 | U6 の残り（端の扱い） | T055・T061 の、職歴の実績とスキルの部分 |
-| U7 | T046 |
 | U1・U8・U9 | 無し（U9 が覆れば構成のタスクを直す） |
 
 ### Within Each User Story

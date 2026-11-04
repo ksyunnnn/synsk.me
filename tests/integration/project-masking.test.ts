@@ -133,6 +133,10 @@ describe.each([
     expectNoHiddenValues(text);
   });
 
+  it('秘匿化した実績は、本文の場所に「非公開」と出す（FR-021）', async () => {
+    expect((await fetchVisitor(MASKED_SLUG, as)).text).toContain('非公開');
+  });
+
   it('秘匿化した組織名の無い組織を指す秘匿化した実績は、出さずに 404（plan.md の U2）', async () => {
     const { status, text } = await fetchVisitor(NO_MASKED_NAME.slug, as);
     if (as === AS_RSC) {
@@ -149,6 +153,7 @@ describe.each([
     expect(status).toBe(200);
     expect(text).toContain(UNMASKED.title);
     expect(text).toContain(UNMASKED.organizationName);
+    expect(text).not.toContain('非公開');
   });
 
   it.each(['/', `/dash/projects/${'{id}'}`])(
