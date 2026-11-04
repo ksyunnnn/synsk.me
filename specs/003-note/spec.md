@@ -260,6 +260,7 @@
 - 完全に削除できること（FR-11）、公開されたときの見た目を公開前に確認できること（FR-13）、保存操作をせずに編集内容が保持されること（FR-14）、公開していない内容を範囲の外の人への応答に含めないこと（NFR-08）、キャッシュに残さないこと（NFR-09）は [REQUIREMENTS.md](../../docs/REQUIREMENTS.md) が持つ
 - 他のサービスに URL が貼られたときのカードの題・説明・画像の出し方は [CRAWLING.md](../../docs/CRAWLING.md) が持つ。説明文が空の note は、本文の冒頭を説明に使う
 - カードの画像の出し方は #186 が持つ
+- 管理画面は `/dash/` 配下に置く（[ADR-0016](../../docs/decisions/0016-url-conventions.md)）。オーナーであることは、アプリケーションの外で Cloudflare Access が判定する（[ADR-0013](../../docs/decisions/0013-access-authentication.md)）
 
 **決まっていて、実装のときに詰めるもの**
 
@@ -270,7 +271,6 @@
 
 **決定が無く、この spec では決めない**
 
-- 管理画面の場所と、オーナーであることの判定の仕方（材料: [ADR-0013](../../docs/decisions/0013-access-authentication.md)、[ADR-0016](../../docs/decisions/0016-url-conventions.md)）
 - 識別子の候補を題から示すかどうか（材料: ADR-0016）
 - 訪問者の note の URL の形（材料: ADR-0016）
 - 削除した note の URL を訪問者が開いたときの応答
