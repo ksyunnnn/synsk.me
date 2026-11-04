@@ -57,9 +57,9 @@ description: "職務経歴書の実装タスク"
 
 **Purpose**: 002 の検査と env の土台
 
-- [ ] T001 プロフィールのメールアドレスを渡す環境変数の型（`RESUME_EMAIL`）を src/shared/server/env.ts に足し、`.dev.vars.example` に雛形を足す。値はコードに書かない（research.md の R10）
-- [ ] T002 [P] workerd と結合の検査が、作り物の職務経歴書と写した行（`resume`・`resume_career`・`resume_project`・`resume_education`・`resume_project_skill`・`resume_skill_override`）を SQL で入れる関数と、消す関数を tests/support/resume-rows.ts に作る。限定公開用は鍵の平文とハッシュの両方を返す
-- [ ] T003 [P] tests/workers/migrations.test.ts に、0008 の後の `resume.audience` の既定値が `limited` であること、`resume_skill_override.months_override` があることを足す
+- [X] T001 プロフィールのメールアドレスを渡す環境変数の型（`RESUME_EMAIL`）を src/shared/server/env.ts に足し、`.dev.vars.example` に雛形を足す。値はコードに書かない（research.md の R10）
+- [X] T002 [P] workerd と結合の検査が、作り物の職務経歴書と写した行（`resume`・`resume_career`・`resume_project`・`resume_education`・`resume_project_skill`・`resume_skill_override`）を SQL で入れる関数と、消す関数を tests/support/resume-rows.ts に作る。限定公開用は鍵の平文とハッシュの両方を返す
+- [X] T003 [P] tests/workers/migrations.test.ts に、0008 の後の `resume.audience` の既定値が `limited` であること、`resume_skill_override.months_override` があることを足す
 
 ---
 
@@ -211,7 +211,7 @@ description: "職務経歴書の実装タスク"
 
 ### Implementation for User Story 5
 
-- [ ] T066 [US5] migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` の既定値が 1 であることを tests/workers/migrations.test.ts で確かめる
+- [X] T066 [US5] migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` の既定値が 1 であることを tests/workers/migrations.test.ts で確かめる
 - [ ] T067 [US5] src/features/resume/domain/build-resume.ts に公開用の分岐を足し、src/features/resume/server/d1-resume-repository.ts の訪問者向けの取り出しを、秘匿化した行で `description`・`url` を SELECT しない形にする（contracts/visitor-resume.md）
 - [ ] T068 [US5] src/features/resume/components/resume-create-form.tsx に公開用の選択肢を出し、create-resume.ts で 2 つ目の公開用を保存の前に拒む（FR-019）。edit-resume-settings.ts と resume-settings-form.tsx で公開用の識別子を書き換えられるようにする（FR-039）
 - [ ] T069 [US5] src/features/resume/components/visitor-resume.tsx に秘匿化した行の表示を足し、公開用のページを src/app/resume/[slug]/page.tsx に作る。`generateMetadata` は DTO の値だけを使う
