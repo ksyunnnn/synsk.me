@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import 'server-only';
 
 import { headers } from 'next/headers';
@@ -122,8 +123,19 @@ export const verifyAuthor = async (
  * 要求のヘッダから、作り手なら `Author` を、確かめられなければ null を返す。`src/proxy.ts`
  * は描画の前に動き、`headers()` を使えないため、要求のヘッダを直接渡す
  */
-export const getAuthorFromHeaders = async (requestHeaders: Headers): Promise<Author | null> =>
-  verifyAuthor(requestHeaders.get(ACCESS_JWT_HEADER), toAccessSettings(await readEnv()));
+export const getAuthorFromHeaders = async (requestHeaders: Headers): Promise<Author | null> => {
+  // `npm run dev`（vinext dev）でだけ、JWT を確かめずに作り手として扱う。手元には JWT を
+  // 付ける Cloudflare Access がいないため。`import.meta.env.DEV` と `import.meta.env.MODE` は
+  // Vite が build のときに定数（false と 'production'）へ置き換え、この分岐は dist/ に残らない
+  // （https://vite.dev/guide/env-and-mode）。実行時の環境変数では切り替えない。
+  // dist/ に残っていないことは tests/integration/dev-author.test.ts が確かめる
+  if (import.meta.env.DEV && import.meta.env.MODE === 'development') {
+    // 固定の値は、`ACCESS_OWNER_EMAIL` が無いときに使う。この値が dist/ に無いことを、分岐が
+    // 消えた印として tests/integration/dev-author.test.ts が見る
+    return { email: (await readEnv()).ACCESS_OWNER_EMAIL || 'dev-author@localhost.invalid' };
+  }
+  return verifyAuthor(requestHeaders.get(ACCESS_JWT_HEADER), toAccessSettings(await readEnv()));
+};
 
 /** この要求を送ったのが作り手なら `Author` を、確かめられなければ null を返す */
 export const getCurrentAuthor = async (): Promise<Author | null> =>
