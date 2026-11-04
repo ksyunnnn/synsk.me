@@ -26,7 +26,8 @@ export const ScrollDelayPage = ({
   const [bandHeight, setBandHeight] = useState(160);
   const [shift, setShift] = useState(8);
   const [guides, setGuides] = useState(false);
-  const [finished, setFinished] = useState(false);
+  // これまでに表示の境目が進んだ、いちばん下の位置
+  const [farthest, setFarthest] = useState(0);
 
   useEffect(() => {
     const element = baseRef.current;
@@ -67,15 +68,16 @@ export const ScrollDelayPage = ({
   // 画面の上からの高さを画面の画素にそろえる。そろえないと、表示の境目で縞の縁が半分の濃さになり、白い線が透ける
   const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
   const lineY = Math.round(viewHeight * line * dpr) / dpr;
-  const revealY = Math.min(h, Math.max(0, view.top + lineY));
+  // 表示の境目は下へ進むだけで、上へスクロールしても戻さない。一度表示したところは表示したままにする
+  const current = Math.min(h, Math.max(0, view.top + lineY));
+  if (current > farthest) setFarthest(current);
+  const revealY = Math.max(current, farthest);
   const bandIndex = Math.floor(revealY / bandHeight);
   const bandTop = bandIndex * bandHeight;
   const u = (revealY - bandTop) / bandHeight;
   // u = 0 で上に最大ずれ、u = 1 で揃う
   const offset = shift * (1 - u);
-  // 一度ページの最後まで進んだら、上へ戻っても表現を戻さない
-  if (!finished && h > 0 && revealY >= h) setFinished(true);
-  const done = finished || revealY >= h;
+  const done = revealY >= h;
   // 縞は画面の下端までで止める
   const streakBottom = Math.min(h, view.bottom);
   const copyProps = { 'aria-hidden': true, inert: true } as const;
