@@ -35,6 +35,7 @@ const project = (overrides: Partial<Project> = {}): Project => ({
   period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
   description: null,
   url: null,
+  skillIds: [],
   updatedAt: OPENED_AT,
   ...overrides,
 });
@@ -54,6 +55,7 @@ const fakeProjects = (current: Project | null) =>
     delete: vi.fn(async () => ({ ok: true })),
     hasSlug: vi.fn(),
     hasId: vi.fn(),
+    listSkillOptions: vi.fn(async () => []),
   }) satisfies ProjectRepository;
 
 let projects: ReturnType<typeof fakeProjects>;

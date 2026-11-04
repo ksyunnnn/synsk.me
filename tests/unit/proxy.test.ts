@@ -33,10 +33,12 @@ vi.mock('@/features/project/server/queries', () => projects);
 /** 行の有無を見る、管理画面のコレクションごとの関数 */
 const rows = vi.hoisted(() => ({
   hasOrganizationId: vi.fn<(id: string) => Promise<boolean>>(),
+  hasSkillId: vi.fn<(id: string) => Promise<boolean>>(),
 }));
 vi.mock('@/features/organization/server/queries', () => ({
   hasOrganizationId: rows.hasOrganizationId,
 }));
+vi.mock('@/features/skill/server/queries', () => ({ hasSkillId: rows.hasSkillId }));
 
 const { config, proxy } = await import('@/proxy');
 
@@ -164,19 +166,19 @@ describe('作り手を確かめられない', () => {
   });
 });
 
-describe.each([['organizations', rows.hasOrganizationId]] as const)(
-  '/dash/%s/{id}',
-  (collection, has) => {
-    it('無い id は 404 の画面へ rewrite する', async () => {
-      has.mockResolvedValue(false);
-      expect(await rewrittenPath(`/dash/${collection}/5/delete`)).toBe(
-        `/dash/${collection}/5/missing`,
-      );
-      expect(has).toHaveBeenCalledWith('5');
-    });
+describe.each([
+  ['organizations', rows.hasOrganizationId],
+  ['skills', rows.hasSkillId],
+] as const)('/dash/%s/{id}', (collection, has) => {
+  it('無い id は 404 の画面へ rewrite する', async () => {
+    has.mockResolvedValue(false);
+    expect(await rewrittenPath(`/dash/${collection}/5/delete`)).toBe(
+      `/dash/${collection}/5/missing`,
+    );
+    expect(has).toHaveBeenCalledWith('5');
+  });
 
-    it('ある id は rewrite しない', async () => {
-      expect(await rewrittenPath(`/dash/${collection}/5`)).toBeNull();
-    });
-  },
-);
+  it('ある id は rewrite しない', async () => {
+    expect(await rewrittenPath(`/dash/${collection}/5`)).toBeNull();
+  });
+});

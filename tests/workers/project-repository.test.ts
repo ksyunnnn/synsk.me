@@ -32,6 +32,7 @@ const content = (overrides: Partial<ProjectContent & { slug: string }> = {}) => 
   period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
   description: '作り物の本文',
   url: 'https://example.com/fake',
+  skillIds: [] as number[],
   slug: crypto.randomUUID(),
   ...overrides,
 });

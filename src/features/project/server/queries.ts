@@ -52,6 +52,12 @@ export const getProjectForEdit = async (id: string): Promise<Project | null> => 
     : getProjectForEditUseCase((await createProjectDeps()).projects, projectId);
 };
 
+/** 実績の入力でつなげるスキルの選択肢（FR-032）。作り手でなければ 403 */
+export const listSkillOptions = async (): Promise<{ id: number; name: string }[]> => {
+  await requireAuthor();
+  return (await createProjectDeps()).projects.listSkillOptions();
+};
+
 /*
  * 以下は `src/proxy.ts` が描画の前に呼ぶ。題や組織名を読まず、有無だけを返す
  */

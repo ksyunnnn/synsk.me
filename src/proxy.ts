@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { hasOrganizationId } from '@/features/organization/server/queries';
 import { hasProjectId, hasProjectSlug } from '@/features/project/server/queries';
+import { hasSkillId } from '@/features/skill/server/queries';
 import { getAuthorFromHeaders } from '@/shared/server/author';
 
 /**
@@ -31,6 +32,7 @@ const DASH_FORBIDDEN = '/dash/forbidden';
 const DASH_ROW_EXISTS: Record<string, (id: string) => Promise<boolean>> = {
   projects: hasProjectId,
   organizations: hasOrganizationId,
+  skills: hasSkillId,
 };
 
 const decide = async (request: NextRequest): Promise<string | null> => {

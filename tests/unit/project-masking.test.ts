@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import {
-  canSaveWithOrganization,
-  decideProjectSlug,
-  isProjectSlug,
-} from '@/features/project/domain/project';
+import { decideProjectSlug, isProjectSlug } from '@/features/project/domain/project';
+import { canSaveWithOrganization } from '@/shared/domain/organization';
 
 /**
  * 実績の秘匿化の決まり（specs/001-career-and-project/spec.md の FR-001・FR-013）。

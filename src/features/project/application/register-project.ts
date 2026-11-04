@@ -1,5 +1,4 @@
 import {
-  canSaveWithOrganization,
   newProjectSlug,
   parseProjectContent,
   type ProjectFieldError,
@@ -8,6 +7,7 @@ import {
   type ProjectField,
 } from '@/features/project/domain/project';
 import type { Author } from '@/shared/domain/author';
+import { canSaveWithOrganization } from '@/shared/domain/organization';
 import type { ProjectDeps } from './deps';
 
 export type RegisterProjectOutcome =

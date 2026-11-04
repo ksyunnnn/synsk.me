@@ -49,6 +49,8 @@ export type ProjectRepository = {
   delete: (id: ProjectId) => Promise<{ ok: boolean }>;
   /** 識別子の実績があるか。`findVisitorBySlug` が null を返さない識別子と一致する */
   hasSlug: (slug: string) => Promise<boolean>;
+  /** 実績の入力でつなげるスキルの選択肢。名前の順（FR-032） */
+  listSkillOptions: () => Promise<{ id: number; name: string }[]>;
   /** id の実績があるか。`findForEdit` が null を返さない id と一致する */
   hasId: (id: ProjectId) => Promise<boolean>;
 };

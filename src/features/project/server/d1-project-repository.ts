@@ -65,7 +65,7 @@ const toPeriod = (row: { started_on: string; ended_on: string | null }) => ({
   endedOn: row.ended_on as CalendarDate | null,
 });
 
-const toProject = (row: ProjectRow): Project => ({
+const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
   id: row.id,
   slug: row.slug,
   organization: {
@@ -80,6 +80,7 @@ const toProject = (row: ProjectRow): Project => ({
   period: toPeriod(row),
   description: row.description,
   url: row.url,
+  skillIds,
   updatedAt: row.updated_at,
 });
 
@@ -186,14 +187,27 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     },
 
     findForEdit: async (id) => {
-      const row = await db
-        .prepare(
-          `SELECT ${EDIT_COLUMNS} FROM project p JOIN organization o ON o.id = p.organization_id
-           WHERE p.id = ?`,
-        )
-        .bind(id)
-        .first<ProjectRow>();
-      return row ? toProject(row) : null;
+      const [project, skills] = await db.batch<ProjectRow | { skill_id: number }>([
+        db
+          .prepare(
+            `SELECT ${EDIT_COLUMNS} FROM project p JOIN organization o ON o.id = p.organization_id
+             WHERE p.id = ?`,
+          )
+          .bind(id),
+        db
+          .prepare('SELECT skill_id FROM project_skill WHERE project_id = ? ORDER BY skill_id')
+          .bind(id),
+      ]);
+      const row = project.results[0] as ProjectRow | undefined;
+      const skillIds = (skills.results as { skill_id: number }[]).map((r) => r.skill_id);
+      return row ? toProject(row, skillIds) : null;
+    },
+
+    listSkillOptions: async () => {
+      const { results } = await db
+        .prepare('SELECT id, name FROM skill ORDER BY name')
+        .all<{ id: number; name: string }>();
+      return results;
     },
 
     list: async () => {
@@ -238,12 +252,19 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
           content.isMasked ? 1 : 0,
           content.organizationName,
         );
+      // スキルのつながりは、実績の行が入ったときだけ入る。無い id のスキルはつながない
+      const linkSkills = content.skillIds.map((skillId) =>
+        db
+          .prepare(
+            `INSERT INTO project_skill (project_id, skill_id)
+             SELECT p.id, s.id FROM project p, skill s WHERE p.slug = ? AND s.id = ?`,
+          )
+          .bind(content.slug, skillId),
+      );
+      const statements = [...organizationStatements(content), insert];
       try {
-        const results = await db.batch<{ id: number }>([
-          ...organizationStatements(content),
-          insert,
-        ]);
-        const id = results.at(-1)?.results[0]?.id;
+        const results = await db.batch<{ id: number }>([...statements, ...linkSkills]);
+        const id = results[statements.length - 1]?.results[0]?.id;
         return id === undefined ? { ok: false, reason: 'masked-name-required' } : { ok: true, id };
       } catch (error) {
         if (isSlugTaken(error)) return { ok: false, reason: 'slug-taken' };
@@ -268,10 +289,28 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
           content.isMasked ? 1 : 0,
           content.organizationName,
         );
+      // スキルのつながりの入れ直しは、上の UPDATE が当たったときだけ働く（research.md の R7）。
+      // UPDATE が当たると、更新日時が `now` になる
+      const updated = 'EXISTS (SELECT 1 FROM project WHERE id = ? AND updated_at = ?)';
+      const relinkSkills = [
+        db
+          .prepare(`DELETE FROM project_skill WHERE project_id = ? AND ${updated}`)
+          .bind(id, id, now),
+        ...content.skillIds.map((skillId) =>
+          db
+            .prepare(
+              `INSERT INTO project_skill (project_id, skill_id)
+               SELECT p.id, s.id FROM project p, skill s
+               WHERE p.id = ? AND p.updated_at = ? AND s.id = ?`,
+            )
+            .bind(id, now, skillId),
+        ),
+      ];
+      const statements = [...organizationStatements(content), update];
       let changes: number;
       try {
-        const results = await db.batch([...organizationStatements(content), update]);
-        changes = results.at(-1)?.meta.changes ?? 0;
+        const results = await db.batch([...statements, ...relinkSkills]);
+        changes = results[statements.length - 1]?.meta.changes ?? 0;
       } catch (error) {
         if (isSlugTaken(error)) return { ok: false, reason: 'slug-taken' };
         throw error;

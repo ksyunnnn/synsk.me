@@ -36,6 +36,8 @@ type ProjectFormAction = (
 type Props = {
   action: ProjectFormAction;
   initialValues: ProjectFormValues;
+  /** つなげるスキルの選択肢（FR-032） */
+  skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
   project?: { id: ProjectId; updatedAt: string; isMasked: boolean };
 };
@@ -60,6 +62,7 @@ const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, str
   },
   description: {},
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
+  skillIds: { invalid: 'スキルを選び直してください' },
   slug: {
     missing: '識別子を入力してください',
     invalid: '識別子は英小文字・数字・ハイフンで、100 文字までにしてください',
@@ -75,7 +78,7 @@ const RESULT_MESSAGES = {
     'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
 
-export const ProjectForm = ({ action, initialValues, project }: Props) => {
+export const ProjectForm = ({ action, initialValues, skillOptions, project }: Props) => {
   const [result, formAction] = useActionState(action, null);
   const values: ProjectFormValues =
     result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
@@ -84,6 +87,8 @@ export const ProjectForm = ({ action, initialValues, project }: Props) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
   };
+
+  const checkedSkillIds = new Set(values.skillIds.split(','));
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
@@ -208,6 +213,31 @@ export const ProjectForm = ({ action, initialValues, project }: Props) => {
         autoComplete="off"
         error={errorOf('url')}
       />
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="font-bold">使ったスキル</legend>
+        {skillOptions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            スキルは、スキルの画面で登録するとここで選べます
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            {skillOptions.map((skill) => (
+              <label key={skill.id} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  name="skillIds"
+                  value={skill.id}
+                  defaultChecked={checkedSkillIds.has(String(skill.id))}
+                  className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                />
+                {skill.name}
+              </label>
+            ))}
+          </div>
+        )}
+        {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
+      </fieldset>
 
       <div>
         <button

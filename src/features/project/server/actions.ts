@@ -31,9 +31,18 @@ const readString = (formData: FormData, name: string) => {
   return typeof value === 'string' ? value : '';
 };
 
+/** スキルはチェックボックスの並びで送られるため、すべての値をカンマで区切って 1 つにする */
 const readValues = (formData: FormData): ProjectFormValues =>
   Object.fromEntries(
-    PROJECT_FIELDS.map((field) => [field, readString(formData, field)]),
+    PROJECT_FIELDS.map((field) => [
+      field,
+      field === 'skillIds'
+        ? formData
+            .getAll(field)
+            .filter((value) => typeof value === 'string')
+            .join(',')
+        : readString(formData, field),
+    ]),
   ) as ProjectFormValues;
 
 /** 実績を登録し、編集の画面へ移る */

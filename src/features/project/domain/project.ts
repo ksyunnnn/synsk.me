@@ -1,9 +1,5 @@
 import type { ActionResult } from '@/shared/domain/action-result';
-import {
-  canBeReferencedAs,
-  parseOrganizationName,
-  type Organization,
-} from '@/shared/domain/organization';
+import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
 
 /**
@@ -55,6 +51,8 @@ export type Project = {
   period: Period;
   description: string | null;
   url: string | null;
+  /** つないだスキルの id（FR-032） */
+  skillIds: number[];
   /** 更新日時。編集の画面を開いたときの値を、楽観ロックに使う（research.md の R7） */
   updatedAt: string;
 };
@@ -81,6 +79,8 @@ export type ProjectContent = {
   period: Period;
   description: string | null;
   url: string | null;
+  /** つなぐスキルの id。0 個以上（FR-032） */
+  skillIds: number[];
 };
 
 /** 入力の項目の名前。フォームの値の名前と同じ */
@@ -96,6 +96,8 @@ export const PROJECT_FIELDS = [
   'description',
   'url',
   'slug',
+  /** つなぐスキルの id をカンマで区切った値。フォームはチェックボックスの並びで送る */
+  'skillIds',
 ] as const;
 export type ProjectField = (typeof PROJECT_FIELDS)[number];
 
@@ -158,6 +160,10 @@ export const parseProjectContent = (
   const url = emptyToNull(values.url);
   if (url !== null && !isWebUrl(url.trim())) errors.url = 'invalid';
 
+  const skillIdTexts = values.skillIds.split(',').filter((id) => id !== '');
+  const skillIds = skillIdTexts.map(parseProjectId);
+  if (skillIds.some((id) => id === null)) errors.skillIds = 'invalid';
+
   if (Object.keys(errors).length > 0 || organizationName === null || !period.ok) {
     return { ok: false, errors };
   }
@@ -173,6 +179,7 @@ export const parseProjectContent = (
       period: period.period,
       description: emptyToNull(values.description.replace(/\r\n?/g, '\n')),
       url: url?.trim() ?? null,
+      skillIds: [...new Set(skillIds as number[])],
     },
   };
 };
@@ -200,20 +207,6 @@ export const decideProjectSlug = (
     : { ok: false, error: 'invalid' };
 };
 
-/**
- * 保存する内容が、組織名の指す組織を指してよいか（FR-001）。`organization` は組織名で
- * 読んだ組織で、無ければ null（保存のときに作る）。組織が秘匿化した組織名を持たなければ、
- * 入力した秘匿化した組織名を入れて保存するため、それで判定する
- */
-export const canSaveWithOrganization = (
-  organization: Pick<Organization, 'nameMasked'> | null,
-  content: Pick<ProjectContent, 'isMasked' | 'organizationNameMasked'>,
-): boolean =>
-  canBeReferencedAs(
-    { nameMasked: organization?.nameMasked ?? content.organizationNameMasked },
-    { isMasked: content.isMasked },
-  );
-
 /** フォームの初めの値。登録の画面は空で、秘匿化する（FR-015） */
 export const toProjectFormValues = (project?: Project): ProjectFormValues =>
   project
@@ -229,6 +222,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
         description: project.description ?? '',
         url: project.url ?? '',
         slug: project.slug,
+        skillIds: project.skillIds.join(','),
       }
     : {
         organizationName: '',
@@ -242,6 +236,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
         description: '',
         url: '',
         slug: '',
+        skillIds: '',
       };
 
 /*

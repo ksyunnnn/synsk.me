@@ -79,6 +79,7 @@ describe('parseProjectContent', () => {
         period: { startedOn: '2021-04-01', endedOn: null },
         description: '1行目\n2行目',
         url: 'https://example.com/x',
+        skillIds: [],
       },
     });
   });
@@ -106,6 +107,29 @@ describe('parseProjectContent', () => {
     expect(parseProjectContent(values(overrides))).toEqual({
       ok: false,
       errors: { [field]: error },
+    });
+  });
+});
+
+describe('スキルのつなぎ（FR-032）', () => {
+  it('カンマで区切った id を読み、重なりを除く', () => {
+    expect(parseProjectContent(values({ skillIds: '3,1,3' }))).toMatchObject({
+      ok: true,
+      content: { skillIds: [3, 1] },
+    });
+  });
+
+  it('空なら 0 個', () => {
+    expect(parseProjectContent(values({ skillIds: '' }))).toMatchObject({
+      ok: true,
+      content: { skillIds: [] },
+    });
+  });
+
+  it('読めない id を拒む', () => {
+    expect(parseProjectContent(values({ skillIds: '1,x' }))).toEqual({
+      ok: false,
+      errors: { skillIds: 'invalid' },
     });
   });
 });

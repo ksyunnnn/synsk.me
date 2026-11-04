@@ -51,6 +51,21 @@ export const canChangeMaskedName = (
   { isReferencedByMasked }: { isReferencedByMasked: boolean },
 ): boolean => !isReferencedByMasked || hasMaskedName({ nameMasked });
 
+/**
+ * 職歴・実績の保存の内容が、組織名の指す組織を指してよいか（FR-001）。`organization` は
+ * 組織名で読んだ組織で、無ければ null（保存のときに作る）。組織が秘匿化した組織名を
+ * 持たなければ、入力した秘匿化した組織名を入れて保存するため、それで判定する。
+ * 使い手は project と career の保存のユースケース
+ */
+export const canSaveWithOrganization = (
+  organization: Pick<Organization, 'nameMasked'> | null,
+  content: { isMasked: boolean; organizationNameMasked: string | null },
+): boolean =>
+  canBeReferencedAs(
+    { nameMasked: organization?.nameMasked ?? content.organizationNameMasked },
+    { isMasked: content.isMasked },
+  );
+
 const hasMaskedName = ({ nameMasked }: Pick<Organization, 'nameMasked'>) =>
   nameMasked !== null && nameMasked.trim() !== '';
 
