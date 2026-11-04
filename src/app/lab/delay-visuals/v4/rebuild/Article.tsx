@@ -46,8 +46,16 @@ export const Article = () => (
           サイトを作り直すことにした
         </h1>
       </header>
-      {/* body: 18px・1.8・Light 300 */}
-      <div style={{ display: 'grid', gap: 24 /* space-md */, fontSize: 18, lineHeight: 1.8 }}>
+      {/* 本文: 24px・1.8・字間 0.05em・Light 300。ガイドラインから外れた試し */}
+      <div
+        style={{
+          display: 'grid',
+          gap: 24 /* space-md */,
+          fontSize: 24,
+          lineHeight: 1.8,
+          letterSpacing: '0.05em',
+        }}
+      >
         {PARAGRAPHS.map((paragraph) => (
           <p key={paragraph.slice(0, 12)}>{paragraph}</p>
         ))}
