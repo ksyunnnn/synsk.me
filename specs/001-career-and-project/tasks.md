@@ -158,7 +158,7 @@ description: "職歴と実績の実装タスク"
 ### Tests for User Story 4
 
 - [ ] T054 [P] [US4] スキルの D1 の実装（大文字と小文字だけ違う名前の拒否、上書きの月数の保存、削除で `project_skill` を先に消す）と、実績へのスキルのつなぎ（0 個以上）を tests/workers/skill-repository.test.ts で確かめる（FR-031・FR-032・FR-034）
-- [ ] T055 [P] [US4] 経験年数の計算を tests/unit/period-experience.test.ts で確かめる。SC-004 の組（重ならない・一部重なる・一方が他方を含む・終わりの日が空）と、上書きの月数を使うこと。職歴の実績とスキル（同じ組織で期間が重なる）も確かめる（FR-017・FR-033〜FR-035）。**止める未決: U6**
+- [ ] T055 [P] [US4] 経験年数の計算を tests/unit/period-experience.test.ts で確かめる。SC-004 の組（重ならない・一部重なる・一方が他方を含む・終わりの日が空）と、上書きの月数を使うこと。職歴の実績とスキル（同じ組織で期間が重なる）も確かめる（FR-017・FR-033〜FR-035）。職歴の実績とスキルの部分だけ **止める未決: U6 の残り（端の扱い）**
 
 ### Implementation for User Story 4
 
@@ -167,7 +167,7 @@ description: "職歴と実績の実装タスク"
 - [ ] T058 [P] [US4] スキルの入力（名前・上書きの年と月）を src/features/skill/components/skill-form.tsx に作る
 - [ ] T059 [US4] 管理画面のページを src/app/dash/skills/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/skills/{id}` の有無を足す
 - [ ] T060 [US4] 実績の入力に、スキルをつなぐチェックボックスの並びを足す（src/features/project/components/project-form.tsx）。src/features/project/server/d1-project-repository.ts の登録と編集で `project_skill` を入れ直し、research.md の R7 の条件を付ける。訪問者向けの DTO の `skills` を埋める
-- [ ] T061 [US4] 経験年数の計算と、職歴の実績とスキルの求め方を src/shared/domain/period.ts に作り、スキルの一覧の画面（src/app/dash/skills/page.tsx）に年と月で出す。**止める未決: U6**
+- [ ] T061 [US4] 経験年数の計算と、職歴の実績とスキルの求め方を src/shared/domain/period.ts に作り、スキルの一覧の画面（src/app/dash/skills/page.tsx）に年と月で出す。職歴の実績とスキルの求め方だけ **止める未決: U6 の残り（端の扱い）**
 
 ---
 
@@ -235,7 +235,7 @@ description: "職歴と実績の実装タスク"
 | U3 | T053 |
 | U4 | T077。T035 の本文の表示 |
 | U5 | T075・T076 |
-| U6 | T055・T061 |
+| U6 の残り（端の扱い） | T055・T061 の、職歴の実績とスキルの部分 |
 | U7 | T046 |
 | U1・U8・U9 | 無し（U9 が覆れば構成のタスクを直す） |
 
@@ -277,7 +277,7 @@ T031 → T032 → T033 → T034、T035・T036 は並べる → T037・T038
 
 ### Incremental Delivery
 
-US1+US2 → US3 → US4（U6 が解けた部分）→ US5 → Polish。各段階を Preview で確かめてからマージする
+US1+US2 → US3 → US4 → US5 → Polish。各段階を Preview で確かめてからマージする
 
 ## Notes
 
