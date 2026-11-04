@@ -179,19 +179,19 @@ description: "職歴と実績の実装タスク"
 
 ### Tests for User Story 5
 
-- [ ] T062 [P] [US5] 職歴の D1 の実装（終わりの日が空、既定で秘匿化、秘匿化した組織名の無い組織で秘匿化しない、楽観ロック、削除で `resume_career.career_id` を空にしてから消す）を tests/workers/career-repository.test.ts で確かめる（FR-001・FR-007・FR-008・FR-010・FR-042）
-- [ ] T063 [P] [US5] 学歴の D1 の実装（学部・終わりの日・備考が空、前後の逆の拒否、削除で `resume_education.education_id` を空にしてから消す）を tests/workers/education-repository.test.ts で確かめる（FR-036・FR-039）
-- [ ] T064 [P] [US5] 学歴の学校名が実績のページの応答に含まれないことと、JWT のない職歴・学歴の Server Action が D1 を変えないことを tests/integration/careers-and-educations.test.ts で確かめる（FR-037・SC-005・FR-040）
+- [X] T062 [P] [US5] 職歴の D1 の実装（終わりの日が空、既定で秘匿化、秘匿化した組織名の無い組織で秘匿化しない、楽観ロック、削除で `resume_career.career_id` を空にしてから消す）を tests/workers/career-repository.test.ts で確かめる（FR-001・FR-007・FR-008・FR-010・FR-042）
+- [X] T063 [P] [US5] 学歴の D1 の実装（学部・終わりの日・備考が空、前後の逆の拒否、削除で `resume_education.education_id` を空にしてから消す）を tests/workers/education-repository.test.ts で確かめる（FR-036・FR-039）
+- [X] T064 [P] [US5] 学歴の学校名が実績のページの応答に含まれないことと、JWT のない職歴・学歴の Server Action が D1 を変えないことを tests/integration/careers-and-educations.test.ts で確かめる（FR-037・SC-005・FR-040）
 
 ### Implementation for User Story 5
 
-- [ ] T065 [P] [US5] 職歴の型・Repository のインタフェース・D1 の実装を src/features/career/domain/career.ts・career-repository.ts・src/features/career/server/d1-career-repository.ts に作る。編集は research.md の R7、削除は R8
-- [ ] T066 [US5] 職歴のユースケース（register-career.ts・edit-career.ts・delete-career.ts・get-career-for-edit.ts・list-careers.ts）を src/features/career/application/ に、組み立て用の関数と Server Action を src/features/career/server/queries.ts・actions.ts に作る。FR-001 の判定を src/shared/domain/organization.ts で行う
-- [ ] T067 [P] [US5] 職歴の入力を src/features/career/components/career-form.tsx に作る
-- [ ] T068 [US5] 管理画面のページを src/app/dash/careers/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/careers/{id}` の有無を足す
-- [ ] T069 [P] [US5] 学歴の型・Repository・D1 の実装・ユースケース・組み立て用の関数・Server Action・入力を src/features/education/ の domain/・application/・server/・components/ に作る
-- [ ] T070 [US5] 管理画面のページを src/app/dash/educations/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/educations/{id}` の有無を足す
-- [ ] T071 [US5] 作り手として職歴と学歴を登録・編集・削除し、2 つのタブで同じ職歴を開いて後から保存した側が止まり入力が残ることを tests/e2e/career-and-education.spec.ts で確かめる（FR-042）
+- [X] T065 [P] [US5] 職歴の型・Repository のインタフェース・D1 の実装を src/features/career/domain/career.ts・career-repository.ts・src/features/career/server/d1-career-repository.ts に作る。編集は research.md の R7、削除は R8
+- [X] T066 [US5] 職歴のユースケース（register-career.ts・edit-career.ts・delete-career.ts・get-career-for-edit.ts・list-careers.ts）を src/features/career/application/ に、組み立て用の関数と Server Action を src/features/career/server/queries.ts・actions.ts に作る。FR-001 の判定を src/shared/domain/organization.ts で行う
+- [X] T067 [P] [US5] 職歴の入力を src/features/career/components/career-form.tsx に作る
+- [X] T068 [US5] 管理画面のページを src/app/dash/careers/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/careers/{id}` の有無を足す
+- [X] T069 [P] [US5] 学歴の型・Repository・D1 の実装・ユースケース・組み立て用の関数・Server Action・入力を src/features/education/ の domain/・application/・server/・components/ に作る
+- [X] T070 [US5] 管理画面のページを src/app/dash/educations/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/educations/{id}` の有無を足す
+- [X] T071 [US5] 作り手として職歴と学歴を登録・編集・削除し、2 つのタブで同じ職歴を開いて後から保存した側が止まり入力が残ることを tests/e2e/career-and-education.spec.ts で確かめる（FR-042）
 
 ---
 

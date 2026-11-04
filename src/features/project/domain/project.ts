@@ -1,6 +1,7 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
+import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
  * 実績の型と決まり（specs/001-career-and-project/spec.md の FR-011〜FR-019・FR-026、
@@ -121,16 +122,6 @@ export type ProjectFormResult = ActionResult<ProjectField, ProjectFieldError>;
 export const IS_MASKED_VALUES = { masked: '1', unmasked: '0' } as const;
 
 const emptyToNull = (value: string) => (value.trim() === '' ? null : value);
-
-/** 関連 URL は http か https の URL だけを通す。画面でリンクにするため */
-const isWebUrl = (value: string) => {
-  try {
-    const { protocol } = new URL(value);
-    return protocol === 'http:' || protocol === 'https:';
-  } catch {
-    return false;
-  }
-};
 
 /**
  * フォームの値を保存する内容に読み替える。秘匿化するかは、秘匿化しないと選んだときだけ

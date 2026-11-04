@@ -1,6 +1,6 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { requireAuthor } from '@/shared/server/author';
+import { TextLink } from '@/shared/components/text-link';
 
 // 要求時のデータ（作り手の確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -28,12 +28,7 @@ const Page = async () => {
         <ul className="flex flex-col gap-2">
           {SECTIONS.map(({ href, label }) => (
             <li key={href}>
-              <Link
-                href={href}
-                className="underline underline-offset-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-              >
-                {label}
-              </Link>
+              <TextLink href={href}>{label}</TextLink>
             </li>
           ))}
         </ul>

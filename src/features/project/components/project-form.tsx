@@ -2,7 +2,6 @@
 
 import { useActionState } from 'react';
 import {
-  IS_MASKED_VALUES,
   OPENED_UPDATED_AT_FIELD,
   PROJECT_ID_FIELD,
   PROJECT_KINDS,
@@ -14,6 +13,7 @@ import {
   type ProjectId,
 } from '@/features/project/domain/project';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { MaskingField } from '@/shared/components/masking-field';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -105,32 +105,10 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
         </p>
       )}
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="font-bold">訪問者への見せ方</legend>
-        <p className="text-sm text-muted-foreground">
-          秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません
-        </p>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="isMasked"
-            value={IS_MASKED_VALUES.masked}
-            defaultChecked={values.isMasked !== IS_MASKED_VALUES.unmasked}
-            className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          />
-          秘匿化する
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="isMasked"
-            value={IS_MASKED_VALUES.unmasked}
-            defaultChecked={values.isMasked === IS_MASKED_VALUES.unmasked}
-            className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          />
-          秘匿化しない（実際の値で出す）
-        </label>
-      </fieldset>
+      <MaskingField
+        isMasked={values.isMasked}
+        description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
+      />
 
       <InputField
         name="organizationName"

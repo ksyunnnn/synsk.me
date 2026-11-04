@@ -1,4 +1,4 @@
-import type { ComponentPropsWithoutRef, ReactNode } from 'react';
+import { useId, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -26,27 +26,26 @@ type ControlProps = {
   error?: ReactNode;
 };
 
-/** 要素の id と、補足と誤りの id。ラベルと `aria-describedby` でつなぐ */
-const idsOf = (name: string) => ({
-  control: `field-${name}`,
-  hint: `field-${name}-hint`,
-  error: `field-${name}-error`,
-});
-
-const describedBy = (name: string, { hint, error }: Pick<ControlProps, 'hint' | 'error'>) => {
-  const ids = idsOf(name);
+/**
+ * 要素の id と、補足と誤りの id。ラベルと `aria-describedby` でつなぐ。id は `useId` で作り、
+ * 同じ名前の項目を持つ別の画面が隠れて残っていても重ならないようにする。画面を移った後も、
+ * 前の画面が隠れて DOM に残ることがある（2026-11-04 に、学歴の登録の画面から編集の画面へ
+ * 移った後の E2E で確かめた）
+ */
+const useFieldIds = (name: string, { hint, error }: Pick<ControlProps, 'hint' | 'error'>) => {
+  const base = `${useId()}-${name}`;
+  const ids = { control: `${base}`, hint: `${base}-hint`, error: `${base}-error` };
   const list = [hint ? ids.hint : null, error ? ids.error : null].filter(Boolean);
-  return list.length > 0 ? list.join(' ') : undefined;
+  return { ...ids, describedBy: list.length > 0 ? list.join(' ') : undefined };
 };
 
 const FieldFrame = ({
-  name,
+  ids,
   label,
   hint,
   error,
   children,
-}: ControlProps & { children: ReactNode }) => {
-  const ids = idsOf(name);
+}: Omit<ControlProps, 'name'> & { ids: ReturnType<typeof useFieldIds>; children: ReactNode }) => {
   return (
     <div className="flex flex-col gap-1">
       <label htmlFor={ids.control} className="font-bold">
@@ -69,18 +68,21 @@ const FieldFrame = ({
 
 type InputFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'input'>, 'name' | 'id'>;
 
-export const InputField = ({ name, label, hint, error, className, ...props }: InputFieldProps) => (
-  <FieldFrame name={name} label={label} hint={hint} error={error}>
-    <input
-      {...props}
-      id={idsOf(name).control}
-      name={name}
-      aria-invalid={error ? true : undefined}
-      aria-describedby={describedBy(name, { hint, error })}
-      className={cn(CONTROL, FOCUS_VISIBLE, className)}
-    />
-  </FieldFrame>
-);
+export const InputField = ({ name, label, hint, error, className, ...props }: InputFieldProps) => {
+  const ids = useFieldIds(name, { hint, error });
+  return (
+    <FieldFrame ids={ids} label={label} hint={hint} error={error}>
+      <input
+        {...props}
+        id={ids.control}
+        name={name}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={ids.describedBy}
+        className={cn(CONTROL, FOCUS_VISIBLE, className)}
+      />
+    </FieldFrame>
+  );
+};
 
 type TextareaFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'textarea'>, 'name' | 'id'>;
 
@@ -91,18 +93,21 @@ export const TextareaField = ({
   error,
   className,
   ...props
-}: TextareaFieldProps) => (
-  <FieldFrame name={name} label={label} hint={hint} error={error}>
-    <textarea
-      {...props}
-      id={idsOf(name).control}
-      name={name}
-      aria-invalid={error ? true : undefined}
-      aria-describedby={describedBy(name, { hint, error })}
-      className={cn(CONTROL, FOCUS_VISIBLE, className)}
-    />
-  </FieldFrame>
-);
+}: TextareaFieldProps) => {
+  const ids = useFieldIds(name, { hint, error });
+  return (
+    <FieldFrame ids={ids} label={label} hint={hint} error={error}>
+      <textarea
+        {...props}
+        id={ids.control}
+        name={name}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={ids.describedBy}
+        className={cn(CONTROL, FOCUS_VISIBLE, className)}
+      />
+    </FieldFrame>
+  );
+};
 
 type SelectFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'select'>, 'name' | 'id'>;
 
@@ -114,20 +119,23 @@ export const SelectField = ({
   className,
   children,
   ...props
-}: SelectFieldProps) => (
-  <FieldFrame name={name} label={label} hint={hint} error={error}>
-    <select
-      {...props}
-      id={idsOf(name).control}
-      name={name}
-      aria-invalid={error ? true : undefined}
-      aria-describedby={describedBy(name, { hint, error })}
-      className={cn(CONTROL, FOCUS_VISIBLE, className)}
-    >
-      {children}
-    </select>
-  </FieldFrame>
-);
+}: SelectFieldProps) => {
+  const ids = useFieldIds(name, { hint, error });
+  return (
+    <FieldFrame ids={ids} label={label} hint={hint} error={error}>
+      <select
+        {...props}
+        id={ids.control}
+        name={name}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={ids.describedBy}
+        className={cn(CONTROL, FOCUS_VISIBLE, className)}
+      >
+        {children}
+      </select>
+    </FieldFrame>
+  );
+};
 
 type CheckboxFieldProps = ControlProps &
   Omit<ComponentPropsWithoutRef<'input'>, 'name' | 'id' | 'type'>;
@@ -141,7 +149,7 @@ export const CheckboxField = ({
   className,
   ...props
 }: CheckboxFieldProps) => {
-  const ids = idsOf(name);
+  const ids = useFieldIds(name, { hint, error });
   return (
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
@@ -151,7 +159,7 @@ export const CheckboxField = ({
           id={ids.control}
           name={name}
           aria-invalid={error ? true : undefined}
-          aria-describedby={describedBy(name, { hint, error })}
+          aria-describedby={ids.describedBy}
           className={cn('size-4 accent-primary', FOCUS_VISIBLE, className)}
         />
         <label htmlFor={ids.control}>{label}</label>

@@ -34,11 +34,15 @@ vi.mock('@/features/project/server/queries', () => projects);
 const rows = vi.hoisted(() => ({
   hasOrganizationId: vi.fn<(id: string) => Promise<boolean>>(),
   hasSkillId: vi.fn<(id: string) => Promise<boolean>>(),
+  hasCareerId: vi.fn<(id: string) => Promise<boolean>>(),
+  hasEducationId: vi.fn<(id: string) => Promise<boolean>>(),
 }));
 vi.mock('@/features/organization/server/queries', () => ({
   hasOrganizationId: rows.hasOrganizationId,
 }));
 vi.mock('@/features/skill/server/queries', () => ({ hasSkillId: rows.hasSkillId }));
+vi.mock('@/features/career/server/queries', () => ({ hasCareerId: rows.hasCareerId }));
+vi.mock('@/features/education/server/queries', () => ({ hasEducationId: rows.hasEducationId }));
 
 const { config, proxy } = await import('@/proxy');
 
@@ -169,6 +173,8 @@ describe('作り手を確かめられない', () => {
 describe.each([
   ['organizations', rows.hasOrganizationId],
   ['skills', rows.hasSkillId],
+  ['careers', rows.hasCareerId],
+  ['educations', rows.hasEducationId],
 ] as const)('/dash/%s/{id}', (collection, has) => {
   it('無い id は 404 の画面へ rewrite する', async () => {
     has.mockResolvedValue(false);

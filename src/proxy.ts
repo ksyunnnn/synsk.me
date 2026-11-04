@@ -1,4 +1,6 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { hasCareerId } from '@/features/career/server/queries';
+import { hasEducationId } from '@/features/education/server/queries';
 import { hasOrganizationId } from '@/features/organization/server/queries';
 import { hasProjectId, hasProjectSlug } from '@/features/project/server/queries';
 import { hasSkillId } from '@/features/skill/server/queries';
@@ -33,6 +35,8 @@ const DASH_ROW_EXISTS: Record<string, (id: string) => Promise<boolean>> = {
   projects: hasProjectId,
   organizations: hasOrganizationId,
   skills: hasSkillId,
+  careers: hasCareerId,
+  educations: hasEducationId,
 };
 
 const decide = async (request: NextRequest): Promise<string | null> => {

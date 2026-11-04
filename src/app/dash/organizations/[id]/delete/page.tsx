@@ -1,9 +1,9 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { DeleteOrganizationForm } from '@/features/organization/components/delete-organization-form';
 import { deleteOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
+import { TextLink } from '@/shared/components/text-link';
 
 // 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -26,12 +26,7 @@ const Page = async ({ params }: Props) => {
       <p>組織名: {organization.name}</p>
       <DeleteOrganizationForm action={deleteOrganization} organizationId={organization.id} />
       <p>
-        <Link
-          href={`/dash/organizations/${organization.id}`}
-          className="underline underline-offset-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          編集の画面へ戻る
-        </Link>
+        <TextLink href={`/dash/organizations/${organization.id}`}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );
