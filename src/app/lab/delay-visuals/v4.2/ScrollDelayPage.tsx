@@ -63,7 +63,10 @@ export const ScrollDelayPage = ({
   // 最初の 1 画面ぶんのスクロールで 0 から 1 へ進む
   const progress = viewHeight ? Math.min(1, Math.max(0, view.scrolled / viewHeight)) : 0;
   const line = lineStart + (lineEnd - lineStart) * progress;
-  const revealY = Math.min(h, Math.max(0, view.top + viewHeight * line));
+  // 画面の上からの高さを画面の画素にそろえる。そろえないと、表示の境目で縞の縁が半分の濃さになり、白い線が透ける
+  const dpr = typeof window === 'undefined' ? 1 : window.devicePixelRatio;
+  const lineY = Math.round(viewHeight * line * dpr) / dpr;
+  const revealY = Math.min(h, Math.max(0, view.top + lineY));
   const bandIndex = Math.floor(revealY / bandHeight);
   const bandTop = bandIndex * bandHeight;
   const u = (revealY - bandTop) / bandHeight;
@@ -99,7 +102,8 @@ export const ScrollDelayPage = ({
           // 上端を 1px 上に広げて下地と重ねる。境目が画素の区切りに乗らないと、両方が半分の濃さで描かれて背景の白が透ける
           style={{
             ...layer,
-            clipPath: `inset(${Math.max(0, bandTop - 1)}px 0 ${h - revealY}px 0)`,
+            // 下端も 1px 下に広げ、表示の境目で縞と重ねる
+            clipPath: `inset(${Math.max(0, bandTop - 1)}px 0 ${Math.max(0, h - revealY - 1)}px 0)`,
           }}
         >
           <div style={{ transform: `translateY(${-offset}px)` }}>{band}</div>
