@@ -90,7 +90,11 @@ export const ScrollDelayPage = ({
       {h > 0 && !done && revealY > bandTop && (
         <div
           {...copyProps}
-          style={{ ...layer, clipPath: `inset(${bandTop}px 0 ${h - revealY}px 0)` }}
+          // 上端を 1px 上に広げて下地と重ねる。境目が画素の区切りに乗らないと、両方が半分の濃さで描かれて背景の白が透ける
+          style={{
+            ...layer,
+            clipPath: `inset(${Math.max(0, bandTop - 1)}px 0 ${h - revealY}px 0)`,
+          }}
         >
           <div style={{ transform: `translateY(${-offset}px)` }}>{band}</div>
         </div>
