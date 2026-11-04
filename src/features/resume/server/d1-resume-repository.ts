@@ -499,24 +499,29 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
 
     readContent,
 
-    editSettings: (id, { title, limitedExpiresAt }, times) =>
-      runLocked(id, times, [
-        // 公開用は期限を持たない（`resume` の CHECK）。限定公開用だけ期限を書く
-        db
-          .prepare(
-            `UPDATE resume SET title = ?,
-               limited_expires_at = CASE WHEN audience = 'limited' THEN ? ELSE NULL END
-             WHERE id = ? AND ${LOCKED}`,
-          )
-          .bind(title, limitedExpiresAt, id, id, times.now),
-      ]),
+    // `resume` の列は、楽観ロックと同じ 1 つの文で書く。2 つ目の文で `resume` を書くと、
+    // 更新日時を変えない UPDATE としてトリガ `resume_updated_at` が更新日時を書き換える
+    editSettings: async (id, { title, limitedExpiresAt }, { openedUpdatedAt, now }) => {
+      // 公開用は期限を持たない（`resume` の CHECK）。限定公開用だけ期限を書く
+      const result = await db
+        .prepare(
+          `UPDATE resume SET title = ?,
+             limited_expires_at = CASE WHEN audience = 'limited' THEN ? ELSE NULL END,
+             updated_at = ?
+           WHERE id = ? AND updated_at = ?`,
+        )
+        .bind(title, limitedExpiresAt, now, id, openedUpdatedAt)
+        .run();
+      return result.meta.changes > 0 ? { ok: true } : failureOf(id);
+    },
 
-    changeStatus: (id, status, times) =>
-      runLocked(id, times, [
-        db
-          .prepare(`UPDATE resume SET status = ? WHERE id = ? AND ${LOCKED}`)
-          .bind(status, id, id, times.now),
-      ]),
+    changeStatus: async (id, status, { openedUpdatedAt, now }) => {
+      const result = await db
+        .prepare('UPDATE resume SET status = ?, updated_at = ? WHERE id = ? AND updated_at = ?')
+        .bind(status, now, id, openedUpdatedAt)
+        .run();
+      return result.meta.changes > 0 ? { ok: true } : failureOf(id);
+    },
 
     editCareer: (id, rowId, content, times) =>
       runLocked(
