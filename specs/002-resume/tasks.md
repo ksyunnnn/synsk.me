@@ -94,7 +94,7 @@ description: "職務経歴書の実装タスク"
 - [X] T015 [P] [US1] 作成のユースケース（既定が限定公開用、限定公開用は鍵を作りハッシュだけを渡す、作り手でない呼び出しを拒む、選んだ行が無ければ作らない）を、Repository の作り物の実装を渡して tests/unit/resume-usecases.test.ts で確かめる（FR-003・FR-011・FR-012・FR-033）
 - [X] T016 [P] [US1] D1 の実装の作成（1 回の `batch()` で `resume` と写した行が入る、子の行の `resume_id` と `resume_project_id` が正しい、途中の文が失敗すると何も残らない、`limited_token_hash` に鍵の平文が無い、状態が `draft`、写した行が始まりの日の新しい順で読める）を tests/workers/resume-repository.test.ts で確かめる（FR-009・FR-012・FR-021、research.md の R4）
 - [X] T017 [P] [US1] JWT のない `/dash/resumes` の GET が 403 で `no-store` を持つこと、JWT のない `createResume` が 403 の結果で D1 を変えないことを tests/integration/dash-resumes.test.ts で確かめる（FR-033）
-- [ ] T018 [P] [US1] 作り手として `/dash/resumes/new` を開くと、登録したすべての職歴・実績・学歴が選ばれ、限定公開用が選ばれていること、実績を 1 件外して作ると設定の画面に載らないことを tests/e2e/resume-create.spec.ts で確かめる。キーボードだけで同じ操作ができる（FR-003・FR-005・SC-006、constitution V）
+- [X] T018 [P] [US1] 作り手として `/dash/resumes/new` を開くと、登録したすべての職歴・実績・学歴が選ばれ、限定公開用が選ばれていること、実績を 1 件外して作ると設定の画面に載らないことを tests/e2e/resume-create.spec.ts で確かめる。キーボードだけで同じ操作ができる（FR-003・FR-005・SC-006、constitution V）
 
 ### Implementation for User Story 1
 
@@ -135,7 +135,7 @@ description: "職務経歴書の実装タスク"
 - [X] T037 [US2] 写した本文を visitor-resume.tsx に出す（FR-010）。**止める未決: U4**
 - [X] T038 [P] [US2] 印刷用の CSS（`@media print`。ボタンとページの外へのリンクを載せない）を src/app/globals.css に足し、「PDF で保存」のボタン（`window.print()` を呼ぶ）を src/features/resume/components/print-button.tsx に作る（FR-029・FR-030、research.md の R11）
 - [X] T039 [US2] visitor-resume.tsx にボタンを置き、限定公開用のページの応答がボタンを持つことを tests/integration/resume-limited.test.ts で確かめる（FR-029）
-- [ ] T040 [US2] ブラウザで印刷の見た目（ボタンが載らない、日本語が読める）を `npx -y @playwright/cli@latest` の PDF の出力で確かめる（FR-029）
+- [X] T040 [US2] ブラウザで印刷の見た目（ボタンが載らない、日本語が読める）を `npx -y @playwright/cli@latest` の PDF の出力で確かめる（FR-029）
 
 **Checkpoint**: User Story 1 と 2 が単独で動く
 
@@ -175,7 +175,7 @@ description: "職務経歴書の実装タスク"
 - [X] T048 [P] [US4] 写した行の編集（直した値がその職務経歴書にだけ効く、ほかの職務経歴書と元の行が変わらない、写した実績の始まりの日を直すと並びが変わる、開いたときの更新日時が違えば何も書かない、スキル名と上書きの入れ直し）と削除の順序を tests/workers/resume-edit.test.ts で確かめる（FR-031・FR-032・FR-038、User Story 4 の 1・2、research.md の R8・R9）
 - [X] T049 [P] [US4] 写した行の編集のユースケース（項目の不備、作り手でない呼び出しを拒む、秘匿化するかどうかの入力を受け取らない）を tests/unit/resume-usecases.test.ts に足す（FR-031・FR-033）
 - [X] T050 [P] [US4] JWT のない `editResumeCareer`・`editResumeProject`・`editResumeEducation`・`editResumeSkillOverrides`・`deleteResume` が D1 を変えないことを tests/integration/dash-resumes.test.ts に足す（FR-033）
-- [ ] T051 [P] [US4] 作り手として写した行を直して設定の画面に出ること、2 つのタブで同じ職務経歴書を開き後から保存した側が止まり入力が残ること、削除の確認を経て一覧から消えることを tests/e2e/resume-edit.spec.ts で確かめる（FR-038、REQUIREMENTS.md の FR-11）
+- [X] T051 [P] [US4] 作り手として写した行を直して設定の画面に出ること、2 つのタブで同じ職務経歴書を開き後から保存した側が止まり入力が残ること、削除の確認を経て一覧から消えることを tests/e2e/resume-edit.spec.ts で確かめる（FR-038、REQUIREMENTS.md の FR-11）
 
 ### Implementation for User Story 4
 
@@ -187,7 +187,7 @@ description: "職務経歴書の実装タスク"
 - [X] T057 [P] [US4] 上書きの入力（スキルごとに年と月、または空）を src/features/resume/components/resume-skill-overrides-form.tsx に作る
 - [X] T058 [US4] 管理画面のページを src/app/dash/resumes/[id]/careers/[rowId]/page.tsx・projects/[rowId]/page.tsx・educations/[rowId]/page.tsx（それぞれ missing/page.tsx も）・[id]/skills/page.tsx・[id]/delete/page.tsx に作る
 - [X] T059 [US4] 訪問者に見せたときの見た目の画面を src/app/dash/resumes/[id]/preview/page.tsx に作る。訪問者向けと同じ DTO と visitor-resume.tsx で描き、状態・鍵・期限に関わらず出す（REQUIREMENTS.md の FR-13）
-- [ ] T060 [P] [US4] 作り手として見た目の画面が下書きの職務経歴書でも出ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-13）
+- [X] T060 [P] [US4] 作り手として見た目の画面が下書きの職務経歴書でも出ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-13）
 - [ ] T061 [US4] 写した行の編集の画面に、入力中の内容を保持する部品（src/shared/components/draft-retention.tsx）を使い、保存せずに再読み込みしても入力が残ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-14）。001 の T072 の後に行う
 
 **Checkpoint**: User Story 1〜4 が単独で動く
