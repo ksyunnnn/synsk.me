@@ -1,6 +1,6 @@
 # Data Model: 職務経歴書
 
-表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0008` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。0006 の `resume_career.organization_name` と `resume_project.title` の注釈より、0008 の冒頭の注釈を正とする。列の一覧は書き写さない。
+表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0009` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。0006 の `resume_career.organization_name` と `resume_project.title` の注釈より、0008 の冒頭の注釈を正とする。列の一覧は書き写さない。
 
 ## Contents
 
@@ -24,7 +24,7 @@
 | `resume_education` | 写した学歴 | 書く | FR-007、FR-009、FR-024 |
 | `resume_project_skill` | 写したスキル | 書く | FR-025・FR-026 |
 | `resume_skill_override` | 写した経験年数の上書き | 書く | FR-028 |
-| `organization`・`career`・`project`・`project_skill`・`skill`・`education` | 写し元 | 読むだけ（作るときと、作成の画面の選択肢） | FR-005・FR-007・FR-008 |
+| `organization`・`career`・`project`・`project_skill`・`skill`・`education` | 写し元 | 読むだけ（作るときと、作成の画面の選択肢） | FR-005・FR-007・FR-008・FR-010・FR-016 |
 
 写し元の行を消すときに、写した行の `*_id` を NULL にするのは 001 の削除の処理が持つ（001 の research.md の R8）。002 は写した行の `*_id` を書き換えない。
 
@@ -53,6 +53,7 @@
 | 中身を返すのは、訪問者に見せる状態で、限定公開用なら鍵が合い、期限の前か期限が無いときだけ | FR-014・FR-020・FR-022・FR-023 | 訪問者向けの取り出しの SQL の WHERE（research.md の R6） |
 | 作るとき、写し方を限定公開用か公開用かで分ける | FR-008・FR-010・FR-016 | `src/features/resume/domain/build-resume.ts`（下の「写し方」） |
 | 公開用に、秘匿化した組織名の無い組織を指す秘匿化した職歴・実績を写さない | FR-016、constitution II | 同上。写せなければ作らずに知らせる |
+| 公開用に、サイトに載せない（`career.status`・`project.status` が `draft`）職歴・実績を写さない。作成の画面で公開用を選んだら、選択肢から外す。限定公開用は `status` を見ない | FR-005・FR-010・FR-016 | 同上と作成の画面（tasks.md の T067・T068）。限定公開用は作成の選択肢と写し方が `status` を読まない形のまま |
 | 並びは始まりの日の新しい順。同じ日は id の順 | FR-009 | 取り出しの SQL の ORDER BY |
 | スキルの一覧は、写したスキルの名前を 1 つにまとめる | FR-026 | `src/features/resume/domain/`。名前の比べ方は plan.md の U11 |
 | 経験年数は写した実績の期間から求め、写した上書きがあればそれを使う。保存しない | FR-027・FR-028 | `src/shared/domain/period.ts` の計算（001 の T061）を呼ぶ。数え方は 001 の FR-033 |
@@ -86,6 +87,8 @@
 | `resume_project_skill.skill_name` | 実績につないだ `skill.name` | 同じ | 同じ |
 | `resume_skill_override` | 写した実績のスキルのうち、`skill.months_override` を持つもの | 同じ | 同じ |
 | 写し元の id（`career_id`・`project_id`・`education_id`） | 写す | 写す | 写す |
+
+公開用の 2 つの列は、作ったときにサイトに載せる（`status` が `published`）写し元だけに当たる。サイトに載せない写し元は、公開用では行ごと写さない。限定公開用は、サイトに載せるかどうかに関わらず、選んだ写し元を写す（FR-010・FR-016）。
 
 ## domain の型
 

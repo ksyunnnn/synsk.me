@@ -209,6 +209,14 @@ description: "職歴と実績の実装タスク"
 - [ ] T081 quickstart.md の手順をブランチの Preview で行う
 - [ ] T082 問い合わせの場所のページ（別の spec）ができたら、秘匿化した実績の「非公開」の近くに、そのページへのリンクを src/features/project/components/visitor-project.tsx に足す（FR-021、plan.md の U7）。**止める依存: 問い合わせの場所のページ**
 
+### サイトに載せるか（FR-044〜FR-046、2026-11-04 の決定）
+
+- [X] T083 migration 0009 で `career.status`・`project.status`（既定 `draft`、CHECK）を足し、既定値と CHECK を tests/workers/migrations.test.ts で確かめる（FR-044）
+- [X] T084 サイトに載せるかの値と読み方を src/shared/domain/site-status.ts に、入力を src/shared/components/site-status-field.tsx に作り、職歴・実績の型・フォーム・Repository・管理画面の一覧に足す。保存と既定を tests/workers/career-repository.test.ts・tests/workers/project-repository.test.ts・tests/unit/project-domain.test.ts・tests/e2e/career-and-education.spec.ts で確かめる（FR-007・FR-011・FR-044）
+- [X] T085 訪問者向けの実績の取り出し（`findVisitorBySlug` と `hasSlug` の `VISITOR_VISIBLE`）を `published` だけにし、tests/workers/project-masking.test.ts と tests/integration/career-and-project-status.test.ts で、載せない実績の 404・応答の中身・切り替えた直後を確かめる。訪問者に出すことを前提にした既存の検査は、作り物の行を `published` で入れる（FR-014・FR-043・FR-045・SC-006）
+- [X] T086 `SkillRepository.listWithPeriods` に読む実績（`all`・`published`）を選ぶ引数を足し、管理画面のスキルの一覧は `all` にする。tests/workers/skill-repository.test.ts と tests/unit/skill.test.ts で確かめる（FR-033）
+- [ ] T087 訪問者がスキルと経験年数、職歴のスキルを見る画面ができたら、`listWithPeriods('published')` を使い、サイトに載せない実績の期間とスキルが出ないことを結合で確かめる（FR-033・FR-035）。**止める依存: 訪問者がスキルと経験年数を見る場所（spec の Assumptions）**
+
 ---
 
 ## Dependencies & Execution Order

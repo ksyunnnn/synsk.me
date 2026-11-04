@@ -26,7 +26,7 @@
 
 **Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions・Route Handlers）、React 19.3、`jose`（001 の作り手の判定）、Tailwind CSS 4。PDF はブラウザの印刷機能（`@media print` の CSS と `window.print()`。package も binding も足さない。research.md の R11）
 
-**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0008`（research.md の R1）
+**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0008`（research.md の R1）と、写し元の `career.status`・`project.status` を足す `0009`
 
 **Testing**: Vitest 4.1.11（単体）、`@cloudflare/vitest-plugin`（workerd と D1）、`createTestHarness()`（本番ビルドに対する結合）、Playwright（E2E、Chromium）。ADR-0019 の 4 段階
 
@@ -69,6 +69,8 @@
 | FR-001・FR-002 | 複数作れる。識別子の形と重複を拒む | 単（形）・W（重複） |
 | FR-003・FR-004 | 既定は限定公開用。作った後に変えられない | E（既定）・W（トリガ） |
 | FR-005・SC-006 | 作成の画面がすべてを選んで始まる | E |
+| FR-005・FR-010 のサイトに載せない写し元 | 限定公開用の作成の選択肢に載せない職歴・実績も出て、写せる | W |
+| FR-005・FR-016・SC-007 のサイトに載せない写し元 | 公開用の選択肢に出さず、選んでも写さない | 単（`build-resume.ts`）・E（選択肢）。US5 で足す |
 | FR-006・FR-034・FR-036 | プロフィールを写さず、定数の値が出る | 結 |
 | FR-035 | メールアドレスのスパム対策 | 本番で確かめる（U8） |
 | FR-007・FR-025・FR-028・SC-001 | 元を直す・消しても、写した値が変わらない（ページ） | 結 |

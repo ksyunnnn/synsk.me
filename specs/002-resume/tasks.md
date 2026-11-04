@@ -204,7 +204,7 @@ description: "職務経歴書の実装タスク"
 
 ### Tests for User Story 5
 
-- [ ] T062 [P] [US5] 公開用の写し方（秘匿化しない行は実際の値、秘匿化した行は秘匿化した組織名と題で `description`・`url` を写さない、秘匿化した組織名が無ければ作らない）を tests/unit/build-resume.test.ts に足す（FR-008・FR-016、research.md の R4）
+- [ ] T062 [P] [US5] 公開用の写し方（秘匿化しない行は実際の値、秘匿化した行は秘匿化した組織名と題で `description`・`url` を写さない、秘匿化した組織名が無ければ作らない、サイトに載せない行は写さない）を tests/unit/build-resume.test.ts に足す（FR-008・FR-016・SC-007、research.md の R4）
 - [ ] T063 [P] [US5] 2 つ目の公開用を保存の前に拒むこと、公開用の識別子を書き換えられること、訪問者向けの取り出しが秘匿化した行の `description`・`url` を返さないことを tests/workers/resume-public.test.ts で確かめる（FR-019・FR-039・FR-017）
 - [ ] T064 [P] [US5] 公開用のページの HTML と RSC の応答（`<title>`・OGP を含む）に、秘匿化した写し元の実際の組織名・題・本文・画像・関連 URL が 0 件であること、オーナーが職務経歴書の中で秘匿化した行に本文を書き足しても出ないこと、秘匿化しない行が実際の値で出ること、下書きの公開用が 404 であることを tests/integration/resume-public.test.ts で確かめる（SC-002・FR-017・FR-018・FR-022・FR-031、User Story 5 の 1〜4）
 - [ ] T065 [P] [US5] 公開用のページの応答が「PDF で保存」のボタンを持ち、印刷するページに T064 の値が 0 件であることを tests/integration/resume-public.test.ts に足す（User Story 5 の 5）
@@ -212,8 +212,8 @@ description: "職務経歴書の実装タスク"
 ### Implementation for User Story 5
 
 - [X] T066 [US5] migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` の既定値が 1 であることを tests/workers/migrations.test.ts で確かめる
-- [ ] T067 [US5] src/features/resume/domain/build-resume.ts に公開用の分岐を足し、src/features/resume/server/d1-resume-repository.ts の訪問者向けの取り出しを、秘匿化した行で `description`・`url` を SELECT しない形にする（contracts/visitor-resume.md）
-- [ ] T068 [US5] src/features/resume/components/resume-create-form.tsx に公開用の選択肢を出し、create-resume.ts で 2 つ目の公開用を保存の前に拒む（FR-019）。edit-resume-settings.ts と resume-settings-form.tsx で公開用の識別子を書き換えられるようにする（FR-039）
+- [ ] T067 [US5] src/features/resume/domain/build-resume.ts に公開用の分岐を足し、サイトに載せない写し元を写さない（FR-016）。そのために `readSources` が写し元の `status` を返すようにする。src/features/resume/server/d1-resume-repository.ts の訪問者向けの取り出しを、秘匿化した行で `description`・`url` を SELECT しない形にする（contracts/visitor-resume.md）
+- [ ] T068 [US5] src/features/resume/components/resume-create-form.tsx に公開用の選択肢を出し、公開用を選んだときは、サイトに載せない職歴・実績を選択肢から外す（FR-005）。create-resume.ts で 2 つ目の公開用と、サイトに載せない職歴・実績を選んだ公開用を、保存の前に拒む（FR-016・FR-019）。edit-resume-settings.ts と resume-settings-form.tsx で公開用の識別子を書き換えられるようにする（FR-039）
 - [ ] T069 [US5] src/features/resume/components/visitor-resume.tsx に秘匿化した行の表示を足し、公開用のページを src/app/resume/[slug]/page.tsx に作る。`generateMetadata` は DTO の値だけを使う
 - [ ] T070 [US5] 秘匿化した行の本文の場所に「非公開」と出す見た目を visitor-resume.tsx に作る（FR-017、plan.md の U5）。contact へのリンクは T077 で足す
 - [ ] T071 [US5] 公開用のページに「PDF で保存」のボタンを置く（FR-029）
@@ -228,6 +228,7 @@ description: "職務経歴書の実装タスク"
 - [ ] T075 quickstart.md の手順をブランチの Preview で行う
 - [ ] T076 `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行し、出力が無いことを確かめる
 - [ ] T077 contact のページができたら、T070 の「非公開」の横に contact へのリンクを足す（FR-017、plan.md の U5）
+- [X] T078 限定公開用の作成の選択肢に、サイトに載せない職歴・実績も出て写せることを tests/workers/resume-repository.test.ts で確かめる（FR-005・FR-010）。作成の選択肢と写し方は `status` を読まない形のまま変えない
 
 ---
 

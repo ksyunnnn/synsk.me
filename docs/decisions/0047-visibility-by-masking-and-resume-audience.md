@@ -96,7 +96,7 @@ Chosen option: "見せ方を種類ごとに分け、限定公開は職務経歴�
 
 ### Confirmation
 
-career と project が is_masked と status の列を持つこと、education が見せるかどうかの列を持たないこと、resume が限定公開用か公開用かの列（resume.audience）を持つことは、`migrations/` の CREATE TABLE で確かめられる。
+career と project が is_masked と status の列を持つこと、education が見せるかどうかの列を持たないこと、resume が限定公開用か公開用かの列（resume.audience）を持つことは、`migrations/` の CREATE TABLE と ALTER TABLE で確かめられる。
 
 秘匿化した職歴・実績の実際の値が訪問者への応答に含まれないことは、判定手段を定めていない。応答を作る処理は、この記録の時点でリポジトリにない。
 
