@@ -6,8 +6,6 @@
 // 同じページを 3 枚重ねる作りは v3.2 と同じ。重ねるのに欠かせない指定は要素の style に直接書く
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 
-const AUTO_SPEED = 200;
-
 export const ScrollDelayPage = ({
   base,
   band,
@@ -21,8 +19,8 @@ export const ScrollDelayPage = ({
   const baseRef = useRef<HTMLDivElement>(null);
   const [height, setHeight] = useState(0);
   // 画面の上端と下端の、ページの中での位置
-  // scrolled はページ全体のスクロール量。atBottom はページの一番下までスクロールしたか
-  const [view, setView] = useState({ top: 0, bottom: 0, scrolled: 0, atBottom: false });
+  // scrolled はページ全体のスクロール量
+  const [view, setView] = useState({ top: 0, bottom: 0, scrolled: 0 });
   const [lineStart, setLineStart] = useState(0.3);
   const [lineEnd, setLineEnd] = useState(0.64);
   const [bandHeight, setBandHeight] = useState(160);
@@ -47,9 +45,7 @@ export const ScrollDelayPage = ({
       const root = rootRef.current;
       if (!root) return;
       const top = -root.getBoundingClientRect().top;
-      const atBottom =
-        window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 1;
-      setView({ top, bottom: top + window.innerHeight, scrolled: window.scrollY, atBottom });
+      setView({ top, bottom: top + window.innerHeight, scrolled: window.scrollY });
     };
     const schedule = () => {
       if (!frame) frame = requestAnimationFrame(measure);
@@ -82,21 +78,6 @@ export const ScrollDelayPage = ({
   // u = 0 で上に最大ずれ、u = 1 で揃う
   const offset = shift * (1 - u);
   const done = revealY >= h;
-
-  // ページの一番下までスクロールしたら、残りを 1 秒あたり AUTO_SPEED px で表示しきる。下に余白を置かずに最後まで届かせるため
-  useEffect(() => {
-    if (!view.atBottom || done || h === 0) return;
-    let frame = 0;
-    let last = performance.now();
-    const tick = (now: number) => {
-      const seconds = (now - last) / 1000;
-      last = now;
-      setFarthest((value) => Math.min(h, value + AUTO_SPEED * seconds));
-      frame = requestAnimationFrame(tick);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [view.atBottom, done, h]);
   // 縞は画面の下端までで止める
   const streakBottom = Math.min(h, view.bottom);
   const copyProps = { 'aria-hidden': true, inert: true } as const;
@@ -111,7 +92,11 @@ export const ScrollDelayPage = ({
   } as const;
 
   return (
-    <div ref={rootRef} style={{ position: 'relative' }}>
+    // 下に「画面の高さ × (1 - lineEnd)」の余白を置き、表示の境目がスクロールでページの最後まで届くようにする
+    <div
+      ref={rootRef}
+      style={{ position: 'relative', paddingBottom: viewHeight * (1 - lineEnd) + 1 }}
+    >
       <div
         ref={baseRef}
         style={{ clipPath: h && !done ? `inset(0 0 ${h - bandTop}px 0)` : undefined }}
