@@ -82,7 +82,7 @@ def rules_note(x, y):
         "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガで拒む",
         "activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
-        "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）",
+        "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
         "id はすべて AUTOINCREMENT（削除した id を使い回さない）。編集の画面は id で行を指すため",
         "訪問者の URL は slug、R2 は storage_key で指す。R2 のバケットは公開せず、Worker を通して配る",
     ]
@@ -116,23 +116,23 @@ def legend():
 TS = [("created_at", "text"), ("updated_at", "text")]
 C = [("created_at", "text")]
 
-organization = [("# id", "integer"), ("name", "text · unique"), ("name_masked", "text")] + TS
+organization = [("# id", "integer"), ("name", "text · unique"), ("name_masked", "text · 空可")] + TS
 career = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月日）"),
     ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
-    ("is_masked", "integer"),
+    ("is_masked", "integer · 既定 1"),
 ] + TS
 project = [
     ("# id", "integer"), ("→ organization_id", "integer"), ("kind", "text · CHECK"),
-    ("slug", "text · unique"), ("title", "text"), ("title_masked", "text"), ("is_masked", "integer"),
-    ("is_highlighted", "integer"), ("→ card_media_id", "integer · 空可"), ("started_on", "text（年月日）"),
+    ("slug", "text · unique"), ("title", "text"), ("title_masked", "text"), ("is_masked", "integer · 既定 1"),
+    ("→ card_media_id", "integer · 空可"), ("started_on", "text（年月日）"),
     ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
 ] + TS
 education = [
     ("# id", "integer"), ("school", "text"), ("department", "text · 空可"),
     ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"), ("remarks", "text · 空可"),
 ] + TS
-skill = [("# id", "integer"), ("name", "text · unique · NOCASE"), ("years_override", "integer · 空可")] + TS
+skill = [("# id", "integer"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
     ("# id", "integer"), ("→ source", "text"),
@@ -223,7 +223,7 @@ el += entity(880, 60, 200, "organization", "組織。会社・団体・自営業
 el += entity(580, 60, 240, "career", "職歴。組織にオーナーが所属した履歴", career)
 el += entity(580, 416, 240, "project", "実績。kind: application・talk・event・other", project)
 el += entity(580, 832, 240, "education", "学歴", education)
-el += entity(880, 480, 200, "skill", "スキル。経験年数は実績から計算", skill)
+el += entity(880, 480, 210, "skill", "スキル。経験年数は実績から計算", skill)
 el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", project_skill)
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
@@ -237,7 +237,7 @@ el += entity(1480, 1056, 220, "link_preview", "URL カードの情報。本文�
 el += kinds_note(40, 1060)
 el += rules_note(400, 1120)
 el += entity(335, 640, 210, "resume_project_skill", "写した実績で使ったスキル", [("# → resume_project_id", "integer"), ("# skill_name", "text")])
-el += entity(40, 400, 260, "resume_skill_override", "写した経験年数の上書き（上書きしたものだけ）", [("# → resume_id", "integer"), ("# skill_name", "text"), ("years_override", "integer")])
+el += entity(40, 400, 260, "resume_skill_override", "写した経験年数の上書き（上書きしたものだけ）", [("# → resume_id", "integer"), ("# skill_name", "text"), ("months_override", "integer")])
 el += legend()
 body = "\n      ".join(el)
 svg = (
