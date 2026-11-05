@@ -15,7 +15,7 @@
 | 単体 | `npm test` | 写し方・鍵の作り方と比べ方・識別子の決まり・スキルの一覧・proxy の rewrite とヘッダ |
 | workerd | `npm run test:workers` | Repository の実装が本物の migration の上で動く。作成の `batch()`・楽観ロック・削除の順序・中身を返す条件 |
 | 結合 | `npm run test:integration` | `/resume/*` の 200・404 とヘッダ（SC-003・SC-005）、元を直しても変わらないこと（SC-001）、`/dash/resumes` の 403、JWT のない書き込みが何も書かないこと |
-| E2E | `npm run test:e2e` | 作り手としての作成・編集・状態の切り替え・削除、同時編集、キーボードだけの操作 |
+| E2E | `npm run test:e2e` | オーナーとしての作成・編集・状態の切り替え・削除、同時編集、キーボードだけの操作 |
 | 型・lint・整形 | `npx tsc --noEmit`、`npm run lint`、`npm run format:check` | 0 件 |
 
 ## 手で確かめる（ブランチの Preview）

@@ -38,7 +38,7 @@ description: "職歴と実績の実装タスク"
 
 **Purpose**: feature/72-rebuild の `npm run build`・型検査・検査の土台を通す。オーナーの判定は ADR-0013・ADR-0036 に沿って作り直す。note に固有の部分（`/notes/*`、`/dash/notes/*`、note の作り物の行）は 003 が持つため作らない
 
-- [X] T001 ブランチ `feature/72-schema-adjustments` の `migrations/0008_rebuild_career_and_project.sql`（コミット `4704df4`）が feature/72-rebuild に入っていることを確かめる。入っていなければオーナーに伝え、D1 を使う検査のタスク（workerd・結合・E2E）を止める（research.md の R1）
+- [X] T001 `migrations/0008_rebuild_career_project_and_resume.sql` が feature/72-rebuild に入っていることを確かめる。入っていなければオーナーに伝え、D1 を使う検査のタスク（workerd・結合・E2E）を止める（research.md の R1）
 - [X] T002 `cloudflare:workers` の env を使うときに読み込む関数を src/shared/server/env.ts に作る。先頭で `import 'server-only'`。モジュールの先頭で `cloudflare:workers` を読み込まない（`vinext build` が Node で読み込むため）。Access の設定値（`ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL`）の型をここに置く
 - [X] T003 Access の JWT を `jose` で検証して `Author` を返す関数（要求のヘッダから・`headers()` から）を src/shared/server/author.ts に作る。署名・発行元・aud（カンマ区切りの複数）・期限・メールアドレス（ローカル部は大文字と小文字を区別し、ドメインは ASCII の英字だけ畳む）を確かめ、設定値が欠ければ null。JWT の型をファイルの外に出さない（constitution VII）
 - [X] T004 [P] T003 の分岐（JWT なし・署名違い・発行元違い・aud 違い・期限切れ・別のメールアドレス・設定値の欠け・正しい JWT）を tests/unit/author.test.ts で確かめる。鍵は tests/support/access.ts の `createAccessTestKeys` を使う

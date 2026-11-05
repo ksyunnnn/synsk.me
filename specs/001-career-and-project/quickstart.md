@@ -12,10 +12,10 @@
 
 | 段階 | コマンド | 確かめること |
 |---|---|---|
-| 単体 | `npm test` | 秘匿化の DTO・識別子の決まり・期間の計算・作り手の判定・proxy の rewrite |
+| 単体 | `npm test` | 秘匿化の DTO・識別子の決まり・期間の計算・オーナーの判定・proxy の rewrite |
 | workerd | `npm run test:workers` | Repository の実装が本物の migration の上で動く。楽観ロック・削除の順序・秘匿化した実績で隠す列を読まない |
 | 結合 | `npm run test:integration` | `/projects/{slug}` の 200・404 と応答の中身（SC-001）、`/dash` の 403 と `no-store`、JWT のない書き込みが何も書かない |
-| E2E | `npm run test:e2e` | 作り手としての登録・編集・削除と、キーボードだけの操作 |
+| E2E | `npm run test:e2e` | オーナーとしての登録・編集・削除と、キーボードだけの操作 |
 | 型・lint・整形 | `npx tsc --noEmit`、`npm run lint`、`npm run format:check` | 0 件 |
 
 ## 手で確かめる（ブランチの Preview）
