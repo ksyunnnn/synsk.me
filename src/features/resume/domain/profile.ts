@@ -15,9 +15,9 @@ export type Profile = {
   email: string | null;
 };
 
-/** オーナーが値を入れる。いまの値は作り物 */
+/** オーナーが値を入れる。自己紹介の値は作り物 */
 export const PROFILE_CONTENT: Omit<Profile, 'email'> = {
-  name: '作り物の氏名',
+  name: '小橋俊介',
   introduction:
     '作り物の自己紹介です。オーナーが src/features/resume/domain/profile.ts に書きます。',
 };
