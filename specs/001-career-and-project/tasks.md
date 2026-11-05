@@ -9,7 +9,7 @@ description: "職歴と実績の実装タスク"
 
 **Prerequisites**: plan.md、spec.md
 
-**Tests**: 検査のタスクを含める。constitution の III（要件の 1 つ 1 つに検査を対応させる）と I（書き込みの経路に、作り手以外が通れないことの検査を書く）が求める。対応は plan.md の「要件と検査の対応」が持つ
+**Tests**: 検査のタスクを含める。constitution の III（要件の 1 つ 1 つに検査を対応させる）と I（書き込みの経路に、オーナー以外が通れないことの検査を書く）が求める。対応は plan.md の「要件と検査の対応」が持つ
 
 **Organization**: User Story ごとに段階を分ける。各段階は単独で確かめられる
 
@@ -36,13 +36,13 @@ description: "職歴と実績の実装タスク"
 
 ## Phase 1: Setup（build を通す）
 
-**Purpose**: feature/72-rebuild の `npm run build`・型検査・検査の土台を通す。作り手の判定は ADR-0013・ADR-0036 に沿って作り直す。note に固有の部分（`/notes/*`、`/dash/notes/*`、note の作り物の行）は 003 が持つため作らない
+**Purpose**: feature/72-rebuild の `npm run build`・型検査・検査の土台を通す。オーナーの判定は ADR-0013・ADR-0036 に沿って作り直す。note に固有の部分（`/notes/*`、`/dash/notes/*`、note の作り物の行）は 003 が持つため作らない
 
-- [X] T001 ブランチ `feature/72-schema-adjustments` の `migrations/0008_rebuild_career_and_project.sql`（コミット `4704df4`）が feature/72-rebuild に入っていることを確かめる。入っていなければ PM に伝え、D1 を使う検査のタスク（workerd・結合・E2E）を止める（research.md の R1）
+- [X] T001 ブランチ `feature/72-schema-adjustments` の `migrations/0008_rebuild_career_and_project.sql`（コミット `4704df4`）が feature/72-rebuild に入っていることを確かめる。入っていなければオーナーに伝え、D1 を使う検査のタスク（workerd・結合・E2E）を止める（research.md の R1）
 - [X] T002 `cloudflare:workers` の env を使うときに読み込む関数を src/shared/server/env.ts に作る。先頭で `import 'server-only'`。モジュールの先頭で `cloudflare:workers` を読み込まない（`vinext build` が Node で読み込むため）。Access の設定値（`ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL`）の型をここに置く
 - [X] T003 Access の JWT を `jose` で検証して `Author` を返す関数（要求のヘッダから・`headers()` から）を src/shared/server/author.ts に作る。署名・発行元・aud（カンマ区切りの複数）・期限・メールアドレス（ローカル部は大文字と小文字を区別し、ドメインは ASCII の英字だけ畳む）を確かめ、設定値が欠ければ null。JWT の型をファイルの外に出さない（constitution VII）
 - [X] T004 [P] T003 の分岐（JWT なし・署名違い・発行元違い・aud 違い・期限切れ・別のメールアドレス・設定値の欠け・正しい JWT）を tests/unit/author.test.ts で確かめる。鍵は tests/support/access.ts の `createAccessTestKeys` を使う
-- [X] T005 src/proxy.ts を作り直す。matcher は `/dash` と `/dash/:path*`。作り手でなければ `/dash/forbidden` へ rewrite し、`/dash` 配下の応答に `Cache-Control: no-store, must-revalidate` を付ける。判定は T003 の関数を呼ぶ。D1 や設定値の読み出しで例外が出たら判定せずに通す（`/dash` のページが作り手を確かめる）。`@/features/note/*` を読まない
+- [X] T005 src/proxy.ts を作り直す。matcher は `/dash` と `/dash/:path*`。オーナーでなければ `/dash/forbidden` へ rewrite し、`/dash` 配下の応答に `Cache-Control: no-store, must-revalidate` を付ける。判定は T003 の関数を呼ぶ。D1 や設定値の読み出しで例外が出たら判定せずに通す（`/dash` のページがオーナーを確かめる）。`@/features/note/*` を読まない
 - [X] T006 tests/unit/proxy.test.ts を T005 に合わせて書き直す。`@/features/note/server/queries` のモックを外し、T003 の関数をモックする。matcher・403 の rewrite・`no-store` を確かめる
 - [X] T007 [P] tests/e2e/support/author.ts を作り直す。playwright.config.ts が読む `ACCESS_CERTS_URL` と `D1_PERSIST_DIR` と、tests/e2e/forbidden-navigation.spec.ts が読む `actAsAuthor` を持つ。tests/support/access.ts を使う
 - [X] T008 tests/e2e/forbidden-navigation.spec.ts のリンク名「新しい note を作る」を、src/app/dash/page.tsx（T014）の入口のリンクに合わせる
@@ -58,7 +58,7 @@ description: "職歴と実績の実装タスク"
 
 **Purpose**: どの User Story も使う管理画面の入口・期間・組織・入力の部品
 
-- [X] T014 管理画面の入口を src/app/dash/page.tsx に作る。描画の前に src/shared/server/author.ts で作り手を確かめ、作り手でなければ `forbidden()`。職歴・実績・学歴・スキル・組織の一覧へのリンクを置く（contracts/dash.md）
+- [X] T014 管理画面の入口を src/app/dash/page.tsx に作る。描画の前に src/shared/server/author.ts でオーナーを確かめ、オーナーでなければ `forbidden()`。職歴・実績・学歴・スキル・組織の一覧へのリンクを置く（contracts/dash.md）
 - [X] T015 [P] 期間の型と、日付の形（`YYYY-MM-DD`）・終わりの日が始まりの日より前でないことの判定を src/shared/domain/period.ts に作る（FR-038・FR-039）。経験年数と重なりの計算はここに置くが、U6 が解けるまで書かない
 - [X] T016 [P] T015 を tests/unit/period.test.ts で確かめる（終わりの日が空・同じ日・逆の日・読めない日付）
 - [X] T017 [P] 組織の型と、秘匿化した職歴・実績が指す組織は秘匿化した組織名を持つという判定（FR-001）と、個人の組織の id の定数（値は T073 で入れる。それまでは誰も指さない値）を src/shared/domain/organization.ts に作る
@@ -67,7 +67,7 @@ description: "職歴と実績の実装タスク"
 - [X] T020 T019 を tests/workers/organization-repository.test.ts で確かめる（同じ名前で探すと同じ行、新しい名前で作る、秘匿化した組織名は空で作れる）
 - [X] T021 [P] workerd と結合の検査が作り物の組織・職歴・実績・学歴・スキルの行を入れる関数を tests/support/career-and-project-rows.ts に作る。個人の組織は T017 の定数の id で入れる
 - [X] T022 [P] ネイティブの入力の要素に、ラベル・項目ごとの誤りの表示・フォーカスの見た目をかぶせた部品を src/shared/components/field.tsx に作る（`design/guidelines.md` の Inputs、トークンの名前で値を使う）
-- [X] T023 Server Action の結果の型（成功・作り手でない・項目ごとの誤りと送られた値・先に書き換えられていた）を src/shared/domain/action-result.ts に作る（contracts/dash.md の共通）
+- [X] T023 Server Action の結果の型（成功・オーナーでない・項目ごとの誤りと送られた値・先に書き換えられていた）を src/shared/domain/action-result.ts に作る（contracts/dash.md の共通）
 
 **Checkpoint**: Phase 1 と 2 が終われば、User Story を並べて始められる
 
@@ -75,14 +75,14 @@ description: "職歴と実績の実装タスク"
 
 ## Phase 3: User Story 1 - 実績を登録し、個別のページで見せる (Priority: P1) 🎯 MVP
 
-**Goal**: 作り手が実績を登録・編集・削除し、訪問者が `/projects/{slug}` で秘匿化しない実績を見る
+**Goal**: オーナーが実績を登録・編集・削除し、訪問者が `/projects/{slug}` で秘匿化しない実績を見る
 
 **Independent Test**: 秘匿化しない実績を 1 件登録し、訪問者として `/projects/{slug}` を開いて、題・組織名・期間が登録した値で出る。無い識別子は 404
 
 ### Tests for User Story 1
 
 - [X] T024 [P] [US1] 実績の domain（登録の識別子が uid で FR-013 の形、識別子の形の判定、種類の 4 値、期間）を tests/unit/project-domain.test.ts で確かめる
-- [X] T025 [P] [US1] 実績のユースケース（登録・編集・削除・作り手でない呼び出しを拒む）を、Repository の作り物の実装を渡して tests/unit/project-usecases.test.ts で確かめる
+- [X] T025 [P] [US1] 実績のユースケース（登録・編集・削除・オーナーでない呼び出しを拒む）を、Repository の作り物の実装を渡して tests/unit/project-usecases.test.ts で確かめる
 - [X] T026 [P] [US1] 実績の D1 の実装（登録・同じ識別子の拒否・編集・楽観ロックで先に書き換えられていたら何も書かない・削除の順序で `resume_project.project_id` を空にしてから消す）を tests/workers/project-repository.test.ts で確かめる（FR-011・FR-013・FR-042、research.md の R7・R8）
 - [X] T027 [P] [US1] `/projects/{slug}` の 200 と、無い識別子の 404、JWT のない実績の Server Action が 403 の結果で D1 を変えないことを tests/integration/projects.test.ts で確かめる（FR-014・FR-040・SC-002）
 - [X] T028 [P] [US1] tests/unit/proxy.test.ts に、無い識別子の `/projects/{slug}` を `/projects/{slug}/missing` へ、無い id の `/dash/projects/{id}` を `/dash/projects/{id}/missing` へ rewrite することを足す
@@ -93,12 +93,12 @@ description: "職歴と実績の実装タスク"
 - [X] T030 [P] [US1] 実績の Repository のインタフェース（訪問者向けに識別子で読む・編集用に id で読む・一覧・登録・開いたときの更新日時つきの編集・削除・識別子と id の有無）を src/features/project/domain/project-repository.ts に作る
 - [X] T031 [US1] ユースケースを src/features/project/application/ に 1 つずつ作る: register-project.ts・edit-project.ts・delete-project.ts・get-visitor-project.ts・get-project-for-edit.ts・list-projects.ts。読む→計算→書くの順（docs/SOFTWARE_DESIGN.md）
 - [X] T032 [US1] D1 の実装を src/features/project/server/d1-project-repository.ts に作る。編集は research.md の R7、削除は R8 の順で 1 つの `batch()`。組織は src/shared/server/organization-repository.ts で探すか作る
-- [X] T033 [US1] 組み立て用の関数（訪問者向けの取り出し、識別子と id の有無）を src/features/project/server/queries.ts に、Server Action（`registerProject`・`editProject`・`deleteProject`）を src/features/project/server/actions.ts に作る。Server Action は先頭で作り手を確かめる
+- [X] T033 [US1] 組み立て用の関数（訪問者向けの取り出し、識別子と id の有無）を src/features/project/server/queries.ts に、Server Action（`registerProject`・`editProject`・`deleteProject`）を src/features/project/server/actions.ts に作る。Server Action は先頭でオーナーを確かめる
 - [X] T034 [US1] src/proxy.ts の matcher に `/projects/:slug` を足し、T033 の有無の関数で 404 の rewrite を足す。`/dash/projects/{id}` の有無も見る
 - [X] T035 [P] [US1] 訪問者向けの実績の表示（秘匿化しない側）を src/features/project/components/visitor-project.tsx に作る。本文は U4 が解けるまで出さない
 - [X] T036 [P] [US1] 実績の入力（組織名・種類・題・秘匿化した題・秘匿化するか・期間・本文・関連 URL）を src/features/project/components/project-form.tsx に作る。組織名は U3 が解けるまでネイティブの `input type="text"`。失敗の結果では送られた値を残す
 - [X] T037 [US1] 訪問者のページを src/app/projects/[slug]/page.tsx（`generateMetadata` も DTO の値だけを使う）と src/app/projects/[slug]/missing/page.tsx（`notFound()` だけ）に作る
-- [X] T038 [US1] 管理画面のページを src/app/dash/projects/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作る。各ページは描画の前に作り手を確かめる
+- [X] T038 [US1] 管理画面のページを src/app/dash/projects/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作る。各ページは描画の前にオーナーを確かめる
 
 **Checkpoint**: User Story 1 が単独で動く
 
@@ -191,7 +191,7 @@ description: "職歴と実績の実装タスク"
 - [X] T068 [US5] 管理画面のページを src/app/dash/careers/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/careers/{id}` の有無を足す
 - [X] T069 [P] [US5] 学歴の型・Repository・D1 の実装・ユースケース・組み立て用の関数・Server Action・入力を src/features/education/ の domain/・application/・server/・components/ に作る
 - [X] T070 [US5] 管理画面のページを src/app/dash/educations/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/educations/{id}` の有無を足す
-- [X] T071 [US5] 作り手として職歴と学歴を登録・編集・削除し、2 つのタブで同じ職歴を開いて後から保存した側が止まり入力が残ることを tests/e2e/career-and-education.spec.ts で確かめる（FR-042）
+- [X] T071 [US5] オーナーとして職歴と学歴を登録・編集・削除し、2 つのタブで同じ職歴を開いて後から保存した側が止まり入力が残ることを tests/e2e/career-and-education.spec.ts で確かめる（FR-042）
 
 ---
 
@@ -199,7 +199,7 @@ description: "職歴と実績の実装タスク"
 
 - [ ] T072 入力中の内容を `localStorage` に持ち、保存に成功したら消す部品を src/shared/components/draft-retention.tsx に作り、実績・職歴・学歴・組織・スキルの入力に使う。E2E で、保存せずに再読み込みしても入力が残ることを tests/e2e/draft-retention.spec.ts で確かめる（REQUIREMENTS.md の FR-14、research.md の R16）
 - [ ] T073 本番の D1 にオーナーが個人の組織を登録した後、その行の id を src/shared/domain/organization.ts の定数に書き、個人の組織を消せないことを tests/workers/organization-edit.test.ts に足す（FR-041、research.md の R9）
-- [ ] T074 作り手として実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
+- [ ] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
 - [ ] T075 R2 の読み書きを src/shared/server/media-storage.ts に閉じ込め、実績・職歴の画像の追加と、実績の代表画像の選択と登録（その実績の画像だけ）を作る。画像の上限を plan.md に書いてから作る（constitution II）。**止める未決: U5**
 - [ ] T076 秘匿化しない実績の画像を配る経路を作り、秘匿化した実績の画像が返らないことを結合で確かめる（FR-030）。**止める未決: U5**
 - [ ] T077 本文の表示と、本文の中に画像とキャプションを置く入力を作る（FR-027）。**止める未決: U4**
@@ -289,5 +289,5 @@ US1+US2 → US3 → US4 → US5 → Polish。各段階を Preview で確かめ�
 ## Notes
 
 - 機能どうしは import しない（ADR-0026）。機能をまたいで要る値は、各機能の Repository の実装が SQL で読む
-- 書き込みの Server Action は、先頭で作り手を確かめる。呼び忘れは型でも lint でも検出しない（ADR-0036 の Consequences）ため、結合の検査で各 Server Action を確かめる
+- 書き込みの Server Action は、先頭でオーナーを確かめる。呼び忘れは型でも lint でも検出しない（ADR-0036 の Consequences）ため、結合の検査で各 Server Action を確かめる
 - コミットはタスクか論理のまとまりごと

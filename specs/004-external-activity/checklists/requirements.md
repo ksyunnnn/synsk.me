@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -32,4 +32,4 @@
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
-- [NEEDS CLARIFICATION] は 2 件ある。URL を指名した・手で入力した外部の activity をオーナーが synsk.me の側で取り消せるか（User Story 4 の Acceptance Scenario 5）、YouTube の取り込み方（Assumptions の「取得元と分類」）。`/speckit-clarify` で解く
+- spec.md に [NEEDS CLARIFICATION] は無い

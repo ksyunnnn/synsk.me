@@ -4,7 +4,7 @@
 
 ## 前提
 
-- `migrations/0008_rebuild_career_and_project.sql`（ブランチ `feature/72-schema-adjustments`）が feature/72-rebuild に入っている
+- `migrations/0008_rebuild_career_project_and_resume.sql` と `migrations/0009_add_status_to_career_and_project.sql` がある
 - `npm ci` を済ませている
 - 例の値はすべて作り物
 

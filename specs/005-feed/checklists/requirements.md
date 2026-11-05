@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -32,4 +32,4 @@
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
-- [NEEDS CLARIFICATION] は 1 件ある。転載元の note が一覧に並ばないとき、転載先の URL と一致する外部の activity を並べるか（User Story 4 の Acceptance Scenario 3）。`/speckit-clarify` で解く
+- spec.md に [NEEDS CLARIFICATION] は無い

@@ -7,7 +7,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - R1 スキーマの前提
 - R2 D1 への読み書き
 - R3 行の型（#188 が未決）
-- R4 作り手の判定
+- R4 オーナーの判定
 - R5 秘匿化の選別をどこで行うか
 - R6 識別子（slug）の uid
 - R7 同時編集の楽観ロック
@@ -25,7 +25,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R1 スキーマの前提
 
-- 決めたこと: `migrations/0001`〜`0007` に、ブランチ `feature/72-schema-adjustments` のコミット `4704df4` の `migrations/0008_rebuild_career_and_project.sql` を当てたスキーマを前提にする。0008 は feature/72-rebuild に入っていない。D1 を使う検査（workerd・結合・E2E）は、0008 が feature/72-rebuild に入ってから回す
+- 決めたこと: `migrations/0001`〜`0007` に `migrations/0008_rebuild_career_project_and_resume.sql` と `migrations/0009_add_status_to_career_and_project.sql` を当てたスキーマを前提にする。D1 を使う検査（workerd・結合・E2E）は、このスキーマを当てた D1 で回す
 - 理由: 0008 が、spec の FR-001（秘匿化した組織名は空にできる）・FR-010・FR-015（既定で秘匿化）・FR-033・FR-034（月まで）を列に反映する
 - 退けた案: 0007 までのスキーマで作る。`organization.name_masked` が NOT NULL、`skill.years_override` が年の整数で、FR-001・FR-034 を満たせない
 
@@ -41,9 +41,9 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 理由: #188 がどちらに決まっても、差し替える場所が Repository の実装の行の型と、CHECK の値の配列の 2 か所に限られる。手で書いた行の型が実物と食い違うことは、本物の migration を当てた workerd の検査で補う（ADR-0035 の Consequences）
 - 未決: 型を生成するか、生成するなら何で作るか（#188）。止めるタスクは無い
 
-## R4 作り手の判定
+## R4 オーナーの判定
 
-- 決めたこと: ログインは Cloudflare Access が行う（ADR-0013、`design/guidelines.md` の Managing accounts）。アプリケーションは、`/dash` 配下の画面を返す前と、書き込みの Server Action の先頭で、`Cf-Access-Jwt-Assertion` の JWT を `jose` で検証する。確かめるのは署名・発行元・aud・期限・メールアドレスがオーナーのものであること。設定値は Worker の secret（`ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL`）に置き、どれかが欠ければ作り手とみなさない
+- 決めたこと: ログインは Cloudflare Access が行う（ADR-0013、`design/guidelines.md` の Managing accounts）。アプリケーションは、`/dash` 配下の画面を返す前と、書き込みの Server Action の先頭で、`Cf-Access-Jwt-Assertion` の JWT を `jose` で検証する。確かめるのは署名・発行元・aud・期限・メールアドレスがオーナーのものであること。設定値は Worker の secret（`ACCESS_ISSUER`・`ACCESS_AUD`・`ACCESS_OWNER_EMAIL`）に置き、どれかが欠ければオーナーとみなさない
 - 理由: ADR-0036。Server Action は経路に縛られないため、Access だけでは書き込みを守れない
 - 置き場: `src/shared/server/author.ts`。使い手は `career`・`project`・`education`・`skill`・`organization` の管理画面と、002・003 の管理画面（constitution IX の 2 つ目の使い道）
 - 検査: 単体で検証の分岐（JWT なし・署名違い・aud 違い・期限切れ・別のメールアドレス・設定値の欠け）を確かめる。結合で JWT のない `/dash` が 403、JWT のない書き込みが何も書かないことを確かめる。テスト用の鍵と公開鍵のサーバは `tests/support/access.ts` を使う
@@ -67,10 +67,10 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 ## R7 同時編集の楽観ロック
 
 - 決めたこと: 編集の画面を開いたときの `updated_at` を隠しフィールドで持ち、保存は `UPDATE … SET …, updated_at = ?新しい値 WHERE id = ? AND updated_at = ?開いたときの値` で行う。新しい値はアプリケーションが `new Date().toISOString()` で作る。同じ `batch()` の後続の文（`project_skill` の入れ直しなど）は `WHERE EXISTS (SELECT 1 FROM project WHERE id = ? AND updated_at = ?新しい値)` を付け、UPDATE が当たらなければ何も書かない。UPDATE の `meta.changes` が 0 なら、保存を止め、送られた内容をフォームに戻して知らせる
-- 理由: spec の FR-042 と台帳 12 節（note と同じ楽観ロック）。台帳 11 節の根拠（Fowler の Optimistic Offline Lock、RFC 9110 §13.1.1）。`updated_at` の形は `toISOString()` と migration の CHECK（`%Y-%m-%dT%H:%M:%fZ`）で同じ。updated_at のトリガは `NEW.updated_at IS OLD.updated_at` のときだけ働くため、アプリケーションが入れた値を上書きしない
+- 理由: spec の FR-042。note と同じ楽観ロックにする。根拠は Fowler の Optimistic Offline Lock と RFC 9110 §13.1.1。`updated_at` の形は `toISOString()` と migration の CHECK（`%Y-%m-%dT%H:%M:%fZ`）で同じ。updated_at のトリガは `NEW.updated_at IS OLD.updated_at` のときだけ働くため、アプリケーションが入れた値を上書きしない
 - 対象: 職歴・実績（FR-042）。学歴・組織・スキルは FR-042 の対象に無いため付けない
 - 限界: 2 つの保存が同じミリ秒に当たると見分けられない。オーナー 1 人の操作では起きにくいとみなす
-- 退けた案: 版の列を足す（台帳 11 節は列を足さない）
+- 退けた案: 版の列を足す（列を足さず、`updated_at` で比べる）
 
 ## R8 削除の順序
 
@@ -80,15 +80,15 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
   - 学歴: `resume_education.education_id` を NULL にする → `education` を消す
   - スキル: `project_skill` を消す → `skill` を消す。`resume_project_skill` と `resume_skill_override` は名前を写して持つため触らない
   - 組織: 職歴・実績が指していれば消さずに知らせる（FR-006）
-- 理由: 外部キーはすべて NO ACTION で、子の行が残ると削除がエラーで止まる（migration 0003 の冒頭、台帳 6 節）。職務経歴書の行は残す（spec の Edge Cases、台帳 7 節の「写した行の *_id を先に空にする」）
-- R2 と D1 のずれ: D1 を先に消し、R2 の削除に失敗しても画像は訪問者に出ない（持ち主の行が無いため配らない）。ずれの扱いは台帳 6 節の未決のまま
-- 退けた案: CASCADE（台帳 7 節が退けた）
+- 理由: 外部キーはすべて NO ACTION で、子の行が残ると削除がエラーで止まる（migration 0003 の冒頭）。職務経歴書の行は残し、写した行の *_id を先に空にする（spec の Edge Cases）
+- R2 と D1 のずれ: D1 を先に消し、R2 の削除に失敗しても画像は訪問者に出ない（持ち主の行が無いため配らない）。ずれの扱いは未決のまま
+- 退けた案: CASCADE（表を作り直す migration で、子の行が黙って消える。migration 0003 の冒頭）
 
 ## R9 個人の組織
 
 - 決めたこと: 個人の組織の `organization.id` を、`src/shared/domain/organization.ts` の定数に置く。値は、本番の D1 にオーナーが個人の組織を登録した後、その行の id を書く。プレビューと検査の D1 は、同じ id で個人の組織を入れる
-- 理由: spec の FR-041 と台帳 12 節（コードの定数で見分け、スキーマに印を足さない）。名前は変わりうるため、名前でなく id で見分ける
-- 使い手: 002 の職務経歴書（台帳 1 節の「個人スキル」）。001 の中では、組織の削除の画面で個人の組織を消せないようにする
+- 理由: spec の FR-041。コードの定数で見分け、スキーマに印を足さない。名前は変わりうるため、名前でなく id で見分ける
+- 使い手: 002 の職務経歴書。001 の中では、組織の削除の画面で個人の組織を消せないようにする
 - 退けた案: 組織名で見分ける（名前を変えると見分けられない）
 
 ## R10 機能の切り方
@@ -107,8 +107,8 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R12 キャッシュと 404・403
 
-- 決めたこと: 実績のページ（`/projects/[slug]`）と管理画面は `'use cache'` を使わない。データを読んでから決まる 404（識別子の実績が無い）と 403（作り手でない `/dash`）は `src/proxy.ts` が描画の前に決め、`notFound()` か `forbidden()` を呼ぶだけのページへ rewrite する。`export const revalidate` と `export const dynamic` は書かない
-- 理由: constitution の Cacheability（ADR-0040）。キャッシュを使わないため、秘匿化を切り替えた時点から新しい状態で出る（FR-043）。キャッシュは計測値が閾値を割るまで足さない（constitution VI、台帳 6 節の「公開の即時反映とキャッシュは後に回す」）
+- 決めたこと: 実績のページ（`/projects/[slug]`）と管理画面は `'use cache'` を使わない。データを読んでから決まる 404（識別子の実績が無い）と 403（オーナーでない `/dash`）は `src/proxy.ts` が描画の前に決め、`notFound()` か `forbidden()` を呼ぶだけのページへ rewrite する。`export const revalidate` と `export const dynamic` は書かない
+- 理由: constitution の Cacheability（ADR-0040）。キャッシュを使わないため、秘匿化を切り替えた時点から新しい状態で出る（FR-043）。キャッシュは計測値が閾値を割るまで足さない（constitution VI。公開の操作のあと見えるまでの時機とキャッシュの扱いは後に回す）
 - proxy の作り直し: note に固有の部分（`/notes/:slug`、`/dash/notes/*`）は 003 が持つため入れない。matcher は `/projects/:slug`・`/dash`・`/dash/:path*`
 - 退けた案: 実績のページを `'use cache'` にし、保存のたびに無効化する（計測値が無い）
 
@@ -132,10 +132,10 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 ## R15 職歴を訪問者に出す場所
 
 - 決めたこと: 001 は、職歴を訪問者に出すページを持たない。訪問者に職歴を出す場所は一覧（005）と職務経歴書（002）で、005 の spec の User Story 2 と FR-012〜FR-014 が、一覧の応答での職歴の秘匿化を確かめる。001 の検査は、職歴の保存の決まり（既定で秘匿化・秘匿化した組織名の必須・期間）までとする
-- 理由: spec の Assumptions（一覧の spec が職歴と実績を一覧に並べる）、台帳 5 節（一覧はビューで読み、秘匿化の決まりはビューの中に書く）。constitution III により、001 の中で検査を対応させられない訪問者側の職歴の要件（FR-009・FR-020、FR-021・FR-022・FR-030 の職歴の部分、User Story 2 の 3）は 001 の範囲から外し、005 で確かめる
+- 理由: spec の Assumptions（一覧の spec が職歴と実績を一覧に並べる）、ADR-0044（一覧はビューで読み、秘匿化の決まりはビューの中に書く）。constitution III により、001 の中で検査を対応させられない訪問者側の職歴の要件（FR-009・FR-020、FR-021・FR-022・FR-030 の職歴の部分、User Story 2 の 3）は 001 の範囲から外し、005 で確かめる
 - 決定（2026-11-04、オーナー）: 職歴は一覧（005）の中で見せるだけで、職歴の一覧のページ（`/career` など）は持たない
 
 ## R16 編集中の内容の保持（REQUIREMENTS.md の FR-14）
 
 - 決めたこと: 001 の入力の画面（職歴・実績・学歴・組織・スキル）は、入力中の内容をブラウザの `localStorage` に持ち、保存に成功したら消す。D1 には書かない。持つ処理は `src/shared/components/` の 1 つの部品にまとめ、5 つの画面と 003 の note の画面が使う
-- 理由: spec の Assumptions が FR-14 を REQUIREMENTS.md の持ち物として挙げる。台帳 6 節の決定（自動保存は DB に書かない）
+- 理由: spec の Assumptions が FR-14 を REQUIREMENTS.md の持ち物として挙げる。自動保存の内容は DB に書かない

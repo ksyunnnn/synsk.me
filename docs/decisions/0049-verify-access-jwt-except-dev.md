@@ -5,13 +5,13 @@ decision-makers: synsk
 consulted: Claude Code
 ---
 
-# 作り手の画面と書き込みの操作は、Cloudflare Access に加えてアプリケーションの中でも作り手であることを確かめる。npm run dev のときだけ確かめない
+# オーナーの画面と書き込みの操作は、Cloudflare Access に加えてアプリケーションの中でもオーナーであることを確かめる。npm run dev のときだけ確かめない
 
 ## Context and Problem Statement
 
-[ADR-0036](./0036-verify-access-jwt-in-app.md) は、作り手の画面を返す前と、書き込みの操作を行う前に、アプリケーションが `Cf-Access-Jwt-Assertion` の JWT を検証すると決めた。JWT がない、検証に失敗する、検証に要る設定値が欠けている、のどれかに当たれば、画面を返さず、書き込まない。
+[ADR-0036](./0036-verify-access-jwt-in-app.md) は、オーナーの画面を返す前と、書き込みの操作を行う前に、アプリケーションが `Cf-Access-Jwt-Assertion` の JWT を検証すると決めた。JWT がない、検証に失敗する、検証に要る設定値が欠けている、のどれかに当たれば、画面を返さず、書き込まない。
 
-手元の `npm run dev`（vinext dev）の前には、JWT を付ける Cloudflare Access がいない。このため手元では、作り手の画面を開けず、書き込みの操作も試せない。
+手元の `npm run dev`（vinext dev）の前には、JWT を付ける Cloudflare Access がいない。このため手元では、オーナーの画面を開けず、書き込みの操作も試せない。
 
 ADR-0036 のほかの決定は変わっていない。[docs/decisions/README.md](./README.md) は、承認した記録の決定内容を変えず、覆すときは新しい記録を書くと定める。1 点だけを変えるときも、元の記録をまるごと引き継ぐ新しい記録を書く（[#72 のコメント 6231369601](https://github.com/ksyunnnn/synsk.me/issues/72#issuecomment-6231369601)）。この記録は ADR-0036 を引き継ぎ、手元の開発での扱いを足す。
 
@@ -24,7 +24,7 @@ ADR-0036 が 2026-09-17 に確かめた事実は、次のとおり。
 
 2026-10-09 から、ブランチのプレビュー URL の版は、本番の D1 ではなく D1 `synsk-me-preview` に書き込む（PR #132）。
 
-手元の開発で作り手として操作する方法を、2026-11-04 に比べた。
+手元の開発でオーナーとして操作する方法を、2026-11-04 に比べた。
 
 - Cloudflare の公式は、`ctx.access` と、手元の開発で使う `access.dev` を用意している（[Workers: Cloudflare Access](https://developers.cloudflare.com/workers/configuration/cloudflare-access/)）。同じ公式に「Workers with Static Assets execute behind an internal router Worker. … the router does not pass `ctx.access` to the user Worker.」とあり、このアプリケーションは `dist/server/wrangler.json` に `assets` を持つ。手元で試したところ、vinext の cdnAdapter が描画を `ctx.exports` への折り返しの fetch で行うため、wrangler dev では描画まで届かなかった
 - Vite は `import.meta.env.DEV` と `import.meta.env.MODE` を、build のときに定数へ置き換える（[Vite: Env Variables and Modes](https://vite.dev/guide/env-and-mode)）
@@ -37,15 +37,15 @@ ADR-0036 が 2026-09-17 に確かめた事実は、次のとおり。
 
 ## Considered Options
 
-作り手であることを確かめる場所
+オーナーであることを確かめる場所
 
 * Access だけで守る
 * Access で守り、アプリケーションの中でも Access の JWT を検証する
 * アプリケーションの中だけで守る
 
-手元の開発で作り手として操作する方法
+手元の開発でオーナーとして操作する方法
 
-* `npm run dev` のときだけ、build で消える分岐で作り手の判定を飛ばす
+* `npm run dev` のときだけ、build で消える分岐でオーナーの判定を飛ばす
 * Cloudflare 公式の `ctx.access` と `access.dev` を使う
 * Cloudflare Tunnel で手元を Access の後ろに置く
 * E2E と同じ手元の鍵サーバと、JWT を付ける中継を使う
@@ -54,21 +54,21 @@ ADR-0036 が 2026-09-17 に確かめた事実は、次のとおり。
 
 Chosen option: "Access で守り、アプリケーションの中でも Access の JWT を検証する", because Access だけでは、経路に縛られない Server Action を守れないため。
 
-Chosen option: "`npm run dev` のときだけ、build で消える分岐で作り手の判定を飛ばす", because 手元で `npm run dev` だけを起動すれば作り手として操作でき、build したものには分岐が残らないため。
+Chosen option: "`npm run dev` のときだけ、build で消える分岐でオーナーの判定を飛ばす", because 手元で `npm run dev` だけを起動すればオーナーとして操作でき、build したものには分岐が残らないため。
 
 - Access は2つのアプリケーションで掛ける。本番の `synsk.me/dash` と `synsk.me/dash/*`、Worker `synsk-me` のプレビュー全体
-- アプリケーションは、作り手の画面を返す前と、書き込みの操作を行う前に、`Cf-Access-Jwt-Assertion` の JWT を検証する。署名、発行元、対象（aud）、期限、メールアドレスがオーナーのものであることを確かめる
+- アプリケーションは、オーナーの画面を返す前と、書き込みの操作を行う前に、`Cf-Access-Jwt-Assertion` の JWT を検証する。署名、発行元、対象（aud）、期限、メールアドレスがオーナーのものであることを確かめる
 - JWT がない、検証に失敗する、検証に要る設定値が欠けている、のどれかに当たれば、画面を返さず、書き込まない
 - 検証に要る設定値は Worker の secret に置く
-- `npm run dev`（vinext dev）のときだけ、作り手の判定を飛ばして作り手として扱う。分け方は `import.meta.env.DEV && import.meta.env.MODE === 'development'` とし、Vite が build のときに定数へ置き換える。実行時の環境変数では切り替えない
+- `npm run dev`（vinext dev）のときだけ、オーナーの判定を飛ばしてオーナーとして扱う。分け方は `import.meta.env.DEV && import.meta.env.MODE === 'development'` とし、Vite が build のときに定数へ置き換える。実行時の環境変数では切り替えない
 
 ### Consequences
 
 * Good, because Access の設定が漏れても、アプリケーションが書き込みを止める
-* Good, because 手元で `npm run dev` だけを起動すれば、作り手の画面と書き込みの操作を試せる
+* Good, because 手元で `npm run dev` だけを起動すれば、オーナーの画面と書き込みの操作を試せる
 * Good, because build したもの（`dist/`）には判定を飛ばす分岐が残らない。本番とプレビューの版で、実行時の値を変えても判定を飛ばせない
-* Bad, because 作り手の画面と書き込みの操作を足すたびに、検証を呼ぶ必要がある。呼び忘れは型でも lint でも検出していない
-* Bad, because E2E で作り手として操作するには、テスト用の鍵で署名した JWT と、その公開鍵を配る先が要る
+* Bad, because オーナーの画面と書き込みの操作を足すたびに、検証を呼ぶ必要がある。呼び忘れは型でも lint でも検出していない
+* Bad, because E2E でオーナーとして操作するには、テスト用の鍵で署名した JWT と、その公開鍵を配る先が要る
 * Bad, because プレビュー URL の全体が Access の後ろに入り、`npm run verify:deploy` でプレビュー URL を検査するときに service token が要る
 * Bad, because `npm run dev` では、JWT の検証の経路を通らない。検証の振る舞いは、build したものに対する結合テストと E2E でだけ確かめられる
 
@@ -95,7 +95,7 @@ Chosen option: "`npm run dev` のときだけ、build で消える分岐で作�
 * Good, because Access の設定に頼らない
 * Bad, because ログインの画面とセッションを持つことになり、ADR-0013 を覆す
 
-### `npm run dev` のときだけ、build で消える分岐で作り手の判定を飛ばす
+### `npm run dev` のときだけ、build で消える分岐でオーナーの判定を飛ばす
 
 * Good, because 起動するのは `npm run dev` の 1 つだけ
 * Good, because 分岐は build のときに消え、実行時の環境変数では切り替わらない

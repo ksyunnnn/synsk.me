@@ -32,5 +32,4 @@
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
-- [NEEDS CLARIFICATION] は 3 件ある。秘匿化した実績の個別のページと識別子（Edge Cases）、秘匿化した職歴・実績で出してよい値（FR-026）、経験年数の単位・端数・終わりの日が空の実績の扱い（FR-033）。`/speckit-clarify` で解く
-- FR-033 と SC-004 は、FR-033 の [NEEDS CLARIFICATION] が解けるまで手で計算する値が定まらない
+- spec.md に [NEEDS CLARIFICATION] は無い

@@ -32,7 +32,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 | 部品 | 置き場 | 002 での使い道 | 001 の状態 |
 |---|---|---|---|
-| 作り手の判定 | `src/shared/server/author.ts` | 管理画面のページと Server Action の先頭 | 済み（001 の T003） |
+| オーナーの判定 | `src/shared/server/author.ts` | 管理画面のページと Server Action の先頭 | 済み（001 の T003） |
 | env の読み出し | `src/shared/server/env.ts` | D1 の binding・メールアドレス | 済み（001 の T002）。002 で型を足す |
 | 期間 | `src/shared/domain/period.ts` | 写した期間の検証と、経験年数の計算 | 期間の検証は済み（001 の T015）。経験年数は 001 の T061（U6 が解けてから） |
 | 入力の部品 | `src/shared/components/field.tsx` | 管理画面の入力 | 済み（001 の T022） |
@@ -53,7 +53,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - `/resume/{slug}/missing` は、限定公開用の `/resume/{slug}/{key}` と同じ深さにある。鍵は 43 文字の base64url（R5）で、`missing` と一致しない
 - 管理画面は `/dash/resumes/*`（contracts/dash.md）。001 の `/dash/projects` と同じく複数形にする
 - `src/app/resume/page.tsx`（`/resume`）は 002 の spec に要件が無く、002 は触れない。002 は `src/app/resume/[slug]/` の下だけを足す
-- 食い違い: ADR-0048 の Decision Outcome は「note と職務経歴書の slug は、題から候補を提示し、作り手が確定させる」とする。spec の FR-037・FR-039 は、識別子を既定で uid とし、限定公開用は書き換えられないとする。plan は spec に従う。ADR を直すかはオーナーが決める（plan.md の U14）
+- 食い違い: ADR-0048 の Decision Outcome は「note と職務経歴書の slug は、題から候補を提示し、オーナーが確定させる」とする。spec の FR-037・FR-039 は、識別子を既定で uid とし、限定公開用は書き換えられないとする。plan は spec に従う。ADR を直すかはオーナーが決める（plan.md の U14）
 
 ## R4 写し方
 

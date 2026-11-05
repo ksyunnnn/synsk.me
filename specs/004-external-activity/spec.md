@@ -226,14 +226,14 @@
 - 管理画面は `/dash/` 配下に置く（[ADR-0016](../../docs/decisions/0016-url-conventions.md)）。オーナーであることは、アプリケーションの外で Cloudflare Access が判定する（[ADR-0013](../../docs/decisions/0013-access-authentication.md)）
 - 取得元ごとに取れるもの・取れないものは、PR #47 の検証記録（`docs/scraps/external-api-verification.md`、ブランチ `feature/external-api-verification`、2026-09-02 実測）による
 
-**取得元と分類（#148 の 6465973173、2026-10-28 にオーナーが採った）**
+**取得元と分類（2026-10-28 にオーナーが採った）**
 
 - 埋め込み: X の投稿・Spotify のプレイリスト・CodePen・CodeSandbox・Speaker Deck・YouTube の動画
 - その他: GitHub のリポジトリ・connpass のイベント・登録していないサイト
 - life event: life event
-- 記事: 上の 3 つに挙がらない取得元。ADR-0045 の挙げる取得元では Zenn・Qiita・dev.to・Medium が当たる（6465973173 は記事の取得元を名指ししていない）
+- 記事: 上の 3 つに挙がらない取得元。ADR-0045 の挙げる取得元では Zenn・Qiita・dev.to・Medium が当たる（2026-10-28 の決定は記事の取得元を名指ししていない）
 - 取り込み方は ADR-0045 による。一覧を取る: Zenn・Qiita・dev.to・Medium・GitHub・Speaker Deck・connpass。URL を指名する: Spotify・X・CodeSandbox・YouTube。すべて手で入力する: CodePen
-- YouTube は URL を指名する（2026-11-04 の PM の判断。ADR-0045 と PR #47 の検証記録は YouTube を挙げない）。チャンネルの動画一覧を取る公式の手段は YouTube Data API v3 で、API キーが要り、既定の割り当ては 1 日 10,000 単位、超えた要求は拒まれる（[Getting Started](https://developers.google.com/youtube/v3/getting-started)、[Errors](https://developers.google.com/youtube/v3/docs/errors)）。料金を公式の文書で確かめられないため、外への要求の費用を確かめられない（SOFTWARE_DESIGN.md の設計原則 2）。チャンネルの RSS フィード（`https://www.youtube.com/feeds/videos.xml?channel_id=<ID>`）は公式の文書に無く、15 件を返す（2026-11-04 実測）。URL から題を取る oEmbed（`https://www.youtube.com/oembed?url=<URL>`）は公開日を返さない（2026-11-04 実測）ので、日付はオーナーが登録する
+- YouTube は URL を指名する（2026-11-04 に決めた。ADR-0045 と PR #47 の検証記録は YouTube を挙げない）。チャンネルの動画一覧を取る公式の手段は YouTube Data API v3 で、API キーが要り、既定の割り当ては 1 日 10,000 単位、超えた要求は拒まれる（[Getting Started](https://developers.google.com/youtube/v3/getting-started)、[Errors](https://developers.google.com/youtube/v3/docs/errors)）。料金を公式の文書で確かめられないため、外への要求の費用を確かめられない（SOFTWARE_DESIGN.md の設計原則 2）。チャンネルの RSS フィード（`https://www.youtube.com/feeds/videos.xml?channel_id=<ID>`）は公式の文書に無く、15 件を返す（2026-11-04 実測）。URL から題を取る oEmbed（`https://www.youtube.com/oembed?url=<URL>`）は公開日を返さない（2026-11-04 実測）ので、日付はオーナーが登録する
 
 **決まっていて、実装のときに詰めるもの**
 
@@ -242,13 +242,13 @@
 - 1 回の取得で一覧から消す件数の上限の値
 - 取得のとき、値が変わった activity だけを書くか。取得の頻度は、保管するデータへの 1 日の書き込みの上限（10 万行）を条件にして決める
 - 1 回の呼び出しで読む問い合わせをまとめるか
-- 作り手が画面から自動取得を止めたくなったときは、その切り替えの印だけを保管するデータに置く
+- オーナーが画面から自動取得を止めたくなったときは、その切り替えの印だけを保管するデータに置く
 
 **決定が無く、この spec では決めない**
 
 - 取得の結果をオーナーに見せる画面を持つか
 - 取得を走らせる時機
-- 外部の activity の代表の画像の出し方（材料: #186）
+- 外部の activity の代表の画像の出し方
 - life event の題を必ず入れるか
 - life event の説明の書式と、説明の中に画像を置けるか
 - life event の個別のページに出す値と見せ方

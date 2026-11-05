@@ -2,7 +2,7 @@
 
 ## 共通
 
-001 の [contracts/dash.md](../../001-career-and-project/contracts/dash.md) の「共通」に従う（`src/proxy.ts` の 403 と `no-store`、ページと Server Action の先頭での作り手の確認、`<form action={Server Action}>`、失敗の結果は項目ごとの理由と送られた値、無い id の 404）。結果の型は `src/shared/domain/action-result.ts` の `ActionResult` を使う。
+001 の [contracts/dash.md](../../001-career-and-project/contracts/dash.md) の「共通」に従う（`src/proxy.ts` の 403 と `no-store`、ページと Server Action の先頭でのオーナーの確認、`<form action={Server Action}>`、失敗の結果は項目ごとの理由と送られた値、無い id の 404）。結果の型は `src/shared/domain/action-result.ts` の `ActionResult` を使う。
 
 002 で足すこと:
 
@@ -31,16 +31,16 @@
 
 | 名前 | 入力 | 成功 | 失敗の理由 |
 |---|---|---|---|
-| `createResume` | 題・限定公開用か公開用か・職歴の id の並び・実績の id の並び・学歴の id の並び・期限（限定公開用、空あり） | 限定公開用は同じ画面に鍵を含む URL と設定の画面へのリンクを返す。公開用は設定の画面へ 303 | 作り手でない／項目の不備／2 つ目の公開用／選んだ行が無い／公開用で、秘匿化した組織名の無い組織を指す秘匿化した職歴・実績を選んだ／公開用で、サイトに載せない職歴・実績を選んだ |
-| `editResumeSettings` | id・開いたときの更新日時・題・識別子（公開用だけ）・期限（限定公開用だけ、空あり） | 同じ画面へ 303 | 作り手でない／項目の不備／識別子の重複／限定公開用の識別子の書き換え／先に書き換えられていた |
-| `changeResumeStatus` | id・開いたときの更新日時・下書きか訪問者に見せるか | 同上 | 作り手でない／先に書き換えられていた |
-| `editResumeCareer`・`editResumeProject`・`editResumeEducation` | id・写した行の id・開いたときの更新日時・上の「画面」の列 | 設定の画面へ 303 | 作り手でない／項目の不備／行が無い／先に書き換えられていた |
-| `editResumeSkillOverrides` | id・開いたときの更新日時・スキルの名前ごとの年と月 | 同上 | 作り手でない／項目の不備／先に書き換えられていた |
-| `deleteResume` | id | 一覧へ 303 | 作り手でない／無い |
+| `createResume` | 題・限定公開用か公開用か・職歴の id の並び・実績の id の並び・学歴の id の並び・期限（限定公開用、空あり） | 限定公開用は同じ画面に鍵を含む URL と設定の画面へのリンクを返す。公開用は設定の画面へ 303 | オーナーでない／項目の不備／2 つ目の公開用／選んだ行が無い／公開用で、秘匿化した組織名の無い組織を指す秘匿化した職歴・実績を選んだ／公開用で、サイトに載せない職歴・実績を選んだ |
+| `editResumeSettings` | id・開いたときの更新日時・題・識別子（公開用だけ）・期限（限定公開用だけ、空あり） | 同じ画面へ 303 | オーナーでない／項目の不備／識別子の重複／限定公開用の識別子の書き換え／先に書き換えられていた |
+| `changeResumeStatus` | id・開いたときの更新日時・下書きか訪問者に見せるか | 同上 | オーナーでない／先に書き換えられていた |
+| `editResumeCareer`・`editResumeProject`・`editResumeEducation` | id・写した行の id・開いたときの更新日時・上の「画面」の列 | 設定の画面へ 303 | オーナーでない／項目の不備／行が無い／先に書き換えられていた |
+| `editResumeSkillOverrides` | id・開いたときの更新日時・スキルの名前ごとの年と月 | 同上 | オーナーでない／項目の不備／先に書き換えられていた |
+| `deleteResume` | id | 一覧へ 303 | オーナーでない／無い |
 
 ## 検査
 
 - 結合: JWT のない `/dash/resumes/*` の GET が 403 で、`no-store` を持つ
 - 結合: JWT のない各 Server Action の呼び出しが 403 の結果を返し、D1 の行が変わらない（FR-033、constitution I）
-- E2E: 作り手として、限定公開用を作り、写した行を直し、状態を切り替え、削除できる。キーボードだけで操作できる（constitution V）
+- E2E: オーナーとして、限定公開用を作り、写した行を直し、状態を切り替え、削除できる。キーボードだけで操作できる（constitution V）
 - E2E: 2 つのタブで同じ職務経歴書を開き、後から保存した側が止まり、入力が残る（FR-038）

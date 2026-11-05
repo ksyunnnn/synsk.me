@@ -18,13 +18,13 @@
 
 オーナーが管理画面（`/dash/resumes`）で、職歴・実績・学歴を選んで職務経歴書を作る。作るときに、選んだ行とスキルを、限定公開用か公開用かに応じた値で `resume_*` の表へ写し、1 回の `batch()` で書く。訪問者は公開用を `/resume/{slug}` で、限定公開用を鍵を含む `/resume/{slug}/{key}` で読み、ページの「PDF で保存」のボタンでブラウザの印刷機能を開いて PDF に保存する。鍵は 256 ビットの乱数で、D1 には SHA-256 だけを持つ。サーバーは PDF を作らない（research.md の R11）。
 
-001 の作り手の判定・env・期間・入力の部品・Server Action の結果の型・proxy をそのまま使う（[research.md](./research.md) の R2）。写した職歴・実績が作ったときに秘匿化していたかは、migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` が持つ（U2）。決め方は research.md が持つ。
+001 のオーナーの判定・env・期間・入力の部品・Server Action の結果の型・proxy をそのまま使う（[research.md](./research.md) の R2）。写した職歴・実績が作ったときに秘匿化していたかは、migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` が持つ（U2）。決め方は research.md が持つ。
 
 ## Technical Context
 
 **Language/Version**: TypeScript 6.0（`typescript` ~6.0.3）、Node.js 22 以上
 
-**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions・Route Handlers）、React 19.3、`jose`（001 の作り手の判定）、Tailwind CSS 4。PDF はブラウザの印刷機能（`@media print` の CSS と `window.print()`。package も binding も足さない。research.md の R11）
+**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions・Route Handlers）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。PDF はブラウザの印刷機能（`@media print` の CSS と `window.print()`。package も binding も足さない。research.md の R11）
 
 **Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0008`（research.md の R1）と、写し元の `career.status`・`project.status` を足す `0009`
 
@@ -46,7 +46,7 @@
 
 | 原則・制約 | 判定 | 根拠 |
 |---|---|---|
-| I. Protected Values | 条件付きで通る | 限定公開用は、鍵が合い期限の前で訪問者に見せる状態のときだけ写した行を読む（R6）。公開用で秘匿化した行の `description`・`url` を写さず読まない（R4、[contracts/visitor-resume.md](./contracts/visitor-resume.md)）。秘匿化した行は `is_masked` で見分ける（U2）。書き込みの Server Action は先頭で作り手を確かめ、作り手でない呼び出しが何も書かないことを結合で確かめる（[contracts/dash.md](./contracts/dash.md)） |
+| I. Protected Values | 条件付きで通る | 限定公開用は、鍵が合い期限の前で訪問者に見せる状態のときだけ写した行を読む（R6）。公開用で秘匿化した行の `description`・`url` を写さず読まない（R4、[contracts/visitor-resume.md](./contracts/visitor-resume.md)）。秘匿化した行は `is_masked` で見分ける（U2）。書き込みの Server Action は先頭でオーナーを確かめ、オーナーでない呼び出しが何も書かないことを結合で確かめる（[contracts/dash.md](./contracts/dash.md)） |
 | II. Stop on Missing Input | 条件付きで通る | 公開用に写す秘匿化した組織名が欠ければ作らない（R4）。費用のかかる処理を持たない（PDF は訪問者のブラウザが作る。R11） |
 | III. Verified Scope | 通る | 要件と検査の対応は下の表。U が止める要件は、解けるまで範囲に入れない |
 | IV. Partial Availability | 通る | ページの取得元は D1 の 1 つと、コードのプロフィールと環境変数のメールアドレス。メールアドレスが欠けてもほかを出す（R10） |
@@ -87,7 +87,7 @@
 | FR-026・FR-027 | スキルの一覧と経験年数 | 単（名前の比べ方は U11 が解けるまで仮の形） |
 | FR-029・FR-030 | ページに「PDF で保存」のボタンと印刷用の CSS があり、印刷するのは同じページ | 結（ボタン）・手（ブラウザで PDF に保存する） |
 | FR-031・FR-032 | 写した値を直すと、その職務経歴書にだけ効く | W |
-| FR-033 | 作り手でない呼び出しが何も書かない | 結 |
+| FR-033 | オーナーでない呼び出しが何も書かない | 結 |
 | FR-037・FR-039 | 限定公開用の識別子は uid で書き換えを拒む。公開用は既定で uid、書き換えられる | 単 |
 | FR-038 | 先に書き換えられていたら保存しない | W（判定）・E（入力が残ること） |
 | REQUIREMENTS.md の FR-11・FR-13・FR-14 | 削除の順序、見た目の確認の画面、入力中の内容の保持 | W・E・E（001 の T072 の部品） |
@@ -111,7 +111,7 @@
 | U11 | スキルの「同じ名前」の比べ方（大文字と小文字を区別するか。research.md の R12） | オーナー | スキルの一覧（FR-026） |
 | U12 | 職歴・実績・学歴を 1 件も選ばずに作れるか（spec の「決定が無く」） | オーナー | 無し。決まるまで 1 件も選ばない作成を拒まない |
 | U13 | 鍵を含む URL を作成の応答の後で示せないこと（R5 の帰結）と、作り直す機能を持つか | オーナー | 無し。持つと決まればタスクを足す |
-| U14 | ADR-0048 の「職務経歴書の slug は題から候補を提示し、作り手が確定させる」と、spec の FR-037・FR-039 の食い違い | オーナー（決定の記録） | 無し。plan は spec に従う |
+| U14 | ADR-0048 の「職務経歴書の slug は題から候補を提示し、オーナーが確定させる」と、spec の FR-037・FR-039 の食い違い | オーナー（決定の記録） | 無し。plan は spec に従う |
 
 依存（未決ではない）: 001 の部品（research.md の R2）。経験年数の計算は 001 の T061 が `src/shared/domain/period.ts` に書く。入力中の内容の保持は 001 の T072 の部品を使う。`src/proxy.ts` は 001 の作業者も直すため、002 の変更は 001 の T034 の後に足す。
 
@@ -164,7 +164,7 @@ tests/
 ├── unit/          resume の domain と application・proxy
 ├── workers/       resume の Repository の実装（本物の migrations/ を当てる）
 ├── integration/   /resume/* と /dash/resumes の応答
-├── e2e/           作り手の操作
+├── e2e/           オーナーの操作
 └── support/       career-and-project-rows.ts（001）、resume-rows.ts
 ```
 

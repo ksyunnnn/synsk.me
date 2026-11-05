@@ -13,7 +13,7 @@
 
 ## Requirement Completeness
 
-- [ ] No [NEEDS CLARIFICATION] markers remain
+- [x] No [NEEDS CLARIFICATION] markers remain
 - [x] Requirements are testable and unambiguous
 - [x] Success criteria are measurable
 - [x] Success criteria are technology-agnostic (no implementation details)
@@ -32,4 +32,4 @@
 ## Notes
 
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
-- [NEEDS CLARIFICATION] は 3 件ある。過去の版に戻したときに訪問者に見える時機（User Story 3 の Acceptance Scenario 2）、削除した note を元に戻す機能（FR-016）、公開した版の本文に無い画像を訪問者に出すか（FR-026）。`/speckit-clarify` で解く
+- spec.md に [NEEDS CLARIFICATION] は無い

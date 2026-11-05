@@ -1,6 +1,6 @@
 # Data Model: 職歴と実績
 
-表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0007` とブランチ `feature/72-schema-adjustments` の `migrations/0008_rebuild_career_and_project.sql`（コミット `4704df4`）と `migrations/0009_add_status_to_career_and_project.sql` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。列の一覧は書き写さない。
+表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0007` と `migrations/0008_rebuild_career_project_and_resume.sql` と `migrations/0009_add_status_to_career_and_project.sql` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。列の一覧は書き写さない。
 
 ## Contents
 
