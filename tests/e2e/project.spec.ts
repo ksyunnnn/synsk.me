@@ -109,7 +109,7 @@ test('秘匿化しない実績の識別子を書き換えると、新しい URL 
 
   await page.getByRole('textbox', { name: '識別子' }).fill('e2e-renamed-slug');
   await saveEdit(page);
-  expect(await readProjectPath(page)).toBe('/projects/e2e-renamed-slug');
+  await readProjectPath(page, '/projects/e2e-renamed-slug');
 
   const visitor = await openVisitor(browser);
   expect(await visit(visitor, '/projects/e2e-renamed-slug')).toBe(200);

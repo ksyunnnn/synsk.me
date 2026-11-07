@@ -103,13 +103,17 @@ export const fillProject = async (page: Page, input: Partial<ProjectInput>) => {
   await chooseSiteOptions(page, input);
 };
 
-/** 実績の編集の画面から、訪問者に見せるページの経路を読む */
-export const readProjectPath = async (page: Page) => {
-  const href = await page
-    .getByRole('link', { name: '訪問者に見せるページを開く' })
-    .getAttribute('href');
-  expect(href).toMatch(/^\/projects\/[a-z0-9-]+$/);
-  return href as string;
+/**
+ * 実績の編集の画面から、訪問者に見せるページの経路を読む。保存した後の画面は、Server Action の
+ * 応答より遅れて描き直される。`expected` に保存した後の経路を渡し、その経路になるまで待つ
+ */
+export const readProjectPath = async (
+  page: Page,
+  expected: string | RegExp = /^\/projects\/[a-z0-9-]+$/,
+) => {
+  const link = page.getByRole('link', { name: '訪問者に見せるページを開く' });
+  await expect(link).toHaveAttribute('href', expected);
+  return (await link.getAttribute('href')) as string;
 };
 
 /**
@@ -136,7 +140,10 @@ export const submitAndWait = async (page: Page, button: string) => {
   ]);
 };
 
-/** 編集の画面で保存し、保存できたことを確かめる */
+/**
+ * 編集の画面で保存し、保存できたことを確かめる。戻ったときには画面がまだ描き直されていない
+ * ことがある。保存した値を画面から読むときは、その値になるまで待つ assertion で読む
+ */
 export const saveEdit = async (page: Page) => {
   await submitAndWait(page, '保存する');
   await expect(page.getByRole('status')).toHaveText('保存しました');

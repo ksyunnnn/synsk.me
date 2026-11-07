@@ -86,8 +86,7 @@ test('秘匿化に切り替えると識別子が新しい uid になって古い
 
   await chooseSiteOptions(page, { isMasked: true });
   await saveEdit(page);
-  const maskedPath = await readProjectPath(page);
-  expect(maskedPath).toMatch(/^\/projects\/[0-9a-f-]{36}$/);
+  const maskedPath = await readProjectPath(page, /^\/projects\/[0-9a-f-]{36}$/);
   await expect(page.getByRole('textbox', { name: '識別子' })).toHaveAttribute('readonly', '');
   expect(await visit(visitor, '/projects/e2e-masking-switch')).toBe(404);
   expect(await visit(visitor, maskedPath)).toBe(200);
@@ -96,7 +95,9 @@ test('秘匿化に切り替えると識別子が新しい uid になって古い
 
   await chooseSiteOptions(page, { isMasked: false });
   await saveEdit(page);
-  expect(await readProjectPath(page)).toBe(maskedPath);
+  // 経路は保存の前後で変わらない。識別子が書き換えられるようになったことで、描き直しを待つ
+  await expect(page.getByRole('textbox', { name: '識別子' })).not.toHaveAttribute('readonly');
+  await readProjectPath(page, maskedPath);
   expect(await visit(visitor, maskedPath)).toBe(200);
   await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('E2E 切替の実際の題');
   await expect(visitor.getByText('E2E 切替の実際の組織')).toBeVisible();
