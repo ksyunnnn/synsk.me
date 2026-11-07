@@ -130,3 +130,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+/*
+ * 印刷（職務経歴書の「PDF で保存」。specs/002-resume/research.md の R11）。画面だけに出す要素は
+ * Tailwind の `print:hidden` で隠す。用紙の余白を決める
+ */
+@media print {
+  @page {
+    margin: 15mm;
+  }
+}

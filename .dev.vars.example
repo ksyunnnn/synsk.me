@@ -12,3 +12,7 @@ ACCESS_ISSUER=https://<team-name>.cloudflareaccess.com
 ACCESS_AUD=<application-audience-tag>
 # 作り手として認めるメールアドレス
 ACCESS_OWNER_EMAIL=<owner@example.com>
+
+# 職務経歴書のプロフィールに出すメールアドレス（specs/002-resume/research.md の R10）。
+# 空か無ければ、職務経歴書にメールアドレスを出さない
+RESUME_EMAIL=<resume@example.com>

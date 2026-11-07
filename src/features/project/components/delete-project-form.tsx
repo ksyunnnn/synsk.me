@@ -1,0 +1,43 @@
+'use client';
+
+import { useActionState } from 'react';
+import { PROJECT_ID_FIELD, type ProjectId } from '@/features/project/domain/project';
+
+/**
+ * 実績を削除する確認のフォーム。確認はダイアログにせず、このフォームを置いた画面で行う
+ * （specs/001-career-and-project/contracts/dash.md）。削除できたときは、Server Action が
+ * 一覧の画面へ移す。このファイルは `server/` を読み込まない（ADR-0026 の依存の向き 3）
+ */
+
+type DeleteProjectAction = (
+  state: { status: 'forbidden' } | null,
+  formData: FormData,
+) => Promise<{ status: 'forbidden' }>;
+
+export const DeleteProjectForm = ({
+  action,
+  projectId,
+}: {
+  action: DeleteProjectAction;
+  projectId: ProjectId;
+}) => {
+  const [result, formAction] = useActionState(action, null);
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name={PROJECT_ID_FIELD} value={projectId} />
+      {result?.status === 'forbidden' && (
+        <p role="alert" className="text-destructive">
+          作り手であることを確かめられませんでした。ログインし直してください
+        </p>
+      )}
+      <div>
+        <button
+          type="submit"
+          className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          削除する
+        </button>
+      </div>
+    </form>
+  );
+};
