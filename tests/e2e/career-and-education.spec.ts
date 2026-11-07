@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
+import { fillCareer } from './support/dash';
 
 /**
  * 入力は `getByRole` で探す。画面を移った後も、前の画面が隠れて DOM に残ることがある
@@ -13,17 +14,19 @@ import { actAsAuthor } from './support/author';
  * テストは同じ手元の D1 を並行して使う。名前は、ほかのテストと重ならない値にする。
  */
 
-const fillCareer = async (page: Page, organizationName: string, role: string) => {
-  await page.getByRole('textbox', { name: '組織名', exact: true }).fill(organizationName);
-  await page.getByRole('textbox', { name: '秘匿化した組織名' }).fill('E2E の会社');
-  await page.getByRole('textbox', { name: '肩書' }).fill(role);
-  await page.getByRole('textbox', { name: '始まりの日' }).fill('2020-04-01');
-};
+/** 登録の画面で、テストごとの組織名と肩書を入れる */
+const fillNewCareer = (page: Page, organizationName: string, role: string) =>
+  fillCareer(page, {
+    organizationName,
+    organizationNameMasked: 'E2E の会社',
+    role,
+    startedOn: '2020-04-01',
+  });
 
 test('職歴を登録・編集・削除できる', async ({ page, context }) => {
   await actAsAuthor(context);
   await page.goto('/dash/careers/new');
-  await fillCareer(page, 'E2E の作り物の組織 1', 'E2E の肩書');
+  await fillNewCareer(page, 'E2E の作り物の組織 1', 'E2E の肩書');
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
   await expect(page.getByRole('radio', { name: '秘匿化する', exact: true })).toBeChecked();
@@ -48,7 +51,7 @@ test('同じ職歴を 2 つのタブで開くと、後から保存した側は�
 }) => {
   await actAsAuthor(context);
   await page.goto('/dash/careers/new');
-  await fillCareer(page, 'E2E の作り物の組織 2', 'E2E の同時編集');
+  await fillNewCareer(page, 'E2E の作り物の組織 2', 'E2E の同時編集');
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
   const editUrl = page.url().replace(/\?.*$/, '');

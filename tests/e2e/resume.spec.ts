@@ -1,5 +1,11 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
+import {
+  createLimitedResume,
+  registerCareer,
+  registerEducation,
+  setResumeVisible,
+} from './support/dash';
 
 /**
  * 作り手としての職務経歴書の作成・編集・状態の切り替え・削除と、同じ職務経歴書を 2 つのタブで
@@ -11,36 +17,19 @@ import { actAsAuthor } from './support/author';
  * `getByRole` で探す（tests/e2e/career-and-education.spec.ts と同じ理由）
  */
 
-/** 写し元の職歴と学歴を、001 の管理画面で登録する */
+/** 写し元の職歴と学歴を、001 の管理画面で登録する。名前はどれも `tag` を含む */
 const registerSources = async (page: Page, tag: string) => {
-  await page.goto('/dash/careers/new');
-  await page
-    .getByRole('textbox', { name: '組織名', exact: true })
-    .fill(`E2E 職務経歴書の組織 ${tag}`);
-  await page.getByRole('textbox', { name: '秘匿化した組織名' }).fill('E2E の会社');
-  await page.getByRole('textbox', { name: '肩書' }).fill(`E2E 職務経歴書の肩書 ${tag}`);
-  await page.getByRole('textbox', { name: '始まりの日' }).fill('2020-04-01');
-  await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page.getByRole('status')).toHaveText('保存しました');
-
-  await page.goto('/dash/educations/new');
-  await page.getByRole('textbox', { name: '学校' }).fill(`E2E 職務経歴書の学校 ${tag}`);
-  await page.getByRole('textbox', { name: '始まりの日' }).fill('2014-04-01');
-  await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await registerCareer(page, {
+    organizationName: `E2E 職務経歴書の組織 ${tag}`,
+    organizationNameMasked: 'E2E の会社',
+    role: `E2E 職務経歴書の肩書 ${tag}`,
+  });
+  await registerEducation(page, `E2E 職務経歴書の学校 ${tag}`);
 };
 
-/** 作成の画面で作り、設定の画面へ移る。限定公開用の URL を返す */
-const createResume = async (page: Page, title: string) => {
-  await page.goto('/dash/resumes/new');
-  await page.getByRole('textbox', { name: '題' }).fill(title);
-  await page.getByRole('button', { name: '作る' }).click();
-  await expect(page.getByRole('status')).toHaveText('職務経歴書を作りました。状態は下書きです');
-  const url = await page.getByRole('textbox', { name: '限定公開用の URL' }).inputValue();
-  await page.getByRole('link', { name: '設定の画面へ' }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
-  return url;
-};
+/** `tag` を名前に含む職歴・学歴だけを選んで作る（tests/e2e/support/dash.ts の keepOnlySources） */
+const createResume = (page: Page, title: string, tag: string) =>
+  createLimitedResume(page, { title, keep: new RegExp(`E2E 職務経歴書の\\S+ ${tag}`) });
 
 test('作成の画面は、すべての職歴・実績・学歴を選んだ状態で始まり、外した行は載らない（キーボードだけで操作する）', async ({
   page,
@@ -56,9 +45,18 @@ test('作成の画面は、すべての職歴・実績・学歴を選んだ状�
   for (let i = 0; i < count; i += 1) await expect(checkboxes.nth(i)).toBeChecked();
   await expect(page.getByText('限定公開用で作ります')).toBeVisible();
 
-  // キーボードだけで、題を入れ、学歴を 1 件外し、作る
+  // キーボードだけで、題を入れ、学歴を 1 件外し、作る。ほかのテストの行も外す。ほかのテストが
+  // 並行して消す行を選んだまま送ると、作成が止まる（tests/e2e/support/dash.ts）
   await page.getByRole('textbox', { name: '題' }).focus();
   await page.keyboard.type('E2E の外す検査');
+  const others = page.getByRole('checkbox', {
+    checked: true,
+    name: /^(?!.*E2E 職務経歴書の\S+ 作成)/,
+  });
+  while ((await others.count()) > 0) {
+    await others.first().focus();
+    await page.keyboard.press('Space');
+  }
   const school = page.getByRole('checkbox', { name: 'E2E 職務経歴書の学校 作成' });
   await school.focus();
   await page.keyboard.press('Space');
@@ -82,7 +80,7 @@ test('写した行を直し、状態を切り替え、訪問者のページで�
 }) => {
   await actAsAuthor(context);
   await registerSources(page, '編集');
-  const url = await createResume(page, 'E2E の編集の検査');
+  const { url } = await createResume(page, 'E2E の編集の検査', '編集');
 
   // 写した職歴を直す（FR-031）
   await page.getByRole('link', { name: /E2E 職務経歴書の肩書 編集/ }).click();
@@ -100,8 +98,7 @@ test('写した行を直し、状態を切り替え、訪問者のページで�
   // 訪問者は、下書きのうちは読めない。見せる状態にすると読める
   const visitor = await browser.newPage();
   expect((await visitor.goto(url))?.status()).toBe(404);
-  await page.getByRole('button', { name: '訪問者に見せる' }).click();
-  await expect(page.getByText('状態: 訪問者に見せる')).toBeVisible();
+  await setResumeVisible(page, true);
   expect((await visitor.goto(url))?.status()).toBe(200);
   await expect(visitor.getByRole('heading', { name: 'E2E で直した組織名' })).toBeVisible();
   await visitor.close();
@@ -119,7 +116,7 @@ test('同じ職務経歴書を 2 つのタブで開くと、後から保存し�
 }) => {
   await actAsAuthor(context);
   await registerSources(page, '同時');
-  await createResume(page, 'E2E の同時編集');
+  await createResume(page, 'E2E の同時編集', '同時');
   const settingsUrl = page.url().replace(/\?.*$/, '');
 
   const other = await context.newPage();
