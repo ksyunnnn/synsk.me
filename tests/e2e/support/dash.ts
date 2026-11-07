@@ -180,30 +180,47 @@ export type LimitedResume = {
   settingsUrl: string;
 };
 
+export type LimitedResumeInput = { title: string; keep: RegExp; expires?: string };
+
 /**
- * 限定公開用の職務経歴書を、名前が `keep` に合う職歴・実績・学歴だけを選んで作り、設定の画面へ
- * 移る。`expires` は期限の入力（日本時間の `YYYY-MM-DDTHH:mm`）
+ * 限定公開用の職務経歴書を、名前が `keep` に合う職歴・実績・学歴だけを選んで作り、作成の画面に
+ * 留まる。作成の画面にだけ示された、鍵を含む URL を返す。`expires` は期限の入力（日本時間の
+ * `YYYY-MM-DDTHH:mm`）
  */
-export const createLimitedResume = async (
+export const submitLimitedResume = async (
   page: Page,
-  { title, keep, expires }: { title: string; keep: RegExp; expires?: string },
-): Promise<LimitedResume> => {
+  { title, keep, expires }: LimitedResumeInput,
+) => {
   await page.goto('/dash/resumes/new');
   await textbox(page, '題').fill(title);
   if (expires !== undefined) await textbox(page, '期限').fill(expires);
   await keepOnlySources(page, keep);
   await page.getByRole('button', { name: '作る' }).click();
-  await expect(page.getByRole('status')).toHaveText('職務経歴書を作りました。状態は下書きです');
-  const url = await textbox(page, '限定公開用の URL').inputValue();
+  await expect(page.getByRole('status')).toHaveText('職務経歴書を作りました。状態は非公開です');
+  return textbox(page, '限定公開用の URL').inputValue();
+};
+
+/** `submitLimitedResume` で作り、設定の画面へ移る */
+export const createLimitedResume = async (
+  page: Page,
+  input: LimitedResumeInput,
+): Promise<LimitedResume> => {
+  const { title } = input;
+  const url = await submitLimitedResume(page, input);
   await page.getByRole('link', { name: '設定の画面へ' }).click();
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
   return { url, settingsUrl: page.url().replace(/\?.*$/, '') };
 };
 
-/** 設定の画面で、下書きと訪問者に見せる状態を切り替える */
+/**
+ * 設定の画面か作成の画面で、公開と非公開を切り替える。作成の画面から移ると、
+ * 作成の画面の状態の表示が隠れて DOM に残るため、見えているものだけを調べる
+ */
 export const setResumeVisible = async (page: Page, visible: boolean) => {
-  await submitAndWait(page, visible ? '訪問者に見せる' : '下書きに戻す');
-  await expect(page.getByText(`状態: ${visible ? '訪問者に見せる' : '下書き'}`)).toBeVisible();
+  await submitAndWait(page, visible ? '公開する' : '非公開にする');
+  await expect(
+    page.getByText(visible ? '公開中' : '非公開', { exact: true }).filter({ visible: true }),
+  ).toBeVisible();
 };
 
 /** 設定の画面で期限を入れて保存する。空なら期限なし */

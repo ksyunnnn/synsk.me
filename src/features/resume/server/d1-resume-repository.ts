@@ -459,11 +459,11 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
             .bind(slug, override.skillName, override.months),
         );
       }
-      statements.push(db.prepare('SELECT id FROM resume WHERE slug = ?').bind(slug));
-      const results = await db.batch<{ id: number }>(statements);
-      const id = results.at(-1)?.results[0]?.id;
-      if (id === undefined) throw new Error('作った職務経歴書を読めなかった');
-      return { id };
+      statements.push(db.prepare('SELECT id, updated_at FROM resume WHERE slug = ?').bind(slug));
+      const results = await db.batch<{ id: number; updated_at: string }>(statements);
+      const row = results.at(-1)?.results[0];
+      if (row === undefined) throw new Error('作った職務経歴書を読めなかった');
+      return { id: row.id, updatedAt: row.updated_at };
     },
 
     list: async () => {

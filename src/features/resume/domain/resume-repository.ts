@@ -27,8 +27,8 @@ export type EditResult = { ok: true } | { ok: false; reason: 'conflict' | 'not-f
 export type ResumeRepository = {
   /** 写し元。`all` ならすべて、そうでなければ選んだ id だけ。始まりの日の新しい順 */
   readSources: (selection: ResumeSelection | 'all') => Promise<ResumeSources>;
-  /** `resume` と写した行を 1 回の `batch()` で入れる（research.md の R4） */
-  create: (resume: NewResume) => Promise<{ id: ResumeId }>;
+  /** `resume` と写した行を 1 回の `batch()` で入れる（research.md の R4）。更新日時は楽観ロックに使う */
+  create: (resume: NewResume) => Promise<{ id: ResumeId; updatedAt: string }>;
   /** 作り手の一覧。作った日時の新しい順 */
   list: () => Promise<Resume[]>;
   findForEdit: (id: ResumeId) => Promise<ResumeForEdit | null>;

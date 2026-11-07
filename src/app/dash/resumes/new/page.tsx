@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ResumeCreateForm } from '@/features/resume/components/resume-create-form';
-import { createResume } from '@/features/resume/server/actions';
+import { changeResumeStatusInPlace, createResume } from '@/features/resume/server/actions';
 import { listResumeSources } from '@/features/resume/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 import type { Period } from '@/shared/domain/period';
@@ -26,6 +26,7 @@ const Page = async () => {
       <h1 className="text-2xl font-bold">職務経歴書を作る</h1>
       <ResumeCreateForm
         action={createResume}
+        changeStatusAction={changeResumeStatusInPlace}
         careers={sources.careers.map((c) => ({
           id: c.id,
           label: `${c.organizationName}・${c.role}`,

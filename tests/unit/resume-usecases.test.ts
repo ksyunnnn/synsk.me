@@ -48,7 +48,7 @@ const OK = { ok: true } as const;
 
 const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   readSources: vi.fn<Repo['readSources']>(async () => sources),
-  create: vi.fn<Repo['create']>(async () => ({ id: 7 })),
+  create: vi.fn<Repo['create']>(async () => ({ id: 7, updatedAt: '2026-11-07T00:00:00.000Z' })),
   list: vi.fn<Repo['list']>(),
   findForEdit: vi.fn<Repo['findForEdit']>(),
   findLimitedIdForVisitor: vi.fn<Repo['findLimitedIdForVisitor']>(),

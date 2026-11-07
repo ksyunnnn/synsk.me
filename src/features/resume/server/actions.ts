@@ -15,7 +15,13 @@ import {
   editResumeSkillOverrides as editResumeSkillOverridesUseCase,
 } from '@/features/resume/application/edit-resume-rows';
 import { editResumeSettings as editResumeSettingsUseCase } from '@/features/resume/application/edit-resume-settings';
-import { parseResumeId, parseResumeRowId, type EditTimes } from '@/features/resume/domain/resume';
+import {
+  isResumeStatus,
+  parseResumeId,
+  parseResumeRowId,
+  type EditTimes,
+  type ResumeStatus,
+} from '@/features/resume/domain/resume';
 import {
   OPENED_UPDATED_AT_FIELD,
   OVERRIDE_MONTHS_FIELD,
@@ -101,6 +107,7 @@ export const createResume = async (
   return {
     status: 'created',
     id: outcome.id,
+    updatedAt: outcome.updatedAt,
     url: await limitedUrl(outcome.slug, outcome.key),
   };
 };
@@ -137,27 +144,49 @@ export const editResumeSettings = async (
   );
 };
 
-export type ResumeStatusResult = EditOutcome<{ status: string }, { status?: FieldError }>;
+export type ResumeStatusResult =
+  | EditOutcome<{ status: string }, { status?: FieldError }>
+  /** 移らずに切り替えた。画面に残す、切り替えた後の状態と更新日時 */
+  | { status: 'changed'; resumeStatus: ResumeStatus; updatedAt: string };
 
-/** 下書きか、訪問者に見せるかを切り替える */
+/** 状態を書き、書いた状態と更新日時を返す。保存できなければ `finish` と同じ形にする */
+const writeStatus = async (formData: FormData): Promise<ResumeStatusResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const id = readResumeId(formData);
+  const status = readString(formData, STATUS_FIELD);
+  const times = readTimes(formData);
+  const outcome = await changeResumeStatusUseCase(
+    await createResumeRepository(),
+    author,
+    id,
+    status,
+    times,
+  );
+  if (outcome.status === 'saved' && isResumeStatus(status)) {
+    return { status: 'changed', resumeStatus: status, updatedAt: times.now };
+  }
+  return finish(id, outcome);
+};
+
+/** 下書きか、訪問者に見せるかを切り替え、設定の画面へ移す */
 export const changeResumeStatus = async (
   _state: ResumeStatusResult | null,
   formData: FormData,
 ): Promise<ResumeStatusResult> => {
-  const author = await getCurrentAuthor();
-  if (!author) return { status: 'forbidden' };
-  const id = readResumeId(formData);
-  return finish(
-    id,
-    await changeResumeStatusUseCase(
-      await createResumeRepository(),
-      author,
-      id,
-      readString(formData, STATUS_FIELD),
-      readTimes(formData),
-    ),
-  );
+  const result = await writeStatus(formData);
+  if (result.status === 'changed') redirect(`/dash/resumes/${readResumeId(formData)}?saved=1`);
+  return result;
 };
+
+/**
+ * 下書きか、訪問者に見せるかを切り替え、同じ画面に留まる。作成の画面が使う。鍵を含む URL は
+ * その画面にだけ示すため、移ると URL が消える（research.md の R5）
+ */
+export const changeResumeStatusInPlace = async (
+  _state: ResumeStatusResult | null,
+  formData: FormData,
+): Promise<ResumeStatusResult> => writeStatus(formData);
 
 /** 写した行の id。読めなければ設定の画面へ移す */
 const readTarget = (formData: FormData) => {

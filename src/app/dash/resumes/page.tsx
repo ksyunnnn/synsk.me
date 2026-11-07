@@ -36,7 +36,7 @@ const Page = async ({ searchParams }: Props) => {
               <TextLink href={`/dash/resumes/${resume.id}`}>{resume.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 {resume.audience === 'limited' ? '限定公開用' : '公開用'}・
-                {resume.status === 'draft' ? '下書き' : '訪問者に見せる'}
+                {resume.status === 'draft' ? '非公開' : '公開中'}
                 {resume.audience === 'limited' &&
                   `・期限 ${formatExpires(resume.limitedExpiresAt)}${
                     isExpired(resume.limitedExpiresAt, now) ? '（過ぎています）' : ''

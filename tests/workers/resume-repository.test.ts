@@ -212,6 +212,11 @@ describe('create', () => {
     }
   });
 
+  it('作った職務経歴書の更新日時を返す（research.md の R8）', async () => {
+    const { id, updatedAt } = await resumes.create(await newResume());
+    expect((await resumes.findForEdit(id))?.updatedAt).toBe(updatedAt);
+  });
+
   it('limited_token_hash に渡したハッシュだけを持つ（FR-012）', async () => {
     const { id } = await resumes.create(await newResume({ limitedTokenHash: HASH }));
     const row = await env.DB.prepare('SELECT limited_token_hash FROM resume WHERE id = ?')

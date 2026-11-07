@@ -1,12 +1,13 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, type ComponentProps } from 'react';
 import {
   SELECTION_FIELDS,
   type CreateResumeError,
   type CreateResumeField,
   type CreateResumeFormResult,
 } from '@/features/resume/domain/resume-forms';
+import { ResumeStatusForm } from '@/features/resume/components/resume-status-form';
 import { CheckboxField, InputField } from '@/shared/components/field';
 import { TextLink } from '@/shared/components/text-link';
 
@@ -16,7 +17,8 @@ import { TextLink } from '@/shared/components/text-link';
  * Server Action は props で受け取り、`server/` を読み込まない（ADR-0026 の依存の向き 3）。
  *
  * 公開用の選択肢は tasks.md の Phase 7（US5）の T068 で足すまで出さず、限定公開用で作る。
- * 作れたら、鍵を含む URL をこの画面にだけ示す（research.md の R5）
+ * 作れたら、鍵を含む URL をこの画面にだけ示す（research.md の R5）。作った職務経歴書は下書きで、
+ * 下書きの間は URL が 404 になるため、URL の隣に状態の切り替えを置く
  */
 
 export type SourceOption = { id: number; label: string; detail: string };
@@ -26,6 +28,8 @@ type Props = {
     state: CreateResumeFormResult | null,
     formData: FormData,
   ) => Promise<CreateResumeFormResult>;
+  /** 作った後の状態の切り替え。移らずに同じ画面に留まり、URL を示したままにする */
+  changeStatusAction: ComponentProps<typeof ResumeStatusForm>['action'];
   careers: SourceOption[];
   projects: SourceOption[];
   educations: SourceOption[];
@@ -81,13 +85,19 @@ const SourceFieldset = ({
   </fieldset>
 );
 
-export const ResumeCreateForm = ({ action, careers, projects, educations }: Props) => {
+export const ResumeCreateForm = ({
+  action,
+  changeStatusAction,
+  careers,
+  projects,
+  educations,
+}: Props) => {
   const [result, formAction] = useActionState(action, null);
 
   if (result?.status === 'created') {
     return (
       <div className="flex flex-col gap-4">
-        <p role="status">職務経歴書を作りました。状態は下書きです</p>
+        <p role="status">職務経歴書を作りました。状態は非公開です</p>
         {result.url && (
           <>
             <InputField
@@ -96,6 +106,13 @@ export const ResumeCreateForm = ({ action, careers, projects, educations }: Prop
               hint="この URL はこの画面でだけ示します。あとから示せないため、控えてから移ってください"
               readOnly
               defaultValue={result.url}
+            />
+            <ResumeStatusForm
+              action={changeStatusAction}
+              status="draft"
+              draftNote="公開すると開けます"
+              resumeId={result.id}
+              updatedAt={result.updatedAt}
             />
           </>
         )}

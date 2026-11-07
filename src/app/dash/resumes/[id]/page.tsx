@@ -1,10 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ResumeOverview } from '@/features/resume/components/resume-overview';
-import {
-  ResumeSettingsForm,
-  ResumeStatusForm,
-} from '@/features/resume/components/resume-settings-form';
+import { ResumeSettingsForm } from '@/features/resume/components/resume-settings-form';
+import { ResumeStatusForm } from '@/features/resume/components/resume-status-form';
 import { formatExpires, isExpired, toExpiresInput } from '@/features/resume/domain/resume';
 import { changeResumeStatus, editResumeSettings } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';

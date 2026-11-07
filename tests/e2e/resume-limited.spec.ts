@@ -7,6 +7,7 @@ import {
   registerProject,
   setResumeExpires,
   setResumeVisible,
+  submitLimitedResume,
   visit,
 } from './support/dash';
 
@@ -92,6 +93,39 @@ test('下書きの間と、鍵が違う・鍵が無い URL では 404 で中身�
 
   await setResumeVisible(page, false);
   await expectNoContent(path);
+  await visitor.close();
+});
+
+test('作成の画面で公開すると、URL を示したまま、その URL が 200 で開く。非公開の間は URL に「公開すると開けます」と添える', async ({
+  page,
+  context,
+  browser,
+}) => {
+  await actAsAuthor(context);
+  await registerSourceCareer(page, '作成の画面');
+  const url = await submitLimitedResume(page, {
+    title: 'E2E 作成の画面の職務経歴書',
+    keep: keepOf('作成の画面'),
+  });
+  const path = new URL(url).pathname;
+  const note = page.getByText('公開すると開けます', { exact: true });
+  await expect(note).toBeVisible();
+  const visitor = await openVisitor(browser);
+  expect(await visit(visitor, path)).toBe(404);
+
+  await setResumeVisible(page, true);
+  await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveValue(url);
+  await expect(note).toHaveCount(0);
+  expect(await visit(visitor, path)).toBe(200);
+  await expect(
+    visitor.getByRole('heading', { name: 'E2E 限定公開の組織 作成の画面' }),
+  ).toBeVisible();
+
+  // 切り替えた後の更新日時で、続けて非公開にできる
+  await setResumeVisible(page, false);
+  await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveValue(url);
+  await expect(note).toBeVisible();
+  expect(await visit(visitor, path)).toBe(404);
   await visitor.close();
 });
 
