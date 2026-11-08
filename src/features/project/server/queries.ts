@@ -8,7 +8,7 @@ import { listProjects as listProjectsUseCase } from '@/features/project/applicat
 import type { Project, ProjectSummary, VisitorProject } from '@/features/project/domain/project';
 import { createD1ProjectRepository } from '@/features/project/server/d1-project-repository';
 import { requireAuthor } from '@/shared/server/author';
-import { parseUid } from '@/shared/domain/uid';
+import { findIdByUid } from '@/shared/domain/uid';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
@@ -43,14 +43,8 @@ export const listProjects = async (): Promise<ProjectSummary[]> => {
 export const getProjectForEdit = async (uid: string): Promise<Project | null> => {
   await requireAuthor();
   const { projects } = await createProjectDeps();
-  const id = await findProjectId(projects, uid);
+  const id = await findIdByUid(projects, uid);
   return id === null ? null : getProjectForEditUseCase(projects, id);
-};
-
-/** URL とフォームの uid が指す実績の id。形の違う値は D1 を読まずに null */
-export const findProjectId = async (projects: ProjectDeps['projects'], uid: string) => {
-  const parsed = parseUid(uid);
-  return parsed === null ? null : projects.findIdByUid(parsed);
 };
 
 /** 実績の入力でつなげるスキルの選択肢（FR-032）。作り手でなければ 403 */
@@ -69,4 +63,4 @@ export const hasProjectSlug = async (slug: string): Promise<boolean> =>
 
 /** 作り手が編集できる実績がある uid か。`getProjectForEdit` が null を返さない uid と一致する */
 export const hasProjectUid = async (uid: string): Promise<boolean> =>
-  (await findProjectId((await createProjectDeps()).projects, uid)) !== null;
+  (await findIdByUid((await createProjectDeps()).projects, uid)) !== null;

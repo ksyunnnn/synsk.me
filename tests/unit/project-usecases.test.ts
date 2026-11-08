@@ -61,7 +61,6 @@ const fakeProjects = (current: Project | null) =>
     edit: vi.fn(async () => ({ ok: true as const })),
     delete: vi.fn(async () => ({ ok: true })),
     hasSlug: vi.fn(),
-    hasId: vi.fn(),
     listSkillOptions: vi.fn(async () => []),
   }) satisfies ProjectRepository;
 

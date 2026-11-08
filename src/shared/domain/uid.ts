@@ -8,3 +8,15 @@ export type Uid = string;
 /** 32 文字の 16 進（英小文字）だけを通す。形の違う値は、D1 を読まずに無い行として扱う */
 export const parseUid = (value: string): Uid | null =>
   /^[0-9a-f]{32}$/.test(value) ? value : null;
+
+/**
+ * URL とフォームの uid が指す行の id。形の違う値は D1 を読まずに null。各機能の `queries.ts`
+ * と Server Action が、それぞれのリポジトリを渡して呼ぶ
+ */
+export const findIdByUid = async <Id>(
+  repository: { findIdByUid: (uid: Uid) => Promise<Id | null> },
+  value: string,
+): Promise<Id | null> => {
+  const uid = parseUid(value);
+  return uid === null ? null : repository.findIdByUid(uid);
+};

@@ -21,12 +21,9 @@ export const getVisitorLimitedResume = async (
 
 /**
  * 訪問者に見せたときの見た目（REQUIREMENTS.md の FR-13）。状態・期限に関わらず、訪問者向けと
- * 同じ DTO を作る。作り手の確認は呼ぶ側が読む前に行う。無い id なら null
+ * 同じ DTO を作る。作り手の確認と、id の職務経歴書があるかの確認は、呼ぶ側が読む前に行う
  */
 export const getResumePreview = async (
   resumes: ResumeRepository,
   { id, profile, now }: { id: ResumeId; profile: Profile; now: Date },
-): Promise<VisitorResume | null> => {
-  if (!(await resumes.hasId(id))) return null;
-  return toLimitedVisitorResume(await resumes.readContent(id), profile, now);
-};
+): Promise<VisitorResume> => toLimitedVisitorResume(await resumes.readContent(id), profile, now);

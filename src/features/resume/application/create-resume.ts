@@ -1,4 +1,10 @@
-import { buildResumeContent, hasAllSources } from '@/features/resume/domain/build-resume';
+import {
+  buildResumeContent,
+  countCopiedRows,
+  countSelected,
+  hasAllSources,
+  MAX_COPIED_ROWS,
+} from '@/features/resume/domain/build-resume';
 import {
   newResumeSlug,
   parseExpiresInput,
@@ -39,7 +45,7 @@ const parseIds = (values: string[]) => values.map(parseResumeId);
  * 何も読まず何も書かない（FR-033）。読む → 計算 → 書くの順（docs/SOFTWARE_DESIGN.md）。
  *
  * 1 件も選ばずに作れるかは plan.md の U12 で決まっていないため、拒まない。公開用は tasks.md の
- * Phase 7（US5）で足すまで拒む
+ * Phase 7（US5）で足すまで拒む。写す行が上限を超えたら作らずに知らせる（research.md の R15）
  */
 export const createResume = async (
   resumes: ResumeRepository,
@@ -75,6 +81,9 @@ export const createResume = async (
     return { status: 'invalid', errors, values };
   }
   const selection = ids as ResumeSelection;
+  if (countSelected(selection) > MAX_COPIED_ROWS) {
+    return { status: 'invalid', errors: { selection: 'too-many' }, values };
+  }
 
   // 読む: 選んだ写し元。開いた後に消えた行があれば作らない
   const sources = await resumes.readSources(selection);
@@ -85,6 +94,9 @@ export const createResume = async (
   // 計算: 写す行と識別子
   const built = buildResumeContent(sources, selection, audience);
   if (!built.ok) return { status: 'invalid', errors: { audience: built.reason }, values };
+  if (countCopiedRows(built.content) > MAX_COPIED_ROWS) {
+    return { status: 'invalid', errors: { selection: 'too-many' }, values };
+  }
   const slug = newResumeSlug();
 
   // 書く

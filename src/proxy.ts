@@ -3,7 +3,11 @@ import { hasCareerUid } from '@/features/career/server/queries';
 import { hasEducationUid } from '@/features/education/server/queries';
 import { hasOrganizationUid } from '@/features/organization/server/queries';
 import { hasProjectSlug, hasProjectUid } from '@/features/project/server/queries';
-import { hasResumeRow, hasResumeUid, hasVisitorResume } from '@/features/resume/server/queries';
+import {
+  findMissingResumeRow,
+  hasResumeUid,
+  hasVisitorResume,
+} from '@/features/resume/server/queries';
 import { hasSkillUid } from '@/features/skill/server/queries';
 import { getAuthorFromHeaders } from '@/shared/server/author';
 
@@ -83,7 +87,6 @@ const decide = async (request: NextRequest): Promise<string | null> => {
   const [, collection, uid, action, rowUid, rowAction] = segments;
   const exists = collection === undefined ? undefined : DASH_ROW_EXISTS[collection];
   if (!isRead || !exists || !uid || uid === 'new' || action === 'missing') return null;
-  if (!(await exists(uid))) return `/dash/${collection}/${uid}/missing`;
   if (
     collection === 'resumes' &&
     RESUME_ROW_KINDS.has(action) &&
@@ -91,11 +94,12 @@ const decide = async (request: NextRequest): Promise<string | null> => {
     rowUid !== 'new' &&
     rowAction !== 'missing'
   ) {
-    return (await hasResumeRow(uid, action, rowUid))
-      ? null
-      : `/dash/resumes/${uid}/${action}/${rowUid}/missing`;
+    // 職務経歴書と行の有無を 1 回で確かめる。職務経歴書の id を D1 から 2 回引かない
+    const missing = await findMissingResumeRow(uid, action, rowUid);
+    if (missing === 'resume') return `/dash/resumes/${uid}/missing`;
+    return missing === 'row' ? `/dash/resumes/${uid}/${action}/${rowUid}/missing` : null;
   }
-  return null;
+  return (await exists(uid)) ? null : `/dash/${collection}/${uid}/missing`;
 };
 
 /**

@@ -711,8 +711,5 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
       ]);
       return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
     },
-
-    hasId: async (id) =>
-      (await db.prepare('SELECT 1 AS found FROM resume WHERE id = ?').bind(id).first()) !== null,
   };
 };

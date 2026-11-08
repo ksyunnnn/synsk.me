@@ -1,4 +1,5 @@
 import type { ActionResult } from '@/shared/domain/action-result';
+import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import type { Uid } from '@/shared/domain/uid';
 
@@ -35,8 +36,6 @@ export type EducationFormResult = ActionResult<EducationField, EducationFieldErr
 
 export const EDUCATION_UID_FIELD = 'educationUid';
 
-const emptyToNull = (value: string) => (value.trim() === '' ? null : value.trim());
-
 /** フォームの値を保存する内容に読み替える。学部・終わりの日・備考は空にできる（FR-036） */
 export const parseEducationContent = (
   values: EducationFormValues,
@@ -57,7 +56,7 @@ export const parseEducationContent = (
     ok: true,
     content: {
       school: values.school.trim(),
-      department: emptyToNull(values.department),
+      department: emptyToNull(values.department)?.trim() ?? null,
       period: period.period,
       remarks: emptyToNull(values.remarks.replace(/\r\n?/g, '\n')),
     },

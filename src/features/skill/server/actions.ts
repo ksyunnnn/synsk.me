@@ -12,7 +12,8 @@ import {
   type SkillFormResult,
   type SkillFormValues,
 } from '@/features/skill/domain/skill';
-import { createSkillRepository, findSkillId } from '@/features/skill/server/queries';
+import { createSkillRepository } from '@/features/skill/server/queries';
+import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -50,7 +51,7 @@ export const editSkill = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const skills = await createSkillRepository();
-  const id = await findSkillId(skills, readString(formData, SKILL_UID_FIELD));
+  const id = await findIdByUid(skills, readString(formData, SKILL_UID_FIELD));
   if (id === null) redirect('/dash/skills');
   const outcome = await editSkillUseCase(skills, author, id, readValues(formData));
   if (outcome.status === 'saved') redirect('/dash/skills?saved=1');
@@ -65,7 +66,7 @@ export const deleteSkill = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const skills = await createSkillRepository();
-  const id = await findSkillId(skills, readString(formData, SKILL_UID_FIELD));
+  const id = await findIdByUid(skills, readString(formData, SKILL_UID_FIELD));
   if (id === null) redirect('/dash/skills');
   const outcome = await deleteSkillUseCase(skills, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };

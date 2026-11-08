@@ -47,7 +47,8 @@ vi.mock('@/features/education/server/queries', () => ({ hasEducationUid: rows.ha
 const resumes = vi.hoisted(() => ({
   hasVisitorResume: vi.fn<(slug: string) => Promise<boolean>>(),
   hasResumeUid: vi.fn<(uid: string) => Promise<boolean>>(),
-  hasResumeRow: vi.fn<(uid: string, kind: string, rowUid: string) => Promise<boolean>>(),
+  findMissingResumeRow:
+    vi.fn<(uid: string, kind: string, rowUid: string) => Promise<'resume' | 'row' | null>>(),
 }));
 vi.mock('@/features/resume/server/queries', () => resumes);
 
@@ -74,7 +75,9 @@ beforeEach(() => {
   projects.hasProjectSlug.mockResolvedValue(true);
   projects.hasProjectUid.mockResolvedValue(true);
   for (const has of Object.values(rows)) has.mockResolvedValue(true);
-  for (const has of Object.values(resumes)) has.mockResolvedValue(true);
+  resumes.hasVisitorResume.mockResolvedValue(true);
+  resumes.hasResumeUid.mockResolvedValue(true);
+  resumes.findMissingResumeRow.mockResolvedValue(null);
 });
 
 describe('対象の経路', () => {
@@ -279,20 +282,26 @@ describe('/dash/resumes/{uid}/<種類>/{rowUid}（specs/002-resume/contracts/das
   });
 
   it('無い職務経歴書は、職務経歴書の 404 の画面へ rewrite する', async () => {
-    resumes.hasResumeUid.mockResolvedValue(false);
+    resumes.findMissingResumeRow.mockResolvedValue('resume');
     expect(await rewrittenPath(`/dash/resumes/${UID}/careers/${ROW_UID}`)).toBe(
       `/dash/resumes/${UID}/missing`,
     );
   });
 
+  it('職務経歴書の有無を、行の有無と別に問い合わせない', async () => {
+    await rewrittenPath(`/dash/resumes/${UID}/careers/${ROW_UID}`);
+    expect(resumes.hasResumeUid).not.toHaveBeenCalled();
+    expect(resumes.findMissingResumeRow).toHaveBeenCalledTimes(1);
+  });
+
   it.each(['careers', 'projects', 'educations'])(
     '無い %s の行は、行の 404 の画面へ rewrite する',
     async (kind) => {
-      resumes.hasResumeRow.mockResolvedValue(false);
+      resumes.findMissingResumeRow.mockResolvedValue('row');
       expect(await rewrittenPath(`/dash/resumes/${UID}/${kind}/${ROW_UID}`)).toBe(
         `/dash/resumes/${UID}/${kind}/${ROW_UID}/missing`,
       );
-      expect(resumes.hasResumeRow).toHaveBeenCalledWith(UID, kind, ROW_UID);
+      expect(resumes.findMissingResumeRow).toHaveBeenCalledWith(UID, kind, ROW_UID);
     },
   );
 
@@ -308,9 +317,9 @@ describe('/dash/resumes/{uid}/<種類>/{rowUid}（specs/002-resume/contracts/das
     `/dash/resumes/${UID}/projects/new`,
     `/dash/resumes/${UID}/educations/new`,
   ])('%s は行の有無を見ない', async (path) => {
-    resumes.hasResumeRow.mockResolvedValue(false);
+    resumes.findMissingResumeRow.mockResolvedValue('row');
     expect(await rewrittenPath(path)).toBeNull();
-    expect(resumes.hasResumeRow).not.toHaveBeenCalled();
+    expect(resumes.findMissingResumeRow).not.toHaveBeenCalled();
   });
 
   it('無い職務経歴書の uid は 404 の画面へ rewrite する', async () => {

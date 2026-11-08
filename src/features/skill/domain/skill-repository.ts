@@ -25,5 +25,4 @@ export type SkillRepository = {
   ) => Promise<{ ok: true } | { ok: false; reason: 'name-taken' | 'not-found' }>;
   /** 実績とのつながりを先に消してから消す（research.md の R8） */
   delete: (id: SkillId) => Promise<{ ok: boolean }>;
-  hasId: (id: SkillId) => Promise<boolean>;
 };

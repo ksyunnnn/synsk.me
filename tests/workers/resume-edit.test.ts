@@ -396,7 +396,7 @@ describe('URL の出し直し（FR-040）', () => {
 describe('削除（research.md の R9）', () => {
   it('子の行から消し、ほかの職務経歴書と写し元は残る', async () => {
     expect(await resumes.delete(target.id)).toEqual({ ok: true });
-    expect(await resumes.hasId(target.id)).toBe(false);
+    expect(await resumes.findForEdit(target.id)).toBeNull();
     for (const table of ['resume_career', 'resume_project', 'resume_education']) {
       const row = await env.DB.prepare(`SELECT count(*) AS n FROM ${table} WHERE resume_id = ?`)
         .bind(target.id)
@@ -407,7 +407,7 @@ describe('削除（research.md の R9）', () => {
       n: number;
     }>();
     expect(skills?.n).toBe(0);
-    expect(await resumes.hasId(other.id)).toBe(true);
+    expect(await resumes.findForEdit(other.id)).not.toBeNull();
     const career = await env.DB.prepare('SELECT count(*) AS n FROM career').first<{ n: number }>();
     expect(career?.n).toBe(1);
   });

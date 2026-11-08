@@ -6,7 +6,7 @@ import { listCareers as listCareersUseCase } from '@/features/career/application
 import type { Career, CareerSummary } from '@/features/career/domain/career';
 import { createD1CareerRepository } from '@/features/career/server/d1-career-repository';
 import { requireAuthor } from '@/shared/server/author';
-import { parseUid } from '@/shared/domain/uid';
+import { findIdByUid } from '@/shared/domain/uid';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
@@ -30,16 +30,10 @@ export const listCareers = async (): Promise<CareerSummary[]> => {
 export const getCareerForEdit = async (uid: string): Promise<Career | null> => {
   await requireAuthor();
   const { careers } = await createCareerDeps();
-  const id = await findCareerId(careers, uid);
+  const id = await findIdByUid(careers, uid);
   return id === null ? null : getCareerForEditUseCase(careers, id);
-};
-
-/** URL とフォームの uid が指す職歴の id。形の違う値は D1 を読まずに null */
-export const findCareerId = async (careers: CareerDeps['careers'], uid: string) => {
-  const parsed = parseUid(uid);
-  return parsed === null ? null : careers.findIdByUid(parsed);
 };
 
 /** `src/proxy.ts` が呼ぶ。職歴がある uid か */
 export const hasCareerUid = async (uid: string): Promise<boolean> =>
-  (await findCareerId((await createCareerDeps()).careers, uid)) !== null;
+  (await findIdByUid((await createCareerDeps()).careers, uid)) !== null;

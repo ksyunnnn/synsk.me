@@ -19,7 +19,7 @@ import {
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
 import { createD1ResumeRepository } from '@/features/resume/server/d1-resume-repository';
-import { parseUid } from '@/shared/domain/uid';
+import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
 
@@ -46,12 +46,6 @@ export const listResumeSources = async (): Promise<ResumeSources> => {
   return listResumeSourcesUseCase(await createResumeRepository());
 };
 
-/** URL とフォームの uid が指す職務経歴書の id。形の違う値は D1 を読まずに null */
-export const findResumeId = async (resumes: ResumeRepository, uid: string) => {
-  const parsed = parseUid(uid);
-  return parsed === null ? null : resumes.findIdByUid(parsed);
-};
-
 /**
  * URL とフォームの uid が指す写した行の id。`kind` は経路の名前（careers・projects・educations）。
  * 行が無いか、その職務経歴書に属さなければ null
@@ -72,7 +66,7 @@ export const findResumeRowId = async (
 export const getResumeForEdit = async (uid: string): Promise<ResumeForEdit | null> => {
   await requireAuthor();
   const resumes = await createResumeRepository();
-  const id = await findResumeId(resumes, uid);
+  const id = await findIdByUid(resumes, uid);
   return id === null ? null : getResumeForEditUseCase(resumes, id);
 };
 
@@ -90,7 +84,7 @@ export const limitedResumeUrl = async (slug: string): Promise<string> => {
 export const getResumePreview = async (uid: string): Promise<VisitorResume | null> => {
   await requireAuthor();
   const resumes = await createResumeRepository();
-  const id = await findResumeId(resumes, uid);
+  const id = await findIdByUid(resumes, uid);
   return id === null
     ? null
     : getResumePreviewUseCase(resumes, { id, profile: await readProfile(), now: new Date() });
@@ -120,11 +114,20 @@ export const hasVisitorResume = async (slug: string): Promise<boolean> =>
 
 /** 作り手が編集できる職務経歴書がある uid か */
 export const hasResumeUid = async (uid: string): Promise<boolean> =>
-  (await findResumeId(await createResumeRepository(), uid)) !== null;
+  (await findIdByUid(await createResumeRepository(), uid)) !== null;
 
-/** 職務経歴書に属する写した行がある uid か。`kind` は経路の名前（careers・projects・educations） */
-export const hasResumeRow = async (uid: string, kind: string, rowUid: string): Promise<boolean> => {
+/**
+ * 写した行の画面の URL が指すもののうち、無いもの。職務経歴書が無ければ `resume`、職務経歴書に
+ * 属する写した行が無ければ `row`、どちらもあれば null。`kind` は経路の名前（careers・projects・
+ * educations）。職務経歴書の id は 1 回だけ引く
+ */
+export const findMissingResumeRow = async (
+  uid: string,
+  kind: string,
+  rowUid: string,
+): Promise<'resume' | 'row' | null> => {
   const resumes = await createResumeRepository();
-  const id = await findResumeId(resumes, uid);
-  return id !== null && (await findResumeRowId(resumes, id, kind, rowUid)) !== null;
+  const id = await findIdByUid(resumes, uid);
+  if (id === null) return 'resume';
+  return (await findResumeRowId(resumes, id, kind, rowUid)) === null ? 'row' : null;
 };

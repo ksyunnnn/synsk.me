@@ -13,7 +13,8 @@ import {
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
-import { createProjectDeps, findProjectId } from '@/features/project/server/queries';
+import { createProjectDeps } from '@/features/project/server/queries';
+import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -67,7 +68,7 @@ export const editProject = async (
   if (!author) return { status: 'forbidden' };
   const deps = await createProjectDeps();
   const uid = readString(formData, PROJECT_UID_FIELD);
-  const id = await findProjectId(deps.projects, uid);
+  const id = await findIdByUid(deps.projects, uid);
   if (id === null) redirect('/dash/projects');
 
   const outcome = await editProjectUseCase(deps, author, id, readValues(formData), {
@@ -87,7 +88,7 @@ export const deleteProject = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { projects } = await createProjectDeps();
-  const id = await findProjectId(projects, readString(formData, PROJECT_UID_FIELD));
+  const id = await findIdByUid(projects, readString(formData, PROJECT_UID_FIELD));
   if (id === null) redirect('/dash/projects');
 
   const outcome = await deleteProjectUseCase(projects, author, id);
