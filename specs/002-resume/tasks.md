@@ -77,7 +77,7 @@ description: "職務経歴書の実装タスク"
 - [X] T010 D1 の実装の骨組み（行の型と domain の型への詰め替え、id と写した行の有無）を src/features/resume/server/d1-resume-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
 - [X] T011 組み立て用の関数の骨組み（`hasResumeId`・`hasResumeRow`）を src/features/resume/server/queries.ts に作る
 - [X] T012 src/app/dash/page.tsx に職務経歴書の一覧（`/dash/resumes`）へのリンクを足す
-- [X] T013 src/proxy.ts の `DASH_ROW_EXISTS` に `resumes` を足し、`/dash/resumes/{id}` と `/dash/resumes/{id}/{careers,projects,educations}/{rowId}` の有無で 404 の rewrite を足す。tests/unit/proxy.test.ts に確かめを足す（contracts/dash.md の共通）。001 の T034 の後に行う
+- [X] T013 src/proxy.ts の `DASH_ROW_EXISTS` に `resumes` を足し、`/dash/resumes/{uid}` と `/dash/resumes/{uid}/{careers,projects,educations}/{rowUid}` の有無で 404 の rewrite を足す。tests/unit/proxy.test.ts に確かめを足す（contracts/dash.md の共通）。001 の T034 の後に行う
 
 **Checkpoint**: Phase 1 と 2 が終われば、User Story を始められる
 
@@ -113,13 +113,13 @@ description: "職務経歴書の実装タスク"
 
 ## Phase 4: User Story 2 - 限定公開用を提出先に渡す (Priority: P1)
 
-**Goal**: URL を知る人が、訪問者に見せる状態で期限の前の限定公開用を読み、ブラウザの印刷機能で PDF に保存する。条件に合わなければ中身を返さない
+**Goal**: URL を知る人が、公開中で期限の前の限定公開用を読み、ブラウザの印刷機能で PDF に保存する。条件に合わなければ中身を返さない
 
-**Independent Test**: 秘匿化した作り物の実績を載せた限定公開用を訪問者に見せる状態にし、ログインせずに URL を開いて実際の題と組織名が出ること。識別子が違う・出し直す前・期限切れ・下書きの URL が 404
+**Independent Test**: 秘匿化した作り物の実績を載せた限定公開用を公開し、ログインせずに URL を開いて実際の題と組織名が出ること。識別子が違う・出し直す前・期限切れ・非公開の URL が 404
 
 ### Tests for User Story 2
 
-- [X] T026 [P] [US2] 訪問者向けの取り出し（識別子が合い、訪問者に見せる状態で期限の前か期限が無いときだけ返す、下書き・期限切れ・違う識別子・公開用の識別子で返さない）を tests/workers/resume-repository.test.ts で確かめる（FR-011・FR-013・FR-014・FR-022・FR-023、research.md の R6）
+- [X] T026 [P] [US2] 訪問者向けの取り出し（識別子が合い、公開中で期限の前か期限が無いときだけ返す、非公開・期限切れ・違う識別子・公開用の識別子で返さない）を tests/workers/resume-repository.test.ts で確かめる（FR-011・FR-013・FR-014・FR-022・FR-023、research.md の R6）
 - [X] T027 [P] [US2] tests/unit/proxy.test.ts に、条件に合わない `/resume/{slug}` を `/resume/{slug}/missing` へ rewrite すること、`/resume/{slug}` とその下の経路のすべての応答（200・404・判定できないとき）に `Cache-Control: no-store, must-revalidate`・`X-Robots-Tag: noindex`・`Referrer-Policy: no-referrer` を付けることを足す（FR-015、research.md の R7）
 - [X] T028 [P] [US2] 限定公開用の 4 つの状態の応答が 404 で写した値を含まないこと、200 の応答に秘匿化した写し元の実際の題・組織名・本文が出ること、すべての応答が 3 つのヘッダを持つこと、期限を過ぎた後に期限を延ばすと同じ URL が 200 になること、JWT のない `changeResumeStatus`・`editResumeSettings` が D1 を変えないことを tests/integration/resume-limited.test.ts で確かめる（SC-003・SC-004・SC-005・FR-010・FR-033、User Story 2 の 1〜6）
 
@@ -190,7 +190,7 @@ description: "職務経歴書の実装タスク"
 - [X] T057 [P] [US4] 上書きの入力（スキルごとに年と月、または空）を src/features/resume/components/resume-skill-overrides-form.tsx に作る
 - [X] T058 [US4] 管理画面のページを src/app/dash/resumes/[id]/careers/[rowId]/page.tsx・projects/[rowId]/page.tsx・educations/[rowId]/page.tsx（それぞれ missing/page.tsx も）・[id]/skills/page.tsx・[id]/delete/page.tsx に作る
 - [X] T059 [US4] 訪問者に見せたときの見た目の画面を src/app/dash/resumes/[id]/preview/page.tsx に作る。訪問者向けと同じ DTO と visitor-resume.tsx で描き、状態・期限に関わらず出す（REQUIREMENTS.md の FR-13）
-- [X] T060 [P] [US4] オーナーとして見た目の画面が下書きの職務経歴書でも出ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-13）
+- [X] T060 [P] [US4] オーナーとして見た目の画面が非公開の職務経歴書でも出ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-13）
 - [ ] T061 [US4] 写した行の編集の画面に、入力中の内容を保持する部品（src/shared/components/draft-retention.tsx）を使い、保存せずに再読み込みしても入力が残ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-14）。001 の T072 の後に行う
 
 **Checkpoint**: User Story 1〜4 が単独で動く
@@ -201,7 +201,7 @@ description: "職務経歴書の実装タスク"
 
 **Goal**: 公開用を 1 つ作り、訪問者が `/resume/{slug}` で読み、ブラウザの印刷機能で PDF に保存する。秘匿化した職歴・実績は秘匿化した値で出し、隠す値を応答に含めない
 
-**Independent Test**: 秘匿化した実績と秘匿化しない実績を 1 件ずつ載せた公開用を訪問者に見せる状態にし、応答に秘匿化した実績の実際の題・組織名・本文が無いこと、秘匿化しない実績が実際の値で出ること
+**Independent Test**: 秘匿化した実績と秘匿化しない実績を 1 件ずつ載せた公開用を公開し、応答に秘匿化した実績の実際の題・組織名・本文が無いこと、秘匿化しない実績が実際の値で出ること
 
 秘匿化した行は、migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` で見分ける（plan.md の U2）。
 
@@ -209,7 +209,7 @@ description: "職務経歴書の実装タスク"
 
 - [ ] T062 [P] [US5] 公開用の写し方（秘匿化しない行は実際の値、秘匿化した行は秘匿化した組織名と題で `description`・`url` を写さない、秘匿化した組織名が無ければ作らない、サイトに載せない行は写さない）を tests/unit/build-resume.test.ts に足す（FR-008・FR-016・SC-007、research.md の R4）
 - [ ] T063 [P] [US5] 2 つ目の公開用を保存の前に拒むこと、公開用の識別子を書き換えられること、訪問者向けの取り出しが秘匿化した行の `description`・`url` を返さないことを tests/workers/resume-public.test.ts で確かめる（FR-019・FR-039・FR-017）
-- [ ] T064 [P] [US5] 公開用のページの HTML と RSC の応答（`<title>`・OGP を含む）に、秘匿化した写し元の実際の組織名・題・本文・画像・関連 URL が 0 件であること、オーナーが職務経歴書の中で秘匿化した行に本文を書き足しても出ないこと、秘匿化しない行が実際の値で出ること、下書きの公開用が 404 であることを tests/integration/resume-public.test.ts で確かめる（SC-002・FR-017・FR-018・FR-022・FR-031、User Story 5 の 1〜4）
+- [ ] T064 [P] [US5] 公開用のページの HTML と RSC の応答（`<title>`・OGP を含む）に、秘匿化した写し元の実際の組織名・題・本文・画像・関連 URL が 0 件であること、オーナーが職務経歴書の中で秘匿化した行に本文を書き足しても出ないこと、秘匿化しない行が実際の値で出ること、非公開の公開用が 404 であることを tests/integration/resume-public.test.ts で確かめる（SC-002・FR-017・FR-018・FR-022・FR-031、User Story 5 の 1〜4）
 - [ ] T065 [P] [US5] 公開用のページの応答が「PDF で保存」のボタンを持ち、印刷するページに T064 の値が 0 件であることを tests/integration/resume-public.test.ts に足す（User Story 5 の 5）
 
 ### Implementation for User Story 5
@@ -323,7 +323,7 @@ T020 → T021 → T022、T023・T024 は並べる → T025
 1. Phase 1・2
 2. Phase 3（US1）で、限定公開用を作って管理画面で見る
 3. Phase 4（US2）を足す。PDF はブラウザの印刷機能で作る（research.md の R11）
-4. Phase 5（US3）で、元を直しても変わらないことを確かめる。US1〜US3 を終えるまで main にマージしない（訪問者に見せる状態の限定公開用が、写した値で出ることを確かめてから出す）
+4. Phase 5（US3）で、元を直しても変わらないことを確かめる。US1〜US3 を終えるまで main にマージしない（公開中の限定公開用が、写した値で出ることを確かめてから出す）
 
 ### Incremental Delivery
 
