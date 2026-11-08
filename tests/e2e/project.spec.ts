@@ -197,60 +197,54 @@ test('同じ実績を 2 つのタブで開くと、後から保存した側は�
   );
 });
 
-test.describe('キーボードだけの操作', () => {
-  // 日付の入力の年・月・日の並びはロケールで変わる。CI の既定（en-US）では月が先に来る
-  test.use({ locale: 'ja-JP' });
+test('キーボードだけで、実績を登録・編集・削除できる（constitution V）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const type = async (name: string, value: string) => {
+    await page.getByRole('textbox', { name, exact: true }).focus();
+    await page.keyboard.press('ControlOrMeta+A');
+    await page.keyboard.type(value);
+  };
 
-  test('キーボードだけで、実績を登録・編集・削除できる（constitution V）', async ({
-    page,
-    context,
-  }) => {
-    await actAsAuthor(context);
-    const type = async (name: string, value: string) => {
-      await page.getByRole('textbox', { name, exact: true }).focus();
-      await page.keyboard.press('ControlOrMeta+A');
-      await page.keyboard.type(value);
-    };
+  // 登録: 入力へフォーカスを移し、文字の入力と矢印キーで選び、Enter で送る
+  await page.goto('/dash/projects/new');
+  await organizationNameInput(page).focus();
+  await page.keyboard.type('E2E キーボードの組織 操作');
+  await type('秘匿化した組織名', 'E2E キーボードの秘匿化した組織 操作');
+  await type('題', 'E2E キーボードの題 操作');
+  await type('秘匿化した題', 'E2E キーボードの秘匿化した題 操作');
+  // 日付はネイティブの <input type="date"> で、キーボードの操作はブラウザが持つ。
+  // 年・月・日の欄の並びは OS のロケールで変わり（CI の Linux では月が先）、
+  // Playwright の locale では変わらないため、値は fill で入れる
+  await page.getByRole('textbox', { name: '始まりの日', exact: true }).fill('2021-04-01');
+  await expect(page.getByRole('textbox', { name: '始まりの日', exact: true })).toHaveValue(
+    '2021-04-01',
+  );
+  await page.getByRole('radio', { name: 'サイトに載せない', exact: true }).focus();
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
+  await page.getByRole('button', { name: '登録する' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('保存しました');
 
-    // 登録: 入力へフォーカスを移し、文字の入力と矢印キーで選び、Enter で送る
-    await page.goto('/dash/projects/new');
-    await organizationNameInput(page).focus();
-    await page.keyboard.type('E2E キーボードの組織 操作');
-    await type('秘匿化した組織名', 'E2E キーボードの秘匿化した組織 操作');
-    await type('題', 'E2E キーボードの題 操作');
-    await type('秘匿化した題', 'E2E キーボードの秘匿化した題 操作');
-    // 日付の入力は年・月・日の欄を Tab で移る
-    await page.getByRole('textbox', { name: '始まりの日', exact: true }).focus();
-    await page.keyboard.type('2021');
-    await page.keyboard.press('Tab');
-    await page.keyboard.type('0401');
-    await expect(page.getByRole('textbox', { name: '始まりの日', exact: true })).toHaveValue(
-      '2021-04-01',
-    );
-    await page.getByRole('radio', { name: 'サイトに載せない', exact: true }).focus();
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
-    await page.getByRole('button', { name: '登録する' }).focus();
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('status')).toHaveText('保存しました');
+  // 編集
+  await type('題', 'E2E キーボードで直した題 操作');
+  await page.getByRole('button', { name: '保存する' }).focus();
+  await Promise.all([
+    page.waitForResponse((res) => res.request().method() === 'POST'),
+    page.keyboard.press('Enter'),
+  ]);
+  await expect(page.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
+    'E2E キーボードで直した題 操作',
+  );
 
-    // 編集
-    await type('題', 'E2E キーボードで直した題 操作');
-    await page.getByRole('button', { name: '保存する' }).focus();
-    await Promise.all([
-      page.waitForResponse((res) => res.request().method() === 'POST'),
-      page.keyboard.press('Enter'),
-    ]);
-    await expect(page.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
-      'E2E キーボードで直した題 操作',
-    );
-
-    // 削除: リンクとボタンを Enter で押す
-    await page.getByRole('link', { name: 'この実績を削除する' }).focus();
-    await page.keyboard.press('Enter');
-    await page.getByRole('button', { name: '削除する' }).focus();
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('status')).toHaveText('実績を削除しました');
-    await expect(page.getByRole('link', { name: 'E2E キーボードで直した題 操作' })).toHaveCount(0);
-  });
+  // 削除: リンクとボタンを Enter で押す
+  await page.getByRole('link', { name: 'この実績を削除する' }).focus();
+  await page.keyboard.press('Enter');
+  await page.getByRole('button', { name: '削除する' }).focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('実績を削除しました');
+  await expect(page.getByRole('link', { name: 'E2E キーボードで直した題 操作' })).toHaveCount(0);
 });
