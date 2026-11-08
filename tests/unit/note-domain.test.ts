@@ -98,6 +98,15 @@ describe('toCardDescription', () => {
     ).toBe('見出し リンクの文');
   });
 
+  it('並びの印と強調の記号を落とし、URL の中のハイフンは残す', () => {
+    expect(
+      toCardDescription({
+        description: null,
+        body: '- **強調** の項目\n\nhttps://example.com/fake-page-name',
+      }),
+    ).toBe('強調 の項目 https://example.com/fake-page-name');
+  });
+
   it('120 文字を超える本文は切り、本文も空なら null', () => {
     expect(toCardDescription({ description: null, body: 'あ'.repeat(200) })).toBe(
       `${'あ'.repeat(120)}…`,

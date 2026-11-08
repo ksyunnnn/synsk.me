@@ -51,7 +51,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R5 公開・下書き・削除の状態の移り方
 
-- 決めたこと: `note.status`（`draft`・`published`）と `note.deleted_at` を別に持つ（migration 0005）。公開は `status = 'published'`・`published_revision_id = 最新の版`・`published_at = COALESCE(published_at, 今)` を 1 文で書く。下書きに戻すは `status = 'draft'` だけを書き、公開した版と初めて公開した日時を残す（FR-013・FR-014）。削除は `deleted_at` を入れ、戻すは `deleted_at` を NULL にする。`status` と版は触らないため、戻すと削除前の状態と版に戻る（FR-016・SC-007）
+- 決めたこと: `note.status`（`draft`・`published`）と `note.deleted_at` を別に持つ（migration 0005）。公開は `status = 'published'`・`published_revision_id = 最新の版`・`published_at = COALESCE(published_at, 公開した時刻)` を 1 文で書く。下書きに戻すは `status = 'draft'` だけを書き、公開した版と初めて公開した日時を残す（FR-013・FR-014）。削除は `deleted_at` を入れ、戻すは `deleted_at` を NULL にする。`status` と版は触らないため、戻すと削除前の状態と版に戻る（FR-016・SC-007）
 - 削除した note は編集・公開・下書きに戻す・画像・転載先の操作を受け付けない。管理画面の一覧と編集の画面に「削除済み」と出し、戻す操作だけを置く
 - 訪問者に出す条件は `status = 'published' AND deleted_at IS NULL` の 1 か所に置く（Repository の実装）
 
@@ -87,7 +87,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 上限（constitution II）: 1 回の保存・取り直しで取りに行く URL は 10 個まで、1 つあたり 5 秒で打ち切り、応答の本文は 512 KB までしか読まない。`http`・`https` だけを取り、`wrangler.jsonc` の `global_fetch_strictly_public` で私的なアドレスへ出さない。取れなくても保存を止めない（設計原則 4）
 - 既定（実装者、2026-11-09）: 参照先の情報が取れなかった URL は、カードにせず、URL の文字のリンクで出す
 - 既定（実装者、2026-11-09）: カードの画像は、参照先の画像の URL（`https` に限る）を `<img>` でそのまま指し、`referrerpolicy="no-referrer"` と `loading="lazy"` を付ける。画像を保管しない（FR-030）。出し方の決定は #186 が持つ
-- 取り出し: 題は `og:title`、無ければ `<title>`。画像は `og:image`。HTML の読み取りは Workers の `HTMLRewriter` で行い、`src/features/note/server/link-preview-fetcher.ts` に閉じ込める（constitution VII・VIII）
+- 取り出し: 題は `og:title`、無ければ `<title>`。画像は `og:image`。HTML の読み取りは、配信先に固有の機能（Workers の `HTMLRewriter`）を使わずに `<meta>` と `<title>` のタグを読む形で行い、`src/features/note/server/link-preview-fetcher.ts` に閉じ込める（constitution VII・VIII）。単体の検査が Node で読み取りを確かめられる
 - 理由: spec の FR-027〜FR-030、SC-005。表示のたびに参照先へ取りに行かない
 
 ## R10 転載先

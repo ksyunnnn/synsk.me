@@ -220,7 +220,9 @@ export const toCardDescription = ({
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/[#>*_`~-]+/g, ' ')
+    // 行頭の見出し・引用・並びの印と、強調とコードの記号だけを落とす。URL の中のハイフンは残す
+    .replace(/^\s*(#{1,6}|>|[-*+]|\d+\.)\s+/gm, '')
+    .replace(/[*_`~]+/g, '')
     .replace(/\s+/g, ' ')
     .trim();
   if (text === '') return null;

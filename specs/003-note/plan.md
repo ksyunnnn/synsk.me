@@ -51,7 +51,7 @@
 | V. Accessible Controls | 通る | 入力はネイティブの要素と `<form>`。E2E でキーボードだけとスマートフォンの幅の操作を確かめる |
 | VI. Measure Before Optimizing | 通る | キャッシュ・索引の追加・版の圧縮を含めない（spec の Assumptions「版が増えたときの扱いは、閾値を割ってから決める」） |
 | VII. Boundary Translation | 通る | 参照先の HTML は `src/features/note/server/link-preview-fetcher.ts` の中で `{ title, imageUrl }` に詰め替える。D1 の行は Repository の実装の中で domain の型に詰め替える |
-| VIII. Portable Core | 通る | D1 は `src/features/note/server/d1-note-repository.ts`、R2 は `src/shared/server/media-storage.ts`、`HTMLRewriter` は `link-preview-fetcher.ts`、`cloudflare:workers` の env は `src/shared/server/env.ts` だけで使う |
+| VIII. Portable Core | 通る | D1 は `src/features/note/server/d1-note-repository.ts`、R2 は `src/shared/server/media-storage.ts`、`cloudflare:workers` の env は `src/shared/server/env.ts` だけで使う |
 | IX. Simplicity | 通る | `src/shared/server/media-storage.ts` の 2 つ目の使い手は、001 の実績・職歴の画像（001 の research.md の R14）。Repository のインタフェースの 2 つ目の使い手は、単体の検査の作り物の実装（ADR-0026 のルール 2） |
 | Test Layering | 通る | 同じことを 2 つの段階で確かめない（下の表の「段階」） |
 | Display Speed | 通る | note のページは NFR-03〜NFR-07 の対象。判定はフィールドの計測で、CI では判定しない |
