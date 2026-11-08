@@ -11,11 +11,14 @@ import type { CalendarDate } from '@/shared/domain/period';
  */
 
 const NOW = new Date('2026-11-04T03:00:00Z');
+/** 作り物の uid */
+const UID = '0123456789abcdef0123456789abcdef';
 
 const fakeSkills = (overrides: Partial<SkillRepository> = {}): SkillRepository => ({
   listWithPeriods: vi.fn(async () => []),
   findById: vi.fn(),
-  register: vi.fn(async () => ({ ok: true as const, id: 1 })),
+  findIdByUid: vi.fn(),
+  register: vi.fn(async () => ({ ok: true as const, id: 1, uid: UID })),
   edit: vi.fn(),
   delete: vi.fn(),
   hasId: vi.fn(),
@@ -59,7 +62,7 @@ describe('parseSkillContent', () => {
   });
 
   it('上書きの月数を年と月のフォームの値に戻す', () => {
-    expect(toSkillFormValues({ id: 1, name: 'Go', monthsOverride: 71 })).toEqual({
+    expect(toSkillFormValues({ name: 'Go', monthsOverride: 71 })).toEqual({
       name: 'Go',
       overrideYears: '5',
       overrideMonths: '11',
@@ -74,10 +77,19 @@ describe('listSkills', () => {
 
   it('実績の期間から求めた月数を使う（FR-033）', async () => {
     const skills = fakeSkills({
-      listWithPeriods: vi.fn(async () => [{ id: 1, name: 'Go', monthsOverride: null, periods }]),
+      listWithPeriods: vi.fn(async () => [
+        { id: 1, uid: UID, name: 'Go', monthsOverride: null, periods },
+      ]),
     });
     expect(await listSkills(skills, NOW)).toEqual([
-      { id: 1, name: 'Go', monthsOverride: null, computedMonths: 24, experienceMonths: 24 },
+      {
+        id: 1,
+        uid: UID,
+        name: 'Go',
+        monthsOverride: null,
+        computedMonths: 24,
+        experienceMonths: 24,
+      },
     ]);
   });
 
@@ -89,10 +101,12 @@ describe('listSkills', () => {
 
   it('上書きの月数があれば、求めた月数の代わりに使う（FR-034）', async () => {
     const skills = fakeSkills({
-      listWithPeriods: vi.fn(async () => [{ id: 1, name: 'Go', monthsOverride: 71, periods }]),
+      listWithPeriods: vi.fn(async () => [
+        { id: 1, uid: UID, name: 'Go', monthsOverride: 71, periods },
+      ]),
     });
     expect(await listSkills(skills, NOW)).toEqual([
-      { id: 1, name: 'Go', monthsOverride: 71, computedMonths: 24, experienceMonths: 71 },
+      { id: 1, uid: UID, name: 'Go', monthsOverride: 71, computedMonths: 24, experienceMonths: 71 },
     ]);
   });
 });

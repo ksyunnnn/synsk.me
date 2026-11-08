@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { ORGANIZATION_ID_FIELD } from '@/features/organization/application/edit-organization';
+import { ORGANIZATION_UID_FIELD } from '@/features/organization/application/edit-organization';
 
 /** 組織を消す確認のフォーム。消せなければ理由を示す */
 
@@ -15,15 +15,15 @@ const MESSAGES: Record<Result['status'], string> = {
 
 export const DeleteOrganizationForm = ({
   action,
-  organizationId,
+  organizationUid,
 }: {
   action: (state: Result | null, formData: FormData) => Promise<Result>;
-  organizationId: number;
+  organizationUid: string;
 }) => {
   const [result, formAction] = useActionState(action, null);
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name={ORGANIZATION_ID_FIELD} value={organizationId} />
+      <input type="hidden" name={ORGANIZATION_UID_FIELD} value={organizationUid} />
       {result && (
         <p role="alert" className="text-destructive">
           {MESSAGES[result.status]}

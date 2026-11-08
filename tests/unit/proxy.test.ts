@@ -26,32 +26,36 @@ vi.mock('@/shared/server/author', () => author);
 
 const projects = vi.hoisted(() => ({
   hasProjectSlug: vi.fn<(slug: string) => Promise<boolean>>(),
-  hasProjectId: vi.fn<(id: string) => Promise<boolean>>(),
+  hasProjectUid: vi.fn<(uid: string) => Promise<boolean>>(),
 }));
 vi.mock('@/features/project/server/queries', () => projects);
 
 /** 行の有無を見る、管理画面のコレクションごとの関数 */
 const rows = vi.hoisted(() => ({
-  hasOrganizationId: vi.fn<(id: string) => Promise<boolean>>(),
-  hasSkillId: vi.fn<(id: string) => Promise<boolean>>(),
-  hasCareerId: vi.fn<(id: string) => Promise<boolean>>(),
-  hasEducationId: vi.fn<(id: string) => Promise<boolean>>(),
+  hasOrganizationUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  hasSkillUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  hasCareerUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  hasEducationUid: vi.fn<(uid: string) => Promise<boolean>>(),
 }));
 vi.mock('@/features/organization/server/queries', () => ({
-  hasOrganizationId: rows.hasOrganizationId,
+  hasOrganizationUid: rows.hasOrganizationUid,
 }));
-vi.mock('@/features/skill/server/queries', () => ({ hasSkillId: rows.hasSkillId }));
-vi.mock('@/features/career/server/queries', () => ({ hasCareerId: rows.hasCareerId }));
-vi.mock('@/features/education/server/queries', () => ({ hasEducationId: rows.hasEducationId }));
+vi.mock('@/features/skill/server/queries', () => ({ hasSkillUid: rows.hasSkillUid }));
+vi.mock('@/features/career/server/queries', () => ({ hasCareerUid: rows.hasCareerUid }));
+vi.mock('@/features/education/server/queries', () => ({ hasEducationUid: rows.hasEducationUid }));
 
 const resumes = vi.hoisted(() => ({
   hasVisitorResume: vi.fn<(slug: string) => Promise<boolean>>(),
-  hasResumeId: vi.fn<(id: string) => Promise<boolean>>(),
-  hasResumeRow: vi.fn<(id: string, kind: string, rowId: string) => Promise<boolean>>(),
+  hasResumeUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  hasResumeRow: vi.fn<(uid: string, kind: string, rowUid: string) => Promise<boolean>>(),
 }));
 vi.mock('@/features/resume/server/queries', () => resumes);
 
 const { config, proxy } = await import('@/proxy');
+
+/** 管理画面の URL の識別子（作り物の uid） */
+const UID = '0123456789abcdef0123456789abcdef';
+const ROW_UID = 'fedcba9876543210fedcba9876543210';
 
 const OWNER: Author = { email: 'owner@synsk.test' };
 
@@ -68,7 +72,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   author.getAuthorFromHeaders.mockResolvedValue(OWNER);
   projects.hasProjectSlug.mockResolvedValue(true);
-  projects.hasProjectId.mockResolvedValue(true);
+  projects.hasProjectUid.mockResolvedValue(true);
   for (const has of Object.values(rows)) has.mockResolvedValue(true);
   for (const has of Object.values(resumes)) has.mockResolvedValue(true);
 });
@@ -79,7 +83,7 @@ describe('対象の経路', () => {
     '/resume/a-slug',
     '/dash',
     '/dash/projects',
-    '/dash/projects/1/delete',
+    `/dash/projects/${UID}/delete`,
   ])('%s で動く', (url) => {
     expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
   });
@@ -110,31 +114,31 @@ describe('/projects/{slug}', () => {
   });
 });
 
-describe('/dash/projects/{id}', () => {
-  it.each(['/dash/projects/1', '/dash/projects/1/delete'])(
+describe('/dash/projects/{uid}', () => {
+  it.each([`/dash/projects/${UID}`, `/dash/projects/${UID}/delete`])(
     '無い id の %s は 404 の画面へ rewrite する',
     async (path) => {
-      projects.hasProjectId.mockResolvedValue(false);
-      expect(await rewrittenPath(path)).toBe('/dash/projects/1/missing');
-      expect(projects.hasProjectId).toHaveBeenCalledWith('1');
+      projects.hasProjectUid.mockResolvedValue(false);
+      expect(await rewrittenPath(path)).toBe(`/dash/projects/${UID}/missing`);
+      expect(projects.hasProjectUid).toHaveBeenCalledWith(UID);
     },
   );
 
   it.each(['/dash/projects', '/dash/projects/new'])('%s は行の有無を見ない', async (path) => {
-    projects.hasProjectId.mockResolvedValue(false);
+    projects.hasProjectUid.mockResolvedValue(false);
     expect(await rewrittenPath(path)).toBeNull();
-    expect(projects.hasProjectId).not.toHaveBeenCalled();
+    expect(projects.hasProjectUid).not.toHaveBeenCalled();
   });
 
   it('書き込みの操作は、行の有無で rewrite しない', async () => {
-    projects.hasProjectId.mockResolvedValue(false);
-    expect(await rewrittenPath('/dash/projects/1', 'POST')).toBeNull();
+    projects.hasProjectUid.mockResolvedValue(false);
+    expect(await rewrittenPath(`/dash/projects/${UID}`, 'POST')).toBeNull();
   });
 
   it('作り手でなければ、行の有無より先に 403', async () => {
     author.getAuthorFromHeaders.mockResolvedValue(null);
-    projects.hasProjectId.mockResolvedValue(false);
-    expect(await rewrittenPath('/dash/projects/1')).toBe('/dash/forbidden');
+    projects.hasProjectUid.mockResolvedValue(false);
+    expect(await rewrittenPath(`/dash/projects/${UID}`)).toBe('/dash/forbidden');
   });
 });
 
@@ -144,7 +148,7 @@ describe('/dash 配下', () => {
     expect(await rewrittenPath('/dash/projects', method)).toBe('/dash/forbidden');
   });
 
-  it.each(['/dash', '/dash/projects', '/dash/projects/1'])(
+  it.each(['/dash', '/dash/projects', `/dash/projects/${UID}`])(
     '作り手の %s は rewrite しない',
     async (path) => {
       expect(await rewrittenPath(path)).toBeNull();
@@ -182,21 +186,21 @@ describe('作り手を確かめられない', () => {
 });
 
 describe.each([
-  ['organizations', rows.hasOrganizationId],
-  ['skills', rows.hasSkillId],
-  ['careers', rows.hasCareerId],
-  ['educations', rows.hasEducationId],
-] as const)('/dash/%s/{id}', (collection, has) => {
-  it('無い id は 404 の画面へ rewrite する', async () => {
+  ['organizations', rows.hasOrganizationUid],
+  ['skills', rows.hasSkillUid],
+  ['careers', rows.hasCareerUid],
+  ['educations', rows.hasEducationUid],
+] as const)('/dash/%s/{uid}', (collection, has) => {
+  it('無い uid は 404 の画面へ rewrite する', async () => {
     has.mockResolvedValue(false);
-    expect(await rewrittenPath(`/dash/${collection}/5/delete`)).toBe(
-      `/dash/${collection}/5/missing`,
+    expect(await rewrittenPath(`/dash/${collection}/${UID}/delete`)).toBe(
+      `/dash/${collection}/${UID}/missing`,
     );
-    expect(has).toHaveBeenCalledWith('5');
+    expect(has).toHaveBeenCalledWith(UID);
   });
 
-  it('ある id は rewrite しない', async () => {
-    expect(await rewrittenPath(`/dash/${collection}/5`)).toBeNull();
+  it('ある uid は rewrite しない', async () => {
+    expect(await rewrittenPath(`/dash/${collection}/${UID}`)).toBeNull();
   });
 });
 
@@ -266,47 +270,51 @@ describe('/resume/{slug}', () => {
   });
 });
 
-describe('/dash/resumes/{id}/<種類>/{rowId}（specs/002-resume/contracts/dash.md）', () => {
-  it('足す画面（/dash/resumes/{id}/<種類>/new）も、無い職務経歴書は 404 の画面へ rewrite する', async () => {
-    resumes.hasResumeId.mockResolvedValue(false);
-    expect(await rewrittenPath('/dash/resumes/3/careers/new')).toBe('/dash/resumes/3/missing');
+describe('/dash/resumes/{uid}/<種類>/{rowUid}（specs/002-resume/contracts/dash.md）', () => {
+  it('足す画面（/dash/resumes/{uid}/<種類>/new）も、無い職務経歴書は 404 の画面へ rewrite する', async () => {
+    resumes.hasResumeUid.mockResolvedValue(false);
+    expect(await rewrittenPath(`/dash/resumes/${UID}/careers/new`)).toBe(
+      `/dash/resumes/${UID}/missing`,
+    );
   });
 
   it('無い職務経歴書は、職務経歴書の 404 の画面へ rewrite する', async () => {
-    resumes.hasResumeId.mockResolvedValue(false);
-    expect(await rewrittenPath('/dash/resumes/3/careers/7')).toBe('/dash/resumes/3/missing');
+    resumes.hasResumeUid.mockResolvedValue(false);
+    expect(await rewrittenPath(`/dash/resumes/${UID}/careers/${ROW_UID}`)).toBe(
+      `/dash/resumes/${UID}/missing`,
+    );
   });
 
   it.each(['careers', 'projects', 'educations'])(
     '無い %s の行は、行の 404 の画面へ rewrite する',
     async (kind) => {
       resumes.hasResumeRow.mockResolvedValue(false);
-      expect(await rewrittenPath(`/dash/resumes/3/${kind}/7`)).toBe(
-        `/dash/resumes/3/${kind}/7/missing`,
+      expect(await rewrittenPath(`/dash/resumes/${UID}/${kind}/${ROW_UID}`)).toBe(
+        `/dash/resumes/${UID}/${kind}/${ROW_UID}/missing`,
       );
-      expect(resumes.hasResumeRow).toHaveBeenCalledWith('3', kind, '7');
+      expect(resumes.hasResumeRow).toHaveBeenCalledWith(UID, kind, ROW_UID);
     },
   );
 
   it('ある行は rewrite しない', async () => {
-    expect(await rewrittenPath('/dash/resumes/3/projects/7')).toBeNull();
+    expect(await rewrittenPath(`/dash/resumes/${UID}/projects/${ROW_UID}`)).toBeNull();
   });
 
   it.each([
-    '/dash/resumes/3/skills',
-    '/dash/resumes/3/preview',
-    '/dash/resumes/3/projects/7/missing',
-    '/dash/resumes/3/careers/new',
-    '/dash/resumes/3/projects/new',
-    '/dash/resumes/3/educations/new',
+    `/dash/resumes/${UID}/skills`,
+    `/dash/resumes/${UID}/preview`,
+    `/dash/resumes/${UID}/projects/${ROW_UID}/missing`,
+    `/dash/resumes/${UID}/careers/new`,
+    `/dash/resumes/${UID}/projects/new`,
+    `/dash/resumes/${UID}/educations/new`,
   ])('%s は行の有無を見ない', async (path) => {
     resumes.hasResumeRow.mockResolvedValue(false);
     expect(await rewrittenPath(path)).toBeNull();
     expect(resumes.hasResumeRow).not.toHaveBeenCalled();
   });
 
-  it('無い職務経歴書の id は 404 の画面へ rewrite する', async () => {
-    resumes.hasResumeId.mockResolvedValue(false);
-    expect(await rewrittenPath('/dash/resumes/3')).toBe('/dash/resumes/3/missing');
+  it('無い職務経歴書の uid は 404 の画面へ rewrite する', async () => {
+    resumes.hasResumeUid.mockResolvedValue(false);
+    expect(await rewrittenPath(`/dash/resumes/${UID}`)).toBe(`/dash/resumes/${UID}/missing`);
   });
 });

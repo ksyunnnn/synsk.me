@@ -1,6 +1,6 @@
 # Data Model: 職務経歴書
 
-表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0010` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。0006 の `resume_career.organization_name` と `resume_project.title` の注釈より、0008 の冒頭の注釈を正とする。列の一覧は書き写さない。
+表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0011` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。0006 の `resume_career.organization_name` と `resume_project.title` の注釈より、0008 の冒頭の注釈を正とする。列の一覧は書き写さない。
 
 ## Contents
 
@@ -28,7 +28,7 @@
 
 写し元の行を消すときに、写した行の `*_id` を NULL にするのは 001 の削除の処理が持つ（001 の research.md の R8）。002 は写した行の `*_id` を書き換えない。
 
-スキーマが守る決まり（002 のコードで重ねて書かない）: 識別子の形と重複（`resume.slug` の CHECK と UNIQUE、FR-002）、限定公開用か公開用かの既定（`resume.audience` の DEFAULT `limited`、FR-003）、作った後に変えないこと（トリガ `resume_audience_fixed`、FR-004）、公開用が 1 つだけ（部分 UNIQUE 索引 `resume_public`、FR-019）、公開用は期限を持たないこと（`resume` の CHECK、FR-020）、状態の既定が下書き（`resume.status` の DEFAULT `draft`、FR-021）、期限の形（`limited_expires_at` の CHECK、FR-013）、写した期間の形と前後、写した種類の 4 値、同じ実績に同じスキル名を 2 回持たないこと（`resume_project_skill` の主キー、Key Entities）、スキルごとに上書きを 1 つ（`resume_skill_override` の主キー）。
+スキーマが守る決まり（002 のコードで重ねて書かない）: 識別子の形と重複（`resume.slug` の CHECK と UNIQUE、FR-002）、限定公開用か公開用かの既定（`resume.audience` の DEFAULT `limited`、FR-003）、作った後に変えないこと（トリガ `resume_audience_fixed`、FR-004）、公開用が 1 つだけ（部分 UNIQUE 索引 `resume_public`、FR-019）、公開用は期限を持たないこと（`resume` の CHECK、FR-020）、状態の既定が下書き（`resume.status` の DEFAULT `draft`、FR-021）、期限の形（`limited_expires_at` の CHECK、FR-013）、写した期間の形と前後、写した種類の 4 値、同じ実績に同じスキル名を 2 回持たないこと（`resume_project_skill` の主キー、Key Entities）、スキルごとに上書きを 1 つ（`resume_skill_override` の主キー）、管理画面の URL の識別子（`resume.uid`・`resume_*.uid`、001 の research.md の R17）。
 
 アプリケーションは、スキーマが拒む入力を保存の前にも確かめ、画面で項目ごとに知らせる。スキーマの制約は最後の守りとして残す。
 
@@ -97,11 +97,11 @@
 
 `src/features/resume/domain/` に置く。行の型は Repository の実装の中だけに置き、ここへ詰め替える（001 の research.md の R3）。
 
-- `Resume`: id・題・識別子・限定公開用か公開用か・下書きか訪問者に見せるか・期限（空あり、限定公開用だけ）・作った日時・直した日時
+- `Resume`: id・uid・題・識別子・限定公開用か公開用か・下書きか訪問者に見せるか・期限（空あり、限定公開用だけ）・作った日時・直した日時
 - `ResumeAudience`: `limited`・`public` の `as const` の配列から作る型。`ResumeStatus` も同じ形で `draft`・`published`
-- `ResumeCareer`: id・写し元の id（空あり）・組織名・肩書・期間・本文（空あり）・関連 URL（空あり）
-- `ResumeProject`: id・写し元の id（空あり）・組織名・種類・題・期間・本文（空あり）・関連 URL（空あり）・スキルの名前の並び
-- `ResumeEducation`: id・写し元の id（空あり）・学校・学部（空あり）・期間・備考（空あり）
+- `ResumeCareer`: id・uid・写し元の id（空あり）・組織名・肩書・期間・本文（空あり）・関連 URL（空あり）
+- `ResumeProject`: id・uid・写し元の id（空あり）・組織名・種類・題・期間・本文（空あり）・関連 URL（空あり）・スキルの名前の並び
+- `ResumeEducation`: id・uid・写し元の id（空あり）・学校・学部（空あり）・期間・備考（空あり）
 - `ResumeSkill`: 名前・経験年数（求めた値か写した上書き）。保存しない
 - `Profile`: 氏名・自己紹介・メールアドレス（空あり）。コードの定数と環境変数から作る（research.md の R10）
 - `Period`・`CalendarDate`: `src/shared/domain/period.ts`（001 の T015）を使う

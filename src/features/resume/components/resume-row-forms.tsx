@@ -8,8 +8,8 @@ import {
   OVERRIDE_MONTHS_FIELD,
   OVERRIDE_NAME_FIELD,
   OVERRIDE_YEARS_FIELD,
-  RESUME_ID_FIELD,
-  ROW_ID_FIELD,
+  RESUME_UID_FIELD,
+  ROW_UID_FIELD,
   type FieldError,
   type ResumeCareerFormValues,
   type ResumeEducationFormValues,
@@ -20,7 +20,7 @@ import { InputField, SelectField, TextareaField } from '@/shared/components/fiel
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
- * `/dash/resumes/{id}/skills`）。秘匿化するかどうかの入力は出さない（FR-031）。直した値は
+ * `/dash/resumes/{uid}/skills`）。秘匿化するかどうかの入力は出さない（FR-031）。直した値は
  * その職務経歴書にだけ効く（FR-032）。Server Action は props で受け取る（ADR-0026 の依存の向き 3）
  */
 
@@ -49,7 +49,7 @@ const FIELD_MESSAGES: Record<string, Partial<Record<FieldError, string>>> = {
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
 };
 
-type Target = { resumeId: number; rowId?: number; updatedAt: string };
+type Target = { resumeUid: string; rowUid?: string; updatedAt: string };
 
 type Action<V, E> = (
   state: EditOutcome<V, E> | null,
@@ -76,8 +76,10 @@ const Frame = ({
   children: ReactNode;
 }) => (
   <form action={formAction} className="flex flex-col gap-6">
-    <input type="hidden" name={RESUME_ID_FIELD} value={target.resumeId} />
-    {target.rowId !== undefined && <input type="hidden" name={ROW_ID_FIELD} value={target.rowId} />}
+    <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
+    {target.rowUid !== undefined && (
+      <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
+    )}
     <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={target.updatedAt} />
     {message && (
       <p role="alert" className="text-destructive">

@@ -31,7 +31,8 @@ export type ResumeRowInput = {
   expiresAt?: string | null;
 };
 
-export type InsertedResume = { id: number; slug: string };
+/** `uid` は DB が入れる。管理画面の URL とフォームは uid で職務経歴書を指す */
+export type InsertedResume = { id: number; uid: string; slug: string };
 
 export const insertResume = async (
   db: D1Database,
@@ -50,7 +51,12 @@ export const insertResume = async (
     status,
     limited_expires_at: audience === 'limited' ? expiresAt : null,
   });
-  return { id, slug };
+  const row = await db
+    .prepare('SELECT uid FROM resume WHERE id = ?')
+    .bind(id)
+    .first<{ uid: string }>();
+  if (!row) throw new Error('入れた職務経歴書を読めなかった');
+  return { id, uid: row.uid, slug };
 };
 
 export type ResumeCareerRowInput = {

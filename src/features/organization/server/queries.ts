@@ -2,6 +2,7 @@ import 'server-only';
 
 import { listOrganizations as listOrganizationsUseCase } from '@/features/organization/application/list-organizations';
 import type { Organization, OrganizationRepository } from '@/shared/domain/organization';
+import { parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
@@ -20,33 +21,28 @@ export const listOrganizations = async (): Promise<Organization[]> => {
   return listOrganizationsUseCase(await createOrganizationRepository());
 };
 
-/** 文字列の id を読む。正の整数でなければ null。個人の組織の id（0）も読む */
-const parseOrganizationId = (value: string): number | null =>
-  /^(0|[1-9]\d{0,15})$/.test(value) ? Number(value) : null;
+/** URL とフォームの uid が指す組織の id。形の違う値は D1 を読まずに null */
+export const findOrganizationId = async (organizations: OrganizationRepository, uid: string) => {
+  const parsed = parseUid(uid);
+  return parsed === null ? null : organizations.findIdByUid(parsed);
+};
 
-/** 作り手が編集する組織と、指している職歴・実績の有無。作り手でなければ 403。無い id なら null */
+/** 作り手が編集する組織と、指している職歴・実績の有無。作り手でなければ 403。無い uid なら null */
 export const getOrganizationForEdit = async (
-  id: string,
+  uid: string,
 ): Promise<{
   organization: Organization;
   references: { isReferenced: boolean; isReferencedByMasked: boolean };
 } | null> => {
   await requireAuthor();
-  const organizationId = parseOrganizationId(id);
-  if (organizationId === null) return null;
   const organizations = await createOrganizationRepository();
+  const organizationId = await findOrganizationId(organizations, uid);
+  if (organizationId === null) return null;
   const organization = await organizations.findById(organizationId);
   if (!organization) return null;
   return { organization, references: await organizations.findReferences(organizationId) };
 };
 
-export { parseOrganizationId };
-
-/** `src/proxy.ts` が呼ぶ。作り手が編集できる組織がある id か */
-export const hasOrganizationId = async (id: string): Promise<boolean> => {
-  const organizationId = parseOrganizationId(id);
-  return (
-    organizationId !== null &&
-    (await (await createOrganizationRepository()).findById(organizationId)) !== null
-  );
-};
+/** `src/proxy.ts` が呼ぶ。作り手が編集できる組織がある uid か */
+export const hasOrganizationUid = async (uid: string): Promise<boolean> =>
+  (await findOrganizationId(await createOrganizationRepository(), uid)) !== null;

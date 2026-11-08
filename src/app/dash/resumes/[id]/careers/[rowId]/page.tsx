@@ -18,13 +18,13 @@ const Page = async ({ params }: Props) => {
   const { id, rowId } = await params;
   // 作り手でなければ、読む前に 403 になる
   const resume = await getResumeForEdit(id);
-  const career = resume?.careers.find((row) => String(row.id) === rowId);
+  const career = resume?.careers.find((row) => row.uid === rowId);
   if (!resume || !career) notFound();
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href={`/dash/resumes/${resume.id}`}>設定の画面へ戻る</TextLink>
+        <TextLink href={`/dash/resumes/${resume.uid}`}>設定の画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">写した職歴を直す</h1>
       <p className="text-sm text-muted-foreground">
@@ -34,7 +34,7 @@ const Page = async ({ params }: Props) => {
         key={resume.updatedAt}
         action={editResumeCareer}
         initialValues={toResumeCareerFormValues(career)}
-        target={{ resumeId: resume.id, rowId: career.id, updatedAt: resume.updatedAt }}
+        target={{ resumeUid: resume.uid, rowUid: career.uid, updatedAt: resume.updatedAt }}
       />
     </main>
   );

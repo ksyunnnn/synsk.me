@@ -21,6 +21,7 @@ import { findOrCreateOrganizationStatements } from '@/shared/server/organization
 
 type ProjectRow = {
   id: number;
+  uid: string;
   slug: string;
   organization_id: number;
   organization_name: string;
@@ -70,6 +71,7 @@ const toPeriod = (row: { started_on: string; ended_on: string | null }) => ({
 
 const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
   id: row.id,
+  uid: row.uid,
   slug: row.slug,
   organization: {
     id: row.organization_id,
@@ -89,7 +91,7 @@ const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
 });
 
 const EDIT_COLUMNS = `
-  p.id, p.slug, p.organization_id, o.name AS organization_name,
+  p.id, p.uid, p.slug, p.organization_id, o.name AS organization_name,
   o.name_masked AS organization_name_masked, p.kind, p.title, p.title_masked, p.is_masked,
   p.status, p.started_on, p.ended_on, p.description, p.url, p.updated_at`;
 
@@ -229,7 +231,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     list: async () => {
       const { results } = await db
         .prepare(
-          `SELECT p.id, p.slug, p.kind, p.title, p.is_masked, p.status, p.started_on, p.ended_on,
+          `SELECT p.id, p.uid, p.slug, p.kind, p.title, p.is_masked, p.status, p.started_on, p.ended_on,
              o.name AS organization_name
            FROM project p JOIN organization o ON o.id = p.organization_id
            ORDER BY p.started_on DESC, p.id DESC`,
@@ -237,13 +239,22 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         .all<
           Pick<
             ProjectRow,
-            'id' | 'slug' | 'kind' | 'title' | 'is_masked' | 'status' | 'started_on' | 'ended_on'
+            | 'id'
+            | 'uid'
+            | 'slug'
+            | 'kind'
+            | 'title'
+            | 'is_masked'
+            | 'status'
+            | 'started_on'
+            | 'ended_on'
           > & {
             organization_name: string;
           }
         >();
       return results.map((row): ProjectSummary => ({
         id: row.id,
+        uid: row.uid,
         slug: row.slug,
         kind: row.kind,
         title: row.title,
@@ -261,7 +272,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
              status, started_on, ended_on, description, url)
            SELECT ${ORGANIZATION_ID_BY_NAME}, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
            WHERE ${MASKING_ALLOWED}
-           RETURNING id`,
+           RETURNING id, uid`,
         )
         .bind(
           content.organizationName,
@@ -280,9 +291,11 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       );
       const statements = [...organizationStatements(content), insert];
       try {
-        const results = await db.batch<{ id: number }>([...statements, ...linkSkills]);
-        const id = results[statements.length - 1]?.results[0]?.id;
-        return id === undefined ? { ok: false, reason: 'masked-name-required' } : { ok: true, id };
+        const results = await db.batch<{ id: number; uid: string }>([...statements, ...linkSkills]);
+        const row = results[statements.length - 1]?.results[0];
+        return row === undefined
+          ? { ok: false, reason: 'masked-name-required' }
+          : { ok: true, id: row.id, uid: row.uid };
       } catch (error) {
         if (isSlugTaken(error)) return { ok: false, reason: 'slug-taken' };
         throw error;
@@ -365,6 +378,10 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         )
         .bind(slug)
         .first()) !== null,
+
+    findIdByUid: async (uid) =>
+      (await db.prepare('SELECT id FROM project WHERE uid = ?').bind(uid).first<{ id: number }>())
+        ?.id ?? null,
 
     hasId: async (id) =>
       (await db.prepare('SELECT 1 AS found FROM project WHERE id = ?').bind(id).first()) !== null,

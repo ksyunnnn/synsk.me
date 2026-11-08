@@ -24,6 +24,7 @@ import type { CalendarDate, Period } from '@/shared/domain/period';
 
 type ResumeRow = {
   id: number;
+  uid: string;
   title: string;
   slug: string;
   audience: 'limited' | 'public';
@@ -37,6 +38,7 @@ type PeriodColumns = { started_on: string; ended_on: string | null };
 
 type ResumeCareerRow = PeriodColumns & {
   id: number;
+  uid: string;
   career_id: number | null;
   organization_name: string;
   role: string;
@@ -47,6 +49,7 @@ type ResumeCareerRow = PeriodColumns & {
 
 type ResumeProjectRow = PeriodColumns & {
   id: number;
+  uid: string;
   project_id: number | null;
   organization_name: string;
   kind: string;
@@ -60,6 +63,7 @@ type ResumeProjectSkillRow = { resume_project_id: number; skill_name: string };
 
 type ResumeEducationRow = PeriodColumns & {
   id: number;
+  uid: string;
   education_id: number | null;
   school: string;
   department: string | null;
@@ -109,6 +113,7 @@ const kindOf = (value: string): ResumeProjectKind => (isResumeProjectKind(value)
 
 const toResume = (row: ResumeRow): Resume => ({
   id: row.id,
+  uid: row.uid,
   title: row.title,
   slug: row.slug,
   audience: row.audience,
@@ -120,6 +125,7 @@ const toResume = (row: ResumeRow): Resume => ({
 
 const toCareer = (row: ResumeCareerRow): ResumeCareer => ({
   id: row.id,
+  uid: row.uid,
   careerId: row.career_id,
   organizationName: row.organization_name,
   role: row.role,
@@ -131,6 +137,7 @@ const toCareer = (row: ResumeCareerRow): ResumeCareer => ({
 
 const toProject = (row: ResumeProjectRow, skills: string[]): ResumeProject => ({
   id: row.id,
+  uid: row.uid,
   projectId: row.project_id,
   organizationName: row.organization_name,
   kind: kindOf(row.kind),
@@ -144,6 +151,7 @@ const toProject = (row: ResumeProjectRow, skills: string[]): ResumeProject => ({
 
 const toEducation = (row: ResumeEducationRow): ResumeEducation => ({
   id: row.id,
+  uid: row.uid,
   educationId: row.education_id,
   school: row.school,
   department: row.department,
@@ -152,7 +160,7 @@ const toEducation = (row: ResumeEducationRow): ResumeEducation => ({
 });
 
 const RESUME_COLUMNS =
-  'id, title, slug, audience, status, limited_expires_at, created_at, updated_at';
+  'id, uid, title, slug, audience, status, limited_expires_at, created_at, updated_at';
 
 /** 並びは始まりの日の新しい順。同じ日は id の順（data-model.md） */
 const NEWEST_FIRST = 'ORDER BY started_on DESC, id ASC';
@@ -329,14 +337,14 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
     const [careers, projects, skills, educations, overrides] = await db.batch([
       db
         .prepare(
-          `SELECT id, career_id, organization_name, role, started_on, ended_on, description, url,
+          `SELECT id, uid, career_id, organization_name, role, started_on, ended_on, description, url,
              is_masked
            FROM resume_career WHERE resume_id = ? ${NEWEST_FIRST}`,
         )
         .bind(id),
       db
         .prepare(
-          `SELECT id, project_id, organization_name, kind, title, started_on, ended_on,
+          `SELECT id, uid, project_id, organization_name, kind, title, started_on, ended_on,
              description, url, is_masked
            FROM resume_project WHERE resume_id = ? ${NEWEST_FIRST}`,
         )
@@ -350,7 +358,7 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
         .bind(id),
       db
         .prepare(
-          `SELECT id, education_id, school, department, started_on, ended_on, remarks
+          `SELECT id, uid, education_id, school, department, started_on, ended_on, remarks
            FROM resume_education WHERE resume_id = ? ${NEWEST_FIRST}`,
         )
         .bind(id),
@@ -467,7 +475,7 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
     },
 
     create: async ({ slug, title, audience, limitedExpiresAt, content }) => {
-      const results = await db.batch<{ id: number; updated_at: string }>([
+      const results = await db.batch<{ id: number; uid: string; updated_at: string }>([
         db
           .prepare(
             `INSERT INTO resume (slug, title, audience, limited_expires_at)
@@ -475,11 +483,11 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
           )
           .bind(slug, title, audience, limitedExpiresAt),
         ...contentStatements(content, { sql: RESUME_ID_BY_SLUG, binds: [slug] }, ALWAYS),
-        db.prepare('SELECT id, updated_at FROM resume WHERE slug = ?').bind(slug),
+        db.prepare('SELECT id, uid, updated_at FROM resume WHERE slug = ?').bind(slug),
       ]);
       const row = results.at(-1)?.results[0];
       if (row === undefined) throw new Error('作った職務経歴書を読めなかった');
-      return { id: row.id, updatedAt: row.updated_at };
+      return { id: row.id, uid: row.uid, updatedAt: row.updated_at };
     },
 
     addRows: (id, content, times) =>
@@ -507,6 +515,18 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
         .first<ResumeRow>();
       return row ? { ...toResume(row), ...(await readContent(id)) } : null;
     },
+
+    findIdByUid: async (uid) =>
+      (await db.prepare('SELECT id FROM resume WHERE uid = ?').bind(uid).first<{ id: number }>())
+        ?.id ?? null,
+
+    findRowIdByUid: async (id, kind, rowUid) =>
+      (
+        await db
+          .prepare(`SELECT id FROM ${ROW_TABLES[kind]} WHERE uid = ? AND resume_id = ?`)
+          .bind(rowUid, id)
+          .first<{ id: number }>()
+      )?.id ?? null,
 
     findLimitedIdForVisitor: async (slug, now) => {
       // 条件はすべて WHERE で弾く（research.md の R6）。`limited_expires_at` は CHECK が
@@ -694,7 +714,5 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
 
     hasId: async (id) =>
       (await db.prepare('SELECT 1 AS found FROM resume WHERE id = ?').bind(id).first()) !== null,
-
-    hasRow,
   };
 };

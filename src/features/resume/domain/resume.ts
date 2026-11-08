@@ -1,4 +1,5 @@
 import type { Period } from '@/shared/domain/period';
+import type { Uid } from '@/shared/domain/uid';
 
 /**
  * 職務経歴書の型と決まり（specs/002-resume/spec.md の FR-001〜FR-004・FR-037・FR-039、
@@ -18,12 +19,9 @@ export const isResumeStatus = (value: string): value is ResumeStatus =>
 
 export type ResumeId = number;
 
-/** 文字列の id を読む。正の整数でなければ null */
+/** 文字列の id を読む。正の整数でなければ null。作成の画面で選んだ写し元の id にも使う */
 export const parseResumeId = (value: string): ResumeId | null =>
   /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
-
-/** 写した行の id。`parseResumeId` と同じ形 */
-export const parseResumeRowId = parseResumeId;
 
 /** 識別子の形（FR-002、`resume.slug` の CHECK）。1〜100 文字の英小文字・数字・ハイフン */
 export const isResumeSlug = (value: string): boolean => /^[a-z0-9-]{1,100}$/.test(value);
@@ -57,6 +55,8 @@ export const isResumeProjectKind = (value: string): value is ResumeProjectKind =
 
 export type Resume = {
   id: ResumeId;
+  /** 管理画面の URL とフォームで職務経歴書を指す識別子。slug は書き換わるため使わない */
+  uid: Uid;
   title: string;
   slug: string;
   audience: ResumeAudience;
@@ -71,6 +71,8 @@ export type Resume = {
 /** 写した職歴 */
 export type ResumeCareer = {
   id: number;
+  /** 管理画面の URL とフォームで写した行を指す識別子 */
+  uid: Uid;
   /** 写し元の職歴。写し元を消すと null（FR-007） */
   careerId: number | null;
   organizationName: string;
@@ -85,6 +87,7 @@ export type ResumeCareer = {
 /** 写した実績 */
 export type ResumeProject = {
   id: number;
+  uid: Uid;
   projectId: number | null;
   organizationName: string;
   kind: ResumeProjectKind;
@@ -100,6 +103,7 @@ export type ResumeProject = {
 /** 写した学歴 */
 export type ResumeEducation = {
   id: number;
+  uid: Uid;
   educationId: number | null;
   school: string;
   department: string | null;
@@ -210,11 +214,11 @@ export const copiedSourceIds = (content: ResumeContent, kind: ResumeRowKind): Se
   return new Set(ids.filter((id): id is number => id !== null));
 };
 
-/** 作るときと足すときに写す中身。id は保存するときに決まる */
+/** 作るときと足すときに写す中身。id と uid は保存するときに決まる */
 export type NewResumeContent = {
-  careers: Omit<ResumeCareer, 'id'>[];
-  projects: Omit<ResumeProject, 'id'>[];
-  educations: Omit<ResumeEducation, 'id'>[];
+  careers: Omit<ResumeCareer, 'id' | 'uid'>[];
+  projects: Omit<ResumeProject, 'id' | 'uid'>[];
+  educations: Omit<ResumeEducation, 'id' | 'uid'>[];
   skillOverrides: ResumeSkillOverride[];
 };
 
@@ -228,9 +232,9 @@ export type NewResume = {
 };
 
 /** 職務経歴書の中で直す値（FR-031）。秘匿化していたかと写し元の id は直さない */
-export type ResumeCareerContent = Omit<ResumeCareer, 'id' | 'careerId' | 'isMasked'>;
-export type ResumeProjectContent = Omit<ResumeProject, 'id' | 'projectId' | 'isMasked'>;
-export type ResumeEducationContent = Omit<ResumeEducation, 'id' | 'educationId'>;
+export type ResumeCareerContent = Omit<ResumeCareer, 'id' | 'uid' | 'careerId' | 'isMasked'>;
+export type ResumeProjectContent = Omit<ResumeProject, 'id' | 'uid' | 'projectId' | 'isMasked'>;
+export type ResumeEducationContent = Omit<ResumeEducation, 'id' | 'uid' | 'educationId'>;
 
 /** 設定の画面で直す値。識別子は公開用だけが持つ（FR-037・FR-039） */
 export type ResumeSettings = { title: string; limitedExpiresAt: string | null };

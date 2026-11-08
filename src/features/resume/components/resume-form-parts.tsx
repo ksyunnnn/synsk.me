@@ -1,4 +1,4 @@
-import { OPENED_UPDATED_AT_FIELD, RESUME_ID_FIELD } from '@/features/resume/domain/resume-forms';
+import { OPENED_UPDATED_AT_FIELD, RESUME_UID_FIELD } from '@/features/resume/domain/resume-forms';
 
 /** 職務経歴書の中を書き換えるフォームが共有する部品と文言（specs/002-resume/contracts/dash.md） */
 
@@ -19,11 +19,11 @@ export const BUTTON =
   'rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
 /** 書き換える職務経歴書と、開いたときの更新日時（楽観ロック。research.md の R8） */
-export type ResumeFormCommon = { resumeId: number; updatedAt: string };
+export type ResumeFormCommon = { resumeUid: string; updatedAt: string };
 
-export const ResumeFormHidden = ({ resumeId, updatedAt }: ResumeFormCommon) => (
+export const ResumeFormHidden = ({ resumeUid, updatedAt }: ResumeFormCommon) => (
   <>
-    <input type="hidden" name={RESUME_ID_FIELD} value={resumeId} />
+    <input type="hidden" name={RESUME_UID_FIELD} value={resumeUid} />
     <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={updatedAt} />
   </>
 );

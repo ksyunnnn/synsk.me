@@ -7,11 +7,12 @@ import {
   type ProjectField,
 } from '@/features/project/domain/project';
 import type { Author } from '@/shared/domain/author';
+import type { Uid } from '@/shared/domain/uid';
 import { canSaveWithOrganization } from '@/shared/domain/organization';
 import type { ProjectDeps } from './deps';
 
 export type RegisterProjectOutcome =
-  | { status: 'registered'; id: ProjectId }
+  | { status: 'registered'; id: ProjectId; uid: Uid }
   | { status: 'forbidden' }
   | {
       status: 'invalid';
@@ -44,7 +45,7 @@ export const registerProject = async (
   }
 
   const result = await projects.register({ ...content, slug: newProjectSlug() });
-  if (result.ok) return { status: 'registered', id: result.id };
+  if (result.ok) return { status: 'registered', id: result.id, uid: result.uid };
   return {
     status: 'invalid',
     errors:

@@ -7,6 +7,7 @@ import {
 } from '@/features/education/domain/education';
 import type { EducationRepository } from '@/features/education/domain/education-repository';
 import type { Author } from '@/shared/domain/author';
+import type { Uid } from '@/shared/domain/uid';
 
 type Invalid = {
   status: 'invalid';
@@ -19,11 +20,13 @@ export const registerEducation = async (
   educations: EducationRepository,
   author: Author | null,
   values: EducationFormValues,
-): Promise<{ status: 'registered'; id: EducationId } | { status: 'forbidden' } | Invalid> => {
+): Promise<
+  { status: 'registered'; id: EducationId; uid: Uid } | { status: 'forbidden' } | Invalid
+> => {
   if (!author) return { status: 'forbidden' };
   const parsed = parseEducationContent(values);
   if (!parsed.ok) return { status: 'invalid', errors: parsed.errors, values };
-  return { status: 'registered', id: await educations.register(parsed.content) };
+  return { status: 'registered', ...(await educations.register(parsed.content)) };
 };
 
 /** 学歴を編集する（FR-036）。作り手でなければ何も書かない（FR-040） */

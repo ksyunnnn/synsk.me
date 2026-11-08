@@ -146,6 +146,7 @@ afterAll(async () => {
 describe('作って、訪問者に見せる（User Story 2 の 1、FR-010・FR-021）', () => {
   let url: ReturnType<typeof parseLimitedUrl>;
   let resumeId: number;
+  let resumeUid: string;
 
   it('作り手が作ると、/resume/{uid} の URL を同じ画面に返す（FR-011・FR-012）', async () => {
     const res = await sendNthForm(ctx, {
@@ -173,6 +174,7 @@ describe('作って、訪問者に見せる（User Story 2 の 1、FR-010・FR-0
       .first<Record<string, unknown>>();
     expect(row).toMatchObject({ status: 'draft', audience: 'limited' });
     resumeId = row!.id as number;
+    resumeUid = row!.uid as string;
   });
 
   it('下書きのうちは 404（FR-022）', async () => {
@@ -185,10 +187,10 @@ describe('作って、訪問者に見せる（User Story 2 の 1、FR-010・FR-0
   it('訪問者に見せる状態にすると、秘匿化した写し元の実際の値で出る', async () => {
     const res = await sendNthForm(ctx, {
       how: 'submit',
-      formPath: `/dash/resumes/${resumeId}`,
+      formPath: `/dash/resumes/${resumeUid}`,
       formIndex: LIMITED_SETTINGS_FORMS.status,
       values: {
-        resumeId,
+        resumeUid,
         openedUpdatedAt: await updatedAtOf(resumeId),
         status: 'published',
       },
@@ -270,10 +272,10 @@ it('期限を過ぎた後に期限を延ばすと、同じ URL で読める（SC
 
   const res = await sendNthForm(ctx, {
     how: 'submit',
-    formPath: `/dash/resumes/${resume.id}`,
+    formPath: `/dash/resumes/${resume.uid}`,
     formIndex: LIMITED_SETTINGS_FORMS.settings,
     values: {
-      resumeId: resume.id,
+      resumeUid: resume.uid,
       openedUpdatedAt: await updatedAtOf(resume.id),
       title: '作り物の職務経歴書',
       expires: '2999-12-31T23:59',
@@ -297,10 +299,10 @@ describe('作り手の JWT がない書き込みは D1 を変えない（FR-033�
       const before = await readRows(ctx, 'resume');
       const res = await sendNthForm(ctx, {
         how,
-        formPath: `/dash/resumes/${target.id}`,
+        formPath: `/dash/resumes/${target.uid}`,
         formIndex,
         to: `/resume/${target.slug}`,
-        values: { resumeId: target.id, openedUpdatedAt: await updatedAtOf(target.id), ...values },
+        values: { resumeUid: target.uid, openedUpdatedAt: await updatedAtOf(target.id), ...values },
         asAuthor: false,
       });
       await res.arrayBuffer();
@@ -312,7 +314,7 @@ describe('作り手の JWT がない書き込みは D1 を変えない（FR-033�
 describe('設定の画面の URL と出し直し（FR-040）', () => {
   it('設定の画面に URL を示し、公開中ならその URL で開ける', async () => {
     const resume = await insertResume(ctx.db, { status: 'published' });
-    const page = await ctx.server.fetch(`/dash/resumes/${resume.id}`, {
+    const page = await ctx.server.fetch(`/dash/resumes/${resume.uid}`, {
       headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
     });
     expect(page.status).toBe(200);
@@ -327,13 +329,13 @@ describe('設定の画面の URL と出し直し（FR-040）', () => {
     await insertResumeProject(ctx.db, { resumeId: resume.id, title: '出し直した後も見える題' });
     const res = await sendNthForm(ctx, {
       how: 'submit',
-      formPath: `/dash/resumes/${resume.id}`,
+      formPath: `/dash/resumes/${resume.uid}`,
       formIndex: LIMITED_SETTINGS_FORMS.url,
-      values: { resumeId: resume.id, openedUpdatedAt: await updatedAtOf(resume.id) },
+      values: { resumeUid: resume.uid, openedUpdatedAt: await updatedAtOf(resume.id) },
       asAuthor: true,
     });
     expect(res.status).toBe(303);
-    expect(res.headers.get('location')).toContain(`/dash/resumes/${resume.id}?regenerated=1`);
+    expect(res.headers.get('location')).toContain(`/dash/resumes/${resume.uid}?regenerated=1`);
     const row = await ctx.db
       .prepare('SELECT slug FROM resume WHERE id = ?')
       .bind(resume.id)
@@ -355,9 +357,9 @@ describe('設定の画面の URL と出し直し（FR-040）', () => {
     const resume = await insertResume(ctx.db, { status: 'published' });
     const res = await sendNthForm(ctx, {
       how: 'submit',
-      formPath: `/dash/resumes/${resume.id}`,
+      formPath: `/dash/resumes/${resume.uid}`,
       formIndex: LIMITED_SETTINGS_FORMS.url,
-      values: { resumeId: resume.id, openedUpdatedAt: '2000-01-01T00:00:00.000Z' },
+      values: { resumeUid: resume.uid, openedUpdatedAt: '2000-01-01T00:00:00.000Z' },
       asAuthor: true,
     });
     expect(res.status).toBe(200);

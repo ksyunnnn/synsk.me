@@ -8,13 +8,12 @@ import { editCareer as editCareerUseCase } from '@/features/career/application/e
 import { registerCareer as registerCareerUseCase } from '@/features/career/application/register-career';
 import {
   CAREER_FIELDS,
-  CAREER_ID_FIELD,
+  CAREER_UID_FIELD,
   OPENED_UPDATED_AT_FIELD,
-  parseCareerId,
   type CareerFormResult,
   type CareerFormValues,
 } from '@/features/career/domain/career';
-import { createCareerDeps } from '@/features/career/server/queries';
+import { createCareerDeps, findCareerId } from '@/features/career/server/queries';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -42,7 +41,7 @@ export const registerCareer = async (
     await getCurrentAuthor(),
     readValues(formData),
   );
-  if (outcome.status === 'registered') redirect(`/dash/careers/${outcome.id}?saved=1`);
+  if (outcome.status === 'registered') redirect(`/dash/careers/${outcome.uid}?saved=1`);
   return outcome;
 };
 
@@ -53,20 +52,16 @@ export const editCareer = async (
 ): Promise<CareerFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseCareerId(readString(formData, CAREER_ID_FIELD));
+  const deps = await createCareerDeps();
+  const uid = readString(formData, CAREER_UID_FIELD);
+  const id = await findCareerId(deps.careers, uid);
   if (id === null) redirect('/dash/careers');
 
-  const outcome = await editCareerUseCase(
-    await createCareerDeps(),
-    author,
-    id,
-    readValues(formData),
-    {
-      openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
-      now: new Date().toISOString(),
-    },
-  );
-  if (outcome.status === 'saved') redirect(`/dash/careers/${id}?saved=1`);
+  const outcome = await editCareerUseCase(deps, author, id, readValues(formData), {
+    openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
+    now: new Date().toISOString(),
+  });
+  if (outcome.status === 'saved') redirect(`/dash/careers/${uid}?saved=1`);
   if (outcome.status === 'not-found') redirect('/dash/careers');
   return outcome;
 };
@@ -78,9 +73,10 @@ export const deleteCareer = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseCareerId(readString(formData, CAREER_ID_FIELD));
+  const { careers } = await createCareerDeps();
+  const id = await findCareerId(careers, readString(formData, CAREER_UID_FIELD));
   if (id === null) redirect('/dash/careers');
-  const outcome = await deleteCareerUseCase((await createCareerDeps()).careers, author, id);
+  const outcome = await deleteCareerUseCase(careers, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
   redirect('/dash/careers?deleted=1');
 };

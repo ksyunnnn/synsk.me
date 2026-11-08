@@ -4,7 +4,7 @@ import type { Period } from '@/shared/domain/period';
 
 /**
  * 写し元の職歴・実績・学歴を選ぶチェックボックス。作成の画面（`/dash/resumes/new`）と、作ったあとに
- * 足す画面（`/dash/resumes/{id}/<種類>/new`、FR-041）が使う（specs/002-resume/contracts/dash.md）
+ * 足す画面（`/dash/resumes/{uid}/<種類>/new`、FR-041）が使う（specs/002-resume/contracts/dash.md）
  */
 
 export type SourceOption = { id: number; label: string; detail: string };

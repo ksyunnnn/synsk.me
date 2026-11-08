@@ -17,12 +17,13 @@ import {
 /** `organization` の行のうち、ここで読む列 */
 type OrganizationRow = {
   id: number;
+  uid: string;
   name: string;
   name_masked: string | null;
   updated_at: string;
 };
 
-const COLUMNS = 'id, name, name_masked, updated_at';
+const COLUMNS = 'id, uid, name, name_masked, updated_at';
 
 /** 職歴か実績がこの組織（id）を指す */
 const REFERENCED = `(EXISTS (SELECT 1 FROM career WHERE organization_id = organization.id)
@@ -37,6 +38,7 @@ const isNameTaken = (error: unknown) =>
 
 const toOrganization = (row: OrganizationRow): Organization => ({
   id: row.id,
+  uid: row.uid,
   name: row.name,
   nameMasked: row.name_masked,
   updatedAt: row.updated_at,
@@ -102,6 +104,14 @@ export const createD1OrganizationRepository = (db: D1Database): OrganizationRepo
       .first<OrganizationRow>();
     return row ? toOrganization(row) : null;
   },
+
+  findIdByUid: async (uid) =>
+    (
+      await db
+        .prepare('SELECT id FROM organization WHERE uid = ?')
+        .bind(uid)
+        .first<{ id: number }>()
+    )?.id ?? null,
 
   list: async () => {
     const { results } = await db

@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import {
-  SKILL_ID_FIELD,
+  SKILL_UID_FIELD,
   type SkillField,
   type SkillFieldError,
   type SkillFormResult,
@@ -18,7 +18,8 @@ import { InputField } from '@/shared/components/field';
 type Props = {
   action: (state: SkillFormResult | null, formData: FormData) => Promise<SkillFormResult>;
   initialValues: SkillFormValues;
-  skillId?: number;
+  /** 編集するスキルの uid。持てば編集のフォーム */
+  skillUid?: string;
 };
 
 const ERROR_MESSAGES: Record<SkillField, Partial<Record<SkillFieldError, string>>> = {
@@ -30,7 +31,7 @@ const ERROR_MESSAGES: Record<SkillField, Partial<Record<SkillFieldError, string>
   overrideMonths: { invalid: '月は 0 から 11 の整数で入力してください' },
 };
 
-export const SkillForm = ({ action, initialValues, skillId }: Props) => {
+export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
   const values =
     result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
@@ -42,7 +43,7 @@ export const SkillForm = ({ action, initialValues, skillId }: Props) => {
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      {skillId !== undefined && <input type="hidden" name={SKILL_ID_FIELD} value={skillId} />}
+      {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
           作り手であることを確かめられませんでした。ログインし直してから入力し直してください
@@ -89,7 +90,7 @@ export const SkillForm = ({ action, initialValues, skillId }: Props) => {
           type="submit"
           className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
-          {skillId === undefined ? '登録する' : '保存する'}
+          {skillUid === undefined ? '登録する' : '保存する'}
         </button>
       </div>
     </form>

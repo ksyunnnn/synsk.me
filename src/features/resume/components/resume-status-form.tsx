@@ -50,18 +50,18 @@ export type ResumeStatusState = ReturnType<typeof useResumeStatus>;
 export const ResumeStatusFields = ({
   state: { formAction, message, status, updatedAt },
   draftNote,
-  resumeId,
+  resumeUid,
 }: {
   state: ResumeStatusState;
   /** 非公開の間だけ、状態に添える短い文 */
   draftNote?: string;
-  resumeId: number;
+  resumeUid: string;
 }) => {
   const next: ResumeStatus = status === 'draft' ? 'published' : 'draft';
 
   return (
     <form action={formAction} className="flex flex-col gap-3">
-      <ResumeFormHidden resumeId={resumeId} updatedAt={updatedAt} />
+      <ResumeFormHidden resumeUid={resumeUid} updatedAt={updatedAt} />
       {message && (
         <p role="alert" className="text-destructive">
           {message}
@@ -87,7 +87,7 @@ export const ResumeStatusForm = ({
   action,
   status,
   draftNote,
-  resumeId,
+  resumeUid,
   updatedAt,
 }: ResumeFormCommon & {
   action: StatusAction;
@@ -96,5 +96,5 @@ export const ResumeStatusForm = ({
   draftNote?: string;
 }) => {
   const state = useResumeStatus(action, status, updatedAt);
-  return <ResumeStatusFields state={state} draftNote={draftNote} resumeId={resumeId} />;
+  return <ResumeStatusFields state={state} draftNote={draftNote} resumeUid={resumeUid} />;
 };

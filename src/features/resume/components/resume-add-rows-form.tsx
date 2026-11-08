@@ -22,7 +22,7 @@ import {
 
 /**
  * 作ったあとに、元の職歴・実績・学歴から選んで足すフォーム（specs/002-resume/contracts/dash.md の
- * `/dash/resumes/{id}/<種類>/new`、FR-041）。選び方は作成の画面と同じ部品（`SourceFieldset`）を
+ * `/dash/resumes/{uid}/<種類>/new`、FR-041）。選び方は作成の画面と同じ部品（`SourceFieldset`）を
  * 使う。選択肢は何も選ばない状態で始まる（research.md の R14）。Server Action は props で受け取る
  * （ADR-0026 の依存の向き 3）
  */
@@ -47,7 +47,7 @@ export const ResumeAddRowsForm = ({
   kind,
   legend,
   options,
-  resumeId,
+  resumeUid,
   updatedAt,
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
@@ -57,7 +57,7 @@ export const ResumeAddRowsForm = ({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      <ResumeFormHidden resumeId={resumeId} updatedAt={updatedAt} />
+      <ResumeFormHidden resumeUid={resumeUid} updatedAt={updatedAt} />
       <input type="hidden" name={ROW_KIND_FIELD} value={kind} />
       {message && (
         <p role="alert" className="text-destructive">

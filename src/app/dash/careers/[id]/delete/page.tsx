@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { CAREER_ID_FIELD } from '@/features/career/domain/career';
+import { CAREER_UID_FIELD } from '@/features/career/domain/career';
 import { deleteCareer } from '@/features/career/server/actions';
 import { getCareerForEdit } from '@/features/career/server/queries';
 import { DeleteForm } from '@/shared/components/delete-form';
@@ -28,14 +28,14 @@ const Page = async ({ params }: Props) => {
       </p>
       <DeleteForm
         action={deleteCareer}
-        idField={CAREER_ID_FIELD}
-        id={career.id}
+        uidField={CAREER_UID_FIELD}
+        uid={career.uid}
         messages={{
           forbidden: '作り手であることを確かめられませんでした。ログインし直してください',
         }}
       />
       <p>
-        <TextLink href={`/dash/careers/${career.id}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={`/dash/careers/${career.uid}`}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

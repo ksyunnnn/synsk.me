@@ -10,12 +10,11 @@ import {
 } from '@/features/education/application/save-education';
 import {
   EDUCATION_FIELDS,
-  EDUCATION_ID_FIELD,
-  parseEducationId,
+  EDUCATION_UID_FIELD,
   type EducationFormResult,
   type EducationFormValues,
 } from '@/features/education/domain/education';
-import { createEducationRepository } from '@/features/education/server/queries';
+import { createEducationRepository, findEducationId } from '@/features/education/server/queries';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -52,14 +51,10 @@ export const editEducation = async (
 ): Promise<EducationFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseEducationId(readString(formData, EDUCATION_ID_FIELD));
+  const educations = await createEducationRepository();
+  const id = await findEducationId(educations, readString(formData, EDUCATION_UID_FIELD));
   if (id === null) redirect('/dash/educations');
-  const outcome = await editEducationUseCase(
-    await createEducationRepository(),
-    author,
-    id,
-    readValues(formData),
-  );
+  const outcome = await editEducationUseCase(educations, author, id, readValues(formData));
   if (outcome.status === 'saved') redirect('/dash/educations?saved=1');
   if (outcome.status === 'not-found') redirect('/dash/educations');
   return outcome;
@@ -71,9 +66,10 @@ export const deleteEducation = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseEducationId(readString(formData, EDUCATION_ID_FIELD));
+  const educations = await createEducationRepository();
+  const id = await findEducationId(educations, readString(formData, EDUCATION_UID_FIELD));
   if (id === null) redirect('/dash/educations');
-  const outcome = await deleteEducationUseCase(await createEducationRepository(), author, id);
+  const outcome = await deleteEducationUseCase(educations, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
   redirect('/dash/educations?deleted=1');
 };

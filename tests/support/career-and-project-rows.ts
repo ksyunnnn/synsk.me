@@ -24,6 +24,19 @@ const insertReturningId = async (
   return row.id;
 };
 
+/**
+ * 入れた行の uid。管理画面の URL とフォームは主キーでなく uid で行を指す
+ * （migrations/0011_add_uid_for_dash_url.sql）。uid は DB が入れるため、入れた後に読む
+ */
+export const uidOf = async (db: D1Database, table: string, id: number): Promise<string> => {
+  const row = await db
+    .prepare(`SELECT uid FROM ${table} WHERE id = ?`)
+    .bind(id)
+    .first<{ uid: string }>();
+  if (!row) throw new Error(`${table} に id ${id} の行がない`);
+  return row.uid;
+};
+
 export type OrganizationRowInput = { name?: string; nameMasked?: string | null };
 
 export const insertOrganization = (

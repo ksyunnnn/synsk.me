@@ -4,10 +4,14 @@
  * （specs/001-career-and-project/research.md の R9・R10）。
  */
 
+import type { Uid } from '@/shared/domain/uid';
+
 export type OrganizationId = number;
 
 export type Organization = {
   id: OrganizationId;
+  /** 管理画面の URL とフォームで組織を指す識別子 */
+  uid: Uid;
   /** 組織名の実際の値 */
   name: string;
   /** 秘匿化した組織名。null なら持たない */
@@ -85,6 +89,8 @@ export type OrganizationRepository = {
   findOrCreateByName: (name: string, nameMasked: string | null) => Promise<Organization>;
   /** id で読む。無ければ null */
   findById: (id: OrganizationId) => Promise<Organization | null>;
+  /** 管理画面の URL とフォームの uid が指す組織の id。無ければ null */
+  findIdByUid: (uid: Uid) => Promise<OrganizationId | null>;
   /** 組織の一覧。名前の順 */
   list: () => Promise<Organization[]>;
   /** 職歴・実績がこの組織を指しているか。秘匿化した職歴・実績が指しているかも返す */

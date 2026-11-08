@@ -24,9 +24,9 @@ const Page = async ({ params }: Props) => {
       <h1 className="text-2xl font-bold">組織を削除する</h1>
       <p>次の組織を削除します。職歴か実績が指している組織と、個人の組織は消せません。</p>
       <p>組織名: {organization.name}</p>
-      <DeleteOrganizationForm action={deleteOrganization} organizationId={organization.id} />
+      <DeleteOrganizationForm action={deleteOrganization} organizationUid={organization.uid} />
       <p>
-        <TextLink href={`/dash/organizations/${organization.id}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={`/dash/organizations/${organization.uid}`}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

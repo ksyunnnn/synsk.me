@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { SKILL_ID_FIELD } from '@/features/skill/domain/skill';
+import { SKILL_UID_FIELD } from '@/features/skill/domain/skill';
 import { deleteSkill } from '@/features/skill/server/actions';
 import { getSkillForEdit } from '@/features/skill/server/queries';
 import { DeleteForm } from '@/shared/components/delete-form';
@@ -26,14 +26,14 @@ const Page = async ({ params }: Props) => {
       <p>名前: {skill.name}</p>
       <DeleteForm
         action={deleteSkill}
-        idField={SKILL_ID_FIELD}
-        id={skill.id}
+        uidField={SKILL_UID_FIELD}
+        uid={skill.uid}
         messages={{
           forbidden: '作り手であることを確かめられませんでした。ログインし直してください',
         }}
       />
       <p>
-        <TextLink href={`/dash/skills/${skill.id}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={`/dash/skills/${skill.uid}`}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

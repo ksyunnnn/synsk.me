@@ -14,11 +14,13 @@ import type {
 } from '@/features/resume/domain/resume-forms';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
+import type { Uid } from '@/shared/domain/uid';
 
 export type CreateResumeOutcome =
   | {
       status: 'created';
       id: ResumeId;
+      uid: Uid;
       updatedAt: string;
       audience: ResumeAudience;
       slug: string;
@@ -86,12 +88,12 @@ export const createResume = async (
   const slug = newResumeSlug();
 
   // 書く
-  const { id, updatedAt } = await resumes.create({
+  const { id, uid, updatedAt } = await resumes.create({
     slug,
     title,
     audience,
     limitedExpiresAt: audience === 'limited' ? expires.expiresAt : null,
     content: built.content,
   });
-  return { status: 'created', id, updatedAt, audience, slug };
+  return { status: 'created', id, uid, updatedAt, audience, slug };
 };

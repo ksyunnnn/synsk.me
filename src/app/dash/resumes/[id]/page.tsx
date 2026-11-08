@@ -31,7 +31,7 @@ const Page = async ({ params, searchParams }: Props) => {
   const { saved, regenerated } = await searchParams;
   const now = new Date();
   const isLimited = resume.audience === 'limited';
-  const common = { resumeId: resume.id, updatedAt: resume.updatedAt };
+  const common = { resumeUid: resume.uid, updatedAt: resume.updatedAt };
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-8">
@@ -74,13 +74,13 @@ const Page = async ({ params, searchParams }: Props) => {
         {...common}
       />
       <p>
-        <TextLink href={`/dash/resumes/${resume.id}/preview`}>
+        <TextLink href={`/dash/resumes/${resume.uid}/preview`}>
           訪問者に見せたときの見た目を見る
         </TextLink>
       </p>
       <ResumeOverview resume={resume} now={now} />
       <p>
-        <TextLink href={`/dash/resumes/${resume.id}/delete`}>この職務経歴書を削除する</TextLink>
+        <TextLink href={`/dash/resumes/${resume.uid}/delete`}>この職務経歴書を削除する</TextLink>
       </p>
     </main>
   );

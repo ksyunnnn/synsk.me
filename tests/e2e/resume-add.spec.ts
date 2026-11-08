@@ -50,7 +50,10 @@ test('0 件の職務経歴書に、設定の画面から職歴・実績・学歴
     educations: page.getByRole('link', { name: 'E2E 足す検査の学校' }),
   };
   for (const [kind, link] of Object.entries(links)) {
-    await expect(link).toHaveAttribute('href', new RegExp(`^/dash/resumes/\\d+/${kind}/\\d+$`));
+    await expect(link).toHaveAttribute(
+      'href',
+      new RegExp(`^/dash/resumes/[0-9a-f]{32}/${kind}/[0-9a-f]{32}$`),
+    );
   }
 
   // 写した職歴は、足す画面の選択肢に出ない

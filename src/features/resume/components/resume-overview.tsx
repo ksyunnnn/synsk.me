@@ -6,7 +6,7 @@ import { toYearsAndMonths, type Period } from '@/shared/domain/period';
 /**
  * 設定の画面の中身。写した職歴・実績・学歴・スキルの一覧と、各行の編集へのリンク、職歴・実績・
  * 学歴を足す画面へのリンク（FR-041。行が 0 件でも出す）
- * （specs/002-resume/contracts/dash.md の `/dash/resumes/{id}`）
+ * （specs/002-resume/contracts/dash.md の `/dash/resumes/{uid}`）
  */
 
 const periodText = (period: Period) => `${period.startedOn} 〜 ${period.endedOn ?? ''}`;
@@ -19,7 +19,7 @@ const formatMonths = (months: number) => {
 export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Date }) => {
   const skills = listResumeSkills(resume.projects, resume.skillOverrides, now);
   const overridden = new Set(resume.skillOverrides.map((o) => o.skillName));
-  const base = `/dash/resumes/${resume.id}`;
+  const base = `/dash/resumes/${resume.uid}`;
 
   return (
     <div className="flex flex-col gap-8">
@@ -31,7 +31,7 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
         <ul className="flex flex-col gap-2">
           {resume.careers.map((career) => (
             <li key={career.id} className="flex flex-col">
-              <TextLink href={`${base}/careers/${career.id}`}>
+              <TextLink href={`${base}/careers/${career.uid}`}>
                 {career.organizationName}・{career.role}
               </TextLink>
               <span className="text-sm text-muted-foreground">{periodText(career.period)}</span>
@@ -47,7 +47,7 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
         <ul className="flex flex-col gap-2">
           {resume.projects.map((project) => (
             <li key={project.id} className="flex flex-col">
-              <TextLink href={`${base}/projects/${project.id}`}>{project.title}</TextLink>
+              <TextLink href={`${base}/projects/${project.uid}`}>{project.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 {RESUME_PROJECT_KIND_LABELS[project.kind]}・{project.organizationName}・
                 {periodText(project.period)}
@@ -64,7 +64,7 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
         <ul className="flex flex-col gap-2">
           {resume.educations.map((education) => (
             <li key={education.id} className="flex flex-col">
-              <TextLink href={`${base}/educations/${education.id}`}>{education.school}</TextLink>
+              <TextLink href={`${base}/educations/${education.uid}`}>{education.school}</TextLink>
               <span className="text-sm text-muted-foreground">{periodText(education.period)}</span>
             </li>
           ))}

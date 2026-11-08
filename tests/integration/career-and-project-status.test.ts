@@ -5,6 +5,7 @@ import {
   insertCareer,
   insertOrganization,
   insertProject,
+  uidOf,
 } from '../support/career-and-project-rows';
 
 /**
@@ -143,7 +144,8 @@ describe.each([
 // このファイルの最後に置く。サイトに載せる実績を、載せない実績に変える
 it('サイトに載せないに切り替えると、直後の要求から 404 になる（FR-043）', async () => {
   const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
-  const path = `/dash/projects/${publishedId}`;
+  const uid = await uidOf(ctx.db, 'project', publishedId);
+  const path = `/dash/projects/${uid}`;
   const page = await ctx.server.fetch(path, { headers: await authorHeaders() });
   expect(page.status).toBe(200);
   const row = await ctx.db
@@ -154,7 +156,7 @@ it('サイトに載せないに切り替えると、直後の要求から 404 �
     .bind(publishedId)
     .first<Record<string, string | null>>();
   const { body, contentType } = await encodeForm(readActionFields(await page.text()), {
-    projectId: String(publishedId),
+    projectUid: uid,
     openedUpdatedAt: row?.updated_at ?? '',
     organizationName: row?.organization_name ?? '',
     organizationNameMasked: row?.organization_name_masked ?? '',

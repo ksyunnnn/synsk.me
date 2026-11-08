@@ -1,9 +1,10 @@
 import 'server-only';
 
 import { listSkills as listSkillsUseCase } from '@/features/skill/application/list-skills';
-import { parseSkillId, type Skill, type SkillSummary } from '@/features/skill/domain/skill';
+import type { Skill, SkillSummary } from '@/features/skill/domain/skill';
 import type { SkillRepository } from '@/features/skill/domain/skill-repository';
 import { createD1SkillRepository } from '@/features/skill/server/d1-skill-repository';
+import { parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
 
@@ -18,15 +19,20 @@ export const listSkills = async (): Promise<SkillSummary[]> => {
   return listSkillsUseCase(await createSkillRepository(), new Date());
 };
 
-/** 作り手が編集するスキル。作り手でなければ 403。無い id なら null */
-export const getSkillForEdit = async (id: string): Promise<Skill | null> => {
-  await requireAuthor();
-  const skillId = parseSkillId(id);
-  return skillId === null ? null : (await createSkillRepository()).findById(skillId);
+/** URL とフォームの uid が指すスキルの id。形の違う値は D1 を読まずに null */
+export const findSkillId = async (skills: SkillRepository, uid: string) => {
+  const parsed = parseUid(uid);
+  return parsed === null ? null : skills.findIdByUid(parsed);
 };
 
-/** `src/proxy.ts` が呼ぶ。スキルがある id か */
-export const hasSkillId = async (id: string): Promise<boolean> => {
-  const skillId = parseSkillId(id);
-  return skillId !== null && (await createSkillRepository()).hasId(skillId);
+/** 作り手が編集するスキル。作り手でなければ 403。無い uid なら null */
+export const getSkillForEdit = async (uid: string): Promise<Skill | null> => {
+  await requireAuthor();
+  const skills = await createSkillRepository();
+  const id = await findSkillId(skills, uid);
+  return id === null ? null : skills.findById(id);
 };
+
+/** `src/proxy.ts` が呼ぶ。スキルがある uid か */
+export const hasSkillUid = async (uid: string): Promise<boolean> =>
+  (await findSkillId(await createSkillRepository(), uid)) !== null;

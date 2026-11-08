@@ -68,6 +68,15 @@ describe('findByName', () => {
   });
 });
 
+describe('findIdByUid（管理画面の URL の uid、migrations/0011）', () => {
+  it('組織の uid から id を引き、無い uid なら null', async () => {
+    const created = await organizations.findOrCreateByName('作り物株式会社', 'ある会社');
+    expect(created.uid).toMatch(/^[0-9a-f]{32}$/);
+    expect(await organizations.findIdByUid(created.uid)).toBe(created.id);
+    expect(await organizations.findIdByUid('0'.repeat(32))).toBeNull();
+  });
+});
+
 describe('findById', () => {
   it('無い id なら null', async () => {
     expect(await organizations.findById(999)).toBeNull();

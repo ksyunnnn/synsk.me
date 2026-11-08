@@ -1,5 +1,6 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { toPeriod, type Period } from '@/shared/domain/period';
+import type { Uid } from '@/shared/domain/uid';
 
 /**
  * 学歴の型と決まり（specs/001-career-and-project/spec.md の FR-036・FR-037・FR-039）。
@@ -8,18 +9,17 @@ import { toPeriod, type Period } from '@/shared/domain/period';
 
 export type EducationId = number;
 
-export const parseEducationId = (value: string): EducationId | null =>
-  /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
-
 export type Education = {
   id: EducationId;
+  /** 管理画面の URL とフォームで学歴を指す識別子 */
+  uid: Uid;
   school: string;
   department: string | null;
   period: Period;
   remarks: string | null;
 };
 
-export type EducationContent = Omit<Education, 'id'>;
+export type EducationContent = Omit<Education, 'id' | 'uid'>;
 
 export const EDUCATION_FIELDS = [
   'school',
@@ -33,7 +33,7 @@ export type EducationFieldError = 'missing' | 'invalid' | 'ended-before-started'
 export type EducationFormValues = Record<EducationField, string>;
 export type EducationFormResult = ActionResult<EducationField, EducationFieldError>;
 
-export const EDUCATION_ID_FIELD = 'educationId';
+export const EDUCATION_UID_FIELD = 'educationUid';
 
 const emptyToNull = (value: string) => (value.trim() === '' ? null : value.trim());
 
@@ -64,7 +64,7 @@ export const parseEducationContent = (
   };
 };
 
-export const toEducationFormValues = (education?: Education): EducationFormValues => ({
+export const toEducationFormValues = (education?: EducationContent): EducationFormValues => ({
   school: education?.school ?? '',
   department: education?.department ?? '',
   startedOn: education?.period.startedOn ?? '',

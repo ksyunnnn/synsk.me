@@ -33,7 +33,7 @@ const Page = async ({ searchParams }: Props) => {
         <ul className="flex flex-col gap-3">
           {resumes.map((resume) => (
             <li key={resume.id} className="flex flex-col">
-              <TextLink href={`/dash/resumes/${resume.id}`}>{resume.title}</TextLink>
+              <TextLink href={`/dash/resumes/${resume.uid}`}>{resume.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 {resume.audience === 'limited' ? '限定公開用' : '公開用'}・
                 {resume.status === 'draft' ? '非公開' : '公開中'}

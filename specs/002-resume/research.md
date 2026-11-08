@@ -52,7 +52,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 訪問者の URL: 公開用と限定公開用は `/resume/{slug}`（R5）。`resume.slug` は限定公開用と公開用をまたいで UNIQUE のため、1 つの経路で識別子から行を引ける。PDF は同じページを印刷して作り、経路を持たない（R11）
 - 理由: ADR-0048 は URL をコレクション名と識別子で表し、職務経歴書に permalink を持たせる。ADR-0048 の Consequences は職務経歴書のコレクション名を `/resume` とする
 - `/resume/{slug}/missing` は `/resume/{slug}` の下にあり、訪問者の経路と重ならない
-- 管理画面は `/dash/resumes/*`（contracts/dash.md）。001 の `/dash/projects` と同じく複数形にする
+- 管理画面は `/dash/resumes/*`（contracts/dash.md）。001 の `/dash/projects` と同じく複数形にする。職務経歴書と写した行は `uid` で開き、`resume.slug` を管理画面の URL に使わない（001 の research.md の R17）
 - `src/app/resume/page.tsx`（`/resume`）は 002 の spec に要件が無く、002 は触れない。002 は `src/app/resume/[slug]/` の下だけを足す
 - 食い違い: ADR-0048 の Decision Outcome は「note と職務経歴書の slug は、題から候補を提示し、オーナーが確定させる」とする。spec の FR-037・FR-039 は、識別子を既定で uid とし、限定公開用は書き換えられないとする。plan は spec に従う。ADR を直すかはオーナーが決める（plan.md の U14）
 
@@ -143,7 +143,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R14 作ったあとに足す
 
-- 決めたこと: 設定の画面の職歴・実績・学歴の各見出しの下に、足す画面へのリンクを置く。行が 0 件でも出す。足す画面は種類ごとに `/dash/resumes/{id}/<種類>/new` に置き、作成の画面と同じ選択の部品（`src/features/resume/components/resume-source-fieldset.tsx`）を使う。写し方は作成と同じ `build-resume.ts` を通し、R4 と同じく読む → 計算 → 書くの順にする（FR-041）
+- 決めたこと: 設定の画面の職歴・実績・学歴の各見出しの下に、足す画面へのリンクを置く。行が 0 件でも出す。足す画面は種類ごとに `/dash/resumes/{uid}/<種類>/new` に置き、作成の画面と同じ選択の部品（`src/features/resume/components/resume-source-fieldset.tsx`）を使う。写し方は作成と同じ `build-resume.ts` を通し、R4 と同じく読む → 計算 → 書くの順にする（FR-041）
 - 既に写した元の行（写した行の `career_id`・`project_id`・`education_id` が指す行）は、選択肢から外す。理由: 同じ元の行をもう一度写すと、元の値で写し直すことと同じになる。写し直す機能は spec の「決定が無く」に残っている。外さずに写し済みと示す形は、選べない行を並べるだけで、選ぶ操作に要らない。送られた id に写し済みの行があれば、足さずに知らせる
 - 写し元を消した写した行（`*_id` が NULL）は写し済みに数えない。消した元の行は選択肢にも出ない
 - 選択肢は何も選ばない状態で始める。理由: 作成の画面がすべてを選んで始める（FR-005）のは、作る時点で載せないものを外すためである。足す画面の選択肢は写していない行だけで、すべてを選んで始めると、外し忘れた行が足される。何も選ばずに送れば、足さずに知らせる

@@ -54,6 +54,15 @@ beforeEach(async () => {
 });
 
 describe('register', () => {
+  it('uid を返し、uid から id を引ける。無い uid なら null（管理画面の URL、migrations/0011）', async () => {
+    const result = await careers.register(content());
+    if (!result.ok) throw new Error(result.reason);
+    expect(result.uid).toMatch(/^[0-9a-f]{32}$/);
+    expect((await careers.findForEdit(result.id))?.uid).toBe(result.uid);
+    expect(await careers.findIdByUid(result.uid)).toBe(result.id);
+    expect(await careers.findIdByUid('0'.repeat(32))).toBeNull();
+  });
+
   it('終わりの日が空の職歴を、続いている職歴として保存する（FR-008）', async () => {
     const id = await register();
     expect(await careers.findForEdit(id)).toMatchObject({

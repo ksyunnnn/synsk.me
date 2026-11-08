@@ -7,7 +7,7 @@ import {
 } from '@/shared/domain/organization';
 
 /** 組織のフォームが、入力の項目とは別に送る値 */
-export const ORGANIZATION_ID_FIELD = 'organizationId';
+export const ORGANIZATION_UID_FIELD = 'organizationUid';
 
 export type OrganizationField = 'name' | 'nameMasked';
 export type OrganizationFieldError = 'missing' | 'name-taken' | 'masked-name-required';

@@ -1,3 +1,4 @@
+import type { Uid } from '@/shared/domain/uid';
 import type {
   Project,
   ProjectContent,
@@ -29,12 +30,15 @@ export type ProjectRepository = {
   findVisitorBySlug: (slug: string) => Promise<VisitorProject | null>;
   /** 作り手が編集する実績。無い id なら null */
   findForEdit: (id: ProjectId) => Promise<Project | null>;
+  /** 管理画面の URL とフォームの uid が指す実績の id。無ければ null */
+  findIdByUid: (uid: Uid) => Promise<ProjectId | null>;
   /** 作り手の一覧。始まりの日の新しい順 */
   list: () => Promise<ProjectSummary[]>;
   register: (
     content: ProjectContent & { slug: string },
   ) => Promise<
-    { ok: true; id: ProjectId } | { ok: false; reason: Exclude<ProjectWriteFailure, 'conflict'> }
+    | { ok: true; id: ProjectId; uid: Uid }
+    | { ok: false; reason: Exclude<ProjectWriteFailure, 'conflict'> }
   >;
   /**
    * 開いたときの更新日時 `openedUpdatedAt` と今の更新日時が一致するときだけ書く

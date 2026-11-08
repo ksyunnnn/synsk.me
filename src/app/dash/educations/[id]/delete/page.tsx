@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { EDUCATION_ID_FIELD } from '@/features/education/domain/education';
+import { EDUCATION_UID_FIELD } from '@/features/education/domain/education';
 import { deleteEducation } from '@/features/education/server/actions';
 import { getEducationForEdit } from '@/features/education/server/queries';
 import { DeleteForm } from '@/shared/components/delete-form';
@@ -26,14 +26,14 @@ const Page = async ({ params }: Props) => {
       <p>{education.school}</p>
       <DeleteForm
         action={deleteEducation}
-        idField={EDUCATION_ID_FIELD}
-        id={education.id}
+        uidField={EDUCATION_UID_FIELD}
+        uid={education.uid}
         messages={{
           forbidden: '作り手であることを確かめられませんでした。ログインし直してください',
         }}
       />
       <p>
-        <TextLink href={`/dash/educations/${education.id}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={`/dash/educations/${education.uid}`}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

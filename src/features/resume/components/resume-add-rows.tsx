@@ -10,7 +10,7 @@ import { TextLink } from '@/shared/components/text-link';
 
 /**
  * 作ったあとに職歴・実績・学歴を足す画面の中身（specs/002-resume/contracts/dash.md の
- * `/dash/resumes/{id}/<種類>/new`、FR-041）。既に写した写し元は選択肢に出さない
+ * `/dash/resumes/{uid}/<種類>/new`、FR-041）。既に写した写し元は選択肢に出さない
  * （research.md の R14）。フォームには選択肢の名前だけを渡し、本文や関連 URL を渡さない
  */
 
@@ -38,7 +38,7 @@ export const ResumeAddRows = ({
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href={`/dash/resumes/${resume.id}`}>設定の画面へ戻る</TextLink>
+        <TextLink href={`/dash/resumes/${resume.uid}`}>設定の画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">{label}を足す</h1>
       <p className="text-sm text-muted-foreground">
@@ -50,7 +50,7 @@ export const ResumeAddRows = ({
         kind={kind}
         legend={label}
         options={options}
-        resumeId={resume.id}
+        resumeUid={resume.uid}
         updatedAt={resume.updatedAt}
       />
     </main>

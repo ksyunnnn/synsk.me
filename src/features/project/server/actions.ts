@@ -9,12 +9,11 @@ import { registerProject as registerProjectUseCase } from '@/features/project/ap
 import {
   OPENED_UPDATED_AT_FIELD,
   PROJECT_FIELDS,
-  PROJECT_ID_FIELD,
-  parseProjectId,
+  PROJECT_UID_FIELD,
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
-import { createProjectDeps } from '@/features/project/server/queries';
+import { createProjectDeps, findProjectId } from '@/features/project/server/queries';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -55,7 +54,7 @@ export const registerProject = async (
     await getCurrentAuthor(),
     readValues(formData),
   );
-  if (outcome.status === 'registered') redirect(`/dash/projects/${outcome.id}?saved=1`);
+  if (outcome.status === 'registered') redirect(`/dash/projects/${outcome.uid}?saved=1`);
   return outcome;
 };
 
@@ -66,35 +65,32 @@ export const editProject = async (
 ): Promise<ProjectFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseProjectId(readString(formData, PROJECT_ID_FIELD));
+  const deps = await createProjectDeps();
+  const uid = readString(formData, PROJECT_UID_FIELD);
+  const id = await findProjectId(deps.projects, uid);
   if (id === null) redirect('/dash/projects');
 
-  const outcome = await editProjectUseCase(
-    await createProjectDeps(),
-    author,
-    id,
-    readValues(formData),
-    {
-      openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
-      now: new Date().toISOString(),
-    },
-  );
-  if (outcome.status === 'saved') redirect(`/dash/projects/${id}?saved=1`);
+  const outcome = await editProjectUseCase(deps, author, id, readValues(formData), {
+    openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
+    now: new Date().toISOString(),
+  });
+  if (outcome.status === 'saved') redirect(`/dash/projects/${uid}?saved=1`);
   if (outcome.status === 'not-found') redirect('/dash/projects');
   return outcome;
 };
 
-/** 実績を削除し、一覧の画面へ移る。確認の画面（`/dash/projects/{id}/delete`）のフォームが呼ぶ */
+/** 実績を削除し、一覧の画面へ移る。確認の画面（`/dash/projects/{uid}/delete`）のフォームが呼ぶ */
 export const deleteProject = async (
   _state: { status: 'forbidden' } | null,
   formData: FormData,
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseProjectId(readString(formData, PROJECT_ID_FIELD));
+  const { projects } = await createProjectDeps();
+  const id = await findProjectId(projects, readString(formData, PROJECT_UID_FIELD));
   if (id === null) redirect('/dash/projects');
 
-  const outcome = await deleteProjectUseCase((await createProjectDeps()).projects, author, id);
+  const outcome = await deleteProjectUseCase(projects, author, id);
   if (outcome.status === 'forbidden') return outcome;
   redirect('/dash/projects?deleted=1');
 };

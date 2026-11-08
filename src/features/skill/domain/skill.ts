@@ -1,5 +1,6 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import type { Period } from '@/shared/domain/period';
+import type { Uid } from '@/shared/domain/uid';
 
 /**
  * スキルの型と決まり（specs/001-career-and-project/spec.md の FR-031〜FR-034）。
@@ -10,6 +11,8 @@ export type SkillId = number;
 
 export type Skill = {
   id: SkillId;
+  /** 管理画面の URL とフォームでスキルを指す識別子 */
+  uid: Uid;
   name: string;
   /** 経験年数を手で上書きした月数。null なら実績の期間から求める（FR-034） */
   monthsOverride: number | null;
@@ -32,11 +35,11 @@ export type SkillFieldError = 'missing' | 'invalid' | 'name-taken';
 export type SkillFormValues = Record<SkillField, string>;
 export type SkillFormResult = ActionResult<SkillField, SkillFieldError>;
 
-/** 編集・削除のフォームが、入力の項目とは別に送る値 */
-export const SKILL_ID_FIELD = 'skillId';
+/** 保存する内容。id と uid は DB が決める */
+export type SkillContent = Omit<Skill, 'id' | 'uid'>;
 
-export const parseSkillId = (value: string): SkillId | null =>
-  /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
+/** 編集・削除のフォームが、入力の項目とは別に送る値 */
+export const SKILL_UID_FIELD = 'skillUid';
 
 const NON_NEGATIVE_INTEGER = /^\d{1,4}$/;
 
@@ -69,7 +72,7 @@ export const parseSkillContent = (
     : { ok: true, content: { name, monthsOverride } };
 };
 
-export const toSkillFormValues = (skill?: Skill): SkillFormValues => {
+export const toSkillFormValues = (skill?: SkillContent): SkillFormValues => {
   if (!skill || skill.monthsOverride === null) {
     return { name: skill?.name ?? '', overrideYears: '', overrideMonths: '' };
   }
