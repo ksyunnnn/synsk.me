@@ -11,26 +11,16 @@ import {
   CAREER_UID_FIELD,
   OPENED_UPDATED_AT_FIELD,
   type CareerFormResult,
-  type CareerFormValues,
 } from '@/features/career/domain/career';
 import { createCareerDeps } from '@/features/career/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
+import { readString, readValues } from '@/shared/server/form-data';
 
 /**
  * 職歴のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
  * オーナーでなければ、入力した値を返さない
  */
-
-const readString = (formData: FormData, name: string) => {
-  const value = formData.get(name);
-  return typeof value === 'string' ? value : '';
-};
-
-const readValues = (formData: FormData): CareerFormValues =>
-  Object.fromEntries(
-    CAREER_FIELDS.map((field) => [field, readString(formData, field)]),
-  ) as CareerFormValues;
 
 /** 職歴を登録し、編集の画面へ移る */
 export const registerCareer = async (
@@ -40,7 +30,7 @@ export const registerCareer = async (
   const outcome = await registerCareerUseCase(
     await createCareerDeps(),
     await getCurrentAuthor(),
-    readValues(formData),
+    readValues(formData, CAREER_FIELDS),
   );
   if (outcome.status === 'registered') redirect(`/dash/careers/${outcome.uid}?saved=1`);
   return outcome;
@@ -58,7 +48,7 @@ export const editCareer = async (
   const id = await findIdByUid(deps.careers, uid);
   if (id === null) redirect('/dash/careers');
 
-  const outcome = await editCareerUseCase(deps, author, id, readValues(formData), {
+  const outcome = await editCareerUseCase(deps, author, id, readValues(formData, CAREER_FIELDS), {
     openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
     now: new Date().toISOString(),
   });

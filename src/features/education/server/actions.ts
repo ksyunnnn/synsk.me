@@ -12,26 +12,16 @@ import {
   EDUCATION_FIELDS,
   EDUCATION_UID_FIELD,
   type EducationFormResult,
-  type EducationFormValues,
 } from '@/features/education/domain/education';
 import { createEducationRepository } from '@/features/education/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
+import { readString, readValues } from '@/shared/server/form-data';
 
 /**
  * 学歴のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
  * オーナーでなければ、入力した値を返さない
  */
-
-const readString = (formData: FormData, name: string) => {
-  const value = formData.get(name);
-  return typeof value === 'string' ? value : '';
-};
-
-const readValues = (formData: FormData): EducationFormValues =>
-  Object.fromEntries(
-    EDUCATION_FIELDS.map((field) => [field, readString(formData, field)]),
-  ) as EducationFormValues;
 
 export const registerEducation = async (
   _state: EducationFormResult | null,
@@ -40,7 +30,7 @@ export const registerEducation = async (
   const outcome = await registerEducationUseCase(
     await createEducationRepository(),
     await getCurrentAuthor(),
-    readValues(formData),
+    readValues(formData, EDUCATION_FIELDS),
   );
   if (outcome.status === 'registered') redirect('/dash/educations?saved=1');
   return outcome;
@@ -55,7 +45,12 @@ export const editEducation = async (
   const educations = await createEducationRepository();
   const id = await findIdByUid(educations, readString(formData, EDUCATION_UID_FIELD));
   if (id === null) redirect('/dash/educations');
-  const outcome = await editEducationUseCase(educations, author, id, readValues(formData));
+  const outcome = await editEducationUseCase(
+    educations,
+    author,
+    id,
+    readValues(formData, EDUCATION_FIELDS),
+  );
   if (outcome.status === 'saved') redirect('/dash/educations?saved=1');
   if (outcome.status === 'not-found') redirect('/dash/educations');
   return outcome;

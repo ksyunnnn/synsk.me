@@ -59,25 +59,12 @@ import {
 } from '@/features/resume/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
+import { readString, readStrings, readValues } from '@/shared/server/form-data';
 
 /**
  * 職務経歴書の管理画面のフォームが呼ぶ Server Action（specs/002-resume/contracts/dash.md）。
  * 何より先にオーナーであることを確かめる（ADR-0036）。オーナーでなければ、入力した値を返さない
  */
-
-const readString = (formData: FormData, name: string) => {
-  const value = formData.get(name);
-  return typeof value === 'string' ? value : '';
-};
-
-const readStrings = (formData: FormData, name: string) =>
-  formData.getAll(name).filter((value): value is string => typeof value === 'string');
-
-const readValues = <F extends string>(formData: FormData, fields: readonly F[]) =>
-  Object.fromEntries(fields.map((field) => [field, readString(formData, field)])) as Record<
-    F,
-    string
-  >;
 
 const readTimes = (formData: FormData): EditTimes => ({
   openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),

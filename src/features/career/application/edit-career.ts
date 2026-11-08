@@ -29,7 +29,6 @@ export const editCareer = async (
   times: { openedUpdatedAt: string; now: string },
 ): Promise<EditCareerOutcome> => {
   if (!author) return { status: 'forbidden' };
-  if (!(await careers.hasId(id))) return { status: 'not-found' };
 
   const parsed = parseCareerContent(values);
   if (!parsed.ok) return { status: 'invalid', errors: parsed.errors, values };

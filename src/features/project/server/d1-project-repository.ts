@@ -11,7 +11,13 @@ import type {
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
 import type { CalendarDate } from '@/shared/domain/period';
 import type { SiteStatus } from '@/shared/domain/site-status';
-import { findOrCreateOrganizationStatements } from '@/shared/server/organization-repository';
+import {
+  MASKING_ALLOWED,
+  ORGANIZATION_ID_BY_NAME,
+  editGuard,
+  findOrCreateOrganizationStatements,
+  registerGuard,
+} from '@/shared/server/organization-repository';
 
 /**
  * `ProjectRepository` の D1 の実装。行の型はこのファイルの中だけに置き、domain の型に
@@ -95,16 +101,6 @@ const EDIT_COLUMNS = `
   o.name_masked AS organization_name_masked, p.kind, p.title, p.title_masked, p.is_masked,
   p.status, p.started_on, p.ended_on, p.description, p.url, p.updated_at`;
 
-/** 組織名から組織の id を読む部分。組織の行は同じ batch の先の文が作る */
-const ORGANIZATION_ID_BY_NAME = '(SELECT id FROM organization WHERE name = ?)';
-
-/**
- * 秘匿化する実績が、秘匿化した組織名を持つ組織を指すときだけ真になる条件（FR-001）。
- * 秘匿化しない実績では常に真。束ねる値は、秘匿化するか（0 か 1）と組織名
- */
-const MASKING_ALLOWED =
-  '(? = 0 OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))';
-
 /**
  * 訪問者に出してよい実績の条件。サイトに載せる実績だけを出す（spec の FR-045）。秘匿化した
  * 実績は、組織が秘匿化した組織名を持つときだけ出す。持たなければ、実際の組織名を出す代わりに
@@ -113,29 +109,6 @@ const MASKING_ALLOWED =
  */
 const VISITOR_VISIBLE =
   "(p.status = 'published' AND (p.is_masked = 0 OR o.name_masked IS NOT NULL))";
-
-/**
- * 登録の INSERT が当たるときだけ真になる条件。組織を探して作る文に渡し、拒まれる登録では組織も
- * 書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）。秘匿化した組織名を渡す保存は、組織を探して
- * 作る文がその組織名を入れるため、`MASKING_ALLOWED` を満たす
- */
-const registerGuard = (content: ProjectContent) => ({
-  sql: `(? = 0 OR ? IS NOT NULL
-    OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))`,
-  values: [content.isMasked ? 1 : 0, content.organizationNameMasked, content.organizationName],
-});
-
-/**
- * 編集の UPDATE が当たるときだけ真になる条件。行があり、更新日時が開いたときと同じで、
- * `registerGuard` を満たす
- */
-const editGuard = (id: number, openedUpdatedAt: string, content: ProjectContent) => {
-  const masking = registerGuard(content);
-  return {
-    sql: `(EXISTS (SELECT 1 FROM project WHERE id = ? AND updated_at = ?) AND ${masking.sql})`,
-    values: [id, openedUpdatedAt, ...masking.values],
-  };
-};
 
 const isSlugTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: project.slug');
@@ -364,7 +337,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         ),
       ];
       const statements = [
-        ...organizationStatements(content, editGuard(id, openedUpdatedAt, content)),
+        ...organizationStatements(content, editGuard('project', id, openedUpdatedAt, content)),
         update,
       ];
       let changes: number;
