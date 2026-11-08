@@ -21,7 +21,6 @@ const fakeSkills = (overrides: Partial<SkillRepository> = {}): SkillRepository =
   register: vi.fn(async () => ({ ok: true as const, id: 1, uid: UID })),
   edit: vi.fn(),
   delete: vi.fn(),
-  hasId: vi.fn(),
   ...overrides,
 });
 

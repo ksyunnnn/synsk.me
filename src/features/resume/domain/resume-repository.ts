@@ -80,5 +80,4 @@ export type ResumeRepository = {
   ) => Promise<EditResult>;
   /** 子の行から物理削除する（research.md の R9） */
   delete: (id: ResumeId) => Promise<{ ok: boolean }>;
-  hasId: (id: ResumeId) => Promise<boolean>;
 };

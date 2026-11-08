@@ -382,8 +382,5 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     findIdByUid: async (uid) =>
       (await db.prepare('SELECT id FROM project WHERE uid = ?').bind(uid).first<{ id: number }>())
         ?.id ?? null,
-
-    hasId: async (id) =>
-      (await db.prepare('SELECT 1 AS found FROM project WHERE id = ?').bind(id).first()) !== null,
   };
 };

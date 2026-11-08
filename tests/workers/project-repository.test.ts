@@ -228,12 +228,10 @@ describe('一覧と有無', () => {
     expect((await projects.list()).map((p) => p.title)).toEqual(['新しい', '古い']);
   });
 
-  it('識別子と id の有無を返す', async () => {
-    const id = await register({ slug: 'exists', status: 'published' });
+  it('識別子の有無を返す', async () => {
+    await register({ slug: 'exists', status: 'published' });
     expect(await projects.hasSlug('exists')).toBe(true);
     expect(await projects.hasSlug('absent')).toBe(false);
-    expect(await projects.hasId(id)).toBe(true);
-    expect(await projects.hasId(id + 1)).toBe(false);
   });
 });
 

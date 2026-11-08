@@ -69,7 +69,6 @@ const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   editEducation: vi.fn<Repo['editEducation']>(async () => OK),
   editSkillOverrides: vi.fn<Repo['editSkillOverrides']>(async () => OK),
   delete: vi.fn<Repo['delete']>(async () => ({ ok: true })),
-  hasId: vi.fn<Repo['hasId']>(async () => true),
 });
 
 const createValues = (overrides: Partial<CreateResumeFormValues> = {}): CreateResumeFormValues => ({

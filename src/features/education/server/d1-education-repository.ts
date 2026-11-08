@@ -81,7 +81,4 @@ export const createD1EducationRepository = (db: D1Database): EducationRepository
     ]);
     return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
   },
-
-  hasId: async (id) =>
-    (await db.prepare('SELECT 1 AS found FROM education WHERE id = ?').bind(id).first()) !== null,
 });

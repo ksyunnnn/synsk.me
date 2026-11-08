@@ -19,5 +19,4 @@ export type EducationRepository = {
   edit: (id: EducationId, content: EducationContent) => Promise<{ ok: boolean }>;
   /** 写した職務経歴書の行は残し、指す id を空にしてから消す（research.md の R8） */
   delete: (id: EducationId) => Promise<{ ok: boolean }>;
-  hasId: (id: EducationId) => Promise<boolean>;
 };

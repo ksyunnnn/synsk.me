@@ -95,7 +95,4 @@ export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
     ]);
     return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
   },
-
-  hasId: async (id) =>
-    (await db.prepare('SELECT 1 AS found FROM skill WHERE id = ?').bind(id).first()) !== null,
 });
