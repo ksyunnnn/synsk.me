@@ -3,14 +3,13 @@
 import { useActionState } from 'react';
 import {
   OPENED_UPDATED_AT_FIELD,
-  PROJECT_ID_FIELD,
+  PROJECT_UID_FIELD,
   PROJECT_KINDS,
   PROJECT_KIND_LABELS,
   type ProjectField,
   type ProjectFieldError,
   type ProjectFormResult,
   type ProjectFormValues,
-  type ProjectId,
 } from '@/features/project/domain/project';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
@@ -40,7 +39,7 @@ type Props = {
   /** つなげるスキルの選択肢（FR-032） */
   skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
-  project?: { id: ProjectId; updatedAt: string; isMasked: boolean };
+  project?: { uid: string; updatedAt: string; isMasked: boolean };
 };
 
 const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, string>>> = {
@@ -96,7 +95,7 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
     <form action={formAction} className="flex flex-col gap-6">
       {project && (
         <>
-          <input type="hidden" name={PROJECT_ID_FIELD} value={project.id} />
+          <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />
           <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={project.updatedAt} />
         </>
       )}

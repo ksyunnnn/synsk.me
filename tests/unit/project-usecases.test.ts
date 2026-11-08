@@ -26,6 +26,7 @@ const NOW = '2026-11-04T00:00:00.000Z';
 
 const project = (overrides: Partial<Project> = {}): Project => ({
   id: 1,
+  uid: '0123456789abcdef0123456789abcdef',
   slug: '0b6f3c1e-1111-4222-8333-444455556666',
   organization: { id: 1, name: '作り物株式会社', nameMasked: 'ある会社' },
   kind: 'application',
@@ -51,7 +52,12 @@ const fakeProjects = (current: Project | null) =>
     findVisitorBySlug: vi.fn(),
     findForEdit: vi.fn(async () => current),
     list: vi.fn(),
-    register: vi.fn(async () => ({ ok: true as const, id: 7 })),
+    findIdByUid: vi.fn(),
+    register: vi.fn(async () => ({
+      ok: true as const,
+      id: 7,
+      uid: 'fedcba9876543210fedcba9876543210',
+    })),
     edit: vi.fn(async () => ({ ok: true as const })),
     delete: vi.fn(async () => ({ ok: true })),
     hasSlug: vi.fn(),
@@ -65,7 +71,13 @@ let deps: ProjectDeps;
 
 beforeEach(() => {
   projects = fakeProjects(project());
-  organization = { id: 1, name: '作り物株式会社', nameMasked: 'ある会社', updatedAt: OPENED_AT };
+  organization = {
+    id: 1,
+    uid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+    name: '作り物株式会社',
+    nameMasked: 'ある会社',
+    updatedAt: OPENED_AT,
+  };
   deps = { projects, organizations: { findByName: vi.fn(async () => organization) } };
 });
 
@@ -96,6 +108,7 @@ describe('registerProject', () => {
     expect(await registerProject(deps, OWNER, values({ slug: 'ignored' }))).toEqual({
       status: 'registered',
       id: 7,
+      uid: 'fedcba9876543210fedcba9876543210',
     });
     const [saved] = projects.register.mock.calls[0] as unknown as [{ slug: string }];
     expect(saved.slug).not.toBe('ignored');

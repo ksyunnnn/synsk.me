@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestServer, type TestServer } from './support/d1';
 import { encodeForm, readActionFields } from './support/form';
-import { insertOrganization, insertProject } from '../support/career-and-project-rows';
+import { insertOrganization, insertProject, uidOf } from '../support/career-and-project-rows';
 
 /**
  * 秘匿化した実績の実際の値を、訪問者への応答に含めない（specs/001-career-and-project/spec.md の
@@ -160,10 +160,10 @@ describe.each([
     expect(text).not.toContain('非公開');
   });
 
-  it.each(['/', `/dash/projects/${'{id}'}`])(
+  it.each(['/', '/dash/projects/{uid}'])(
     '訪問者が到達するほかの経路 %s も、隠す値を含まない',
     async (template) => {
-      const path = template.replace('{id}', String(maskedId));
+      const path = template.replace('{uid}', await uidOf(ctx.db, 'project', maskedId));
       const res = await ctx.server.fetch(`${path}${as.query}`, {
         headers: as.headers,
         redirect: 'manual',
@@ -184,7 +184,8 @@ describe('秘匿化を切り替えた直後の要求（FR-043）', () => {
 
   /** 作り手として、JavaScript なしのブラウザと同じ形で編集のフォームを送る */
   const submitEdit = async (id: number, values: Record<string, string>) => {
-    const path = `/dash/projects/${id}`;
+    const uid = await uidOf(ctx.db, 'project', id);
+    const path = `/dash/projects/${uid}`;
     const page = await ctx.server.fetch(path, { headers: await authorHeaders() });
     expect(page.status).toBe(200);
     const row = await ctx.db
@@ -195,7 +196,7 @@ describe('秘匿化を切り替えた直後の要求（FR-043）', () => {
       .bind(id)
       .first<Record<string, string | null>>();
     const { body, contentType } = await encodeForm(readActionFields(await page.text()), {
-      projectId: String(id),
+      projectUid: uid,
       openedUpdatedAt: row?.updated_at ?? '',
       organizationName: row?.organization_name ?? '',
       organizationNameMasked: row?.organization_name_masked ?? '',

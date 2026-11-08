@@ -5,14 +5,14 @@ import 'server-only';
 import { redirect } from 'next/navigation';
 import { deleteOrganization as deleteOrganizationUseCase } from '@/features/organization/application/delete-organization';
 import {
-  ORGANIZATION_ID_FIELD,
+  ORGANIZATION_UID_FIELD,
   editOrganization as editOrganizationUseCase,
   type OrganizationField,
   type OrganizationFieldError,
 } from '@/features/organization/application/edit-organization';
 import {
   createOrganizationRepository,
-  parseOrganizationId,
+  findOrganizationId,
 } from '@/features/organization/server/queries';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { getCurrentAuthor } from '@/shared/server/author';
@@ -36,14 +36,16 @@ export const editOrganization = async (
 ): Promise<OrganizationFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseOrganizationId(readString(formData, ORGANIZATION_ID_FIELD));
+  const organizations = await createOrganizationRepository();
+  const uid = readString(formData, ORGANIZATION_UID_FIELD);
+  const id = await findOrganizationId(organizations, uid);
   if (id === null) redirect('/dash/organizations');
 
-  const outcome = await editOrganizationUseCase(await createOrganizationRepository(), author, id, {
+  const outcome = await editOrganizationUseCase(organizations, author, id, {
     name: readString(formData, 'name'),
     nameMasked: readString(formData, 'nameMasked'),
   });
-  if (outcome.status === 'saved') redirect(`/dash/organizations/${id}?saved=1`);
+  if (outcome.status === 'saved') redirect(`/dash/organizations/${uid}?saved=1`);
   if (outcome.status === 'not-found') redirect('/dash/organizations');
   return outcome;
 };
@@ -57,10 +59,11 @@ export const deleteOrganization = async (
 ): Promise<DeleteOrganizationResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseOrganizationId(readString(formData, ORGANIZATION_ID_FIELD));
+  const organizations = await createOrganizationRepository();
+  const id = await findOrganizationId(organizations, readString(formData, ORGANIZATION_UID_FIELD));
   if (id === null) redirect('/dash/organizations');
 
-  const outcome = await deleteOrganizationUseCase(await createOrganizationRepository(), author, id);
+  const outcome = await deleteOrganizationUseCase(organizations, author, id);
   if (outcome.status === 'deleted' || outcome.status === 'not-found') {
     redirect('/dash/organizations?deleted=1');
   }

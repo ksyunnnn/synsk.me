@@ -5,14 +5,10 @@ import type { ProjectDeps } from '@/features/project/application/deps';
 import { getProjectForEdit as getProjectForEditUseCase } from '@/features/project/application/get-project-for-edit';
 import { getVisitorProject as getVisitorProjectUseCase } from '@/features/project/application/get-visitor-project';
 import { listProjects as listProjectsUseCase } from '@/features/project/application/list-projects';
-import {
-  parseProjectId,
-  type Project,
-  type ProjectSummary,
-  type VisitorProject,
-} from '@/features/project/domain/project';
+import type { Project, ProjectSummary, VisitorProject } from '@/features/project/domain/project';
 import { createD1ProjectRepository } from '@/features/project/server/d1-project-repository';
 import { requireAuthor } from '@/shared/server/author';
+import { parseUid } from '@/shared/domain/uid';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
@@ -43,13 +39,18 @@ export const listProjects = async (): Promise<ProjectSummary[]> => {
   return listProjectsUseCase((await createProjectDeps()).projects);
 };
 
-/** 作り手が編集する実績。作り手でなければ 403。無い id なら null */
-export const getProjectForEdit = async (id: string): Promise<Project | null> => {
+/** 作り手が編集する実績。作り手でなければ 403。無い uid なら null */
+export const getProjectForEdit = async (uid: string): Promise<Project | null> => {
   await requireAuthor();
-  const projectId = parseProjectId(id);
-  return projectId === null
-    ? null
-    : getProjectForEditUseCase((await createProjectDeps()).projects, projectId);
+  const { projects } = await createProjectDeps();
+  const id = await findProjectId(projects, uid);
+  return id === null ? null : getProjectForEditUseCase(projects, id);
+};
+
+/** URL とフォームの uid が指す実績の id。形の違う値は D1 を読まずに null */
+export const findProjectId = async (projects: ProjectDeps['projects'], uid: string) => {
+  const parsed = parseUid(uid);
+  return parsed === null ? null : projects.findIdByUid(parsed);
 };
 
 /** 実績の入力でつなげるスキルの選択肢（FR-032）。作り手でなければ 403 */
@@ -66,8 +67,6 @@ export const listSkillOptions = async (): Promise<{ id: number; name: string }[]
 export const hasProjectSlug = async (slug: string): Promise<boolean> =>
   (await createProjectDeps()).projects.hasSlug(slug);
 
-/** 作り手が編集できる実績がある id か。`getProjectForEdit` が null を返さない id と一致する */
-export const hasProjectId = async (id: string): Promise<boolean> => {
-  const projectId = parseProjectId(id);
-  return projectId !== null && (await createProjectDeps()).projects.hasId(projectId);
-};
+/** 作り手が編集できる実績がある uid か。`getProjectForEdit` が null を返さない uid と一致する */
+export const hasProjectUid = async (uid: string): Promise<boolean> =>
+  (await findProjectId((await createProjectDeps()).projects, uid)) !== null;

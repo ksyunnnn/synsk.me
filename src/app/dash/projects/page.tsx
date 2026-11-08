@@ -33,7 +33,7 @@ const Page = async ({ searchParams }: Props) => {
         <ul className="flex flex-col gap-3">
           {projects.map((project) => (
             <li key={project.id} className="flex flex-col">
-              <TextLink href={`/dash/projects/${project.id}`}>{project.title}</TextLink>
+              <TextLink href={`/dash/projects/${project.uid}`}>{project.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 {PROJECT_KIND_LABELS[project.kind]}・{project.organizationName}・
                 {project.period.startedOn} 〜 {project.period.endedOn ?? ''}・

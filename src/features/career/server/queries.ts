@@ -3,9 +3,10 @@ import 'server-only';
 import type { CareerDeps } from '@/features/career/application/deps';
 import { getCareerForEdit as getCareerForEditUseCase } from '@/features/career/application/get-career-for-edit';
 import { listCareers as listCareersUseCase } from '@/features/career/application/list-careers';
-import { parseCareerId, type Career, type CareerSummary } from '@/features/career/domain/career';
+import type { Career, CareerSummary } from '@/features/career/domain/career';
 import { createD1CareerRepository } from '@/features/career/server/d1-career-repository';
 import { requireAuthor } from '@/shared/server/author';
+import { parseUid } from '@/shared/domain/uid';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
@@ -25,17 +26,20 @@ export const listCareers = async (): Promise<CareerSummary[]> => {
   return listCareersUseCase((await createCareerDeps()).careers);
 };
 
-/** 作り手が編集する職歴。作り手でなければ 403。無い id なら null */
-export const getCareerForEdit = async (id: string): Promise<Career | null> => {
+/** 作り手が編集する職歴。作り手でなければ 403。無い uid なら null */
+export const getCareerForEdit = async (uid: string): Promise<Career | null> => {
   await requireAuthor();
-  const careerId = parseCareerId(id);
-  return careerId === null
-    ? null
-    : getCareerForEditUseCase((await createCareerDeps()).careers, careerId);
+  const { careers } = await createCareerDeps();
+  const id = await findCareerId(careers, uid);
+  return id === null ? null : getCareerForEditUseCase(careers, id);
 };
 
-/** `src/proxy.ts` が呼ぶ。職歴がある id か */
-export const hasCareerId = async (id: string): Promise<boolean> => {
-  const careerId = parseCareerId(id);
-  return careerId !== null && (await createCareerDeps()).careers.hasId(careerId);
+/** URL とフォームの uid が指す職歴の id。形の違う値は D1 を読まずに null */
+export const findCareerId = async (careers: CareerDeps['careers'], uid: string) => {
+  const parsed = parseUid(uid);
+  return parsed === null ? null : careers.findIdByUid(parsed);
 };
+
+/** `src/proxy.ts` が呼ぶ。職歴がある uid か */
+export const hasCareerUid = async (uid: string): Promise<boolean> =>
+  (await findCareerId((await createCareerDeps()).careers, uid)) !== null;

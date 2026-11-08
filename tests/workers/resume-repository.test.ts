@@ -161,9 +161,12 @@ describe('サイトに載せない写し元（specs/002-resume/spec.md の FR-00
 
 describe('create', () => {
   it('resume と写した行が入り、下書きで、写した行が始まりの日の新しい順で読める（FR-009・FR-021）', async () => {
-    const { id } = await resumes.create(await newResume());
+    const { id, uid } = await resumes.create(await newResume());
     const resume = await resumes.findForEdit(id);
     expect(resume).toMatchObject({ status: 'draft', audience: 'limited', limitedExpiresAt: null });
+    // 管理画面の URL に出す uid は DB が入れ、作った結果と読み出した値が一致する
+    expect(uid).toMatch(/^[0-9a-f]{32}$/);
+    expect(resume?.uid).toBe(uid);
     expect(resume?.careers.map((c) => c.role)).toEqual(['新しい肩書', '作り物の肩書']);
     expect(resume?.projects.map((p) => p.title)).toEqual([
       '新しい作り物の実績',

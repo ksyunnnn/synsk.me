@@ -6,11 +6,12 @@ import {
   type CareerId,
 } from '@/features/career/domain/career';
 import type { Author } from '@/shared/domain/author';
+import type { Uid } from '@/shared/domain/uid';
 import { canSaveWithOrganization } from '@/shared/domain/organization';
 import type { CareerDeps } from './deps';
 
 export type RegisterCareerOutcome =
-  | { status: 'registered'; id: CareerId }
+  | { status: 'registered'; id: CareerId; uid: Uid }
   | { status: 'forbidden' }
   | {
       status: 'invalid';
@@ -42,6 +43,6 @@ export const registerCareer = async (
   }
   const result = await careers.register(content);
   return result.ok
-    ? { status: 'registered', id: result.id }
+    ? { status: 'registered', id: result.id, uid: result.uid }
     : { status: 'invalid', errors: { organizationNameMasked: 'masked-name-required' }, values };
 };

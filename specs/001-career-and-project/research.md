@@ -20,12 +20,13 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - R14 本文と画像（書式・上限・配る経路が未決）
 - R15 職歴を訪問者に出す場所
 - R16 編集中の内容の保持（REQUIREMENTS.md の FR-14）
+- R17 管理画面の URL の識別子
 
 ---
 
 ## R1 スキーマの前提
 
-- 決めたこと: `migrations/0001`〜`0007` に `migrations/0008_rebuild_career_project_and_resume.sql` と `migrations/0009_add_status_to_career_and_project.sql` を当てたスキーマを前提にする。D1 を使う検査（workerd・結合・E2E）は、このスキーマを当てた D1 で回す
+- 決めたこと: `migrations/0001`〜`0007` に `migrations/0008_rebuild_career_project_and_resume.sql` と `migrations/0009_add_status_to_career_and_project.sql` と `migrations/0011_add_uid_for_dash_url.sql` を当てたスキーマを前提にする。D1 を使う検査（workerd・結合・E2E）は、このスキーマを当てた D1 で回す
 - 理由: 0008 が、spec の FR-001（秘匿化した組織名は空にできる）・FR-010・FR-015（既定で秘匿化）・FR-033・FR-034（月まで）を列に反映する
 - 退けた案: 0007 までのスキーマで作る。`organization.name_masked` が NOT NULL、`skill.years_override` が年の整数で、FR-001・FR-034 を満たせない
 
@@ -139,3 +140,19 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 - 決めたこと: 001 の入力の画面（職歴・実績・学歴・組織・スキル）は、入力中の内容をブラウザの `localStorage` に持ち、保存に成功したら消す。D1 には書かない。持つ処理は `src/shared/components/` の 1 つの部品にまとめ、5 つの画面と 003 の note の画面が使う
 - 理由: spec の Assumptions が FR-14 を REQUIREMENTS.md の持ち物として挙げる。自動保存の内容は DB に書かない
+
+## R17 管理画面の URL の識別子
+
+- 決めたこと: 管理画面で 1 行ずつ開く画面の URL は、その行の `uid` で表す（`/dash/<コレクション>/{uid}`、`/dash/resumes/{uid}/<種類>/{rowUid}`）。`uid` は `organization`・`career`・`project`・`skill`・`education`・`resume`・`resume_career`・`resume_project`・`resume_education` が持つ。編集と削除のフォームの隠しフィールドも `uid` を送り、Server Action が `uid` から主キーを引く。主キー（`id`）は URL にも隠しフィールドにも出さない
+- 列の形: `migrations/0011_add_uid_for_dash_url.sql`。16 バイトの乱数の 16 進表記（32 文字）を DB の DEFAULT が入れ、NOT NULL・UNIQUE・形の CHECK を持ち、書き換えをトリガで拒む。アプリケーションは `uid` を作らない
+- 理由:
+  - ADR-0048 の Decision Outcome は「主キーは URL に出さない」とし、管理画面を `/dash/` 配下に置くとする。管理画面の URL も対象に含む
+  - `project.slug` は、オーナーが書き換えられ、秘匿化に切り替えると新しい uid に戻る（spec の FR-013）。`resume.slug` は、限定公開用では URL を出し直すと新しい uid に書き換わり（002 の spec の FR-040）、公開用はオーナーが書き換えられる（002 の spec の FR-039）。どちらも管理画面の URL に使うと、書き換えのたびに開いている管理画面の URL が別の行を指すか、どの行も指さなくなる。書き換えない `uid` を別に持つ
+  - `resume.slug` は、限定公開用では URL を開く鍵を兼ねる（002 の research.md の R5）。管理画面の URL に使うと、鍵がブラウザの履歴など管理画面の外にも残る。docs/SOFTWARE_DESIGN.md の設計原則 1（守る over 手軽さ）
+  - 列の名前は、意味ごとに 1 つにする（docs/SOFTWARE_DESIGN.md の「列の名前を意味ごとに1つにする」）。訪問者向けの URL の識別子は `slug`、管理画面の URL の識別子は `uid` と呼び分け、どの表でも同じ名前にする
+  - DB の DEFAULT が入れるのは、職務経歴書に行を写す文を含む、どの INSERT でも入れ忘れないため。0003 が `created_at` を DB に入れさせるのと同じ考え。SQLite の `randomblob(N)` は N バイトの擬似乱数を返す（[Built-In Scalar SQL Functions](https://sqlite.org/lang_corefunc.html#randomblob)、2026-11-08 に確認）。CREATE TABLE の DEFAULT は括弧で囲んだ式を取れるが、ALTER TABLE ADD COLUMN の DEFAULT は取れない（[ALTER TABLE](https://sqlite.org/lang_altertable.html#altertabaddcol)、2026-11-08 に確認）ため、表を作り直す
+- 検査: workerd で列と DEFAULT と書き換えの拒否を確かめる（`tests/workers/migrations.test.ts`）。結合で、作り手が開く管理画面のリンク・redirect 先・隠しフィールドに数字だけの識別子が出ないことを確かめる（`tests/integration/dash-url-without-id.test.ts`）
+- 退けた案:
+  - `project.slug`・`resume.slug` を管理画面の URL に使い、持たない表にだけ `uid` を足す。書き換えのたびに管理画面の URL が変わる。表ごとに識別子の名前が分かれる
+  - URL だけを `uid` にし、隠しフィールドは主キーのまま送る。保存の後の redirect 先を作るのに `uid` を別に引くことになり、主キーを画面に出し続ける
+  - アプリケーションが `crypto.randomUUID()` で `uid` を作る（R6 の識別子と同じ作り方）。写した行を入れる文のすべてに値を渡すことになり、渡し忘れを DB が拒めない

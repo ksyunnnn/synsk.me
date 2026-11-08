@@ -39,10 +39,10 @@ const Page = async ({ params, searchParams }: Props) => {
         action={editProject}
         initialValues={toProjectFormValues(project)}
         skillOptions={skillOptions}
-        project={{ id: project.id, updatedAt: project.updatedAt, isMasked: project.isMasked }}
+        project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
       />
       <p>
-        <TextLink href={`/dash/projects/${project.id}/delete`}>この実績を削除する</TextLink>
+        <TextLink href={`/dash/projects/${project.uid}/delete`}>この実績を削除する</TextLink>
       </p>
     </main>
   );

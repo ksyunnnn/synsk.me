@@ -2,6 +2,7 @@ import type { ActionResult } from '@/shared/domain/action-result';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
+import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
@@ -12,12 +13,11 @@ import { isWebUrl } from '@/shared/domain/web-url';
 
 export type CareerId = number;
 
-export const parseCareerId = (value: string): CareerId | null =>
-  /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
-
 /** 作り手が編集する職歴 */
 export type Career = {
   id: CareerId;
+  /** 管理画面の URL とフォームで職歴を指す識別子 */
+  uid: Uid;
   organization: Pick<Organization, 'id' | 'name' | 'nameMasked'>;
   role: string;
   isMasked: boolean;
@@ -30,7 +30,10 @@ export type Career = {
   updatedAt: string;
 };
 
-export type CareerSummary = Pick<Career, 'id' | 'role' | 'isMasked' | 'status' | 'period'> & {
+export type CareerSummary = Pick<
+  Career,
+  'id' | 'uid' | 'role' | 'isMasked' | 'status' | 'period'
+> & {
   organizationName: string;
 };
 
@@ -63,7 +66,7 @@ export type CareerFieldError =
 export type CareerFormValues = Record<CareerField, string>;
 export type CareerFormResult = ActionResult<CareerField, CareerFieldError>;
 
-export const CAREER_ID_FIELD = 'careerId';
+export const CAREER_UID_FIELD = 'careerUid';
 export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 /** `isMasked` の値。送られた値が秘匿化しないことを示すときだけ、秘匿化しない（FR-010） */

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestServer, type TestServer } from './support/d1';
 import { encodeActionCall, encodeForm, readActionFields } from './support/form';
-import { insertOrganization, insertProject } from '../support/career-and-project-rows';
+import { insertOrganization, insertProject, uidOf } from '../support/career-and-project-rows';
 
 /**
  * 実績の個別のページと、実績の書き込みの操作（specs/001-career-and-project/spec.md の
@@ -26,7 +26,10 @@ const INPUT = {
 };
 
 let ctx: TestServer;
-let editId: number;
+let editUid: string;
+
+/** 形は uid だが、どの行も持たない値 */
+const ABSENT_UID = '0'.repeat(32);
 const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
 
 const countProjects = async () =>
@@ -46,13 +49,14 @@ beforeAll(async () => {
   ctx = await startTestServer({
     seed: async (db) => {
       const organizationId = await insertOrganization(db, { name: '作り物の個人' });
-      editId = await insertProject(db, {
+      const editId = await insertProject(db, {
         organizationId,
         slug: UNMASKED.slug,
         title: UNMASKED.title,
         isMasked: false,
         status: 'published',
       });
+      editUid = await uidOf(db, 'project', editId);
     },
   });
 }, 60_000);
@@ -81,21 +85,25 @@ describe('作り手の画面', () => {
     expect(res.status).toBe(200);
   });
 
-  it('無い id の編集の画面は 404', async () => {
-    const res = await ctx.server.fetch('/dash/projects/999', { headers: await authorHeaders() });
+  it('無い uid の編集の画面は 404', async () => {
+    const res = await ctx.server.fetch(`/dash/projects/${ABSENT_UID}`, {
+      headers: await authorHeaders(),
+    });
     expect(res.status).toBe(404);
   });
 
-  it.each(['/dash/projects', '/dash/projects/new', '/dash/projects/1', '/dash/projects/1/delete'])(
-    '作り手の JWT がない %s は 403 で、画面の中身を返さない',
-    async (path) => {
-      const res = await ctx.server.fetch(path);
-      expect(res.status).toBe(403);
-      const text = await res.text();
-      expect(text).not.toContain(UNMASKED.title);
-      expect(text).not.toContain('<form');
-    },
-  );
+  it.each([
+    '/dash/projects',
+    '/dash/projects/new',
+    '/dash/projects/{uid}',
+    '/dash/projects/{uid}/delete',
+  ])('作り手の JWT がない %s は 403 で、画面の中身を返さない', async (template) => {
+    const res = await ctx.server.fetch(template.replace('{uid}', editUid));
+    expect(res.status).toBe(403);
+    const text = await res.text();
+    expect(text).not.toContain(UNMASKED.title);
+    expect(text).not.toContain('<form');
+  });
 });
 
 describe('作り手の JWT がない書き込み（FR-040）', () => {
@@ -143,8 +151,8 @@ describe('作り手の JWT がない書き込み（FR-040）', () => {
       const before = await readProjectRows();
       const res = await send(
         how,
-        `/dash/projects/${editId}`,
-        { ...INPUT, isMasked: '0', slug: UNMASKED.slug, projectId: editId, openedUpdatedAt: '' },
+        `/dash/projects/${editUid}`,
+        { ...INPUT, isMasked: '0', slug: UNMASKED.slug, projectUid: editUid, openedUpdatedAt: '' },
         {},
       );
       await res.arrayBuffer();
@@ -153,7 +161,7 @@ describe('作り手の JWT がない書き込み（FR-040）', () => {
 
     it('削除は D1 を変えない', async () => {
       const before = await readProjectRows();
-      const res = await send(how, `/dash/projects/${editId}/delete`, { projectId: editId }, {});
+      const res = await send(how, `/dash/projects/${editUid}/delete`, { projectUid: editUid }, {});
       await res.arrayBuffer();
       expect(await readProjectRows()).toEqual(before);
     });

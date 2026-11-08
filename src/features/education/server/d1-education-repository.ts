@@ -8,6 +8,7 @@ import type { CalendarDate } from '@/shared/domain/period';
 
 type EducationRow = {
   id: number;
+  uid: string;
   school: string;
   department: string | null;
   started_on: string;
@@ -15,10 +16,11 @@ type EducationRow = {
   remarks: string | null;
 };
 
-const COLUMNS = 'id, school, department, started_on, ended_on, remarks';
+const COLUMNS = 'id, uid, school, department, started_on, ended_on, remarks';
 
 const toEducation = (row: EducationRow): Education => ({
   id: row.id,
+  uid: row.uid,
   school: row.school,
   department: row.department,
   period: {
@@ -37,6 +39,10 @@ export const createD1EducationRepository = (db: D1Database): EducationRepository
     return row ? toEducation(row) : null;
   },
 
+  findIdByUid: async (uid) =>
+    (await db.prepare('SELECT id FROM education WHERE uid = ?').bind(uid).first<{ id: number }>())
+      ?.id ?? null,
+
   list: async () => {
     const { results } = await db
       .prepare(`SELECT ${COLUMNS} FROM education ORDER BY started_on DESC, id DESC`)
@@ -48,12 +54,12 @@ export const createD1EducationRepository = (db: D1Database): EducationRepository
     const row = await db
       .prepare(
         `INSERT INTO education (school, department, started_on, ended_on, remarks)
-         VALUES (?, ?, ?, ?, ?) RETURNING id`,
+         VALUES (?, ?, ?, ?, ?) RETURNING id, uid`,
       )
       .bind(school, department, period.startedOn, period.endedOn, remarks)
-      .first<{ id: number }>();
+      .first<{ id: number; uid: string }>();
     if (!row) throw new Error('学歴を登録した後に id を読めなかった');
-    return row.id;
+    return { id: row.id, uid: row.uid };
   },
 
   edit: async (id, { school, department, period, remarks }) => {

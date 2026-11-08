@@ -122,12 +122,12 @@ const ResumeCreated = ({
           <ResumeStatusFields
             state={statusState}
             draftNote="公開すると開けます"
-            resumeId={created.id}
+            resumeUid={created.uid}
           />
         </>
       )}
       <p>
-        <TextLink href={`/dash/resumes/${created.id}`}>設定の画面へ</TextLink>
+        <TextLink href={`/dash/resumes/${created.uid}`}>設定の画面へ</TextLink>
       </p>
     </div>
   );

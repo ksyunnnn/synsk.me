@@ -3,7 +3,7 @@ import { startTestServer, type TestServer } from './support/d1';
 import { readRows } from './support/send';
 import { sendNthForm } from './support/resume';
 import { isNoStore } from '../../scripts/lib/verify-deploy.mjs';
-import { insertCareer, insertOrganization } from '../support/career-and-project-rows';
+import { insertCareer, insertOrganization, uidOf } from '../support/career-and-project-rows';
 import {
   insertResume,
   insertResumeCareer,
@@ -22,7 +22,8 @@ import {
 let ctx: TestServer;
 let resume: InsertedResume;
 let careerId: number;
-let rows: { career: number; project: number; education: number };
+/** 写した行の uid。管理画面の URL とフォームは uid で行を指す */
+let rows: { career: string; project: string; education: string };
 
 const TABLES = [
   'resume',
@@ -56,9 +57,21 @@ beforeAll(async () => {
   });
   resume = await insertResume(ctx.db, { status: 'published' });
   rows = {
-    career: await insertResumeCareer(ctx.db, { resumeId: resume.id }),
-    project: await insertResumeProject(ctx.db, { resumeId: resume.id, skills: ['Go'] }),
-    education: await insertResumeEducation(ctx.db, { resumeId: resume.id }),
+    career: await uidOf(
+      ctx.db,
+      'resume_career',
+      await insertResumeCareer(ctx.db, { resumeId: resume.id }),
+    ),
+    project: await uidOf(
+      ctx.db,
+      'resume_project',
+      await insertResumeProject(ctx.db, { resumeId: resume.id, skills: ['Go'] }),
+    ),
+    education: await uidOf(
+      ctx.db,
+      'resume_education',
+      await insertResumeEducation(ctx.db, { resumeId: resume.id }),
+    ),
   };
 }, 60_000);
 
@@ -70,13 +83,13 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
   const paths = () => [
     '/dash/resumes',
     '/dash/resumes/new',
-    `/dash/resumes/${resume.id}`,
-    `/dash/resumes/${resume.id}/preview`,
-    `/dash/resumes/${resume.id}/skills`,
-    `/dash/resumes/${resume.id}/delete`,
-    `/dash/resumes/${resume.id}/careers/${rows.career}`,
-    `/dash/resumes/${resume.id}/projects/${rows.project}`,
-    `/dash/resumes/${resume.id}/educations/${rows.education}`,
+    `/dash/resumes/${resume.uid}`,
+    `/dash/resumes/${resume.uid}/preview`,
+    `/dash/resumes/${resume.uid}/skills`,
+    `/dash/resumes/${resume.uid}/delete`,
+    `/dash/resumes/${resume.uid}/careers/${rows.career}`,
+    `/dash/resumes/${resume.uid}/projects/${rows.project}`,
+    `/dash/resumes/${resume.uid}/educations/${rows.education}`,
   ];
 
   it('どの画面も', async () => {
@@ -101,9 +114,12 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
 
   it('作り手でも、無い行の画面は 404', async () => {
     for (const path of [
-      '/dash/resumes/999999',
-      `/dash/resumes/${resume.id}/careers/999999`,
-      `/dash/resumes/${resume.id}/projects/${rows.career}9999`,
+      `/dash/resumes/${'0'.repeat(32)}`,
+      // 主キーでは開けない（ADR-0048）
+      `/dash/resumes/${resume.id}`,
+      `/dash/resumes/${resume.uid}/careers/${'0'.repeat(32)}`,
+      // 別の種類の行の uid では開けない
+      `/dash/resumes/${resume.uid}/projects/${rows.career}`,
     ]) {
       const res = await ctx.server.fetch(path, {
         headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
@@ -117,7 +133,7 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
 describe('JWT のない Server Action は D1 を変えない（FR-033）', () => {
   const outside = () => `/resume/${resume.slug}`;
   const common = async () => ({
-    resumeId: resume.id,
+    resumeUid: resume.uid,
     openedUpdatedAt: await updatedAtOf(resume.id),
   });
 
@@ -136,10 +152,10 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     ],
     [
       'editResumeCareer',
-      `/dash/resumes/${resume.id}/careers/${rows.career}`,
+      `/dash/resumes/${resume.uid}/careers/${rows.career}`,
       {
         ...(await common()),
-        rowId: rows.career,
+        rowUid: rows.career,
         organizationName: '書き換えた組織名',
         role: '書き換えた肩書',
         startedOn: '2020-04-01',
@@ -150,10 +166,10 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     ],
     [
       'editResumeProject',
-      `/dash/resumes/${resume.id}/projects/${rows.project}`,
+      `/dash/resumes/${resume.uid}/projects/${rows.project}`,
       {
         ...(await common()),
-        rowId: rows.project,
+        rowUid: rows.project,
         organizationName: '書き換えた組織名',
         kind: 'talk',
         title: '書き換えた題',
@@ -166,10 +182,10 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     ],
     [
       'editResumeEducation',
-      `/dash/resumes/${resume.id}/educations/${rows.education}`,
+      `/dash/resumes/${resume.uid}/educations/${rows.education}`,
       {
         ...(await common()),
-        rowId: rows.education,
+        rowUid: rows.education,
         school: '書き換えた学校',
         department: '',
         startedOn: '2014-04-01',
@@ -179,10 +195,10 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     ],
     [
       'editResumeSkillOverrides',
-      `/dash/resumes/${resume.id}/skills`,
+      `/dash/resumes/${resume.uid}/skills`,
       { ...(await common()), overrideName: 'Go', overrideYears: '9', overrideMonths: '0' },
     ],
-    ['deleteResume', `/dash/resumes/${resume.id}/delete`, { resumeId: resume.id }],
+    ['deleteResume', `/dash/resumes/${resume.uid}/delete`, { resumeUid: resume.uid }],
   ];
 
   describe.each(['submit', 'call'] as const)('%s', (how) => {

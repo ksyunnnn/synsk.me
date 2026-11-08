@@ -13,6 +13,7 @@ import { findOrCreateOrganizationStatements } from '@/shared/server/organization
 
 type CareerRow = {
   id: number;
+  uid: string;
   organization_id: number;
   organization_name: string;
   organization_name_masked: string | null;
@@ -33,6 +34,7 @@ const toPeriod = (row: { started_on: string; ended_on: string | null }) => ({
 
 const toCareer = (row: CareerRow): Career => ({
   id: row.id,
+  uid: row.uid,
   organization: {
     id: row.organization_id,
     name: row.organization_name,
@@ -79,7 +81,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
     findForEdit: async (id) => {
       const row = await db
         .prepare(
-          `SELECT c.id, c.organization_id, o.name AS organization_name,
+          `SELECT c.id, c.uid, c.organization_id, o.name AS organization_name,
              o.name_masked AS organization_name_masked, c.role, c.is_masked, c.status, c.started_on,
              c.ended_on, c.description, c.url, c.updated_at
            FROM career c JOIN organization o ON o.id = c.organization_id WHERE c.id = ?`,
@@ -92,18 +94,22 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
     list: async () => {
       const { results } = await db
         .prepare(
-          `SELECT c.id, c.role, c.is_masked, c.status, c.started_on, c.ended_on,
+          `SELECT c.id, c.uid, c.role, c.is_masked, c.status, c.started_on, c.ended_on,
              o.name AS organization_name
            FROM career c JOIN organization o ON o.id = c.organization_id
            ORDER BY c.started_on DESC, c.id DESC`,
         )
         .all<
-          Pick<CareerRow, 'id' | 'role' | 'is_masked' | 'status' | 'started_on' | 'ended_on'> & {
+          Pick<
+            CareerRow,
+            'id' | 'uid' | 'role' | 'is_masked' | 'status' | 'started_on' | 'ended_on'
+          > & {
             organization_name: string;
           }
         >();
       return results.map((row) => ({
         id: row.id,
+        uid: row.uid,
         role: row.role,
         isMasked: row.is_masked === 1,
         status: row.status,
@@ -119,12 +125,17 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
              description, url)
            SELECT ${ORGANIZATION_ID_BY_NAME}, ?, ?, ?, ?, ?, ?, ?
            WHERE ${MASKING_ALLOWED}
-           RETURNING id`,
+           RETURNING id, uid`,
         )
         .bind(content.organizationName, ...contentValues(content), ...maskingValues(content));
-      const results = await db.batch<{ id: number }>([...organizationStatements(content), insert]);
-      const id = results.at(-1)?.results[0]?.id;
-      return id === undefined ? { ok: false, reason: 'masked-name-required' } : { ok: true, id };
+      const results = await db.batch<{ id: number; uid: string }>([
+        ...organizationStatements(content),
+        insert,
+      ]);
+      const row = results.at(-1)?.results[0];
+      return row === undefined
+        ? { ok: false, reason: 'masked-name-required' }
+        : { ok: true, id: row.id, uid: row.uid };
     },
 
     edit: async (id, content, { openedUpdatedAt, now }) => {
@@ -166,6 +177,10 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
       ]);
       return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
     },
+
+    findIdByUid: async (uid) =>
+      (await db.prepare('SELECT id FROM career WHERE uid = ?').bind(uid).first<{ id: number }>())
+        ?.id ?? null,
 
     hasId: async (id) =>
       (await db.prepare('SELECT 1 AS found FROM career WHERE id = ?').bind(id).first()) !== null,

@@ -9,6 +9,7 @@ import {
   insertProject,
   insertSkill,
   linkProjectSkill,
+  uidOf,
 } from '../support/career-and-project-rows';
 
 /**
@@ -117,10 +118,15 @@ describe('元を直しても、作ったときの値で出る（User Story 3 の
 describe('元を消しても、写した行が残る（User Story 3 の 3、Edge Cases）', () => {
   beforeAll(async () => {
     // 001 の削除の Server Action を作り手として呼ぶ。写した行の *_id を空にしてから消す
+    const uids = {
+      education: await uidOf(ctx.db, 'education', ids.education),
+      project: await uidOf(ctx.db, 'project', ids.project),
+      career: await uidOf(ctx.db, 'career', ids.career),
+    };
     for (const [formPath, values] of [
-      [`/dash/educations/${ids.education}/delete`, { educationId: ids.education }],
-      [`/dash/projects/${ids.project}/delete`, { projectId: ids.project }],
-      [`/dash/careers/${ids.career}/delete`, { careerId: ids.career }],
+      [`/dash/educations/${uids.education}/delete`, { educationUid: uids.education }],
+      [`/dash/projects/${uids.project}/delete`, { projectUid: uids.project }],
+      [`/dash/careers/${uids.career}/delete`, { careerUid: uids.career }],
     ] as const) {
       const res = await sendForm(ctx, { how: 'submit', formPath, values, asAuthor: true });
       await res.arrayBuffer();
@@ -151,11 +157,11 @@ describe('元を消しても、写した行が残る（User Story 3 の 3、Edge
 });
 
 it('作り手の管理画面にも、作ったときの値が出る', async () => {
-  const id = (await ctx.db
-    .prepare('SELECT id FROM resume WHERE slug = ?')
+  const uid = (await ctx.db
+    .prepare('SELECT uid FROM resume WHERE slug = ?')
     .bind(url.slug)
-    .first<{ id: number }>())!.id;
-  const res = await ctx.server.fetch(`/dash/resumes/${id}`, { headers: await asAuthor() });
+    .first<{ uid: string }>())!.uid;
+  const res = await ctx.server.fetch(`/dash/resumes/${uid}`, { headers: await asAuthor() });
   const text = await res.text();
   expect(text).toContain(ORIGINAL.title);
   expect(text).toContain(ORIGINAL.school);

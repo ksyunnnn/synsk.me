@@ -32,7 +32,7 @@ const Page = async ({ searchParams }: Props) => {
         <ul className="flex flex-col gap-3">
           {careers.map((career) => (
             <li key={career.id} className="flex flex-col">
-              <TextLink href={`/dash/careers/${career.id}`}>
+              <TextLink href={`/dash/careers/${career.uid}`}>
                 {career.organizationName}・{career.role}
               </TextLink>
               <span className="text-sm text-muted-foreground">

@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 1740
-H = 1564
+H = 1644
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -84,7 +84,8 @@ def rules_note(x, y):
         "activity.slug は life event の行だけが持つ（CHECK）。空でない行で UNIQUE（部分 UNIQUE 索引）",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
-        "id はすべて AUTOINCREMENT（削除した id を使い回さない）。編集の画面は id で行を指すため",
+        "id はすべて AUTOINCREMENT（削除した id を使い回さない）",
+        "管理画面の URL とフォームは uid で行を指し、id を出さない。uid は DB が乱数で入れ、書き換えをトリガで拒む",
         "訪問者の URL は slug、R2 は storage_key で指す。R2 のバケットは公開せず、Worker を通して配る",
     ]
     w, h = 720, 48 + len(lines) * 18 + 8
@@ -117,24 +118,24 @@ def legend():
 TS = [("created_at", "text"), ("updated_at", "text")]
 C = [("created_at", "text")]
 
-organization = [("# id", "integer"), ("name", "text · unique"), ("name_masked", "text · 空可")] + TS
+organization = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name", "text · unique"), ("name_masked", "text · 空可")] + TS
 career = [
-    ("# id", "integer"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月日）"),
+    ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ organization_id", "integer"), ("role", "text"), ("started_on", "text（年月日）"),
     ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
     ("is_masked", "integer · 既定 1"), ("status", "text · CHECK · 既定 draft"),
 ] + TS
 project = [
-    ("# id", "integer"), ("→ organization_id", "integer"), ("kind", "text · CHECK"),
+    ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ organization_id", "integer"), ("kind", "text · CHECK"),
     ("slug", "text · unique"), ("title", "text"), ("title_masked", "text"), ("is_masked", "integer · 既定 1"),
     ("→ card_media_id", "integer · 空可"), ("started_on", "text（年月日）"),
     ("ended_on", "text（年月日）· 空可"), ("description", "text · 空可"), ("url", "text · 空可"),
     ("status", "text · CHECK · 既定 draft"),
 ] + TS
 education = [
-    ("# id", "integer"), ("school", "text"), ("department", "text · 空可"),
+    ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("school", "text"), ("department", "text · 空可"),
     ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"), ("remarks", "text · 空可"),
 ] + TS
-skill = [("# id", "integer"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可")] + TS
+skill = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
     ("# id", "integer"), ("→ source", "text"), ("slug", "text · unique · life event だけ"),
@@ -154,42 +155,42 @@ media = [("# id", "integer"), ("→ note_id", "integer · 空可"), ("→ projec
 synd = [("# id", "integer"), ("→ note_id", "integer"), ("url", "text · unique")] + C
 link_preview = [("# id", "integer"), ("url", "text · unique"), ("title", "text · 空可"), ("image_url", "text · 空可"), ("fetched_at", "text")]
 resume = [
-    ("# id", "integer"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),
+    ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),
     ("limited_expires_at", "text · 空可"),
 ] + TS
 YMD = [("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可")]
-resume_career = [("# id", "integer"), ("→ resume_id", "integer"), ("→ career_id", "integer · 空可"), ("organization_name", "text"), ("role", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可"), ("is_masked", "integer · 既定 1")]
-resume_project = [("# id", "integer"), ("→ resume_id", "integer"), ("→ project_id", "integer · 空可"), ("organization_name", "text"), ("kind", "text · CHECK"), ("title", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可"), ("is_masked", "integer · 既定 1")]
-resume_education = [("# id", "integer"), ("→ resume_id", "integer"), ("→ education_id", "integer · 空可"), ("school", "text"), ("department", "text · 空可")] + YMD + [("remarks", "text · 空可")]
+resume_career = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ resume_id", "integer"), ("→ career_id", "integer · 空可"), ("organization_name", "text"), ("role", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可"), ("is_masked", "integer · 既定 1")]
+resume_project = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ resume_id", "integer"), ("→ project_id", "integer · 空可"), ("organization_name", "text"), ("kind", "text · CHECK"), ("title", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可"), ("is_masked", "integer · 既定 1")]
+resume_education = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ resume_id", "integer"), ("→ education_id", "integer · 空可"), ("school", "text"), ("department", "text · 空可")] + YMD + [("remarks", "text · 空可")]
 
 el = []
-el += zone(20, 20, 535, 1050, "職務経歴書")
+el += zone(20, 20, 535, 1100, "職務経歴書")
 el += zone(560, 20, 540, 1088, "経歴（職歴・実績・学歴・スキル）")
 el += zone(1120, 20, 600, 584, "activity")
 el += zone(1120, 608, 600, 684, "note（転載先・URL カード・画像）")
 
 # 職務経歴書
 el += path("M 300,110 H 335")
-el += path("M 300,280 H 318 V 400 H 335")
-el += path("M 40,200 H 28 V 878 H 335")
-el += path("M 440,646 V 680")
-el += path("M 150,296 V 400")
+el += path("M 300,280 H 318 V 420 H 335")
+el += path("M 40,200 H 28 V 904 H 335")
+el += path("M 440,686 V 716")
+el += path("M 150,316 V 400")
 el += label(306, 92, "1") + label(320, 114, "0..N")
-el += label(306, 262, "1") + label(320, 404, "0..N")
-el += label(34, 182, "1") + label(318, 860, "0..N")
-el += label(454, 650, "1") + label(458, 666, "0..N")
-el += label(164, 302, "1") + label(170, 384, "0..N")
+el += label(306, 262, "1") + label(320, 424, "0..N")
+el += label(34, 182, "1") + label(318, 886, "0..N")
+el += label(454, 690, "1") + label(458, 706, "0..N")
+el += label(164, 322, "1") + label(170, 384, "0..N")
 # 職務経歴書 → 経歴
 el += path("M 545,110 H 580")
-el += path("M 545,400 H 562 V 460 H 580")
-el += path("M 545,900 H 580")
+el += path("M 545,420 H 562 V 480 H 580")
+el += path("M 545,926 H 580")
 el += label(559, 114, "0..N") + label(572, 92, "1")
-el += label(559, 404, "0..N") + label(570, 442, "1")
-el += label(559, 904, "0..N") + label(572, 882, "1")
+el += label(559, 424, "0..N") + label(570, 462, "1")
+el += label(559, 930, "0..N") + label(572, 908, "1")
 # 経歴の中
 el += path("M 820,110 H 880")
 el += label(832, 92, "0..N") + label(868, 92, "1")
-el += path("M 760,416 V 376 H 850 V 200 H 880")
+el += path("M 760,416 V 396 H 850 V 200 H 880")
 el += label(776, 398, "0..N") + label(868, 182, "1")
 el += path("M 820,720 H 880")
 el += label(832, 702, "1") + label(860, 702, "0..N")
@@ -219,13 +220,13 @@ el += rel_label(1356, 966, "CARD")
 
 el += entity(40, 60, 260, "resume", "職務経歴書の版。複数持つ", resume)
 el += entity(335, 60, 210, "resume_career", "職務経歴書に写した職歴", resume_career)
-el += entity(335, 350, 210, "resume_project", "職務経歴書に写した実績", resume_project)
-el += entity(335, 820, 210, "resume_education", "職務経歴書に写した学歴", resume_education)
+el += entity(335, 370, 210, "resume_project", "職務経歴書に写した実績", resume_project)
+el += entity(335, 846, 210, "resume_education", "職務経歴書に写した学歴", resume_education)
 el += entity(880, 60, 200, "organization", "組織。会社・団体・自営業（個人）", organization)
 el += entity(580, 60, 240, "career", "職歴。組織にオーナーが所属した履歴", career)
 el += entity(580, 416, 240, "project", "実績。kind: application・talk・event・other", project)
 el += entity(580, 832, 240, "education", "学歴", education)
-el += entity(880, 480, 210, "skill", "スキル。経験年数は実績から計算", skill)
+el += entity(880, 460, 210, "skill", "スキル。経験年数は実績から計算", skill)
 el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", project_skill)
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
@@ -236,9 +237,9 @@ el += entity(1480, 656, 220, "note_revision", "note の版。保存と公開の�
 el += entity(1160, 1012, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)
 el += entity(1480, 880, 220, "syndication", "note を転載した先の URL（POSSE）", synd)
 el += entity(1480, 1056, 220, "link_preview", "URL カードの情報。本文の URL で引く", link_preview)
-el += kinds_note(40, 1090)
-el += rules_note(400, 1120)
-el += entity(335, 680, 210, "resume_project_skill", "写した実績で使ったスキル", [("# → resume_project_id", "integer"), ("# skill_name", "text")])
+el += kinds_note(40, 1140)
+el += rules_note(400, 1150)
+el += entity(335, 716, 210, "resume_project_skill", "写した実績で使ったスキル", [("# → resume_project_id", "integer"), ("# skill_name", "text")])
 el += entity(40, 400, 260, "resume_skill_override", "写した経験年数の上書き（上書きしたものだけ）", [("# → resume_id", "integer"), ("# skill_name", "text"), ("months_override", "integer")])
 el += legend()
 body = "\n      ".join(el)

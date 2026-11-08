@@ -7,6 +7,7 @@ import {
   insertOrganization,
   insertProject,
   insertSkill,
+  uidOf,
 } from '../support/career-and-project-rows';
 
 /**
@@ -18,9 +19,9 @@ const PROJECT_SLUG = 'fake-education-check';
 const SCHOOL = '訪問者に出さない作り物大学';
 
 let ctx: TestServer;
-let careerId: number;
-let educationId: number;
-let skillId: number;
+let careerUid: string;
+let educationUid: string;
+let skillUid: string;
 
 const CAREER_INPUT = {
   organizationName: '結合の検査の作り物の組織',
@@ -45,9 +46,9 @@ beforeAll(async () => {
   ctx = await startTestServer({
     seed: async (db) => {
       const organizationId = await insertOrganization(db);
-      careerId = await insertCareer(db, { organizationId });
-      educationId = await insertEducation(db, { school: SCHOOL });
-      skillId = await insertSkill(db, { name: 'Go' });
+      careerUid = await uidOf(db, 'career', await insertCareer(db, { organizationId }));
+      educationUid = await uidOf(db, 'education', await insertEducation(db, { school: SCHOOL }));
+      skillUid = await uidOf(db, 'skill', await insertSkill(db, { name: 'Go' }));
       await insertProject(db, {
         organizationId,
         slug: PROJECT_SLUG,
@@ -83,21 +84,21 @@ describe('作り手の JWT がない書き込み（FR-040）', () => {
       [
         '職歴の編集',
         'career',
-        `/dash/careers/${careerId}`,
-        { ...CAREER_INPUT, careerId, openedUpdatedAt: '' },
+        `/dash/careers/${careerUid}`,
+        { ...CAREER_INPUT, careerUid, openedUpdatedAt: '' },
       ],
-      ['職歴の削除', 'career', `/dash/careers/${careerId}/delete`, { careerId }],
+      ['職歴の削除', 'career', `/dash/careers/${careerUid}/delete`, { careerUid }],
       ['学歴の登録', 'education', '/dash/educations/new', EDUCATION_INPUT],
       [
         '学歴の編集',
         'education',
-        `/dash/educations/${educationId}`,
-        { ...EDUCATION_INPUT, educationId },
+        `/dash/educations/${educationUid}`,
+        { ...EDUCATION_INPUT, educationUid },
       ],
-      ['学歴の削除', 'education', `/dash/educations/${educationId}/delete`, { educationId }],
+      ['学歴の削除', 'education', `/dash/educations/${educationUid}/delete`, { educationUid }],
       ['スキルの登録', 'skill', '/dash/skills/new', SKILL_INPUT],
-      ['スキルの編集', 'skill', `/dash/skills/${skillId}`, { ...SKILL_INPUT, skillId }],
-      ['スキルの削除', 'skill', `/dash/skills/${skillId}/delete`, { skillId }],
+      ['スキルの編集', 'skill', `/dash/skills/${skillUid}`, { ...SKILL_INPUT, skillUid }],
+      ['スキルの削除', 'skill', `/dash/skills/${skillUid}/delete`, { skillUid }],
     ] as const;
 
   describe.each(['submit', 'call'] as const)('%s', (how) => {
@@ -147,13 +148,21 @@ it.each([
   await res.arrayBuffer();
 });
 
-it.each(['/dash/careers/999', '/dash/educations/999', '/dash/skills/999'])(
-  '作り手の、無い id の %s は 404',
-  async (path) => {
-    const res = await ctx.server.fetch(path, {
-      headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
-    });
-    expect(res.status).toBe(404);
-    await res.arrayBuffer();
-  },
-);
+/** 形は uid だが、どの行も持たない値 */
+const MISSING_UID = '0'.repeat(32);
+
+it.each([
+  `/dash/careers/${MISSING_UID}`,
+  `/dash/educations/${MISSING_UID}`,
+  `/dash/skills/${MISSING_UID}`,
+  // 主キーでは開けない（ADR-0048）
+  '/dash/careers/1',
+  '/dash/educations/1',
+  '/dash/skills/1',
+])('作り手の、無い uid の %s は 404', async (path) => {
+  const res = await ctx.server.fetch(path, {
+    headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
+  });
+  expect(res.status).toBe(404);
+  await res.arrayBuffer();
+});

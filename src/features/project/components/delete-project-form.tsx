@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import { PROJECT_ID_FIELD, type ProjectId } from '@/features/project/domain/project';
+import { PROJECT_UID_FIELD } from '@/features/project/domain/project';
 
 /**
  * 実績を削除する確認のフォーム。確認はダイアログにせず、このフォームを置いた画面で行う
@@ -16,15 +16,15 @@ type DeleteProjectAction = (
 
 export const DeleteProjectForm = ({
   action,
-  projectId,
+  projectUid,
 }: {
   action: DeleteProjectAction;
-  projectId: ProjectId;
+  projectUid: string;
 }) => {
   const [result, formAction] = useActionState(action, null);
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name={PROJECT_ID_FIELD} value={projectId} />
+      <input type="hidden" name={PROJECT_UID_FIELD} value={projectUid} />
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
           作り手であることを確かめられませんでした。ログインし直してください

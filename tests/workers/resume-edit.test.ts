@@ -7,6 +7,7 @@ import {
   deleteCareerAndProjectRows,
   insertCareer,
   insertOrganization,
+  uidOf,
 } from '../support/career-and-project-rows';
 import {
   deleteResumeRows,
@@ -310,5 +311,27 @@ describe('削除（research.md の R9）', () => {
 
   it('無い id は消せない', async () => {
     expect(await resumes.delete(999_999)).toEqual({ ok: false });
+  });
+});
+
+describe('管理画面の uid から id を引く（ADR-0048、specs/001-career-and-project/research.md の R17）', () => {
+  it('職務経歴書の uid から id を引く。無い uid は null', async () => {
+    expect(await resumes.findIdByUid(target.uid)).toBe(target.id);
+    expect(await resumes.findIdByUid('0'.repeat(32))).toBeNull();
+  });
+
+  it('写した行の uid から id を引く。別の職務経歴書の行と、種類の違う行は null', async () => {
+    const careerUid = await uidOf(env.DB, 'resume_career', rows.career);
+    const otherCareerUid = await uidOf(env.DB, 'resume_career', rows.otherCareer);
+    expect(await resumes.findRowIdByUid(target.id, 'careers', careerUid)).toBe(rows.career);
+    expect(await resumes.findRowIdByUid(target.id, 'careers', otherCareerUid)).toBeNull();
+    expect(await resumes.findRowIdByUid(target.id, 'projects', careerUid)).toBeNull();
+  });
+
+  it('読み出した写した行は uid を持つ', async () => {
+    const content = await resumes.readContent(target.id);
+    for (const row of [...content.careers, ...content.projects, ...content.educations]) {
+      expect(row.uid).toMatch(/^[0-9a-f]{32}$/);
+    }
   });
 });

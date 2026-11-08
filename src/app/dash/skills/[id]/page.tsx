@@ -25,9 +25,9 @@ const Page = async ({ params }: Props) => {
         <TextLink href="/dash/skills">スキルの一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">スキルを編集する</h1>
-      <SkillForm action={editSkill} initialValues={toSkillFormValues(skill)} skillId={skill.id} />
+      <SkillForm action={editSkill} initialValues={toSkillFormValues(skill)} skillUid={skill.uid} />
       <p>
-        <TextLink href={`/dash/skills/${skill.id}/delete`}>このスキルを削除する</TextLink>
+        <TextLink href={`/dash/skills/${skill.uid}/delete`}>このスキルを削除する</TextLink>
       </p>
     </main>
   );

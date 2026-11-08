@@ -17,9 +17,8 @@ import { editResumeSettings as editResumeSettingsUseCase } from '@/features/resu
 import { regenerateResumeUrl as regenerateResumeUrlUseCase } from '@/features/resume/application/regenerate-resume-url';
 import {
   isResumeStatus,
-  parseResumeId,
-  parseResumeRowId,
   type EditTimes,
+  type ResumeId,
   type ResumeStatus,
 } from '@/features/resume/domain/resume';
 import {
@@ -29,10 +28,10 @@ import {
   OVERRIDE_YEARS_FIELD,
   RESUME_CAREER_FIELDS,
   RESUME_EDUCATION_FIELDS,
-  RESUME_ID_FIELD,
+  RESUME_UID_FIELD,
   RESUME_PROJECT_FIELDS,
   RESUME_SETTINGS_FIELDS,
-  ROW_ID_FIELD,
+  ROW_UID_FIELD,
   SELECTION_FIELDS,
   STATUS_FIELD,
   type CreateResumeFormResult,
@@ -46,7 +45,12 @@ import {
   type ResumeSettingsField,
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
-import { createResumeRepository, limitedResumeUrl } from '@/features/resume/server/queries';
+import {
+  createResumeRepository,
+  findResumeId,
+  findResumeRowId,
+  limitedResumeUrl,
+} from '@/features/resume/server/queries';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -73,12 +77,16 @@ const readTimes = (formData: FormData): EditTimes => ({
   now: new Date().toISOString(),
 });
 
-/** 送られた職務経歴書の id。読めなければ一覧へ移す */
-const readResumeId = (formData: FormData) => {
-  const id = parseResumeId(readString(formData, RESUME_ID_FIELD));
+/** 送られた uid が指す職務経歴書。無ければ一覧へ移す。redirect 先の URL は uid で作る */
+const readResume = async (formData: FormData) => {
+  const resumes = await createResumeRepository();
+  const uid = readString(formData, RESUME_UID_FIELD);
+  const id = await findResumeId(resumes, uid);
   if (id === null) redirect('/dash/resumes');
-  return id;
+  return { resumes, id, uid };
 };
+
+type ResumeTarget = { id: ResumeId; uid: string };
 
 /** 職務経歴書を作る。限定公開用は移らず、URL を同じ画面に返す */
 export const createResume = async (
@@ -96,10 +104,10 @@ export const createResume = async (
     educationIds: readStrings(formData, SELECTION_FIELDS.educationIds),
   });
   if (outcome.status !== 'created') return outcome;
-  if (outcome.audience !== 'limited') redirect(`/dash/resumes/${outcome.id}?saved=1`);
+  if (outcome.audience !== 'limited') redirect(`/dash/resumes/${outcome.uid}?saved=1`);
   return {
     status: 'created',
-    id: outcome.id,
+    uid: outcome.uid,
     updatedAt: outcome.updatedAt,
     audience: outcome.audience,
     url: await limitedResumeUrl(outcome.slug),
@@ -107,9 +115,9 @@ export const createResume = async (
 };
 
 /** 書き込みの結果を画面に返す形にする。保存したら設定の画面へ移す */
-const finish = <V, E>(id: number, outcome: EditOutcome<V, E>) => {
-  if (outcome.status === 'saved') redirect(`/dash/resumes/${id}?saved=1`);
-  if (outcome.status === 'not-found') redirect(`/dash/resumes/${id}`);
+const finish = <V, E>({ uid }: ResumeTarget, outcome: EditOutcome<V, E>) => {
+  if (outcome.status === 'saved') redirect(`/dash/resumes/${uid}?saved=1`);
+  if (outcome.status === 'not-found') redirect(`/dash/resumes/${uid}`);
   return outcome;
 };
 
@@ -125,13 +133,13 @@ export const editResumeSettings = async (
 ): Promise<ResumeSettingsResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = readResumeId(formData);
+  const { resumes, ...target } = await readResume(formData);
   return finish(
-    id,
+    target,
     await editResumeSettingsUseCase(
-      await createResumeRepository(),
+      resumes,
       author,
-      id,
+      target.id,
       readValues(formData, RESUME_SETTINGS_FIELDS),
       readTimes(formData),
     ),
@@ -147,20 +155,14 @@ export type ResumeStatusResult =
 const writeStatus = async (formData: FormData): Promise<ResumeStatusResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = readResumeId(formData);
+  const { resumes, ...target } = await readResume(formData);
   const status = readString(formData, STATUS_FIELD);
   const times = readTimes(formData);
-  const outcome = await changeResumeStatusUseCase(
-    await createResumeRepository(),
-    author,
-    id,
-    status,
-    times,
-  );
+  const outcome = await changeResumeStatusUseCase(resumes, author, target.id, status, times);
   if (outcome.status === 'saved' && isResumeStatus(status)) {
     return { status: 'changed', resumeStatus: status, updatedAt: times.now };
   }
-  return finish(id, outcome);
+  return finish(target, outcome);
 };
 
 /** 下書きか、訪問者に見せるかを切り替え、設定の画面へ移す */
@@ -169,7 +171,9 @@ export const changeResumeStatus = async (
   formData: FormData,
 ): Promise<ResumeStatusResult> => {
   const result = await writeStatus(formData);
-  if (result.status === 'changed') redirect(`/dash/resumes/${readResumeId(formData)}?saved=1`);
+  if (result.status === 'changed') {
+    redirect(`/dash/resumes/${readString(formData, RESUME_UID_FIELD)}?saved=1`);
+  }
   return result;
 };
 
@@ -191,23 +195,23 @@ export const regenerateResumeUrl = async (
 ): Promise<RegenerateResumeUrlResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = readResumeId(formData);
-  const outcome = await regenerateResumeUrlUseCase(
-    await createResumeRepository(),
-    author,
-    id,
-    readTimes(formData),
-  );
-  if (outcome.status === 'saved') redirect(`/dash/resumes/${id}?regenerated=1`);
-  return finish(id, outcome);
+  const { resumes, ...target } = await readResume(formData);
+  const outcome = await regenerateResumeUrlUseCase(resumes, author, target.id, readTimes(formData));
+  if (outcome.status === 'saved') redirect(`/dash/resumes/${target.uid}?regenerated=1`);
+  return finish(target, outcome);
 };
 
-/** 写した行の id。読めなければ設定の画面へ移す */
-const readTarget = (formData: FormData) => {
-  const id = readResumeId(formData);
-  const rowId = parseResumeRowId(readString(formData, ROW_ID_FIELD));
-  if (rowId === null) redirect(`/dash/resumes/${id}`);
-  return { id, rowId };
+/** 送られた uid が指す写した行。行が無いか、その職務経歴書に属さなければ設定の画面へ移す */
+const readTarget = async (formData: FormData, kind: 'careers' | 'projects' | 'educations') => {
+  const { resumes, ...resume } = await readResume(formData);
+  const rowId = await findResumeRowId(
+    resumes,
+    resume.id,
+    kind,
+    readString(formData, ROW_UID_FIELD),
+  );
+  if (rowId === null) redirect(`/dash/resumes/${resume.uid}`);
+  return { resumes, resume, row: { id: resume.id, rowId } };
 };
 
 export type ResumeCareerResult = EditOutcome<
@@ -221,13 +225,13 @@ export const editResumeCareer = async (
 ): Promise<ResumeCareerResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const target = readTarget(formData);
+  const { resumes, resume, row } = await readTarget(formData, 'careers');
   return finish(
-    target.id,
+    resume,
     await editResumeCareerUseCase(
-      await createResumeRepository(),
+      resumes,
       author,
-      target,
+      row,
       readValues(formData, RESUME_CAREER_FIELDS),
       readTimes(formData),
     ),
@@ -245,13 +249,13 @@ export const editResumeProject = async (
 ): Promise<ResumeProjectResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const target = readTarget(formData);
+  const { resumes, resume, row } = await readTarget(formData, 'projects');
   return finish(
-    target.id,
+    resume,
     await editResumeProjectUseCase(
-      await createResumeRepository(),
+      resumes,
       author,
-      target,
+      row,
       readValues(formData, RESUME_PROJECT_FIELDS),
       readTimes(formData),
     ),
@@ -269,13 +273,13 @@ export const editResumeEducation = async (
 ): Promise<ResumeEducationResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const target = readTarget(formData);
+  const { resumes, resume, row } = await readTarget(formData, 'educations');
   return finish(
-    target.id,
+    resume,
     await editResumeEducationUseCase(
-      await createResumeRepository(),
+      resumes,
       author,
-      target,
+      row,
       readValues(formData, RESUME_EDUCATION_FIELDS),
       readTimes(formData),
     ),
@@ -294,7 +298,7 @@ export const editResumeSkillOverrides = async (
 ): Promise<ResumeSkillOverridesResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = readResumeId(formData);
+  const { resumes, ...target } = await readResume(formData);
   const names = readStrings(formData, OVERRIDE_NAME_FIELD);
   const years = readStrings(formData, OVERRIDE_YEARS_FIELD);
   const months = readStrings(formData, OVERRIDE_MONTHS_FIELD);
@@ -304,14 +308,8 @@ export const editResumeSkillOverrides = async (
     months: months[index] ?? '',
   }));
   return finish(
-    id,
-    await editResumeSkillOverridesUseCase(
-      await createResumeRepository(),
-      author,
-      id,
-      rows,
-      readTimes(formData),
-    ),
+    target,
+    await editResumeSkillOverridesUseCase(resumes, author, target.id, rows, readTimes(formData)),
   );
 };
 
@@ -322,8 +320,8 @@ export const deleteResume = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = readResumeId(formData);
-  const outcome = await deleteResumeUseCase(await createResumeRepository(), author, id);
+  const { resumes, id } = await readResume(formData);
+  const outcome = await deleteResumeUseCase(resumes, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
   redirect('/dash/resumes?deleted=1');
 };

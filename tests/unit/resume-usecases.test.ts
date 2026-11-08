@@ -48,9 +48,15 @@ const OK = { ok: true } as const;
 
 const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   readSources: vi.fn<Repo['readSources']>(async () => sources),
-  create: vi.fn<Repo['create']>(async () => ({ id: 7, updatedAt: '2026-11-07T00:00:00.000Z' })),
+  create: vi.fn<Repo['create']>(async () => ({
+    id: 7,
+    uid: '0123456789abcdef0123456789abcdef',
+    updatedAt: '2026-11-07T00:00:00.000Z',
+  })),
   list: vi.fn<Repo['list']>(),
   findForEdit: vi.fn<Repo['findForEdit']>(),
+  findIdByUid: vi.fn<Repo['findIdByUid']>(),
+  findRowIdByUid: vi.fn<Repo['findRowIdByUid']>(),
   findLimitedIdForVisitor: vi.fn<Repo['findLimitedIdForVisitor']>(),
   readContent: vi.fn<Repo['readContent']>(),
   editSettings: vi.fn<Repo['editSettings']>(async () => OK),
@@ -62,7 +68,6 @@ const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   editSkillOverrides: vi.fn<Repo['editSkillOverrides']>(async () => OK),
   delete: vi.fn<Repo['delete']>(async () => ({ ok: true })),
   hasId: vi.fn<Repo['hasId']>(async () => true),
-  hasRow: vi.fn<Repo['hasRow']>(async () => true),
 });
 
 const createValues = (overrides: Partial<CreateResumeFormValues> = {}): CreateResumeFormValues => ({

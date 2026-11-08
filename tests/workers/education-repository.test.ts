@@ -29,14 +29,16 @@ beforeEach(async () => {
 });
 
 it('学部・終わりの日・備考を空にして登録できる（FR-036）', async () => {
-  const id = await educations.register({
+  const { id, uid } = await educations.register({
     school: '作り物大学',
     department: null,
     period: { startedOn: '2014-04-01' as CalendarDate, endedOn: null },
     remarks: null,
   });
+  expect(uid).toMatch(/^[0-9a-f]{32}$/);
   expect(await educations.findById(id)).toEqual({
     id,
+    uid,
     school: '作り物大学',
     department: null,
     period: { startedOn: '2014-04-01', endedOn: null },
@@ -64,7 +66,7 @@ it('終わりの日が始まりの日より前の学歴は、入力でも D1 で
 });
 
 it('写した職務経歴書の行を残し、指す id を空にしてから消す（R8）', async () => {
-  const id = await educations.register({
+  const { id } = await educations.register({
     school: '作り物大学',
     department: '作り物学部',
     period: { startedOn: '2014-04-01' as CalendarDate, endedOn: '2018-03-31' as CalendarDate },
@@ -85,6 +87,19 @@ it('写した職務経歴書の行を残し、指す id を空にしてから消
   expect(await env.DB.prepare('SELECT education_id, school FROM resume_education').first()).toEqual(
     { education_id: null, school: '写した学校' },
   );
+});
+
+describe('findIdByUid（管理画面の URL の uid、migrations/0011）', () => {
+  it('登録した学歴の uid から id を引き、無い uid なら null', async () => {
+    const { id, uid } = await educations.register({
+      school: '作り物大学',
+      department: null,
+      period: { startedOn: '2014-04-01' as CalendarDate, endedOn: null },
+      remarks: null,
+    });
+    expect(await educations.findIdByUid(uid)).toBe(id);
+    expect(await educations.findIdByUid('0'.repeat(32))).toBeNull();
+  });
 });
 
 describe('edit', () => {

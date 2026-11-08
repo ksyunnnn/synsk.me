@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import {
-  CAREER_ID_FIELD,
+  CAREER_UID_FIELD,
   OPENED_UPDATED_AT_FIELD,
   type CareerField,
   type CareerFieldError,
@@ -24,7 +24,7 @@ type Props = {
   action: (state: CareerFormResult | null, formData: FormData) => Promise<CareerFormResult>;
   initialValues: CareerFormValues;
   /** 編集する職歴。持てば編集のフォームで、楽観ロックの値を送る */
-  career?: { id: number; updatedAt: string };
+  career?: { uid: string; updatedAt: string };
 };
 
 const ERROR_MESSAGES: Record<CareerField, Partial<Record<CareerFieldError, string>>> = {
@@ -69,7 +69,7 @@ export const CareerForm = ({ action, initialValues, career }: Props) => {
     <form action={formAction} className="flex flex-col gap-6">
       {career && (
         <>
-          <input type="hidden" name={CAREER_ID_FIELD} value={career.id} />
+          <input type="hidden" name={CAREER_UID_FIELD} value={career.uid} />
           <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={career.updatedAt} />
         </>
       )}

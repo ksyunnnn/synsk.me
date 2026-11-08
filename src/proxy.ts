@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { hasCareerId } from '@/features/career/server/queries';
-import { hasEducationId } from '@/features/education/server/queries';
-import { hasOrganizationId } from '@/features/organization/server/queries';
-import { hasProjectId, hasProjectSlug } from '@/features/project/server/queries';
-import { hasResumeId, hasResumeRow, hasVisitorResume } from '@/features/resume/server/queries';
-import { hasSkillId } from '@/features/skill/server/queries';
+import { hasCareerUid } from '@/features/career/server/queries';
+import { hasEducationUid } from '@/features/education/server/queries';
+import { hasOrganizationUid } from '@/features/organization/server/queries';
+import { hasProjectSlug, hasProjectUid } from '@/features/project/server/queries';
+import { hasResumeRow, hasResumeUid, hasVisitorResume } from '@/features/resume/server/queries';
+import { hasSkillUid } from '@/features/skill/server/queries';
 import { getAuthorFromHeaders } from '@/shared/server/author';
 
 /**
@@ -32,21 +32,22 @@ const resumePageMissing = (slug: string) => `/resume/${slug}/missing`;
 const DASH_FORBIDDEN = '/dash/forbidden';
 
 /**
- * 管理画面のうち、id で開く行の画面。id の行が無ければ `/dash/<コレクション>/{id}/missing`
- * へ rewrite する（specs/001-career-and-project/contracts/dash.md の共通）
+ * 管理画面のうち、uid で開く行の画面。uid の行が無ければ `/dash/<コレクション>/{uid}/missing`
+ * へ rewrite する（specs/001-career-and-project/contracts/dash.md の共通）。主キーは URL に
+ * 出さない（ADR-0048）
  */
-const DASH_ROW_EXISTS: Record<string, (id: string) => Promise<boolean>> = {
-  projects: hasProjectId,
-  organizations: hasOrganizationId,
-  skills: hasSkillId,
-  careers: hasCareerId,
-  educations: hasEducationId,
-  resumes: hasResumeId,
+const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
+  projects: hasProjectUid,
+  organizations: hasOrganizationUid,
+  skills: hasSkillUid,
+  careers: hasCareerUid,
+  educations: hasEducationUid,
+  resumes: hasResumeUid,
 };
 
 /**
- * 職務経歴書に属する写した行の画面（`/dash/resumes/{id}/<種類>/{rowId}`）。行が無いか、その
- * 職務経歴書に属さなければ `/dash/resumes/{id}/<種類>/{rowId}/missing` へ rewrite する
+ * 職務経歴書に属する写した行の画面（`/dash/resumes/{uid}/<種類>/{rowUid}`）。行が無いか、その
+ * 職務経歴書に属さなければ `/dash/resumes/{uid}/<種類>/{rowUid}/missing` へ rewrite する
  * （specs/002-resume/contracts/dash.md の共通）
  */
 const RESUME_ROW_KINDS = new Set(['careers', 'projects', 'educations']);
@@ -78,19 +79,19 @@ const decide = async (request: NextRequest): Promise<string | null> => {
 
   if (!(await getAuthorFromHeaders(request.headers))) return DASH_FORBIDDEN;
 
-  const [, collection, id, action, rowId, rowAction] = segments;
+  const [, collection, uid, action, rowUid, rowAction] = segments;
   const exists = collection === undefined ? undefined : DASH_ROW_EXISTS[collection];
-  if (!isRead || !exists || !id || id === 'new' || action === 'missing') return null;
-  if (!(await exists(id))) return `/dash/${collection}/${id}/missing`;
+  if (!isRead || !exists || !uid || uid === 'new' || action === 'missing') return null;
+  if (!(await exists(uid))) return `/dash/${collection}/${uid}/missing`;
   if (
     collection === 'resumes' &&
     RESUME_ROW_KINDS.has(action) &&
-    rowId &&
+    rowUid &&
     rowAction !== 'missing'
   ) {
-    return (await hasResumeRow(id, action, rowId))
+    return (await hasResumeRow(uid, action, rowUid))
       ? null
-      : `/dash/resumes/${id}/${action}/${rowId}/missing`;
+      : `/dash/resumes/${uid}/${action}/${rowUid}/missing`;
   }
   return null;
 };

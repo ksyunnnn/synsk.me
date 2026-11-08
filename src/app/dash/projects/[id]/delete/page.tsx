@@ -25,9 +25,9 @@ const Page = async ({ params }: Props) => {
         次の実績を削除します。訪問者のページは見つからなくなり、戻せません。作った職務経歴書の中身は残ります。
       </p>
       <p>題: {project.title}</p>
-      <DeleteProjectForm action={deleteProject} projectId={project.id} />
+      <DeleteProjectForm action={deleteProject} projectUid={project.uid} />
       <p>
-        <TextLink href={`/dash/projects/${project.id}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={`/dash/projects/${project.uid}`}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

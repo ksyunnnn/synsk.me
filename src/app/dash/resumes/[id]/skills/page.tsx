@@ -31,7 +31,7 @@ const Page = async ({ params }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href={`/dash/resumes/${resume.id}`}>設定の画面へ戻る</TextLink>
+        <TextLink href={`/dash/resumes/${resume.uid}`}>設定の画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">経験年数の上書きを直す</h1>
       <p className="text-sm text-muted-foreground">
@@ -41,7 +41,7 @@ const Page = async ({ params }: Props) => {
         key={resume.updatedAt}
         action={editResumeSkillOverrides}
         initialRows={rows}
-        target={{ resumeId: resume.id, updatedAt: resume.updatedAt }}
+        target={{ resumeUid: resume.uid, updatedAt: resume.updatedAt }}
       />
     </main>
   );

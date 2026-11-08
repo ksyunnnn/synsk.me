@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import {
-  EDUCATION_ID_FIELD,
+  EDUCATION_UID_FIELD,
   type EducationField,
   type EducationFieldError,
   type EducationFormResult,
@@ -18,7 +18,8 @@ import { InputField, TextareaField } from '@/shared/components/field';
 type Props = {
   action: (state: EducationFormResult | null, formData: FormData) => Promise<EducationFormResult>;
   initialValues: EducationFormValues;
-  educationId?: number;
+  /** 編集する学歴の uid。持てば編集のフォーム */
+  educationUid?: string;
 };
 
 const ERROR_MESSAGES: Record<EducationField, Partial<Record<EducationFieldError, string>>> = {
@@ -35,7 +36,7 @@ const ERROR_MESSAGES: Record<EducationField, Partial<Record<EducationFieldError,
   remarks: {},
 };
 
-export const EducationForm = ({ action, initialValues, educationId }: Props) => {
+export const EducationForm = ({ action, initialValues, educationUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
   const values =
     result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
@@ -47,8 +48,8 @@ export const EducationForm = ({ action, initialValues, educationId }: Props) => 
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      {educationId !== undefined && (
-        <input type="hidden" name={EDUCATION_ID_FIELD} value={educationId} />
+      {educationUid !== undefined && (
+        <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
       )}
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
@@ -95,7 +96,7 @@ export const EducationForm = ({ action, initialValues, educationId }: Props) => 
           type="submit"
           className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
-          {educationId === undefined ? '登録する' : '保存する'}
+          {educationUid === undefined ? '登録する' : '保存する'}
         </button>
       </div>
     </form>

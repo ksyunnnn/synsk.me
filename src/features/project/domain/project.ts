@@ -2,6 +2,7 @@ import type { ActionResult } from '@/shared/domain/action-result';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
+import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
@@ -28,7 +29,7 @@ const isProjectKind = (value: string): value is ProjectKind =>
 
 export type ProjectId = number;
 
-/** 文字列の id を読む。正の整数でなければ null */
+/** 文字列の id を読む。正の整数でなければ null。使い手はスキルの id の読み取り */
 export const parseProjectId = (value: string): ProjectId | null =>
   /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
 
@@ -44,6 +45,8 @@ export const newProjectSlug = (): string => crypto.randomUUID();
 /** 作り手が編集する実績 */
 export type Project = {
   id: ProjectId;
+  /** 管理画面の URL とフォームで実績を指す識別子。訪問者向けの URL は slug */
+  uid: Uid;
   slug: string;
   organization: Pick<Organization, 'id' | 'name' | 'nameMasked'>;
   kind: ProjectKind;
@@ -64,7 +67,7 @@ export type Project = {
 /** 作り手の一覧の 1 行 */
 export type ProjectSummary = Pick<
   Project,
-  'id' | 'slug' | 'kind' | 'title' | 'isMasked' | 'status' | 'period'
+  'id' | 'uid' | 'slug' | 'kind' | 'title' | 'isMasked' | 'status' | 'period'
 > & {
   organizationName: string;
 };
@@ -108,7 +111,7 @@ export const PROJECT_FIELDS = [
 export type ProjectField = (typeof PROJECT_FIELDS)[number];
 
 /** 編集の画面のフォームが、入力の項目とは別に送る値 */
-export const PROJECT_ID_FIELD = 'projectId';
+export const PROJECT_UID_FIELD = 'projectUid';
 export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 export type ProjectFieldError =

@@ -1,6 +1,6 @@
 # Data Model: 職歴と実績
 
-表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0007` と `migrations/0008_rebuild_career_project_and_resume.sql` と `migrations/0009_add_status_to_career_and_project.sql` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。列の一覧は書き写さない。
+表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0007` と `migrations/0008_rebuild_career_project_and_resume.sql` と `migrations/0009_add_status_to_career_and_project.sql` と `migrations/0011_add_uid_for_dash_url.sql` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。列の一覧は書き写さない。
 
 ## Contents
 
@@ -25,7 +25,7 @@
 | `media` | 画像（持ち主が職歴か実績の行） | 書く（R14 の未決が解けてから） | FR-027〜FR-030 |
 | `resume_career`・`resume_project`・`resume_education` | 職務経歴書の写し | 削除のときに `*_id` を NULL にするだけ | spec の Edge Cases |
 
-スキーマが守る決まり（001 のコードで重ねて書かない）: 組織名の重複（`organization.name` の UNIQUE、FR-003）、スキル名の大文字と小文字だけの重複（`skill.name` の `COLLATE NOCASE` の UNIQUE、FR-031）、識別子の形と重複（`project.slug` の CHECK と UNIQUE、FR-013）、種類（`project.kind` の CHECK、FR-012）、日付の形と前後（`*_on` の CHECK、FR-038・FR-039）、既定で秘匿化（`is_masked` の DEFAULT 1、FR-010・FR-015）、既定でサイトに載せないことと値の 2 つ（`career.status`・`project.status` の DEFAULT `draft` と CHECK、FR-044）、代表画像がその実績の画像であること（複合の外部キー、FR-028）、画像の持ち主が 1 つ（`media` の CHECK）、指されている組織の削除（NO ACTION の外部キー、FR-006）、上書きの月数が 0 以上（`skill.months_override` の CHECK、FR-034）。
+スキーマが守る決まり（001 のコードで重ねて書かない）: 組織名の重複（`organization.name` の UNIQUE、FR-003）、スキル名の大文字と小文字だけの重複（`skill.name` の `COLLATE NOCASE` の UNIQUE、FR-031）、識別子の形と重複（`project.slug` の CHECK と UNIQUE、FR-013）、種類（`project.kind` の CHECK、FR-012）、日付の形と前後（`*_on` の CHECK、FR-038・FR-039）、既定で秘匿化（`is_masked` の DEFAULT 1、FR-010・FR-015）、既定でサイトに載せないことと値の 2 つ（`career.status`・`project.status` の DEFAULT `draft` と CHECK、FR-044）、代表画像がその実績の画像であること（複合の外部キー、FR-028）、画像の持ち主が 1 つ（`media` の CHECK）、指されている組織の削除（NO ACTION の外部キー、FR-006）、上書きの月数が 0 以上（`skill.months_override` の CHECK、FR-034）、管理画面の URL の識別子の形・重複・書き換えの拒否（`*.uid` の CHECK・UNIQUE・トリガ、research.md の R17）。
 
 アプリケーションは、スキーマが拒む入力を保存の前にも確かめ、画面で項目ごとに知らせる。スキーマの制約は最後の守りとして残す。
 
@@ -68,11 +68,11 @@
 
 各機能の `domain/` に置く。行の型は Repository の実装の中だけに置き、ここへ詰め替える（research.md の R3）。
 
-- `Organization`: id・名前・秘匿化した組織名（空あり）・更新日時
-- `Career`: id・組織・肩書・期間・本文（空あり）・関連 URL（空あり）・秘匿化するか・サイトに載せるか・更新日時
-- `Project`: id・組織・種類・識別子・題・秘匿化した題・秘匿化するか・サイトに載せるか・代表画像（空あり）・期間・本文（空あり）・関連 URL（空あり）・スキルの id の並び・更新日時
-- `Skill`: id・名前・上書きの月数（空あり）
-- `Education`: id・学校・学部（空あり）・期間・備考（空あり）
+- `Organization`: id・uid・名前・秘匿化した組織名（空あり）・更新日時
+- `Career`: id・uid・組織・肩書・期間・本文（空あり）・関連 URL（空あり）・秘匿化するか・サイトに載せるか・更新日時
+- `Project`: id・uid・組織・種類・識別子・題・秘匿化した題・秘匿化するか・サイトに載せるか・代表画像（空あり）・期間・本文（空あり）・関連 URL（空あり）・スキルの id の並び・更新日時
+- `Skill`: id・uid・名前・上書きの月数（空あり）
+- `Education`: id・uid・学校・学部（空あり）・期間・備考（空あり）
 - `Period`（`src/shared/domain/period.ts`）: 始まりの日・終わりの日（空なら続いている）。日付は `YYYY-MM-DD` の文字列のまま持ち、時刻帯を持たない
 - `ProjectKind`: `application`・`talk`・`event`・`other` の `as const` の配列から作る型
 - `SiteStatus`（`src/shared/domain/site-status.ts`）: `draft`・`published` の `as const` の配列から作る型

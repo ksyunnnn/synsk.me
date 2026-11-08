@@ -2,7 +2,7 @@
 
 import { useActionState } from 'react';
 import {
-  ORGANIZATION_ID_FIELD,
+  ORGANIZATION_UID_FIELD,
   type OrganizationField,
   type OrganizationFieldError,
   type OrganizationFormValues,
@@ -22,7 +22,7 @@ type Props = {
     state: OrganizationFormResult | null,
     formData: FormData,
   ) => Promise<OrganizationFormResult>;
-  organizationId: number;
+  organizationUid: string;
   initialValues: OrganizationFormValues;
   /** 秘匿化した職歴・実績が指している。秘匿化した組織名を空にできないことを示す */
   isReferencedByMasked: boolean;
@@ -37,7 +37,7 @@ const ERROR_MESSAGES: Record<OrganizationFieldError, string> = {
 
 export const OrganizationForm = ({
   action,
-  organizationId,
+  organizationUid,
   initialValues,
   isReferencedByMasked,
 }: Props) => {
@@ -52,7 +52,7 @@ export const OrganizationForm = ({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      <input type="hidden" name={ORGANIZATION_ID_FIELD} value={organizationId} />
+      <input type="hidden" name={ORGANIZATION_UID_FIELD} value={organizationUid} />
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
           作り手であることを確かめられませんでした。ログインし直してから入力し直してください

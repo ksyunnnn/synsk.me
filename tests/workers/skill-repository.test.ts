@@ -59,11 +59,20 @@ describe('register と edit', () => {
   it('上書きの月数を保存する（FR-034）', async () => {
     const result = await skills.register({ name: 'TypeScript', monthsOverride: 71 });
     if (!result.ok) throw new Error(result.reason);
+    expect(result.uid).toMatch(/^[0-9a-f]{32}$/);
     expect(await skills.findById(result.id)).toEqual({
       id: result.id,
+      uid: result.uid,
       name: 'TypeScript',
       monthsOverride: 71,
     });
+  });
+
+  it('登録したスキルの uid から id を引き、無い uid なら null（管理画面の URL、migrations/0011）', async () => {
+    const result = await skills.register({ name: 'Go', monthsOverride: null });
+    if (!result.ok) throw new Error(result.reason);
+    expect(await skills.findIdByUid(result.uid)).toBe(result.id);
+    expect(await skills.findIdByUid('0'.repeat(32))).toBeNull();
   });
 
   it('大文字と小文字だけ違う名前のスキルを登録しない（FR-031）', async () => {
@@ -117,9 +126,16 @@ describe('listWithPeriods', () => {
     });
     await linkProjectSkill(env.DB, p1, ts);
     expect(await skills.listWithPeriods('all')).toEqual([
-      { id: expect.any(Number), name: 'Go', monthsOverride: null, periods: [] },
+      {
+        id: expect.any(Number),
+        uid: expect.stringMatching(/^[0-9a-f]{32}$/),
+        name: 'Go',
+        monthsOverride: null,
+        periods: [],
+      },
       {
         id: ts,
+        uid: expect.stringMatching(/^[0-9a-f]{32}$/),
         name: 'TypeScript',
         monthsOverride: null,
         periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],

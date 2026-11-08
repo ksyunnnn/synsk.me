@@ -51,7 +51,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 訪問者の URL: 公開用と限定公開用は `/resume/{slug}`（R5）。`resume.slug` は限定公開用と公開用をまたいで UNIQUE のため、1 つの経路で識別子から行を引ける。PDF は同じページを印刷して作り、経路を持たない（R11）
 - 理由: ADR-0048 は URL をコレクション名と識別子で表し、職務経歴書に permalink を持たせる。ADR-0048 の Consequences は職務経歴書のコレクション名を `/resume` とする
 - `/resume/{slug}/missing` は `/resume/{slug}` の下にあり、訪問者の経路と重ならない
-- 管理画面は `/dash/resumes/*`（contracts/dash.md）。001 の `/dash/projects` と同じく複数形にする
+- 管理画面は `/dash/resumes/*`（contracts/dash.md）。001 の `/dash/projects` と同じく複数形にする。職務経歴書と写した行は `uid` で開き、`resume.slug` を管理画面の URL に使わない（001 の research.md の R17）
 - `src/app/resume/page.tsx`（`/resume`）は 002 の spec に要件が無く、002 は触れない。002 は `src/app/resume/[slug]/` の下だけを足す
 - 食い違い: ADR-0048 の Decision Outcome は「note と職務経歴書の slug は、題から候補を提示し、オーナーが確定させる」とする。spec の FR-037・FR-039 は、識別子を既定で uid とし、限定公開用は書き換えられないとする。plan は spec に従う。ADR を直すかはオーナーが決める（plan.md の U14）
 

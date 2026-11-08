@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { RESUME_ID_FIELD } from '@/features/resume/domain/resume-forms';
+import { RESUME_UID_FIELD } from '@/features/resume/domain/resume-forms';
 import { deleteResume } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';
 import { DeleteForm } from '@/shared/components/delete-form';
@@ -29,14 +29,14 @@ const Page = async ({ params }: Props) => {
       <p>{resume.title}</p>
       <DeleteForm
         action={deleteResume}
-        idField={RESUME_ID_FIELD}
-        id={resume.id}
+        uidField={RESUME_UID_FIELD}
+        uid={resume.uid}
         messages={{
           forbidden: '作り手であることを確かめられませんでした。ログインし直してください',
         }}
       />
       <p>
-        <TextLink href={`/dash/resumes/${resume.id}`}>設定の画面へ戻る</TextLink>
+        <TextLink href={`/dash/resumes/${resume.uid}`}>設定の画面へ戻る</TextLink>
       </p>
     </main>
   );

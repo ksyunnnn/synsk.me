@@ -54,7 +54,7 @@ const Page = async ({ searchParams }: Props) => {
             {skills.map((skill) => (
               <tr key={skill.id} className="border-b">
                 <td className="py-2">
-                  <TextLink href={`/dash/skills/${skill.id}`}>{skill.name}</TextLink>
+                  <TextLink href={`/dash/skills/${skill.uid}`}>{skill.name}</TextLink>
                 </td>
                 <td className="py-2">
                   {formatMonths(skill.experienceMonths)}

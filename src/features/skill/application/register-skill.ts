@@ -7,9 +7,10 @@ import {
 } from '@/features/skill/domain/skill';
 import type { SkillRepository } from '@/features/skill/domain/skill-repository';
 import type { Author } from '@/shared/domain/author';
+import type { Uid } from '@/shared/domain/uid';
 
 export type RegisterSkillOutcome =
-  | { status: 'registered'; id: SkillId }
+  | { status: 'registered'; id: SkillId; uid: Uid }
   | { status: 'forbidden' }
   | {
       status: 'invalid';
@@ -28,6 +29,6 @@ export const registerSkill = async (
   if (!parsed.ok) return { status: 'invalid', errors: parsed.errors, values };
   const result = await skills.register(parsed.content);
   return result.ok
-    ? { status: 'registered', id: result.id }
+    ? { status: 'registered', id: result.id, uid: result.uid }
     : { status: 'invalid', errors: { name: 'name-taken' }, values };
 };

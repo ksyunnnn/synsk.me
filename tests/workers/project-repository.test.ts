@@ -236,3 +236,20 @@ describe('一覧と有無', () => {
     expect(await projects.hasId(id + 1)).toBe(false);
   });
 });
+
+describe('uid（管理画面の URL とフォームの識別子）', () => {
+  it('登録は DB が入れた 32 文字の 16 進の uid を返し、編集と一覧の行も同じ uid を持つ', async () => {
+    const result = await projects.register(content());
+    if (!result.ok) throw new Error(`実績を登録できなかった: ${result.reason}`);
+    expect(result.uid).toMatch(/^[0-9a-f]{32}$/);
+    expect((await projects.findForEdit(result.id))?.uid).toBe(result.uid);
+    expect((await projects.list()).map((p) => p.uid)).toEqual([result.uid]);
+  });
+
+  it('uid から id を引く。無い uid なら null', async () => {
+    const result = await projects.register(content());
+    if (!result.ok) throw new Error(`実績を登録できなかった: ${result.reason}`);
+    expect(await projects.findIdByUid(result.uid)).toBe(result.id);
+    expect(await projects.findIdByUid('0'.repeat(32))).toBeNull();
+  });
+});

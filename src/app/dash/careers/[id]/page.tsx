@@ -35,10 +35,10 @@ const Page = async ({ params, searchParams }: Props) => {
         key={career.updatedAt}
         action={editCareer}
         initialValues={toCareerFormValues(career)}
-        career={{ id: career.id, updatedAt: career.updatedAt }}
+        career={{ uid: career.uid, updatedAt: career.updatedAt }}
       />
       <p>
-        <TextLink href={`/dash/careers/${career.id}/delete`}>この職歴を削除する</TextLink>
+        <TextLink href={`/dash/careers/${career.uid}/delete`}>この職歴を削除する</TextLink>
       </p>
     </main>
   );

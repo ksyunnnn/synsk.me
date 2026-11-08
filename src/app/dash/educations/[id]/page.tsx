@@ -28,10 +28,10 @@ const Page = async ({ params }: Props) => {
       <EducationForm
         action={editEducation}
         initialValues={toEducationFormValues(education)}
-        educationId={education.id}
+        educationUid={education.uid}
       />
       <p>
-        <TextLink href={`/dash/educations/${education.id}/delete`}>この学歴を削除する</TextLink>
+        <TextLink href={`/dash/educations/${education.uid}/delete`}>この学歴を削除する</TextLink>
       </p>
     </main>
   );

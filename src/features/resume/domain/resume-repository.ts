@@ -15,6 +15,7 @@ import type {
   ResumeSources,
   ResumeStatus,
 } from '@/features/resume/domain/resume';
+import type { Uid } from '@/shared/domain/uid';
 
 /**
  * 職務経歴書の取り出し方と保存の仕方（docs/SOFTWARE_DESIGN.md の Repository）。
@@ -28,10 +29,14 @@ export type ResumeRepository = {
   /** 写し元。`all` ならすべて、そうでなければ選んだ id だけ。始まりの日の新しい順 */
   readSources: (selection: ResumeSelection | 'all') => Promise<ResumeSources>;
   /** `resume` と写した行を 1 回の `batch()` で入れる（research.md の R4）。更新日時は楽観ロックに使う */
-  create: (resume: NewResume) => Promise<{ id: ResumeId; updatedAt: string }>;
+  create: (resume: NewResume) => Promise<{ id: ResumeId; uid: Uid; updatedAt: string }>;
   /** 作り手の一覧。作った日時の新しい順 */
   list: () => Promise<Resume[]>;
   findForEdit: (id: ResumeId) => Promise<ResumeForEdit | null>;
+  /** 管理画面の URL とフォームの uid が指す職務経歴書の id。無ければ null */
+  findIdByUid: (uid: Uid) => Promise<ResumeId | null>;
+  /** uid が指す写した行の id。行が無いか、その職務経歴書に属さなければ null */
+  findRowIdByUid: (id: ResumeId, kind: ResumeRowKind, rowUid: Uid) => Promise<number | null>;
   /**
    * 訪問者に中身を返してよい限定公開用の id。識別子が合い、訪問者に見せる状態で、期限の前か
    * 期限が無いときだけ返す（FR-011・FR-014・FR-022・FR-023、research.md の R6）
@@ -70,6 +75,4 @@ export type ResumeRepository = {
   /** 子の行から物理削除する（research.md の R9） */
   delete: (id: ResumeId) => Promise<{ ok: boolean }>;
   hasId: (id: ResumeId) => Promise<boolean>;
-  /** 写した行があり、その職務経歴書に属するか */
-  hasRow: (id: ResumeId, kind: ResumeRowKind, rowId: number) => Promise<boolean>;
 };

@@ -33,13 +33,13 @@ const Page = async ({ params, searchParams }: Props) => {
       <OrganizationForm
         key={organization.updatedAt}
         action={editOrganization}
-        organizationId={organization.id}
+        organizationUid={organization.uid}
         initialValues={{ name: organization.name, nameMasked: organization.nameMasked ?? '' }}
         isReferencedByMasked={references.isReferencedByMasked}
       />
       {!references.isReferenced && (
         <p>
-          <TextLink href={`/dash/organizations/${organization.id}/delete`}>
+          <TextLink href={`/dash/organizations/${organization.uid}/delete`}>
             この組織を削除する
           </TextLink>
         </p>

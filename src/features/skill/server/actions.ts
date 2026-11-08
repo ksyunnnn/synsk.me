@@ -8,12 +8,11 @@ import { editSkill as editSkillUseCase } from '@/features/skill/application/edit
 import { registerSkill as registerSkillUseCase } from '@/features/skill/application/register-skill';
 import {
   SKILL_FIELDS,
-  SKILL_ID_FIELD,
-  parseSkillId,
+  SKILL_UID_FIELD,
   type SkillFormResult,
   type SkillFormValues,
 } from '@/features/skill/domain/skill';
-import { createSkillRepository } from '@/features/skill/server/queries';
+import { createSkillRepository, findSkillId } from '@/features/skill/server/queries';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -50,14 +49,10 @@ export const editSkill = async (
 ): Promise<SkillFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseSkillId(readString(formData, SKILL_ID_FIELD));
+  const skills = await createSkillRepository();
+  const id = await findSkillId(skills, readString(formData, SKILL_UID_FIELD));
   if (id === null) redirect('/dash/skills');
-  const outcome = await editSkillUseCase(
-    await createSkillRepository(),
-    author,
-    id,
-    readValues(formData),
-  );
+  const outcome = await editSkillUseCase(skills, author, id, readValues(formData));
   if (outcome.status === 'saved') redirect('/dash/skills?saved=1');
   if (outcome.status === 'not-found') redirect('/dash/skills');
   return outcome;
@@ -69,9 +64,10 @@ export const deleteSkill = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const id = parseSkillId(readString(formData, SKILL_ID_FIELD));
+  const skills = await createSkillRepository();
+  const id = await findSkillId(skills, readString(formData, SKILL_UID_FIELD));
   if (id === null) redirect('/dash/skills');
-  const outcome = await deleteSkillUseCase(await createSkillRepository(), author, id);
+  const outcome = await deleteSkillUseCase(skills, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
   redirect('/dash/skills?deleted=1');
 };

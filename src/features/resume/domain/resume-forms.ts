@@ -17,8 +17,9 @@ import { isWebUrl } from '@/shared/domain/web-url';
  * （specs/002-resume/contracts/dash.md）。秘匿化するかどうかの入力は持たない（FR-031）
  */
 
-export const RESUME_ID_FIELD = 'resumeId';
-export const ROW_ID_FIELD = 'rowId';
+/** 職務経歴書と写した行は uid で指す。主キーはフォームに出さない（src/shared/domain/uid.ts） */
+export const RESUME_UID_FIELD = 'resumeUid';
+export const ROW_UID_FIELD = 'rowUid';
 export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 export type FieldError = 'missing' | 'invalid' | 'ended-before-started';
@@ -77,7 +78,8 @@ export type CreateResumeFormResult =
   /** 作った。`url` は限定公開用の URL（`/resume/{slug}`）。公開用は null */
   | {
       status: 'created';
-      id: number;
+      /** 作った職務経歴書の uid。設定の画面の URL とフォームに使う */
+      uid: string;
       updatedAt: string;
       audience: ResumeAudience;
       url: string | null;

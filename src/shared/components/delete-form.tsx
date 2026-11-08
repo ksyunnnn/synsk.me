@@ -13,17 +13,17 @@ type Result = { status: string };
 
 type Props<R extends Result> = {
   action: (state: R | null, formData: FormData) => Promise<R>;
-  /** 削除する行の id を送る名前 */
-  idField: string;
-  id: number;
+  /** 削除する行の uid を送る名前。主キーは送らない（src/shared/domain/uid.ts） */
+  uidField: string;
+  uid: string;
   messages: Record<R['status'], string>;
 };
 
-export const DeleteForm = <R extends Result>({ action, idField, id, messages }: Props<R>) => {
+export const DeleteForm = <R extends Result>({ action, uidField, uid, messages }: Props<R>) => {
   const [result, formAction] = useActionState(action, null);
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name={idField} value={id} />
+      <input type="hidden" name={uidField} value={uid} />
       {result && (
         <p role="alert" className="text-destructive">
           {messages[result.status as R['status']]}

@@ -157,3 +157,56 @@ describe('migration 0009 の activity.slug（specs/004-external-activity/spec.md
     ).rejects.toThrow(/CHECK constraint failed/);
   });
 });
+
+/**
+ * 管理画面の URL に出す uid（ADR-0048 の「主キーは URL に出さない」、
+ * specs/001-career-and-project/research.md の R17）
+ */
+describe('migration 0011 の uid', () => {
+  const TABLES = [
+    'organization',
+    'career',
+    'project',
+    'skill',
+    'education',
+    'resume',
+    'resume_career',
+    'resume_project',
+    'resume_education',
+  ];
+
+  it.each(TABLES)('%s.uid は NOT NULL', async (table) => {
+    const column = (await columnsOf(table)).find((c) => c.name === 'uid');
+    expect(column).toMatchObject({ notnull: 1 });
+  });
+
+  it.each(TABLES)('%s に uid の書き換えを拒むトリガがある', async (table) => {
+    const trigger = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'trigger' AND tbl_name = ? AND name = ?",
+    )
+      .bind(table, `${table}_uid_fixed`)
+      .first();
+    expect(trigger).not.toBeNull();
+  });
+
+  it('uid を挙げずに入れると、DB が 32 文字の 16 進を入れる。書き換えは拒む', async () => {
+    const row = await env.DB.prepare(
+      "INSERT INTO organization (name) VALUES ('作り物の 0011 の組織') RETURNING id, uid",
+    ).first<{ id: number; uid: string }>();
+    expect(row?.uid).toMatch(/^[0-9a-f]{32}$/);
+    await expect(
+      env.DB.prepare('UPDATE organization SET uid = ? WHERE id = ?')
+        .bind('0'.repeat(32), row?.id)
+        .run(),
+    ).rejects.toThrow(/organization_uid_fixed/);
+    await env.DB.prepare('DELETE FROM organization WHERE id = ?').bind(row?.id).run();
+  });
+
+  it('形の違う uid を拒む', async () => {
+    await expect(
+      env.DB.prepare(
+        "INSERT INTO organization (name, uid) VALUES ('作り物の 0011 の組織', '12345')",
+      ).run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
+  });
+});
