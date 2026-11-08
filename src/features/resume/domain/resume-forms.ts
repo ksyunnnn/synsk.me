@@ -72,7 +72,7 @@ export type CreateResumeFormValues = {
 };
 
 export type CreateResumeField = 'title' | 'audience' | 'expires' | 'selection';
-export type CreateResumeError = FieldError | 'public-not-supported' | 'source-missing';
+export type CreateResumeError = FieldError | 'public-not-supported' | 'source-missing' | 'too-many';
 
 export type CreateResumeFormResult =
   /** 作った。`url` は限定公開用の URL（`/resume/{slug}`）。公開用は null */
@@ -98,7 +98,7 @@ export type CreateResumeFormResult =
 export const ROW_KIND_FIELD = 'rowKind';
 
 export type AddResumeRowsError =
-  'missing' | 'invalid' | 'source-missing' | 'already-copied' | 'public-not-supported';
+  'missing' | 'invalid' | 'source-missing' | 'already-copied' | 'public-not-supported' | 'too-many';
 
 /** 足すときの誤り。選択の 1 つの項目だけを持つ */
 export type AddResumeRowsErrors = { selection?: AddResumeRowsError };

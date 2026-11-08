@@ -1,3 +1,4 @@
+import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import type { ResumeRowKind, ResumeSources } from '@/features/resume/domain/resume';
 import { CheckboxField } from '@/shared/components/field';
 import type { Period } from '@/shared/domain/period';
@@ -38,6 +39,7 @@ export const SELECTION_MESSAGES = {
   invalid: '選んだ項目を読めませんでした。開き直してください',
   'source-missing':
     '選んだ職歴・実績・学歴のうち、開いた後に消えたものがあります。開き直してください',
+  'too-many': `一度に写せるのは、職歴・実績・学歴と実績のスキルを合わせて ${MAX_COPIED_ROWS} 行までです。選ぶものを減らしてください`,
 } as const;
 
 export const SourceFieldset = ({

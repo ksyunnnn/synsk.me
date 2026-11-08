@@ -1,4 +1,10 @@
-import { buildResumeContent, hasAllSources } from '@/features/resume/domain/build-resume';
+import {
+  buildResumeContent,
+  countCopiedRows,
+  countSelected,
+  hasAllSources,
+  MAX_COPIED_ROWS,
+} from '@/features/resume/domain/build-resume';
 import {
   copiedSourceIds,
   parseResumeId,
@@ -20,7 +26,8 @@ export type AddResumeRowsOutcome = EditOutcome<string[], AddResumeRowsErrors>;
  * 書くの順（docs/SOFTWARE_DESIGN.md）。
  *
  * 既に写した写し元は足さない。開いた後に選んだ写し元が消えていたら、作るときと同じく足さずに
- * 知らせる（research.md の R14）
+ * 知らせる（research.md の R14）。写す行が上限を超えたら、作るときと同じく足さずに知らせる
+ * （research.md の R15）
  */
 export const addResumeRows = async (
   resumes: ResumeRepository,
@@ -35,6 +42,10 @@ export const addResumeRows = async (
   if (parsed.includes(null)) return { status: 'invalid', errors: { selection: 'invalid' }, values };
   const ids = [...new Set(parsed as number[])];
   if (ids.length === 0) return { status: 'invalid', errors: { selection: 'missing' }, values };
+  const selection = selectionOf(target.kind, ids);
+  if (countSelected(selection) > MAX_COPIED_ROWS) {
+    return { status: 'invalid', errors: { selection: 'too-many' }, values };
+  }
 
   // 読む: 職務経歴書と、選んだ写し元
   const resume = await resumes.findForEdit(target.id);
@@ -44,7 +55,6 @@ export const addResumeRows = async (
   if (ids.some((id) => copied.has(id))) {
     return { status: 'invalid', errors: { selection: 'already-copied' }, values };
   }
-  const selection = selectionOf(target.kind, ids);
   const sources = await resumes.readSources(selection);
   if (!hasAllSources(sources, selection)) {
     return { status: 'invalid', errors: { selection: 'source-missing' }, values };
@@ -53,6 +63,9 @@ export const addResumeRows = async (
   // 計算: 作るときと同じ写し方
   const built = buildResumeContent(sources, selection, resume.audience);
   if (!built.ok) return { status: 'invalid', errors: { selection: built.reason }, values };
+  if (countCopiedRows(built.content) > MAX_COPIED_ROWS) {
+    return { status: 'invalid', errors: { selection: 'too-many' }, values };
+  }
 
   // 書く
   return toEditOutcome(await resumes.addRows(target.id, built.content, times), values);

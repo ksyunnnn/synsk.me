@@ -19,6 +19,26 @@ import type {
 export type BuildResumeResult =
   { ok: true; content: NewResumeContent } | { ok: false; reason: 'public-not-supported' };
 
+/**
+ * 1 回の作成と足す操作で写せる行の数の上限（docs/SOFTWARE_DESIGN.md の設計原則 2、research.md の
+ * R15）。写す行は 1 行ごとに D1 の文を 1 つ、1 つの `batch()` に積む。職歴・実績・学歴・実績の
+ * スキル・経験年数の上書きを合わせて数える
+ */
+export const MAX_COPIED_ROWS = 1000;
+
+/** 選んだ写し元の数。写す行は写し元より少なくならないため、読む前に上限と比べる */
+export const countSelected = (selection: ResumeSelection): number =>
+  new Set(selection.careerIds).size +
+  new Set(selection.projectIds).size +
+  new Set(selection.educationIds).size;
+
+/** 写す行の数。`MAX_COPIED_ROWS` と比べる */
+export const countCopiedRows = (content: NewResumeContent): number =>
+  content.careers.length +
+  content.projects.reduce((sum, project) => sum + 1 + project.skills.length, 0) +
+  content.educations.length +
+  content.skillOverrides.length;
+
 /** 写した実績のスキルのうち、元のスキルが経験年数の上書きを持つもの（FR-028）。名前ごとに 1 つ */
 const collectOverrides = (sources: ResumeSources['projects']): ResumeSkillOverride[] => {
   const byName = new Map<string, number>();

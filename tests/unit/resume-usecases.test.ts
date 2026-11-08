@@ -9,6 +9,7 @@ import { editResumeSettings } from '@/features/resume/application/edit-resume-se
 import { changeResumeStatus } from '@/features/resume/application/change-resume-status';
 import { deleteResume } from '@/features/resume/application/delete-resume';
 import { regenerateResumeUrl } from '@/features/resume/application/regenerate-resume-url';
+import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import type { ResumeForEdit, ResumeSources } from '@/features/resume/domain/resume';
 import type {
   CreateResumeField,
@@ -71,6 +72,33 @@ const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   delete: vi.fn<Repo['delete']>(async () => ({ ok: true })),
 });
 
+/** 選んだ写し元の id。上限の検査に使う */
+const manyIds = (count: number) => Array.from({ length: count }, (_, i) => String(i + 1));
+
+/** スキルを `skillCount` 個持つ実績 1 つ。写す行は実績の 1 行とスキルの行の数になる */
+const projectWithSkills = (skillCount: number): ResumeSources => ({
+  careers: [],
+  projects: [
+    {
+      id: 5,
+      organizationName: '作り物株式会社',
+      organizationNameMasked: 'ある会社',
+      kind: 'talk',
+      title: '作り物の登壇',
+      titleMasked: 'ある登壇',
+      isMasked: true,
+      period: { startedOn: '2022-04-01' as CalendarDate, endedOn: null },
+      description: null,
+      url: null,
+      skills: Array.from({ length: skillCount }, (_, i) => ({
+        name: `作り物のスキル${i}`,
+        monthsOverride: null,
+      })),
+    },
+  ],
+  educations: [],
+});
+
 const createValues = (overrides: Partial<CreateResumeFormValues> = {}): CreateResumeFormValues => ({
   title: '作り物の提出先',
   audience: '',
@@ -123,6 +151,32 @@ describe('createResume', () => {
     const outcome = await createResume(resumes, OWNER, createValues());
     expect(outcome).toMatchObject({ status: 'invalid', errors: { selection: 'source-missing' } });
     expect(resumes.create).not.toHaveBeenCalled();
+  });
+
+  it('選んだ写し元が上限を超えたら、何も読まずに作らず、送られた値を返す（research.md の R15）', async () => {
+    const resumes = fakeResumes();
+    const values = createValues({ careerIds: manyIds(MAX_COPIED_ROWS + 1) });
+    expect(await createResume(resumes, OWNER, values)).toEqual({
+      status: 'invalid',
+      errors: { selection: 'too-many' },
+      values,
+    });
+    expect(resumes.readSources).not.toHaveBeenCalled();
+    expect(resumes.create).not.toHaveBeenCalled();
+  });
+
+  it('実績のスキルを合わせて写す行が上限を超えたら作らない（research.md の R15）', async () => {
+    const values = createValues({ careerIds: [], projectIds: ['5'] });
+    const over = fakeResumes(projectWithSkills(MAX_COPIED_ROWS));
+    expect(await createResume(over, OWNER, values)).toMatchObject({
+      status: 'invalid',
+      errors: { selection: 'too-many' },
+      values,
+    });
+    expect(over.create).not.toHaveBeenCalled();
+
+    const atLimit = fakeResumes(projectWithSkills(MAX_COPIED_ROWS - 1));
+    expect(await createResume(atLimit, OWNER, values)).toMatchObject({ status: 'created' });
   });
 
   it.each([
@@ -352,6 +406,31 @@ describe('addResumeRows（FR-041）', () => {
     ]);
     expect(content.skillOverrides).toEqual([{ skillName: 'Go', months: 24 }]);
     expect(content.careers).toEqual([]);
+  });
+
+  it('選んだ写し元が上限を超えたら、何も読まずに足さない（research.md の R15）', async () => {
+    const resumes = withResume(PROJECT_SOURCES);
+    const values = manyIds(MAX_COPIED_ROWS + 1);
+    expect(await addResumeRows(resumes, OWNER, { id: 1, kind: 'projects' }, values, TIMES)).toEqual(
+      { status: 'invalid', errors: { selection: 'too-many' }, values },
+    );
+    expect(resumes.findForEdit).not.toHaveBeenCalled();
+    expect(resumes.addRows).not.toHaveBeenCalled();
+  });
+
+  it('実績のスキルを合わせて写す行が上限を超えたら足さない（research.md の R15）', async () => {
+    const over = withResume(projectWithSkills(MAX_COPIED_ROWS));
+    expect(await addResumeRows(over, OWNER, { id: 1, kind: 'projects' }, ['5'], TIMES)).toEqual({
+      status: 'invalid',
+      errors: { selection: 'too-many' },
+      values: ['5'],
+    });
+    expect(over.addRows).not.toHaveBeenCalled();
+
+    const atLimit = withResume(projectWithSkills(MAX_COPIED_ROWS - 1));
+    expect(await addResumeRows(atLimit, OWNER, { id: 1, kind: 'projects' }, ['5'], TIMES)).toEqual({
+      status: 'saved',
+    });
   });
 
   it('何も選ばなければ足さない', async () => {
