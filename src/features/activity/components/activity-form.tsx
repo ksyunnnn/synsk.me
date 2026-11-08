@@ -85,7 +85,9 @@ export const ActivityForm = ({ action, initialValues, activity }: Props) => {
       )}
 
       {!activity && (
+        // 送った後、React はフォームを初めの値に戻す。選択肢は送った値で描き直し、選び直させない
         <SelectField
+          key={values.source}
           name="source"
           label="取得元"
           hint="URL を指名する取得元は、題を取得元から取ります。手で入力する取得元は、題も入力します"

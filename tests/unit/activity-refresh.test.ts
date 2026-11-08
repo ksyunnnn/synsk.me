@@ -7,7 +7,7 @@ import {
   slotAt,
 } from '@/features/activity/application/run-scheduled-fetch';
 import type { ActivityRepository } from '@/features/activity/domain/activity-repository';
-import type { FetchedItem, FetchOutcome } from '@/features/activity/domain/fetched-item';
+import type { FetchedItem, FetchOutcome, UrlCheck } from '@/features/activity/domain/fetched-item';
 
 /**
  * 取得のユースケース（specs/004-external-activity/spec.md の User Story 1〜3・FR-012・FR-014・
@@ -96,8 +96,8 @@ describe('refreshSource', () => {
         },
       ]),
     });
-    const checkUrl = vi.fn(
-      async (url: string) => (url.endsWith('/gone') ? 'gone' : 'unknown') as const,
+    const checkUrl = vi.fn(async (url: string): Promise<UrlCheck> =>
+      url.endsWith('/gone') ? 'gone' : 'unknown',
     );
     await refreshSource(
       {
