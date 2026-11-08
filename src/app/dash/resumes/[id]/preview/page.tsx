@@ -14,7 +14,7 @@ type Props = { params: Promise<{ id: string }> };
 
 /**
  * 訪問者に見せたときの見た目（REQUIREMENTS.md の FR-13）。訪問者向けと同じ DTO と部品で描き、
- * 状態・鍵・期限に関わらず出す
+ * 状態・期限に関わらず出す
  */
 const Page = async ({ params }: Props) => {
   const { id } = await params;

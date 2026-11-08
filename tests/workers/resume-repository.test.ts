@@ -23,10 +23,6 @@ import { deleteResumeRows, insertResume } from '../support/resume-rows';
 const resumes = createD1ResumeRepository(env.DB);
 
 const NOW = '2026-11-04T00:00:00.000Z';
-const HASH = 'a'.repeat(64);
-
-/** `limited_token_hash` は UNIQUE。作るたびに違う値にする */
-const randomHash = () => crypto.randomUUID().replaceAll('-', '').padEnd(64, '0');
 
 let ids: { careers: number[]; projects: number[]; educations: number[]; skill: number };
 
@@ -44,7 +40,6 @@ const newResume = async (overrides: Partial<NewResume> = {}): Promise<NewResume>
     slug: crypto.randomUUID(),
     title: '作り物の提出先',
     audience: 'limited',
-    limitedTokenHash: randomHash(),
     limitedExpiresAt: null,
     content: built.content,
     ...overrides,
@@ -151,7 +146,6 @@ describe('サイトに載せない写し元（specs/002-resume/spec.md の FR-00
       slug: crypto.randomUUID(),
       title: '作り物の提出先',
       audience: 'limited',
-      limitedTokenHash: randomHash(),
       limitedExpiresAt: null,
       content: built.content,
     });
@@ -217,12 +211,10 @@ describe('create', () => {
     expect((await resumes.findForEdit(id))?.updatedAt).toBe(updatedAt);
   });
 
-  it('limited_token_hash に渡したハッシュだけを持つ（FR-012）', async () => {
-    const { id } = await resumes.create(await newResume({ limitedTokenHash: HASH }));
-    const row = await env.DB.prepare('SELECT limited_token_hash FROM resume WHERE id = ?')
-      .bind(id)
-      .first<{ limited_token_hash: string }>();
-    expect(row?.limited_token_hash).toBe(HASH);
+  it('渡した識別子で入る（FR-012）', async () => {
+    const slug = crypto.randomUUID();
+    const { id } = await resumes.create(await newResume({ slug }));
+    expect((await resumes.findForEdit(id))?.slug).toBe(slug);
   });
 
   it('同じ識別子の 2 つ目は入らない（FR-002）', async () => {
@@ -245,9 +237,9 @@ describe('元を直しても写した値は変わらない（FR-007・FR-025・F
 });
 
 describe('findLimitedIdForVisitor（FR-011・FR-014・FR-022・FR-023、research.md の R6）', () => {
-  it('訪問者に見せる状態で鍵が合い、期限が無ければ返す', async () => {
+  it('訪問者に見せる状態で、期限が無ければ返す', async () => {
     const r = await insertResume(env.DB, { status: 'published' });
-    expect(await resumes.findLimitedIdForVisitor(r.slug, r.key!, NOW)).toBe(r.id);
+    expect(await resumes.findLimitedIdForVisitor(r.slug, NOW)).toBe(r.id);
   });
 
   it('期限の前なら返す', async () => {
@@ -255,12 +247,12 @@ describe('findLimitedIdForVisitor（FR-011・FR-014・FR-022・FR-023、research
       status: 'published',
       expiresAt: '2026-11-05T00:00:00.000Z',
     });
-    expect(await resumes.findLimitedIdForVisitor(r.slug, r.key!, NOW)).toBe(r.id);
+    expect(await resumes.findLimitedIdForVisitor(r.slug, NOW)).toBe(r.id);
   });
 
   it('下書きは返さない', async () => {
     const r = await insertResume(env.DB, { status: 'draft' });
-    expect(await resumes.findLimitedIdForVisitor(r.slug, r.key!, NOW)).toBeNull();
+    expect(await resumes.findLimitedIdForVisitor(r.slug, NOW)).toBeNull();
   });
 
   it('期限を過ぎたら返さない。期限ちょうども返さない', async () => {
@@ -269,24 +261,18 @@ describe('findLimitedIdForVisitor（FR-011・FR-014・FR-022・FR-023、research
       expiresAt: '2026-11-03T23:59:59.999Z',
     });
     const exact = await insertResume(env.DB, { status: 'published', expiresAt: NOW });
-    expect(await resumes.findLimitedIdForVisitor(past.slug, past.key!, NOW)).toBeNull();
-    expect(await resumes.findLimitedIdForVisitor(exact.slug, exact.key!, NOW)).toBeNull();
-  });
-
-  it('鍵が違えば返さない', async () => {
-    const r = await insertResume(env.DB, { status: 'published' });
-    const other = await insertResume(env.DB, { status: 'published' });
-    expect(await resumes.findLimitedIdForVisitor(r.slug, other.key!, NOW)).toBeNull();
+    expect(await resumes.findLimitedIdForVisitor(past.slug, NOW)).toBeNull();
+    expect(await resumes.findLimitedIdForVisitor(exact.slug, NOW)).toBeNull();
   });
 
   it('識別子が違えば返さない', async () => {
-    const r = await insertResume(env.DB, { status: 'published' });
-    expect(await resumes.findLimitedIdForVisitor('no-such-slug', r.key!, NOW)).toBeNull();
+    await insertResume(env.DB, { status: 'published' });
+    expect(await resumes.findLimitedIdForVisitor('no-such-slug', NOW)).toBeNull();
   });
 
   it('公開用の識別子では返さない', async () => {
     const r = await insertResume(env.DB, { status: 'published', audience: 'public' });
-    expect(await resumes.findLimitedIdForVisitor(r.slug, 'k'.repeat(43), NOW)).toBeNull();
+    expect(await resumes.findLimitedIdForVisitor(r.slug, NOW)).toBeNull();
   });
 });
 
@@ -295,7 +281,7 @@ describe('作った後', () => {
     const r = await insertResume(env.DB);
     await expect(
       env.DB.prepare(
-        "UPDATE resume SET audience = 'public', limited_token_hash = NULL WHERE id = ?",
+        "UPDATE resume SET audience = 'public', limited_expires_at = NULL WHERE id = ?",
       )
         .bind(r.id)
         .run(),

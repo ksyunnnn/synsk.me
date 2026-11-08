@@ -21,8 +21,8 @@ import { TextLink } from '@/shared/components/text-link';
  * Server Action は props で受け取り、`server/` を読み込まない（ADR-0026 の依存の向き 3）。
  *
  * 公開用の選択肢は tasks.md の Phase 7（US5）の T068 で足すまで出さず、限定公開用で作る。
- * 作れたら、鍵を含む URL をこの画面にだけ示す（research.md の R5）。作った職務経歴書は下書きで、
- * 下書きの間は URL が 404 になるため、URL の隣に状態の切り替えを置く
+ * 作れたら、限定公開用の URL をこの画面に示す。設定の画面も同じ URL を示す（FR-040）。作った
+ * 職務経歴書は下書きで、下書きの間は URL が 404 になるため、URL の隣に状態の切り替えを置く
  */
 
 export type SourceOption = { id: number; label: string; detail: string };
@@ -115,7 +115,7 @@ const ResumeCreated = ({
           <InputField
             name="limitedUrl"
             label="限定公開用の URL"
-            hint="この URL はこの画面でだけ示します。あとから示せないため、控えてから移ってください"
+            hint="設定の画面でも示します"
             readOnly
             defaultValue={created.url}
           />

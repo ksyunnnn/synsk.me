@@ -58,19 +58,19 @@ description: "職務経歴書の実装タスク"
 **Purpose**: 002 の検査と env の土台
 
 - [X] T001 プロフィールのメールアドレスを渡す環境変数の型（`RESUME_EMAIL`）を src/shared/server/env.ts に足し、`.dev.vars.example` に雛形を足す。値はコードに書かない（research.md の R10）
-- [X] T002 [P] workerd と結合の検査が、作り物の職務経歴書と写した行（`resume`・`resume_career`・`resume_project`・`resume_education`・`resume_project_skill`・`resume_skill_override`）を SQL で入れる関数と、消す関数を tests/support/resume-rows.ts に作る。限定公開用は鍵の平文とハッシュの両方を返す
+- [X] T002 [P] workerd と結合の検査が、作り物の職務経歴書と写した行（`resume`・`resume_career`・`resume_project`・`resume_education`・`resume_project_skill`・`resume_skill_override`）を SQL で入れる関数と、消す関数を tests/support/resume-rows.ts に作る
 - [X] T003 [P] tests/workers/migrations.test.ts に、0008 の後の `resume.audience` の既定値が `limited` であること、`resume_skill_override.months_override` があることを足す
 
 ---
 
 ## Phase 2: Foundational
 
-**Purpose**: どの User Story も使う職務経歴書の型・鍵・Repository のインタフェース・管理画面の入口
+**Purpose**: どの User Story も使う職務経歴書の型・識別子・Repository のインタフェース・管理画面の入口
 
 - [X] T004 [P] 職務経歴書の型、`ResumeAudience`・`ResumeStatus` の `as const` の配列、識別子の決まり（uid の生成は `crypto.randomUUID()`、FR-002 の形の判定、限定公開用の書き換えを拒む、公開用の書き換えを許す）を src/features/resume/domain/resume.ts に作る（FR-001・FR-002・FR-037・FR-039）
 - [X] T005 [P] T004 を tests/unit/resume-domain.test.ts で確かめる（uid の形、101 文字・大文字・記号を拒む、限定公開用の識別子の書き換えを拒む）
-- [X] T006 [P] 限定公開用の鍵（`crypto.getRandomValues` の 32 バイトを base64url にする、SHA-256 の 16 進を作る、`crypto.subtle.timingSafeEqual` で比べる）を src/features/resume/domain/limited-key.ts に作る（FR-011・FR-012、research.md の R5）
-- [X] T007 [P] T006 を tests/unit/limited-key.test.ts で確かめる（43 文字の base64url、同じ鍵は同じハッシュ、1 文字違う鍵は一致しない、ハッシュに鍵の平文が含まれない）
+- [X] T006 [P] migrations/0010_drop_limited_token_hash_from_resume.sql で `resume` を作り直し、`limited_token_hash` を外す。限定公開用の URL は識別子（uid）だけで作る（FR-011・FR-012、research.md の R5）
+- [X] T007 [P] T006 を tests/workers/migrations.test.ts で確かめる（`limited_token_hash` が無い、公開用は期限を持てない、索引 `resume_public` とトリガが残る）
 - [X] T008 職務経歴書の Repository のインタフェース（写し元の読み出し・作成・一覧・編集用に id で読む・訪問者向けに読む・設定と状態と写した行の開いたときの更新日時つきの編集・削除・id と写した行の有無）を src/features/resume/domain/resume-repository.ts に作る
 - [X] T009 [P] 職務経歴書の写した行の型（`ResumeCareer`・`ResumeProject`・`ResumeEducation`）を src/features/resume/domain/resume.ts に足す（data-model.md の「domain の型」）
 - [X] T010 D1 の実装の骨組み（行の型と domain の型への詰め替え、id と写した行の有無）を src/features/resume/server/d1-resume-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
@@ -91,8 +91,8 @@ description: "職務経歴書の実装タスク"
 ### Tests for User Story 1
 
 - [X] T014 [P] [US1] 写し方（限定公開用は秘匿化した写し元も実際の組織名・題・本文・関連 URL を写す、選ばなかった行を写さない、実績のスキル名と上書きを写す、写し元の id を写す）を tests/unit/build-resume.test.ts で確かめる（FR-007・FR-008・FR-010・FR-025・FR-028）
-- [X] T015 [P] [US1] 作成のユースケース（既定が限定公開用、限定公開用は鍵を作りハッシュだけを渡す、オーナーでない呼び出しを拒む、選んだ行が無ければ作らない）を、Repository の作り物の実装を渡して tests/unit/resume-usecases.test.ts で確かめる（FR-003・FR-011・FR-012・FR-033）
-- [X] T016 [P] [US1] D1 の実装の作成（1 回の `batch()` で `resume` と写した行が入る、子の行の `resume_id` と `resume_project_id` が正しい、途中の文が失敗すると何も残らない、`limited_token_hash` に鍵の平文が無い、状態が `draft`、写した行が始まりの日の新しい順で読める）を tests/workers/resume-repository.test.ts で確かめる（FR-009・FR-012・FR-021、research.md の R4）
+- [X] T015 [P] [US1] 作成のユースケース（既定が限定公開用、識別子が uid、オーナーでない呼び出しを拒む、選んだ行が無ければ作らない）を、Repository の作り物の実装を渡して tests/unit/resume-usecases.test.ts で確かめる（FR-003・FR-011・FR-012・FR-033）
+- [X] T016 [P] [US1] D1 の実装の作成（1 回の `batch()` で `resume` と写した行が入る、子の行の `resume_id` と `resume_project_id` が正しい、途中の文が失敗すると何も残らない、渡した識別子で入る、状態が `draft`、写した行が始まりの日の新しい順で読める）を tests/workers/resume-repository.test.ts で確かめる（FR-009・FR-012・FR-021、research.md の R4）
 - [X] T017 [P] [US1] JWT のない `/dash/resumes` の GET が 403 で `no-store` を持つこと、JWT のない `createResume` が 403 の結果で D1 を変えないことを tests/integration/dash-resumes.test.ts で確かめる（FR-033）
 - [X] T018 [P] [US1] オーナーとして `/dash/resumes/new` を開くと、登録したすべての職歴・実績・学歴が選ばれ、限定公開用が選ばれていること、実績を 1 件外して作ると設定の画面に載らないことを tests/e2e/resume-create.spec.ts で確かめる。キーボードだけで同じ操作ができる（FR-003・FR-005・SC-006、constitution V）
 
@@ -101,7 +101,7 @@ description: "職務経歴書の実装タスク"
 - [X] T019 [US1] 写し方を src/features/resume/domain/build-resume.ts に作る。限定公開用の分岐だけを書き、公開用は Phase 7（US5）の T067 で足すまで拒む（data-model.md の「写し方」）
 - [X] T020 [US1] 写し元の読み出し（選んだ id の職歴・実績・学歴を、組織・スキル・上書きとともに 1 回の `batch()` で）、作成、一覧、編集用の読み出しを src/features/resume/server/d1-resume-repository.ts に足す（research.md の R4）
 - [X] T021 [US1] ユースケースを src/features/resume/application/ に作る: create-resume.ts・list-resumes.ts・get-resume-for-edit.ts・list-resume-sources.ts。読む→計算→書くの順（docs/SOFTWARE_DESIGN.md）
-- [X] T022 [US1] Server Action `createResume` を src/features/resume/server/actions.ts に作る。先頭でオーナーを確かめる。限定公開用は 303 で移さず、鍵を含む URL を結果に載せて同じ画面に返す（contracts/dash.md）
+- [X] T022 [US1] Server Action `createResume` を src/features/resume/server/actions.ts に作る。先頭でオーナーを確かめる。限定公開用は 303 で移さず、URL（`/resume/{slug}`）を結果に載せて同じ画面に返す（contracts/dash.md）
 - [X] T023 [P] [US1] 作成の入力（題、限定公開用か公開用か、職歴・実績・学歴のチェックボックスをすべて選んだ状態で）を src/features/resume/components/resume-create-form.tsx に作る。公開用の選択肢は Phase 7（US5）の T068 で足すまで出さない
 - [X] T024 [P] [US1] 設定の画面の中身（写した職歴・実績・学歴・スキルの一覧）を src/features/resume/components/resume-overview.tsx に作る
 - [X] T025 [US1] 管理画面のページを src/app/dash/resumes/page.tsx・new/page.tsx・[id]/page.tsx・[id]/missing/page.tsx に作る。各ページは描画の前にオーナーを確かめる
@@ -112,29 +112,31 @@ description: "職務経歴書の実装タスク"
 
 ## Phase 4: User Story 2 - 限定公開用を提出先に渡す (Priority: P1)
 
-**Goal**: 鍵を含む URL を知る人が、訪問者に見せる状態で期限の前の限定公開用を読み、ブラウザの印刷機能で PDF に保存する。条件に合わなければ中身を返さない
+**Goal**: URL を知る人が、訪問者に見せる状態で期限の前の限定公開用を読み、ブラウザの印刷機能で PDF に保存する。条件に合わなければ中身を返さない
 
-**Independent Test**: 秘匿化した作り物の実績を載せた限定公開用を訪問者に見せる状態にし、ログインせずに URL を開いて実際の題と組織名が出ること。鍵が違う・鍵が無い・期限切れ・下書きの URL が 404
+**Independent Test**: 秘匿化した作り物の実績を載せた限定公開用を訪問者に見せる状態にし、ログインせずに URL を開いて実際の題と組織名が出ること。識別子が違う・出し直す前・期限切れ・下書きの URL が 404
 
 ### Tests for User Story 2
 
-- [X] T026 [P] [US2] 訪問者向けの取り出し（訪問者に見せる状態で鍵が合い期限の前か期限が無いときだけ返す、下書き・期限切れ・鍵違い・公開用の識別子で返さない）を tests/workers/resume-visitor.test.ts で確かめる（FR-011・FR-013・FR-014・FR-022・FR-023、research.md の R6）
-- [X] T027 [P] [US2] tests/unit/proxy.test.ts に、条件に合わない `/resume/{slug}/{key}` を `/resume/{slug}/missing` へ rewrite すること、鍵を含む経路のすべての応答（200・404・判定できないとき）に `Cache-Control: no-store, must-revalidate`・`X-Robots-Tag: noindex`・`Referrer-Policy: no-referrer` を付けることを足す（FR-015、research.md の R7）
+- [X] T026 [P] [US2] 訪問者向けの取り出し（識別子が合い、訪問者に見せる状態で期限の前か期限が無いときだけ返す、下書き・期限切れ・違う識別子・公開用の識別子で返さない）を tests/workers/resume-repository.test.ts で確かめる（FR-011・FR-013・FR-014・FR-022・FR-023、research.md の R6）
+- [X] T027 [P] [US2] tests/unit/proxy.test.ts に、条件に合わない `/resume/{slug}` を `/resume/{slug}/missing` へ rewrite すること、`/resume/{slug}` とその下の経路のすべての応答（200・404・判定できないとき）に `Cache-Control: no-store, must-revalidate`・`X-Robots-Tag: noindex`・`Referrer-Policy: no-referrer` を付けることを足す（FR-015、research.md の R7）
 - [X] T028 [P] [US2] 限定公開用の 4 つの状態の応答が 404 で写した値を含まないこと、200 の応答に秘匿化した写し元の実際の題・組織名・本文が出ること、すべての応答が 3 つのヘッダを持つこと、期限を過ぎた後に期限を延ばすと同じ URL が 200 になること、JWT のない `changeResumeStatus`・`editResumeSettings` が D1 を変えないことを tests/integration/resume-limited.test.ts で確かめる（SC-003・SC-004・SC-005・FR-010・FR-033、User Story 2 の 1〜6）
 
 ### Implementation for User Story 2
 
-- [X] T029 [US2] 訪問者向けの取り出しを src/features/resume/server/d1-resume-repository.ts に足す。鍵のほかの条件を WHERE に入れ、返った `limited_token_hash` を src/features/resume/domain/limited-key.ts で比べ、一致したときだけ写した行を読み、contracts/visitor-resume.md の DTO に詰める
+- [X] T029 [US2] 訪問者向けの取り出しを src/features/resume/server/d1-resume-repository.ts に足す。条件をすべて WHERE に入れ、行が返ったときだけ写した行を読み、contracts/visitor-resume.md の DTO に詰める
 - [X] T030 [US2] ユースケース get-visitor-resume.ts・change-resume-status.ts・edit-resume-settings.ts（題と期限。限定公開用の識別子の書き換えを拒む）を src/features/resume/application/ に作り、組み立て用の関数（`hasVisitorResume`）を src/features/resume/server/queries.ts に、Server Action `changeResumeStatus`・`editResumeSettings` を src/features/resume/server/actions.ts に足す。どれも research.md の R8 の楽観ロックを付ける
-- [X] T031 [US2] src/proxy.ts の matcher に `/resume/:path*` を足し、`hasVisitorResume` で 404 の rewrite と、鍵を含む経路のヘッダを足す（research.md の R7）
+- [X] T031 [US2] src/proxy.ts の matcher に `/resume/:path*` を足し、`hasVisitorResume` で 404 の rewrite と、`/resume/{slug}` とその下の経路のヘッダを足す（research.md の R7）
 - [X] T032 [P] [US2] 訪問者向けの職務経歴書の表示（職歴・実績・学歴・スキルの名前。秘匿化しない形だけ）を src/features/resume/components/visitor-resume.tsx に作る。本文は U4 が解けるまで出さない
-- [X] T033 [US2] 訪問者のページを src/app/resume/[slug]/[key]/page.tsx と src/app/resume/[slug]/missing/page.tsx（`notFound()` だけ）に作る。`generateMetadata` は職務経歴書の中身を使わない（ADR-0024）
+- [X] T033 [US2] 訪問者のページを src/app/resume/[slug]/page.tsx と src/app/resume/[slug]/missing/page.tsx（`notFound()` だけ）に作る。`generateMetadata` は職務経歴書の中身を使わない（ADR-0024）
 - [X] T034 [US2] 設定の画面に、状態の切り替えと題の入力を足す（src/features/resume/components/resume-settings-form.tsx）。限定公開用の識別子を読み取りだけで出す（FR-037）
 - [X] T035 [US2] 期限の入力（日時か、期限なし）を、作成の入力（src/features/resume/components/resume-create-form.tsx）と設定の入力（resume-settings-form.tsx）に足す（FR-013）。**止める未決: U9**
 - [X] T036 [US2] プロフィールの定数を src/features/resume/domain/profile.ts に置き、src/shared/server/env.ts からメールアドレスを読んで DTO に足し、visitor-resume.tsx に出す。メールアドレスが欠ければ出さない（FR-034〜FR-036、research.md の R10）。メールアドレスを訪問者に出すのは **止める未決: U8**
 - [X] T037 [US2] 写した本文を visitor-resume.tsx に出す（FR-010）。**止める未決: U4**
 - [X] T038 [P] [US2] 印刷用の CSS（`@media print`。ボタンとページの外へのリンクを載せない）を src/app/globals.css に足し、「PDF で保存」のボタン（`window.print()` を呼ぶ）を src/features/resume/components/print-button.tsx に作る（FR-029・FR-030、research.md の R11）
 - [X] T039 [US2] visitor-resume.tsx にボタンを置き、限定公開用のページの応答がボタンを持つことを tests/integration/resume-limited.test.ts で確かめる（FR-029）
+- [X] T079 [P] [US2] URL の出し直し（新しい uid を渡す、オーナーでない呼び出しを拒む）を tests/unit/resume-usecases.test.ts で、D1 の書き換え（識別子が変わり古い識別子で読めない、公開用と無い id は書かない、楽観ロック、重なる識別子を拒む）を tests/workers/resume-edit.test.ts で、設定の画面の URL と出し直した後の古い URL の 404・新しい URL の 200・JWT のない呼び出しが D1 を変えないことを tests/integration/resume-limited.test.ts で、設定の画面に URL が出て出し直せることを tests/e2e/resume-limited.spec.ts で確かめる（FR-040・FR-033・FR-038）
+- [X] T080 [US2] URL の出し直しを、Repository の `regenerateLimitedSlug`（src/features/resume/server/d1-resume-repository.ts）、ユースケース src/features/resume/application/regenerate-resume-url.ts、Server Action `regenerateResumeUrl`、設定の画面の URL の表示と「URL を出し直す」（src/features/resume/components/resume-url-form.tsx）に作る（FR-040、research.md の R5）
 - [X] T040 [US2] ブラウザで印刷の見た目（ボタンが載らない、日本語が読める）を `npx -y @playwright/cli@latest` の PDF の出力で確かめる（FR-029）
 
 **Checkpoint**: User Story 1 と 2 が単独で動く
@@ -186,7 +188,7 @@ description: "職務経歴書の実装タスク"
 - [X] T056 [P] [US4] 写した学歴の入力を src/features/resume/components/resume-education-form.tsx に作る（学校・学部・期間・備考）
 - [X] T057 [P] [US4] 上書きの入力（スキルごとに年と月、または空）を src/features/resume/components/resume-skill-overrides-form.tsx に作る
 - [X] T058 [US4] 管理画面のページを src/app/dash/resumes/[id]/careers/[rowId]/page.tsx・projects/[rowId]/page.tsx・educations/[rowId]/page.tsx（それぞれ missing/page.tsx も）・[id]/skills/page.tsx・[id]/delete/page.tsx に作る
-- [X] T059 [US4] 訪問者に見せたときの見た目の画面を src/app/dash/resumes/[id]/preview/page.tsx に作る。訪問者向けと同じ DTO と visitor-resume.tsx で描き、状態・鍵・期限に関わらず出す（REQUIREMENTS.md の FR-13）
+- [X] T059 [US4] 訪問者に見せたときの見た目の画面を src/app/dash/resumes/[id]/preview/page.tsx に作る。訪問者向けと同じ DTO と visitor-resume.tsx で描き、状態・期限に関わらず出す（REQUIREMENTS.md の FR-13）
 - [X] T060 [P] [US4] オーナーとして見た目の画面が下書きの職務経歴書でも出ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-13）
 - [ ] T061 [US4] 写した行の編集の画面に、入力中の内容を保持する部品（src/shared/components/draft-retention.tsx）を使い、保存せずに再読み込みしても入力が残ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-14）。001 の T072 の後に行う
 
@@ -214,7 +216,7 @@ description: "職務経歴書の実装タスク"
 - [X] T066 [US5] migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` の既定値が 1 であることを tests/workers/migrations.test.ts で確かめる
 - [ ] T067 [US5] src/features/resume/domain/build-resume.ts に公開用の分岐を足し、サイトに載せない写し元を写さない（FR-016）。そのために `readSources` が写し元の `status` を返すようにする。src/features/resume/server/d1-resume-repository.ts の訪問者向けの取り出しを、秘匿化した行で `description`・`url` を SELECT しない形にする（contracts/visitor-resume.md）
 - [ ] T068 [US5] src/features/resume/components/resume-create-form.tsx に公開用の選択肢を出し、公開用を選んだときは、サイトに載せない職歴・実績を選択肢から外す（FR-005）。create-resume.ts で 2 つ目の公開用と、サイトに載せない職歴・実績を選んだ公開用を、保存の前に拒む（FR-016・FR-019）。edit-resume-settings.ts と resume-settings-form.tsx で公開用の識別子を書き換えられるようにする（FR-039）
-- [ ] T069 [US5] src/features/resume/components/visitor-resume.tsx に秘匿化した行の表示を足し、公開用のページを src/app/resume/[slug]/page.tsx に作る。`generateMetadata` は DTO の値だけを使う
+- [ ] T069 [US5] src/features/resume/components/visitor-resume.tsx に秘匿化した行の表示を足し、公開用も src/app/resume/[slug]/page.tsx で読む（識別子は限定公開用と公開用で重ならない）。`/resume/{slug}` に付く限定公開用のヘッダ（research.md の R7）を公開用で外すかを決める。`generateMetadata` は DTO の値だけを使う
 - [ ] T070 [US5] 秘匿化した行の本文の場所に「非公開」と出す見た目を visitor-resume.tsx に作る（FR-017、plan.md の U5）。contact へのリンクは T077 で足す
 - [ ] T071 [US5] 公開用のページに「PDF で保存」のボタンを置く（FR-029）
 
@@ -261,7 +263,7 @@ description: "職務経歴書の実装タスク"
 | U9 | T035 |
 | U11 | T044・T045 |
 | U10 | T033 の 404 の画面の文言と `<title>`。404 の状態コードは止めない |
-| U1・U12・U13・U14 | 無し（U13 で作り直す機能を持つと決まればタスクを足す） |
+| U1・U12・U13・U14 | 無し |
 
 ### Within Each User Story
 

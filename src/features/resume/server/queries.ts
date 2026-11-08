@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { headers } from 'next/headers';
 import { cache } from 'react';
 import { getResumeForEdit as getResumeForEditUseCase } from '@/features/resume/application/get-resume-for-edit';
 import {
@@ -55,6 +56,16 @@ export const getResumeForEdit = async (id: string): Promise<ResumeForEdit | null
     : getResumeForEditUseCase(await createResumeRepository(), resumeId);
 };
 
+/**
+ * 限定公開用の URL（`/resume/{slug}`）。要求の host から作る。URL を知る人は誰でも読めるため、
+ * 作り手の画面と Server Action の結果にだけ出す（FR-012・FR-040）
+ */
+export const limitedResumeUrl = async (slug: string): Promise<string> => {
+  const host = (await headers()).get('host') ?? 'synsk.me';
+  const scheme = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) ? 'http' : 'https';
+  return `${scheme}://${host}/resume/${slug}`;
+};
+
 /** 訪問者に見せたときの見た目。作り手でなければ 403。無い id なら null */
 export const getResumePreview = async (id: string): Promise<VisitorResume | null> => {
   await requireAuthor();
@@ -72,25 +83,23 @@ export const getResumePreview = async (id: string): Promise<VisitorResume | null
  * 訪問者に見せる限定公開用。条件に合わなければ null。ページの本体とメタデータの両方が呼ぶため、
  * 1 つの要求の中では D1 に 1 回だけ問い合わせる
  */
-export const getVisitorLimitedResume = cache(
-  async (slug: string, key: string): Promise<VisitorResume | null> =>
-    getVisitorLimitedResumeUseCase(await createResumeRepository(), {
-      slug,
-      key,
-      profile: await readProfile(),
-      now: new Date(),
-    }),
+export const getVisitorLimitedResume = cache(async (slug: string): Promise<VisitorResume | null> =>
+  getVisitorLimitedResumeUseCase(await createResumeRepository(), {
+    slug,
+    profile: await readProfile(),
+    now: new Date(),
+  }),
 );
 
 /*
  * 以下は `src/proxy.ts` が描画の前に呼ぶ。中身を読まず、有無だけを返す
  */
 
-/** 訪問者に中身を返してよい限定公開用か。`getVisitorLimitedResume` が null を返さない組と一致する */
-export const hasVisitorResume = async (slug: string, key: string): Promise<boolean> =>
+/** 訪問者に中身を返してよい限定公開用か。`getVisitorLimitedResume` が null を返さない識別子と一致する */
+export const hasVisitorResume = async (slug: string): Promise<boolean> =>
   (await (
     await createResumeRepository()
-  ).findLimitedIdForVisitor(slug, key, new Date().toISOString())) !== null;
+  ).findLimitedIdForVisitor(slug, new Date().toISOString())) !== null;
 
 /** 作り手が編集できる職務経歴書がある id か */
 export const hasResumeId = async (id: string): Promise<boolean> => {

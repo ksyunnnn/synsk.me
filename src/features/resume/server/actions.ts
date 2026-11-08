@@ -2,7 +2,6 @@
 
 import 'server-only';
 
-import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { changeResumeStatus as changeResumeStatusUseCase } from '@/features/resume/application/change-resume-status';
 import { createResume as createResumeUseCase } from '@/features/resume/application/create-resume';
@@ -15,6 +14,7 @@ import {
   editResumeSkillOverrides as editResumeSkillOverridesUseCase,
 } from '@/features/resume/application/edit-resume-rows';
 import { editResumeSettings as editResumeSettingsUseCase } from '@/features/resume/application/edit-resume-settings';
+import { regenerateResumeUrl as regenerateResumeUrlUseCase } from '@/features/resume/application/regenerate-resume-url';
 import {
   isResumeStatus,
   parseResumeId,
@@ -46,7 +46,7 @@ import {
   type ResumeSettingsField,
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
-import { createResumeRepository } from '@/features/resume/server/queries';
+import { createResumeRepository, limitedResumeUrl } from '@/features/resume/server/queries';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -80,14 +80,7 @@ const readResumeId = (formData: FormData) => {
   return id;
 };
 
-/** 限定公開用の URL。鍵を含むため、作成に成功した応答の中でだけ返す（research.md の R5） */
-const limitedUrl = async (slug: string, key: string) => {
-  const host = (await headers()).get('host') ?? 'synsk.me';
-  const scheme = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) ? 'http' : 'https';
-  return `${scheme}://${host}/resume/${slug}/${key}`;
-};
-
-/** 職務経歴書を作る。限定公開用は移らず、鍵を含む URL を同じ画面に返す */
+/** 職務経歴書を作る。限定公開用は移らず、URL を同じ画面に返す */
 export const createResume = async (
   _state: CreateResumeFormResult | null,
   formData: FormData,
@@ -103,13 +96,13 @@ export const createResume = async (
     educationIds: readStrings(formData, SELECTION_FIELDS.educationIds),
   });
   if (outcome.status !== 'created') return outcome;
-  if (outcome.key === null) redirect(`/dash/resumes/${outcome.id}?saved=1`);
+  if (outcome.audience !== 'limited') redirect(`/dash/resumes/${outcome.id}?saved=1`);
   return {
     status: 'created',
     id: outcome.id,
     updatedAt: outcome.updatedAt,
     audience: outcome.audience,
-    url: await limitedUrl(outcome.slug, outcome.key),
+    url: await limitedResumeUrl(outcome.slug),
   };
 };
 
@@ -181,13 +174,33 @@ export const changeResumeStatus = async (
 };
 
 /**
- * 下書きか、訪問者に見せるかを切り替え、同じ画面に留まる。作成の画面が使う。鍵を含む URL は
- * その画面にだけ示すため、移ると URL が消える（research.md の R5）
+ * 下書きか、訪問者に見せるかを切り替え、同じ画面に留まる。作成の画面が使い、作った後の
+ * 知らせと URL を示したままにする
  */
 export const changeResumeStatusInPlace = async (
   _state: ResumeStatusResult | null,
   formData: FormData,
 ): Promise<ResumeStatusResult> => writeStatus(formData);
+
+export type RegenerateResumeUrlResult = EditOutcome<Record<string, never>, Record<string, never>>;
+
+/** 限定公開用の URL を出し直し、設定の画面へ移す（FR-040） */
+export const regenerateResumeUrl = async (
+  _state: RegenerateResumeUrlResult | null,
+  formData: FormData,
+): Promise<RegenerateResumeUrlResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const id = readResumeId(formData);
+  const outcome = await regenerateResumeUrlUseCase(
+    await createResumeRepository(),
+    author,
+    id,
+    readTimes(formData),
+  );
+  if (outcome.status === 'saved') redirect(`/dash/resumes/${id}?regenerated=1`);
+  return finish(id, outcome);
+};
 
 /** 写した行の id。読めなければ設定の画面へ移す */
 const readTarget = (formData: FormData) => {

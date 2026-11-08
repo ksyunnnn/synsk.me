@@ -181,7 +181,7 @@ export const keepOnlySources = async (page: Page, keep: RegExp) => {
 };
 
 export type LimitedResume = {
-  /** 作成の画面にだけ示された、鍵を含む URL */
+  /** 作成の画面に示された、限定公開用の URL（`/resume/{uid}`） */
   url: string;
   /** 設定の画面の URL */
   settingsUrl: string;
@@ -191,7 +191,7 @@ export type LimitedResumeInput = { title: string; keep: RegExp; expires?: string
 
 /**
  * 限定公開用の職務経歴書を、名前が `keep` に合う職歴・実績・学歴だけを選んで作り、作成の画面に
- * 留まる。作成の画面にだけ示された、鍵を含む URL を返す。`expires` は期限の入力（日本時間の
+ * 留まる。作成の画面に示された、限定公開用の URL を返す。`expires` は期限の入力（日本時間の
  * `YYYY-MM-DDTHH:mm`）
  */
 export const submitLimitedResume = async (

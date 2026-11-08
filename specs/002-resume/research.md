@@ -8,7 +8,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - R2 001 から使うもの
 - R3 機能の切り方と URL
 - R4 写し方
-- R5 限定公開用の鍵
+- R5 限定公開用の URL
 - R6 中身を返す条件
 - R7 キャッシュ・検索・404
 - R8 同時編集の楽観ロック
@@ -48,9 +48,9 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 ## R3 機能の切り方と URL
 
 - 決めたこと: `src/features/resume/` に domain・application・components・server を置く。名前は ADR-0027 が挙げる `resume`
-- 訪問者の URL: 公開用は `/resume/{slug}`、限定公開用は `/resume/{slug}/{key}`（R5）。PDF は同じページを印刷して作り、経路を持たない（R11）
+- 訪問者の URL: 公開用と限定公開用は `/resume/{slug}`（R5）。`resume.slug` は限定公開用と公開用をまたいで UNIQUE のため、1 つの経路で識別子から行を引ける。PDF は同じページを印刷して作り、経路を持たない（R11）
 - 理由: ADR-0048 は URL をコレクション名と識別子で表し、職務経歴書に permalink を持たせる。ADR-0048 の Consequences は職務経歴書のコレクション名を `/resume` とする
-- `/resume/{slug}/missing` は、限定公開用の `/resume/{slug}/{key}` と同じ深さにある。鍵は 43 文字の base64url（R5）で、`missing` と一致しない
+- `/resume/{slug}/missing` は `/resume/{slug}` の下にあり、訪問者の経路と重ならない
 - 管理画面は `/dash/resumes/*`（contracts/dash.md）。001 の `/dash/projects` と同じく複数形にする
 - `src/app/resume/page.tsx`（`/resume`）は 002 の spec に要件が無く、002 は触れない。002 は `src/app/resume/[slug]/` の下だけを足す
 - 食い違い: ADR-0048 の Decision Outcome は「note と職務経歴書の slug は、題から候補を提示し、オーナーが確定させる」とする。spec の FR-037・FR-039 は、識別子を既定で uid とし、限定公開用は書き換えられないとする。plan は spec に従う。ADR を直すかはオーナーが決める（plan.md の U14）
@@ -66,30 +66,29 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 公開用で、秘匿化した職歴・実績が秘匿化した組織名の無い組織を指していたら、作らずに知らせる（constitution II）。001 の FR-001 がこの状態を保存の前に拒むため、起きるのは 001 の決まりの外で D1 を書き換えたときだけ
 - 退けた案: `INSERT … SELECT` で写し元から直接写す。写し方の分岐が SQL の CASE に入り、単体で確かめられない
 
-## R5 限定公開用の鍵
+## R5 限定公開用の URL
 
-- 決めたこと: 鍵は `crypto.getRandomValues` で作った 32 バイト（256 ビット）を base64url にした 43 文字にする。D1 には鍵の SHA-256（`crypto.subtle.digest`）の 16 進を `limited_token_hash` に入れ、鍵の平文を書かない（FR-012）。鍵は URL のパスに置く（`/resume/{slug}/{key}`）
-- 比べ方: 識別子で行を読み、送られた鍵のハッシュと `limited_token_hash` を `crypto.subtle.timingSafeEqual` で比べる。一致したときだけ中身を読む（R6）
+- 決めたこと: 限定公開用の URL は `/resume/{slug}` だけにする。識別子は `crypto.randomUUID()` の uid（FR-012・FR-037）で、識別子を知っている人が読める。URL に識別子のほかの値を持たず、ハッシュも照合も持たない
+- 出し直し: 設定の画面の「URL を出し直す」で、識別子を新しい uid に書き換える。古い識別子の URL は R6 の取り出しで行が見つからず 404 になる（FR-040）。書き換えは R8 の楽観ロックと同じ 1 つの UPDATE で行い、`audience = 'limited'` の行だけを書く
+- 示し方: 識別子は D1 にあるため、作成の画面と設定の画面のどちらでも URL を示す（FR-040）
 - 理由:
-  - OWASP は、エントロピーの高いランダムな値には速いハッシュで足りるとする。「A fast hash is sufficient for these random verifiers; password hashing algorithms are unnecessary.」、エントロピーは「at least 128 bits of entropy; prefer 160 bits or more」（[Session Management Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)、2026-11-04 に確認）
-  - Workers は `getRandomValues`・`digest`（SHA-256）・`timingSafeEqual` を持つ。`timingSafeEqual` は長さが違うと例外を投げる（[Web Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)、2026-11-04 に確認）。ハッシュは長さが一定のため例外にならない
+  - 2026-11-08 のオーナーの決定（spec の Clarifications）
+  - Workers の `crypto.randomUUID()` は「Generates a new random (version 4) UUID」（[Web Crypto](https://developers.cloudflare.com/workers/runtime-apis/web-crypto/)、2026-11-08 に確認）。UUID v4 は 128 ビットのうち version の 4 ビットと variant の 2 ビットを除く 122 ビットが乱数である（[RFC 9562 の 5.4](https://www.rfc-editor.org/rfc/rfc9562#section-5.4)、2026-11-08 に確認）
   - W3C TAG の Capability URLs は、推測できない値にすること・期限を持たせること・https にすることを勧め、値をパスに置く例を示す。文書は 2014-02-18 の First Public Working Draft で、勧告にならない（[Good Practices for Capability URLs](https://www.w3.org/TR/capability-urls/)、2026-11-04 に確認）
-- Referer: 限定公開用のページから外へのリンクで鍵を含む URL が漏れないよう、応答に `Referrer-Policy: no-referrer` を付ける（R7）。OWASP は、秘密の値を含む再設定のページに `no-referrer` を勧める（[Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)、2026-11-04 に確認）
-- 帰結: 鍵の平文は D1 に無いため、URL を示せるのは作成に成功した応答の中だけになる。失くした URL を作り直す機能は spec に無い（plan.md の U13）
-- 退けた案: 鍵を平文で持つ（FR-012 に反する）。パスワードのハッシュ（bcrypt など）を使う（OWASP がランダムな値には要らないとする）。鍵をクエリに置く（W3C の例と違い、比べた資料を確かめていない）
+- Referer: 限定公開用のページから外へのリンクで URL が漏れないよう、応答に `Referrer-Policy: no-referrer` を付ける（R7）。OWASP は、秘密の値を含む再設定のページに `no-referrer` を勧める（[Forgot Password Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html)、2026-11-04 に確認）
 
 ## R6 中身を返す条件
 
-- 決めたこと: 訪問者向けの取り出しは、鍵のほかの条件を SQL の WHERE に入れ、条件に合わなければ行を返さない
+- 決めたこと: 訪問者向けの取り出しは、条件をすべて SQL の WHERE に入れ、条件に合わなければ行を返さない
   - 公開用: `slug = ? AND audience = 'public' AND status = 'published'`
-  - 限定公開用: `slug = ? AND audience = 'limited' AND status = 'published' AND (limited_expires_at IS NULL OR limited_expires_at > ?今の日時)`。返った行の `limited_token_hash` と送られた鍵のハッシュを R5 の方法で比べ、一致したときだけ写した行を読む
+  - 限定公開用: `slug = ? AND audience = 'limited' AND status = 'published' AND (limited_expires_at IS NULL OR limited_expires_at > ?今の日時)`。行が返ったときだけ写した行を読む
 - 今の日時はアプリケーションが `new Date().toISOString()` で作る。`limited_expires_at` の CHECK の形（`%Y-%m-%dT%H:%M:%fZ`）と同じため、文字列の比較が日時の比較になる
-- 理由: ADR-0029（取り出すときに確かめる）。中身を返さない 4 つの状態（下書き・期限切れ・鍵が合わない・鍵が無い、SC-003）を同じ取り出しで区別なく弾く
+- 理由: ADR-0029（取り出すときに確かめる）。中身を返さない 4 つの状態（下書き・期限切れ・識別子が合わない・出し直す前の識別子、SC-003）を同じ取り出しで区別なく弾く
 - 返さないときの応答は 404 にそろえる。状態を区別して返すと、識別子の有無や期限切れが URL を知らない人に分かる。W3C の Capability URLs も、期限が切れたら 410 か 404 を返すとする（R5）。画面に何を示すかは spec が決めない（plan.md の U10）
 
 ## R7 キャッシュ・検索・404
 
-- 決めたこと: 職務経歴書のページは `'use cache'` を使わない（001 の research.md の R12 と同じ）。限定公開用（`/resume/{slug}/{key}`）の応答に、`src/proxy.ts` が次のヘッダを付ける
+- 決めたこと: 職務経歴書のページは `'use cache'` を使わない（001 の research.md の R12 と同じ）。`/resume/{slug}` とその下の経路の応答に、`src/proxy.ts` が次のヘッダを付ける。限定公開用か公開用かは D1 を読むまで分からないため、経路の形で付ける。公開用（tasks.md の T069）でこのヘッダを外すかは公開用を足すときに決める
   - `Cache-Control: no-store, must-revalidate`（FR-015・NFR-09）
   - `X-Robots-Tag: noindex`（FR-015）。Google は PDF のような HTML でない応答にも X-Robots-Tag が効くとする（[Robots meta tag](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)、2026-11-04 に確認）
   - `Referrer-Policy: no-referrer`（R5）

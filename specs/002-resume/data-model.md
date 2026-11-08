@@ -1,6 +1,6 @@
 # Data Model: 職務経歴書
 
-表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0009` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。0006 の `resume_career.organization_name` と `resume_project.title` の注釈より、0008 の冒頭の注釈を正とする。列の一覧は書き写さない。
+表・列・型・CHECK・外部キーの正本は `migrations/` にある。この文書は、`migrations/0001`〜`0010` を当てたスキーマを、spec の要件と、アプリケーションが守る決まりに対応させる。0006 の `resume_career.organization_name` と `resume_project.title` の注釈より、0008 の冒頭の注釈を正とする。列の一覧は書き写さない。
 
 ## Contents
 
@@ -18,7 +18,7 @@
 
 | 表 | spec の実体 | 002 が書くか | 主な要件 |
 |---|---|---|---|
-| `resume` | 職務経歴書 | 書く | FR-001〜FR-004、FR-011〜FR-015、FR-019〜FR-023、FR-037〜FR-039 |
+| `resume` | 職務経歴書 | 書く | FR-001〜FR-004、FR-011〜FR-015、FR-019〜FR-023、FR-037〜FR-040 |
 | `resume_career` | 写した職歴 | 書く | FR-007〜FR-010、FR-016〜FR-018、FR-031 |
 | `resume_project` | 写した実績 | 書く | 同上 |
 | `resume_education` | 写した学歴 | 書く | FR-007、FR-009、FR-024 |
@@ -28,7 +28,7 @@
 
 写し元の行を消すときに、写した行の `*_id` を NULL にするのは 001 の削除の処理が持つ（001 の research.md の R8）。002 は写した行の `*_id` を書き換えない。
 
-スキーマが守る決まり（002 のコードで重ねて書かない）: 識別子の形と重複（`resume.slug` の CHECK と UNIQUE、FR-002）、限定公開用か公開用かの既定（`resume.audience` の DEFAULT `limited`、FR-003）、作った後に変えないこと（トリガ `resume_audience_fixed`、FR-004）、公開用が 1 つだけ（部分 UNIQUE 索引 `resume_public`、FR-019）、公開用は鍵と期限を持たないこと（`resume` の CHECK、FR-020）、状態の既定が下書き（`resume.status` の DEFAULT `draft`、FR-021）、期限の形（`limited_expires_at` の CHECK、FR-013）、鍵のハッシュの重複（`limited_token_hash` の UNIQUE）、写した期間の形と前後、写した種類の 4 値、同じ実績に同じスキル名を 2 回持たないこと（`resume_project_skill` の主キー、Key Entities）、スキルごとに上書きを 1 つ（`resume_skill_override` の主キー）。
+スキーマが守る決まり（002 のコードで重ねて書かない）: 識別子の形と重複（`resume.slug` の CHECK と UNIQUE、FR-002）、限定公開用か公開用かの既定（`resume.audience` の DEFAULT `limited`、FR-003）、作った後に変えないこと（トリガ `resume_audience_fixed`、FR-004）、公開用が 1 つだけ（部分 UNIQUE 索引 `resume_public`、FR-019）、公開用は期限を持たないこと（`resume` の CHECK、FR-020）、状態の既定が下書き（`resume.status` の DEFAULT `draft`、FR-021）、期限の形（`limited_expires_at` の CHECK、FR-013）、写した期間の形と前後、写した種類の 4 値、同じ実績に同じスキル名を 2 回持たないこと（`resume_project_skill` の主キー、Key Entities）、スキルごとに上書きを 1 つ（`resume_skill_override` の主キー）。
 
 アプリケーションは、スキーマが拒む入力を保存の前にも確かめ、画面で項目ごとに知らせる。スキーマの制約は最後の守りとして残す。
 
@@ -49,8 +49,8 @@
 | 限定公開用の識別子は uid で、書き換えを拒む | FR-037 | `src/features/resume/domain/resume.ts` |
 | 公開用の識別子の既定は uid。書き換えは FR-002 の形と重複を確かめる | FR-002・FR-039 | 同上 |
 | 2 つ目の公開用は、保存の前に拒む | FR-019 | 作成のユースケース。索引 `resume_public` は最後の守り |
-| 限定公開用は作るときに鍵を作り、ハッシュだけを保存する | FR-011・FR-012 | `src/features/resume/domain/limited-key.ts`（research.md の R5） |
-| 中身を返すのは、訪問者に見せる状態で、限定公開用なら鍵が合い、期限の前か期限が無いときだけ | FR-014・FR-020・FR-022・FR-023 | 訪問者向けの取り出しの SQL の WHERE（research.md の R6） |
+| 限定公開用の URL は識別子（uid）だけで作る。出し直すと識別子を新しい uid に書き換える | FR-011・FR-012・FR-040 | `src/features/resume/domain/resume.ts` の `newResumeSlug`（research.md の R5） |
+| 中身を返すのは、識別子が合い、訪問者に見せる状態で、限定公開用なら期限の前か期限が無いときだけ | FR-014・FR-020・FR-022・FR-023 | 訪問者向けの取り出しの SQL の WHERE（research.md の R6） |
 | 作るとき、写し方を限定公開用か公開用かで分ける | FR-008・FR-010・FR-016 | `src/features/resume/domain/build-resume.ts`（下の「写し方」） |
 | 公開用に、秘匿化した組織名の無い組織を指す秘匿化した職歴・実績を写さない | FR-016、constitution II | 同上。写せなければ作らずに知らせる |
 | 公開用に、サイトに載せない（`career.status`・`project.status` が `draft`）職歴・実績を写さない。作成の画面で公開用を選んだら、選択肢から外す。限定公開用は `status` を見ない | FR-005・FR-010・FR-016 | 同上と作成の画面（tasks.md の T067・T068）。限定公開用は作成の選択肢と写し方が `status` を読まない形のまま |
@@ -64,11 +64,12 @@
 
 | 切り替え | 起きること |
 |---|---|
-| 作る | `status` は `draft`。限定公開用は鍵を作り、`limited_token_hash` を入れる。期限はオーナーが選ぶ（空なら期限なし） |
-| `draft` → `published` | 公開用は、`/resume/{slug}` で読める。限定公開用は、鍵が合い期限の前なら読める |
+| 作る | `status` は `draft`。識別子は uid。期限はオーナーが選ぶ（空なら期限なし） |
+| `draft` → `published` | 公開用は、`/resume/{slug}` で読める。限定公開用は、期限の前なら `/resume/{slug}` で読める |
 | `published` → `draft` | どちらも中身を返さなくなる。行は残る |
 | 期限を変える（限定公開用） | 過ぎた期限を先の日時にすると、同じ URL でもう一度読める（FR-014）。空にすると期限なし |
 | 識別子を変える（公開用だけ） | 古い識別子の URL は 404 になる |
+| URL を出し直す（限定公開用だけ） | 識別子を新しい uid に書き換える。古い識別子の URL は 404 になる。状態と期限は変わらない（FR-040） |
 | 限定公開用 ↔ 公開用 | できない（トリガが拒む。画面に入力を出さない） |
 
 キャッシュを持たないため、切り替えを保存した直後の要求から新しい状態で出る（research.md の R7）。

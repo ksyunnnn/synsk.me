@@ -196,6 +196,11 @@ describe('楽観ロック（FR-038、research.md の R8）', () => {
       ok: false,
       reason: 'conflict',
     });
+    expect(await resumes.regenerateLimitedSlug(target.id, crypto.randomUUID(), stale)).toEqual({
+      ok: false,
+      reason: 'conflict',
+    });
+    expect((await resumes.findForEdit(target.id))?.slug).toBe(target.slug);
     const content = await resumes.readContent(target.id);
     expect(content.careers[0].organizationName).toBe('元の作り物の組織名');
     expect(content.projects.find((p) => p.id === rows.project)?.skills).toEqual(['TypeScript']);
@@ -239,6 +244,48 @@ describe('設定', () => {
       { openedUpdatedAt: NOW, now: '2026-11-05T00:00:00.000Z' },
     );
     expect((await resumes.findForEdit(target.id))?.limitedExpiresAt).toBeNull();
+  });
+});
+
+describe('URL の出し直し（FR-040）', () => {
+  it('識別子を渡した uid に書き換え、古い識別子では訪問者向けに読めない', async () => {
+    await resumes.changeStatus(target.id, 'published', await times(target.id));
+    expect(await resumes.findLimitedIdForVisitor(target.slug, NOW)).toBe(target.id);
+    const content = await resumes.readContent(target.id);
+    const slug = crypto.randomUUID();
+    expect(
+      await resumes.regenerateLimitedSlug(target.id, slug, {
+        openedUpdatedAt: NOW,
+        now: '2026-11-05T00:00:00.000Z',
+      }),
+    ).toEqual({ ok: true });
+    expect(await resumes.findForEdit(target.id)).toMatchObject({
+      slug,
+      updatedAt: '2026-11-05T00:00:00.000Z',
+    });
+    expect(await resumes.findLimitedIdForVisitor(target.slug, NOW)).toBeNull();
+    expect(await resumes.findLimitedIdForVisitor(slug, NOW)).toBe(target.id);
+    expect(await resumes.readContent(target.id)).toEqual(content);
+  });
+
+  it('公開用と無い id は not-found で、書き換えない', async () => {
+    const pub = await insertResume(env.DB, { audience: 'public' });
+    expect(
+      await resumes.regenerateLimitedSlug(pub.id, crypto.randomUUID(), await times(pub.id)),
+    ).toEqual({ ok: false, reason: 'not-found' });
+    expect((await resumes.findForEdit(pub.id))?.slug).toBe(pub.slug);
+    expect(
+      await resumes.regenerateLimitedSlug(999_999, crypto.randomUUID(), {
+        openedUpdatedAt: NOW,
+        now: NOW,
+      }),
+    ).toEqual({ ok: false, reason: 'not-found' });
+  });
+
+  it('ほかの職務経歴書と同じ識別子には書き換えない（FR-002）', async () => {
+    await expect(
+      resumes.regenerateLimitedSlug(target.id, other.slug, await times(target.id)),
+    ).rejects.toThrow();
   });
 });
 

@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { isLimitedKeyShape, matchesLimitedKey } from '@/features/resume/domain/limited-key';
 import {
   isResumeProjectKind,
   type EditTimes,
@@ -366,14 +365,14 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
       };
     },
 
-    create: async ({ slug, title, audience, limitedTokenHash, limitedExpiresAt, content }) => {
+    create: async ({ slug, title, audience, limitedExpiresAt, content }) => {
       const statements: D1PreparedStatement[] = [
         db
           .prepare(
-            `INSERT INTO resume (slug, title, audience, limited_token_hash, limited_expires_at)
-             VALUES (?, ?, ?, ?, ?)`,
+            `INSERT INTO resume (slug, title, audience, limited_expires_at)
+             VALUES (?, ?, ?, ?)`,
           )
-          .bind(slug, title, audience, limitedTokenHash, limitedExpiresAt),
+          .bind(slug, title, audience, limitedExpiresAt),
       ];
       for (const career of content.careers) {
         statements.push(
@@ -481,20 +480,18 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
       return row ? { ...toResume(row), ...(await readContent(id)) } : null;
     },
 
-    findLimitedIdForVisitor: async (slug, key, now) => {
-      if (!isLimitedKeyShape(key)) return null;
-      // 鍵のほかの条件は WHERE で弾く（research.md の R6）。`limited_expires_at` は CHECK が
+    findLimitedIdForVisitor: async (slug, now) => {
+      // 条件はすべて WHERE で弾く（research.md の R6）。`limited_expires_at` は CHECK が
       // `now` と同じ形に揃えるため、文字列の比較が日時の比較になる
       const row = await db
         .prepare(
-          `SELECT id, limited_token_hash FROM resume
+          `SELECT id FROM resume
            WHERE slug = ? AND audience = 'limited' AND status = 'published'
              AND (limited_expires_at IS NULL OR limited_expires_at > ?)`,
         )
         .bind(slug, now)
-        .first<{ id: number; limited_token_hash: string | null }>();
-      if (!row?.limited_token_hash) return null;
-      return (await matchesLimitedKey(key, row.limited_token_hash)) ? row.id : null;
+        .first<{ id: number }>();
+      return row?.id ?? null;
     },
 
     readContent,
@@ -521,6 +518,25 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
         .bind(status, now, id, openedUpdatedAt)
         .run();
       return result.meta.changes > 0 ? { ok: true } : failureOf(id);
+    },
+
+    regenerateLimitedSlug: async (id, slug, { openedUpdatedAt, now }) => {
+      const result = await db
+        .prepare(
+          `UPDATE resume SET slug = ?, updated_at = ?
+           WHERE id = ? AND audience = 'limited' AND updated_at = ?`,
+        )
+        .bind(slug, now, id, openedUpdatedAt)
+        .run();
+      if (result.meta.changes > 0) return { ok: true };
+      // 公開用の識別子は出し直さない（FR-037・FR-039）。無い id と同じに扱う
+      const current = await db
+        .prepare('SELECT audience FROM resume WHERE id = ?')
+        .bind(id)
+        .first<{ audience: string }>();
+      return current?.audience === 'limited'
+        ? { ok: false, reason: 'conflict' }
+        : { ok: false, reason: 'not-found' };
     },
 
     editCareer: (id, rowId, content, times) =>

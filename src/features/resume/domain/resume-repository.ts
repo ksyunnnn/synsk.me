@@ -33,14 +33,16 @@ export type ResumeRepository = {
   list: () => Promise<Resume[]>;
   findForEdit: (id: ResumeId) => Promise<ResumeForEdit | null>;
   /**
-   * 訪問者に中身を返してよい限定公開用の id。訪問者に見せる状態で、期限の前か期限が無く、
-   * 鍵が合うときだけ返す（FR-011・FR-014・FR-022・FR-023、research.md の R6）
+   * 訪問者に中身を返してよい限定公開用の id。識別子が合い、訪問者に見せる状態で、期限の前か
+   * 期限が無いときだけ返す（FR-011・FR-014・FR-022・FR-023、research.md の R6）
    */
-  findLimitedIdForVisitor: (slug: string, key: string, now: string) => Promise<ResumeId | null>;
+  findLimitedIdForVisitor: (slug: string, now: string) => Promise<ResumeId | null>;
   /** 写した中身。始まりの日の新しい順（FR-009） */
   readContent: (id: ResumeId) => Promise<ResumeContent>;
   editSettings: (id: ResumeId, settings: ResumeSettings, times: EditTimes) => Promise<EditResult>;
   changeStatus: (id: ResumeId, status: ResumeStatus, times: EditTimes) => Promise<EditResult>;
+  /** 限定公開用の識別子を新しい uid に書き換える（FR-040）。公開用の行は書き換えず `not-found` */
+  regenerateLimitedSlug: (id: ResumeId, slug: string, times: EditTimes) => Promise<EditResult>;
   editCareer: (
     id: ResumeId,
     rowId: number,

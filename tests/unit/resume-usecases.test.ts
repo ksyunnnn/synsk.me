@@ -7,7 +7,7 @@ import {
 import { editResumeSettings } from '@/features/resume/application/edit-resume-settings';
 import { changeResumeStatus } from '@/features/resume/application/change-resume-status';
 import { deleteResume } from '@/features/resume/application/delete-resume';
-import { hashLimitedKey } from '@/features/resume/domain/limited-key';
+import { regenerateResumeUrl } from '@/features/resume/application/regenerate-resume-url';
 import type { ResumeSources } from '@/features/resume/domain/resume';
 import type {
   CreateResumeField,
@@ -18,7 +18,7 @@ import type { Author } from '@/shared/domain/author';
 import type { CalendarDate } from '@/shared/domain/period';
 
 /**
- * 職務経歴書のユースケース（specs/002-resume/spec.md の FR-003・FR-011・FR-012・FR-031・FR-033）。
+ * 職務経歴書のユースケース（specs/002-resume/spec.md の FR-003・FR-012・FR-031・FR-033・FR-040）。
  * Repository は作り物の実装を渡す（docs/SOFTWARE_DESIGN.md の Dependency Injection）。D1 の上での
  * 動きは tests/workers/resume-repository.test.ts と tests/workers/resume-edit.test.ts が持つ
  */
@@ -55,6 +55,7 @@ const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   readContent: vi.fn<Repo['readContent']>(),
   editSettings: vi.fn<Repo['editSettings']>(async () => OK),
   changeStatus: vi.fn<Repo['changeStatus']>(async () => OK),
+  regenerateLimitedSlug: vi.fn<Repo['regenerateLimitedSlug']>(async () => OK),
   editCareer: vi.fn<Repo['editCareer']>(async () => OK),
   editProject: vi.fn<Repo['editProject']>(async () => OK),
   editEducation: vi.fn<Repo['editEducation']>(async () => OK),
@@ -82,20 +83,14 @@ describe('createResume', () => {
     expect(resumes.create).toHaveBeenCalledWith(expect.objectContaining({ audience: 'limited' }));
   });
 
-  it('鍵を作り、ハッシュだけを渡し、鍵の平文は結果でだけ返す（FR-011・FR-012）', async () => {
-    const resumes = fakeResumes();
-    const outcome = await createResume(resumes, OWNER, createValues());
-    if (outcome.status !== 'created' || outcome.key === null) throw new Error(outcome.status);
-    const saved = resumes.create.mock.calls[0][0];
-    expect(saved.limitedTokenHash).toBe(await hashLimitedKey(outcome.key));
-    expect(JSON.stringify(saved)).not.toContain(outcome.key);
-  });
-
-  it('識別子は uid（FR-037）', async () => {
+  it('識別子は uid で、渡した識別子を結果で返す（FR-012・FR-037）', async () => {
     const resumes = fakeResumes();
     const outcome = await createResume(resumes, OWNER, createValues());
     if (outcome.status !== 'created') throw new Error(outcome.status);
-    expect(outcome.slug).toMatch(/^[0-9a-f-]{36}$/);
+    expect(outcome.slug).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    expect(resumes.create.mock.calls[0][0].slug).toBe(outcome.slug);
   });
 
   it('期限を日本時間で読み、UTC で保存する（plan.md の U9 の仮の形）', async () => {
@@ -149,6 +144,7 @@ describe('書き込みは作り手だけ（FR-033）', () => {
       (r: ResumeRepository) => editResumeSettings(r, null, 1, { title: 't', expires: '' }, TIMES),
     ],
     ['状態', (r: ResumeRepository) => changeResumeStatus(r, null, 1, 'published', TIMES)],
+    ['URL の出し直し', (r: ResumeRepository) => regenerateResumeUrl(r, null, 1, TIMES)],
     [
       '写した職歴',
       (r: ResumeRepository) =>
@@ -243,5 +239,34 @@ describe('写した行の編集（FR-031）', () => {
     );
     expect(outcome).toMatchObject({ status: 'invalid', errors: { invalidRows: [0] } });
     expect(resumes.editSkillOverrides).not.toHaveBeenCalled();
+  });
+});
+
+describe('regenerateResumeUrl（FR-040）', () => {
+  it('新しい uid を渡し、保存したら saved を返す', async () => {
+    const resumes = fakeResumes();
+    expect(await regenerateResumeUrl(resumes, OWNER, 1, TIMES)).toEqual({ status: 'saved' });
+    const [id, slug, times] = resumes.regenerateLimitedSlug.mock.calls[0];
+    expect(id).toBe(1);
+    expect(slug).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+    expect(times).toEqual(TIMES);
+  });
+
+  it('呼ぶたびに違う uid を作る', async () => {
+    const resumes = fakeResumes();
+    await regenerateResumeUrl(resumes, OWNER, 1, TIMES);
+    await regenerateResumeUrl(resumes, OWNER, 1, TIMES);
+    const [first, second] = resumes.regenerateLimitedSlug.mock.calls.map((call) => call[1]);
+    expect(first).not.toBe(second);
+  });
+
+  it('先に書き換えられていたら conflict、公開用か無い id なら not-found', async () => {
+    const resumes = fakeResumes();
+    resumes.regenerateLimitedSlug.mockResolvedValueOnce({ ok: false, reason: 'conflict' });
+    expect(await regenerateResumeUrl(resumes, OWNER, 1, TIMES)).toMatchObject({
+      status: 'conflict',
+    });
+    resumes.regenerateLimitedSlug.mockResolvedValueOnce({ ok: false, reason: 'not-found' });
+    expect(await regenerateResumeUrl(resumes, OWNER, 1, TIMES)).toEqual({ status: 'not-found' });
   });
 });

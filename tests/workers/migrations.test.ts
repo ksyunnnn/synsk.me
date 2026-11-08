@@ -68,6 +68,33 @@ describe('migration 0008 の後の表', () => {
   );
 });
 
+describe('migration 0010 の後の表（specs/002-resume/spec.md の FR-012）', () => {
+  it('resume は limited_token_hash を持たない', async () => {
+    const names = (await columnsOf('resume')).map((c) => c.name);
+    expect(names).not.toContain('limited_token_hash');
+    expect(names).toEqual(
+      expect.arrayContaining(['slug', 'audience', 'status', 'limited_expires_at']),
+    );
+  });
+
+  it('公開用は期限を持てない（FR-020）', async () => {
+    await expect(
+      env.DB.prepare(
+        "INSERT INTO resume (slug, title, audience, limited_expires_at) VALUES ('migration-0010', '作り物', 'public', '2026-12-01T00:00:00.000Z')",
+      ).run(),
+    ).rejects.toThrow(/CHECK/);
+  });
+
+  it('索引 resume_public とトリガ resume_audience_fixed・resume_updated_at を持つ', async () => {
+    const { results } = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE tbl_name = 'resume' AND type IN ('index', 'trigger') ORDER BY name",
+    ).all<{ name: string }>();
+    expect(results.map((r) => r.name)).toEqual(
+      expect.arrayContaining(['resume_audience_fixed', 'resume_public', 'resume_updated_at']),
+    );
+  });
+});
+
 describe('migration 0009 の後の表', () => {
   it.each(['career', 'project'])(
     '%s.status は NOT NULL で、既定値は draft（specs/001-career-and-project/spec.md の FR-044）',

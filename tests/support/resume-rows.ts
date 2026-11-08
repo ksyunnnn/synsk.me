@@ -3,8 +3,7 @@
  * 省いた列は、検査が値を気にしないときの既定の値で入れる。
  *
  * 行は Repository を通さずに SQL で入れる。Repository の検査の前提を、検査する実装に頼らずに
- * 作るため。鍵とハッシュも、src/features/resume/domain/limited-key.ts を使わずに Web Crypto で作る
- * （specs/002-resume/research.md の R5 と同じ作り方）。
+ * 作るため。
  */
 
 const insertReturningId = async (
@@ -23,21 +22,6 @@ const insertReturningId = async (
   return row.id;
 };
 
-const toBase64Url = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes))
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
-    .replace(/=+$/, '');
-
-/** 限定公開用の鍵の平文。32 バイトの乱数の base64url */
-export const createTestKey = () => toBase64Url(crypto.getRandomValues(new Uint8Array(32)));
-
-/** 鍵の SHA-256 の 16 進 */
-export const hashTestKey = async (key: string) =>
-  [...new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(key)))]
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-
 export type ResumeRowInput = {
   slug?: string;
   title?: string;
@@ -47,14 +31,7 @@ export type ResumeRowInput = {
   expiresAt?: string | null;
 };
 
-export type InsertedResume = {
-  id: number;
-  slug: string;
-  /** 限定公開用の鍵の平文。公開用は null */
-  key: string | null;
-  /** 限定公開用の鍵のハッシュ。公開用は null */
-  keyHash: string | null;
-};
+export type InsertedResume = { id: number; slug: string };
 
 export const insertResume = async (
   db: D1Database,
@@ -66,17 +43,14 @@ export const insertResume = async (
     expiresAt = null,
   }: ResumeRowInput = {},
 ): Promise<InsertedResume> => {
-  const key = audience === 'limited' ? createTestKey() : null;
-  const keyHash = key === null ? null : await hashTestKey(key);
   const id = await insertReturningId(db, 'resume', {
     slug,
     title,
     audience,
     status,
-    limited_token_hash: keyHash,
     limited_expires_at: audience === 'limited' ? expiresAt : null,
   });
-  return { id, slug, key, keyHash };
+  return { id, slug };
 };
 
 export type ResumeCareerRowInput = {

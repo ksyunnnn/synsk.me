@@ -52,11 +52,11 @@ const DASH_ROW_EXISTS: Record<string, (id: string) => Promise<boolean>> = {
 const RESUME_ROW_KINDS = new Set(['careers', 'projects', 'educations']);
 
 /**
- * 限定公開用の職務経歴書の経路（`/resume/{slug}/{key}`）か。`/resume/{slug}/missing` も同じ深さに
- * あり、同じヘッダを付ける（specs/002-resume/research.md の R7）
+ * 職務経歴書の経路（`/resume/{slug}` と、その下の `/resume/{slug}/missing`）か。限定公開用か
+ * 公開用かは D1 を読むまで分からないため、識別子を含む経路のすべてに限定公開用のヘッダを付ける
+ * （specs/002-resume/research.md の R7）。公開用は tasks.md の Phase 7（US5）で足す
  */
-const isLimitedResumePath = (segments: string[]) =>
-  segments[0] === 'resume' && segments.length === 3;
+const isResumeSlugPath = (segments: string[]) => segments[0] === 'resume' && segments.length >= 2;
 
 const decide = async (request: NextRequest): Promise<string | null> => {
   const segments = request.nextUrl.pathname.split('/').filter(Boolean);
@@ -70,10 +70,10 @@ const decide = async (request: NextRequest): Promise<string | null> => {
   }
 
   if (segments[0] === 'resume') {
-    // 公開用の `/resume/{slug}` は tasks.md の Phase 7（US5）で足す。いまは経路が無く 404
-    const [, slug, key] = segments;
-    if (!isRead || !isLimitedResumePath(segments) || key === 'missing') return null;
-    return (await hasVisitorResume(slug, key)) ? null : resumePageMissing(slug);
+    // 公開用は tasks.md の Phase 7（US5）で足すまで中身を返さず、404 になる
+    const [, slug] = segments;
+    if (!isRead || segments.length !== 2) return null;
+    return (await hasVisitorResume(slug)) ? null : resumePageMissing(slug);
   }
 
   if (!(await getAuthorFromHeaders(request.headers))) return DASH_FORBIDDEN;
@@ -114,7 +114,7 @@ const respond = async (request: NextRequest) => {
 };
 
 /**
- * 限定公開用の職務経歴書の応答のヘッダ（specs/002-resume/research.md の R5・R7）。中身を返すか
+ * 限定公開用の職務経歴書の応答のヘッダ（specs/002-resume/research.md の R7）。中身を返すか
  * どうかに関わらず、D1 を読む前に決め、200・404・判定できないときのすべてに付ける
  */
 const LIMITED_RESUME_HEADERS = {
@@ -129,7 +129,7 @@ export const proxy = async (request: NextRequest) => {
   if (segments[0] === 'dash') {
     response.headers.set('Cache-Control', NO_STORE);
   }
-  if (isLimitedResumePath(segments)) {
+  if (isResumeSlugPath(segments)) {
     for (const [name, value] of Object.entries(LIMITED_RESUME_HEADERS)) {
       response.headers.set(name, value);
     }

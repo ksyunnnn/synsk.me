@@ -45,7 +45,7 @@ vi.mock('@/features/career/server/queries', () => ({ hasCareerId: rows.hasCareer
 vi.mock('@/features/education/server/queries', () => ({ hasEducationId: rows.hasEducationId }));
 
 const resumes = vi.hoisted(() => ({
-  hasVisitorResume: vi.fn<(slug: string, key: string) => Promise<boolean>>(),
+  hasVisitorResume: vi.fn<(slug: string) => Promise<boolean>>(),
   hasResumeId: vi.fn<(id: string) => Promise<boolean>>(),
   hasResumeRow: vi.fn<(id: string, kind: string, rowId: string) => Promise<boolean>>(),
 }));
@@ -76,7 +76,7 @@ beforeEach(() => {
 describe('対象の経路', () => {
   it.each([
     '/projects/a-slug',
-    '/resume/a-slug/a-key',
+    '/resume/a-slug',
     '/dash',
     '/dash/projects',
     '/dash/projects/1/delete',
@@ -204,8 +204,8 @@ describe.each([
  * 限定公開用の職務経歴書（specs/002-resume/research.md の R6・R7）。中身を返さない要求は
  * `/resume/{slug}/missing` へ移し、すべての応答に 3 つのヘッダを付ける（FR-015）
  */
-describe('/resume/{slug}/{key}', () => {
-  const KEY = 'k'.repeat(43);
+describe('/resume/{slug}', () => {
+  const SLUG = '146e2230-0e3f-4c88-815f-1d8ba698bf7d';
   const LIMITED_HEADERS = {
     'cache-control': 'no-store, must-revalidate',
     'x-robots-tag': 'noindex',
@@ -217,42 +217,52 @@ describe('/resume/{slug}/{key}', () => {
     }
   };
 
-  it('中身を返してよい組は rewrite せず、3 つのヘッダを付ける', async () => {
-    const response = await proxy(request(`/resume/a-slug/${KEY}`));
+  it('中身を返してよい識別子は rewrite せず、3 つのヘッダを付ける', async () => {
+    const response = await proxy(request(`/resume/${SLUG}`));
     expect(isRewrite(response)).toBe(false);
-    expect(resumes.hasVisitorResume).toHaveBeenCalledWith('a-slug', KEY);
+    expect(resumes.hasVisitorResume).toHaveBeenCalledWith(SLUG);
     expectLimitedHeaders(response);
   });
 
-  it('下書き・期限切れ・鍵違いは 404 の画面へ rewrite し、3 つのヘッダを付ける', async () => {
+  it('下書き・期限切れ・無い識別子は 404 の画面へ rewrite し、3 つのヘッダを付ける', async () => {
     resumes.hasVisitorResume.mockResolvedValue(false);
-    const response = await proxy(request(`/resume/a-slug/${KEY}`));
-    expect(new URL(getRewrittenUrl(response)!).pathname).toBe('/resume/a-slug/missing');
+    const response = await proxy(request(`/resume/${SLUG}`));
+    expect(new URL(getRewrittenUrl(response)!).pathname).toBe(`/resume/${SLUG}/missing`);
     expectLimitedHeaders(response);
   });
 
   it('判定できないときは通し、3 つのヘッダを付ける', async () => {
     resumes.hasVisitorResume.mockRejectedValue(new Error('D1_ERROR'));
-    const response = await proxy(request(`/resume/a-slug/${KEY}`));
+    const response = await proxy(request(`/resume/${SLUG}`));
     expect(isRewrite(response)).toBe(false);
     expectLimitedHeaders(response);
   });
 
   it('作り手かを確かめない', async () => {
-    await proxy(request(`/resume/a-slug/${KEY}`));
+    await proxy(request(`/resume/${SLUG}`));
     expect(author.getAuthorFromHeaders).not.toHaveBeenCalled();
   });
 
-  it('鍵の無い /resume/{slug} は判定しない', async () => {
-    expect(await rewrittenPath('/resume/a-slug')).toBeNull();
+  it('書き込みの要求は判定しない', async () => {
+    expect(await rewrittenPath(`/resume/${SLUG}`, 'POST')).toBeNull();
     expect(resumes.hasVisitorResume).not.toHaveBeenCalled();
   });
 
-  it('/resume/{slug}/missing は判定しない', async () => {
+  it('/resume/{slug} の下の経路は判定せず、3 つのヘッダを付ける', async () => {
     resumes.hasVisitorResume.mockResolvedValue(false);
-    const response = await proxy(request('/resume/a-slug/missing'));
+    for (const path of [`/resume/${SLUG}/missing`, `/resume/${SLUG}/a-key`]) {
+      const response = await proxy(request(path));
+      expect(isRewrite(response), path).toBe(false);
+      expectLimitedHeaders(response);
+    }
+    expect(resumes.hasVisitorResume).not.toHaveBeenCalled();
+  });
+
+  it('/resume は判定せず、ヘッダも付けない', async () => {
+    const response = await proxy(request('/resume'));
     expect(isRewrite(response)).toBe(false);
-    expectLimitedHeaders(response);
+    expect(resumes.hasVisitorResume).not.toHaveBeenCalled();
+    expect(response.headers.get('x-robots-tag')).toBeNull();
   });
 });
 

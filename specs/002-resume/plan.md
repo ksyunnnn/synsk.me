@@ -16,7 +16,7 @@
 
 ## Summary
 
-オーナーが管理画面（`/dash/resumes`）で、職歴・実績・学歴を選んで職務経歴書を作る。作るときに、選んだ行とスキルを、限定公開用か公開用かに応じた値で `resume_*` の表へ写し、1 回の `batch()` で書く。訪問者は公開用を `/resume/{slug}` で、限定公開用を鍵を含む `/resume/{slug}/{key}` で読み、ページの「PDF で保存」のボタンでブラウザの印刷機能を開いて PDF に保存する。鍵は 256 ビットの乱数で、D1 には SHA-256 だけを持つ。サーバーは PDF を作らない（research.md の R11）。
+オーナーが管理画面（`/dash/resumes`）で、職歴・実績・学歴を選んで職務経歴書を作る。作るときに、選んだ行とスキルを、限定公開用か公開用かに応じた値で `resume_*` の表へ写し、1 回の `batch()` で書く。訪問者は公開用と限定公開用を `/resume/{slug}` で読み、ページの「PDF で保存」のボタンでブラウザの印刷機能を開いて PDF に保存する。限定公開用の識別子はランダムな uid で、URL に識別子のほかの値を持たない（R5）。サーバーは PDF を作らない（research.md の R11）。
 
 001 のオーナーの判定・env・期間・入力の部品・Server Action の結果の型・proxy をそのまま使う（[research.md](./research.md) の R2）。写した職歴・実績が作ったときに秘匿化していたかは、migration 0008 の `resume_career.is_masked`・`resume_project.is_masked` が持つ（U2）。決め方は research.md が持つ。
 
@@ -34,7 +34,7 @@
 
 **Project Type**: Web アプリケーション（1 つの Next.js のプロジェクト）
 
-**Performance Goals**: 訪問者が到達する `/resume/{slug}` と `/resume/{slug}/{key}` が `docs/REQUIREMENTS.md` の NFR-03〜NFR-07 を満たす。判定はフィールドの計測（ADR-0017）
+**Performance Goals**: 訪問者が到達する `/resume/{slug}` が `docs/REQUIREMENTS.md` の NFR-03〜NFR-07 を満たす。判定はフィールドの計測（ADR-0017）
 
 **Constraints**: 応答は NFR-08・NFR-09 を満たす。限定公開用と `/dash` の応答は `no-store`。PR の CI は 10 分以内
 
@@ -46,7 +46,7 @@
 
 | 原則・制約 | 判定 | 根拠 |
 |---|---|---|
-| I. Protected Values | 条件付きで通る | 限定公開用は、鍵が合い期限の前で訪問者に見せる状態のときだけ写した行を読む（R6）。公開用で秘匿化した行の `description`・`url` を写さず読まない（R4、[contracts/visitor-resume.md](./contracts/visitor-resume.md)）。秘匿化した行は `is_masked` で見分ける（U2）。書き込みの Server Action は先頭でオーナーを確かめ、オーナーでない呼び出しが何も書かないことを結合で確かめる（[contracts/dash.md](./contracts/dash.md)） |
+| I. Protected Values | 条件付きで通る | 限定公開用は、識別子が合い期限の前で訪問者に見せる状態のときだけ写した行を読む（R6）。公開用で秘匿化した行の `description`・`url` を写さず読まない（R4、[contracts/visitor-resume.md](./contracts/visitor-resume.md)）。秘匿化した行は `is_masked` で見分ける（U2）。書き込みの Server Action は先頭でオーナーを確かめ、オーナーでない呼び出しが何も書かないことを結合で確かめる（[contracts/dash.md](./contracts/dash.md)） |
 | II. Stop on Missing Input | 条件付きで通る | 公開用に写す秘匿化した組織名が欠ければ作らない（R4）。費用のかかる処理を持たない（PDF は訪問者のブラウザが作る。R11） |
 | III. Verified Scope | 通る | 要件と検査の対応は下の表。U が止める要件は、解けるまで範囲に入れない |
 | IV. Partial Availability | 通る | ページの取得元は D1 の 1 つと、コードのプロフィールと環境変数のメールアドレス。メールアドレスが欠けてもほかを出す（R10） |
@@ -76,12 +76,12 @@
 | FR-007・FR-025・FR-028・SC-001 | 元を直す・消しても、写した値が変わらない（ページ） | 結 |
 | FR-008・FR-010・FR-016 | 写し方（限定公開用・公開用の秘匿化しない・秘匿化した） | 単（`build-resume.ts`） |
 | FR-009 | 始まりの日の新しい順 | W |
-| FR-011・FR-012・FR-023・SC-003 | 4 つの状態で中身を返さない。鍵のハッシュだけを保存する | 単（鍵）・W（保存）・結（応答） |
+| FR-011・FR-012・FR-023・SC-003 | 4 つの状態で中身を返さない。識別子はランダムな uid | 単（uid）・W（取り出し）・結（応答） |
 | FR-013・FR-014・SC-004 | 期限なし・期限切れ・延ばした後に同じ URL で読める | 結 |
 | FR-015・SC-005 | `no-store`・`noindex`・`no-referrer` | 単（proxy）・結（応答） |
 | FR-017・FR-018・SC-002 | 公開用の応答に秘匿化した行の隠す値が無い | 結（ページ。PDF は同じページを印刷する） |
 | FR-019 | 2 つ目の公開用を保存の前に拒む | W |
-| FR-020 | 公開用は鍵と期限を持たない | スキーマが持つ（CHECK） |
+| FR-020 | 公開用は期限を持たない | スキーマが持つ（CHECK） |
 | FR-021・FR-022 | 作ると下書き。下書きは中身を返さない | 結（SC-003 と同じ検査） |
 | FR-024 | 学歴が職務経歴書に出る | 結 |
 | FR-026・FR-027 | スキルの一覧と経験年数 | 単（名前の比べ方は U11 が解けるまで仮の形） |
@@ -89,6 +89,7 @@
 | FR-031・FR-032 | 写した値を直すと、その職務経歴書にだけ効く | W |
 | FR-033 | オーナーでない呼び出しが何も書かない | 結 |
 | FR-037・FR-039 | 限定公開用の識別子は uid で書き換えを拒む。公開用は既定で uid、書き換えられる | 単 |
+| FR-040 | 設定の画面に URL が出る。出し直すと識別子が新しい uid になり、古い URL は 404、新しい URL は 200 | 単（ユースケース）・W（書き換え）・結（応答）・E |
 | FR-038 | 先に書き換えられていたら保存しない | W（判定）・E（入力が残ること） |
 | REQUIREMENTS.md の FR-11・FR-13・FR-14 | 削除の順序、見た目の確認の画面、入力中の内容の保持 | W・E・E（001 の T072 の部品） |
 
@@ -110,7 +111,7 @@
 | U10 | 中身を返さないときの画面と、職務経歴書の題を訪問者に出すか（spec の「決定が無く」） | オーナー | 404 の画面の文言、ページの `<title>` |
 | U11 | スキルの「同じ名前」の比べ方（大文字と小文字を区別するか。research.md の R12） | オーナー | スキルの一覧（FR-026） |
 | U12 | 職歴・実績・学歴を 1 件も選ばずに作れるか（spec の「決定が無く」） | オーナー | 無し。決まるまで 1 件も選ばない作成を拒まない |
-| U13 | 鍵を含む URL を作成の応答の後で示せないこと（R5 の帰結）と、作り直す機能を持つか | オーナー | 無し。持つと決まればタスクを足す |
+| U13 | 決定済み（2026-11-08）。設定の画面で URL をいつでも示し、出し直せる（spec の FR-040、R5） | — | 無し |
 | U14 | ADR-0048 の「職務経歴書の slug は題から候補を提示し、オーナーが確定させる」と、spec の FR-037・FR-039 の食い違い | オーナー（決定の記録） | 無し。plan は spec に従う |
 
 依存（未決ではない）: 001 の部品（research.md の R2）。経験年数の計算は 001 の T061 が `src/shared/domain/period.ts` に書く。入力中の内容の保持は 001 の T072 の部品を使う。`src/proxy.ts` は 001 の作業者も直すため、002 の変更は 001 の T034 の後に足す。
@@ -141,8 +142,7 @@ ADR-0026 のディレクトリの形と依存の向きに従う。機能どう�
 src/
 ├── proxy.ts                         /resume/* の 404 とヘッダ、/dash/resumes/* の 404 を足す
 ├── app/
-│   ├── resume/[slug]/page.tsx       公開用（訪問者）
-│   ├── resume/[slug]/[key]/page.tsx 限定公開用（訪問者）
+│   ├── resume/[slug]/page.tsx       限定公開用と公開用（訪問者）
 │   ├── resume/[slug]/missing/page.tsx
 │   └── dash/
 │       ├── page.tsx                 職務経歴書の一覧へのリンクを足す
@@ -152,8 +152,8 @@ src/
 │           [id]/{careers,projects,educations}/[rowId]/page.tsx・…/[rowId]/missing/page.tsx
 ├── features/
 │   └── resume/
-│       ├── domain/       resume.ts・limited-key.ts・build-resume.ts・resume-skills.ts・profile.ts・resume-repository.ts
-│       ├── application/  create-resume.ts・edit-resume-*.ts・change-resume-status.ts・delete-resume.ts・
+│       ├── domain/       resume.ts・build-resume.ts・resume-skills.ts・profile.ts・resume-repository.ts
+│       ├── application/  create-resume.ts・edit-resume-*.ts・change-resume-status.ts・regenerate-resume-url.ts・delete-resume.ts・
 │       │                 get-visitor-resume.ts・get-resume-for-edit.ts・list-resumes.ts
 │       ├── components/   visitor-resume.tsx・print-button.tsx・各入力の部品
 │       └── server/       d1-resume-repository.ts・queries.ts・actions.ts

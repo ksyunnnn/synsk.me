@@ -12,15 +12,15 @@ import {
  */
 export const getVisitorLimitedResume = async (
   resumes: ResumeRepository,
-  { slug, key, profile, now }: { slug: string; key: string; profile: Profile; now: Date },
+  { slug, profile, now }: { slug: string; profile: Profile; now: Date },
 ): Promise<VisitorResume | null> => {
-  const id = await resumes.findLimitedIdForVisitor(slug, key, now.toISOString());
+  const id = await resumes.findLimitedIdForVisitor(slug, now.toISOString());
   if (id === null) return null;
   return toLimitedVisitorResume(await resumes.readContent(id), profile, now);
 };
 
 /**
- * 訪問者に見せたときの見た目（REQUIREMENTS.md の FR-13）。状態・鍵・期限に関わらず、訪問者向けと
+ * 訪問者に見せたときの見た目（REQUIREMENTS.md の FR-13）。状態・期限に関わらず、訪問者向けと
  * 同じ DTO を作る。作り手の確認は呼ぶ側が読む前に行う。無い id なら null
  */
 export const getResumePreview = async (

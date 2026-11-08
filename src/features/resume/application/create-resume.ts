@@ -1,5 +1,4 @@
 import { buildResumeContent } from '@/features/resume/domain/build-resume';
-import { generateLimitedKey, hashLimitedKey } from '@/features/resume/domain/limited-key';
 import {
   newResumeSlug,
   parseExpiresInput,
@@ -17,14 +16,12 @@ import type { ResumeRepository } from '@/features/resume/domain/resume-repositor
 import type { Author } from '@/shared/domain/author';
 
 export type CreateResumeOutcome =
-  /** `key` は限定公開用の鍵の平文。D1 には無く、この結果の中でだけ持つ（research.md の R5） */
   | {
       status: 'created';
       id: ResumeId;
       updatedAt: string;
       audience: ResumeAudience;
       slug: string;
-      key: string | null;
     }
   | { status: 'forbidden' }
   | {
@@ -89,10 +86,9 @@ export const createResume = async (
   );
   if (!allFound) return { status: 'invalid', errors: { selection: 'source-missing' }, values };
 
-  // 計算: 写す行と鍵
+  // 計算: 写す行と識別子
   const built = buildResumeContent(sources, selection, audience);
   if (!built.ok) return { status: 'invalid', errors: { audience: built.reason }, values };
-  const key = audience === 'limited' ? generateLimitedKey() : null;
   const slug = newResumeSlug();
 
   // 書く
@@ -100,9 +96,8 @@ export const createResume = async (
     slug,
     title,
     audience,
-    limitedTokenHash: key === null ? null : await hashLimitedKey(key),
     limitedExpiresAt: audience === 'limited' ? expires.expiresAt : null,
     content: built.content,
   });
-  return { status: 'created', id, updatedAt, audience, slug, key };
+  return { status: 'created', id, updatedAt, audience, slug };
 };

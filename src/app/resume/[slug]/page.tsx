@@ -16,13 +16,18 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type Props = { params: Promise<{ slug: string; key: string }> };
+type Props = { params: Promise<{ slug: string }> };
 
+/**
+ * 限定公開用の職務経歴書（specs/002-resume/contracts/visitor-resume.md）。識別子は限定公開用と
+ * 公開用で重ならない（`resume.slug` の UNIQUE）ため、公開用も同じ経路で読む形にできる。
+ * 公開用は tasks.md の Phase 7（US5）で足すまで読まず、404 になる
+ */
 const Page = async ({ params }: Props) => {
   // 中身を返さない要求は `src/proxy.ts` が描画の前に 404 の画面へ移す。読み出しの間に
   // 条件が変わった職務経歴書はここで 404 にする
-  const { slug, key } = await params;
-  const resume = await getVisitorLimitedResume(slug, key);
+  const { slug } = await params;
+  const resume = await getVisitorLimitedResume(slug);
   if (!resume) notFound();
 
   return (

@@ -13,7 +13,7 @@ import {
 
 /**
  * 限定公開用の職務経歴書を訪問者に渡すまで（specs/002-resume/spec.md の User Story 1 の 5、
- * User Story 2 の 1〜5、FR-010・FR-011・FR-013・FR-014・FR-021〜FR-023、SC-003・SC-004）。
+ * User Story 2 の 1〜5、FR-010〜FR-014・FR-021〜FR-023・FR-040、SC-003・SC-004）。
  * 管理画面で作る・切り替える・期限を変えた結果が、訪問者の URL に届くまでを通しで確かめる。
  * 応答のヘッダ（User Story 2 の 6）と D1 の行は結合の検査が持つ。
  *
@@ -34,35 +34,74 @@ const registerSourceCareer = (page: Page, tag: string) =>
 /** `tag` を名前に含む写し元だけを選ぶ */
 const keepOf = (tag: string) => new RegExp(`E2E 限定公開の\\S+ ${tag}`);
 
-/** URL の鍵の最後の 1 文字を変える */
-const withWrongKey = (url: string) => url.slice(0, -1) + (url.endsWith('A') ? 'B' : 'A');
+/** URL の識別子の最後の 1 文字を変える */
+const withWrongSlug = (path: string) => path.slice(0, -1) + (path.endsWith('a') ? 'b' : 'a');
 
-test('鍵を含む URL は作った画面にだけ示し、設定の画面と一覧には出さない', async ({
+const UID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+test('URL は /resume/{uid} で、作成の画面と設定の画面に同じ URL を示し、公開中ならその URL で開ける（FR-012・FR-040）', async ({
   page,
   context,
+  browser,
 }) => {
   await actAsAuthor(context);
-  await registerSourceCareer(page, '鍵の表示');
+  await registerSourceCareer(page, 'URL の表示');
   const { url, settingsUrl } = await createLimitedResume(page, {
-    title: 'E2E 鍵の表示の職務経歴書',
-    keep: keepOf('鍵の表示'),
+    title: 'E2E URL の表示の職務経歴書',
+    keep: keepOf('URL の表示'),
   });
-  const key = url.split('/').at(-1) as string;
-  expect(key).toMatch(/^[A-Za-z0-9_-]{43}$/);
+  const path = new URL(url).pathname;
+  expect(path.split('/')).toHaveLength(3);
+  expect(path.split('/')[2]).toMatch(UID);
 
-  await expect(
-    page.getByText('限定公開用の URL は作ったときの画面でだけ示します', { exact: false }),
-  ).toBeVisible();
   // 作成の画面から移ると、前の画面が隠れて DOM に残る。設定の画面を読み直してから調べる
   await page.goto(settingsUrl);
-  expect(await page.content()).not.toContain(key);
-  await page.goto('/dash/resumes');
-  expect(await page.content()).not.toContain(key);
-  await page.goto('/dash/resumes/new');
-  await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveCount(0);
+  await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveValue(url);
+  await setResumeVisible(page, true);
+  await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveValue(url);
+
+  const visitor = await openVisitor(browser);
+  expect(await visit(visitor, path)).toBe(200);
+  await expect(
+    visitor.getByRole('heading', { name: 'E2E 限定公開の組織 URL の表示' }),
+  ).toBeVisible();
+  await visitor.close();
 });
 
-test('下書きの間と、鍵が違う・鍵が無い URL では 404 で中身を出さず、訪問者に見せる状態の正しい URL でだけ読める', async ({
+test('URL を出し直すと識別子が新しい uid になり、古い URL は 404、新しい URL は 200 になる（FR-040）', async ({
+  page,
+  context,
+  browser,
+}) => {
+  await actAsAuthor(context);
+  await registerSourceCareer(page, '出し直し');
+  const { url, settingsUrl } = await createLimitedResume(page, {
+    title: 'E2E 出し直しの職務経歴書',
+    keep: keepOf('出し直し'),
+  });
+  await page.goto(settingsUrl);
+  await setResumeVisible(page, true);
+  const oldPath = new URL(url).pathname;
+  const visitor = await openVisitor(browser);
+  expect(await visit(visitor, oldPath)).toBe(200);
+
+  await page.getByRole('button', { name: 'URL を出し直す' }).click();
+  await expect(page.getByRole('status')).toHaveText('URL を出し直しました');
+  const fresh = await page.getByRole('textbox', { name: '限定公開用の URL' }).inputValue();
+  const freshPath = new URL(fresh).pathname;
+  expect(freshPath).not.toBe(oldPath);
+  expect(freshPath.split('/')[2]).toMatch(UID);
+  // 状態は出し直しで変わらない
+  await expect(page.getByText('公開中', { exact: true })).toBeVisible();
+
+  expect(await visit(visitor, oldPath)).toBe(404);
+  expect(await visitor.content()).not.toContain('E2E 限定公開の組織 出し直し');
+  expect(await visit(visitor, freshPath)).toBe(200);
+  await expect(visitor.getByRole('heading', { name: 'E2E 限定公開の組織 出し直し' })).toBeVisible();
+  await visitor.close();
+});
+
+test('下書きの間と、存在しない識別子の URL では 404 で中身を出さず、訪問者に見せる状態の正しい URL でだけ読める', async ({
   page,
   context,
   browser,
@@ -75,7 +114,6 @@ test('下書きの間と、鍵が違う・鍵が無い URL では 404 で中身�
   });
   await expect(page.getByText('限定公開用・期限 期限なし')).toBeVisible();
   const path = new URL(url).pathname;
-  const slugPath = path.split('/').slice(0, 3).join('/');
 
   const visitor = await openVisitor(browser);
   const expectNoContent = async (target: string) => {
@@ -88,8 +126,7 @@ test('下書きの間と、鍵が違う・鍵が無い URL では 404 で中身�
   await setResumeVisible(page, true);
   expect(await visit(visitor, path)).toBe(200);
   await expect(visitor.getByRole('heading', { name: 'E2E 限定公開の組織 状態' })).toBeVisible();
-  await expectNoContent(withWrongKey(path));
-  await expectNoContent(slugPath);
+  await expectNoContent(withWrongSlug(path));
 
   await setResumeVisible(page, false);
   await expectNoContent(path);

@@ -115,7 +115,7 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
 });
 
 describe('JWT のない Server Action は D1 を変えない（FR-033）', () => {
-  const outside = () => `/resume/${resume.slug}/${resume.key}`;
+  const outside = () => `/resume/${resume.slug}`;
   const common = async () => ({
     resumeId: resume.id,
     openedUpdatedAt: await updatedAtOf(resume.id),

@@ -3,8 +3,8 @@ import type { TestServer } from './d1';
 import { encodeActionCall, readActionFields } from './form';
 
 /**
- * 職務経歴書の結合の検査の道具。設定の画面は状態と設定の 2 つのフォームを持つため、何番目の
- * フォームの操作を送るかを選べるようにする。`tests/integration/support/send.ts` の `sendForm` と
+ * 職務経歴書の結合の検査の道具。設定の画面は複数のフォームを持つため（限定公開用は URL の
+ * 出し直し・状態・設定の順）、何番目のフォームの操作を送るかを選べるようにする。`tests/integration/support/send.ts` の `sendForm` と
  * 同じ要求を組み立てる
  */
 
@@ -91,9 +91,19 @@ const encodeActionCallEntries = (
   return encodeActionCall(fields, Object.fromEntries(entries));
 };
 
-/** 鍵を含む URL の経路から、識別子と鍵を取り出す */
+/** 限定公開用の URL（`/resume/{slug}`）の経路から、識別子を取り出す */
 export const parseLimitedUrl = (url: string) => {
-  const match = /\/resume\/([a-z0-9-]+)\/([A-Za-z0-9_-]{43})$/.exec(url);
+  const match = /\/resume\/([a-z0-9-]+)$/.exec(url);
   if (!match) throw new Error(`限定公開用の URL の形でない: ${url}`);
-  return { path: `/resume/${match[1]}/${match[2]}`, slug: match[1], key: match[2] };
+  return { path: `/resume/${match[1]}`, slug: match[1] };
 };
+
+/** HTML に示された限定公開用の URL（`/resume/{slug}`）を探し、識別子を取り出す */
+export const findLimitedUrl = (html: string) => {
+  const found = /https?:\/\/[^"<\s]+\/resume\/[a-z0-9-]+(?=["<\s])/.exec(html)?.[0];
+  if (!found) throw new Error('限定公開用の URL が HTML に無い');
+  return parseLimitedUrl(found);
+};
+
+/** 設定の画面の、限定公開用のフォームの並び */
+export const LIMITED_SETTINGS_FORMS = { url: 0, status: 1, settings: 2 } as const;

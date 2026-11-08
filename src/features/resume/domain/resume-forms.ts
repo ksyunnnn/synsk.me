@@ -74,7 +74,7 @@ export type CreateResumeField = 'title' | 'audience' | 'expires' | 'selection';
 export type CreateResumeError = FieldError | 'public-not-supported' | 'source-missing';
 
 export type CreateResumeFormResult =
-  /** 作った。限定公開用の鍵を含む URL は、この結果の中でだけ示す（research.md の R5） */
+  /** 作った。`url` は限定公開用の URL（`/resume/{slug}`）。公開用は null */
   | {
       status: 'created';
       id: number;

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestServer, type TestServer } from './support/d1';
 import { sendForm } from './support/send';
-import { parseLimitedUrl, sendNthForm } from './support/resume';
+import { findLimitedUrl, parseLimitedUrl, sendNthForm } from './support/resume';
 import {
   insertCareer,
   insertEducation,
@@ -77,10 +77,7 @@ beforeAll(async () => {
     ],
     asAuthor: true,
   });
-  const found = /https?:\/\/[^"<\s]+\/resume\/[a-z0-9-]+\/[A-Za-z0-9_-]{43}/.exec(
-    await created.text(),
-  )?.[0];
-  url = parseLimitedUrl(found!);
+  url = findLimitedUrl(await created.text());
   await ctx.db
     .prepare("UPDATE resume SET status = 'published' WHERE slug = ?")
     .bind(url.slug)

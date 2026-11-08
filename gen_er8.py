@@ -79,7 +79,7 @@ def rules_note(x, y):
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",
         "note.status が公開なら、note.published_revision_id と note.published_at は空でない（CHECK）",
         "note.card_media_id は、note.card_image が media のときだけ入る（CHECK）",
-        "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は鍵と期限を持たない（CHECK）。audience の更新はトリガで拒む",
+        "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は期限を持たない（CHECK）。audience の更新はトリガで拒む",
         "activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)",
         "activity.slug は life event の行だけが持つ（CHECK）。空でない行で UNIQUE（部分 UNIQUE 索引）",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
@@ -155,7 +155,7 @@ synd = [("# id", "integer"), ("→ note_id", "integer"), ("url", "text · unique
 link_preview = [("# id", "integer"), ("url", "text · unique"), ("title", "text · 空可"), ("image_url", "text · 空可"), ("fetched_at", "text")]
 resume = [
     ("# id", "integer"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),
-    ("limited_token_hash", "text · unique · 空可"), ("limited_expires_at", "text · 空可"),
+    ("limited_expires_at", "text · 空可"),
 ] + TS
 YMD = [("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可")]
 resume_career = [("# id", "integer"), ("→ resume_id", "integer"), ("→ career_id", "integer · 空可"), ("organization_name", "text"), ("role", "text")] + YMD + [("description", "text · 空可"), ("url", "text · 空可"), ("is_masked", "integer · 既定 1")]
@@ -173,12 +173,12 @@ el += path("M 300,110 H 335")
 el += path("M 300,280 H 318 V 400 H 335")
 el += path("M 40,200 H 28 V 878 H 335")
 el += path("M 440,646 V 680")
-el += path("M 150,316 V 400")
+el += path("M 150,296 V 400")
 el += label(306, 92, "1") + label(320, 114, "0..N")
 el += label(306, 262, "1") + label(320, 404, "0..N")
 el += label(34, 182, "1") + label(318, 860, "0..N")
 el += label(454, 650, "1") + label(458, 666, "0..N")
-el += label(164, 322, "1") + label(170, 384, "0..N")
+el += label(164, 302, "1") + label(170, 384, "0..N")
 # 職務経歴書 → 経歴
 el += path("M 545,110 H 580")
 el += path("M 545,400 H 562 V 460 H 580")
