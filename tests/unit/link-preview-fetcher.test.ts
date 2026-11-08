@@ -38,7 +38,7 @@ describe('parseLinkPreviewHtml', () => {
 
 describe('fetchLinkPreview', () => {
   it('題と、https の画像の URL を返す', async () => {
-    const fetch = vi.fn(async () =>
+    const fetch = vi.fn<(url: string, init?: RequestInit) => Promise<Response>>(async () =>
       respond(
         html(
           '<meta property="og:title" content="作り物"><meta property="og:image" content="/og.png">',

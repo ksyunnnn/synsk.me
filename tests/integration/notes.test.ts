@@ -39,7 +39,10 @@ let draftUid: string;
 
 const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
 
-const fetchText = async (path: string, init: RequestInit = {}) => {
+const fetchText = async (
+  path: string,
+  init: NonNullable<Parameters<TestServer['server']['fetch']>[1]> = {},
+) => {
   const res = await ctx.server.fetch(path, { redirect: 'manual', ...init });
   return { res, text: await res.text() };
 };

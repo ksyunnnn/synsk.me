@@ -83,6 +83,8 @@ export const NoteForm = ({ action, initialValues, note }: Props) => {
       clearDraft(key);
       // 作った直後（版が 1 つ）は、作る画面の書きかけも消す
       if (latestRevision === 1) clearDraft(draftKey(null));
+      // 保存の印を URL から外す。開き直したときに、その後の書きかけを消さないため
+      window.history.replaceState(window.history.state, '', window.location.pathname);
       return;
     }
     const draft = readDraft(key);
