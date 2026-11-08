@@ -68,8 +68,11 @@ const Page = async ({ params, searchParams }: Props) => {
       <ResumeSettingsForm
         key={`settings-${resume.updatedAt}`}
         action={editResumeSettings}
-        initialValues={{ title: resume.title, expires: toExpiresInput(resume.limitedExpiresAt) }}
-        slug={resume.slug}
+        initialValues={{
+          title: resume.title,
+          expires: toExpiresInput(resume.limitedExpiresAt),
+          slug: resume.slug,
+        }}
         isLimited={isLimited}
         {...common}
       />

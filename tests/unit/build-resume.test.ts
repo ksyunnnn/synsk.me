@@ -21,6 +21,7 @@ const SOURCES: ResumeSources = {
       organizationNameMasked: 'ある会社',
       role: '作り物の肩書',
       isMasked: true,
+      status: 'published',
       period: period('2020-04-01'),
       description: '職歴の本文',
       url: 'https://career.example.com',
@@ -31,6 +32,7 @@ const SOURCES: ResumeSources = {
       organizationNameMasked: null,
       role: '選ばない肩書',
       isMasked: false,
+      status: 'draft',
       period: period('2015-04-01', '2020-03-31'),
       description: null,
       url: null,
@@ -45,6 +47,7 @@ const SOURCES: ResumeSources = {
       title: '実際の作り物の受託開発',
       titleMasked: '業務システムの開発',
       isMasked: true,
+      status: 'published',
       period: period('2021-04-01'),
       description: '実績の本文',
       url: 'https://project.example.com',
@@ -61,6 +64,7 @@ const SOURCES: ResumeSources = {
       title: '外す作り物の登壇',
       titleMasked: '登壇',
       isMasked: false,
+      status: 'published',
       period: period('2022-01-01', '2022-01-01'),
       description: null,
       url: null,
@@ -142,9 +146,80 @@ it('何も選ばなければ、何も写さない（plan.md の U12 が決まる
   });
 });
 
-it('公開用は、tasks.md の Phase 7 で足すまで拒む', () => {
-  expect(buildResumeContent(SOURCES, SELECT_SOME, 'public')).toEqual({
-    ok: false,
-    reason: 'public-not-supported',
+describe('公開用（FR-008・FR-016・FR-017・SC-007、research.md の R4）', () => {
+  const ALL = { careerIds: [1, 2], projectIds: [10, 11], educationIds: [20] };
+  const built = buildResumeContent(SOURCES, ALL, 'public');
+  if (!built.ok) throw new Error(built.reason);
+  const { content } = built;
+
+  it('秘匿化しない行は、実際の組織名・題・本文・関連 URL を写す', () => {
+    expect(content.projects.find((p) => p.projectId === 11)).toMatchObject({
+      organizationName: '作り物の個人',
+      title: '外す作り物の登壇',
+      isMasked: false,
+    });
+  });
+
+  it('秘匿化した行は、秘匿化した組織名と秘匿化した題で写し、本文と関連 URL を写さない', () => {
+    expect(content.careers.find((c) => c.careerId === 1)).toEqual({
+      careerId: 1,
+      organizationName: 'ある会社',
+      role: '作り物の肩書',
+      period: period('2020-04-01'),
+      description: null,
+      url: null,
+      isMasked: true,
+    });
+    expect(content.projects.find((p) => p.projectId === 10)).toMatchObject({
+      organizationName: 'ある会社',
+      title: '業務システムの開発',
+      description: null,
+      url: null,
+      isMasked: true,
+      skills: ['TypeScript', 'Go'],
+    });
+  });
+
+  it('秘匿化した行の実際の組織名・題・本文・関連 URL が、写す中身のどこにも無い', () => {
+    const text = JSON.stringify(content);
+    for (const hidden of [
+      '実際の作り物株式会社',
+      '実際の作り物の受託開発',
+      '職歴の本文',
+      '実績の本文',
+      'career.example.com',
+      'project.example.com',
+    ]) {
+      expect(text).not.toContain(hidden);
+    }
+  });
+
+  it('サイトに載せない行は、選んでいても写さない（FR-016）', () => {
+    expect(content.careers.map((c) => c.careerId)).toEqual([1]);
+    expect(JSON.stringify(content)).not.toContain('選ばない作り物の組織');
+  });
+
+  it('学歴は限定公開用と同じく写す', () => {
+    expect(content.educations.map((e) => e.educationId)).toEqual([20]);
+  });
+
+  it('秘匿化した行の組織に秘匿化した組織名が無ければ、何も写さない（research.md の R4）', () => {
+    const noMaskedName: ResumeSources = {
+      ...SOURCES,
+      careers: [{ ...SOURCES.careers[0], organizationNameMasked: null }],
+    };
+    expect(buildResumeContent(noMaskedName, SELECT_SOME, 'public')).toEqual({
+      ok: false,
+      reason: 'masked-name-missing',
+    });
+  });
+
+  it('秘匿化しない行は、秘匿化した組織名が無くても写す', () => {
+    const select = { careerIds: [], projectIds: [11], educationIds: [] };
+    const open: ResumeSources = {
+      ...SOURCES,
+      projects: [{ ...SOURCES.projects[1], organizationNameMasked: null }],
+    };
+    expect(buildResumeContent(open, select, 'public').ok).toBe(true);
   });
 });

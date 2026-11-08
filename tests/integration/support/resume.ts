@@ -107,3 +107,6 @@ export const findLimitedUrl = (html: string) => {
 
 /** 設定の画面の、限定公開用のフォームの並び */
 export const LIMITED_SETTINGS_FORMS = { url: 0, status: 1, settings: 2 } as const;
+
+/** 設定の画面の、公開用のフォームの並び。公開用は URL の出し直しを持たない（FR-039） */
+export const PUBLIC_SETTINGS_FORMS = { status: 0, settings: 1 } as const;

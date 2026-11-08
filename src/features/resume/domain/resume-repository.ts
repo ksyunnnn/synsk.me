@@ -1,5 +1,6 @@
 import type {
   EditTimes,
+  ResumeAudience,
   NewResume,
   NewResumeContent,
   Resume,
@@ -48,8 +49,24 @@ export type ResumeRepository = {
    * 期限が無いときだけ返す（FR-011・FR-014・FR-022・FR-023、research.md の R6）
    */
   findLimitedIdForVisitor: (slug: string, now: string) => Promise<ResumeId | null>;
+  /**
+   * 訪問者に中身を返してよい公開用の id。識別子が合い、訪問者に見せる状態のときだけ返す
+   * （FR-019・FR-022、research.md の R6）
+   */
+  findPublicIdForVisitor: (slug: string) => Promise<ResumeId | null>;
+  /** 公開用が既にあるか（FR-019）。作る前に確かめる */
+  hasPublic: () => Promise<boolean>;
+  /** `slug` を、`exceptId` 以外の職務経歴書が使っているか（`resume.slug` の UNIQUE、FR-039） */
+  isSlugTaken: (slug: string, exceptId: ResumeId) => Promise<boolean>;
   /** 写した中身。始まりの日の新しい順（FR-009） */
   readContent: (id: ResumeId) => Promise<ResumeContent>;
+  /**
+   * 訪問者に見せる中身と、限定公開用か公開用か。公開用で秘匿化した行の `description`・`url` は
+   * SQL で読まず null にする（FR-017・FR-018、contracts/visitor-resume.md）。無い id なら null
+   */
+  readVisitorContent: (
+    id: ResumeId,
+  ) => Promise<{ audience: ResumeAudience; content: ResumeContent } | null>;
   editSettings: (id: ResumeId, settings: ResumeSettings, times: EditTimes) => Promise<EditResult>;
   changeStatus: (id: ResumeId, status: ResumeStatus, times: EditTimes) => Promise<EditResult>;
   /** 限定公開用の識別子を新しい uid に書き換える（FR-040）。公開用の行は書き換えず `not-found` */

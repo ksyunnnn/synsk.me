@@ -8,29 +8,41 @@ import {
   ResumeFormHidden,
   type ResumeFormCommon,
 } from '@/features/resume/components/resume-form-parts';
-import type { FieldError, ResumeSettingsField } from '@/features/resume/domain/resume-forms';
+import type {
+  ResumeSettingsError,
+  ResumeSettingsField,
+} from '@/features/resume/domain/resume-forms';
 import { InputField } from '@/shared/components/field';
 
 /**
- * 職務経歴書の設定（題・期限）のフォーム（specs/002-resume/contracts/dash.md の
- * `editResumeSettings`）。限定公開用の識別子は読み取りだけで出す（FR-037）。
+ * 職務経歴書の設定（題・期限・公開用の識別子）のフォーム（specs/002-resume/contracts/dash.md の
+ * `editResumeSettings`）。限定公開用の識別子は読み取りだけで出す（FR-037）。公開用の識別子は
+ * 書き換えられる（FR-039）。公開用は期限を持たない。
  * 期限の入力は plan.md の U9 の仮の形（日本時間の日付と時刻、空なら期限なし）。
  * 状態の切り替えは resume-status-form.tsx が持つ
  */
 
 type SettingsValues = Record<ResumeSettingsField, string>;
-type SettingsResult = EditOutcome<SettingsValues, Partial<Record<ResumeSettingsField, FieldError>>>;
+type SettingsResult = EditOutcome<
+  SettingsValues,
+  Partial<Record<ResumeSettingsField, ResumeSettingsError>>
+>;
+
+const SLUG_ERRORS: Record<ResumeSettingsError, string> = {
+  missing: '識別子を入力してください',
+  invalid: '識別子は 100 文字までの英小文字・数字・ハイフンで入力してください',
+  'ended-before-started': '識別子を確かめてください',
+  taken: 'この識別子は別の職務経歴書が使っています',
+};
 
 export const ResumeSettingsForm = ({
   action,
   initialValues,
-  slug,
   isLimited,
   ...common
 }: ResumeFormCommon & {
   action: (state: SettingsResult | null, formData: FormData) => Promise<SettingsResult>;
   initialValues: SettingsValues;
-  slug: string;
   isLimited: boolean;
 }) => {
   const [result, formAction] = useActionState(action, null);
@@ -55,13 +67,24 @@ export const ResumeSettingsForm = ({
         autoComplete="off"
         error={errors.title === 'missing' ? '題を入力してください' : undefined}
       />
-      <InputField
-        name="slug"
-        label="識別子"
-        hint={isLimited ? '限定公開用の識別子は書き換えられません' : undefined}
-        readOnly
-        defaultValue={slug}
-      />
+      {isLimited ? (
+        <InputField
+          name="slug"
+          label="識別子"
+          hint="限定公開用の識別子は書き換えられません"
+          readOnly
+          defaultValue={initialValues.slug}
+        />
+      ) : (
+        <InputField
+          name="slug"
+          label="識別子"
+          hint="URL の /resume/ の後に付きます。英小文字・数字・ハイフンで、例: resume"
+          defaultValue={values.slug}
+          autoComplete="off"
+          error={errors.slug ? SLUG_ERRORS[errors.slug] : undefined}
+        />
+      )}
       {isLimited && (
         <InputField
           type="datetime-local"

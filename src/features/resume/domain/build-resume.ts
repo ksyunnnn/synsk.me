@@ -12,12 +12,16 @@ import type {
  * 「読む → 計算 → 書く」）。
  *
  * 限定公開用は、秘匿化するかどうかに関わらず、実際の組織名・題・本文・関連 URL を写す（FR-008・
- * FR-010）。写し元が秘匿化していたかは `isMasked` に写す（migration 0008）。公開用の分岐は
- * tasks.md の Phase 7（US5）で足すまで作らず、拒む
+ * FR-010）。写し元が秘匿化していたかは `isMasked` に写す（migration 0008）。
+ *
+ * 公開用は、サイトに載せる職歴・実績だけを写し、選んでいてもサイトに載せないものは写さない
+ * （FR-016）。秘匿化しない行は実際の値を、秘匿化した行は秘匿化した組織名と秘匿化した題を写し、
+ * 本文と関連 URL を写さない（FR-008・FR-017・FR-018、research.md の R4）。秘匿化した行の組織に
+ * 秘匿化した組織名が無ければ、何も写さずに知らせる（research.md の R4、設計原則 2）
  */
 
 export type BuildResumeResult =
-  { ok: true; content: NewResumeContent } | { ok: false; reason: 'public-not-supported' };
+  { ok: true; content: NewResumeContent } | { ok: false; reason: 'masked-name-missing' };
 
 /**
  * 1 回の作成と足す操作で写せる行の数の上限（docs/SOFTWARE_DESIGN.md の設計原則 2、research.md の
@@ -61,40 +65,58 @@ export const hasAllSources = (sources: ResumeSources, selection: ResumeSelection
   sources.projects.length === new Set(selection.projectIds).size &&
   sources.educations.length === new Set(selection.educationIds).size;
 
+/** 写す組織名。公開用で秘匿化した行は秘匿化した組織名で、無ければ null */
+const organizationNameFor = (
+  source: { organizationName: string; organizationNameMasked: string | null; isMasked: boolean },
+  audience: ResumeAudience,
+): string | null =>
+  audience === 'public' && source.isMasked
+    ? source.organizationNameMasked
+    : source.organizationName;
+
 /** 作るときと、作ったあとに足すとき（FR-041）に、同じ写し方で写す行を返す */
 export const buildResumeContent = (
   sources: ResumeSources,
   selection: ResumeSelection,
   audience: ResumeAudience,
 ): BuildResumeResult => {
-  if (audience !== 'limited') return { ok: false, reason: 'public-not-supported' };
-
+  const isPublic = audience === 'public';
   const chosen = <T extends { id: number }>(rows: T[], ids: number[]) => {
     const set = new Set(ids);
     return rows.filter((row) => set.has(row.id));
   };
-  const projects = chosen(sources.projects, selection.projectIds);
+  // 公開用は、サイトに載せる行だけを写す（FR-016）
+  const onSite = <T extends { status: 'draft' | 'published' }>(rows: T[]) =>
+    isPublic ? rows.filter((row) => row.status === 'published') : rows;
+  // 公開用で秘匿化した行は、本文と関連 URL を写さない（FR-017）
+  const hides = (row: { isMasked: boolean }) => isPublic && row.isMasked;
+
+  const careers = onSite(chosen(sources.careers, selection.careerIds));
+  const projects = onSite(chosen(sources.projects, selection.projectIds));
+  if ([...careers, ...projects].some((row) => organizationNameFor(row, audience) === null)) {
+    return { ok: false, reason: 'masked-name-missing' };
+  }
 
   return {
     ok: true,
     content: {
-      careers: chosen(sources.careers, selection.careerIds).map((career) => ({
+      careers: careers.map((career) => ({
         careerId: career.id,
-        organizationName: career.organizationName,
+        organizationName: organizationNameFor(career, audience) ?? '',
         role: career.role,
         period: career.period,
-        description: career.description,
-        url: career.url,
+        description: hides(career) ? null : career.description,
+        url: hides(career) ? null : career.url,
         isMasked: career.isMasked,
       })),
       projects: projects.map((project) => ({
         projectId: project.id,
-        organizationName: project.organizationName,
+        organizationName: organizationNameFor(project, audience) ?? '',
         kind: project.kind,
-        title: project.title,
+        title: hides(project) ? project.titleMasked : project.title,
         period: project.period,
-        description: project.description,
-        url: project.url,
+        description: hides(project) ? null : project.description,
+        url: hides(project) ? null : project.url,
         isMasked: project.isMasked,
         skills: [...new Set(project.skills.map((skill) => skill.name))],
       })),

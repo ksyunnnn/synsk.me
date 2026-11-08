@@ -37,6 +37,7 @@ const SOURCES: ResumeSources = {
       organizationNameMasked: 'ある会社',
       role: '作り物の肩書',
       isMasked: true,
+      status: 'published',
       period: { startedOn: '2020-04-01' as CalendarDate, endedOn: null },
       description: null,
       url: null,
@@ -62,7 +63,11 @@ const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   findIdByUid: vi.fn<Repo['findIdByUid']>(),
   findRowIdByUid: vi.fn<Repo['findRowIdByUid']>(),
   findLimitedIdForVisitor: vi.fn<Repo['findLimitedIdForVisitor']>(),
+  findPublicIdForVisitor: vi.fn<Repo['findPublicIdForVisitor']>(),
+  hasPublic: vi.fn<Repo['hasPublic']>(async () => false),
+  isSlugTaken: vi.fn<Repo['isSlugTaken']>(async () => false),
   readContent: vi.fn<Repo['readContent']>(),
+  readVisitorContent: vi.fn<Repo['readVisitorContent']>(),
   editSettings: vi.fn<Repo['editSettings']>(async () => OK),
   changeStatus: vi.fn<Repo['changeStatus']>(async () => OK),
   regenerateLimitedSlug: vi.fn<Repo['regenerateLimitedSlug']>(async () => OK),
@@ -88,6 +93,7 @@ const projectWithSkills = (skillCount: number): ResumeSources => ({
       title: '作り物の登壇',
       titleMasked: 'ある登壇',
       isMasked: true,
+      status: 'published',
       period: { startedOn: '2022-04-01' as CalendarDate, endedOn: null },
       description: null,
       url: null,
@@ -183,7 +189,7 @@ describe('createResume', () => {
   it.each([
     ['題が空', { title: ' ' }, 'title'],
     ['期限の形が違う', { expires: '2026-02-30T09:00' }, 'expires'],
-    ['公開用', { audience: 'public' }, 'audience'],
+    ['限定公開用でも公開用でもない', { audience: 'other' }, 'audience'],
     ['id の形が違う', { careerIds: ['x'] }, 'selection'],
   ] satisfies [string, Partial<CreateResumeFormValues>, CreateResumeField][])(
     '%s なら作らず、送られた値を返す',
@@ -198,11 +204,151 @@ describe('createResume', () => {
   );
 });
 
+describe('公開用を作る（FR-016・FR-019、tasks.md の T068）', () => {
+  it('公開用を作る。期限の入力を読まず、期限なしで保存する', async () => {
+    const resumes = fakeResumes();
+    const outcome = await createResume(
+      resumes,
+      OWNER,
+      createValues({ audience: 'public', expires: '2026-12-01T09:00' }),
+    );
+    expect(outcome).toMatchObject({ status: 'created', audience: 'public' });
+    expect(resumes.create.mock.calls[0][0]).toMatchObject({
+      audience: 'public',
+      limitedExpiresAt: null,
+    });
+  });
+
+  it('秘匿化した写し元は、秘匿化した組織名で写す', async () => {
+    const resumes = fakeResumes();
+    await createResume(resumes, OWNER, createValues({ audience: 'public' }));
+    expect(resumes.create.mock.calls[0][0].content.careers[0].organizationName).toBe('ある会社');
+  });
+
+  it('2 つ目の公開用は、写し元を読む前に拒む（FR-019）', async () => {
+    const resumes = fakeResumes();
+    resumes.hasPublic.mockResolvedValue(true);
+    const outcome = await createResume(resumes, OWNER, createValues({ audience: 'public' }));
+    expect(outcome).toMatchObject({ status: 'invalid', errors: { audience: 'public-exists' } });
+    expect(resumes.readSources).not.toHaveBeenCalled();
+    expect(resumes.create).not.toHaveBeenCalled();
+  });
+
+  it('限定公開用は、公開用の有無を見ない', async () => {
+    const resumes = fakeResumes();
+    resumes.hasPublic.mockResolvedValue(true);
+    expect(await createResume(resumes, OWNER, createValues())).toMatchObject({
+      status: 'created',
+    });
+    expect(resumes.hasPublic).not.toHaveBeenCalled();
+  });
+
+  it('秘匿化した写し元の組織に秘匿化した組織名が無ければ、作らずに知らせる', async () => {
+    const resumes = fakeResumes({
+      ...SOURCES,
+      careers: [{ ...SOURCES.careers[0], organizationNameMasked: null }],
+    });
+    const outcome = await createResume(resumes, OWNER, createValues({ audience: 'public' }));
+    expect(outcome).toMatchObject({
+      status: 'invalid',
+      errors: { selection: 'masked-name-missing' },
+    });
+    expect(resumes.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('設定を直す（FR-037・FR-039）', () => {
+  const resumeOf = (audience: 'limited' | 'public'): ResumeForEdit => ({
+    id: 1,
+    uid: '0123456789abcdef0123456789abcdef',
+    title: '作り物の題',
+    slug: 'old-slug',
+    audience,
+    status: 'draft',
+    limitedExpiresAt: null,
+    createdAt: TIMES.openedUpdatedAt,
+    updatedAt: TIMES.openedUpdatedAt,
+    careers: [],
+    projects: [],
+    educations: [],
+    skillOverrides: [],
+  });
+  const withAudience = (audience: 'limited' | 'public') => {
+    const resumes = fakeResumes();
+    resumes.findForEdit.mockResolvedValue(resumeOf(audience));
+    return resumes;
+  };
+
+  it('公開用は識別子を書き換え、期限を読まない', async () => {
+    const resumes = withAudience('public');
+    const outcome = await editResumeSettings(
+      resumes,
+      OWNER,
+      1,
+      { title: '題', expires: '2026-12-01T09:00', slug: ' resume ' },
+      TIMES,
+    );
+    expect(outcome).toEqual({ status: 'saved' });
+    expect(resumes.editSettings).toHaveBeenCalledWith(
+      1,
+      { title: '題', limitedExpiresAt: null, slug: 'resume' },
+      TIMES,
+    );
+  });
+
+  it('限定公開用は送られた識別子を読まない（FR-037）', async () => {
+    const resumes = withAudience('limited');
+    await editResumeSettings(resumes, OWNER, 1, { title: '題', expires: '', slug: 'mine' }, TIMES);
+    expect(resumes.editSettings.mock.calls[0][1].slug).toBeNull();
+    expect(resumes.isSlugTaken).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['空', '', 'missing'],
+    ['形が違う', 'Resume_1', 'invalid'],
+  ])('公開用の識別子が%sなら保存しない', async (_, slug, error) => {
+    const resumes = withAudience('public');
+    const outcome = await editResumeSettings(
+      resumes,
+      OWNER,
+      1,
+      { title: '題', expires: '', slug },
+      TIMES,
+    );
+    expect(outcome).toMatchObject({ status: 'invalid', errors: { slug: error } });
+    expect(resumes.editSettings).not.toHaveBeenCalled();
+  });
+
+  it('公開用の識別子が別の職務経歴書と重なれば保存しない', async () => {
+    const resumes = withAudience('public');
+    resumes.isSlugTaken.mockResolvedValue(true);
+    const outcome = await editResumeSettings(
+      resumes,
+      OWNER,
+      1,
+      { title: '題', expires: '', slug: 'taken' },
+      TIMES,
+    );
+    expect(outcome).toMatchObject({ status: 'invalid', errors: { slug: 'taken' } });
+    expect(resumes.isSlugTaken).toHaveBeenCalledWith('taken', 1);
+    expect(resumes.editSettings).not.toHaveBeenCalled();
+  });
+
+  it('無い id なら not-found', async () => {
+    const resumes = fakeResumes();
+    resumes.findForEdit.mockResolvedValue(null);
+    expect(
+      await editResumeSettings(resumes, OWNER, 1, { title: '題', expires: '', slug: '' }, TIMES),
+    ).toEqual({ status: 'not-found' });
+  });
+});
+
 describe('書き込みはオーナーだけ（FR-033）', () => {
   it.each([
     [
       '設定',
-      (r: ResumeRepository) => editResumeSettings(r, null, 1, { title: 't', expires: '' }, TIMES),
+      (r: ResumeRepository) =>
+        editResumeSettings(r, null, 1, { title: 't', expires: '', slug: '' }, TIMES),
     ],
     ['状態', (r: ResumeRepository) => changeResumeStatus(r, null, 1, 'published', TIMES)],
     ['URL の出し直し', (r: ResumeRepository) => regenerateResumeUrl(r, null, 1, TIMES)],
@@ -448,6 +594,7 @@ describe('addResumeRows（FR-041）', () => {
         title: '作り物の登壇',
         titleMasked: 'ある登壇',
         isMasked: true,
+        status: 'published',
         period: { startedOn: '2022-04-01' as CalendarDate, endedOn: null },
         description: '作り物の本文',
         url: null,

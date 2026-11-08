@@ -1,4 +1,5 @@
 import type { Period } from '@/shared/domain/period';
+import type { SiteStatus } from '@/shared/domain/site-status';
 import type { Uid } from '@/shared/domain/uid';
 
 /**
@@ -149,6 +150,8 @@ export type ResumeSourceCareer = {
   organizationNameMasked: string | null;
   role: string;
   isMasked: boolean;
+  /** サイトに載せるか。公開用は載せる行だけを写す（FR-016） */
+  status: SiteStatus;
   period: Period;
   description: string | null;
   url: string | null;
@@ -162,6 +165,8 @@ export type ResumeSourceProject = {
   title: string;
   titleMasked: string;
   isMasked: boolean;
+  /** サイトに載せるか。公開用は載せる行だけを写す（FR-016） */
+  status: SiteStatus;
   period: Period;
   description: string | null;
   url: string | null;
@@ -242,8 +247,15 @@ export type ResumeCareerContent = Omit<ResumeCareer, 'id' | 'uid' | 'careerId' |
 export type ResumeProjectContent = Omit<ResumeProject, 'id' | 'uid' | 'projectId' | 'isMasked'>;
 export type ResumeEducationContent = Omit<ResumeEducation, 'id' | 'uid' | 'educationId'>;
 
-/** 設定の画面で直す値。識別子は公開用だけが持つ（FR-037・FR-039） */
-export type ResumeSettings = { title: string; limitedExpiresAt: string | null };
+/**
+ * 設定の画面で直す値。識別子（`slug`）は公開用だけが書き換える（FR-037・FR-039）。限定公開用は
+ * null を渡し、識別子を変えない
+ */
+export type ResumeSettings = {
+  title: string;
+  limitedExpiresAt: string | null;
+  slug: string | null;
+};
 
 /** 楽観ロックに使う日時（research.md の R8） */
 export type EditTimes = { openedUpdatedAt: string; now: string };

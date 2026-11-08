@@ -11,7 +11,8 @@ import { TextLink } from '@/shared/components/text-link';
 /**
  * 作ったあとに職歴・実績・学歴を足す画面の中身（specs/002-resume/contracts/dash.md の
  * `/dash/resumes/{uid}/<種類>/new`、FR-041）。既に写した写し元は選択肢に出さない
- * （research.md の R14）。フォームには選択肢の名前だけを渡し、本文や関連 URL を渡さない
+ * （research.md の R14）。公開用は、サイトに載せない職歴・実績を選択肢に出さない（FR-016）。
+ * フォームには選択肢の名前だけを渡し、本文や関連 URL を渡さない
  */
 
 export const RESUME_ROW_KIND_LABELS: Record<ResumeRowKind, string> = {
@@ -33,7 +34,9 @@ export const ResumeAddRows = ({
 }) => {
   const label = RESUME_ROW_KIND_LABELS[kind];
   const copied = copiedSourceIds(resume, kind);
-  const options = toSourceOptions(sources)[kind].filter((option) => !copied.has(option.id));
+  const options = toSourceOptions(sources)[kind].filter(
+    (option) => !copied.has(option.id) && (resume.audience === 'limited' || option.isOnSite),
+  );
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">

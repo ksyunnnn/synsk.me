@@ -73,7 +73,14 @@ export type CreateResumeFormValues = {
 };
 
 export type CreateResumeField = 'title' | 'audience' | 'expires' | 'selection';
-export type CreateResumeError = FieldError | 'public-not-supported' | 'source-missing' | 'too-many';
+export type CreateResumeError =
+  | FieldError
+  /** 公開用が既にある（FR-019） */
+  | 'public-exists'
+  /** 公開用で秘匿化した行の組織に、秘匿化した組織名が無い（research.md の R4） */
+  | 'masked-name-missing'
+  | 'source-missing'
+  | 'too-many';
 
 export type CreateResumeFormResult =
   /** 作った。`url` は限定公開用の URL（`/resume/{slug}`）。公開用は null */
@@ -99,14 +106,17 @@ export type CreateResumeFormResult =
 export const ROW_KIND_FIELD = 'rowKind';
 
 export type AddResumeRowsError =
-  'missing' | 'invalid' | 'source-missing' | 'already-copied' | 'public-not-supported' | 'too-many';
+  'missing' | 'invalid' | 'source-missing' | 'already-copied' | 'masked-name-missing' | 'too-many';
 
 /** 足すときの誤り。選択の 1 つの項目だけを持つ */
 export type AddResumeRowsErrors = { selection?: AddResumeRowsError };
 
-/** 設定（題と期限）の入力の名前 */
-export const RESUME_SETTINGS_FIELDS = ['title', 'expires'] as const;
+/** 設定（題・期限・公開用の識別子）の入力の名前。限定公開用は識別子を読まない（FR-037） */
+export const RESUME_SETTINGS_FIELDS = ['title', 'expires', 'slug'] as const;
 export type ResumeSettingsField = (typeof RESUME_SETTINGS_FIELDS)[number];
+
+/** 設定の誤り。`taken` は公開用の識別子が別の職務経歴書と重なる（`resume.slug` の UNIQUE） */
+export type ResumeSettingsError = FieldError | 'taken';
 
 export const STATUS_FIELD = 'status';
 

@@ -4,8 +4,9 @@ import { headers } from 'next/headers';
 import { cache } from 'react';
 import { getResumeForEdit as getResumeForEditUseCase } from '@/features/resume/application/get-resume-for-edit';
 import {
+  findVisitorResumeId,
   getResumePreview as getResumePreviewUseCase,
-  getVisitorLimitedResume as getVisitorLimitedResumeUseCase,
+  getVisitorResume as getVisitorResumeUseCase,
 } from '@/features/resume/application/get-visitor-resume';
 import { listResumeSources as listResumeSourcesUseCase } from '@/features/resume/application/list-resume-sources';
 import { listResumes as listResumesUseCase } from '@/features/resume/application/list-resumes';
@@ -71,8 +72,8 @@ export const getResumeForEdit = async (uid: string): Promise<ResumeForEdit | nul
 };
 
 /**
- * 限定公開用の URL（`/resume/{slug}`）。要求の host から作る。URL を知る人は誰でも読めるため、
- * オーナーの画面と Server Action の結果にだけ出す（FR-012・FR-040）
+ * 職務経歴書の URL（`/resume/{slug}`）。要求の host から作る。限定公開用の URL は知る人は誰でも
+ * 読めるため、オーナーの画面と Server Action の結果にだけ出す（FR-012・FR-040）
  */
 export const limitedResumeUrl = async (slug: string): Promise<string> => {
   const host = (await headers()).get('host') ?? 'synsk.me';
@@ -91,11 +92,11 @@ export const getResumePreview = async (uid: string): Promise<VisitorResume | nul
 };
 
 /**
- * 訪問者に見せる限定公開用。条件に合わなければ null。ページの本体とメタデータの両方が呼ぶため、
- * 1 つの要求の中では D1 に 1 回だけ問い合わせる
+ * 訪問者に見せる職務経歴書（限定公開用か公開用）。条件に合わなければ null。ページの本体と
+ * メタデータの両方が呼ぶため、1 つの要求の中では D1 に 1 回だけ問い合わせる
  */
-export const getVisitorLimitedResume = cache(async (slug: string): Promise<VisitorResume | null> =>
-  getVisitorLimitedResumeUseCase(await createResumeRepository(), {
+export const getVisitorResume = cache(async (slug: string): Promise<VisitorResume | null> =>
+  getVisitorResumeUseCase(await createResumeRepository(), {
     slug,
     profile: await readProfile(),
     now: new Date(),
@@ -106,11 +107,9 @@ export const getVisitorLimitedResume = cache(async (slug: string): Promise<Visit
  * 以下は `src/proxy.ts` が描画の前に呼ぶ。中身を読まず、有無だけを返す
  */
 
-/** 訪問者に中身を返してよい限定公開用か。`getVisitorLimitedResume` が null を返さない識別子と一致する */
+/** 訪問者に中身を返してよい職務経歴書か。`getVisitorResume` が null を返さない識別子と一致する */
 export const hasVisitorResume = async (slug: string): Promise<boolean> =>
-  (await (
-    await createResumeRepository()
-  ).findLimitedIdForVisitor(slug, new Date().toISOString())) !== null;
+  (await findVisitorResumeId(await createResumeRepository(), slug, new Date())) !== null;
 
 /** オーナーが編集できる職務経歴書がある uid か */
 export const hasResumeUid = async (uid: string): Promise<boolean> =>

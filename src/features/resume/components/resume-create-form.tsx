@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import {
   SELECTION_FIELDS,
   type CreateResumeError,
@@ -25,8 +25,10 @@ import { TextLink } from '@/shared/components/text-link';
  * 職歴・実績・学歴のチェックボックスは、すべて選んだ状態で始まる（FR-005・SC-006）。
  * Server Action は props で受け取り、`server/` を読み込まない（ADR-0026 の依存の向き 3）。
  *
- * 公開用の選択肢は tasks.md の Phase 7（US5）の T068 で足すまで出さず、限定公開用で作る。
- * 作れたら、限定公開用の URL をこの画面に示す。設定の画面も同じ URL を示す（FR-040）。作った
+ * 限定公開用か公開用かを選ぶ（FR-003）。公開用を選ぶと、サイトに載せない職歴・実績を選択肢から外し、
+ * 期限の入力を出さない（FR-005・FR-016）。JavaScript が無く外せないときも、公開用はサイトに載せない
+ * 職歴・実績を写さない（build-resume.ts）。
+ * 限定公開用を作れたら、限定公開用の URL をこの画面に示す。設定の画面も同じ URL を示す（FR-040）。作った
  * 職務経歴書は下書きで、下書きの間は URL が 404 になるため、URL の隣に状態の切り替えを置く
  */
 
@@ -46,7 +48,8 @@ const ERROR_MESSAGES: Record<CreateResumeField, Partial<Record<CreateResumeError
   title: { missing: '題を入力してください' },
   audience: {
     invalid: '限定公開用か公開用かを選んでください',
-    'public-not-supported': '公開用はまだ作れません',
+    'public-exists':
+      '公開用は 1 つだけ作れます。既にある公開用を直すか、削除してから作ってください',
   },
   expires: { invalid: '期限を日付と時刻で入力してください' },
   selection: SELECTION_MESSAGES,
@@ -61,6 +64,14 @@ const AUDIENCE_LABELS: Record<ResumeAudience, string> = {
   limited: '限定公開用',
   public: '公開用',
 };
+
+const AUDIENCE_HINTS: Record<ResumeAudience, string> = {
+  limited: 'URL を知る人だけが読めます。秘匿化した職歴・実績も実際の値で載せます',
+  public: 'サイトで誰でも読めます。サイトに載せる職歴・実績だけを、秘匿化した値で載せます',
+};
+
+const RADIO =
+  'size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
 const createdNotice = (audience: ResumeAudience, status: ResumeStatus) =>
   `${AUDIENCE_LABELS[audience]}の職務経歴書を作りました。${status === 'draft' ? '非公開です' : '公開中です'}`;
@@ -109,6 +120,8 @@ export const ResumeCreateForm = ({
   educations,
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
+  // 送った後も選んだ方を保つ。誤りで戻ったときは送った値が同じ選択になる
+  const [audience, setAudience] = useState<ResumeAudience>('limited');
 
   if (result?.status === 'created') {
     return <ResumeCreated created={result} changeStatusAction={changeStatusAction} />;
@@ -116,6 +129,10 @@ export const ResumeCreateForm = ({
 
   const values = result?.status === 'invalid' ? result.values : null;
   const errors = result?.status === 'invalid' ? result.errors : {};
+  const isPublic = audience === 'public';
+  // 公開用は、サイトに載せない職歴・実績を選択肢から外す（FR-005）
+  const onSite = (options: SourceOption[]) =>
+    isPublic ? options.filter((option) => option.isOnSite) : options;
   const errorOf = (field: CreateResumeField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
@@ -136,30 +153,48 @@ export const ResumeCreateForm = ({
         autoComplete="off"
         error={errorOf('title')}
       />
-      <input type="hidden" name="audience" value="limited" />
-      <p className="text-sm text-muted-foreground">
-        限定公開用で作ります。限定公開用か公開用かは、作った後に変えられません
-        {errorOf('audience') && <span className="text-destructive">。{errorOf('audience')}</span>}
-      </p>
-      <InputField
-        type="datetime-local"
-        name="expires"
-        label="期限"
-        hint="日本時間。空なら期限を設けません"
-        defaultValue={values?.expires ?? ''}
-        error={errorOf('expires')}
-      />
+      <fieldset className="flex flex-col gap-2">
+        <legend className="font-bold">限定公開用か公開用か</legend>
+        <p className="text-sm text-muted-foreground">作った後に変えられません</p>
+        {(['limited', 'public'] as const).map((value) => (
+          <label key={value} className="flex items-start gap-2">
+            <input
+              type="radio"
+              name="audience"
+              value={value}
+              checked={audience === value}
+              onChange={() => setAudience(value)}
+              className={`${RADIO} mt-1`}
+            />
+            <span className="flex flex-col">
+              {AUDIENCE_LABELS[value]}
+              <span className="text-sm text-muted-foreground">{AUDIENCE_HINTS[value]}</span>
+            </span>
+          </label>
+        ))}
+        {errorOf('audience') && <p className="text-sm text-destructive">{errorOf('audience')}</p>}
+      </fieldset>
+      {!isPublic && (
+        <InputField
+          type="datetime-local"
+          name="expires"
+          label="期限"
+          hint="日本時間。空なら期限を設けません"
+          defaultValue={values?.expires ?? ''}
+          error={errorOf('expires')}
+        />
+      )}
       {errorOf('selection') && <p className="text-sm text-destructive">{errorOf('selection')}</p>}
       <SourceFieldset
         legend="職歴"
         name={SELECTION_FIELDS.careerIds}
-        options={careers}
+        options={onSite(careers)}
         selected={values?.careerIds ?? null}
       />
       <SourceFieldset
         legend="実績"
         name={SELECTION_FIELDS.projectIds}
-        options={projects}
+        options={onSite(projects)}
         selected={values?.projectIds ?? null}
       />
       <SourceFieldset

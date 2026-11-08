@@ -195,7 +195,11 @@ describe('楽観ロック（FR-038、research.md の R8）', () => {
       reason: 'conflict',
     });
     expect(
-      await resumes.editSettings(target.id, { title: '直した題', limitedExpiresAt: null }, stale),
+      await resumes.editSettings(
+        target.id,
+        { title: '直した題', limitedExpiresAt: null, slug: null },
+        stale,
+      ),
     ).toEqual({ ok: false, reason: 'conflict' });
     expect(await resumes.changeStatus(target.id, 'published', stale)).toEqual({
       ok: false,
@@ -335,7 +339,7 @@ describe('設定', () => {
   it('期限を直す。空にすると期限なし（FR-013）', async () => {
     await resumes.editSettings(
       target.id,
-      { title: '直した題', limitedExpiresAt: '2026-12-01T00:00:00.000Z' },
+      { title: '直した題', limitedExpiresAt: '2026-12-01T00:00:00.000Z', slug: null },
       await times(target.id),
     );
     expect(await resumes.findForEdit(target.id)).toMatchObject({
@@ -344,7 +348,7 @@ describe('設定', () => {
     });
     await resumes.editSettings(
       target.id,
-      { title: '直した題', limitedExpiresAt: null },
+      { title: '直した題', limitedExpiresAt: null, slug: null },
       { openedUpdatedAt: NOW, now: '2026-11-05T00:00:00.000Z' },
     );
     expect((await resumes.findForEdit(target.id))?.limitedExpiresAt).toBeNull();

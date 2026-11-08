@@ -38,7 +38,6 @@ type Props = ResumeFormCommon & {
 const errorText = (error: AddResumeRowsError, legend: string) => {
   if (error === 'missing') return `足す${legend}を選んでください`;
   if (error === 'already-copied') return `写し済みの${legend}があります。開き直してください`;
-  if (error === 'public-not-supported') return '公開用にはまだ足せません';
   return SELECTION_MESSAGES[error];
 };
 

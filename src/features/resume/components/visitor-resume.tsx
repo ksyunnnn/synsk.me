@@ -12,6 +12,9 @@ import { toYearsAndMonths, type Period } from '@/shared/domain/period';
  * 本文の書式は plan.md の U4 で決まっていない。決まるまでの仮の形として、本文は書式を持たない
  * 文字列として改行だけを残して出す。本文の画像は出さない。
  *
+ * 公開用で秘匿化した職歴・実績は、本文の場所に「非公開」と出す（FR-017、plan.md の U5）。contact の
+ * ページへのリンクは、contact のページができてから足す（tasks.md の T077）。
+ *
  * メールアドレスは、環境変数で渡したときだけ出す。スパム対策（FR-035）は plan.md の U8 で
  * 決まっておらず、本番の応答で Email Address Obfuscation が効くかを確かめる（tasks.md の T072）
  */
@@ -26,6 +29,9 @@ const PeriodText = ({ period }: { period: Period }) => (
 
 const Body = ({ text }: { text: string | null }) =>
   text ? <p className="whitespace-pre-line">{text}</p> : null;
+
+/** 公開用で秘匿化した行の本文の場所（FR-017）。中身を持たず、伏せたことだけを示す */
+const MaskedBody = () => <p className="text-sm text-muted-foreground">非公開</p>;
 
 const ExternalLink = ({ href }: { href: string | null }) =>
   href ? (
@@ -98,8 +104,14 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
                 <p className="text-sm text-muted-foreground">
                   {career.role}・<PeriodText period={career.period} />
                 </p>
-                <Body text={career.body} />
-                <ExternalLink href={career.url} />
+                {career.isMasked ? (
+                  <MaskedBody />
+                ) : (
+                  <>
+                    <Body text={career.body} />
+                    <ExternalLink href={career.url} />
+                  </>
+                )}
               </li>
             ))}
           </ol>
@@ -119,8 +131,14 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
                 {project.skills.length > 0 && (
                   <p className="text-sm">{project.skills.join('、')}</p>
                 )}
-                <Body text={project.body} />
-                <ExternalLink href={project.url} />
+                {project.isMasked ? (
+                  <MaskedBody />
+                ) : (
+                  <>
+                    <Body text={project.body} />
+                    <ExternalLink href={project.url} />
+                  </>
+                )}
               </li>
             ))}
           </ol>

@@ -44,8 +44,9 @@ const parseIds = (values: string[]) => values.map(parseResumeId);
  * 職務経歴書を作る（FR-001・FR-003・FR-005・FR-007・FR-011〜FR-013・FR-021）。オーナーでなければ
  * 何も読まず何も書かない（FR-033）。読む → 計算 → 書くの順（docs/SOFTWARE_DESIGN.md）。
  *
- * 1 件も選ばずに作れるかは plan.md の U12 で決まっていないため、拒まない。公開用は tasks.md の
- * Phase 7（US5）で足すまで拒む。写す行が上限を超えたら作らずに知らせる（research.md の R15）
+ * 1 件も選ばずに作れるかは plan.md の U12 で決まっていないため、拒まない。公開用は 1 つだけで、
+ * 2 つ目は保存の前に拒む（FR-019）。公開用は期限を持たず、期限の入力を読まない。写す行が上限を
+ * 超えたら作らずに知らせる（research.md の R15）
  */
 export const createResume = async (
   resumes: ResumeRepository,
@@ -65,9 +66,8 @@ export const createResume = async (
         ? 'public'
         : null;
   if (audience === null) errors.audience = 'invalid';
-  else if (audience === 'public') errors.audience = 'public-not-supported';
 
-  const expires = parseExpiresInput(values.expires);
+  const expires = parseExpiresInput(audience === 'public' ? '' : values.expires);
   if (!expires.ok) errors.expires = 'invalid';
 
   const ids = {
@@ -85,7 +85,10 @@ export const createResume = async (
     return { status: 'invalid', errors: { selection: 'too-many' }, values };
   }
 
-  // 読む: 選んだ写し元。開いた後に消えた行があれば作らない
+  // 読む: 公開用の有無と、選んだ写し元。開いた後に消えた行があれば作らない
+  if (audience === 'public' && (await resumes.hasPublic())) {
+    return { status: 'invalid', errors: { audience: 'public-exists' }, values };
+  }
   const sources = await resumes.readSources(selection);
   if (!hasAllSources(sources, selection)) {
     return { status: 'invalid', errors: { selection: 'source-missing' }, values };
@@ -93,7 +96,7 @@ export const createResume = async (
 
   // 計算: 写す行と識別子
   const built = buildResumeContent(sources, selection, audience);
-  if (!built.ok) return { status: 'invalid', errors: { audience: built.reason }, values };
+  if (!built.ok) return { status: 'invalid', errors: { selection: built.reason }, values };
   if (countCopiedRows(built.content) > MAX_COPIED_ROWS) {
     return { status: 'invalid', errors: { selection: 'too-many' }, values };
   }

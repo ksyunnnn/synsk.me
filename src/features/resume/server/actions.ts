@@ -49,6 +49,7 @@ import {
   type ResumeEducationFormValues,
   type ResumeProjectField,
   type ResumeProjectFormValues,
+  type ResumeSettingsError,
   type ResumeSettingsField,
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
@@ -117,10 +118,10 @@ const finish = <V, E>({ uid }: ResumeTarget, outcome: EditOutcome<V, E>) => {
 
 export type ResumeSettingsResult = EditOutcome<
   Record<ResumeSettingsField, string>,
-  Partial<Record<ResumeSettingsField, FieldError>>
+  Partial<Record<ResumeSettingsField, ResumeSettingsError>>
 >;
 
-/** 題と期限を直す */
+/** 題・期限・公開用の識別子を直す */
 export const editResumeSettings = async (
   _state: ResumeSettingsResult | null,
   formData: FormData,

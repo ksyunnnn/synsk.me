@@ -3,6 +3,7 @@ import 'server-only';
 import {
   isResumeProjectKind,
   type EditTimes,
+  type ResumeAudience,
   type NewResumeContent,
   type Resume,
   type ResumeCareer,
@@ -15,6 +16,7 @@ import {
 } from '@/features/resume/domain/resume';
 import type { EditResult, ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
+import type { SiteStatus } from '@/shared/domain/site-status';
 
 /**
  * `ResumeRepository` の D1 の実装。行の型はこのファイルの中だけに置く（001 の research.md の R3）。
@@ -78,6 +80,7 @@ type SourceCareerRow = PeriodColumns & {
   organization_name_masked: string | null;
   role: string;
   is_masked: 0 | 1;
+  status: string;
   description: string | null;
   url: string | null;
 };
@@ -90,6 +93,7 @@ type SourceProjectRow = PeriodColumns & {
   title: string;
   title_masked: string;
   is_masked: 0 | 1;
+  status: string;
   description: string | null;
   url: string | null;
 };
@@ -107,6 +111,9 @@ const periodOf = (row: PeriodColumns): Period => ({
   startedOn: row.started_on as CalendarDate,
   endedOn: row.ended_on as CalendarDate | null,
 });
+
+/** サイトに載せるか。CHECK が 2 値に絞る。読めない値は載せない（001 の FR-044 の既定） */
+const siteStatusOf = (value: string): SiteStatus => (value === 'published' ? 'published' : 'draft');
 
 /** 種類は CHECK が 4 値に絞る。読めない値は 001 の `other` と同じ扱いにする */
 const kindOf = (value: string): ResumeProjectKind => (isResumeProjectKind(value) ? value : 'other');
@@ -333,19 +340,25 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
     return statements;
   };
 
-  const readContent = async (id: number): Promise<ResumeContent> => {
+  /**
+   * 写した中身を読む。`hideMasked` なら、秘匿化した行の `description`・`url` を SQL で読まず
+   * NULL にする（公開用の訪問者向け、contracts/visitor-resume.md）
+   */
+  const readRows = async (id: number, hideMasked: boolean): Promise<ResumeContent> => {
+    const hidden = (column: string) =>
+      hideMasked ? `CASE WHEN is_masked = 1 THEN NULL ELSE ${column} END AS ${column}` : column;
     const [careers, projects, skills, educations, overrides] = await db.batch([
       db
         .prepare(
-          `SELECT id, uid, career_id, organization_name, role, started_on, ended_on, description, url,
-             is_masked
+          `SELECT id, uid, career_id, organization_name, role, started_on, ended_on,
+             ${hidden('description')}, ${hidden('url')}, is_masked
            FROM resume_career WHERE resume_id = ? ${NEWEST_FIRST}`,
         )
         .bind(id),
       db
         .prepare(
           `SELECT id, uid, project_id, organization_name, kind, title, started_on, ended_on,
-             description, url, is_masked
+             ${hidden('description')}, ${hidden('url')}, is_masked
            FROM resume_project WHERE resume_id = ? ${NEWEST_FIRST}`,
         )
         .bind(id),
@@ -388,6 +401,8 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
     };
   };
 
+  const readContent = (id: number) => readRows(id, false);
+
   return {
     readSources: async (selection) => {
       const filter = (column: string) =>
@@ -401,7 +416,7 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
         bindIds(
           db.prepare(
             `SELECT c.id, o.name AS organization_name, o.name_masked AS organization_name_masked,
-               c.role, c.is_masked, c.started_on, c.ended_on, c.description, c.url
+               c.role, c.is_masked, c.status, c.started_on, c.ended_on, c.description, c.url
              FROM career c JOIN organization o ON o.id = c.organization_id
              ${filter('c.id')} ORDER BY c.started_on DESC, c.id ASC`,
           ),
@@ -410,7 +425,7 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
         bindIds(
           db.prepare(
             `SELECT p.id, o.name AS organization_name, o.name_masked AS organization_name_masked,
-               p.kind, p.title, p.title_masked, p.is_masked, p.started_on, p.ended_on,
+               p.kind, p.title, p.title_masked, p.is_masked, p.status, p.started_on, p.ended_on,
                p.description, p.url
              FROM project p JOIN organization o ON o.id = p.organization_id
              ${filter('p.id')} ORDER BY p.started_on DESC, p.id ASC`,
@@ -447,6 +462,7 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
           organizationNameMasked: row.organization_name_masked,
           role: row.role,
           isMasked: row.is_masked === 1,
+          status: siteStatusOf(row.status),
           period: periodOf(row),
           description: row.description,
           url: row.url,
@@ -459,6 +475,7 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
           title: row.title,
           titleMasked: row.title_masked,
           isMasked: row.is_masked === 1,
+          status: siteStatusOf(row.status),
           period: periodOf(row),
           description: row.description,
           url: row.url,
@@ -542,20 +559,52 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
       return row?.id ?? null;
     },
 
+    findPublicIdForVisitor: async (slug) => {
+      const row = await db
+        .prepare(
+          `SELECT id FROM resume
+           WHERE slug = ? AND audience = 'public' AND status = 'published'`,
+        )
+        .bind(slug)
+        .first<{ id: number }>();
+      return row?.id ?? null;
+    },
+
+    hasPublic: async () =>
+      (await db.prepare("SELECT 1 AS found FROM resume WHERE audience = 'public'").first()) !==
+      null,
+
+    isSlugTaken: async (slug, exceptId) =>
+      (await db
+        .prepare('SELECT 1 AS found FROM resume WHERE slug = ? AND id <> ?')
+        .bind(slug, exceptId)
+        .first()) !== null,
+
     readContent,
+
+    readVisitorContent: async (id) => {
+      const row = await db
+        .prepare('SELECT audience FROM resume WHERE id = ?')
+        .bind(id)
+        .first<{ audience: ResumeAudience }>();
+      if (!row) return null;
+      return { audience: row.audience, content: await readRows(id, row.audience === 'public') };
+    },
 
     // `resume` の列は、楽観ロックと同じ 1 つの文で書く。2 つ目の文で `resume` を書くと、
     // 更新日時を変えない UPDATE としてトリガ `resume_updated_at` が更新日時を書き換える
-    editSettings: async (id, { title, limitedExpiresAt }, { openedUpdatedAt, now }) => {
-      // 公開用は期限を持たない（`resume` の CHECK）。限定公開用だけ期限を書く
+    editSettings: async (id, { title, limitedExpiresAt, slug }, { openedUpdatedAt, now }) => {
+      // 公開用は期限を持たない（`resume` の CHECK）。限定公開用だけ期限を書く。識別子は
+      // 公開用だけ書き換え、限定公開用は渡されても変えない（FR-037・FR-039）
       const result = await db
         .prepare(
           `UPDATE resume SET title = ?,
              limited_expires_at = CASE WHEN audience = 'limited' THEN ? ELSE NULL END,
+             slug = CASE WHEN audience = 'public' THEN coalesce(?, slug) ELSE slug END,
              updated_at = ?
            WHERE id = ? AND updated_at = ?`,
         )
-        .bind(title, limitedExpiresAt, now, id, openedUpdatedAt)
+        .bind(title, limitedExpiresAt, slug, now, id, openedUpdatedAt)
         .run();
       return result.meta.changes > 0 ? { ok: true } : failureOf(id);
     },

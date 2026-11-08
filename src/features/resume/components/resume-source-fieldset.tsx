@@ -2,15 +2,26 @@ import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import type { ResumeRowKind, ResumeSources } from '@/features/resume/domain/resume';
 import { CheckboxField } from '@/shared/components/field';
 import type { Period } from '@/shared/domain/period';
+import { SITE_STATUS_LABELS, type SiteStatus } from '@/shared/domain/site-status';
 
 /**
  * 写し元の職歴・実績・学歴を選ぶチェックボックス。作成の画面（`/dash/resumes/new`）と、作ったあとに
  * 足す画面（`/dash/resumes/{uid}/<種類>/new`、FR-041）が使う（specs/002-resume/contracts/dash.md）
  */
 
-export type SourceOption = { id: number; label: string; detail: string };
+export type SourceOption = {
+  id: number;
+  label: string;
+  detail: string;
+  /** サイトに載せるか。公開用の作成の画面は、載せないものを選択肢から外す（FR-005）。学歴は常に true */
+  isOnSite: boolean;
+};
 
 const periodText = (period: Period) => `${period.startedOn} 〜 ${period.endedOn ?? ''}`;
+
+/** サイトに載せないものは、選択肢の説明にそう添える */
+const siteDetail = (detail: string, status: SiteStatus) =>
+  status === 'published' ? detail : `${detail}・${SITE_STATUS_LABELS.draft}`;
 
 /**
  * 写し元を選択肢にする。名前と期間だけを持ち、本文や関連 URL をクライアントの部品に渡さない。
@@ -20,17 +31,20 @@ export const toSourceOptions = (sources: ResumeSources): Record<ResumeRowKind, S
   careers: sources.careers.map((c) => ({
     id: c.id,
     label: `${c.organizationName}・${c.role}`,
-    detail: periodText(c.period),
+    detail: siteDetail(periodText(c.period), c.status),
+    isOnSite: c.status === 'published',
   })),
   projects: sources.projects.map((p) => ({
     id: p.id,
     label: p.title,
-    detail: `${p.organizationName}・${periodText(p.period)}`,
+    detail: siteDetail(`${p.organizationName}・${periodText(p.period)}`, p.status),
+    isOnSite: p.status === 'published',
   })),
   educations: sources.educations.map((e) => ({
     id: e.id,
     label: e.school,
     detail: periodText(e.period),
+    isOnSite: true,
   })),
 });
 
@@ -39,6 +53,8 @@ export const SELECTION_MESSAGES = {
   invalid: '選んだ項目を読めませんでした。開き直してください',
   'source-missing':
     '選んだ職歴・実績・学歴のうち、開いた後に消えたものがあります。開き直してください',
+  'masked-name-missing':
+    '秘匿化した職歴・実績のうち、組織に秘匿化した組織名が無いものがあります。組織の画面で秘匿化した組織名を入力してください',
   'too-many': `一度に写せるのは、職歴・実績・学歴と実績のスキルを合わせて ${MAX_COPIED_ROWS} 行までです。選ぶものを減らしてください`,
 } as const;
 
