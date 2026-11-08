@@ -63,6 +63,8 @@ export const editProject = async (
   const result = await projects.edit(id, { ...content, slug: slug.slug }, times);
   if (result.ok) return { status: 'saved' };
   switch (result.reason) {
+    case 'not-found':
+      return { status: 'not-found' };
     case 'conflict':
       return { status: 'conflict', values };
     case 'slug-taken':

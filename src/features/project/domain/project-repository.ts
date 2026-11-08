@@ -42,13 +42,13 @@ export type ProjectRepository = {
   >;
   /**
    * 開いたときの更新日時 `openedUpdatedAt` と今の更新日時が一致するときだけ書く
-   * （research.md の R7）。`now` は新しい更新日時
+   * （research.md の R7）。`now` は新しい更新日時。開いた後に消されていたら `not-found`
    */
   edit: (
     id: ProjectId,
     content: ProjectContent & { slug: string },
     times: { openedUpdatedAt: string; now: string },
-  ) => Promise<{ ok: true } | { ok: false; reason: ProjectWriteFailure }>;
+  ) => Promise<{ ok: true } | { ok: false; reason: ProjectWriteFailure | 'not-found' }>;
   /** 物理削除する（research.md の R8）。無い id なら `ok: false` */
   delete: (id: ProjectId) => Promise<{ ok: boolean }>;
   /** 識別子の実績があるか。`findVisitorBySlug` が null を返さない識別子と一致する */

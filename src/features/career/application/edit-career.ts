@@ -45,6 +45,7 @@ export const editCareer = async (
   }
   const result = await careers.edit(id, content, times);
   if (result.ok) return { status: 'saved' };
+  if (result.reason === 'not-found') return { status: 'not-found' };
   return result.reason === 'conflict'
     ? { status: 'conflict', values }
     : { status: 'invalid', errors: { organizationNameMasked: 'masked-name-required' }, values };

@@ -114,15 +114,37 @@ const MASKING_ALLOWED =
 const VISITOR_VISIBLE =
   "(p.status = 'published' AND (p.is_masked = 0 OR o.name_masked IS NOT NULL))";
 
+/**
+ * 編集の UPDATE が当たるときだけ真になる条件。組織を探して作る文に渡し、拒まれる編集では組織も
+ * 書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）。秘匿化した組織名を渡す編集は、組織を探して
+ * 作る文がその組織名を入れるため、`MASKING_ALLOWED` を満たす
+ */
+const editGuard = (id: number, openedUpdatedAt: string, content: ProjectContent) => ({
+  sql: `(EXISTS (SELECT 1 FROM project WHERE id = ? AND updated_at = ?)
+    AND (? = 0 OR ? IS NOT NULL
+      OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL)))`,
+  values: [
+    id,
+    openedUpdatedAt,
+    content.isMasked ? 1 : 0,
+    content.organizationNameMasked,
+    content.organizationName,
+  ],
+});
+
 const isSlugTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: project.slug');
 
 export const createD1ProjectRepository = (db: D1Database): ProjectRepository => {
-  const organizationStatements = (content: ProjectContent) =>
+  const organizationStatements = (
+    content: ProjectContent,
+    guard?: Parameters<typeof findOrCreateOrganizationStatements>[3],
+  ) =>
     findOrCreateOrganizationStatements(
       db,
       content.organizationName,
       content.organizationNameMasked,
+      guard,
     );
 
   const contentValues = (content: ProjectContent & { slug: string }) => [
@@ -336,7 +358,10 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
             .bind(id, now, skillId),
         ),
       ];
-      const statements = [...organizationStatements(content), update];
+      const statements = [
+        ...organizationStatements(content, editGuard(id, openedUpdatedAt, content)),
+        update,
+      ];
       let changes: number;
       try {
         const results = await db.batch([...statements, ...relinkSkills]);
@@ -347,12 +372,14 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       }
       if (changes > 0) return { ok: true };
 
-      // 当たらなかった理由を見分ける。更新日時が違えば、先に書き換えられていた
+      // 当たらなかった理由を見分ける。行が無ければ消されていた。更新日時が違えば、先に
+      // 書き換えられていた
       const current = await db
         .prepare('SELECT updated_at FROM project WHERE id = ?')
         .bind(id)
         .first<{ updated_at: string }>();
-      return current?.updated_at === openedUpdatedAt
+      if (!current) return { ok: false, reason: 'not-found' };
+      return current.updated_at === openedUpdatedAt
         ? { ok: false, reason: 'masked-name-required' }
         : { ok: false, reason: 'conflict' };
     },

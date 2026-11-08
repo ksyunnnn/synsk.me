@@ -157,6 +157,11 @@ describe('editProject', () => {
     expect(projects.edit).not.toHaveBeenCalled();
   });
 
+  it('読んだ後に書く前に消されていたら not-found を返す', async () => {
+    projects.edit.mockResolvedValue({ ok: false, reason: 'not-found' } as never);
+    expect(await editProject(deps, OWNER, 1, values(), times)).toEqual({ status: 'not-found' });
+  });
+
   it('先に書き換えられていたら、送られた値を残して知らせる（FR-042）', async () => {
     projects.edit.mockResolvedValue({ ok: false, reason: 'conflict' } as never);
     const sent = values({ title: '手元で直した題' });
