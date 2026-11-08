@@ -16,3 +16,9 @@ ACCESS_OWNER_EMAIL=<owner@example.com>
 # 職務経歴書のプロフィールに出すメールアドレス（specs/002-resume/research.md の R10）。
 # 空か無ければ、職務経歴書にメールアドレスを出さない
 RESUME_EMAIL=<resume@example.com>
+
+# 外部の activity の取得に使う認証情報（specs/004-external-activity/research.md の R3）。
+# GitHub と Qiita は無くても取れる（1 時間に 60 回まで）。connpass は無ければ取らない
+GITHUB_TOKEN=<github-token>
+QIITA_ACCESS_TOKEN=<qiita-token>
+CONNPASS_API_KEY=<connpass-api-key>

@@ -38,6 +38,9 @@
   // vinext の CDN キャッシュ（vite.config.ts の cdnAdapter）が使う Workers Cache
   "cache": { "enabled": true },
   "version_metadata": { "binding": "CF_VERSION_METADATA" },
+  // 外部の activity の取得。1 時間に 1 回、1 つの取得元だけを取る（UTC で動く。
+  // specs/004-external-activity/research.md の R6）。止めるときは [] にする。消しても止まらない
+  "triggers": { "crons": ["0 * * * *"] },
   // ブランチごとの Preview の設定。トップレベルの値は引き継がれないため、
   // バインディングを並べ直す。データはプレビュー用の資源に分け、本番に触れない。
   // D1 のマイグレーションは wrangler.preview-migrations.jsonc から当てる
