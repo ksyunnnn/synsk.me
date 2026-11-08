@@ -48,24 +48,36 @@ const toOrganization = (row: OrganizationRow): Organization => ({
  * 組織名で探し、無ければ作る文。既にある組織が秘匿化した組織名を持たなければ `nameMasked`
  * を入れる。組織名の UNIQUE（FR-003）に当たれば作らない。職歴・実績の保存が、同じ
  * `batch()` の中で組織を指す行を書く前に並べる。後の文は組織を
- * `(SELECT id FROM organization WHERE name = ?)` で指す
+ * `(SELECT id FROM organization WHERE name = ?)` で指す。
+ *
+ * `guard` を渡すと、その条件が真のときだけ書く。後の文が条件つきで拒まれうる保存は、拒まれる
+ * ときに組織も書かないよう、後の文が当たる条件を渡す（docs/SOFTWARE_DESIGN.md の設計原則 1）。
+ * `batch()` は 1 つのトランザクションのため、条件は後の文と同じ状態を読む
+ * （https://developers.cloudflare.com/d1/worker-api/d1-database/#batch）
  */
 export const findOrCreateOrganizationStatements = (
   db: D1Database,
   name: string,
   nameMasked: string | null,
+  guard: { sql: string; values: unknown[] } = { sql: '1', values: [] },
 ): D1PreparedStatement[] => [
+  // INSERT ... SELECT に ON CONFLICT を付けるときは、SELECT に WHERE が要る
+  // （https://www.sqlite.org/lang_upsert.html の「Parsing Ambiguity」）
   db
     .prepare(
-      'INSERT INTO organization (name, name_masked) VALUES (?, ?) ON CONFLICT (name) DO NOTHING',
+      `INSERT INTO organization (name, name_masked) SELECT ?, ? WHERE ${guard.sql}
+       ON CONFLICT (name) DO NOTHING`,
     )
-    .bind(name, nameMasked),
+    .bind(name, nameMasked, ...guard.values),
   ...(nameMasked === null
     ? []
     : [
         db
-          .prepare('UPDATE organization SET name_masked = ? WHERE name = ? AND name_masked IS NULL')
-          .bind(nameMasked, name),
+          .prepare(
+            `UPDATE organization SET name_masked = ?
+             WHERE name = ? AND name_masked IS NULL AND ${guard.sql}`,
+          )
+          .bind(nameMasked, name, ...guard.values),
       ]),
 ];
 

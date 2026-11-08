@@ -55,12 +55,34 @@ const ORGANIZATION_ID_BY_NAME = '(SELECT id FROM organization WHERE name = ?)';
 const MASKING_ALLOWED =
   '(? = 0 OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))';
 
+/**
+ * 編集の UPDATE が当たるときだけ真になる条件。組織を探して作る文に渡し、拒まれる編集では組織も
+ * 書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）。秘匿化した組織名を渡す編集は、組織を探して
+ * 作る文がその組織名を入れるため、`MASKING_ALLOWED` を満たす
+ */
+const editGuard = (id: number, openedUpdatedAt: string, content: CareerContent) => ({
+  sql: `(EXISTS (SELECT 1 FROM career WHERE id = ? AND updated_at = ?)
+    AND (? = 0 OR ? IS NOT NULL
+      OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL)))`,
+  values: [
+    id,
+    openedUpdatedAt,
+    content.isMasked ? 1 : 0,
+    content.organizationNameMasked,
+    content.organizationName,
+  ],
+});
+
 export const createD1CareerRepository = (db: D1Database): CareerRepository => {
-  const organizationStatements = (content: CareerContent) =>
+  const organizationStatements = (
+    content: CareerContent,
+    guard?: Parameters<typeof findOrCreateOrganizationStatements>[3],
+  ) =>
     findOrCreateOrganizationStatements(
       db,
       content.organizationName,
       content.organizationNameMasked,
+      guard,
     );
 
   const contentValues = (content: CareerContent) => [
@@ -154,15 +176,20 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
           openedUpdatedAt,
           ...maskingValues(content),
         );
-      const results = await db.batch([...organizationStatements(content), update]);
+      const results = await db.batch([
+        ...organizationStatements(content, editGuard(id, openedUpdatedAt, content)),
+        update,
+      ]);
       if ((results.at(-1)?.meta.changes ?? 0) > 0) return { ok: true };
 
-      // 当たらなかった理由を見分ける。更新日時が違えば、先に書き換えられていた
+      // 当たらなかった理由を見分ける。行が無ければ消されていた。更新日時が違えば、先に
+      // 書き換えられていた
       const current = await db
         .prepare('SELECT updated_at FROM career WHERE id = ?')
         .bind(id)
         .first<{ updated_at: string }>();
-      return current?.updated_at === openedUpdatedAt
+      if (!current) return { ok: false, reason: 'not-found' };
+      return current.updated_at === openedUpdatedAt
         ? { ok: false, reason: 'masked-name-required' }
         : { ok: false, reason: 'conflict' };
     },

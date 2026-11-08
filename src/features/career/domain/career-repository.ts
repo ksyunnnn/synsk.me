@@ -21,12 +21,17 @@ export type CareerRepository = {
   ) => Promise<
     { ok: true; id: CareerId; uid: Uid } | { ok: false; reason: 'masked-name-required' }
   >;
-  /** 開いたときの更新日時と今の更新日時が一致するときだけ書く（research.md の R7） */
+  /**
+   * 開いたときの更新日時と今の更新日時が一致するときだけ書く（research.md の R7）。
+   * 開いた後に消されていたら `not-found`
+   */
   edit: (
     id: CareerId,
     content: CareerContent,
     times: { openedUpdatedAt: string; now: string },
-  ) => Promise<{ ok: true } | { ok: false; reason: 'masked-name-required' | 'conflict' }>;
+  ) => Promise<
+    { ok: true } | { ok: false; reason: 'masked-name-required' | 'conflict' | 'not-found' }
+  >;
   /** 物理削除する（research.md の R8） */
   delete: (id: CareerId) => Promise<{ ok: boolean }>;
   hasId: (id: CareerId) => Promise<boolean>;

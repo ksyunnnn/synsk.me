@@ -185,6 +185,67 @@ describe('edit', () => {
   });
 });
 
+describe('拒まれた編集はどの表にも書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）', () => {
+  const readOrganization = (name: string) =>
+    env.DB.prepare('SELECT name, name_masked FROM organization WHERE name = ?').bind(name).first();
+
+  it('先に書き換えられていたら、新しい組織を作らない', async () => {
+    const id = await register();
+    await setUpdatedAt(id, '2026-11-02T00:00:00.000Z');
+    expect(
+      await projects.edit(
+        id,
+        content({ organizationName: '新しい組織', organizationNameMasked: '新しい秘匿名' }),
+        { openedUpdatedAt: OPENED_AT, now: NOW },
+      ),
+    ).toEqual({ ok: false, reason: 'conflict' });
+    expect(await readOrganization('新しい組織')).toBeNull();
+  });
+
+  it('先に書き換えられていたら、既にある組織に秘匿化した組織名を入れない', async () => {
+    const id = await register();
+    await setUpdatedAt(id, '2026-11-02T00:00:00.000Z');
+    await insertOrganization(env.DB, { name: '名前の無い組織', nameMasked: null });
+    expect(
+      await projects.edit(
+        id,
+        content({ organizationName: '名前の無い組織', organizationNameMasked: '新しい秘匿名' }),
+        { openedUpdatedAt: OPENED_AT, now: NOW },
+      ),
+    ).toEqual({ ok: false, reason: 'conflict' });
+    expect(await readOrganization('名前の無い組織')).toEqual({
+      name: '名前の無い組織',
+      name_masked: null,
+    });
+  });
+
+  it('秘匿化した組織名が要るとして拒んだら、新しい組織を作らない（FR-001）', async () => {
+    const id = await register();
+    await setUpdatedAt(id, OPENED_AT);
+    expect(
+      await projects.edit(
+        id,
+        content({ organizationName: '新しい組織', organizationNameMasked: null }),
+        { openedUpdatedAt: OPENED_AT, now: NOW },
+      ),
+    ).toEqual({ ok: false, reason: 'masked-name-required' });
+    expect(await readOrganization('新しい組織')).toBeNull();
+  });
+
+  it('開いた後に消されていたら not-found を返し、組織を作らない', async () => {
+    const id = await register();
+    await projects.delete(id);
+    expect(
+      await projects.edit(
+        id,
+        content({ organizationName: '新しい組織', organizationNameMasked: '新しい秘匿名' }),
+        { openedUpdatedAt: OPENED_AT, now: NOW },
+      ),
+    ).toEqual({ ok: false, reason: 'not-found' });
+    expect(await readOrganization('新しい組織')).toBeNull();
+  });
+});
+
 describe('delete', () => {
   it('写した職務経歴書の行を残し、指す id を空にしてから消す（R8）', async () => {
     const id = await register();
