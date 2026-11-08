@@ -4,7 +4,13 @@ import type { Career, CareerContent } from '@/features/career/domain/career';
 import type { CareerRepository } from '@/features/career/domain/career-repository';
 import type { CalendarDate } from '@/shared/domain/period';
 import type { SiteStatus } from '@/shared/domain/site-status';
-import { findOrCreateOrganizationStatements } from '@/shared/server/organization-repository';
+import {
+  MASKING_ALLOWED,
+  ORGANIZATION_ID_BY_NAME,
+  editGuard,
+  findOrCreateOrganizationStatements,
+  registerGuard,
+} from '@/shared/server/organization-repository';
 
 /**
  * `CareerRepository` の D1 の実装。行の型はこのファイルの中だけに置く（research.md の R3）。
@@ -48,35 +54,6 @@ const toCareer = (row: CareerRow): Career => ({
   url: row.url,
   updatedAt: row.updated_at,
 });
-
-const ORGANIZATION_ID_BY_NAME = '(SELECT id FROM organization WHERE name = ?)';
-
-/** 秘匿化する職歴が、秘匿化した組織名を持つ組織を指すときだけ真になる条件（FR-001） */
-const MASKING_ALLOWED =
-  '(? = 0 OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))';
-
-/**
- * 登録の INSERT が当たるときだけ真になる条件。組織を探して作る文に渡し、拒まれる登録では組織も
- * 書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）。秘匿化した組織名を渡す保存は、組織を探して
- * 作る文がその組織名を入れるため、`MASKING_ALLOWED` を満たす
- */
-const registerGuard = (content: CareerContent) => ({
-  sql: `(? = 0 OR ? IS NOT NULL
-    OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))`,
-  values: [content.isMasked ? 1 : 0, content.organizationNameMasked, content.organizationName],
-});
-
-/**
- * 編集の UPDATE が当たるときだけ真になる条件。行があり、更新日時が開いたときと同じで、
- * `registerGuard` を満たす
- */
-const editGuard = (id: number, openedUpdatedAt: string, content: CareerContent) => {
-  const masking = registerGuard(content);
-  return {
-    sql: `(EXISTS (SELECT 1 FROM career WHERE id = ? AND updated_at = ?) AND ${masking.sql})`,
-    values: [id, openedUpdatedAt, ...masking.values],
-  };
-};
 
 export const createD1CareerRepository = (db: D1Database): CareerRepository => {
   const organizationStatements = (
@@ -182,7 +159,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
           ...maskingValues(content),
         );
       const results = await db.batch([
-        ...organizationStatements(content, editGuard(id, openedUpdatedAt, content)),
+        ...organizationStatements(content, editGuard('career', id, openedUpdatedAt, content)),
         update,
       ]);
       if ((results.at(-1)?.meta.changes ?? 0) > 0) return { ok: true };

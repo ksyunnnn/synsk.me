@@ -81,6 +81,51 @@ export const findOrCreateOrganizationStatements = (
       ]),
 ];
 
+/** 職歴・実績の保存のうち、組織を指す部分の内容 */
+type OrganizationOfContent = {
+  organizationName: string;
+  organizationNameMasked: string | null;
+  isMasked: boolean;
+};
+
+/** 組織名から組織の id を読む部分。組織の行は同じ batch の先の文が作る */
+export const ORGANIZATION_ID_BY_NAME = '(SELECT id FROM organization WHERE name = ?)';
+
+/**
+ * 秘匿化する職歴・実績が、秘匿化した組織名を持つ組織を指すときだけ真になる条件（FR-001）。
+ * 秘匿化しない職歴・実績では常に真。束ねる値は、秘匿化するか（0 か 1）と組織名
+ */
+export const MASKING_ALLOWED =
+  '(? = 0 OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))';
+
+/**
+ * 登録の INSERT が当たるときだけ真になる条件。組織を探して作る文に渡し、拒まれる登録では組織も
+ * 書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）。秘匿化した組織名を渡す保存は、組織を探して
+ * 作る文がその組織名を入れるため、`MASKING_ALLOWED` を満たす
+ */
+export const registerGuard = (content: OrganizationOfContent) => ({
+  sql: `(? = 0 OR ? IS NOT NULL
+    OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))`,
+  values: [content.isMasked ? 1 : 0, content.organizationNameMasked, content.organizationName],
+});
+
+/**
+ * 編集の UPDATE が当たるときだけ真になる条件。`table` の行があり、更新日時が開いたときと同じで、
+ * `registerGuard` を満たす
+ */
+export const editGuard = (
+  table: 'career' | 'project',
+  id: number,
+  openedUpdatedAt: string,
+  content: OrganizationOfContent,
+) => {
+  const masking = registerGuard(content);
+  return {
+    sql: `(EXISTS (SELECT 1 FROM ${table} WHERE id = ? AND updated_at = ?) AND ${masking.sql})`,
+    values: [id, openedUpdatedAt, ...masking.values],
+  };
+};
+
 export const createD1OrganizationRepository = (db: D1Database): OrganizationRepository => ({
   listNames: async () => {
     const { results } = await db
