@@ -32,6 +32,16 @@ const collectOverrides = (sources: ResumeSources['projects']): ResumeSkillOverri
   return [...byName].map(([skillName, months]) => ({ skillName, months }));
 };
 
+/**
+ * 選んだ写し元がすべて読めたか。開いた後に消えた行があれば false。作るときと足すときに、
+ * 写す前に確かめる（FR-007・FR-041）
+ */
+export const hasAllSources = (sources: ResumeSources, selection: ResumeSelection): boolean =>
+  sources.careers.length === new Set(selection.careerIds).size &&
+  sources.projects.length === new Set(selection.projectIds).size &&
+  sources.educations.length === new Set(selection.educationIds).size;
+
+/** 作るときと、作ったあとに足すとき（FR-041）に、同じ写し方で写す行を返す */
 export const buildResumeContent = (
   sources: ResumeSources,
   selection: ResumeSelection,

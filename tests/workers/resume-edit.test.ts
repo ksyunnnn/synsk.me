@@ -1,6 +1,10 @@
 import { env, applyD1Migrations } from 'cloudflare:test';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import type { ResumeCareerContent, ResumeProjectContent } from '@/features/resume/domain/resume';
+import type {
+  NewResumeContent,
+  ResumeCareerContent,
+  ResumeProjectContent,
+} from '@/features/resume/domain/resume';
 import { createD1ResumeRepository } from '@/features/resume/server/d1-resume-repository';
 import type { CalendarDate } from '@/shared/domain/period';
 import {
@@ -224,6 +228,105 @@ describe('楽観ロック（FR-038、research.md の R8）', () => {
   it('保存すると更新日時が新しい値になる', async () => {
     await resumes.changeStatus(target.id, 'published', await times(target.id));
     expect(await updatedAtOf(target.id)).toBe(NOW);
+  });
+});
+
+describe('作ったあとに足す（FR-041、research.md の R14）', () => {
+  const added = (): NewResumeContent => ({
+    careers: [
+      {
+        careerId: sourceCareerId,
+        organizationName: '足した作り物の組織名',
+        role: '足した作り物の肩書',
+        period: { startedOn: '2024-04-01' as CalendarDate, endedOn: null },
+        description: '足した本文',
+        url: null,
+        isMasked: false,
+      },
+    ],
+    projects: [
+      {
+        projectId: null,
+        organizationName: '足した作り物株式会社',
+        kind: 'talk',
+        title: '足した題',
+        period: { startedOn: '2022-04-01' as CalendarDate, endedOn: null },
+        description: null,
+        url: null,
+        isMasked: true,
+        skills: ['TypeScript', 'Go'],
+      },
+    ],
+    educations: [
+      {
+        educationId: null,
+        school: '足した作り物大学',
+        department: null,
+        period: { startedOn: '2010-04-01' as CalendarDate, endedOn: null },
+        remarks: null,
+      },
+    ],
+    skillOverrides: [
+      { skillName: 'TypeScript', months: 99 },
+      { skillName: 'Go', months: 12 },
+    ],
+  });
+
+  it('写した行を足し、既にある行は変えない。更新日時が新しい値になる', async () => {
+    expect(await resumes.addRows(target.id, added(), await times(target.id))).toEqual({ ok: true });
+    expect(await updatedAtOf(target.id)).toBe(NOW);
+    const content = await resumes.readContent(target.id);
+    expect(content.careers.map((c) => c.organizationName)).toEqual([
+      '足した作り物の組織名',
+      '元の作り物の組織名',
+    ]);
+    expect(content.careers[0]).toMatchObject({
+      careerId: sourceCareerId,
+      description: '足した本文',
+      isMasked: false,
+    });
+    expect(content.projects.map((p) => [p.title, p.skills])).toEqual([
+      ['新しい題', []],
+      ['足した題', ['TypeScript', 'Go']],
+      ['古い題', ['TypeScript']],
+    ]);
+    expect(content.educations.map((e) => e.school)).toEqual([
+      '写した作り物大学',
+      '足した作り物大学',
+    ]);
+    expect((await resumes.readContent(other.id)).projects).toEqual([]);
+  });
+
+  it('写した経験年数の上書きは、同じ名前の上書きが無いものだけを足す', async () => {
+    await resumes.addRows(target.id, added(), await times(target.id));
+    expect((await resumes.readContent(target.id)).skillOverrides).toEqual([
+      { skillName: 'Go', months: 12 },
+      { skillName: 'TypeScript', months: 30 },
+    ]);
+  });
+
+  it('開いたときの更新日時が違えば、何も足さない（FR-038）', async () => {
+    const before = await resumes.readContent(target.id);
+    expect(
+      await resumes.addRows(target.id, added(), {
+        openedUpdatedAt: '2000-01-01T00:00:00.000Z',
+        now: NOW,
+      }),
+    ).toEqual({ ok: false, reason: 'conflict' });
+    expect(await resumes.readContent(target.id)).toEqual(before);
+  });
+
+  it('無い職務経歴書は not-found で、何も足さない', async () => {
+    const count = async () =>
+      (await env.DB.prepare('SELECT count(*) AS n FROM resume_career').first<{ n: number }>())!.n;
+    const before = await count();
+    expect(
+      await resumes.addRows(999999, added(), {
+        openedUpdatedAt: '2000-01-01T00:00:00.000Z',
+        now: NOW,
+      }),
+    ).toEqual({ ok: false, reason: 'not-found' });
+    expect(await count()).toBe(before);
   });
 });
 

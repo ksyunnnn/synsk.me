@@ -12,7 +12,12 @@ import {
   useResumeStatus,
 } from '@/features/resume/components/resume-status-form';
 import type { ResumeAudience, ResumeStatus } from '@/features/resume/domain/resume';
-import { CheckboxField, InputField } from '@/shared/components/field';
+import {
+  SELECTION_MESSAGES,
+  SourceFieldset,
+  type SourceOption,
+} from '@/features/resume/components/resume-source-fieldset';
+import { InputField } from '@/shared/components/field';
 import { TextLink } from '@/shared/components/text-link';
 
 /**
@@ -24,8 +29,6 @@ import { TextLink } from '@/shared/components/text-link';
  * 作れたら、限定公開用の URL をこの画面に示す。設定の画面も同じ URL を示す（FR-040）。作った
  * 職務経歴書は下書きで、下書きの間は URL が 404 になるため、URL の隣に状態の切り替えを置く
  */
-
-export type SourceOption = { id: number; label: string; detail: string };
 
 type Props = {
   action: (
@@ -46,48 +49,13 @@ const ERROR_MESSAGES: Record<CreateResumeField, Partial<Record<CreateResumeError
     'public-not-supported': '公開用はまだ作れません',
   },
   expires: { invalid: '期限を日付と時刻で入力してください' },
-  selection: {
-    invalid: '選んだ項目を読めませんでした。開き直してください',
-    'source-missing':
-      '選んだ職歴・実績・学歴のうち、開いた後に消えたものがあります。開き直してください',
-  },
+  selection: SELECTION_MESSAGES,
 };
 
 const RESULT_MESSAGES = {
   forbidden: '作り手であることを確かめられませんでした。ログインし直してから入力し直してください',
   invalid: '入力を確かめてください',
 } as const;
-
-const SourceFieldset = ({
-  legend,
-  name,
-  options,
-  selected,
-}: {
-  legend: string;
-  name: string;
-  options: SourceOption[];
-  /** 送り直した値。無ければすべて選ぶ */
-  selected: string[] | null;
-}) => (
-  <fieldset className="flex flex-col gap-2">
-    <legend className="font-bold">{legend}</legend>
-    {options.length === 0 ? (
-      <p className="text-sm text-muted-foreground">登録したものはありません</p>
-    ) : (
-      options.map((option) => (
-        <CheckboxField
-          key={option.id}
-          name={name}
-          value={option.id}
-          label={option.label}
-          hint={option.detail}
-          defaultChecked={selected === null || selected.includes(String(option.id))}
-        />
-      ))
-    )}
-  </fieldset>
-);
 
 const AUDIENCE_LABELS: Record<ResumeAudience, string> = {
   limited: '限定公開用',

@@ -89,6 +89,18 @@ export type CreateResumeFormResult =
       values: CreateResumeFormValues;
     };
 
+/* 作ったあとに足す（contracts/dash.md の `addResumeRows`、FR-041）。選んだ id は種類ごとに
+ * `SELECTION_FIELDS` の名前で送る */
+
+/** 足す写した行の種類（careers・projects・educations） */
+export const ROW_KIND_FIELD = 'rowKind';
+
+export type AddResumeRowsError =
+  'missing' | 'invalid' | 'source-missing' | 'already-copied' | 'public-not-supported';
+
+/** 足すときの誤り。選択の 1 つの項目だけを持つ */
+export type AddResumeRowsErrors = { selection?: AddResumeRowsError };
+
 /** 設定（題と期限）の入力の名前 */
 export const RESUME_SETTINGS_FIELDS = ['title', 'expires'] as const;
 export type ResumeSettingsField = (typeof RESUME_SETTINGS_FIELDS)[number];

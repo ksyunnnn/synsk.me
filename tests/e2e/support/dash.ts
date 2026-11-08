@@ -222,6 +222,42 @@ export const createLimitedResume = async (
 };
 
 /**
+ * 職歴・実績・学歴を 1 件も選ばずに限定公開用の職務経歴書を作り、設定の画面へ移る。設定の画面の
+ * URL を返す
+ */
+export const createEmptyLimitedResume = async (page: Page, title: string) => {
+  await page.goto('/dash/resumes/new');
+  await textbox(page, '題').fill(title);
+  const all = page.getByRole('checkbox');
+  const count = await all.count();
+  for (let i = 0; i < count; i += 1) await all.nth(i).uncheck();
+  await page.getByRole('button', { name: '作る' }).click();
+  await expect(page.getByRole('status')).toHaveText(
+    '限定公開用の職務経歴書を作りました。非公開です',
+  );
+  await page.getByRole('link', { name: '設定の画面へ' }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(title);
+  return page.url().replace(/\?.*$/, '');
+};
+
+/**
+ * 設定の画面から、作ったあとに職歴・実績・学歴を足す（FR-041）。`kind` は見出しの名前、
+ * `option` は足す画面のチェックボックスの名前（職歴は「組織名・肩書」、実績は題、学歴は学校）。
+ * 足した後は設定の画面に戻る
+ */
+export const addResumeRow = async (
+  page: Page,
+  kind: '職歴' | '実績' | '学歴',
+  option: string | RegExp,
+) => {
+  await page.getByRole('link', { name: `${kind}を足す` }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${kind}を足す`);
+  await page.getByRole('checkbox', { name: option }).check();
+  await submitAndWait(page, '足す');
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+};
+
+/**
  * 設定の画面か作成の画面で、公開と非公開を切り替える。作成の画面から移ると、
  * 作成の画面の状態の表示が隠れて DOM に残るため、見えているものだけを調べる
  */

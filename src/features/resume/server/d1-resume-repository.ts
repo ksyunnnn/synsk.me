@@ -3,6 +3,7 @@ import 'server-only';
 import {
   isResumeProjectKind,
   type EditTimes,
+  type NewResumeContent,
   type Resume,
   type ResumeCareer,
   type ResumeContent,
@@ -172,6 +173,12 @@ const RESUME_ID_BY_SLUG = '(SELECT id FROM resume WHERE slug = ?)';
  */
 const LOCKED = 'EXISTS (SELECT 1 FROM resume WHERE id = ? AND updated_at = ?)';
 
+/** SQL の一部と、その `?` に当てる値 */
+type SqlPart = { sql: string; binds: unknown[] };
+
+/** 条件を付けない文の条件。`INSERT … SELECT … ON CONFLICT` は WHERE を要する（SQLite の UPSERT の parsing ambiguity） */
+const ALWAYS: SqlPart = { sql: 'true', binds: [] };
+
 export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
   /**
    * 楽観ロックの先頭の文。開いたときの更新日時と一致し、`rowExists` があればその行もあるときだけ、
@@ -222,6 +229,100 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
   ): Promise<EditResult> => {
     const results = await db.batch([lockStatement(id, times, row), ...statements]);
     return (results[0]?.meta.changes ?? 0) > 0 ? { ok: true } : failureOf(id, row);
+  };
+
+  /**
+   * 写した中身を入れる文（research.md の R4・R14）。作るときと足すときが使う。`resumeId` は
+   * 職務経歴書の id を指す SQL とその値、`guard` は各文に付ける条件とその値。
+   * 1 つのトランザクションの中で順に入れるため、直前に入れた写した実績が、その職務経歴書の
+   * 写した実績のうち id が最も大きい行になる（AUTOINCREMENT は id を戻さない）。
+   * 写した経験年数の上書きは、同じ名前の上書きが既にあれば入れない（足すとき、R14）
+   */
+  const contentStatements = (
+    content: NewResumeContent,
+    resumeId: SqlPart,
+    guard: SqlPart,
+  ): D1PreparedStatement[] => {
+    const insert = (sql: string, values: unknown[]) =>
+      db.prepare(sql).bind(...resumeId.binds, ...values, ...guard.binds);
+    const statements: D1PreparedStatement[] = [];
+    for (const career of content.careers) {
+      statements.push(
+        insert(
+          `INSERT INTO resume_career (resume_id, career_id, organization_name, role,
+             started_on, ended_on, description, url, is_masked)
+           SELECT ${resumeId.sql}, ?, ?, ?, ?, ?, ?, ?, ? WHERE ${guard.sql}`,
+          [
+            career.careerId,
+            career.organizationName,
+            career.role,
+            career.period.startedOn,
+            career.period.endedOn,
+            career.description,
+            career.url,
+            career.isMasked ? 1 : 0,
+          ],
+        ),
+      );
+    }
+    for (const project of content.projects) {
+      statements.push(
+        insert(
+          `INSERT INTO resume_project (resume_id, project_id, organization_name, kind, title,
+             started_on, ended_on, description, url, is_masked)
+           SELECT ${resumeId.sql}, ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE ${guard.sql}`,
+          [
+            project.projectId,
+            project.organizationName,
+            project.kind,
+            project.title,
+            project.period.startedOn,
+            project.period.endedOn,
+            project.description,
+            project.url,
+            project.isMasked ? 1 : 0,
+          ],
+        ),
+      );
+      for (const skill of new Set(project.skills)) {
+        statements.push(
+          insert(
+            `INSERT INTO resume_project_skill (resume_project_id, skill_name)
+             SELECT (SELECT max(id) FROM resume_project WHERE resume_id = ${resumeId.sql}), ?
+             WHERE ${guard.sql}`,
+            [skill],
+          ),
+        );
+      }
+    }
+    for (const education of content.educations) {
+      statements.push(
+        insert(
+          `INSERT INTO resume_education (resume_id, education_id, school, department,
+             started_on, ended_on, remarks)
+           SELECT ${resumeId.sql}, ?, ?, ?, ?, ?, ? WHERE ${guard.sql}`,
+          [
+            education.educationId,
+            education.school,
+            education.department,
+            education.period.startedOn,
+            education.period.endedOn,
+            education.remarks,
+          ],
+        ),
+      );
+    }
+    for (const override of content.skillOverrides) {
+      statements.push(
+        insert(
+          `INSERT INTO resume_skill_override (resume_id, skill_name, months_override)
+           SELECT ${resumeId.sql}, ?, ? WHERE ${guard.sql}
+           ON CONFLICT (resume_id, skill_name) DO NOTHING`,
+          [override.skillName, override.months],
+        ),
+      );
+    }
+    return statements;
   };
 
   const readContent = async (id: number): Promise<ResumeContent> => {
@@ -366,104 +467,31 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
     },
 
     create: async ({ slug, title, audience, limitedExpiresAt, content }) => {
-      const statements: D1PreparedStatement[] = [
+      const results = await db.batch<{ id: number; updated_at: string }>([
         db
           .prepare(
             `INSERT INTO resume (slug, title, audience, limited_expires_at)
              VALUES (?, ?, ?, ?)`,
           )
           .bind(slug, title, audience, limitedExpiresAt),
-      ];
-      for (const career of content.careers) {
-        statements.push(
-          db
-            .prepare(
-              `INSERT INTO resume_career (resume_id, career_id, organization_name, role,
-                 started_on, ended_on, description, url, is_masked)
-               VALUES (${RESUME_ID_BY_SLUG}, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            )
-            .bind(
-              slug,
-              career.careerId,
-              career.organizationName,
-              career.role,
-              career.period.startedOn,
-              career.period.endedOn,
-              career.description,
-              career.url,
-              career.isMasked ? 1 : 0,
-            ),
-        );
-      }
-      for (const project of content.projects) {
-        statements.push(
-          db
-            .prepare(
-              `INSERT INTO resume_project (resume_id, project_id, organization_name, kind, title,
-                 started_on, ended_on, description, url, is_masked)
-               VALUES (${RESUME_ID_BY_SLUG}, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            )
-            .bind(
-              slug,
-              project.projectId,
-              project.organizationName,
-              project.kind,
-              project.title,
-              project.period.startedOn,
-              project.period.endedOn,
-              project.description,
-              project.url,
-              project.isMasked ? 1 : 0,
-            ),
-        );
-        // 1 つのトランザクションの中で順に入れるため、直前に入れた写した実績が、その職務経歴書の
-        // 写した実績のうち id が最も大きい行になる（AUTOINCREMENT は id を戻さない）
-        for (const skill of new Set(project.skills)) {
-          statements.push(
-            db
-              .prepare(
-                `INSERT INTO resume_project_skill (resume_project_id, skill_name)
-                 VALUES ((SELECT max(id) FROM resume_project WHERE resume_id = ${RESUME_ID_BY_SLUG}), ?)`,
-              )
-              .bind(slug, skill),
-          );
-        }
-      }
-      for (const education of content.educations) {
-        statements.push(
-          db
-            .prepare(
-              `INSERT INTO resume_education (resume_id, education_id, school, department,
-                 started_on, ended_on, remarks)
-               VALUES (${RESUME_ID_BY_SLUG}, ?, ?, ?, ?, ?, ?)`,
-            )
-            .bind(
-              slug,
-              education.educationId,
-              education.school,
-              education.department,
-              education.period.startedOn,
-              education.period.endedOn,
-              education.remarks,
-            ),
-        );
-      }
-      for (const override of content.skillOverrides) {
-        statements.push(
-          db
-            .prepare(
-              `INSERT INTO resume_skill_override (resume_id, skill_name, months_override)
-               VALUES (${RESUME_ID_BY_SLUG}, ?, ?)`,
-            )
-            .bind(slug, override.skillName, override.months),
-        );
-      }
-      statements.push(db.prepare('SELECT id, updated_at FROM resume WHERE slug = ?').bind(slug));
-      const results = await db.batch<{ id: number; updated_at: string }>(statements);
+        ...contentStatements(content, { sql: RESUME_ID_BY_SLUG, binds: [slug] }, ALWAYS),
+        db.prepare('SELECT id, updated_at FROM resume WHERE slug = ?').bind(slug),
+      ]);
       const row = results.at(-1)?.results[0];
       if (row === undefined) throw new Error('作った職務経歴書を読めなかった');
       return { id: row.id, updatedAt: row.updated_at };
     },
+
+    addRows: (id, content, times) =>
+      runLocked(
+        id,
+        times,
+        contentStatements(
+          content,
+          { sql: '?', binds: [id] },
+          { sql: LOCKED, binds: [id, times.now] },
+        ),
+      ),
 
     list: async () => {
       const { results } = await db

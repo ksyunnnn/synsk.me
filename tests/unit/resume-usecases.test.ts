@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { addResumeRows } from '@/features/resume/application/add-resume-rows';
 import { createResume } from '@/features/resume/application/create-resume';
 import {
   editResumeCareer,
@@ -8,7 +9,7 @@ import { editResumeSettings } from '@/features/resume/application/edit-resume-se
 import { changeResumeStatus } from '@/features/resume/application/change-resume-status';
 import { deleteResume } from '@/features/resume/application/delete-resume';
 import { regenerateResumeUrl } from '@/features/resume/application/regenerate-resume-url';
-import type { ResumeSources } from '@/features/resume/domain/resume';
+import type { ResumeForEdit, ResumeSources } from '@/features/resume/domain/resume';
 import type {
   CreateResumeField,
   CreateResumeFormValues,
@@ -49,6 +50,7 @@ const OK = { ok: true } as const;
 const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   readSources: vi.fn<Repo['readSources']>(async () => sources),
   create: vi.fn<Repo['create']>(async () => ({ id: 7, updatedAt: '2026-11-07T00:00:00.000Z' })),
+  addRows: vi.fn<Repo['addRows']>(async () => OK),
   list: vi.fn<Repo['list']>(),
   findForEdit: vi.fn<Repo['findForEdit']>(),
   findLimitedIdForVisitor: vi.fn<Repo['findLimitedIdForVisitor']>(),
@@ -169,6 +171,10 @@ describe('書き込みは作り手だけ（FR-033）', () => {
         editResumeSkillOverrides(r, null, 1, [{ name: 'Go', years: '1', months: '0' }], TIMES),
     ],
     ['削除', (r: ResumeRepository) => deleteResume(r, null, 1)],
+    [
+      '足す',
+      (r: ResumeRepository) => addResumeRows(r, null, { id: 1, kind: 'careers' }, ['1'], TIMES),
+    ],
   ])('%s', async (_, run) => {
     const resumes = fakeResumes();
     expect(await run(resumes)).toEqual({ status: 'forbidden' });
@@ -268,5 +274,152 @@ describe('regenerateResumeUrl（FR-040）', () => {
     });
     resumes.regenerateLimitedSlug.mockResolvedValueOnce({ ok: false, reason: 'not-found' });
     expect(await regenerateResumeUrl(resumes, OWNER, 1, TIMES)).toEqual({ status: 'not-found' });
+  });
+});
+
+describe('addResumeRows（FR-041）', () => {
+  const RESUME: ResumeForEdit = {
+    id: 1,
+    title: '作り物の提出先',
+    slug: 'x',
+    audience: 'limited',
+    status: 'draft',
+    limitedExpiresAt: null,
+    createdAt: TIMES.openedUpdatedAt,
+    updatedAt: TIMES.openedUpdatedAt,
+    careers: [],
+    projects: [],
+    educations: [],
+    skillOverrides: [],
+  };
+
+  const PROJECT_SOURCES: ResumeSources = {
+    careers: [],
+    projects: [
+      {
+        id: 5,
+        organizationName: '作り物株式会社',
+        organizationNameMasked: 'ある会社',
+        kind: 'talk',
+        title: '作り物の登壇',
+        titleMasked: 'ある登壇',
+        isMasked: true,
+        period: { startedOn: '2022-04-01' as CalendarDate, endedOn: null },
+        description: '作り物の本文',
+        url: null,
+        skills: [
+          { name: 'Go', monthsOverride: 24 },
+          { name: 'Rust', monthsOverride: null },
+        ],
+      },
+    ],
+    educations: [],
+  };
+
+  const withResume = (sources: ResumeSources, resume: ResumeForEdit = RESUME) => {
+    const resumes = fakeResumes(sources);
+    resumes.findForEdit.mockResolvedValue(resume);
+    return resumes;
+  };
+
+  it('選んだ写し元を、作るときと同じ写し方で写して渡す。スキルと上書きも写す', async () => {
+    const resumes = withResume(PROJECT_SOURCES);
+    expect(await addResumeRows(resumes, OWNER, { id: 1, kind: 'projects' }, ['5'], TIMES)).toEqual({
+      status: 'saved',
+    });
+    expect(resumes.readSources).toHaveBeenCalledWith({
+      careerIds: [],
+      projectIds: [5],
+      educationIds: [],
+    });
+    const [id, content, times] = resumes.addRows.mock.calls[0];
+    expect(id).toBe(1);
+    expect(times).toEqual(TIMES);
+    expect(content.projects).toEqual([
+      expect.objectContaining({
+        projectId: 5,
+        organizationName: '作り物株式会社',
+        title: '作り物の登壇',
+        description: '作り物の本文',
+        isMasked: true,
+        skills: ['Go', 'Rust'],
+      }),
+    ]);
+    expect(content.skillOverrides).toEqual([{ skillName: 'Go', months: 24 }]);
+    expect(content.careers).toEqual([]);
+  });
+
+  it('何も選ばなければ足さない', async () => {
+    const resumes = withResume(PROJECT_SOURCES);
+    expect(await addResumeRows(resumes, OWNER, { id: 1, kind: 'projects' }, [], TIMES)).toEqual({
+      status: 'invalid',
+      errors: { selection: 'missing' },
+      values: [],
+    });
+    expect(resumes.addRows).not.toHaveBeenCalled();
+  });
+
+  it('id の形が違えば、何も読まずに返す', async () => {
+    const resumes = withResume(PROJECT_SOURCES);
+    expect(
+      await addResumeRows(resumes, OWNER, { id: 1, kind: 'projects' }, ['x'], TIMES),
+    ).toMatchObject({ status: 'invalid', errors: { selection: 'invalid' } });
+    expect(resumes.findForEdit).not.toHaveBeenCalled();
+  });
+
+  it('開いた後に選んだ写し元が消えていたら、作るときと同じく足さずに知らせる', async () => {
+    const resumes = withResume({ careers: [], projects: [], educations: [] });
+    expect(await addResumeRows(resumes, OWNER, { id: 1, kind: 'projects' }, ['5'], TIMES)).toEqual({
+      status: 'invalid',
+      errors: { selection: 'source-missing' },
+      values: ['5'],
+    });
+    expect(resumes.addRows).not.toHaveBeenCalled();
+  });
+
+  it('既に写した写し元は足さない', async () => {
+    const resumes = withResume(SOURCES, {
+      ...RESUME,
+      careers: [
+        {
+          id: 9,
+          careerId: 1,
+          organizationName: '作り物株式会社',
+          role: '作り物の肩書',
+          period: { startedOn: '2020-04-01' as CalendarDate, endedOn: null },
+          description: null,
+          url: null,
+          isMasked: true,
+        },
+      ],
+    });
+    expect(
+      await addResumeRows(resumes, OWNER, { id: 1, kind: 'careers' }, ['1'], TIMES),
+    ).toMatchObject({ status: 'invalid', errors: { selection: 'already-copied' } });
+    expect(resumes.addRows).not.toHaveBeenCalled();
+  });
+
+  it('開いた後に書き換えられていたら、送られた値を返す（FR-038）', async () => {
+    const resumes = withResume(SOURCES, { ...RESUME, updatedAt: TIMES.now });
+    expect(await addResumeRows(resumes, OWNER, { id: 1, kind: 'careers' }, ['1'], TIMES)).toEqual({
+      status: 'conflict',
+      values: ['1'],
+    });
+    expect(resumes.addRows).not.toHaveBeenCalled();
+
+    const raced = withResume(SOURCES);
+    raced.addRows.mockResolvedValue({ ok: false, reason: 'conflict' });
+    expect(await addResumeRows(raced, OWNER, { id: 1, kind: 'careers' }, ['1'], TIMES)).toEqual({
+      status: 'conflict',
+      values: ['1'],
+    });
+  });
+
+  it('無い職務経歴書なら not-found', async () => {
+    const resumes = fakeResumes();
+    resumes.findForEdit.mockResolvedValue(null);
+    expect(await addResumeRows(resumes, OWNER, { id: 1, kind: 'careers' }, ['1'], TIMES)).toEqual({
+      status: 'not-found',
+    });
   });
 });

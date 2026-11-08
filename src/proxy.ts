@@ -47,7 +47,8 @@ const DASH_ROW_EXISTS: Record<string, (id: string) => Promise<boolean>> = {
 /**
  * 職務経歴書に属する写した行の画面（`/dash/resumes/{id}/<種類>/{rowId}`）。行が無いか、その
  * 職務経歴書に属さなければ `/dash/resumes/{id}/<種類>/{rowId}/missing` へ rewrite する
- * （specs/002-resume/contracts/dash.md の共通）
+ * （specs/002-resume/contracts/dash.md の共通）。`/dash/resumes/{id}/<種類>/new` は足す画面で、
+ * 行の有無を見ない
  */
 const RESUME_ROW_KINDS = new Set(['careers', 'projects', 'educations']);
 
@@ -86,6 +87,7 @@ const decide = async (request: NextRequest): Promise<string | null> => {
     collection === 'resumes' &&
     RESUME_ROW_KINDS.has(action) &&
     rowId &&
+    rowId !== 'new' &&
     rowAction !== 'missing'
   ) {
     return (await hasResumeRow(id, action, rowId))

@@ -29,6 +29,7 @@ description: "職務経歴書の実装タスク"
 - Phase 5: User Story 3（P1）
 - Phase 6: User Story 4（P2）
 - Phase 7: User Story 5（P2）
+- Phase 7b: User Story 6（P2）
 - Phase 8: Polish
 - Dependencies & Execution Order
 - Implementation Strategy
@@ -222,6 +223,28 @@ description: "職務経歴書の実装タスク"
 
 ---
 
+## Phase 7b: User Story 6 - 作ったあとに職歴・実績・学歴を足す (Priority: P2)
+
+**Goal**: 作った職務経歴書に、設定の画面から元の職歴・実績・学歴を選んで足す。写し方は作成と同じ（FR-041）
+
+**Independent Test**: 0 件の職務経歴書に、設定の画面から職歴・実績・学歴を足すと、写した行と直すリンクが出る。足したあとに元を直しても、職務経歴書の値は変わらない
+
+### Tests for User Story 6
+
+- [X] T081 [P] [US6] 足すユースケース（作成と同じ写し方とスキル・上書き、何も選ばない・形の違う id・消えた元の行・写し済みの行を足さない、先に書き換えられていたら `conflict`、オーナーでない呼び出しを拒む）を tests/unit/resume-usecases.test.ts に、足す画面の経路で行の有無を見ないことを tests/unit/proxy.test.ts に足す（FR-033・FR-038・FR-041）
+- [X] T082 [P] [US6] D1 の書き込み（写した行とスキルが足した実績につく、既にある行は変わらない、上書きは同じ名前が無いものだけ入る、楽観ロック、無い id）を tests/workers/resume-edit.test.ts に足す（FR-041、research.md の R14）
+- [X] T083 [P] [US6] JWT のない足す画面の GET が 403、`addResumeRows` が D1 を変えないこと、作り手が足すと元の値で写り設定の画面へ 303 で移り、写した行が選択肢に出ないことを tests/integration/dash-resumes.test.ts に足す（FR-033・FR-041）
+- [X] T084 [P] [US6] 0 件の職務経歴書に設定の画面から職歴・実績・学歴を足すと写した行と直すリンクが出ること、足したあとに元を直しても値が変わらないことを tests/e2e/resume-add.spec.ts で確かめる（FR-041）
+
+### Implementation for User Story 6
+
+- [X] T085 [US6] Repository の `addRows`（作成と同じ写した行の文を楽観ロックの後に置く）を src/features/resume/server/d1-resume-repository.ts に、ユースケース src/features/resume/application/add-resume-rows.ts、Server Action `addResumeRows` を src/features/resume/server/actions.ts に足す（research.md の R14）
+- [X] T086 [US6] 作成の画面の選択の部品を src/features/resume/components/resume-source-fieldset.tsx に移し、足す画面（src/features/resume/components/resume-add-rows.tsx・resume-add-rows-form.tsx、src/app/dash/resumes/[id]/{careers,projects,educations}/new/page.tsx）と設定の画面の各見出しの下のリンク（resume-overview.tsx）を足す。src/proxy.ts で足す画面の経路の行の有無を見ない
+
+公開用に足すことは、公開用の写し方（T067）が入るまで `build-resume.ts` が拒む。
+
+---
+
 ## Phase 8: Polish & Cross-Cutting Concerns
 
 - [ ] T072 本番の応答で、職務経歴書のページのメールアドレスが Email Address Obfuscation で難読化されるかを確かめ、結果を plan.md の U8 に書く。難読化されなければ、別の方法が決まるまでメールアドレスを出さない（FR-035、research.md の R10）。**止める未決: U8**
@@ -244,6 +267,7 @@ description: "職務経歴書の実装タスク"
 - Phase 5（US3）は US2 の訪問者のページを使う。T042 は 001 の削除のタスクを、T047 は 001 の T061 を待つ
 - Phase 6（US4）は US1 の後に、US2・US3 と並べられる。T059 は US2 の visitor-resume.tsx を使う
 - Phase 7（US5）は US1・US2 の後
+- Phase 7b（US6）は US1 と US4（T052）の後
 - Phase 8 は各 User Story の後
 
 ### User Story Dependencies
@@ -253,6 +277,7 @@ description: "職務経歴書の実装タスク"
 - US3: US2（T029・T032・T033）に依存
 - US4: US1 に依存。T059 は US2 の T032 に依存
 - US5: US1・US2 に依存
+- US6: US1 に依存。楽観ロックは US4 の T052 と同じ形
 
 ### 未決が止めるタスク
 
@@ -302,7 +327,7 @@ T020 → T021 → T022、T023・T024 は並べる → T025
 
 ### Incremental Delivery
 
-US1+US2+US3 → US4 → US5 → Polish。各段階を Preview で確かめてからマージする
+US1+US2+US3 → US4 → US6 → US5 → Polish。各段階を Preview で確かめてからマージする
 
 ## Notes
 

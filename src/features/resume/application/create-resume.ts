@@ -1,4 +1,4 @@
-import { buildResumeContent } from '@/features/resume/domain/build-resume';
+import { buildResumeContent, hasAllSources } from '@/features/resume/domain/build-resume';
 import {
   newResumeSlug,
   parseExpiresInput,
@@ -76,15 +76,9 @@ export const createResume = async (
 
   // 読む: 選んだ写し元。開いた後に消えた行があれば作らない
   const sources = await resumes.readSources(selection);
-  const found = {
-    careerIds: sources.careers.length,
-    projectIds: sources.projects.length,
-    educationIds: sources.educations.length,
-  };
-  const allFound = (Object.keys(found) as (keyof typeof found)[]).every(
-    (key) => found[key] === new Set(selection[key]).size,
-  );
-  if (!allFound) return { status: 'invalid', errors: { selection: 'source-missing' }, values };
+  if (!hasAllSources(sources, selection)) {
+    return { status: 'invalid', errors: { selection: 'source-missing' }, values };
+  }
 
   // 計算: 写す行と識別子
   const built = buildResumeContent(sources, selection, audience);

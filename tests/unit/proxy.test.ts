@@ -267,6 +267,11 @@ describe('/resume/{slug}', () => {
 });
 
 describe('/dash/resumes/{id}/<種類>/{rowId}（specs/002-resume/contracts/dash.md）', () => {
+  it('足す画面（/dash/resumes/{id}/<種類>/new）も、無い職務経歴書は 404 の画面へ rewrite する', async () => {
+    resumes.hasResumeId.mockResolvedValue(false);
+    expect(await rewrittenPath('/dash/resumes/3/careers/new')).toBe('/dash/resumes/3/missing');
+  });
+
   it('無い職務経歴書は、職務経歴書の 404 の画面へ rewrite する', async () => {
     resumes.hasResumeId.mockResolvedValue(false);
     expect(await rewrittenPath('/dash/resumes/3/careers/7')).toBe('/dash/resumes/3/missing');
@@ -291,6 +296,9 @@ describe('/dash/resumes/{id}/<種類>/{rowId}（specs/002-resume/contracts/dash.
     '/dash/resumes/3/skills',
     '/dash/resumes/3/preview',
     '/dash/resumes/3/projects/7/missing',
+    '/dash/resumes/3/careers/new',
+    '/dash/resumes/3/projects/new',
+    '/dash/resumes/3/educations/new',
   ])('%s は行の有無を見ない', async (path) => {
     resumes.hasResumeRow.mockResolvedValue(false);
     expect(await rewrittenPath(path)).toBeNull();

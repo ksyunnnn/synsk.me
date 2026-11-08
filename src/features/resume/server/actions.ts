@@ -3,6 +3,10 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
+import {
+  addResumeRows as addResumeRowsUseCase,
+  type AddResumeRowsOutcome,
+} from '@/features/resume/application/add-resume-rows';
 import { changeResumeStatus as changeResumeStatusUseCase } from '@/features/resume/application/change-resume-status';
 import { createResume as createResumeUseCase } from '@/features/resume/application/create-resume';
 import { deleteResume as deleteResumeUseCase } from '@/features/resume/application/delete-resume';
@@ -16,10 +20,12 @@ import {
 import { editResumeSettings as editResumeSettingsUseCase } from '@/features/resume/application/edit-resume-settings';
 import { regenerateResumeUrl as regenerateResumeUrlUseCase } from '@/features/resume/application/regenerate-resume-url';
 import {
+  isResumeRowKind,
   isResumeStatus,
   parseResumeId,
   parseResumeRowId,
   type EditTimes,
+  SELECTION_KEY_OF_KIND,
   type ResumeStatus,
 } from '@/features/resume/domain/resume';
 import {
@@ -33,6 +39,7 @@ import {
   RESUME_PROJECT_FIELDS,
   RESUME_SETTINGS_FIELDS,
   ROW_ID_FIELD,
+  ROW_KIND_FIELD,
   SELECTION_FIELDS,
   STATUS_FIELD,
   type CreateResumeFormResult,
@@ -208,6 +215,33 @@ const readTarget = (formData: FormData) => {
   const rowId = parseResumeRowId(readString(formData, ROW_ID_FIELD));
   if (rowId === null) redirect(`/dash/resumes/${id}`);
   return { id, rowId };
+};
+
+export type AddResumeRowsResult = AddResumeRowsOutcome;
+
+/**
+ * 作ったあとに、元の職歴・実績・学歴から選んだ行を足し、設定の画面へ移す（FR-041）。
+ * 選んだ id は種類ごとに作成と同じ名前（`SELECTION_FIELDS`）で送る
+ */
+export const addResumeRows = async (
+  _state: AddResumeRowsResult | null,
+  formData: FormData,
+): Promise<AddResumeRowsResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const id = readResumeId(formData);
+  const kind = readString(formData, ROW_KIND_FIELD);
+  if (!isResumeRowKind(kind)) redirect(`/dash/resumes/${id}`);
+  return finish(
+    id,
+    await addResumeRowsUseCase(
+      await createResumeRepository(),
+      author,
+      { id, kind },
+      readStrings(formData, SELECTION_FIELDS[SELECTION_KEY_OF_KIND[kind]]),
+      readTimes(formData),
+    ),
+  );
 };
 
 export type ResumeCareerResult = EditOutcome<

@@ -174,14 +174,43 @@ export type ResumeSources = {
   educations: ResumeSourceEducation[];
 };
 
-/** 作成の画面で選んだ写し元の id */
+/** 作成の画面と足す画面で選んだ写し元の id */
 export type ResumeSelection = {
   careerIds: number[];
   projectIds: number[];
   educationIds: number[];
 };
 
-/** 作るときに写す中身。id は保存するときに決まる */
+/** 写した行の種類ごとの、選んだ写し元の id の名前 */
+export const SELECTION_KEY_OF_KIND: Record<ResumeRowKind, keyof ResumeSelection> = {
+  careers: 'careerIds',
+  projects: 'projectIds',
+  educations: 'educationIds',
+};
+
+/** 1 つの種類の写し元だけを選んだ選択。足す画面は種類ごとに選ぶ（FR-041） */
+export const selectionOf = (kind: ResumeRowKind, ids: number[]): ResumeSelection => ({
+  careerIds: [],
+  projectIds: [],
+  educationIds: [],
+  [SELECTION_KEY_OF_KIND[kind]]: ids,
+});
+
+/**
+ * 職務経歴書が既に写した写し元の id。足す画面の選択肢から外す（FR-041、research.md の R14）。
+ * 写し元を消した行（写し元の id が null）は数えない
+ */
+export const copiedSourceIds = (content: ResumeContent, kind: ResumeRowKind): Set<number> => {
+  const ids =
+    kind === 'careers'
+      ? content.careers.map((row) => row.careerId)
+      : kind === 'projects'
+        ? content.projects.map((row) => row.projectId)
+        : content.educations.map((row) => row.educationId);
+  return new Set(ids.filter((id): id is number => id !== null));
+};
+
+/** 作るときと足すときに写す中身。id は保存するときに決まる */
 export type NewResumeContent = {
   careers: Omit<ResumeCareer, 'id'>[];
   projects: Omit<ResumeProject, 'id'>[];

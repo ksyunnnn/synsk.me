@@ -77,6 +77,9 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
     `/dash/resumes/${resume.id}/careers/${rows.career}`,
     `/dash/resumes/${resume.id}/projects/${rows.project}`,
     `/dash/resumes/${resume.id}/educations/${rows.education}`,
+    `/dash/resumes/${resume.id}/careers/new`,
+    `/dash/resumes/${resume.id}/projects/new`,
+    `/dash/resumes/${resume.id}/educations/new`,
   ];
 
   it('どの画面も', async () => {
@@ -102,6 +105,7 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
   it('作り手でも、無い行の画面は 404', async () => {
     for (const path of [
       '/dash/resumes/999999',
+      '/dash/resumes/999999/careers/new',
       `/dash/resumes/${resume.id}/careers/999999`,
       `/dash/resumes/${resume.id}/projects/${rows.career}9999`,
     ]) {
@@ -182,6 +186,11 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
       `/dash/resumes/${resume.id}/skills`,
       { ...(await common()), overrideName: 'Go', overrideYears: '9', overrideMonths: '0' },
     ],
+    [
+      'addResumeRows',
+      `/dash/resumes/${resume.id}/careers/new`,
+      { ...(await common()), rowKind: 'careers', careerIds: careerId },
+    ],
     ['deleteResume', `/dash/resumes/${resume.id}/delete`, { resumeId: resume.id }],
   ];
 
@@ -209,5 +218,39 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     const res = await sendNthForm(ctx, { how: 'submit', formPath, values, asAuthor: true });
     await res.arrayBuffer();
     expect((await readRows(ctx, 'resume')).length).toBe(before + 1);
+  });
+});
+
+describe('作ったあとに足す（FR-041）', () => {
+  it('作り手が選んだ職歴を、元の値で写して足し、設定の画面へ 303 で移す', async () => {
+    const added = await insertResume(ctx.db);
+    const formPath = `/dash/resumes/${added.id}/careers/new`;
+    const res = await sendNthForm(ctx, {
+      how: 'submit',
+      formPath,
+      values: {
+        resumeId: added.id,
+        openedUpdatedAt: await updatedAtOf(added.id),
+        rowKind: 'careers',
+        careerIds: careerId,
+      },
+      asAuthor: true,
+    });
+    await res.arrayBuffer();
+    expect(res.status).toBe(303);
+    expect(res.headers.get('location')).toContain(`/dash/resumes/${added.id}?saved=1`);
+    const copied = await ctx.db
+      .prepare('SELECT career_id, organization_name FROM resume_career WHERE resume_id = ?')
+      .bind(added.id)
+      .all();
+    expect(copied.results).toEqual([{ career_id: careerId, organization_name: '作り物株式会社' }]);
+
+    // 写した職歴は、足す画面の選択肢に出ない
+    const page = await ctx.server.fetch(formPath, {
+      headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
+    });
+    const html = await page.text();
+    expect(html).not.toContain(`value="${careerId}"`);
+    expect(html).toContain('足せるものはありません');
   });
 });

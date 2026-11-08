@@ -38,7 +38,7 @@
 
 **Constraints**: 応答は NFR-08・NFR-09 を満たす。限定公開用と `/dash` の応答は `no-store`。PR の CI は 10 分以内
 
-**Scale/Scope**: 書き手はオーナー 1 人。管理画面は職務経歴書の一覧・作成・設定・写した行 3 種類の編集・上書きの編集・見た目の確認・削除。訪問者の経路は公開用・限定公開用のページの 2 つ
+**Scale/Scope**: 書き手はオーナー 1 人。管理画面は職務経歴書の一覧・作成・設定・写した行 3 種類の足す画面と編集・上書きの編集・見た目の確認・削除。訪問者の経路は公開用・限定公開用のページの 2 つ
 
 ## Constitution Check
 
@@ -91,6 +91,7 @@
 | FR-037・FR-039 | 限定公開用の識別子は uid で書き換えを拒む。公開用は既定で uid、書き換えられる | 単 |
 | FR-040 | 設定の画面に URL が出る。出し直すと識別子が新しい uid になり、古い URL は 404、新しい URL は 200 | 単（ユースケース）・W（書き換え）・結（応答）・E |
 | FR-038 | 先に書き換えられていたら保存しない | W（判定）・E（入力が残ること） |
+| FR-041 | 作ったあとに足すと、作成と同じ写し方で写り、元を直しても変わらない。写し済みの元の行は選択肢に出ない。消えた元の行と写し済みの行は足さない。上書きが既にある名前は変えない。楽観ロック | 単（ユースケース）・W（書き込み）・結（403 と 303）・E |
 | REQUIREMENTS.md の FR-11・FR-13・FR-14 | 削除の順序、見た目の確認の画面、入力中の内容の保持 | W・E・E（001 の T072 の部品） |
 
 ## 未決
@@ -149,11 +150,12 @@ src/
 │       └── resumes/
 │           page.tsx・new/page.tsx・[id]/page.tsx・[id]/preview/page.tsx・[id]/skills/page.tsx・
 │           [id]/delete/page.tsx・[id]/missing/page.tsx・
-│           [id]/{careers,projects,educations}/[rowId]/page.tsx・…/[rowId]/missing/page.tsx
+│           [id]/{careers,projects,educations}/[rowId]/page.tsx・…/[rowId]/missing/page.tsx・
+│           [id]/{careers,projects,educations}/new/page.tsx
 ├── features/
 │   └── resume/
 │       ├── domain/       resume.ts・build-resume.ts・resume-skills.ts・profile.ts・resume-repository.ts
-│       ├── application/  create-resume.ts・edit-resume-*.ts・change-resume-status.ts・regenerate-resume-url.ts・delete-resume.ts・
+│       ├── application/  create-resume.ts・add-resume-rows.ts・edit-resume-*.ts・change-resume-status.ts・regenerate-resume-url.ts・delete-resume.ts・
 │       │                 get-visitor-resume.ts・get-resume-for-edit.ts・list-resumes.ts
 │       ├── components/   visitor-resume.tsx・print-button.tsx・各入力の部品
 │       └── server/       d1-resume-repository.ts・queries.ts・actions.ts

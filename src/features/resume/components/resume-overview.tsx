@@ -4,7 +4,8 @@ import { TextLink } from '@/shared/components/text-link';
 import { toYearsAndMonths, type Period } from '@/shared/domain/period';
 
 /**
- * 設定の画面の中身。写した職歴・実績・学歴・スキルの一覧と、各行の編集へのリンク
+ * 設定の画面の中身。写した職歴・実績・学歴・スキルの一覧と、各行の編集へのリンク、職歴・実績・
+ * 学歴を足す画面へのリンク（FR-041。行が 0 件でも出す）
  * （specs/002-resume/contracts/dash.md の `/dash/resumes/{id}`）
  */
 
@@ -24,6 +25,9 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-bold">職歴（{resume.careers.length} 件）</h2>
+        <p>
+          <TextLink href={`${base}/careers/new`}>職歴を足す</TextLink>
+        </p>
         <ul className="flex flex-col gap-2">
           {resume.careers.map((career) => (
             <li key={career.id} className="flex flex-col">
@@ -37,6 +41,9 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
       </section>
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-bold">実績（{resume.projects.length} 件）</h2>
+        <p>
+          <TextLink href={`${base}/projects/new`}>実績を足す</TextLink>
+        </p>
         <ul className="flex flex-col gap-2">
           {resume.projects.map((project) => (
             <li key={project.id} className="flex flex-col">
@@ -51,6 +58,9 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
       </section>
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-bold">学歴（{resume.educations.length} 件）</h2>
+        <p>
+          <TextLink href={`${base}/educations/new`}>学歴を足す</TextLink>
+        </p>
         <ul className="flex flex-col gap-2">
           {resume.educations.map((education) => (
             <li key={education.id} className="flex flex-col">

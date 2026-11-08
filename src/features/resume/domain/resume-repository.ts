@@ -1,6 +1,7 @@
 import type {
   EditTimes,
   NewResume,
+  NewResumeContent,
   Resume,
   ResumeCareerContent,
   ResumeContent,
@@ -29,6 +30,11 @@ export type ResumeRepository = {
   readSources: (selection: ResumeSelection | 'all') => Promise<ResumeSources>;
   /** `resume` と写した行を 1 回の `batch()` で入れる（research.md の R4）。更新日時は楽観ロックに使う */
   create: (resume: NewResume) => Promise<{ id: ResumeId; updatedAt: string }>;
+  /**
+   * 作ったあとに、写した行を足す（FR-041）。楽観ロックは書き換えと同じ（research.md の R8）。
+   * 写した経験年数の上書きは、その職務経歴書に同じ名前の上書きが無いものだけを入れる（R14）
+   */
+  addRows: (id: ResumeId, content: NewResumeContent, times: EditTimes) => Promise<EditResult>;
   /** 作り手の一覧。作った日時の新しい順 */
   list: () => Promise<Resume[]>;
   findForEdit: (id: ResumeId) => Promise<ResumeForEdit | null>;
