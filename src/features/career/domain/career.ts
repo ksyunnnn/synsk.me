@@ -1,4 +1,5 @@
 import type { ActionResult } from '@/shared/domain/action-result';
+import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
@@ -71,8 +72,6 @@ export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 /** `isMasked` の値。送られた値が秘匿化しないことを示すときだけ、秘匿化しない（FR-010） */
 export const IS_MASKED_VALUES = { masked: '1', unmasked: '0' } as const;
-
-const emptyToNull = (value: string) => (value.trim() === '' ? null : value);
 
 /**
  * フォームの値を保存する内容に読み替える。秘匿化するかは、既定で秘匿化する（FR-010）。

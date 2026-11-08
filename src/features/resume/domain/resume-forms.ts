@@ -9,6 +9,7 @@ import {
   type ResumeProjectContent,
   type ResumeSkillOverride,
 } from '@/features/resume/domain/resume';
+import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { isWebUrl } from '@/shared/domain/web-url';
 
@@ -24,7 +25,6 @@ export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 export type FieldError = 'missing' | 'invalid' | 'ended-before-started';
 
-const emptyToNull = (value: string) => (value.trim() === '' ? null : value);
 const normalizeNewlines = (value: string) => value.replace(/\r\n?/g, '\n');
 
 type Parsed<F extends string, C> =
