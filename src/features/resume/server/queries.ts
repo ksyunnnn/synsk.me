@@ -122,9 +122,18 @@ export const hasVisitorResume = async (slug: string): Promise<boolean> =>
 export const hasResumeUid = async (uid: string): Promise<boolean> =>
   (await findResumeId(await createResumeRepository(), uid)) !== null;
 
-/** 職務経歴書に属する写した行がある uid か。`kind` は経路の名前（careers・projects・educations） */
-export const hasResumeRow = async (uid: string, kind: string, rowUid: string): Promise<boolean> => {
+/**
+ * 写した行の画面の URL が指すもののうち、無いもの。職務経歴書が無ければ `resume`、職務経歴書に
+ * 属する写した行が無ければ `row`、どちらもあれば null。`kind` は経路の名前（careers・projects・
+ * educations）。職務経歴書の id は 1 回だけ引く
+ */
+export const findMissingResumeRow = async (
+  uid: string,
+  kind: string,
+  rowUid: string,
+): Promise<'resume' | 'row' | null> => {
   const resumes = await createResumeRepository();
   const id = await findResumeId(resumes, uid);
-  return id !== null && (await findResumeRowId(resumes, id, kind, rowUid)) !== null;
+  if (id === null) return 'resume';
+  return (await findResumeRowId(resumes, id, kind, rowUid)) === null ? 'row' : null;
 };
