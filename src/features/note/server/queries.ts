@@ -11,7 +11,7 @@ import type {
   VisitorNote,
   LinkPreview,
 } from '@/features/note/domain/note';
-import { isNoteImageFile, toStorageKey } from '@/features/note/domain/note-image';
+import { isImageFile, toStorageKey } from '@/shared/domain/media-image';
 import { extractCardUrls } from '@/features/note/domain/link-card';
 import { createD1NoteRepository } from '@/features/note/server/d1-note-repository';
 import { fetchLinkPreviews } from '@/features/note/server/link-preview-fetcher';
@@ -53,9 +53,9 @@ export const getVisitorNoteImage = async (
   slug: string,
   file: string,
 ): Promise<StoredMedia | null> => {
-  if (!isNoteImageFile(file)) return null;
+  if (!isImageFile(file)) return null;
   const { notes } = await createNoteDeps();
-  const key = await notes.findVisitorImage(slug, toStorageKey(file));
+  const key = await notes.findVisitorImage(slug, toStorageKey('notes', file));
   return key === null ? null : (await getMediaStorage()).get(key);
 };
 
@@ -115,11 +115,11 @@ export const getOwnerNoteImage = async (
   file: string,
 ): Promise<StoredMedia | null | 'forbidden'> => {
   if (!(await getCurrentAuthor())) return 'forbidden';
-  if (!isNoteImageFile(file)) return null;
+  if (!isImageFile(file)) return null;
   const { notes } = await createNoteDeps();
   const id = await findIdByUid(notes, uid);
   if (id === null) return null;
-  const key = await notes.findOwnerImage(id, toStorageKey(file));
+  const key = await notes.findOwnerImage(id, toStorageKey('notes', file));
   return key === null ? null : (await getMediaStorage()).get(key);
 };
 

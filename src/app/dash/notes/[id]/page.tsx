@@ -10,12 +10,8 @@ import {
   toNoteFormValues,
   type NoteDoneKind,
 } from '@/features/note/domain/note';
-import {
-  NOTE_IMAGE_MAX_BYTES,
-  NOTE_IMAGE_MAX_COUNT,
-  isNoteImageFile,
-  toMarkdownImage,
-} from '@/features/note/domain/note-image';
+import { NOTE_COMMON_MESSAGES } from '@/features/note/components/note-messages';
+import { ImageUploadSection } from '@/shared/components/image-upload-section';
 import {
   addNoteImage,
   addSyndication,
@@ -184,60 +180,16 @@ const Page = async ({ params, searchParams }: Props) => {
             )}
           </section>
 
-          <section className={SECTION} aria-labelledby="images-heading">
-            <h2 id="images-heading" className={H2}>
-              画像
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              JPEG・PNG・WebP・GIF を 1 枚 {NOTE_IMAGE_MAX_BYTES / 1024 / 1024} MB まで、1 つの note
-              に {NOTE_IMAGE_MAX_COUNT}{' '}
-              枚まで追加できます。本文に貼ると、公開した版の本文にある画像だけが訪問者に見えます。
-            </p>
-            {done === 'image-added' && addedImage && isNoteImageFile(addedImage) && (
-              <p role="status">
-                本文に貼る書き方: <code className="font-mono">{toMarkdownImage(addedImage)}</code>
-              </p>
-            )}
-            <NoteActionForm
-              action={addNoteImage}
-              hidden={uid}
-              submitLabel="画像を追加する"
-              label="画像の追加"
-              messages={{
-                missing: '画像のファイルを選んでください',
-                'too-large': `画像は 1 枚 ${NOTE_IMAGE_MAX_BYTES / 1024 / 1024} MB までです`,
-                unsupported: '画像は JPEG・PNG・WebP・GIF のどれかにしてください',
-                'too-many-images': `1 つの note に追加できる画像は ${NOTE_IMAGE_MAX_COUNT} 枚までです`,
-              }}
-            >
-              <label className="flex flex-col gap-1">
-                <span className="font-bold">画像のファイル</span>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  className="rounded-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                />
-              </label>
-            </NoteActionForm>
-            {note.images.length > 0 && (
-              <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                {note.images.map((image) => (
-                  <li key={image.file} className="flex flex-col gap-1">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`/dash/notes/${note.uid}/images/${image.file}`}
-                      alt=""
-                      className="h-24 w-full rounded-md object-cover"
-                    />
-                    <code className="font-mono text-xs break-all">
-                      {toMarkdownImage(image.file)}
-                    </code>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <ImageUploadSection
+            action={addNoteImage}
+            hidden={uid}
+            ownerLabel=" note "
+            images={note.images.map((image) => image.file)}
+            imageUrl={(file) => `/dash/notes/${note.uid}/images/${file}`}
+            addedImage={done === 'image-added' ? addedImage : null}
+            visibility="本文に貼ると、公開した版の本文にある画像だけが訪問者に見えます。"
+            commonMessages={NOTE_COMMON_MESSAGES}
+          />
 
           <section className={SECTION} aria-labelledby="card-image-heading">
             <h2 id="card-image-heading" className={H2}>

@@ -6,7 +6,7 @@ import { publishNote } from '@/features/note/application/publish-note';
 import { restoreRevision } from '@/features/note/application/restore-revision';
 import { saveNote } from '@/features/note/application/save-note';
 import type { NoteForEdit } from '@/features/note/domain/note';
-import { NOTE_IMAGE_MAX_BYTES } from '@/features/note/domain/note-image';
+import { IMAGE_MAX_BYTES } from '@/shared/domain/media-image';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
 
 /**
@@ -158,7 +158,7 @@ describe('addNoteImage', () => {
   it('大きすぎる画像は、中身を読まずに止める', async () => {
     const { deps } = fakeDeps();
     const read = vi.fn(async () => png());
-    expect(await addNoteImage(deps, OWNER, 1, { size: NOTE_IMAGE_MAX_BYTES + 1, read })).toEqual({
+    expect(await addNoteImage(deps, OWNER, 1, { size: IMAGE_MAX_BYTES + 1, read })).toEqual({
       status: 'too-large',
     });
     expect(read).not.toHaveBeenCalled();

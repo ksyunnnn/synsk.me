@@ -1,20 +1,15 @@
 import type { NoteId } from '@/features/note/domain/note';
 import {
-  checkNoteImage,
-  checkNoteImageSize,
+  checkImage,
+  checkImageSize,
   contentTypeOf,
-  newNoteImageFile,
+  newImageFile,
   toStorageKey,
-  type NoteImageError,
-} from '@/features/note/domain/note-image';
+  type ImageError,
+  type UploadedImage,
+} from '@/shared/domain/media-image';
 import type { Author } from '@/shared/domain/author';
 import type { NoteDeps, NoteOperationOutcome } from './deps';
-
-/** 送られた画像。中身は大きさを確かめた後に読む */
-export type UploadedImage = {
-  size: number;
-  read: () => Promise<ArrayBuffer>;
-};
 
 /**
  * note に画像を足す（FR-023、research.md の R7）。大きさ・形式・枚数の上限を超えたら足さない。
@@ -28,19 +23,19 @@ export const addNoteImage = async (
   upload: UploadedImage | null,
 ): Promise<
   | { status: 'added'; file: string }
-  | NoteOperationOutcome<NoteImageError | 'deleted' | 'too-many-images'>
+  | NoteOperationOutcome<ImageError | 'deleted' | 'too-many-images'>
 > => {
   if (!author) return { status: 'forbidden' };
   if (!upload) return { status: 'missing' };
   // 大きさは中身を読む前に確かめる
-  const sizeError = checkNoteImageSize(upload.size);
+  const sizeError = checkImageSize(upload.size);
   if (sizeError) return { status: sizeError };
   const bytes = await upload.read();
-  const checked = checkNoteImage(new Uint8Array(bytes));
+  const checked = checkImage(new Uint8Array(bytes));
   if (!checked.ok) return { status: checked.error };
 
-  const file = newNoteImageFile(checked.extension);
-  const key = toStorageKey(file);
+  const file = newImageFile(checked.extension);
+  const key = toStorageKey('notes', file);
   await images.put(key, bytes, contentTypeOf(file));
   const result = await notes.addImage(id, key);
   if (result.ok) return { status: 'added', file };

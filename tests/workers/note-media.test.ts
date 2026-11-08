@@ -1,6 +1,6 @@
 import { env, applyD1Migrations } from 'cloudflare:test';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { NOTE_IMAGE_MAX_COUNT } from '@/features/note/domain/note-image';
+import { IMAGE_MAX_COUNT } from '@/shared/domain/media-image';
 import { createD1NoteRepository } from '@/features/note/server/d1-note-repository';
 import { createR2MediaStorage } from '@/shared/server/media-storage';
 import { deleteNoteRows, insertNote } from '../support/note-rows';
@@ -107,12 +107,12 @@ describe('代表画像（FR-024・FR-025）', () => {
 });
 
 describe('画像の数の上限（research.md の R7）', () => {
-  it(`1 つの note に ${NOTE_IMAGE_MAX_COUNT} 枚を超えて足さない`, async () => {
+  it(`1 つの note に ${IMAGE_MAX_COUNT} 枚を超えて足さない`, async () => {
     const { id } = await insertNote(env.DB, {
       slug: 'many',
       revisions: [{ title: '題', body: '' }],
     });
-    for (let i = 0; i < NOTE_IMAGE_MAX_COUNT; i++) {
+    for (let i = 0; i < IMAGE_MAX_COUNT; i++) {
       expect(await notes.addImage(id, `notes/many-${i}.png`)).toEqual({ ok: true });
     }
     expect(await notes.addImage(id, 'notes/many-over.png')).toEqual({

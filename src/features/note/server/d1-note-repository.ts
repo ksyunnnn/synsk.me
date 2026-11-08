@@ -9,8 +9,7 @@ import type {
   NoteSummary,
   VisitorNote,
 } from '@/features/note/domain/note';
-import { MEDIA_SCHEME, toImageFile } from '@/features/note/domain/note-image';
-import { NOTE_IMAGE_MAX_COUNT } from '@/features/note/domain/note-image';
+import { IMAGE_MAX_COUNT, MEDIA_SCHEME, toImageFile } from '@/shared/domain/media-image';
 import type { NoteRepository, NoteWriteFailure } from '@/features/note/domain/note-repository';
 
 /**
@@ -343,7 +342,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
           `INSERT INTO media (note_id, storage_key) SELECT ?, ?
            WHERE ${LIVE} AND (SELECT count(*) FROM media WHERE note_id = ?) < ?`,
         )
-        .bind(id, storageKey, id, id, NOTE_IMAGE_MAX_COUNT)
+        .bind(id, storageKey, id, id, IMAGE_MAX_COUNT)
         .run();
       return result.meta.changes > 0 ? { ok: true } : whyMissed(id, 'too-many-images');
     },

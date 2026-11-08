@@ -1,5 +1,5 @@
 import { isCardImageSource, type NoteId } from '@/features/note/domain/note';
-import { isNoteImageFile, toStorageKey } from '@/features/note/domain/note-image';
+import { isImageFile, toStorageKey } from '@/shared/domain/media-image';
 import type { Author } from '@/shared/domain/author';
 import type { NoteDeps, NoteOperationOutcome } from './deps';
 
@@ -15,12 +15,11 @@ export const chooseCardImage = async (
 ): Promise<NoteOperationOutcome<'invalid' | 'deleted' | 'not-own-image'>> => {
   if (!author) return { status: 'forbidden' };
   if (!isCardImageSource(choice.source)) return { status: 'invalid' };
-  if (choice.source === 'media' && !isNoteImageFile(choice.file))
-    return { status: 'not-own-image' };
+  if (choice.source === 'media' && !isImageFile(choice.file)) return { status: 'not-own-image' };
   const result = await notes.chooseCardImage(
     id,
     choice.source,
-    choice.source === 'media' ? toStorageKey(choice.file) : null,
+    choice.source === 'media' ? toStorageKey('notes', choice.file) : null,
   );
   return result.ok ? { status: 'done' } : { status: result.reason };
 };
