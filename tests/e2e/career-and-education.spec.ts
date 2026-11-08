@@ -24,6 +24,8 @@ const fillNewCareer = (page: Page, organizationName: string, role: string) =>
   });
 
 test('職歴を登録・編集・削除できる', async ({ page, context }) => {
+  // 失敗した回の行は消えずに残る。retry と繰り返しで前の回の行を拾わないよう、回ごとに変える
+  const editedRole = `E2E で直した肩書 ${crypto.randomUUID()}`;
   await actAsAuthor(context);
   await page.goto('/dash/careers/new');
   await fillNewCareer(page, 'E2E の作り物の組織 1', 'E2E の肩書');
@@ -32,17 +34,24 @@ test('職歴を登録・編集・削除できる', async ({ page, context }) => 
   await expect(page.getByRole('radio', { name: '秘匿化する', exact: true })).toBeChecked();
   await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
 
-  await page.getByRole('textbox', { name: '肩書' }).fill('E2E で直した肩書');
+  // 保存した後の画面が描き直されるまで待つ。画面に出る値は保存の前と変わらないため、
+  // 保存のたびに変わる更新日時（楽観ロックの隠れた入力）で見分ける。描き直しの前にリンクを
+  // 押すと、vinext 1.2 は後から描いた保存の結果の画面を残し、削除の確認画面へ移らない
+  // （2026-11-08 に、CPU を絞った手元の E2E で、保存の応答の後・描き直しの前に押した回で確かめた）
+  const openedUpdatedAt = page.locator('input[name="openedUpdatedAt"]');
+  const updatedAtBeforeSave = await openedUpdatedAt.inputValue();
+  await page.getByRole('textbox', { name: '肩書' }).fill(editedRole);
   await page.getByRole('radio', { name: 'サイトに載せる', exact: true }).check();
   await page.getByRole('button', { name: '保存する' }).click();
-  await expect(page.getByRole('textbox', { name: '肩書' })).toHaveValue('E2E で直した肩書');
+  await expect(openedUpdatedAt).not.toHaveValue(updatedAtBeforeSave);
+  await expect(page.getByRole('textbox', { name: '肩書' })).toHaveValue(editedRole);
   await expect(page.getByRole('status')).toHaveText('保存しました');
   await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
 
   await page.getByRole('link', { name: 'この職歴を削除する' }).click();
   await page.getByRole('button', { name: '削除する' }).click();
   await expect(page.getByRole('status')).toHaveText('職歴を削除しました');
-  await expect(page.getByRole('link', { name: /E2E で直した肩書/ })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: new RegExp(editedRole) })).toHaveCount(0);
 });
 
 test('同じ職歴を 2 つのタブで開くと、後から保存した側は止まり、入力が残る', async ({
