@@ -285,6 +285,7 @@ describe('regenerateResumeUrl（FR-040）', () => {
 describe('addResumeRows（FR-041）', () => {
   const RESUME: ResumeForEdit = {
     id: 1,
+    uid: '0123456789abcdef0123456789abcdef',
     title: '作り物の提出先',
     slug: 'x',
     audience: 'limited',
@@ -388,6 +389,7 @@ describe('addResumeRows（FR-041）', () => {
       careers: [
         {
           id: 9,
+          uid: 'fedcba9876543210fedcba9876543210',
           careerId: 1,
           organizationName: '作り物株式会社',
           role: '作り物の肩書',
