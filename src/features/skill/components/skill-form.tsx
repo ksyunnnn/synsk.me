@@ -9,6 +9,7 @@ import {
   type SkillFormValues,
 } from '@/features/skill/domain/skill';
 import { InputField } from '@/shared/components/field';
+import { DraftRetention } from '@/shared/components/draft-retention';
 
 /**
  * スキルを登録する・編集するフォーム。上書きの経験年数は年と月で入れる（FR-034）。
@@ -43,6 +44,7 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      <DraftRetention storageKey={`skill:${skillUid ?? 'new'}`} result={result} />
       {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">

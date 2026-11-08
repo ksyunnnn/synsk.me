@@ -9,6 +9,7 @@ import {
 } from '@/features/organization/application/edit-organization';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { InputField } from '@/shared/components/field';
+import { DraftRetention } from '@/shared/components/draft-retention';
 
 /**
  * 組織名と秘匿化した組織名を直すフォーム。Server Action は props で受け取り、`server/` を
@@ -52,6 +53,7 @@ export const OrganizationForm = ({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      <DraftRetention storageKey={`organization:${organizationUid}`} result={result} />
       <input type="hidden" name={ORGANIZATION_UID_FIELD} value={organizationUid} />
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">

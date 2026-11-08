@@ -38,6 +38,7 @@ const fakeCareers = () =>
     register: vi.fn(),
     edit: vi.fn(async () => ({ ok: true as const })),
     delete: vi.fn(),
+    listProjectsOfOrganization: vi.fn(async () => []),
   }) satisfies CareerRepository;
 
 let careers: ReturnType<typeof fakeCareers>;

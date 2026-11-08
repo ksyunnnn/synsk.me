@@ -18,6 +18,7 @@ import {
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { DraftRetention } from '@/shared/components/draft-retention';
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
@@ -70,14 +71,24 @@ const Frame = ({
   formAction,
   target,
   message,
+  draft,
+  result,
   children,
 }: {
   formAction: (formData: FormData) => void;
   target: Target;
   message: string | null;
+  /** 入力中の内容を持つ名前の、写した行の種類（REQUIREMENTS.md の FR-14） */
+  draft: string;
+  result: unknown;
   children: ReactNode;
 }) => (
   <form action={formAction} className="flex flex-col gap-6">
+    <DraftRetention
+      storageKey={`resume:${target.resumeUid}:${draft}:${target.rowUid ?? 'new'}`}
+      version={target.updatedAt}
+      result={result}
+    />
     <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
     {target.rowUid !== undefined && (
       <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
@@ -147,7 +158,7 @@ export const ResumeCareerForm = ({
   const { result, formAction, values, message } = useRowForm(action, initialValues);
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message}>
+    <Frame formAction={formAction} target={target} message={message} draft="career" result={result}>
       <InputField
         name="organizationName"
         label="組織名"
@@ -188,7 +199,13 @@ export const ResumeProjectForm = ({
   const { result, formAction, values, message } = useRowForm(action, initialValues);
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message}>
+    <Frame
+      formAction={formAction}
+      target={target}
+      message={message}
+      draft="project"
+      result={result}
+    >
       <InputField
         name="organizationName"
         label="組織名"
@@ -249,7 +266,13 @@ export const ResumeEducationForm = ({
   const { result, formAction, values, message } = useRowForm(action, initialValues);
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message}>
+    <Frame
+      formAction={formAction}
+      target={target}
+      message={message}
+      draft="education"
+      result={result}
+    >
       <InputField
         name="school"
         label="学校"
@@ -281,7 +304,7 @@ export const ResumeSkillOverridesForm = ({
   const { result, formAction, values, message } = useRowForm(action, initialRows);
   const invalid = new Set(result?.status === 'invalid' ? result.errors.invalidRows : []);
   return (
-    <Frame formAction={formAction} target={target} message={message}>
+    <Frame formAction={formAction} target={target} message={message} draft="skills" result={result}>
       {values.length === 0 ? (
         <p>写したスキルはありません</p>
       ) : (

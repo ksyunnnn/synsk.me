@@ -5,8 +5,8 @@ import { openVisitor, registerCareer, registerProject, saveEdit } from './suppor
 /**
  * 組織の画面（specs/001-career-and-project/spec.md の User Story 3 の 2・3、FR-001・FR-003・
  * FR-004・FR-006）。組織は職歴・実績の入力の中で作られ、組織の画面では直す・消すだけを行う。
- * 組織名の入力に過去の組織名を選択肢として出すこと（User Story 3 の 1、FR-002）は、部品が
- * 決まっていない（specs/001-career-and-project/plan.md の U3）。
+ * 組織名の入力に過去の組織名を選択肢として出すこと（User Story 3 の 1、FR-002）は
+ * tests/e2e/organization-input.spec.ts が持つ。
  *
  * テストは同じ手元の D1 を並行して使う。名前は、ほかのテストと重ならない値にする。
  */

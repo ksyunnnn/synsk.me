@@ -2,6 +2,10 @@ import 'server-only';
 
 import type { CareerDeps } from '@/features/career/application/deps';
 import { getCareerForEdit as getCareerForEditUseCase } from '@/features/career/application/get-career-for-edit';
+import {
+  listCareerProjects,
+  type CareerProjects,
+} from '@/features/career/application/list-career-projects';
 import { listCareers as listCareersUseCase } from '@/features/career/application/list-careers';
 import type { Career, CareerSummary } from '@/features/career/domain/career';
 import { createD1CareerRepository } from '@/features/career/server/d1-career-repository';
@@ -32,6 +36,15 @@ export const getCareerForEdit = async (uid: string): Promise<Career | null> => {
   const { careers } = await createCareerDeps();
   const id = await findIdByUid(careers, uid);
   return id === null ? null : getCareerForEditUseCase(careers, id);
+};
+
+/**
+ * 管理画面に出す、職歴の実績とスキル（FR-017・FR-035）。サイトに載せない実績も含める。
+ * オーナーでなければ 403
+ */
+export const getCareerProjectsForEdit = async (career: Career): Promise<CareerProjects> => {
+  await requireAuthor();
+  return listCareerProjects((await createCareerDeps()).careers, career, 'all');
 };
 
 /** `src/proxy.ts` が呼ぶ。職歴がある uid か */

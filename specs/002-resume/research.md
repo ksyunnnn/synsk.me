@@ -90,7 +90,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R7 キャッシュ・検索・404
 
-- 決めたこと: 職務経歴書のページは `'use cache'` を使わない（001 の research.md の R12 と同じ）。`/resume/{slug}` とその下の経路の応答に、`src/proxy.ts` が次のヘッダを付ける。限定公開用か公開用かは D1 を読むまで分からないため、経路の形で付ける。公開用（tasks.md の T069）でこのヘッダを外すかは公開用を足すときに決める
+- 決めたこと: 職務経歴書のページは `'use cache'` を使わない（001 の research.md の R12 と同じ）。`/resume/{slug}` とその下の経路の応答に、`src/proxy.ts` が次のヘッダを付ける。限定公開用か公開用かは D1 を読むまで分からないため、経路の形で付ける。公開用（tasks.md の T069）にも同じヘッダを付けたままにする。実装者の仮の既定で、オーナーの決定が無い。限定公開用か公開用かは D1 を読むまで分からず、経路の形でヘッダを決める限り、公開用だけ外すと D1 を読んだ後にヘッダを変える形になる。外すかは、公開用を検索に出すかと合わせて決める
   - `Cache-Control: no-store, must-revalidate`（FR-015・NFR-09）
   - `X-Robots-Tag: noindex`（FR-015）。Google は PDF のような HTML でない応答にも X-Robots-Tag が効くとする（[Robots meta tag](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag)、2026-11-04 に確認）
   - `Referrer-Policy: no-referrer`（R5）

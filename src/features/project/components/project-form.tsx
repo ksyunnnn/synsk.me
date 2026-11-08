@@ -13,7 +13,9 @@ import {
 } from '@/features/project/domain/project';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
+import { OrganizationNameField } from '@/shared/components/organization-name-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { DraftRetention } from '@/shared/components/draft-retention';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -25,7 +27,7 @@ import { SiteStatusField } from '@/shared/components/site-status-field';
  * 入力の決まりはサーバで確かめ、誤りを文言で返す。`required` を付けない。ブラウザが送信を
  * 止めると、どの項目の何が合わないかを同じ形で伝えられないため。
  *
- * 組織名は、選択肢を出す部品が決まるまでネイティブの文字の入力にする（plan.md の U3）。
+ * 組織名は、登録した組織名を選択肢に出すネイティブの入力（plan.md の U3）。
  */
 
 type ProjectFormAction = (
@@ -38,6 +40,8 @@ type Props = {
   initialValues: ProjectFormValues;
   /** つなげるスキルの選択肢（FR-032） */
   skillOptions: { id: number; name: string }[];
+  /** 組織名の選択肢。登録した組織名（FR-002） */
+  organizationNames: readonly string[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
   project?: { uid: string; updatedAt: string; isMasked: boolean };
 };
@@ -79,7 +83,13 @@ const RESULT_MESSAGES = {
     'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
 
-export const ProjectForm = ({ action, initialValues, skillOptions, project }: Props) => {
+export const ProjectForm = ({
+  action,
+  initialValues,
+  skillOptions,
+  organizationNames,
+  project,
+}: Props) => {
   const [result, formAction] = useActionState(action, null);
   const values: ProjectFormValues =
     result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
@@ -93,6 +103,11 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      <DraftRetention
+        storageKey={`project:${project?.uid ?? 'new'}`}
+        version={project?.updatedAt}
+        result={result}
+      />
       {project && (
         <>
           <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />
@@ -113,11 +128,12 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
         description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
       />
 
-      <InputField
+      <OrganizationNameField
         name="organizationName"
         label="組織名"
+        hint="登録した組織名から選ぶか、新しい組織名を入力します"
+        options={organizationNames}
         defaultValue={values.organizationName}
-        autoComplete="off"
         error={errorOf('organizationName')}
       />
       <InputField

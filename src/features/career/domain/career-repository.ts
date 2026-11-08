@@ -3,6 +3,7 @@ import type {
   Career,
   CareerContent,
   CareerId,
+  CareerProjectSource,
   CareerSummary,
 } from '@/features/career/domain/career';
 
@@ -32,6 +33,14 @@ export type CareerRepository = {
   ) => Promise<
     { ok: true } | { ok: false; reason: 'masked-name-required' | 'conflict' | 'not-found' }
   >;
+  /**
+   * 組織の実績と、つないだスキルの名前。始まりの日の新しい順。`published` ならサイトに載せる
+   * 実績だけ（FR-035）。職歴の実績を求めるのに使う（FR-017）
+   */
+  listProjectsOfOrganization: (
+    organizationId: number,
+    scope: 'all' | 'published',
+  ) => Promise<CareerProjectSource[]>;
   /** 物理削除する（research.md の R8） */
   delete: (id: CareerId) => Promise<{ ok: boolean }>;
 };

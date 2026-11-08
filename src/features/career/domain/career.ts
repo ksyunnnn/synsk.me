@@ -1,7 +1,7 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
-import { toPeriod, type Period } from '@/shared/domain/period';
+import { periodsOverlap, toPeriod, type Period } from '@/shared/domain/period';
 import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
@@ -141,3 +141,33 @@ export const toCareerFormValues = (career?: Career): CareerFormValues =>
         description: '',
         url: '',
       };
+
+/*
+ * 職歴ごとの実績とスキル（spec の FR-017・FR-035）。実績は職歴と直接つながらず、職歴と同じ組織で
+ * 期間が重なる実績として求める。職歴のスキルは、その実績につないだスキルを合わせて求める。
+ * 求めた値は保存しない。期間の重なりは src/shared/domain/period.ts の `periodsOverlap` が決める
+ */
+
+/** 職歴の実績を求めるのに要る、実績の値 */
+export type CareerProjectSource = {
+  organizationId: number;
+  title: string;
+  period: Period;
+  /** つないだスキルの名前 */
+  skills: string[];
+};
+
+/** 職歴と同じ組織で、期間が重なる実績。並びは受け取った順のまま */
+export const projectsOfCareer = <P extends CareerProjectSource>(
+  career: Pick<Career, 'organization' | 'period'>,
+  projects: readonly P[],
+): P[] =>
+  projects.filter(
+    (project) =>
+      project.organizationId === career.organization.id &&
+      periodsOverlap(career.period, project.period),
+  );
+
+/** 職歴の実績につないだスキルの名前。重ねず、名前の順 */
+export const skillsOfCareer = (projects: readonly CareerProjectSource[]): string[] =>
+  [...new Set(projects.flatMap((project) => project.skills))].sort((a, b) => a.localeCompare(b));

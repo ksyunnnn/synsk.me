@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { listCareerProjects } from '@/features/career/application/list-career-projects';
+import type { CareerRepository } from '@/features/career/domain/career-repository';
 import {
   countExperienceMonths,
+  periodsOverlap,
   toYearsAndMonths,
   type CalendarDate,
   type Period,
@@ -10,7 +13,8 @@ import {
  * 経験年数の数え方（specs/001-career-and-project/spec.md の FR-033・SC-004）。月を単位に、
  * 両端の月を含めて数え、重なる月は 1 回だけ数える。終わりの日が空なら日本時間の今月まで。
  * 上書きの月数を使うことは、スキルのユースケースの検査が持つ。
- * 職歴の実績とスキル（FR-017・FR-035）は、端の扱いが決まってから確かめる（plan.md の U6 の残り）。
+ * 職歴の実績とスキル（FR-017・FR-035）は、期間が両端を含むことに合わせ、端の日だけ接する期間を
+ * 重なるとみなす既定で確かめる（plan.md の U6 の残り）。
  */
 
 const period = (startedOn: string, endedOn: string | null): Period => ({
@@ -98,5 +102,67 @@ describe('toYearsAndMonths', () => {
     [0, { years: 0, months: 0 }],
   ])('%i か月は %j', (months, expected) => {
     expect(toYearsAndMonths(months)).toEqual(expected);
+  });
+});
+
+describe('periodsOverlap（FR-017・FR-035、plan.md の U6 の残りの既定）', () => {
+  it.each([
+    ['一部が重なる', period('2020-01-01', '2020-06-30'), period('2020-04-01', '2020-09-30'), true],
+    [
+      '一方が他方を含む',
+      period('2019-01-01', '2020-12-31'),
+      period('2019-06-01', '2019-08-31'),
+      true,
+    ],
+    [
+      '端の日だけ接する',
+      period('2020-01-01', '2020-03-31'),
+      period('2020-03-31', '2020-06-30'),
+      true,
+    ],
+    ['1 日離れる', period('2020-01-01', '2020-03-30'), period('2020-03-31', '2020-06-30'), false],
+    ['重ならない', period('2018-01-01', '2018-12-31'), period('2020-01-01', '2020-12-31'), false],
+    [
+      '終わりの日が空の期間は終わらない',
+      period('2015-01-01', null),
+      period('2026-01-01', null),
+      true,
+    ],
+    [
+      '終わりの日が空でも、始まる前は重ならない',
+      period('2020-01-01', null),
+      period('2019-01-01', '2019-12-31'),
+      false,
+    ],
+  ])('%s', (_, a, b, expected) => {
+    expect(periodsOverlap(a, b)).toBe(expected);
+    expect(periodsOverlap(b, a)).toBe(expected);
+  });
+});
+
+describe('職歴の実績とスキル（FR-017・FR-035）', () => {
+  const project = (organizationId: number, title: string, p: Period, skills: string[]) => ({
+    organizationId,
+    title,
+    period: p,
+    skills,
+  });
+  const careers = {
+    listProjectsOfOrganization: async () => [
+      project(1, '重なる実績', period('2021-04-01', '2022-03-31'), ['Go', 'TypeScript']),
+      project(1, '後の実績', period('2023-04-01', null), ['Rust']),
+      project(2, '別の組織の実績', period('2021-04-01', null), ['Python']),
+      project(1, '端で接する実績', period('2020-01-01', '2020-04-01'), ['TypeScript']),
+    ],
+  } as unknown as CareerRepository;
+  const career = {
+    organization: { id: 1, name: '作り物株式会社', nameMasked: 'ある会社' },
+    period: period('2020-04-01', '2023-03-31'),
+  };
+
+  it('同じ組織で期間が重なる実績を選び、そのスキルを重ねずに名前の順で合わせる', async () => {
+    const { projects, skills } = await listCareerProjects(careers, career, 'all');
+    expect(projects.map((p) => p.title)).toEqual(['重なる実績', '端で接する実績']);
+    expect(skills).toEqual(['Go', 'TypeScript']);
   });
 });

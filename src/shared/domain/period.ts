@@ -2,9 +2,8 @@
  * 職歴・実績・学歴の期間（specs/001-career-and-project/spec.md の FR-038・FR-039）。
  * 使い手は career・project・education と、002 の職務経歴書。
  *
- * 日付は `YYYY-MM-DD` の文字列のまま持ち、時刻帯を持たない。経験年数の計算もここに置く
- * （spec の FR-033）。職歴と実績の期間の重なりの判定は、端の扱いが決まるまで書かない
- * （specs/001-career-and-project/plan.md の U6 の残り）。
+ * 日付は `YYYY-MM-DD` の文字列のまま持ち、時刻帯を持たない。経験年数の計算（spec の FR-033）と、
+ * 職歴と実績の期間の重なりの判定（FR-017・FR-035）もここに置く。
  */
 
 /** 暦の日付。`YYYY-MM-DD` の形で、実在する日 */
@@ -114,3 +113,16 @@ export const toYearsAndMonths = (months: number): { years: number; months: numbe
   years: Math.floor(months / 12),
   months: months % 12,
 });
+
+/**
+ * 2 つの期間が重なるか（spec の FR-017・FR-035）。期間は両端の日を含む（FR-039 は始まりと終わりが
+ * 同じ日の期間を許す）ため、一方の終わりの日ともう一方の始まりの日が同じ日なら重なるとみなす。
+ * 終わりの日が空の期間は終わらない。
+ *
+ * 端の日だけ接するときの扱いは specs/001-career-and-project/plan.md の U6 の残りで、オーナーの決定が
+ * 無い。決まるまでの既定として、期間が両端を含むことに合わせて重なるとする。日付の比較は文字列の
+ * 比較で足りる（`YYYY-MM-DD` は文字列の順と日付の順が一致する）
+ */
+export const periodsOverlap = (a: Period, b: Period): boolean =>
+  (b.endedOn === null || a.startedOn <= b.endedOn) &&
+  (a.endedOn === null || b.startedOn <= a.endedOn);

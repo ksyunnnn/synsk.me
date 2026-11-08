@@ -9,6 +9,7 @@ import {
   type EducationFormValues,
 } from '@/features/education/domain/education';
 import { InputField, TextareaField } from '@/shared/components/field';
+import { DraftRetention } from '@/shared/components/draft-retention';
 
 /**
  * 学歴を登録する・編集するフォーム。Server Action は props で受け取り、`server/` を読み込まない
@@ -48,6 +49,7 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      <DraftRetention storageKey={`education:${educationUid ?? 'new'}`} result={result} />
       {educationUid !== undefined && (
         <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
       )}

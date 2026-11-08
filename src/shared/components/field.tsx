@@ -66,7 +66,7 @@ const FieldFrame = ({
   );
 };
 
-type InputFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'input'>, 'name' | 'id'>;
+export type InputFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'input'>, 'name' | 'id'>;
 
 export const InputField = ({ name, label, hint, error, className, ...props }: InputFieldProps) => {
   const ids = useFieldIds(name, { hint, error });

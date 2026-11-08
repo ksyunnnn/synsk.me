@@ -337,4 +337,4 @@ CREATE TABLE project (is_masked INTEGER NOT NULL CHECK (is_masked IN (0, 1)));
 一般名との違い: ユビキタス言語（Evans、Domain-Driven Design）は、話す言葉とコードの言葉を1つに揃えるところまで。接尾辞と接頭辞で列の性質を表す決まりは、synsk.me が足したもの。
 
 もとにした原則: 1
-手本のファイル: 未定（その形を最初に書いたときに足す）
+手本のファイル: `migrations/0008_rebuild_career_project_and_resume.sql`

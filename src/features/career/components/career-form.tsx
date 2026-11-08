@@ -11,18 +11,22 @@ import {
 } from '@/features/career/domain/career';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
+import { OrganizationNameField } from '@/shared/components/organization-name-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { DraftRetention } from '@/shared/components/draft-retention';
 
 /**
  * 職歴を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
  * Server Action は props で受け取り、`server/` を読み込まない（ADR-0026 の依存の向き 3）。
- * 失敗の結果は送られた値を持ち、入力を消さずに理由を示す。組織名はネイティブの文字の入力
- * （plan.md の U3）
+ * 失敗の結果は送られた値を持ち、入力を消さずに理由を示す。組織名は登録した組織名を
+ * 選択肢に出すネイティブの入力（plan.md の U3）
  */
 
 type Props = {
   action: (state: CareerFormResult | null, formData: FormData) => Promise<CareerFormResult>;
   initialValues: CareerFormValues;
+  /** 組織名の選択肢。登録した組織名（FR-002） */
+  organizationNames: readonly string[];
   /** 編集する職歴。持てば編集のフォームで、楽観ロックの値を送る */
   career?: { uid: string; updatedAt: string };
 };
@@ -55,7 +59,7 @@ const RESULT_MESSAGES = {
     'この職歴は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
 
-export const CareerForm = ({ action, initialValues, career }: Props) => {
+export const CareerForm = ({ action, initialValues, organizationNames, career }: Props) => {
   const [result, formAction] = useActionState(action, null);
   const values =
     result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
@@ -67,6 +71,11 @@ export const CareerForm = ({ action, initialValues, career }: Props) => {
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
+      <DraftRetention
+        storageKey={`career:${career?.uid ?? 'new'}`}
+        version={career?.updatedAt}
+        result={result}
+      />
       {career && (
         <>
           <input type="hidden" name={CAREER_UID_FIELD} value={career.uid} />
@@ -83,11 +92,12 @@ export const CareerForm = ({ action, initialValues, career }: Props) => {
         isMasked={values.isMasked}
         description="秘匿化すると、訪問者には秘匿化した組織名で出し、本文と画像を出しません"
       />
-      <InputField
+      <OrganizationNameField
         name="organizationName"
         label="組織名"
+        hint="登録した組織名から選ぶか、新しい組織名を入力します"
+        options={organizationNames}
         defaultValue={values.organizationName}
-        autoComplete="off"
         error={errorOf('organizationName')}
       />
       <InputField

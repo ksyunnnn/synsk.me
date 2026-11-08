@@ -5,6 +5,7 @@ import { toProjectFormValues } from '@/features/project/domain/project';
 import { editProject } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { listOrganizationNames } from '@/shared/server/organization-names';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -21,7 +22,11 @@ const Page = async ({ params, searchParams }: Props) => {
   // オーナーでなければ、実績を読む前に 403 になる
   const project = await getProjectForEdit((await params).id);
   if (!project) notFound();
-  const [{ saved }, skillOptions] = await Promise.all([searchParams, listSkillOptions()]);
+  const [{ saved }, skillOptions, organizationNames] = await Promise.all([
+    searchParams,
+    listSkillOptions(),
+    listOrganizationNames(),
+  ]);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
@@ -39,6 +44,7 @@ const Page = async ({ params, searchParams }: Props) => {
         action={editProject}
         initialValues={toProjectFormValues(project)}
         skillOptions={skillOptions}
+        organizationNames={organizationNames}
         project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
       />
       <p>

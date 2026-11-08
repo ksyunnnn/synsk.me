@@ -3,8 +3,9 @@ import { notFound } from 'next/navigation';
 import { CareerForm } from '@/features/career/components/career-form';
 import { toCareerFormValues } from '@/features/career/domain/career';
 import { editCareer } from '@/features/career/server/actions';
-import { getCareerForEdit } from '@/features/career/server/queries';
+import { getCareerForEdit, getCareerProjectsForEdit } from '@/features/career/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { listOrganizationNames } from '@/shared/server/organization-names';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -21,7 +22,11 @@ const Page = async ({ params, searchParams }: Props) => {
   // オーナーでなければ、職歴を読む前に 403 になる
   const career = await getCareerForEdit((await params).id);
   if (!career) notFound();
-  const { saved } = await searchParams;
+  const [{ saved }, organizationNames, related] = await Promise.all([
+    searchParams,
+    listOrganizationNames(),
+    getCareerProjectsForEdit(career),
+  ]);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
@@ -35,8 +40,34 @@ const Page = async ({ params, searchParams }: Props) => {
         key={career.updatedAt}
         action={editCareer}
         initialValues={toCareerFormValues(career)}
+        organizationNames={organizationNames}
         career={{ uid: career.uid, updatedAt: career.updatedAt }}
       />
+      <section className="flex flex-col gap-2" aria-labelledby="career-projects">
+        <h2 id="career-projects" className="text-lg font-bold">
+          この職歴の実績とスキル
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          同じ組織で、期間が重なる実績です。保存した職歴の値から求めます
+        </p>
+        {related.projects.length === 0 ? (
+          <p>当てはまる実績はありません</p>
+        ) : (
+          <>
+            <ul className="flex flex-col gap-1">
+              {related.projects.map((project, index) => (
+                <li key={index}>
+                  {project.title}
+                  <span className="text-sm text-muted-foreground">
+                    （{project.period.startedOn} 〜 {project.period.endedOn ?? ''}）
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <p>スキル: {related.skills.length === 0 ? 'なし' : related.skills.join('、')}</p>
+          </>
+        )}
+      </section>
       <p>
         <TextLink href={`/dash/careers/${career.uid}/delete`}>この職歴を削除する</TextLink>
       </p>

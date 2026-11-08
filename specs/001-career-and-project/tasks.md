@@ -145,7 +145,7 @@ description: "職歴と実績の実装タスク"
 - [X] T050 [US3] 組織のユースケース（edit-organization.ts・delete-organization.ts・list-organizations.ts）を src/features/organization/application/ に、組み立て用の関数と Server Action を src/features/organization/server/queries.ts・actions.ts に作る
 - [X] T051 [P] [US3] 組織の編集の入力を src/features/organization/components/organization-form.tsx に作る
 - [X] T052 [US3] 管理画面のページを src/app/dash/organizations/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/organizations/{uid}` の有無を足す
-- [ ] T053 [US3] 組織名の選択肢を出す入力の部品を src/shared/components/ に作り、src/features/project/components/project-form.tsx と src/features/career/components/career-form.tsx の組織名に使う。E2E で選択肢が出ることとキーボードで選べることを tests/e2e/organization-input.spec.ts で確かめる（FR-002）。**止める未決: U3**
+- [X] T053 [US3] 組織名の選択肢を出す入力の部品を src/shared/components/ に作り、src/features/project/components/project-form.tsx と src/features/career/components/career-form.tsx の組織名に使う。E2E で選択肢が出ることとキーボードで選べることを tests/e2e/organization-input.spec.ts で確かめる（FR-002）。**止める未決: U3**
 
 ---
 
@@ -158,7 +158,7 @@ description: "職歴と実績の実装タスク"
 ### Tests for User Story 4
 
 - [X] T054 [P] [US4] スキルの D1 の実装（大文字と小文字だけ違う名前の拒否、上書きの月数の保存、削除で `project_skill` を先に消す）と、実績へのスキルのつなぎ（0 個以上）を tests/workers/skill-repository.test.ts で確かめる（FR-031・FR-032・FR-034）
-- [ ] T055 [P] [US4] 経験年数の計算を tests/unit/period-experience.test.ts で確かめる。SC-004 の組（重ならない・一部重なる・一方が他方を含む・終わりの日が空）と、上書きの月数を使うこと。職歴の実績とスキル（同じ組織で期間が重なる）も確かめる（FR-017・FR-033〜FR-035）。職歴の実績とスキルの部分だけ **止める未決: U6 の残り（端の扱い）**
+- [X] T055 [P] [US4] 経験年数の計算を tests/unit/period-experience.test.ts で確かめる。SC-004 の組（重ならない・一部重なる・一方が他方を含む・終わりの日が空）と、上書きの月数を使うこと。職歴の実績とスキル（同じ組織で期間が重なる）も確かめる（FR-017・FR-033〜FR-035）。職歴の実績とスキルの部分だけ **止める未決: U6 の残り（端の扱い）**
 
 ### Implementation for User Story 4
 
@@ -167,7 +167,7 @@ description: "職歴と実績の実装タスク"
 - [X] T058 [P] [US4] スキルの入力（名前・上書きの年と月）を src/features/skill/components/skill-form.tsx に作る
 - [X] T059 [US4] 管理画面のページを src/app/dash/skills/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/skills/{uid}` の有無を足す
 - [X] T060 [US4] 実績の入力に、スキルをつなぐチェックボックスの並びを足す（src/features/project/components/project-form.tsx）。src/features/project/server/d1-project-repository.ts の登録と編集で `project_skill` を入れ直し、research.md の R7 の条件を付ける。訪問者向けの DTO の `skills` を埋める
-- [ ] T061 [US4] 経験年数の計算と、職歴の実績とスキルの求め方を src/shared/domain/period.ts に作り、スキルの一覧の画面（src/app/dash/skills/page.tsx）に年と月で出す。職歴の実績とスキルの求め方だけ **止める未決: U6 の残り（端の扱い）**
+- [X] T061 [US4] 経験年数の計算と、職歴の実績とスキルの求め方を src/shared/domain/period.ts に作り、スキルの一覧の画面（src/app/dash/skills/page.tsx）に年と月で出す。職歴の実績とスキルの求め方だけ **止める未決: U6 の残り（端の扱い）**
 
 ---
 
@@ -197,14 +197,14 @@ description: "職歴と実績の実装タスク"
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T072 入力中の内容を `localStorage` に持ち、保存に成功したら消す部品を src/shared/components/draft-retention.tsx に作り、実績・職歴・学歴・組織・スキルの入力に使う。E2E で、保存せずに再読み込みしても入力が残ることを tests/e2e/draft-retention.spec.ts で確かめる（REQUIREMENTS.md の FR-14、research.md の R16）
+- [X] T072 入力中の内容を `localStorage` に持ち、保存に成功したら消す部品を src/shared/components/draft-retention.tsx に作り、実績・職歴・学歴・組織・スキルの入力に使う。E2E で、保存せずに再読み込みしても入力が残ることを tests/e2e/draft-retention.spec.ts で確かめる（REQUIREMENTS.md の FR-14、research.md の R16）
 - [ ] T073 本番の D1 にオーナーが個人の組織を登録した後、その行の id を src/shared/domain/organization.ts の定数に書き、個人の組織を消せないことを tests/workers/organization-edit.test.ts に足す（FR-041、research.md の R9）
-- [ ] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
+- [X] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
 - [ ] T075 R2 の読み書きを src/shared/server/media-storage.ts に閉じ込め、実績・職歴の画像の追加と、実績の代表画像の選択と登録（その実績の画像だけ）を作る。画像の上限を plan.md に書いてから作る（constitution II）。**止める未決: U5**
 - [ ] T076 秘匿化しない実績の画像を配る経路を作り、秘匿化した実績の画像が返らないことを結合で確かめる（FR-030）。**止める未決: U5**
 - [ ] T077 本文の表示と、本文の中に画像とキャプションを置く入力を作る（FR-027）。**止める未決: U4**
 - [X] T078 訪問者向けの実績の取り出しと識別子の有無（src/features/project/server/d1-project-repository.ts）を、秘匿化した組織名の無い組織を指す秘匿化した実績を出さない形にし、tests/workers/project-masking.test.ts と tests/integration/project-masking.test.ts で 404 と応答の中身を確かめる（U2 の決定、research.md の R5）。トリガの migration は足さない
-- [ ] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース・失敗の表し方・見た目と操作を分ける）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
+- [X] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース・失敗の表し方・見た目と操作を分ける）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
 - [ ] T080 PR の CI が 10 分以内に収まることを GitHub Actions のステップの所要時間で確かめる（ADR-0019）
 - [ ] T081 quickstart.md の手順をブランチの Preview で行う
 - [ ] T082 問い合わせの場所のページ（別の spec）ができたら、秘匿化した実績の「非公開」の近くに、そのページへのリンクを src/features/project/components/visitor-project.tsx に足す（FR-021、plan.md の U7）。**止める依存: 問い合わせの場所のページ**

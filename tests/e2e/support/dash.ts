@@ -48,6 +48,13 @@ export const VISITOR_PAGES = ['/', '/about', '/contact', '/resume'] as const;
 
 const textbox = (page: Page, name: string) => page.getByRole('textbox', { name, exact: true });
 
+/**
+ * 職歴・実績の組織名の入力。登録した組織名を選択肢に出す `<input list>` で、役割は combobox
+ * （HTML-AAM。src/shared/components/organization-name-field.tsx）
+ */
+export const organizationNameInput = (page: Page) =>
+  page.getByRole('combobox', { name: '組織名', exact: true });
+
 /** 入力を省いた項目は、いまの値のまま触らない */
 const fillIfGiven = async (page: Page, name: string, value: string | undefined) => {
   if (value !== undefined) await textbox(page, name).fill(value);
@@ -67,7 +74,9 @@ export const chooseSiteOptions = async (page: Page, { isMasked, onSite }: SiteOp
 
 /** 職歴の登録の画面か編集の画面で、入力を埋める */
 export const fillCareer = async (page: Page, input: Partial<CareerInput>) => {
-  await fillIfGiven(page, '組織名', input.organizationName);
+  if (input.organizationName !== undefined) {
+    await organizationNameInput(page).fill(input.organizationName);
+  }
   await fillIfGiven(page, '秘匿化した組織名', input.organizationNameMasked);
   await fillIfGiven(page, '肩書', input.role);
   await fillIfGiven(page, '始まりの日', input.startedOn);
@@ -88,7 +97,9 @@ export const registerCareer = async (page: Page, input: CareerInput) => {
 
 /** 実績の登録の画面か編集の画面で、入力を埋める */
 export const fillProject = async (page: Page, input: Partial<ProjectInput>) => {
-  await fillIfGiven(page, '組織名', input.organizationName);
+  if (input.organizationName !== undefined) {
+    await organizationNameInput(page).fill(input.organizationName);
+  }
   await fillIfGiven(page, '秘匿化した組織名', input.organizationNameMasked);
   if (input.kind) await page.getByRole('combobox', { name: '種類' }).selectOption(input.kind);
   await fillIfGiven(page, '題', input.title);

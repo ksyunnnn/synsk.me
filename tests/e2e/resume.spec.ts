@@ -43,7 +43,8 @@ test('作成の画面は、すべての職歴・実績・学歴を選んだ状�
   const count = await checkboxes.count();
   expect(count).toBeGreaterThanOrEqual(2);
   for (let i = 0; i < count; i += 1) await expect(checkboxes.nth(i)).toBeChecked();
-  await expect(page.getByText('限定公開用で作ります')).toBeVisible();
+  // 限定公開用か公開用かは、限定公開用を選んだ状態で始まる（FR-003）
+  await expect(page.getByRole('radio', { name: /^限定公開用/ })).toBeChecked();
 
   // キーボードだけで、題を入れ、学歴を 1 件外し、作る。ほかのテストの行も外す。ほかのテストが
   // 並行して消す行を選んだまま送ると、作成が止まる（tests/e2e/support/dash.ts）
