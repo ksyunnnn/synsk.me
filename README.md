@@ -33,7 +33,6 @@ cp ../../assets/.env.local .env.local # 手元の環境変数を写す
 npm run dev        # 開発サーバー（http://localhost:3000）
 npm run build      # プロダクションビルド（出力は dist/）
 npm run lint       # リンター
-npm run start      # ビルド出力をローカルで起動
 npm run preview    # ビルドして Workers ランタイムでローカル起動
 npm run deploy     # ビルド済みの dist をデプロイし、配信を検査する
 npm run preview:branch # ビルド済みの dist から、ブランチの Preview を作る
@@ -190,7 +189,7 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 
 ## Worker の secret
 
-`ACCESS_` で始まる 3 つは、`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、オーナーであることを確かめられないとして拒む。`npm run dev` のときだけ、JWT を検証せずにオーナーとして扱い、3 つが欠けていても拒まない。分岐は `npm run build` で消えるため、`npm run preview` と `npm run start` では検証する（[ADR-0049](./docs/decisions/0049-verify-access-jwt-except-dev.md)）。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
+`ACCESS_` で始まる 3 つは、`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、オーナーであることを確かめられないとして拒む。`npm run dev` のときだけ、JWT を検証せずにオーナーとして扱い、3 つが欠けていても拒まない。分岐は `npm run build` で消えるため、`npm run preview` では検証する（[ADR-0049](./docs/decisions/0049-verify-access-jwt-except-dev.md)）。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
 
 | 変数 | 用途 |
 |------|------|
