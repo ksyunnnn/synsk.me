@@ -9,6 +9,7 @@ import {
   type ResumeProjectContent,
   type ResumeSkillOverride,
 } from '@/features/resume/domain/resume';
+import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { isWebUrl } from '@/shared/domain/web-url';
@@ -196,6 +197,8 @@ export const parseResumeProject = (
         .filter((name) => name !== ''),
     ),
   ];
+  // スキルは 1 つごとに D1 の文を 1 つ積む。写すときと同じ上限で止める（research.md の R15）
+  if (skills.length > MAX_COPIED_ROWS) errors.skills = 'invalid';
   if (Object.keys(errors).length > 0 || period === null || !isResumeProjectKind(values.kind)) {
     return { ok: false, errors };
   }
@@ -265,6 +268,8 @@ const NON_NEGATIVE_INTEGER = /^\d{1,3}$/;
 
 /**
  * 行ごとの年と月を月数にする。年と月の両方が空の行は上書きなし。月は 0〜11。
+ * 同じスキルの名前は 1 行だけ受け取る（`resume_skill_override` はスキルの名前ごとに 1 行）。
+ * 上書きは 1 つごとに D1 の文を 1 つ積むため、写すときと同じ上限で止める（research.md の R15）。
  * 誤りのある行の位置を返す
  */
 export const parseSkillOverrides = (
@@ -272,13 +277,25 @@ export const parseSkillOverrides = (
 ): { ok: true; overrides: ResumeSkillOverride[] } | { ok: false; invalidRows: number[] } => {
   const overrides: ResumeSkillOverride[] = [];
   const invalidRows: number[] = [];
+  const names = new Set<string>();
   rows.forEach((row, index) => {
+    if (names.has(row.name)) {
+      invalidRows.push(index);
+      return;
+    }
+    names.add(row.name);
     const years = row.years.trim();
     const months = row.months.trim();
     if (years === '' && months === '') return;
     const y = years === '' ? 0 : NON_NEGATIVE_INTEGER.test(years) ? Number(years) : NaN;
     const m = months === '' ? 0 : NON_NEGATIVE_INTEGER.test(months) ? Number(months) : NaN;
-    if (Number.isNaN(y) || Number.isNaN(m) || m > 11 || row.name.trim() === '') {
+    if (
+      Number.isNaN(y) ||
+      Number.isNaN(m) ||
+      m > 11 ||
+      row.name.trim() === '' ||
+      overrides.length >= MAX_COPIED_ROWS
+    ) {
       invalidRows.push(index);
       return;
     }
