@@ -53,6 +53,7 @@ describe('id', () => {
   it.each([
     ['1', 1],
     ['42', 42],
+    [String(Number.MAX_SAFE_INTEGER), Number.MAX_SAFE_INTEGER],
   ])('%s を読む', (value, id) => {
     expect(parseResumeId(value)).toBe(id);
   });
@@ -60,4 +61,11 @@ describe('id', () => {
   it.each(['', '0', '-1', '1.5', 'abc', '01'])('%s を拒む', (value) => {
     expect(parseResumeId(value)).toBeNull();
   });
+
+  it.each(['9007199254740992', '9007199254740993', '9999999999999999'])(
+    'Number.MAX_SAFE_INTEGER を超える %s は、精度を失うため拒む',
+    (value) => {
+      expect(parseResumeId(value)).toBeNull();
+    },
+  );
 });
