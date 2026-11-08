@@ -13,7 +13,7 @@ import {
 import { getResumeForEdit, limitedResumeUrl } from '@/features/resume/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 
-// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 
@@ -25,7 +25,7 @@ type Props = {
 };
 
 const Page = async ({ params, searchParams }: Props) => {
-  // 作り手でなければ、読む前に 403 になる
+  // オーナーでなければ、読む前に 403 になる
   const resume = await getResumeForEdit((await params).id);
   if (!resume) notFound();
   const { saved, regenerated } = await searchParams;

@@ -182,7 +182,7 @@ it('秘匿化した実績のページの <title> と OGP は、秘匿化した�
 describe('秘匿化を切り替えた直後の要求（FR-043）', () => {
   const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
 
-  /** 作り手として、JavaScript なしのブラウザと同じ形で編集のフォームを送る */
+  /** オーナーとして、JavaScript なしのブラウザと同じ形で編集のフォームを送る */
   const submitEdit = async (id: number, values: Record<string, string>) => {
     const uid = await uidOf(ctx.db, 'project', id);
     const path = `/dash/projects/${uid}`;

@@ -21,7 +21,7 @@ export type RegisterProjectOutcome =
     };
 
 /**
- * 実績を登録する（FR-011・FR-013・FR-015）。作り手でなければ何も書かない（FR-040）。
+ * 実績を登録する（FR-011・FR-013・FR-015）。オーナーでなければ何も書かない（FR-040）。
  * 組織を読み、決まりを確かめ、最後に書く（docs/SOFTWARE_DESIGN.md の「読む → 計算 → 書く」）
  */
 export const registerProject = async (

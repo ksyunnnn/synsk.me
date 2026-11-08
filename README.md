@@ -129,7 +129,7 @@ E2E の前に `npx playwright install chromium` でブラウザを入れる。
 
 ## 配信の検査
 
-`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものと、作り手の画面を守る Access の設定と、note の応答がキャッシュに載らないことである。
+`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものと、オーナーの画面を守る Access の設定と、note の応答がキャッシュに載らないことである。
 
 | 検査 | 落ちたときに疑うもの |
 | --- | --- |
@@ -190,13 +190,13 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 
 ## Worker の secret
 
-`ACCESS_` で始まる 3 つは、`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、作り手であることを確かめられないとして拒む。`npm run dev` のときだけ、JWT を検証せずに作り手として扱い、3 つが欠けていても拒まない。分岐は `npm run build` で消えるため、`npm run preview` と `npm run start` では検証する（[ADR-0049](./docs/decisions/0049-verify-access-jwt-except-dev.md)）。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
+`ACCESS_` で始まる 3 つは、`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、オーナーであることを確かめられないとして拒む。`npm run dev` のときだけ、JWT を検証せずにオーナーとして扱い、3 つが欠けていても拒まない。分岐は `npm run build` で消えるため、`npm run preview` と `npm run start` では検証する（[ADR-0049](./docs/decisions/0049-verify-access-jwt-except-dev.md)）。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
 
 | 変数 | 用途 |
 |------|------|
 | `ACCESS_ISSUER` | Access の team domain（`https://<team-name>.cloudflareaccess.com`）。公開鍵を `<ACCESS_ISSUER>/cdn-cgi/access/certs` から取る |
 | `ACCESS_AUD` | Access のアプリケーションの AUD タグ。カンマで区切って複数並べられる。本番には `synsk.me dash`、Preview には `synsk.me preview` の AUD を置く |
-| `ACCESS_OWNER_EMAIL` | 作り手として認めるメールアドレス |
+| `ACCESS_OWNER_EMAIL` | オーナーとして認めるメールアドレス |
 | `RESUME_EMAIL` | 職務経歴書のプロフィールに出すメールアドレス。空か無ければ出さない |
 
 ## Workers Builds のビルド構成

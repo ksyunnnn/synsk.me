@@ -22,7 +22,7 @@ export type AddResumeRowsOutcome = EditOutcome<string[], AddResumeRowsErrors>;
 
 /**
  * 作ったあとに、元の職歴・実績・学歴から選んだ行を職務経歴書に足す（FR-041）。写し方は作るときと
- * 同じ（`buildResumeContent`）。作り手でなければ何も読まず何も書かない（FR-033）。読む → 計算 →
+ * 同じ（`buildResumeContent`）。オーナーでなければ何も読まず何も書かない（FR-033）。読む → 計算 →
  * 書くの順（docs/SOFTWARE_DESIGN.md）。
  *
  * 既に写した写し元は足さない。開いた後に選んだ写し元が消えていたら、作るときと同じく足さずに

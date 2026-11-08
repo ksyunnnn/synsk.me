@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * `npm run dev` でだけ作り手の判定を飛ばす分岐（src/shared/server/author.ts）が、build した
+ * `npm run dev` でだけオーナーの判定を飛ばす分岐（src/shared/server/author.ts）が、build した
  * dist/ に残っていないことを確かめる。分岐は `import.meta.env.DEV` で分け、Vite が build のときに
  * 定数へ置き換えて消す。分岐の中の固定のメールアドレスを、分岐が残った印として探す。
  *
@@ -15,7 +15,7 @@ const DIST = 'dist';
 const SOURCE = 'src/shared/server/author.ts';
 /** 分岐の中にだけある値 */
 const MARK = 'dev-author@localhost.invalid';
-/** 作り手の判定の、build に残る側にある値。探す先が正しいことを確かめる対照に使う */
+/** オーナーの判定の、build に残る側にある値。探す先が正しいことを確かめる対照に使う */
 const KEPT = 'cf-access-jwt-assertion';
 
 const readBuiltFiles = async () => {
@@ -26,12 +26,12 @@ const readBuiltFiles = async () => {
   return Promise.all(files.map(async (path) => ({ path, text: await readFile(path, 'utf8') })));
 };
 
-describe('build に作り手の判定を飛ばす分岐が無い', () => {
+describe('build にオーナーの判定を飛ばす分岐が無い', () => {
   it('対照: ソースは分岐の印を持つ', async () => {
     expect(await readFile(SOURCE, 'utf8')).toContain(MARK);
   });
 
-  it('対照: build したものは作り手の判定を持つ', async () => {
+  it('対照: build したものはオーナーの判定を持つ', async () => {
     const files = await readBuiltFiles();
     expect(files.some(({ text }) => text.includes(KEPT))).toBe(true);
   });

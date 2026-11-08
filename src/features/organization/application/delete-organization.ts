@@ -14,7 +14,7 @@ export type DeleteOrganizationOutcome =
 
 /**
  * 組織を消す。職歴・実績が指している組織（FR-006）と個人の組織（FR-041）は消さない。
- * 作り手でなければ何も書かない（FR-040）
+ * オーナーでなければ何も書かない（FR-040）
  */
 export const deleteOrganization = async (
   organizations: OrganizationRepository,

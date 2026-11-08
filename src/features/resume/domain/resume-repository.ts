@@ -36,7 +36,7 @@ export type ResumeRepository = {
    * 写した経験年数の上書きは、その職務経歴書に同じ名前の上書きが無いものだけを入れる（R14）
    */
   addRows: (id: ResumeId, content: NewResumeContent, times: EditTimes) => Promise<EditResult>;
-  /** 作り手の一覧。作った日時の新しい順 */
+  /** オーナーの一覧。作った日時の新しい順 */
   list: () => Promise<Resume[]>;
   findForEdit: (id: ResumeId) => Promise<ResumeForEdit | null>;
   /** 管理画面の URL とフォームの uid が指す職務経歴書の id。無ければ null */

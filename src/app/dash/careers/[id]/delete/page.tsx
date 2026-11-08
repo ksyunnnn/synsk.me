@@ -6,7 +6,7 @@ import { getCareerForEdit } from '@/features/career/server/queries';
 import { DeleteForm } from '@/shared/components/delete-form';
 import { TextLink } from '@/shared/components/text-link';
 
-// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: '職歴を削除する | synsk.me' };
 type Props = { params: Promise<{ id: string }> };
 
 const Page = async ({ params }: Props) => {
-  // 作り手でなければ、職歴を読む前に 403 になる
+  // オーナーでなければ、職歴を読む前に 403 になる
   const career = await getCareerForEdit((await params).id);
   if (!career) notFound();
 
@@ -31,7 +31,7 @@ const Page = async ({ params }: Props) => {
         uidField={CAREER_UID_FIELD}
         uid={career.uid}
         messages={{
-          forbidden: '作り手であることを確かめられませんでした。ログインし直してください',
+          forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
         }}
       />
       <p>

@@ -34,7 +34,7 @@ afterAll(async () => {
   await ctx?.close();
 });
 
-describe('作り手の JWT がない書き込み（FR-040）', () => {
+describe('オーナーの JWT がない書き込み（FR-040）', () => {
   const OUTSIDE_DASH = `/projects/${PROJECT_SLUG}`;
 
   describe.each(['submit', 'call'] as const)('%s', (how) => {
@@ -66,7 +66,7 @@ describe('作り手の JWT がない書き込み（FR-040）', () => {
   });
 });
 
-it('作り手の JWT がない組織の画面は 403', async () => {
+it('オーナーの JWT がない組織の画面は 403', async () => {
   for (const path of [
     '/dash/organizations',
     `/dash/organizations/${organizationUid}`,

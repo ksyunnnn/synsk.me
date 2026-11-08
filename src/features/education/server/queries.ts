@@ -12,13 +12,13 @@ import { readEnv } from '@/shared/server/env';
 export const createEducationRepository = async (): Promise<EducationRepository> =>
   createD1EducationRepository((await readEnv()).DB);
 
-/** 作り手の一覧。作り手でなければ 403 */
+/** オーナーの一覧。オーナーでなければ 403 */
 export const listEducations = async (): Promise<Education[]> => {
   await requireAuthor();
   return (await createEducationRepository()).list();
 };
 
-/** 作り手が編集する学歴。作り手でなければ 403。無い uid なら null */
+/** オーナーが編集する学歴。オーナーでなければ 403。無い uid なら null */
 export const getEducationForEdit = async (uid: string): Promise<Education | null> => {
   await requireAuthor();
   const educations = await createEducationRepository();

@@ -46,7 +46,7 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
       {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
-          作り手であることを確かめられませんでした。ログインし直してから入力し直してください
+          オーナーであることを確かめられませんでした。ログインし直してから入力し直してください
         </p>
       )}
       {result?.status === 'invalid' && (

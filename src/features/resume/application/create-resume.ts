@@ -41,7 +41,7 @@ export type CreateResumeOutcome =
 const parseIds = (values: string[]) => values.map(parseResumeId);
 
 /**
- * 職務経歴書を作る（FR-001・FR-003・FR-005・FR-007・FR-011〜FR-013・FR-021）。作り手でなければ
+ * 職務経歴書を作る（FR-001・FR-003・FR-005・FR-007・FR-011〜FR-013・FR-021）。オーナーでなければ
  * 何も読まず何も書かない（FR-033）。読む → 計算 → 書くの順（docs/SOFTWARE_DESIGN.md）。
  *
  * 1 件も選ばずに作れるかは plan.md の U12 で決まっていないため、拒まない。公開用は tasks.md の

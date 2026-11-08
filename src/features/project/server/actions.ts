@@ -21,9 +21,9 @@ import { getCurrentAuthor } from '@/shared/server/author';
  * 実績のフォームが呼ぶ Server Action。`page.tsx` が読み込み、フォームの部品に props で渡す
  * （ADR-0026 の依存の向き 3）。
  *
- * どの操作も、何より先に作り手であることを確かめる（ユースケースの先頭）。Server Action は
+ * どの操作も、何より先にオーナーであることを確かめる（ユースケースの先頭）。Server Action は
  * 経路に縛られず、`/dash` の外への POST からも呼べるため（ADR-0036）。
- * 作り手でなければ、入力した値を返さない
+ * オーナーでなければ、入力した値を返さない
  */
 
 const readString = (formData: FormData, name: string) => {

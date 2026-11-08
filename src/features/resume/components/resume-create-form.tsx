@@ -53,7 +53,7 @@ const ERROR_MESSAGES: Record<CreateResumeField, Partial<Record<CreateResumeError
 };
 
 const RESULT_MESSAGES = {
-  forbidden: '作り手であることを確かめられませんでした。ログインし直してから入力し直してください',
+  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
   invalid: '入力を確かめてください',
 } as const;
 

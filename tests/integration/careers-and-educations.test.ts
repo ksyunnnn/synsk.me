@@ -75,7 +75,7 @@ describe('学歴は、職務経歴書の外の訪問者への応答に含まれ�
   });
 });
 
-describe('作り手の JWT がない書き込み（FR-040）', () => {
+describe('オーナーの JWT がない書き込み（FR-040）', () => {
   const OUTSIDE_DASH = `/projects/${PROJECT_SLUG}`;
 
   const cases = () =>
@@ -117,7 +117,7 @@ describe('作り手の JWT がない書き込み（FR-040）', () => {
       }
     });
 
-    it('対照: 作り手の JWT があれば、同じ形の登録が書く', async () => {
+    it('対照: オーナーの JWT があれば、同じ形の登録が書く', async () => {
       for (const [name, table, formPath, values] of cases().filter(([n]) => n.endsWith('登録'))) {
         const before = (await readRows(ctx, table)).length;
         const unique = `（対照 ${how}）`;
@@ -142,7 +142,7 @@ it.each([
   '/dash/educations/new',
   '/dash/skills',
   '/dash/skills/new',
-])('作り手の JWT がない %s は 403', async (path) => {
+])('オーナーの JWT がない %s は 403', async (path) => {
   const res = await ctx.server.fetch(path);
   expect(res.status).toBe(403);
   await res.arrayBuffer();
@@ -159,7 +159,7 @@ it.each([
   '/dash/careers/1',
   '/dash/educations/1',
   '/dash/skills/1',
-])('作り手の、無い uid の %s は 404', async (path) => {
+])('オーナーの、無い uid の %s は 404', async (path) => {
   const res = await ctx.server.fetch(path, {
     headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
   });

@@ -80,7 +80,7 @@ beforeEach(() => {
   deps = { projects, organizations: { findByName: vi.fn(async () => organization) } };
 });
 
-describe('作り手でない呼び出しを拒む（FR-040）', () => {
+describe('オーナーでない呼び出しを拒む（FR-040）', () => {
   it('登録は何も書かず、入力した値を返さない', async () => {
     expect(await registerProject(deps, null, values())).toEqual({ status: 'forbidden' });
     expect(projects.register).not.toHaveBeenCalled();

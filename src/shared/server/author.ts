@@ -8,7 +8,7 @@ import type { Author } from '@/shared/domain/author';
 import { readEnv, type AccessEnv } from '@/shared/server/env';
 
 /**
- * Cloudflare Access が `Cf-Access-Jwt-Assertion` に付ける JWT を検証し、作り手で
+ * Cloudflare Access が `Cf-Access-Jwt-Assertion` に付ける JWT を検証し、オーナーで
  * あることを確かめる（ADR-0013・ADR-0036）。
  *
  * `/dash` 配下の画面は描画の前に、書き込みの Server Action は書き込みの前に、これを呼ぶ。
@@ -25,7 +25,7 @@ const ACCESS_JWT_HEADER = 'cf-access-jwt-assertion';
 
 /**
  * 公開鍵の取得先ごとの鍵の集まり。要求をまたいで使い回す。要求ごとに作ると、`jose` が
- * 持つ鍵のキャッシュが効かず、毎回 Access へ取りに行き、一度の失敗で作り手を拒む
+ * 持つ鍵のキャッシュが効かず、毎回 Access へ取りに行き、一度の失敗でオーナーを拒む
  */
 const keySets = new Map<string, ReturnType<typeof createRemoteJWKSet>>();
 
@@ -59,7 +59,7 @@ export const isSameMailbox = (a: string, b: string): boolean => {
   return a.slice(0, ia) === b.slice(0, ib) && foldAscii(domainA) === foldAscii(domainB);
 };
 
-/** 検証に使う設定値。どれかが欠けていれば、作り手であることを確かめられない */
+/** 検証に使う設定値。どれかが欠けていれば、オーナーであることを確かめられない */
 export type AccessSettings = {
   /** 公開鍵の取得先。`<issuer>/cdn-cgi/access/certs` */
   certsUrl: string | undefined;
@@ -71,7 +71,7 @@ export type AccessSettings = {
    * 一致すれば通す
    */
   audience: string | undefined;
-  /** 作り手として認めるメールアドレス */
+  /** オーナーとして認めるメールアドレス */
   ownerEmail: string | undefined;
 };
 
@@ -90,7 +90,7 @@ export const toAccessSettings = (env: AccessEnv): AccessSettings => {
 };
 
 /**
- * 作り手であることを確かめられれば `Author` を、確かめられなければ null を返す。
+ * オーナーであることを確かめられれば `Author` を、確かめられなければ null を返す。
  * 設定値が欠けている、JWT がない、署名・`iss`・`aud`・期限のどれかが合わない、
  * メールアドレスがオーナーのものでない、公開鍵が取れない、のどれでも null
  */
@@ -120,11 +120,11 @@ export const verifyAuthor = async (
 };
 
 /**
- * 要求のヘッダから、作り手なら `Author` を、確かめられなければ null を返す。`src/proxy.ts`
+ * 要求のヘッダから、オーナーなら `Author` を、確かめられなければ null を返す。`src/proxy.ts`
  * は描画の前に動き、`headers()` を使えないため、要求のヘッダを直接渡す
  */
 export const getAuthorFromHeaders = async (requestHeaders: Headers): Promise<Author | null> => {
-  // `npm run dev`（vinext dev）でだけ、JWT を確かめずに作り手として扱う。手元には JWT を
+  // `npm run dev`（vinext dev）でだけ、JWT を確かめずにオーナーとして扱う。手元には JWT を
   // 付ける Cloudflare Access がいないため。`import.meta.env.DEV` と `import.meta.env.MODE` は
   // Vite が build のときに定数（false と 'production'）へ置き換え、この分岐は dist/ に残らない
   // （https://vite.dev/guide/env-and-mode）。実行時の環境変数では切り替えない。
@@ -137,12 +137,12 @@ export const getAuthorFromHeaders = async (requestHeaders: Headers): Promise<Aut
   return verifyAuthor(requestHeaders.get(ACCESS_JWT_HEADER), toAccessSettings(await readEnv()));
 };
 
-/** この要求を送ったのが作り手なら `Author` を、確かめられなければ null を返す */
+/** この要求を送ったのがオーナーなら `Author` を、確かめられなければ null を返す */
 export const getCurrentAuthor = async (): Promise<Author | null> =>
   getAuthorFromHeaders(await headers());
 
 /**
- * 作り手であることを確かめる。確かめられなければ `forbidden()` で、画面の中身を返さずに
+ * オーナーであることを確かめる。確かめられなければ `forbidden()` で、画面の中身を返さずに
  * 403 にする。`/dash` 配下の画面は、何かを読む前にこれを通す（ADR-0036）
  */
 export const requireAuthor = async (): Promise<Author> => {

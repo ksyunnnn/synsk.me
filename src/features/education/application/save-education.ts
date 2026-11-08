@@ -15,7 +15,7 @@ type Invalid = {
   values: EducationFormValues;
 };
 
-/** 学歴を登録する（FR-036）。作り手でなければ何も書かない（FR-040） */
+/** 学歴を登録する（FR-036）。オーナーでなければ何も書かない（FR-040） */
 export const registerEducation = async (
   educations: EducationRepository,
   author: Author | null,
@@ -29,7 +29,7 @@ export const registerEducation = async (
   return { status: 'registered', ...(await educations.register(parsed.content)) };
 };
 
-/** 学歴を編集する（FR-036）。作り手でなければ何も書かない（FR-040） */
+/** 学歴を編集する（FR-036）。オーナーでなければ何も書かない（FR-040） */
 export const editEducation = async (
   educations: EducationRepository,
   author: Author | null,
@@ -44,7 +44,7 @@ export const editEducation = async (
     : { status: 'not-found' };
 };
 
-/** 学歴を物理削除する（FR-036）。作り手でなければ何も書かない（FR-040） */
+/** 学歴を物理削除する（FR-036）。オーナーでなければ何も書かない（FR-040） */
 export const deleteEducation = async (
   educations: EducationRepository,
   author: Author | null,

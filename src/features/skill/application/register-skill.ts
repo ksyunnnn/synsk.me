@@ -18,7 +18,7 @@ export type RegisterSkillOutcome =
       values: SkillFormValues;
     };
 
-/** スキルを登録する（FR-031・FR-034）。作り手でなければ何も書かない（FR-040） */
+/** スキルを登録する（FR-031・FR-034）。オーナーでなければ何も書かない（FR-040） */
 export const registerSkill = async (
   skills: SkillRepository,
   author: Author | null,

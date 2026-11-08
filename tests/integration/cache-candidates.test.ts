@@ -12,8 +12,8 @@ import { isNoStore } from '../../scripts/lib/verify-deploy.mjs';
  * 手元の workerd で起きないため、ここでは外に出る指示を見て、`no-store` でないものを
  * 保存できる応答とみなす。
  *
- * キャッシュしてよいのは、誰が要求しても同じになる応答だけ。作り手の画面と note の
- * 画面がキャッシュに載ると、作り手の画面や、削除した note が訪問者に返りうる。
+ * キャッシュしてよいのは、誰が要求しても同じになる応答だけ。オーナーの画面と note の
+ * 画面がキャッシュに載ると、オーナーの画面や、削除した note が訪問者に返りうる。
  */
 
 const CONFIG = './dist/server/wrangler.json';

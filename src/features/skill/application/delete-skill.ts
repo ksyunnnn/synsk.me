@@ -2,7 +2,7 @@ import type { SkillId } from '@/features/skill/domain/skill';
 import type { SkillRepository } from '@/features/skill/domain/skill-repository';
 import type { Author } from '@/shared/domain/author';
 
-/** スキルを消す（FR-031）。作り手でなければ何も書かない（FR-040） */
+/** スキルを消す（FR-031）。オーナーでなければ何も書かない（FR-040） */
 export const deleteSkill = async (
   skills: SkillRepository,
   author: Author | null,

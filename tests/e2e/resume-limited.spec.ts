@@ -193,7 +193,7 @@ test('期限を過ぎると 404 になり、設定の画面に過ぎていると
   ).toBeVisible();
   expect(await visit(visitor, path)).toBe(404);
   expect(await visitor.content()).not.toContain('E2E 限定公開の組織 期限');
-  // 期限が切れても職務経歴書は消えず、作り手は読める（Edge Cases）
+  // 期限が切れても職務経歴書は消えず、オーナーは読める（Edge Cases）
   await page.getByRole('link', { name: '訪問者に見せたときの見た目を見る' }).click();
   await expect(page.getByRole('heading', { name: 'E2E 限定公開の組織 期限' })).toBeVisible();
   await page.getByRole('link', { name: '設定の画面へ戻る' }).click();

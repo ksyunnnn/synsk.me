@@ -18,7 +18,7 @@ export type EditSkillOutcome =
       values: SkillFormValues;
     };
 
-/** スキルの名前と上書きの月数を直す（FR-031・FR-034）。作り手でなければ何も書かない（FR-040） */
+/** スキルの名前と上書きの月数を直す（FR-031・FR-034）。オーナーでなければ何も書かない（FR-040） */
 export const editSkill = async (
   skills: SkillRepository,
   author: Author | null,

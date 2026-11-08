@@ -49,7 +49,7 @@ const ERROR_MESSAGES: Record<CareerField, Partial<Record<CareerFieldError, strin
 };
 
 const RESULT_MESSAGES = {
-  forbidden: '作り手であることを確かめられませんでした。ログインし直してから入力し直してください',
+  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
   invalid: '入力を確かめてください',
   conflict:
     'この職歴は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',

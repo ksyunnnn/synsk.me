@@ -5,14 +5,14 @@ import { registerProject } from '@/features/project/server/actions';
 import { listSkillOptions } from '@/features/project/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 
-// 要求時のデータ（作り手の確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
+// 要求時のデータ（オーナーの確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 
 export const metadata: Metadata = { title: '実績を登録する | synsk.me' };
 
 const Page = async () => {
-  // 作り手でなければ、読む前に 403 になる
+  // オーナーでなければ、読む前に 403 になる
   const skillOptions = await listSkillOptions();
 
   return (

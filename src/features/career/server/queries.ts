@@ -20,13 +20,13 @@ export const createCareerDeps = async (): Promise<CareerDeps> => {
   };
 };
 
-/** 作り手の一覧。作り手でなければ 403 */
+/** オーナーの一覧。オーナーでなければ 403 */
 export const listCareers = async (): Promise<CareerSummary[]> => {
   await requireAuthor();
   return listCareersUseCase((await createCareerDeps()).careers);
 };
 
-/** 作り手が編集する職歴。作り手でなければ 403。無い uid なら null */
+/** オーナーが編集する職歴。オーナーでなければ 403。無い uid なら null */
 export const getCareerForEdit = async (uid: string): Promise<Career | null> => {
   await requireAuthor();
   const { careers } = await createCareerDeps();

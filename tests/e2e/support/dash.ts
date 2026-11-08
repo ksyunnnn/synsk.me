@@ -1,7 +1,7 @@
 import { expect, type Browser, type Page } from '@playwright/test';
 
 /**
- * E2E で作り手が管理画面で行う操作と、訪問者として確かめる操作。
+ * E2E でオーナーが管理画面で行う操作と、訪問者として確かめる操作。
  *
  * 入力は `getByRole` で探す。画面を移った後も、前の画面が隠れて DOM に残ることがあり、
  * `getByLabel` は隠れた画面の同じ名前の入力も拾う（tests/e2e/career-and-education.spec.ts）。
@@ -275,7 +275,7 @@ export const setResumeExpires = async (page: Page, expires: string) => {
 };
 
 /**
- * 作り手の JWT を持たない訪問者のページを開く。作り手の context とは別の context にする。
+ * オーナーの JWT を持たない訪問者のページを開く。オーナーの context とは別の context にする。
  * 呼び手が閉じる。`browser.newPage()` の context は、ページを閉じると閉じる
  */
 export const openVisitor = (browser: Browser) => browser.newPage();

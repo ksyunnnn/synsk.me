@@ -4,7 +4,7 @@ import type { ResumeRepository } from '@/features/resume/domain/resume-repositor
 import type { Author } from '@/shared/domain/author';
 import { toEditOutcome, type EditOutcome } from './edit-outcome';
 
-/** 下書きか、訪問者に見せるかを切り替える（FR-021）。作り手でなければ何も書かない（FR-033） */
+/** 下書きか、訪問者に見せるかを切り替える（FR-021）。オーナーでなければ何も書かない（FR-033） */
 export const changeResumeStatus = async (
   resumes: ResumeRepository,
   author: Author | null,

@@ -139,7 +139,7 @@ describe('createResume', () => {
     expect(resumes.create.mock.calls[0][0].limitedExpiresAt).toBeNull();
   });
 
-  it('作り手でなければ、何も読まず何も書かない（FR-033）', async () => {
+  it('オーナーでなければ、何も読まず何も書かない（FR-033）', async () => {
     const resumes = fakeResumes();
     expect(await createResume(resumes, null, createValues())).toEqual({ status: 'forbidden' });
     expect(resumes.readSources).not.toHaveBeenCalled();
@@ -197,7 +197,7 @@ describe('createResume', () => {
   );
 });
 
-describe('書き込みは作り手だけ（FR-033）', () => {
+describe('書き込みはオーナーだけ（FR-033）', () => {
   it.each([
     [
       '設定',

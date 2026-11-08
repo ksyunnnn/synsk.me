@@ -11,7 +11,7 @@ import { insertOrganization, insertProject, uidOf } from '../support/career-and-
 
 const UNMASKED = { slug: 'fake-personal-app', title: '作り物の個人開発のアプリ' };
 
-/** 作り手が入力する値。応答と D1 に残ったかを確かめるため、ほかの値と重ならないものにする */
+/** オーナーが入力する値。応答と D1 に残ったかを確かめるため、ほかの値と重ならないものにする */
 const INPUT = {
   organizationName: '結合の検査で入力した組織',
   organizationNameMasked: '結合の検査の会社',
@@ -38,7 +38,7 @@ const countProjects = async () =>
 const readProjectRows = async () =>
   (await ctx.db.prepare('SELECT * FROM project ORDER BY id').all()).results;
 
-/** 作り手として画面を開き、フォームの操作を指す hidden の入力を取り出す */
+/** オーナーとして画面を開き、フォームの操作を指す hidden の入力を取り出す */
 const readFormOf = async (path: string) => {
   const res = await ctx.server.fetch(path, { headers: await authorHeaders() });
   expect(res.status).toBe(200);
@@ -79,8 +79,8 @@ describe('/projects/{slug}（SC-002）', () => {
   });
 });
 
-describe('作り手の画面', () => {
-  it.each(['/dash/projects', '/dash/projects/new'])('作り手の %s は 200', async (path) => {
+describe('オーナーの画面', () => {
+  it.each(['/dash/projects', '/dash/projects/new'])('オーナーの %s は 200', async (path) => {
     const res = await ctx.server.fetch(path, { headers: await authorHeaders() });
     expect(res.status).toBe(200);
   });
@@ -97,7 +97,7 @@ describe('作り手の画面', () => {
     '/dash/projects/new',
     '/dash/projects/{uid}',
     '/dash/projects/{uid}/delete',
-  ])('作り手の JWT がない %s は 403 で、画面の中身を返さない', async (template) => {
+  ])('オーナーの JWT がない %s は 403 で、画面の中身を返さない', async (template) => {
     const res = await ctx.server.fetch(template.replace('{uid}', editUid));
     expect(res.status).toBe(403);
     const text = await res.text();
@@ -106,7 +106,7 @@ describe('作り手の画面', () => {
   });
 });
 
-describe('作り手の JWT がない書き込み（FR-040）', () => {
+describe('オーナーの JWT がない書き込み（FR-040）', () => {
   /**
    * Server Action は経路に縛られない。`/dash` の外の経路へ送り、`src/proxy.ts` の 403 に
    * 頼らずに、Server Action が自分で拒むことを確かめる
@@ -166,7 +166,7 @@ describe('作り手の JWT がない書き込み（FR-040）', () => {
       expect(await readProjectRows()).toEqual(before);
     });
 
-    it('対照: 作り手の JWT があれば、同じ形の登録が書く', async () => {
+    it('対照: オーナーの JWT があれば、同じ形の登録が書く', async () => {
       // 上の検査が、要求の形の誤りで書き込まずに通っていないことを確かめる
       const before = await countProjects();
       const res = await send(

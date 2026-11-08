@@ -110,7 +110,7 @@ describe('/projects/{slug}', () => {
     expect(await rewrittenPath('/projects/no-such')).toBe('/projects/no-such/missing');
   });
 
-  it('作り手かを確かめず、no-store を付けない', async () => {
+  it('オーナーかを確かめず、no-store を付けない', async () => {
     const response = await proxy(request('/projects/a-slug'));
     expect(author.getAuthorFromHeaders).not.toHaveBeenCalled();
     expect(response.headers.get('cache-control')).toBeNull();
@@ -138,7 +138,7 @@ describe('/dash/projects/{uid}', () => {
     expect(await rewrittenPath(`/dash/projects/${UID}`, 'POST')).toBeNull();
   });
 
-  it('作り手でなければ、行の有無より先に 403', async () => {
+  it('オーナーでなければ、行の有無より先に 403', async () => {
     author.getAuthorFromHeaders.mockResolvedValue(null);
     projects.hasProjectUid.mockResolvedValue(false);
     expect(await rewrittenPath(`/dash/projects/${UID}`)).toBe('/dash/forbidden');
@@ -146,27 +146,27 @@ describe('/dash/projects/{uid}', () => {
 });
 
 describe('/dash 配下', () => {
-  it.each(['GET', 'POST'])('作り手でなければ %s を 403 の画面へ rewrite する', async (method) => {
+  it.each(['GET', 'POST'])('オーナーでなければ %s を 403 の画面へ rewrite する', async (method) => {
     author.getAuthorFromHeaders.mockResolvedValue(null);
     expect(await rewrittenPath('/dash/projects', method)).toBe('/dash/forbidden');
   });
 
   it.each(['/dash', '/dash/projects', `/dash/projects/${UID}`])(
-    '作り手の %s は rewrite しない',
+    'オーナーの %s は rewrite しない',
     async (path) => {
       expect(await rewrittenPath(path)).toBeNull();
     },
   );
 
-  it('要求のヘッダで作り手を確かめる', async () => {
+  it('要求のヘッダでオーナーを確かめる', async () => {
     const req = request('/dash');
     await proxy(req);
     expect(author.getAuthorFromHeaders).toHaveBeenCalledWith(req.headers);
   });
 
   it.each([
-    ['作り手', OWNER],
-    ['作り手でない', null],
+    ['オーナー', OWNER],
+    ['オーナーでない', null],
   ])('%s の応答は、どのキャッシュにも残さない', async (_, who) => {
     author.getAuthorFromHeaders.mockResolvedValue(who);
     const response = await proxy(request('/dash/projects'));
@@ -174,7 +174,7 @@ describe('/dash 配下', () => {
   });
 });
 
-describe('作り手を確かめられない', () => {
+describe('オーナーを確かめられない', () => {
   it('D1 から実績の有無を読み出せなければ、判定せずにページへ通す', async () => {
     projects.hasProjectSlug.mockRejectedValue(new Error('D1_ERROR'));
     expect(await rewrittenPath('/projects/a-slug')).toBeNull();
@@ -245,7 +245,7 @@ describe('/resume/{slug}', () => {
     expectLimitedHeaders(response);
   });
 
-  it('作り手かを確かめない', async () => {
+  it('オーナーかを確かめない', async () => {
     await proxy(request(`/resume/${SLUG}`));
     expect(author.getAuthorFromHeaders).not.toHaveBeenCalled();
   });

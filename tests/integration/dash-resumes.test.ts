@@ -13,9 +13,9 @@ import {
 } from '../support/resume-rows';
 
 /**
- * 職務経歴書の管理画面は作り手だけのもの（specs/002-resume/spec.md の FR-033、contracts/dash.md の
+ * 職務経歴書の管理画面はオーナーだけのもの（specs/002-resume/spec.md の FR-033、contracts/dash.md の
  * 検査）。JWT のない GET は 403 で `no-store`、JWT のない Server Action は D1 を変えない。
- * Server Action は経路に縛られないため、`/dash` の外へ送って、Server Action が自分で作り手を
+ * Server Action は経路に縛られないため、`/dash` の外へ送って、Server Action が自分でオーナーを
  * 確かめることを確かめる
  */
 
@@ -105,7 +105,7 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
     }
   });
 
-  it('対照: 作り手なら 200', async () => {
+  it('対照: オーナーなら 200', async () => {
     for (const path of paths()) {
       const res = await ctx.server.fetch(path, {
         headers: { 'cf-access-jwt-assertion': await ctx.signAuthorJwt() },
@@ -115,7 +115,7 @@ describe('JWT のない GET は 403 で、どのキャッシュにも残さな�
     }
   });
 
-  it('作り手でも、無い行の画面は 404', async () => {
+  it('オーナーでも、無い行の画面は 404', async () => {
     for (const path of [
       `/dash/resumes/${'0'.repeat(32)}`,
       `/dash/resumes/${'0'.repeat(32)}/careers/new`,
@@ -229,7 +229,7 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     });
   });
 
-  it('対照: 作り手の JWT があれば、同じ形の作成が書く', async () => {
+  it('対照: オーナーの JWT があれば、同じ形の作成が書く', async () => {
     const before = (await readRows(ctx, 'resume')).length;
     const [, formPath, values] = (await cases())[0];
     const res = await sendNthForm(ctx, { how: 'submit', formPath, values, asAuthor: true });
@@ -239,7 +239,7 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
 });
 
 describe('作ったあとに足す（FR-041）', () => {
-  it('作り手が選んだ職歴を、元の値で写して足し、設定の画面へ 303 で移す', async () => {
+  it('オーナーが選んだ職歴を、元の値で写して足し、設定の画面へ 303 で移す', async () => {
     const added = await insertResume(ctx.db);
     const formPath = `/dash/resumes/${added.uid}/careers/new`;
     const res = await sendNthForm(ctx, {

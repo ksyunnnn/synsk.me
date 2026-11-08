@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { listEducations } from '@/features/education/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 
-// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 
@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: '学歴 | synsk.me' };
 type Props = { searchParams: Promise<{ saved?: string | string[]; deleted?: string | string[] }> };
 
 const Page = async ({ searchParams }: Props) => {
-  // 作り手でなければ、読む前に 403 になる
+  // オーナーでなければ、読む前に 403 になる
   const educations = await listEducations();
   const { saved, deleted } = await searchParams;
 

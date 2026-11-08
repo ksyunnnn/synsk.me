@@ -4,7 +4,7 @@ import { isNoStore } from '../../scripts/lib/verify-deploy.mjs';
 
 /**
  * 認証を要する応答を、どのキャッシュにも残さない（docs/REQUIREMENTS.md の NFR-09）。
- * 作り手でない要求に、作り手の画面を返さない（NFR-08）。
+ * オーナーでない要求に、オーナーの画面を返さない（NFR-08）。
  *
  * 各機能の画面と書き込みの操作の検査は、その機能の結合テストが持つ。ここでは `/dash` の
  * 入口と、プレビュー配信のヘッダを確かめる。状態コードは、検査する応答が意図した応答で
@@ -49,7 +49,7 @@ const expectNoStore = (res: { headers: { get: (name: string) => string | null } 
 /** プレビュー配信の URL の形（`<branch>-synsk-me.<account>.workers.dev`） */
 const PREVIEW_ORIGIN = 'https://feature-test-synsk-me.is-syunsukekobashi.workers.dev';
 
-/** 作り手の画面 */
+/** オーナーの画面 */
 const AUTHOR_PAGES = ['/dash'];
 
 let ctx: TestServer;
@@ -67,7 +67,7 @@ describe.each([
   ['HTML', AS_HTML],
   ['RSC', AS_RSC],
 ])('画面の要求（%s）', (_, as) => {
-  it.each(AUTHOR_PAGES)('作り手の %s は、どのキャッシュにも残らない', async (path) => {
+  it.each(AUTHOR_PAGES)('オーナーの %s は、どのキャッシュにも残らない', async (path) => {
     const res = await ctx.server.fetch(`${path}${as.query}`, {
       headers: { ...(await authorHeaders()), ...as.headers },
       redirect: 'manual',
@@ -77,7 +77,7 @@ describe.each([
   });
 
   it.each(AUTHOR_PAGES)(
-    '作り手の JWT がない %s は 403 で、どのキャッシュにも残らない',
+    'オーナーの JWT がない %s は 403 で、どのキャッシュにも残らない',
     async (path) => {
       const res = await ctx.server.fetch(`${path}${as.query}`, {
         headers: as.headers,

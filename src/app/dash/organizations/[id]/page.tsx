@@ -5,7 +5,7 @@ import { editOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 
-// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 
@@ -17,7 +17,7 @@ type Props = {
 };
 
 const Page = async ({ params, searchParams }: Props) => {
-  // 作り手でなければ、組織を読む前に 403 になる
+  // オーナーでなければ、組織を読む前に 403 になる
   const found = await getOrganizationForEdit((await params).id);
   if (!found) notFound();
   const { organization, references } = found;

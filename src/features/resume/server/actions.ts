@@ -62,7 +62,7 @@ import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
  * 職務経歴書の管理画面のフォームが呼ぶ Server Action（specs/002-resume/contracts/dash.md）。
- * 何より先に作り手であることを確かめる（ADR-0036）。作り手でなければ、入力した値を返さない
+ * 何より先にオーナーであることを確かめる（ADR-0036）。オーナーでなければ、入力した値を返さない
  */
 
 const readString = (formData: FormData, name: string) => {

@@ -17,7 +17,7 @@ import {
 } from '../support/access';
 
 /**
- * Cloudflare Access の JWT を検証し、作り手であることを確かめる関数
+ * Cloudflare Access の JWT を検証し、オーナーであることを確かめる関数
  * （ADR-0036）。
  *
  * 公開鍵は、テストが起動する手元のサーバから取る。
@@ -45,12 +45,12 @@ afterAll(async () => {
 const sign = (overrides: { audience?: string; email?: string; expiresAt?: number } = {}) =>
   signAccessJwt(keys.privateJwk, { issuer: certs.issuer, ...overrides });
 
-describe('作り手であることを確かめる', () => {
-  it('オーナーの正しい JWT は作り手として通る', async () => {
+describe('オーナーであることを確かめる', () => {
+  it('オーナーの正しい JWT は通る', async () => {
     expect(await verifyAuthor(await sign(), settings)).toEqual({ email: TEST_OWNER_EMAIL });
   });
 
-  it('ドメインの大文字と小文字だけが違う JWT は作り手として通る', async () => {
+  it('ドメインの大文字と小文字だけが違う JWT はオーナーとして通る', async () => {
     expect(await verifyAuthor(await sign({ email: 'owner@Synsk.TEST' }), settings)).toEqual({
       email: TEST_OWNER_EMAIL,
     });
@@ -61,7 +61,7 @@ describe('作り手であることを確かめる', () => {
     // 持つ。どちらの JWT も通す
     const audience = `production-aud, ${TEST_ACCESS_AUD}`;
 
-    it.each(['production-aud', TEST_ACCESS_AUD])('%s の JWT は作り手として通る', async (aud) => {
+    it.each(['production-aud', TEST_ACCESS_AUD])('%s の JWT はオーナーとして通る', async (aud) => {
       expect(await verifyAuthor(await sign({ audience: aud }), { ...settings, audience })).toEqual({
         email: TEST_OWNER_EMAIL,
       });

@@ -11,7 +11,7 @@
 export type ActionResult<Field extends string, Reason extends string = string> =
   /** 保存した。同じ画面で知らせるときに使う */
   | { status: 'saved' }
-  /** 作り手でない。何も書かない（FR-040） */
+  /** オーナーでない。何も書かない（FR-040） */
   | { status: 'forbidden' }
   /** 項目の不備。項目ごとの理由と、送られた値を返す */
   | {

@@ -33,13 +33,13 @@ export const getVisitorProject = cache(async (slug: string): Promise<VisitorProj
   getVisitorProjectUseCase((await createProjectDeps()).projects, slug),
 );
 
-/** 作り手の一覧。作り手でなければ 403 */
+/** オーナーの一覧。オーナーでなければ 403 */
 export const listProjects = async (): Promise<ProjectSummary[]> => {
   await requireAuthor();
   return listProjectsUseCase((await createProjectDeps()).projects);
 };
 
-/** 作り手が編集する実績。作り手でなければ 403。無い uid なら null */
+/** オーナーが編集する実績。オーナーでなければ 403。無い uid なら null */
 export const getProjectForEdit = async (uid: string): Promise<Project | null> => {
   await requireAuthor();
   const { projects } = await createProjectDeps();
@@ -47,7 +47,7 @@ export const getProjectForEdit = async (uid: string): Promise<Project | null> =>
   return id === null ? null : getProjectForEditUseCase(projects, id);
 };
 
-/** 実績の入力でつなげるスキルの選択肢（FR-032）。作り手でなければ 403 */
+/** 実績の入力でつなげるスキルの選択肢（FR-032）。オーナーでなければ 403 */
 export const listSkillOptions = async (): Promise<{ id: number; name: string }[]> => {
   await requireAuthor();
   return (await createProjectDeps()).projects.listSkillOptions();
@@ -61,6 +61,6 @@ export const listSkillOptions = async (): Promise<{ id: number; name: string }[]
 export const hasProjectSlug = async (slug: string): Promise<boolean> =>
   (await createProjectDeps()).projects.hasSlug(slug);
 
-/** 作り手が編集できる実績がある uid か。`getProjectForEdit` が null を返さない uid と一致する */
+/** オーナーが編集できる実績がある uid か。`getProjectForEdit` が null を返さない uid と一致する */
 export const hasProjectUid = async (uid: string): Promise<boolean> =>
   (await findIdByUid((await createProjectDeps()).projects, uid)) !== null;

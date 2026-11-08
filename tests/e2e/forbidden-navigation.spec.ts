@@ -6,7 +6,7 @@ import { actAsAuthor } from './support/author';
  * （ADR-0042）。`src/app/forbidden.tsx` がないと、画面全体が消える。
  */
 
-test('作り手でなくなった後にリンクで移ると、開く権限がないことが出る', async ({
+test('オーナーでなくなった後にリンクで移ると、開く権限がないことが出る', async ({
   page,
   context,
 }) => {

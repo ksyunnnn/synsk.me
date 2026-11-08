@@ -22,7 +22,7 @@ export type EditProjectOutcome =
   | { status: 'conflict'; values: ProjectFormValues };
 
 /**
- * 実績を編集する（FR-011・FR-013・FR-042）。作り手でなければ何も書かない（FR-040）。
+ * 実績を編集する（FR-011・FR-013・FR-042）。オーナーでなければ何も書かない（FR-040）。
  * 今の実績と組織を読み、識別子と決まりを確かめ、最後に書く
  */
 export const editProject = async (

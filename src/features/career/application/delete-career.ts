@@ -2,7 +2,7 @@ import type { CareerId } from '@/features/career/domain/career';
 import type { CareerRepository } from '@/features/career/domain/career-repository';
 import type { Author } from '@/shared/domain/author';
 
-/** 職歴を物理削除する（FR-007）。作り手でなければ何も書かない（FR-040） */
+/** 職歴を物理削除する（FR-007）。オーナーでなければ何も書かない（FR-040） */
 export const deleteCareer = async (
   careers: CareerRepository,
   author: Author | null,

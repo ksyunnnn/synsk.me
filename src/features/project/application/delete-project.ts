@@ -5,7 +5,7 @@ import type { Author } from '@/shared/domain/author';
 export type DeleteProjectOutcome =
   { status: 'deleted' } | { status: 'forbidden' } | { status: 'not-found' };
 
-/** 実績を物理削除する（FR-011）。作り手でなければ何も書かない（FR-040） */
+/** 実績を物理削除する（FR-011）。オーナーでなければ何も書かない（FR-040） */
 export const deleteProject = async (
   projects: ProjectRepository,
   author: Author | null,

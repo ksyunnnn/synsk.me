@@ -24,7 +24,7 @@ export type EditOrganizationOutcome =
     };
 
 /**
- * 組織名と秘匿化した組織名を直す（FR-001・FR-003・FR-004）。作り手でなければ何も書かない
+ * 組織名と秘匿化した組織名を直す（FR-001・FR-003・FR-004）。オーナーでなければ何も書かない
  * （FR-040）。指している職歴・実績を読み、決まりを確かめ、最後に書く
  */
 export const editOrganization = async (

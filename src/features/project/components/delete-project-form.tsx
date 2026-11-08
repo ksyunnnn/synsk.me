@@ -27,7 +27,7 @@ export const DeleteProjectForm = ({
       <input type="hidden" name={PROJECT_UID_FIELD} value={projectUid} />
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
-          作り手であることを確かめられませんでした。ログインし直してください
+          オーナーであることを確かめられませんでした。ログインし直してください
         </p>
       )}
       <div>

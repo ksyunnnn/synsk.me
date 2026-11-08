@@ -15,13 +15,13 @@ import { createD1OrganizationRepository } from '@/shared/server/organization-rep
 export const createOrganizationRepository = async (): Promise<OrganizationRepository> =>
   createD1OrganizationRepository((await readEnv()).DB);
 
-/** 作り手の一覧。作り手でなければ 403 */
+/** オーナーの一覧。オーナーでなければ 403 */
 export const listOrganizations = async (): Promise<Organization[]> => {
   await requireAuthor();
   return listOrganizationsUseCase(await createOrganizationRepository());
 };
 
-/** 作り手が編集する組織と、指している職歴・実績の有無。作り手でなければ 403。無い uid なら null */
+/** オーナーが編集する組織と、指している職歴・実績の有無。オーナーでなければ 403。無い uid なら null */
 export const getOrganizationForEdit = async (
   uid: string,
 ): Promise<{
@@ -37,6 +37,6 @@ export const getOrganizationForEdit = async (
   return { organization, references: await organizations.findReferences(organizationId) };
 };
 
-/** `src/proxy.ts` が呼ぶ。作り手が編集できる組織がある uid か */
+/** `src/proxy.ts` が呼ぶ。オーナーが編集できる組織がある uid か */
 export const hasOrganizationUid = async (uid: string): Promise<boolean> =>
   (await findIdByUid(await createOrganizationRepository(), uid)) !== null;

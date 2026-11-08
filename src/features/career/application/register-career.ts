@@ -20,7 +20,7 @@ export type RegisterCareerOutcome =
     };
 
 /**
- * 職歴を登録する（FR-007・FR-010）。作り手でなければ何も書かない（FR-040）。
+ * 職歴を登録する（FR-007・FR-010）。オーナーでなければ何も書かない（FR-040）。
  * 組織を読み、FR-001 を確かめ、最後に書く
  */
 export const registerCareer = async (

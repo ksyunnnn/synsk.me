@@ -11,7 +11,7 @@ import {
 } from './support/dash';
 
 /**
- * 作り手としての実績の登録・編集・削除と、訪問者の個別のページ（specs/001-career-and-project/
+ * オーナーとしての実績の登録・編集・削除と、訪問者の個別のページ（specs/001-career-and-project/
  * spec.md の User Story 1、FR-011・FR-013・FR-014・FR-023・FR-039・FR-042）。
  * 秘匿化は tests/e2e/masking.spec.ts、サイトに載せるかは tests/e2e/site-status.spec.ts が持つ。
  * HTTP の状態コードと D1 の行は結合の検査が持つ。

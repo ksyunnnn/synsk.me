@@ -28,11 +28,11 @@ export type ProjectRepository = {
    * 無い識別子と、サイトに載せない実績の識別子なら null（spec の FR-014・FR-045）
    */
   findVisitorBySlug: (slug: string) => Promise<VisitorProject | null>;
-  /** 作り手が編集する実績。無い id なら null */
+  /** オーナーが編集する実績。無い id なら null */
   findForEdit: (id: ProjectId) => Promise<Project | null>;
   /** 管理画面の URL とフォームの uid が指す実績の id。無ければ null */
   findIdByUid: (uid: Uid) => Promise<ProjectId | null>;
-  /** 作り手の一覧。始まりの日の新しい順 */
+  /** オーナーの一覧。始まりの日の新しい順 */
   list: () => Promise<ProjectSummary[]>;
   register: (
     content: ProjectContent & { slug: string },

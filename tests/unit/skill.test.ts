@@ -111,7 +111,7 @@ describe('listSkills', () => {
 });
 
 describe('registerSkill', () => {
-  it('作り手でなければ何も書かない（FR-040）', async () => {
+  it('オーナーでなければ何も書かない（FR-040）', async () => {
     const skills = fakeSkills();
     expect(
       await registerSkill(skills, null, { name: 'Go', overrideYears: '', overrideMonths: '' }),

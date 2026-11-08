@@ -14,7 +14,7 @@ import {
 
 /**
  * 元を直しても消しても、作った職務経歴書の中身は変わらない（specs/002-resume/spec.md の
- * User Story 3、FR-007・FR-025・FR-028・SC-001）。作り手として作ってから元を直し、限定公開用の
+ * User Story 3、FR-007・FR-025・FR-028・SC-001）。オーナーとして作ってから元を直し、限定公開用の
  * ページの応答を HTML と RSC の両方で調べる。値はすべて作り物
  */
 
@@ -117,7 +117,7 @@ describe('元を直しても、作ったときの値で出る（User Story 3 の
 
 describe('元を消しても、写した行が残る（User Story 3 の 3、Edge Cases）', () => {
   beforeAll(async () => {
-    // 001 の削除の Server Action を作り手として呼ぶ。写した行の *_id を空にしてから消す
+    // 001 の削除の Server Action をオーナーとして呼ぶ。写した行の *_id を空にしてから消す
     const uids = {
       education: await uidOf(ctx.db, 'education', ids.education),
       project: await uidOf(ctx.db, 'project', ids.project),
@@ -156,7 +156,7 @@ describe('元を消しても、写した行が残る（User Story 3 の 3、Edge
   });
 });
 
-it('作り手の管理画面にも、作ったときの値が出る', async () => {
+it('オーナーの管理画面にも、作ったときの値が出る', async () => {
   const uid = (await ctx.db
     .prepare('SELECT uid FROM resume WHERE slug = ?')
     .bind(url.slug)

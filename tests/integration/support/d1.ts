@@ -22,7 +22,7 @@ export type TestServer = {
   server: ReturnType<typeof createTestHarness>;
   /** Worker が使うものと同じ D1。行を入れ、読み、表を消して読めない状態を作るのに使う */
   db: D1Database;
-  /** 作り手の JWT。`Cf-Access-Jwt-Assertion` に入れる */
+  /** オーナーの JWT。`Cf-Access-Jwt-Assertion` に入れる */
   signAuthorJwt: (claims?: { audience?: string; email?: string }) => Promise<string>;
   close: () => Promise<void>;
 };

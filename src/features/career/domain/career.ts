@@ -14,7 +14,7 @@ import { isWebUrl } from '@/shared/domain/web-url';
 
 export type CareerId = number;
 
-/** 作り手が編集する職歴 */
+/** オーナーが編集する職歴 */
 export type Career = {
   id: CareerId;
   /** 管理画面の URL とフォームで職歴を指す識別子 */

@@ -122,7 +122,7 @@ export type ResumeContent = {
   skillOverrides: ResumeSkillOverride[];
 };
 
-/** 作り手が編集する職務経歴書 */
+/** オーナーが編集する職務経歴書 */
 export type ResumeForEdit = Resume & ResumeContent;
 
 /** 写した行の種類。管理画面の経路の名前と同じ */

@@ -34,13 +34,13 @@ export const createResumeRepository = async (): Promise<ResumeRepository> =>
 /** プロフィールは写さず、要求のたびに定数と環境変数から作る（FR-036、research.md の R10） */
 const readProfile = async () => toProfile((await readEnv()).RESUME_EMAIL);
 
-/** 作り手の一覧。作り手でなければ 403 */
+/** オーナーの一覧。オーナーでなければ 403 */
 export const listResumes = async (): Promise<Resume[]> => {
   await requireAuthor();
   return listResumesUseCase(await createResumeRepository());
 };
 
-/** 作成の画面の選択肢。作り手でなければ 403 */
+/** 作成の画面の選択肢。オーナーでなければ 403 */
 export const listResumeSources = async (): Promise<ResumeSources> => {
   await requireAuthor();
   return listResumeSourcesUseCase(await createResumeRepository());
@@ -62,7 +62,7 @@ export const findResumeRowId = async (
     : resumes.findRowIdByUid(id, kind, parsed);
 };
 
-/** 作り手が編集する職務経歴書。作り手でなければ 403。無い uid なら null */
+/** オーナーが編集する職務経歴書。オーナーでなければ 403。無い uid なら null */
 export const getResumeForEdit = async (uid: string): Promise<ResumeForEdit | null> => {
   await requireAuthor();
   const resumes = await createResumeRepository();
@@ -72,7 +72,7 @@ export const getResumeForEdit = async (uid: string): Promise<ResumeForEdit | nul
 
 /**
  * 限定公開用の URL（`/resume/{slug}`）。要求の host から作る。URL を知る人は誰でも読めるため、
- * 作り手の画面と Server Action の結果にだけ出す（FR-012・FR-040）
+ * オーナーの画面と Server Action の結果にだけ出す（FR-012・FR-040）
  */
 export const limitedResumeUrl = async (slug: string): Promise<string> => {
   const host = (await headers()).get('host') ?? 'synsk.me';
@@ -80,7 +80,7 @@ export const limitedResumeUrl = async (slug: string): Promise<string> => {
   return `${scheme}://${host}/resume/${slug}`;
 };
 
-/** 訪問者に見せたときの見た目。作り手でなければ 403。無い uid なら null */
+/** 訪問者に見せたときの見た目。オーナーでなければ 403。無い uid なら null */
 export const getResumePreview = async (uid: string): Promise<VisitorResume | null> => {
   await requireAuthor();
   const resumes = await createResumeRepository();
@@ -112,7 +112,7 @@ export const hasVisitorResume = async (slug: string): Promise<boolean> =>
     await createResumeRepository()
   ).findLimitedIdForVisitor(slug, new Date().toISOString())) !== null;
 
-/** 作り手が編集できる職務経歴書がある uid か */
+/** オーナーが編集できる職務経歴書がある uid か */
 export const hasResumeUid = async (uid: string): Promise<boolean> =>
   (await findIdByUid(await createResumeRepository(), uid)) !== null;
 

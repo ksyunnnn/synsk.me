@@ -19,7 +19,7 @@ type UrlResult = EditOutcome<Record<string, never>, Record<string, never>>;
 const MESSAGES: Partial<Record<UrlResult['status'], string>> = {
   conflict:
     'この職務経歴書は、開いた後に別の画面で書き換えられていました。URL は出し直していません。開き直してください',
-  forbidden: '作り手であることを確かめられませんでした。ログインし直してください',
+  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
 };
 
 export const ResumeUrlForm = ({

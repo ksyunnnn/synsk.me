@@ -16,8 +16,8 @@ import type { ActionResult } from '@/shared/domain/action-result';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
- * 組織のフォームが呼ぶ Server Action。何より先に作り手であることを確かめる（ADR-0036）。
- * 作り手でなければ、入力した値を返さない
+ * 組織のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
+ * オーナーでなければ、入力した値を返さない
  */
 
 const readString = (formData: FormData, name: string) => {

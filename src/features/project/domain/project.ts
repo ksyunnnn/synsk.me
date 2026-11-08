@@ -43,7 +43,7 @@ export const isProjectSlug = (value: string): boolean => /^[a-z0-9-]{1,100}$/.te
  */
 export const newProjectSlug = (): string => crypto.randomUUID();
 
-/** 作り手が編集する実績 */
+/** オーナーが編集する実績 */
 export type Project = {
   id: ProjectId;
   /** 管理画面の URL とフォームで実績を指す識別子。訪問者向けの URL は slug */
@@ -65,7 +65,7 @@ export type Project = {
   updatedAt: string;
 };
 
-/** 作り手の一覧の 1 行 */
+/** オーナーの一覧の 1 行 */
 export type ProjectSummary = Pick<
   Project,
   'id' | 'uid' | 'slug' | 'kind' | 'title' | 'isMasked' | 'status' | 'period'

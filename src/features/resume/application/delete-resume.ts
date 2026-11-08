@@ -3,7 +3,7 @@ import type { ResumeRepository } from '@/features/resume/domain/resume-repositor
 import type { Author } from '@/shared/domain/author';
 
 /**
- * 職務経歴書を物理削除する（REQUIREMENTS.md の FR-11）。写し元は消さない。作り手でなければ
+ * 職務経歴書を物理削除する（REQUIREMENTS.md の FR-11）。写し元は消さない。オーナーでなければ
  * 何も書かない（FR-033）
  */
 export const deleteResume = async (

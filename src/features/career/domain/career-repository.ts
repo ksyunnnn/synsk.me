@@ -14,7 +14,7 @@ export type CareerRepository = {
   findForEdit: (id: CareerId) => Promise<Career | null>;
   /** 管理画面の URL とフォームの uid が指す職歴の id。無ければ null */
   findIdByUid: (uid: Uid) => Promise<CareerId | null>;
-  /** 作り手の一覧。始まりの日の新しい順 */
+  /** オーナーの一覧。始まりの日の新しい順 */
   list: () => Promise<CareerSummary[]>;
   register: (
     content: CareerContent,

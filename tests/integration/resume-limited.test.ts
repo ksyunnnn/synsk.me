@@ -148,7 +148,7 @@ describe('作って、訪問者に見せる（User Story 2 の 1、FR-010・FR-0
   let resumeId: number;
   let resumeUid: string;
 
-  it('作り手が作ると、/resume/{uid} の URL を同じ画面に返す（FR-011・FR-012）', async () => {
+  it('オーナーが作ると、/resume/{uid} の URL を同じ画面に返す（FR-011・FR-012）', async () => {
     const res = await sendNthForm(ctx, {
       how: 'submit',
       formPath: '/dash/resumes/new',
@@ -288,7 +288,7 @@ it('期限を過ぎた後に期限を延ばすと、同じ URL で読める（SC
   expect(page.text).toContain('延ばした後に見える題');
 });
 
-describe('作り手の JWT がない書き込みは D1 を変えない（FR-033）', () => {
+describe('オーナーの JWT がない書き込みは D1 を変えない（FR-033）', () => {
   describe.each(['submit', 'call'] as const)('%s', (how) => {
     it.each([
       ['URL の出し直し', LIMITED_SETTINGS_FORMS.url, {}],

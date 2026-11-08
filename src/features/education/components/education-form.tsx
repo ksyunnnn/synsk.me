@@ -53,7 +53,7 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
       )}
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
-          作り手であることを確かめられませんでした。ログインし直してから入力し直してください
+          オーナーであることを確かめられませんでした。ログインし直してから入力し直してください
         </p>
       )}
       {result?.status === 'invalid' && (

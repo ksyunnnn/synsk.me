@@ -17,8 +17,8 @@ import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
- * スキルのフォームが呼ぶ Server Action。何より先に作り手であることを確かめる（ADR-0036）。
- * 作り手でなければ、入力した値を返さない
+ * スキルのフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
+ * オーナーでなければ、入力した値を返さない
  */
 
 const readString = (formData: FormData, name: string) => {

@@ -8,7 +8,7 @@ import { ORGANIZATION_UID_FIELD } from '@/features/organization/application/edit
 type Result = { status: 'forbidden' | 'referenced' | 'personal' };
 
 const MESSAGES: Record<Result['status'], string> = {
-  forbidden: '作り手であることを確かめられませんでした。ログインし直してください',
+  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
   referenced: '職歴か実績がこの組織を指しているため、消せません',
   personal: '個人の組織は消せません',
 };

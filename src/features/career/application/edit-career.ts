@@ -20,7 +20,7 @@ export type EditCareerOutcome =
     }
   | { status: 'conflict'; values: CareerFormValues };
 
-/** 職歴を編集する（FR-007・FR-042）。作り手でなければ何も書かない（FR-040） */
+/** 職歴を編集する（FR-007・FR-042）。オーナーでなければ何も書かない（FR-040） */
 export const editCareer = async (
   { careers, organizations }: CareerDeps,
   author: Author | null,

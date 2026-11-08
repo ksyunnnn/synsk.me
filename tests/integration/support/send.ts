@@ -3,10 +3,10 @@ import type { TestServer } from './d1';
 import { encodeActionCall, encodeForm, readActionFields } from './form';
 
 /**
- * 作り手として画面を開いてフォームの操作を取り出し、ブラウザと同じ形で送る。
+ * オーナーとして画面を開いてフォームの操作を取り出し、ブラウザと同じ形で送る。
  * `how` が `submit` なら JavaScript なしの送信、`call` ならハイドレーションの後の呼び出し。
  * `to` を省くと、フォームのある画面へ送る。Server Action は経路に縛られないため、`/dash` の
- * 外へ送って、Server Action が自分で作り手を確かめることを確かめられる
+ * 外へ送って、Server Action が自分でオーナーを確かめることを確かめられる
  */
 export const sendForm = async (
   ctx: TestServer,

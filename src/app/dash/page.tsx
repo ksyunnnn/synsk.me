@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { requireAuthor } from '@/shared/server/author';
 import { TextLink } from '@/shared/components/text-link';
 
-// 要求時のデータ（作り手の確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
+// 要求時のデータ（オーナーの確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 

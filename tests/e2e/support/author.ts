@@ -9,7 +9,7 @@ import {
 } from '../../support/access.ts';
 
 /**
- * E2E で作り手として操作するための道具。
+ * E2E でオーナーとして操作するための道具。
  *
  * Playwright の webServer が起動する順に次を行う（playwright.config.ts）。
  * 1. `access-server.ts` がテスト用の鍵の組を作って `ACCESS_KEYS_PATH` に書き、
@@ -47,8 +47,8 @@ const readKeys = async (): Promise<AccessTestKeys> =>
   JSON.parse(await readFile(ACCESS_KEYS_PATH, 'utf8')) as AccessTestKeys;
 
 /**
- * ブラウザのこの context から送るすべての要求に、作り手の JWT を付ける。
- * Cloudflare Access がログインした作り手の要求に付けるのと同じヘッダを使う
+ * ブラウザのこの context から送るすべての要求に、オーナーの JWT を付ける。
+ * Cloudflare Access がログインしたオーナーの要求に付けるのと同じヘッダを使う
  */
 export const actAsAuthor = async (context: BrowserContext) => {
   const token = await signAccessJwt((await readKeys()).privateJwk, { issuer: ACCESS_ISSUER });

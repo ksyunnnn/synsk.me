@@ -13,13 +13,13 @@ import { readEnv } from '@/shared/server/env';
 export const createSkillRepository = async (): Promise<SkillRepository> =>
   createD1SkillRepository((await readEnv()).DB);
 
-/** 作り手の一覧と経験年数。作り手でなければ 403 */
+/** オーナーの一覧と経験年数。オーナーでなければ 403 */
 export const listSkills = async (): Promise<SkillSummary[]> => {
   await requireAuthor();
   return listSkillsUseCase(await createSkillRepository(), new Date());
 };
 
-/** 作り手が編集するスキル。作り手でなければ 403。無い uid なら null */
+/** オーナーが編集するスキル。オーナーでなければ 403。無い uid なら null */
 export const getSkillForEdit = async (uid: string): Promise<Skill | null> => {
   await requireAuthor();
   const skills = await createSkillRepository();

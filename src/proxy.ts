@@ -19,11 +19,11 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  * 「The HTTP contract」）。公式は、描画の前に proxy で確かめる形を示す
  * （https://nextjs.org/docs/app/api-reference/file-conventions/loading#status-codes）。
  *
- * ページと Server Action の作り手の確認は残す。公式は、作り手の確認を proxy だけに
+ * ページと Server Action のオーナーの確認は残す。公式は、オーナーの確認を proxy だけに
  * 頼らないよう求める（https://nextjs.org/docs/app/api-reference/file-conventions/proxy
  * の「Always verify authentication and authorization inside each Server Function」）。
  *
- * D1 や設定値を読み出せないときは判定せずにページへ通す。ページが作り手を確かめる。
+ * D1 や設定値を読み出せないときは判定せずにページへ通す。ページがオーナーを確かめる。
  */
 
 export const config = {
@@ -66,7 +66,7 @@ const isResumeSlugPath = (segments: string[]) => segments[0] === 'resume' && seg
 
 const decide = async (request: NextRequest): Promise<string | null> => {
   const segments = request.nextUrl.pathname.split('/').filter(Boolean);
-  // 書き込みの操作は、Server Action が作り手と行を確かめて結果を返す
+  // 書き込みの操作は、Server Action がオーナーと行を確かめて結果を返す
   const isRead = request.method === 'GET' || request.method === 'HEAD';
 
   if (segments[0] === 'projects') {
@@ -103,7 +103,7 @@ const decide = async (request: NextRequest): Promise<string | null> => {
 };
 
 /**
- * 作り手の経路の応答を、どのキャッシュにも残さない（docs/REQUIREMENTS.md の NFR-09）。
+ * オーナーの経路の応答を、どのキャッシュにも残さない（docs/REQUIREMENTS.md の NFR-09）。
  * 画面は vinext が `no-store` を付けるが、JavaScript なしの操作の結果の 303 には何も
  * 付けない。vinext は proxy の応答ヘッダを 303 に写す
  * （`vinext/dist/server/app-server-action-execution.js` の `mergeMiddlewareResponseHeaders`）
