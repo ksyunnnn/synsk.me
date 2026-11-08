@@ -1,22 +1,21 @@
 import 'server-only';
 
 import type { SkillRepository } from '@/features/skill/domain/skill-repository';
-import type { CalendarDate } from '@/shared/domain/period';
+import type { CalendarDate, Period } from '@/shared/domain/period';
 
 /**
  * `SkillRepository` の D1 の実装。行の型はこのファイルの中だけに置く（research.md の R3）
  */
 
 type SkillRow = { id: number; uid: string; name: string; months_override: number | null };
+type PeriodRow = { skill_id: number; started_on: string; ended_on: string | null };
 
 const isNameTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: skill.name');
 
 export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
   listWithPeriods: async (projects) => {
-    const [skills, periods] = await db.batch<
-      SkillRow | { skill_id: number; started_on: string; ended_on: string | null }
-    >([
+    const [skills, periods] = await db.batch<SkillRow | PeriodRow>([
       db.prepare('SELECT id, uid, name, months_override FROM skill ORDER BY name'),
       db
         .prepare(
@@ -26,22 +25,21 @@ export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
         )
         .bind(projects),
     ]);
-    const periodRows = periods.results as {
-      skill_id: number;
-      started_on: string;
-      ended_on: string | null;
-    }[];
+    const periodsBySkill = new Map<number, Period[]>();
+    for (const period of periods.results as PeriodRow[]) {
+      const list = periodsBySkill.get(period.skill_id) ?? [];
+      list.push({
+        startedOn: period.started_on as CalendarDate,
+        endedOn: period.ended_on as CalendarDate | null,
+      });
+      periodsBySkill.set(period.skill_id, list);
+    }
     return (skills.results as SkillRow[]).map((row) => ({
       id: row.id,
       uid: row.uid,
       name: row.name,
       monthsOverride: row.months_override,
-      periods: periodRows
-        .filter((period) => period.skill_id === row.id)
-        .map((period) => ({
-          startedOn: period.started_on as CalendarDate,
-          endedOn: period.ended_on as CalendarDate | null,
-        })),
+      periods: periodsBySkill.get(row.id) ?? [],
     }));
   },
 
