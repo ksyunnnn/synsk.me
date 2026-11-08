@@ -14,6 +14,7 @@ import {
   insertResumeEducation,
   insertResumeProject,
 } from '../support/resume-rows';
+import { insertExternalActivity, insertLifeEvent } from '../support/activity-rows';
 
 /**
  * 管理画面の URL に主キーが出ないこと（ADR-0048 の「主キーは URL に出さない」、
@@ -67,6 +68,8 @@ beforeAll(async () => {
       await insertResumeCareer(db, { resumeId: resume.id, careerId });
       await insertResumeProject(db, { resumeId: resume.id, projectId, skills: ['Go'] });
       await insertResumeEducation(db, { resumeId: resume.id, educationId });
+      await insertLifeEvent(db);
+      await insertExternalActivity(db, { source: 'unlisted' });
     },
   });
 }, 60_000);
@@ -114,6 +117,8 @@ describe('管理画面のリンクと隠しフィールドに主キーが出な�
       /^\/dash\/resumes\/[0-9a-f]{32}\/careers\/[0-9a-f]{32}$/,
       /^\/dash\/resumes\/[0-9a-f]{32}\/projects\/[0-9a-f]{32}$/,
       /^\/dash\/resumes\/[0-9a-f]{32}\/educations\/[0-9a-f]{32}$/,
+      /^\/dash\/activities\/[0-9a-f]{32}\/delete$/,
+      /^\/dash\/life-events\/[0-9a-f]{32}\/delete$/,
     ]) {
       expect(
         [...visited].some((path) => pattern.test(path)),

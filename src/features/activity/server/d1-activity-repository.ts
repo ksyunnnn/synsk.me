@@ -59,8 +59,14 @@ const CHANGED = `activity.url IS NOT excluded.url OR activity.title IS NOT exclu
   OR activity.image_url IS NOT excluded.image_url
   OR activity.published_at IS NOT excluded.published_at`;
 
+/**
+ * 書き換えた日時も同じ文で入れる。入れないと `activity_updated_at` のトリガがもう 1 回書き、
+ * 書き込みの行数が倍になる（D1 の 1 日の書き込みの上限、research.md の R6）
+ */
+const TOUCH = "updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')";
+
 const UPDATE_SET = `url = excluded.url, title = excluded.title, image_url = excluded.image_url,
-  published_at = excluded.published_at`;
+  published_at = excluded.published_at, ${TOUCH}`;
 
 export const createD1ActivityRepository = (db: D1Database): ActivityRepository => {
   /**
@@ -201,7 +207,7 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
       try {
         const result = await db
           .prepare(
-            `UPDATE activity SET url = ?, external_id = ?, title = ?, published_at = ?
+            `UPDATE activity SET url = ?, external_id = ?, title = ?, published_at = ?, ${TOUCH}
              WHERE id = ? AND ${EXTERNAL}`,
           )
           .bind(values.url, values.externalId, values.title, values.publishedAt, id)
@@ -242,7 +248,7 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
         ...updates.map((update) =>
           db
             .prepare(
-              `UPDATE activity SET title = ?, image_url = ?
+              `UPDATE activity SET title = ?, image_url = ?, ${TOUCH}
                WHERE id = ? AND ${EXTERNAL} AND (title IS NOT ? OR image_url IS NOT ?)`,
             )
             .bind(update.title, update.imageUrl, update.id, update.title, update.imageUrl),

@@ -118,7 +118,8 @@ export const createD1LifeEventRepository = (db: D1Database): LifeEventRepository
     try {
       const result = await db
         .prepare(
-          `UPDATE activity SET slug = ?, title = ?, description = ?, happened_on = ?
+          `UPDATE activity SET slug = ?, title = ?, description = ?, happened_on = ?,
+             updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
            WHERE id = ? AND ${LIFE_EVENT}`,
         )
         .bind(content.slug, content.title, content.description, content.happenedOn, id)

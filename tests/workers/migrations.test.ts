@@ -210,3 +210,59 @@ describe('migration 0011 の uid', () => {
     ).rejects.toThrow(/CHECK constraint failed/);
   });
 });
+
+/**
+ * activity の uid と外部の取得元の行（specs/004-external-activity/research.md の R1・R3、
+ * migrations/0020・0021）
+ */
+describe('migration 0020・0021 の activity', () => {
+  it('activity.uid は NOT NULL で、DB が入れ、書き換えを拒む', async () => {
+    const column = (await columnsOf('activity')).find((c) => c.name === 'uid');
+    expect(column).toMatchObject({ notnull: 1 });
+    const row = await env.DB.prepare(
+      "INSERT INTO activity (source, happened_on, title, slug) VALUES ('life_event', '2026-01-01', '作り物の 0020', 'migration-0020') RETURNING id, uid",
+    ).first<{ id: number; uid: string }>();
+    expect(row?.uid).toMatch(/^[0-9a-f]{32}$/);
+    await expect(
+      env.DB.prepare('UPDATE activity SET uid = ? WHERE id = ?')
+        .bind('0'.repeat(32), row?.id)
+        .run(),
+    ).rejects.toThrow(/activity_uid_fixed/);
+    await env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(row?.id).run();
+  });
+
+  it('作り直した後も、0004 と 0009 の索引とトリガを持つ', async () => {
+    const { results } = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE tbl_name = 'activity' AND type IN ('index', 'trigger') AND name NOT LIKE 'sqlite_%' ORDER BY name",
+    ).all<{ name: string }>();
+    expect(results.map((r) => r.name)).toEqual([
+      'activity_slug',
+      'activity_sort_at',
+      'activity_source_url',
+      'activity_uid_fixed',
+      'activity_updated_at',
+    ]);
+  });
+
+  it('外部の取得元の行と分類（FR-001、spec の Assumptions）', async () => {
+    const { results } = await env.DB.prepare(
+      'SELECT source, kind FROM activity_source ORDER BY source',
+    ).all<{ source: string; kind: string }>();
+    expect(Object.fromEntries(results.map((r) => [r.source, r.kind]))).toEqual({
+      codepen_pen: 'embed',
+      codesandbox_sandbox: 'embed',
+      connpass_event: 'other',
+      devto_article: 'article',
+      github_repository: 'other',
+      life_event: 'life_event',
+      medium_article: 'article',
+      qiita_article: 'article',
+      speakerdeck_deck: 'embed',
+      spotify_playlist: 'embed',
+      unlisted: 'other',
+      x_post: 'embed',
+      youtube_video: 'embed',
+      zenn_article: 'article',
+    });
+  });
+});
