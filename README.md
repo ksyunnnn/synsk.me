@@ -19,6 +19,12 @@
 
 ## 開発
 
+Node.js 24 を使う（`.nvmrc`）。`package.json` の `engines` は 22 以上を求める。依存はワークスペースの直下で入れる。
+
+```bash
+npm i # 依存を入れる
+```
+
 ```bash
 npm run dev        # 開発サーバー（http://localhost:3000）
 npm run build      # プロダクションビルド（出力は dist/）
@@ -69,12 +75,14 @@ npm run test:integration # 結合。ビルドしてから本番出力を workerd
 npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 ```
 
+E2E の前に `npx playwright install chromium` でブラウザを入れる。
+
 段階ごとの割り当てと時間の上限は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
 
 | 段階 | 回すもの | Tolerable | Goal |
 |---|---|---|---|
 | 手元 watch | `npm run test:watch` | 10 秒 | 1 秒 |
-| コミット前 | `npm test` `npm run test:workers` `npx tsc --noEmit` `npm run lint` `npm run format:check` | 60 秒 | 30 秒 |
+| コミット前 | `npm test` `npm run test:workers` `npm run cf-typegen` `npm run build` `npx tsc --noEmit` `npx tsc --noEmit -p tests/tsconfig.json` `npm run lint` `npm run format:check`（この順。型検査は `cf-typegen` と `build` が生成する型を読む） | 60 秒 | 30 秒 |
 | PR の CI | 上記と結合・E2E。CI はビルドを 1 回に抑えるため `test:integration:only` と `test:e2e:only` を呼ぶ | 10 分 | 5 分 |
 
 設定は 4 つに分かれる。単体と workerd は vinext を読み込まない。vinext は公開の `next/*` を自前の shim に置き換えるため、読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。
@@ -178,13 +186,14 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 
 ## Worker の secret
 
-`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、作り手であることを確かめられないとして拒む。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
+`ACCESS_` で始まる 3 つは、`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、作り手であることを確かめられないとして拒む。`npm run dev` のときだけ、JWT を検証せずに作り手として扱い、3 つが欠けていても拒まない。分岐は `npm run build` で消えるため、`npm run preview` と `npm run start` では検証する（[ADR-0049](./docs/decisions/0049-verify-access-jwt-except-dev.md)）。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
 
 | 変数 | 用途 |
 |------|------|
 | `ACCESS_ISSUER` | Access の team domain（`https://<team-name>.cloudflareaccess.com`）。公開鍵を `<ACCESS_ISSUER>/cdn-cgi/access/certs` から取る |
 | `ACCESS_AUD` | Access のアプリケーションの AUD タグ。カンマで区切って複数並べられる。本番には `synsk.me dash`、Preview には `synsk.me preview` の AUD を置く |
 | `ACCESS_OWNER_EMAIL` | 作り手として認めるメールアドレス |
+| `RESUME_EMAIL` | 職務経歴書のプロフィールに出すメールアドレス。空か無ければ出さない |
 
 ## Workers Builds のビルド構成
 
