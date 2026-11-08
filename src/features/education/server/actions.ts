@@ -14,7 +14,8 @@ import {
   type EducationFormResult,
   type EducationFormValues,
 } from '@/features/education/domain/education';
-import { createEducationRepository, findEducationId } from '@/features/education/server/queries';
+import { createEducationRepository } from '@/features/education/server/queries';
+import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -52,7 +53,7 @@ export const editEducation = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const educations = await createEducationRepository();
-  const id = await findEducationId(educations, readString(formData, EDUCATION_UID_FIELD));
+  const id = await findIdByUid(educations, readString(formData, EDUCATION_UID_FIELD));
   if (id === null) redirect('/dash/educations');
   const outcome = await editEducationUseCase(educations, author, id, readValues(formData));
   if (outcome.status === 'saved') redirect('/dash/educations?saved=1');
@@ -67,7 +68,7 @@ export const deleteEducation = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const educations = await createEducationRepository();
-  const id = await findEducationId(educations, readString(formData, EDUCATION_UID_FIELD));
+  const id = await findIdByUid(educations, readString(formData, EDUCATION_UID_FIELD));
   if (id === null) redirect('/dash/educations');
   const outcome = await deleteEducationUseCase(educations, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };

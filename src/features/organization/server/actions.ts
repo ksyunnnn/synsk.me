@@ -10,10 +10,8 @@ import {
   type OrganizationField,
   type OrganizationFieldError,
 } from '@/features/organization/application/edit-organization';
-import {
-  createOrganizationRepository,
-  findOrganizationId,
-} from '@/features/organization/server/queries';
+import { createOrganizationRepository } from '@/features/organization/server/queries';
+import { findIdByUid } from '@/shared/domain/uid';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { getCurrentAuthor } from '@/shared/server/author';
 
@@ -38,7 +36,7 @@ export const editOrganization = async (
   if (!author) return { status: 'forbidden' };
   const organizations = await createOrganizationRepository();
   const uid = readString(formData, ORGANIZATION_UID_FIELD);
-  const id = await findOrganizationId(organizations, uid);
+  const id = await findIdByUid(organizations, uid);
   if (id === null) redirect('/dash/organizations');
 
   const outcome = await editOrganizationUseCase(organizations, author, id, {
@@ -60,7 +58,7 @@ export const deleteOrganization = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const organizations = await createOrganizationRepository();
-  const id = await findOrganizationId(organizations, readString(formData, ORGANIZATION_UID_FIELD));
+  const id = await findIdByUid(organizations, readString(formData, ORGANIZATION_UID_FIELD));
   if (id === null) redirect('/dash/organizations');
 
   const outcome = await deleteOrganizationUseCase(organizations, author, id);

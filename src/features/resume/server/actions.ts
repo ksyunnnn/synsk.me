@@ -54,10 +54,10 @@ import {
 } from '@/features/resume/domain/resume-forms';
 import {
   createResumeRepository,
-  findResumeId,
   findResumeRowId,
   limitedResumeUrl,
 } from '@/features/resume/server/queries';
+import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -88,7 +88,7 @@ const readTimes = (formData: FormData): EditTimes => ({
 const readResume = async (formData: FormData) => {
   const resumes = await createResumeRepository();
   const uid = readString(formData, RESUME_UID_FIELD);
-  const id = await findResumeId(resumes, uid);
+  const id = await findIdByUid(resumes, uid);
   if (id === null) redirect('/dash/resumes');
   return { resumes, id, uid };
 };

@@ -13,7 +13,8 @@ import {
   type CareerFormResult,
   type CareerFormValues,
 } from '@/features/career/domain/career';
-import { createCareerDeps, findCareerId } from '@/features/career/server/queries';
+import { createCareerDeps } from '@/features/career/server/queries';
+import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 
 /**
@@ -54,7 +55,7 @@ export const editCareer = async (
   if (!author) return { status: 'forbidden' };
   const deps = await createCareerDeps();
   const uid = readString(formData, CAREER_UID_FIELD);
-  const id = await findCareerId(deps.careers, uid);
+  const id = await findIdByUid(deps.careers, uid);
   if (id === null) redirect('/dash/careers');
 
   const outcome = await editCareerUseCase(deps, author, id, readValues(formData), {
@@ -74,7 +75,7 @@ export const deleteCareer = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { careers } = await createCareerDeps();
-  const id = await findCareerId(careers, readString(formData, CAREER_UID_FIELD));
+  const id = await findIdByUid(careers, readString(formData, CAREER_UID_FIELD));
   if (id === null) redirect('/dash/careers');
   const outcome = await deleteCareerUseCase(careers, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
