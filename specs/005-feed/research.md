@@ -121,5 +121,5 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R13 読み取り行数
 
-- 決めたこと: 一覧の 1 回の読み取りが D1 でスキャンする行数を、workerd の検査で `meta.rows_read` から測り、research.md に書く（tasks.md）。遅ければ値を写して持つ形へ移す（ADR-0044 の Confirmation）
+- 決めたこと: 一覧の 1 回の読み取りが D1 でスキャンする行数を、`tests/workers/feed-repository.test.ts` の「1 ページを読むときにスキャンする行数を測る」が `meta.rows_read` で測り、値を検査に固定する。返る値は、5 種類を 1 件ずつ入れた D1 で 1 ページを読んだときのスキャン行数。本番の D1 で遅ければ、値を写して持つ形へ移す（ADR-0044 の Confirmation）
 - 理由: constitution VI。計測の前に索引や写しを足さない

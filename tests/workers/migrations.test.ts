@@ -297,3 +297,31 @@ describe('migration 0020・0021 の activity', () => {
     });
   });
 });
+
+/**
+ * 一覧のビュー（specs/005-feed/data-model.md、migrations/0025）。訪問者に出してよい値の
+ * 列だけを持つ（FR-012・FR-013 の許可リスト）
+ */
+describe('migration 0025 の activity_feed', () => {
+  it('ビューは data-model.md の列だけを持つ', async () => {
+    expect((await columnsOf('activity_feed')).map((c) => c.name)).toEqual([
+      'item_type',
+      'item_id',
+      'type_rank',
+      'sort_key',
+      'slug',
+      'url',
+      'visible_title',
+      'description',
+      'source',
+      'source_kind',
+      'visible_organization_name',
+      'role',
+      'project_kind',
+      'started_on',
+      'ended_on',
+      'is_masked',
+      'skills',
+    ]);
+  });
+});

@@ -10,7 +10,9 @@ import {
   getVisitorLifeEvent as getVisitorLifeEventUseCase,
   listLifeEvents as listLifeEventsUseCase,
 } from '@/features/activity/application/life-events';
+import { listFeed as listFeedUseCase } from '@/features/activity/application/list-feed';
 import type { ExternalActivity, FetchResult } from '@/features/activity/domain/activity';
+import type { FeedPage } from '@/features/activity/domain/feed';
 import type {
   LifeEvent,
   LifeEventSummary,
@@ -27,6 +29,13 @@ import { createActivityDeps as createDeps } from './deps';
  */
 
 export const createActivityDeps = async () => createDeps(await readEnv());
+
+/**
+ * 訪問者の一覧（timeline）の `page` ページ目（specs/005-feed/contracts/visitor-feed.md）。
+ * 誰が要求しても同じ値を返す。オーナーを確かめない
+ */
+export const listFeed = async (page: number): Promise<FeedPage> =>
+  listFeedUseCase((await createActivityDeps()).feed, page);
 
 /** 管理画面の一覧と、取得元ごとの取得の結果。オーナーでなければ 403 */
 export const listActivities = async (): Promise<{
