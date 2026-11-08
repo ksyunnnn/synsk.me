@@ -19,9 +19,15 @@ export const isResumeStatus = (value: string): value is ResumeStatus =>
 
 export type ResumeId = number;
 
-/** 文字列の id を読む。正の整数でなければ null。作成の画面で選んだ写し元の id にも使う */
-export const parseResumeId = (value: string): ResumeId | null =>
-  /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
+/**
+ * 文字列の id を読む。正の整数でなければ null。作成の画面で選んだ写し元の id にも使う。
+ * `Number.MAX_SAFE_INTEGER` を超える値は精度を失い別の id に読めるため、null にする
+ */
+export const parseResumeId = (value: string): ResumeId | null => {
+  if (!/^[1-9]\d{0,15}$/.test(value)) return null;
+  const id = Number(value);
+  return Number.isSafeInteger(id) ? id : null;
+};
 
 /** 識別子の形（FR-002、`resume.slug` の CHECK）。1〜100 文字の英小文字・数字・ハイフン */
 export const isResumeSlug = (value: string): boolean => /^[a-z0-9-]{1,100}$/.test(value);

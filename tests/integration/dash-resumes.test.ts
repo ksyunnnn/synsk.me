@@ -271,3 +271,29 @@ describe('作ったあとに足す（FR-041）', () => {
     expect(html).toContain('足せるものはありません');
   });
 });
+
+describe('写した経験年数の上書きの編集（FR-028）', () => {
+  it('同じスキルの名前を 2 回送ると、500 にせず、入力の不備として何も書かない', async () => {
+    const target = await insertResume(ctx.db);
+    const formPath = `/dash/resumes/${target.uid}/skills`;
+    const before = await snapshot();
+    const res = await sendNthForm(ctx, {
+      how: 'submit',
+      formPath,
+      values: [
+        ['resumeUid', target.uid],
+        ['openedUpdatedAt', await updatedAtOf(target.id)],
+        ['overrideName', 'Go'],
+        ['overrideYears', '1'],
+        ['overrideMonths', '0'],
+        ['overrideName', 'Go'],
+        ['overrideYears', '2'],
+        ['overrideMonths', '0'],
+      ],
+      asAuthor: true,
+    });
+    await res.arrayBuffer();
+    expect(res.status).toBe(200);
+    expect(await snapshot()).toEqual(before);
+  });
+});

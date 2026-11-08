@@ -3,6 +3,7 @@ import { addResumeRows } from '@/features/resume/application/add-resume-rows';
 import { createResume } from '@/features/resume/application/create-resume';
 import {
   editResumeCareer,
+  editResumeProject,
   editResumeSkillOverrides,
 } from '@/features/resume/application/edit-resume-rows';
 import { editResumeSettings } from '@/features/resume/application/edit-resume-settings';
@@ -303,6 +304,90 @@ describe('写した行の編集（FR-031）', () => {
     );
     expect(outcome).toMatchObject({ status: 'invalid', errors: { invalidRows: [0] } });
     expect(resumes.editSkillOverrides).not.toHaveBeenCalled();
+  });
+
+  it('同じスキルの名前を 2 回送ると、後の行を不備として書かない', async () => {
+    const resumes = fakeResumes();
+    const outcome = await editResumeSkillOverrides(
+      resumes,
+      OWNER,
+      1,
+      [
+        { name: 'Go', years: '1', months: '0' },
+        { name: 'Rust', years: '', months: '' },
+        { name: 'Go', years: '', months: '' },
+      ],
+      TIMES,
+    );
+    expect(outcome).toMatchObject({ status: 'invalid', errors: { invalidRows: [2] } });
+    expect(resumes.editSkillOverrides).not.toHaveBeenCalled();
+  });
+
+  it('スキルの名前は前後の空白を除いて渡し、除いた名前で重複を見る', async () => {
+    const resumes = fakeResumes();
+    await editResumeSkillOverrides(
+      resumes,
+      OWNER,
+      1,
+      [{ name: ' Go ', years: '1', months: '0' }],
+      TIMES,
+    );
+    expect(resumes.editSkillOverrides.mock.calls[0][1]).toEqual([{ skillName: 'Go', months: 12 }]);
+
+    const duplicated = await editResumeSkillOverrides(
+      resumes,
+      OWNER,
+      1,
+      [
+        { name: 'Go', years: '1', months: '0' },
+        { name: ' Go', years: '2', months: '0' },
+      ],
+      TIMES,
+    );
+    expect(duplicated).toMatchObject({ status: 'invalid', errors: { invalidRows: [1] } });
+  });
+
+  it(`上書きは ${MAX_COPIED_ROWS} 行まで書く。超えた行は不備として書かない`, async () => {
+    const rows = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({ name: `S${i}`, years: '1', months: '0' }));
+    const resumes = fakeResumes();
+    const over = await editResumeSkillOverrides(
+      resumes,
+      OWNER,
+      1,
+      rows(MAX_COPIED_ROWS + 1),
+      TIMES,
+    );
+    expect(over).toMatchObject({ status: 'invalid', errors: { invalidRows: [MAX_COPIED_ROWS] } });
+    expect(resumes.editSkillOverrides).not.toHaveBeenCalled();
+
+    await editResumeSkillOverrides(resumes, OWNER, 1, rows(MAX_COPIED_ROWS), TIMES);
+    expect(resumes.editSkillOverrides.mock.calls[0][1]).toHaveLength(MAX_COPIED_ROWS);
+  });
+
+  it(`写した実績のスキルは ${MAX_COPIED_ROWS} 個まで書く。超えたら不備として書かない`, async () => {
+    const projectValues = (skillCount: number) => ({
+      organizationName: '組織',
+      kind: 'talk',
+      title: '題',
+      startedOn: '2020-04-01',
+      endedOn: '',
+      description: '',
+      url: '',
+      skills: Array.from({ length: skillCount }, (_, i) => `S${i}`).join('\n'),
+    });
+    const resumes = fakeResumes();
+    const values = projectValues(MAX_COPIED_ROWS + 1);
+    expect(await editResumeProject(resumes, OWNER, { id: 1, rowId: 2 }, values, TIMES)).toEqual({
+      status: 'invalid',
+      errors: { skills: 'invalid' },
+      values,
+    });
+    expect(resumes.editProject).not.toHaveBeenCalled();
+
+    const atLimit = projectValues(MAX_COPIED_ROWS);
+    await editResumeProject(resumes, OWNER, { id: 1, rowId: 2 }, atLimit, TIMES);
+    expect(resumes.editProject.mock.calls[0][2].skills).toHaveLength(MAX_COPIED_ROWS);
   });
 });
 

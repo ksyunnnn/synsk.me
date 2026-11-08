@@ -2,6 +2,7 @@
 
 import { useActionState, type ReactNode } from 'react';
 import type { EditOutcome } from '@/features/resume/application/edit-outcome';
+import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import { RESUME_PROJECT_KINDS, RESUME_PROJECT_KIND_LABELS } from '@/features/resume/domain/resume';
 import {
   OPENED_UPDATED_AT_FIELD,
@@ -47,6 +48,7 @@ const FIELD_MESSAGES: Record<string, Partial<Record<FieldError, string>>> = {
     'ended-before-started': '終わりの日は始まりの日より前にできません',
   },
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
+  skills: { invalid: `スキルは ${MAX_COPIED_ROWS} 個までにしてください` },
 };
 
 type Target = { resumeUid: string; rowUid?: string; updatedAt: string };
@@ -220,6 +222,7 @@ export const ResumeProjectForm = ({
         hint="1 行に 1 つ書きます"
         rows={4}
         defaultValue={values.skills}
+        error={errorText(errors, 'skills')}
       />
       <TextareaField name="description" label="本文" rows={8} defaultValue={values.description} />
       <InputField
