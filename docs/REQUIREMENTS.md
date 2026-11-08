@@ -4,27 +4,6 @@
 
 ---
 
-## FR-01: activity を永続化する
-根拠: [ADR-0045](./decisions/0045-external-activity-follows-source.md)
-
-## FR-02: 外部 activity を自動で取得し、永続化する
-根拠: [ADR-0045](./decisions/0045-external-activity-follows-source.md)
-
-## FR-03: career と project を永続化する
-根拠: [ADR-0044](./decisions/0044-content-data-model-by-organization.md)
-
-## FR-05: note に、公開前の下書き状態を持てる
-根拠: [ADR-0008](./decisions/0008-content-visibility.md)
-
-## FR-07: career と project は、公開・限定公開・非公開の3段階を区別して保持できる
-根拠: [ADR-0008](./decisions/0008-content-visibility.md)
-
-## FR-08: career と project は、公開できる値と公開できない値の両方を保持できる
-根拠: [ADR-0008](./decisions/0008-content-visibility.md)
-
-## FR-10: note の過去の版を保持し、任意の版に戻せる
-根拠: [ADR-0010](./decisions/0010-content-storage-scope.md)
-
 ## FR-11: 永続化したデータを完全に削除できる
 根拠: [ADR-0008](./decisions/0008-content-visibility.md)
 
@@ -33,18 +12,6 @@
 
 ## FR-14: 保存操作をせずに編集内容が保持される
 根拠: [ADR-0014](./decisions/0014-authoring-and-datastore.md)
-
-## FR-15: note に URL を入力すると、参照先の情報を伴う表示になる
-根拠: [ADR-0014](./decisions/0014-authoring-and-datastore.md)
-
-## FR-16: スマートフォンから note を作成・編集・公開できる
-根拠: [ADR-0014](./decisions/0014-authoring-and-datastore.md)
-
-## FR-17: note の公開と修正が、公開操作の後に別の工程を挟まずに反映される
-根拠: [ADR-0014](./decisions/0014-authoring-and-datastore.md)
-
-## FR-18: 職務経歴書を複数保持し、それぞれに公開範囲を設定できる
-根拠: [ADR-0015](./decisions/0015-multiple-resumes.md)
 
 ## NFR-01: 永続化したデータ全体を復元できる
 根拠: なし

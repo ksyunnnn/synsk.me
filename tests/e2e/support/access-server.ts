@@ -5,7 +5,7 @@ import { ACCESS_KEYS_PATH, ACCESS_SERVER_PORT } from './author.ts';
 
 /**
  * E2E の webServer として走り、テスト用の鍵の組を作って公開鍵を配る。
- * 鍵の組は、テストのプロセスが作り手の JWT を作るために `ACCESS_KEYS_PATH` に書く。
+ * 鍵の組は、テストのプロセスがオーナーの JWT を作るために `ACCESS_KEYS_PATH` に書く。
  *
  * `node tests/e2e/support/access-server.ts` で走る。Playwright が終わるときに止める。
  */

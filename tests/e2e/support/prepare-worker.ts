@@ -5,8 +5,8 @@ import { ACCESS_VARS, D1_PERSIST_DIR } from './author.ts';
 /**
  * E2E で `wrangler dev` を起動する前に、ビルド出力を動かす準備をする。
  *
- * - ローカルの D1 を空にして `migrations/` を当てる。前の実行で作った note が
- *   残ると、同じ slug で作る操作が重複で落ちる
+ * - ローカルの D1 を空にして `migrations/` を当てる。前の実行で作った行が
+ *   残ると、同じ値で作る操作が重複で落ちる
  * - `dist/server/.dev.vars` に `ACCESS_*` を書く。`wrangler dev` は設定ファイルと
  *   同じディレクトリの `.dev.vars` を読む。`dist/` はビルドのたびに作り直される
  *
