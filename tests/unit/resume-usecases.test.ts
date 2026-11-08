@@ -323,6 +323,30 @@ describe('写した行の編集（FR-031）', () => {
     expect(resumes.editSkillOverrides).not.toHaveBeenCalled();
   });
 
+  it('スキルの名前は前後の空白を除いて渡し、除いた名前で重複を見る', async () => {
+    const resumes = fakeResumes();
+    await editResumeSkillOverrides(
+      resumes,
+      OWNER,
+      1,
+      [{ name: ' Go ', years: '1', months: '0' }],
+      TIMES,
+    );
+    expect(resumes.editSkillOverrides.mock.calls[0][1]).toEqual([{ skillName: 'Go', months: 12 }]);
+
+    const duplicated = await editResumeSkillOverrides(
+      resumes,
+      OWNER,
+      1,
+      [
+        { name: 'Go', years: '1', months: '0' },
+        { name: ' Go', years: '2', months: '0' },
+      ],
+      TIMES,
+    );
+    expect(duplicated).toMatchObject({ status: 'invalid', errors: { invalidRows: [1] } });
+  });
+
   it(`上書きは ${MAX_COPIED_ROWS} 行まで書く。超えた行は不備として書かない`, async () => {
     const rows = (count: number) =>
       Array.from({ length: count }, (_, i) => ({ name: `S${i}`, years: '1', months: '0' }));

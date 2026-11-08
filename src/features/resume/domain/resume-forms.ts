@@ -279,11 +279,12 @@ export const parseSkillOverrides = (
   const invalidRows: number[] = [];
   const names = new Set<string>();
   rows.forEach((row, index) => {
-    if (names.has(row.name)) {
+    const name = row.name.trim();
+    if (names.has(name)) {
       invalidRows.push(index);
       return;
     }
-    names.add(row.name);
+    names.add(name);
     const years = row.years.trim();
     const months = row.months.trim();
     if (years === '' && months === '') return;
@@ -293,13 +294,13 @@ export const parseSkillOverrides = (
       Number.isNaN(y) ||
       Number.isNaN(m) ||
       m > 11 ||
-      row.name.trim() === '' ||
+      name === '' ||
       overrides.length >= MAX_COPIED_ROWS
     ) {
       invalidRows.push(index);
       return;
     }
-    overrides.push({ skillName: row.name, months: y * 12 + m });
+    overrides.push({ skillName: name, months: y * 12 + m });
   });
   return invalidRows.length > 0 ? { ok: false, invalidRows } : { ok: true, overrides };
 };
