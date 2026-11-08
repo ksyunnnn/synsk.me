@@ -39,6 +39,15 @@ npm install -g @pen.dev/cli                      # 保存に使う。初回は p
 pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() がファイルへ書き込む
 ```
 
+手元の D1 はワークスペース（`desk-NN`）ごとに別で、`npm run dev` か `wrangler d1 … --local` を初めて実行したときに `.wrangler/state` の下に作られる。表を作って seed を入れるには、ワークスペースの直下で次を実行する。
+
+```bash
+npx wrangler d1 migrations apply synsk-me --local                           # 手元の D1 に表を作る
+npx wrangler d1 execute synsk-me --local --file ../../assets/seed-local.sql # seed を入れる
+```
+
+seed は実名を含むため、リポジトリに入れず `synsk.me/assets/seed-local.sql` に置く。
+
 ## データベース
 
 Cloudflare D1 のデータベース `synsk-me`（binding `DB`）。スキーマはリポジトリ直下の `migrations/` の SQL が持つ。
