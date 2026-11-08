@@ -203,7 +203,9 @@ export const submitLimitedResume = async (
   if (expires !== undefined) await textbox(page, '期限').fill(expires);
   await keepOnlySources(page, keep);
   await page.getByRole('button', { name: '作る' }).click();
-  await expect(page.getByRole('status')).toHaveText('職務経歴書を作りました。状態は非公開です');
+  await expect(page.getByRole('status')).toHaveText(
+    '限定公開用の職務経歴書を作りました。非公開です',
+  );
   return textbox(page, '限定公開用の URL').inputValue();
 };
 

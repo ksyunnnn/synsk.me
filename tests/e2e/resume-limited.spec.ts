@@ -96,7 +96,7 @@ test('下書きの間と、鍵が違う・鍵が無い URL では 404 で中身�
   await visitor.close();
 });
 
-test('作成の画面で公開すると、URL を示したまま、その URL が 200 で開く。非公開の間は URL に「公開すると開けます」と添える', async ({
+test('作成の画面で公開すると、URL を示したまま、その URL が 200 で開き、知らせが「公開中です」に変わる。非公開の間は URL に「公開すると開けます」と添える', async ({
   page,
   context,
   browser,
@@ -113,7 +113,9 @@ test('作成の画面で公開すると、URL を示したまま、その URL �
   const visitor = await openVisitor(browser);
   expect(await visit(visitor, path)).toBe(404);
 
+  const notice = page.getByRole('status');
   await setResumeVisible(page, true);
+  await expect(notice).toHaveText('限定公開用の職務経歴書を作りました。公開中です');
   await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveValue(url);
   await expect(note).toHaveCount(0);
   expect(await visit(visitor, path)).toBe(200);
@@ -123,6 +125,7 @@ test('作成の画面で公開すると、URL を示したまま、その URL �
 
   // 切り替えた後の更新日時で、続けて非公開にできる
   await setResumeVisible(page, false);
+  await expect(notice).toHaveText('限定公開用の職務経歴書を作りました。非公開です');
   await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveValue(url);
   await expect(note).toBeVisible();
   expect(await visit(visitor, path)).toBe(404);

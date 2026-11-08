@@ -108,6 +108,7 @@ export const createResume = async (
     status: 'created',
     id: outcome.id,
     updatedAt: outcome.updatedAt,
+    audience: outcome.audience,
     url: await limitedUrl(outcome.slug, outcome.key),
   };
 };

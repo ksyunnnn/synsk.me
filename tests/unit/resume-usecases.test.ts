@@ -78,7 +78,7 @@ describe('createResume', () => {
   it('限定公開用か公開用かを選ばなければ、限定公開用で作る（FR-003）', async () => {
     const resumes = fakeResumes();
     const outcome = await createResume(resumes, OWNER, createValues());
-    expect(outcome.status).toBe('created');
+    expect(outcome).toMatchObject({ status: 'created', audience: 'limited' });
     expect(resumes.create).toHaveBeenCalledWith(expect.objectContaining({ audience: 'limited' }));
   });
 

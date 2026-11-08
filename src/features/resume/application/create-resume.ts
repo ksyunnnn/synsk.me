@@ -18,7 +18,14 @@ import type { Author } from '@/shared/domain/author';
 
 export type CreateResumeOutcome =
   /** `key` は限定公開用の鍵の平文。D1 には無く、この結果の中でだけ持つ（research.md の R5） */
-  | { status: 'created'; id: ResumeId; updatedAt: string; slug: string; key: string | null }
+  | {
+      status: 'created';
+      id: ResumeId;
+      updatedAt: string;
+      audience: ResumeAudience;
+      slug: string;
+      key: string | null;
+    }
   | { status: 'forbidden' }
   | {
       status: 'invalid';
@@ -97,5 +104,5 @@ export const createResume = async (
     limitedExpiresAt: audience === 'limited' ? expires.expiresAt : null,
     content: built.content,
   });
-  return { status: 'created', id, updatedAt, slug, key };
+  return { status: 'created', id, updatedAt, audience, slug, key };
 };

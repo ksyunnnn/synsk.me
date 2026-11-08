@@ -1,5 +1,6 @@
 import {
   isResumeProjectKind,
+  type ResumeAudience,
   type ResumeCareer,
   type ResumeCareerContent,
   type ResumeEducation,
@@ -74,7 +75,13 @@ export type CreateResumeError = FieldError | 'public-not-supported' | 'source-mi
 
 export type CreateResumeFormResult =
   /** 作った。限定公開用の鍵を含む URL は、この結果の中でだけ示す（research.md の R5） */
-  | { status: 'created'; id: number; updatedAt: string; url: string | null }
+  | {
+      status: 'created';
+      id: number;
+      updatedAt: string;
+      audience: ResumeAudience;
+      url: string | null;
+    }
   | { status: 'forbidden' }
   | {
       status: 'invalid';

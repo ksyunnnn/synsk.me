@@ -1,13 +1,17 @@
 'use client';
 
-import { useActionState, type ComponentProps } from 'react';
+import { useActionState } from 'react';
 import {
   SELECTION_FIELDS,
   type CreateResumeError,
   type CreateResumeField,
   type CreateResumeFormResult,
 } from '@/features/resume/domain/resume-forms';
-import { ResumeStatusForm } from '@/features/resume/components/resume-status-form';
+import {
+  ResumeStatusFields,
+  useResumeStatus,
+} from '@/features/resume/components/resume-status-form';
+import type { ResumeAudience, ResumeStatus } from '@/features/resume/domain/resume';
 import { CheckboxField, InputField } from '@/shared/components/field';
 import { TextLink } from '@/shared/components/text-link';
 
@@ -29,7 +33,7 @@ type Props = {
     formData: FormData,
   ) => Promise<CreateResumeFormResult>;
   /** 作った後の状態の切り替え。移らずに同じ画面に留まり、URL を示したままにする */
-  changeStatusAction: ComponentProps<typeof ResumeStatusForm>['action'];
+  changeStatusAction: Parameters<typeof useResumeStatus>[0];
   careers: SourceOption[];
   projects: SourceOption[];
   educations: SourceOption[];
@@ -85,6 +89,50 @@ const SourceFieldset = ({
   </fieldset>
 );
 
+const AUDIENCE_LABELS: Record<ResumeAudience, string> = {
+  limited: '限定公開用',
+  public: '公開用',
+};
+
+const createdNotice = (audience: ResumeAudience, status: ResumeStatus) =>
+  `${AUDIENCE_LABELS[audience]}の職務経歴書を作りました。${status === 'draft' ? '非公開です' : '公開中です'}`;
+
+/** 作った後の画面。知らせと状態の切り替えは、同じ状態（`useResumeStatus`）から描く */
+const ResumeCreated = ({
+  created,
+  changeStatusAction,
+}: {
+  created: Extract<CreateResumeFormResult, { status: 'created' }>;
+  changeStatusAction: Props['changeStatusAction'];
+}) => {
+  const statusState = useResumeStatus(changeStatusAction, 'draft', created.updatedAt);
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p role="status">{createdNotice(created.audience, statusState.status)}</p>
+      {created.url && (
+        <>
+          <InputField
+            name="limitedUrl"
+            label="限定公開用の URL"
+            hint="この URL はこの画面でだけ示します。あとから示せないため、控えてから移ってください"
+            readOnly
+            defaultValue={created.url}
+          />
+          <ResumeStatusFields
+            state={statusState}
+            draftNote="公開すると開けます"
+            resumeId={created.id}
+          />
+        </>
+      )}
+      <p>
+        <TextLink href={`/dash/resumes/${created.id}`}>設定の画面へ</TextLink>
+      </p>
+    </div>
+  );
+};
+
 export const ResumeCreateForm = ({
   action,
   changeStatusAction,
@@ -95,32 +143,7 @@ export const ResumeCreateForm = ({
   const [result, formAction] = useActionState(action, null);
 
   if (result?.status === 'created') {
-    return (
-      <div className="flex flex-col gap-4">
-        <p role="status">職務経歴書を作りました。状態は非公開です</p>
-        {result.url && (
-          <>
-            <InputField
-              name="limitedUrl"
-              label="限定公開用の URL"
-              hint="この URL はこの画面でだけ示します。あとから示せないため、控えてから移ってください"
-              readOnly
-              defaultValue={result.url}
-            />
-            <ResumeStatusForm
-              action={changeStatusAction}
-              status="draft"
-              draftNote="公開すると開けます"
-              resumeId={result.id}
-              updatedAt={result.updatedAt}
-            />
-          </>
-        )}
-        <p>
-          <TextLink href={`/dash/resumes/${result.id}`}>設定の画面へ</TextLink>
-        </p>
-      </div>
-    );
+    return <ResumeCreated created={result} changeStatusAction={changeStatusAction} />;
   }
 
   const values = result?.status === 'invalid' ? result.values : null;

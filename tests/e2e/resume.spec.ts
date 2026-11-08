@@ -64,7 +64,9 @@ test('作成の画面は、すべての職歴・実績・学歴を選んだ状�
   await page.getByRole('button', { name: '作る' }).focus();
   await page.keyboard.press('Enter');
 
-  await expect(page.getByRole('status')).toHaveText('職務経歴書を作りました。状態は非公開です');
+  await expect(page.getByRole('status')).toHaveText(
+    '限定公開用の職務経歴書を作りました。非公開です',
+  );
   await expect(page.getByRole('textbox', { name: '限定公開用の URL' })).toHaveValue(
     /\/resume\/[a-z0-9-]+\/[A-Za-z0-9_-]{43}$/,
   );

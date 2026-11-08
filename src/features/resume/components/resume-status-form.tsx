@@ -23,23 +23,40 @@ type StatusResult =
   | EditOutcome<{ status: string }, { status?: FieldError }>
   | { status: 'changed'; resumeStatus: ResumeStatus; updatedAt: string };
 
-export const ResumeStatusForm = ({
-  action,
-  status: initialStatus,
+type StatusAction = (state: StatusResult | null, formData: FormData) => Promise<StatusResult>;
+
+/**
+ * 切り替えの状態。作成の画面は、フォームの外の知らせもこの状態から描く
+ * （知らせとフォームの状態の表示を食い違わせないため）
+ */
+export const useResumeStatus = (
+  action: StatusAction,
+  initialStatus: ResumeStatus,
+  initialUpdatedAt: string,
+) => {
+  const [result, formAction] = useActionState(action, null);
+  const changed = result?.status === 'changed' ? result : null;
+  return {
+    formAction,
+    message: messageOf(result),
+    status: changed?.resumeStatus ?? initialStatus,
+    updatedAt: changed?.updatedAt ?? initialUpdatedAt,
+  };
+};
+
+export type ResumeStatusState = ReturnType<typeof useResumeStatus>;
+
+/** `useResumeStatus` の状態を描くフォーム */
+export const ResumeStatusFields = ({
+  state: { formAction, message, status, updatedAt },
   draftNote,
   resumeId,
-  updatedAt: initialUpdatedAt,
-}: ResumeFormCommon & {
-  action: (state: StatusResult | null, formData: FormData) => Promise<StatusResult>;
-  status: ResumeStatus;
+}: {
+  state: ResumeStatusState;
   /** 非公開の間だけ、状態に添える短い文 */
   draftNote?: string;
+  resumeId: number;
 }) => {
-  const [result, formAction] = useActionState(action, null);
-  const message = messageOf(result);
-  const changed = result?.status === 'changed' ? result : null;
-  const status = changed?.resumeStatus ?? initialStatus;
-  const updatedAt = changed?.updatedAt ?? initialUpdatedAt;
   const next: ResumeStatus = status === 'draft' ? 'published' : 'draft';
 
   return (
@@ -64,4 +81,20 @@ export const ResumeStatusForm = ({
       </div>
     </form>
   );
+};
+
+export const ResumeStatusForm = ({
+  action,
+  status,
+  draftNote,
+  resumeId,
+  updatedAt,
+}: ResumeFormCommon & {
+  action: StatusAction;
+  status: ResumeStatus;
+  /** 非公開の間だけ、状態に添える短い文 */
+  draftNote?: string;
+}) => {
+  const state = useResumeStatus(action, status, updatedAt);
+  return <ResumeStatusFields state={state} draftNote={draftNote} resumeId={resumeId} />;
 };
