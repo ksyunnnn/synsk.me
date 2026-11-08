@@ -16,6 +16,7 @@ import {
 import { createProjectDeps } from '@/features/project/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
+import { readString, readStrings } from '@/shared/server/form-data';
 
 /**
  * 実績のフォームが呼ぶ Server Action。`page.tsx` が読み込み、フォームの部品に props で渡す
@@ -26,22 +27,12 @@ import { getCurrentAuthor } from '@/shared/server/author';
  * オーナーでなければ、入力した値を返さない
  */
 
-const readString = (formData: FormData, name: string) => {
-  const value = formData.get(name);
-  return typeof value === 'string' ? value : '';
-};
-
 /** スキルはチェックボックスの並びで送られるため、すべての値をカンマで区切って 1 つにする */
 const readValues = (formData: FormData): ProjectFormValues =>
   Object.fromEntries(
     PROJECT_FIELDS.map((field) => [
       field,
-      field === 'skillIds'
-        ? formData
-            .getAll(field)
-            .filter((value) => typeof value === 'string')
-            .join(',')
-        : readString(formData, field),
+      field === 'skillIds' ? readStrings(formData, field).join(',') : readString(formData, field),
     ]),
   ) as ProjectFormValues;
 

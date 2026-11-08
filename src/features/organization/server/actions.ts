@@ -14,16 +14,12 @@ import { createOrganizationRepository } from '@/features/organization/server/que
 import { findIdByUid } from '@/shared/domain/uid';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { getCurrentAuthor } from '@/shared/server/author';
+import { readString } from '@/shared/server/form-data';
 
 /**
  * 組織のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
  * オーナーでなければ、入力した値を返さない
  */
-
-const readString = (formData: FormData, name: string) => {
-  const value = formData.get(name);
-  return typeof value === 'string' ? value : '';
-};
 
 export type OrganizationFormResult = ActionResult<OrganizationField, OrganizationFieldError>;
 
