@@ -44,6 +44,13 @@ vi.mock('@/features/skill/server/queries', () => ({ hasSkillUid: rows.hasSkillUi
 vi.mock('@/features/career/server/queries', () => ({ hasCareerUid: rows.hasCareerUid }));
 vi.mock('@/features/education/server/queries', () => ({ hasEducationUid: rows.hasEducationUid }));
 
+const activities = vi.hoisted(() => ({
+  hasLifeEventSlug: vi.fn<(slug: string) => Promise<boolean>>(),
+  hasActivityUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  hasLifeEventUid: vi.fn<(uid: string) => Promise<boolean>>(),
+}));
+vi.mock('@/features/activity/server/queries', () => activities);
+
 const resumes = vi.hoisted(() => ({
   hasVisitorResume: vi.fn<(slug: string) => Promise<boolean>>(),
   hasResumeUid: vi.fn<(uid: string) => Promise<boolean>>(),
@@ -88,12 +95,14 @@ beforeEach(() => {
   notes.hasNoteSlug.mockResolvedValue(true);
   notes.hasNoteUid.mockResolvedValue(true);
   notes.hasNoteRevision.mockResolvedValue(true);
+  for (const has of Object.values(activities)) has.mockResolvedValue(true);
 });
 
 describe('対象の経路', () => {
   it.each([
     '/projects/a-slug',
     '/notes/a-slug',
+    '/life-events/a-slug',
     '/resume/a-slug',
     '/dash',
     '/dash/projects',
@@ -128,6 +137,25 @@ describe('/projects/{slug}', () => {
 
   it('オーナーかを確かめず、no-store を付けない', async () => {
     const response = await proxy(request('/projects/a-slug'));
+    expect(author.getAuthorFromHeaders).not.toHaveBeenCalled();
+    expect(response.headers.get('cache-control')).toBeNull();
+  });
+});
+
+/** life event の個別のページ（specs/004-external-activity/contracts/visitor-life-event.md） */
+describe('/life-events/{slug}', () => {
+  it('ある識別子は rewrite しない', async () => {
+    expect(await rewrittenPath('/life-events/a-slug')).toBeNull();
+    expect(activities.hasLifeEventSlug).toHaveBeenCalledWith('a-slug');
+  });
+
+  it('無い識別子は 404 の画面へ rewrite する', async () => {
+    activities.hasLifeEventSlug.mockResolvedValue(false);
+    expect(await rewrittenPath('/life-events/a-slug')).toBe('/life-events/a-slug/missing');
+  });
+
+  it('オーナーかを確かめず、no-store を付けない', async () => {
+    const response = await proxy(request('/life-events/a-slug'));
     expect(author.getAuthorFromHeaders).not.toHaveBeenCalled();
     expect(response.headers.get('cache-control')).toBeNull();
   });
@@ -209,6 +237,8 @@ describe.each([
   ['skills', rows.hasSkillUid],
   ['careers', rows.hasCareerUid],
   ['educations', rows.hasEducationUid],
+  ['activities', activities.hasActivityUid],
+  ['life-events', activities.hasLifeEventUid],
 ] as const)('/dash/%s/{uid}', (collection, has) => {
   it('無い uid は 404 の画面へ rewrite する', async () => {
     has.mockResolvedValue(false);
