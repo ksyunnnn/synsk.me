@@ -24,7 +24,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R1 スキーマの前提
 
-- 決めたこと: `migrations/0001`〜`0008` を当てたスキーマを前提にする。`migrations/0008_rebuild_career_project_and_resume.sql` はブランチ `feature/72-schema-adjustments` のコミット `465fb59` のもので、feature/72-rebuild に入っている（マージのコミット `ce76e8e`、`git branch --contains 465fb59` で確かめた）。写し方は 0008 の `resume.audience` の注釈を正とし、0006 の `resume_career.organization_name`・`resume_project.title` の注釈は使わない（0008 の冒頭）
+- 決めたこと: `migrations/0001`〜`0008` を当てたスキーマを前提にする。写し方は 0008 の `resume.audience` の注釈を正とし、0006 の `resume_career.organization_name`・`resume_project.title` の注釈は使わない（0008 の冒頭）
 - 理由: 0008 が `resume.audience` の既定値 `limited`（FR-003）と `resume_skill_override.months_override`（月数、FR-028）を列に反映する
 - 写した職歴・実績が作ったときに秘匿化していたかは、0008 の `resume_career.is_masked`・`resume_project.is_masked` が持つ（data-model.md の「秘匿化していたかの列」、plan.md の U2）
 
@@ -85,7 +85,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
   - 公開用: `slug = ? AND audience = 'public' AND status = 'published'`
   - 限定公開用: `slug = ? AND audience = 'limited' AND status = 'published' AND (limited_expires_at IS NULL OR limited_expires_at > ?今の日時)`。行が返ったときだけ写した行を読む
 - 今の日時はアプリケーションが `new Date().toISOString()` で作る。`limited_expires_at` の CHECK の形（`%Y-%m-%dT%H:%M:%fZ`）と同じため、文字列の比較が日時の比較になる
-- 理由: ADR-0029（取り出すときに確かめる）。中身を返さない 4 つの状態（下書き・期限切れ・識別子が合わない・出し直す前の識別子、SC-003）を同じ取り出しで区別なく弾く
+- 理由: ADR-0029（取り出すときに確かめる）。中身を返さない 4 つの状態（非公開・期限切れ・識別子が合わない・出し直す前の識別子、SC-003）を同じ取り出しで区別なく弾く
 - 返さないときの応答は 404 にそろえる。状態を区別して返すと、識別子の有無や期限切れが URL を知らない人に分かる。W3C の Capability URLs も、期限が切れたら 410 か 404 を返すとする（R5）。画面に何を示すかは spec が決めない（plan.md の U10）
 
 ## R7 キャッシュ・検索・404

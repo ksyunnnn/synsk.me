@@ -1335,7 +1335,6 @@
       "title": "職務経歴書",
       "audience": "public",
       "status": "published",
-      "limited_token_hash": null,
       "limited_expires_at": null,
       "created_at": "2026-10-21T02:04:58.398Z",
       "updated_at": "2026-10-21T02:04:58.398Z"
@@ -1346,7 +1345,6 @@
       "title": "職務経歴書（例示株式会社 様）",
       "audience": "limited",
       "status": "published",
-      "limited_token_hash": "0000000000000000000000000000000000000000000000000000000000000001",
       "limited_expires_at": "2026-12-31T14:59:59.000Z",
       "created_at": "2026-10-21T04:48:02.918Z",
       "updated_at": "2026-10-21T04:48:02.918Z"
@@ -1357,7 +1355,6 @@
       "title": "職務経歴書（作成中）",
       "audience": "limited",
       "status": "draft",
-      "limited_token_hash": null,
       "limited_expires_at": null,
       "created_at": "2026-10-21T02:41:50.572Z",
       "updated_at": "2026-10-21T02:41:50.572Z"

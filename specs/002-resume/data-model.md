@@ -28,7 +28,7 @@
 
 写し元の行を消すときに、写した行の `*_id` を NULL にするのは 001 の削除の処理が持つ（001 の research.md の R8）。002 は写した行の `*_id` を書き換えない。
 
-スキーマが守る決まり（002 のコードで重ねて書かない）: 識別子の形と重複（`resume.slug` の CHECK と UNIQUE、FR-002）、限定公開用か公開用かの既定（`resume.audience` の DEFAULT `limited`、FR-003）、作った後に変えないこと（トリガ `resume_audience_fixed`、FR-004）、公開用が 1 つだけ（部分 UNIQUE 索引 `resume_public`、FR-019）、公開用は期限を持たないこと（`resume` の CHECK、FR-020）、状態の既定が下書き（`resume.status` の DEFAULT `draft`、FR-021）、期限の形（`limited_expires_at` の CHECK、FR-013）、写した期間の形と前後、写した種類の 4 値、同じ実績に同じスキル名を 2 回持たないこと（`resume_project_skill` の主キー、Key Entities）、スキルごとに上書きを 1 つ（`resume_skill_override` の主キー）、管理画面の URL の識別子（`resume.uid`・`resume_*.uid`、001 の research.md の R17）。
+スキーマが守る決まり（002 のコードで重ねて書かない）: 識別子の形と重複（`resume.slug` の CHECK と UNIQUE、FR-002）、限定公開用か公開用かの既定（`resume.audience` の DEFAULT `limited`、FR-003）、作った後に変えないこと（トリガ `resume_audience_fixed`、FR-004）、公開用が 1 つだけ（部分 UNIQUE 索引 `resume_public`、FR-019）、公開用は期限を持たないこと（`resume` の CHECK、FR-020）、状態の既定が非公開（`resume.status` の DEFAULT `draft`、FR-021）、期限の形（`limited_expires_at` の CHECK、FR-013）、写した期間の形と前後、写した種類の 4 値、同じ実績に同じスキル名を 2 回持たないこと（`resume_project_skill` の主キー、Key Entities）、スキルごとに上書きを 1 つ（`resume_skill_override` の主キー）、管理画面の URL の識別子（`resume.uid`・`resume_*.uid`、001 の research.md の R17）。
 
 アプリケーションは、スキーマが拒む入力を保存の前にも確かめ、画面で項目ごとに知らせる。スキーマの制約は最後の守りとして残す。
 
@@ -50,7 +50,7 @@
 | 公開用の識別子の既定は uid。書き換えは FR-002 の形と重複を確かめる | FR-002・FR-039 | 同上 |
 | 2 つ目の公開用は、保存の前に拒む | FR-019 | 作成のユースケース。索引 `resume_public` は最後の守り |
 | 限定公開用の URL は識別子（uid）だけで作る。出し直すと識別子を新しい uid に書き換える | FR-011・FR-012・FR-040 | `src/features/resume/domain/resume.ts` の `newResumeSlug`（research.md の R5） |
-| 中身を返すのは、識別子が合い、訪問者に見せる状態で、限定公開用なら期限の前か期限が無いときだけ | FR-014・FR-020・FR-022・FR-023 | 訪問者向けの取り出しの SQL の WHERE（research.md の R6） |
+| 中身を返すのは、識別子が合い、公開中で、限定公開用なら期限の前か期限が無いときだけ | FR-014・FR-020・FR-022・FR-023 | 訪問者向けの取り出しの SQL の WHERE（research.md の R6） |
 | 作るとき、写し方を限定公開用か公開用かで分ける | FR-008・FR-010・FR-016 | `src/features/resume/domain/build-resume.ts`（下の「写し方」） |
 | 公開用に、秘匿化した組織名の無い組織を指す秘匿化した職歴・実績を写さない | FR-016、constitution II | 同上。写せなければ作らずに知らせる |
 | 公開用に、サイトに載せない（`career.status`・`project.status` が `draft`）職歴・実績を写さない。作成の画面で公開用を選んだら、選択肢から外す。限定公開用は `status` を見ない | FR-005・FR-010・FR-016 | 同上と作成の画面（tasks.md の T067・T068）。限定公開用は作成の選択肢と写し方が `status` を読まない形のまま |
@@ -97,7 +97,7 @@
 
 `src/features/resume/domain/` に置く。行の型は Repository の実装の中だけに置き、ここへ詰め替える（001 の research.md の R3）。
 
-- `Resume`: id・uid・題・識別子・限定公開用か公開用か・下書きか訪問者に見せるか・期限（空あり、限定公開用だけ）・作った日時・直した日時
+- `Resume`: id・uid・題・識別子・限定公開用か公開用か・公開中か非公開か・期限（空あり、限定公開用だけ）・作った日時・直した日時
 - `ResumeAudience`: `limited`・`public` の `as const` の配列から作る型。`ResumeStatus` も同じ形で `draft`・`published`
 - `ResumeCareer`: id・uid・写し元の id（空あり）・組織名・肩書・期間・本文（空あり）・関連 URL（空あり）
 - `ResumeProject`: id・uid・写し元の id（空あり）・組織名・種類・題・期間・本文（空あり）・関連 URL（空あり）・スキルの名前の並び

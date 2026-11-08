@@ -4,9 +4,9 @@
 
 | 要求 | 応答 |
 |---|---|
-| `GET /resume/{slug}`、限定公開用で訪問者に見せる状態、期限の前か期限が無い | 200。下の DTO の値だけで描画する。`Cache-Control: no-store, must-revalidate`・`X-Robots-Tag: noindex`・`Referrer-Policy: no-referrer` |
-| `GET /resume/{slug}`、公開用で訪問者に見せる状態 | 200。下の DTO の値だけで描画する（tasks.md の T069） |
-| 上の条件に合わない（下書き・期限切れ・識別子が無い・出し直す前の識別子） | 404。`src/proxy.ts` が描画の前に `/resume/{slug}/missing` へ rewrite する。上と同じ 3 つのヘッダ |
+| `GET /resume/{slug}`、限定公開用で公開中、期限の前か期限が無い | 200。下の DTO の値だけで描画する。`Cache-Control: no-store, must-revalidate`・`X-Robots-Tag: noindex`・`Referrer-Policy: no-referrer` |
+| `GET /resume/{slug}`、公開用で公開中 | 200。下の DTO の値だけで描画する（tasks.md の T069） |
+| 上の条件に合わない（非公開・期限切れ・識別子が無い・出し直す前の識別子） | 404。`src/proxy.ts` が描画の前に `/resume/{slug}/missing` へ rewrite する。上と同じ 3 つのヘッダ |
 | D1 から読めない | proxy は判定せずに通し、ページが 500 の画面を返す。上と同じ 3 つのヘッダ |
 
 キャッシュの指定（`'use cache'`・`revalidate`・`dynamic`）を持たない。ヘッダは `/resume/{slug}` とその下の経路の形で付け、D1 を読む前に決める（research.md の R7）。
@@ -69,7 +69,7 @@ Repository の実装が R6（research.md）の条件で読み、写した行を�
 
 ## 検査
 
-- 結合: 限定公開用の 4 つの状態（下書き・期限切れ・識別子が合わない・出し直す前の識別子）で、ページの応答が 404 で、写した値を含まない（SC-003、FR-040）
+- 結合: 限定公開用の 4 つの状態（非公開・期限切れ・識別子が合わない・出し直す前の識別子）で、ページの応答が 404 で、写した値を含まない（SC-003、FR-040）
 - 結合: 限定公開用の 200 の応答に、秘匿化した写し元の実際の題・組織名・本文が出る（FR-010、User Story 2 の 1）
 - 結合: 限定公開用の応答のすべてが、`no-store`・`noindex`・`no-referrer` を持つ（SC-005）
 - 結合: 期限を過ぎた限定公開用の期限を延ばすと、同じ URL が 200 になる（SC-004）

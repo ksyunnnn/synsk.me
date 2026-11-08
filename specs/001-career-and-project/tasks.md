@@ -85,7 +85,7 @@ description: "職歴と実績の実装タスク"
 - [X] T025 [P] [US1] 実績のユースケース（登録・編集・削除・オーナーでない呼び出しを拒む）を、Repository の作り物の実装を渡して tests/unit/project-usecases.test.ts で確かめる
 - [X] T026 [P] [US1] 実績の D1 の実装（登録・同じ識別子の拒否・編集・楽観ロックで先に書き換えられていたら何も書かない・削除の順序で `resume_project.project_id` を空にしてから消す）を tests/workers/project-repository.test.ts で確かめる（FR-011・FR-013・FR-042、research.md の R7・R8）
 - [X] T027 [P] [US1] `/projects/{slug}` の 200 と、無い識別子の 404、JWT のない実績の Server Action が 403 の結果で D1 を変えないことを tests/integration/projects.test.ts で確かめる（FR-014・FR-040・SC-002）
-- [X] T028 [P] [US1] tests/unit/proxy.test.ts に、無い識別子の `/projects/{slug}` を `/projects/{slug}/missing` へ、無い id の `/dash/projects/{id}` を `/dash/projects/{id}/missing` へ rewrite することを足す
+- [X] T028 [P] [US1] tests/unit/proxy.test.ts に、無い識別子の `/projects/{slug}` を `/projects/{slug}/missing` へ、無い uid の `/dash/projects/{uid}` を `/dash/projects/{uid}/missing` へ rewrite することを足す
 
 ### Implementation for User Story 1
 
@@ -94,7 +94,7 @@ description: "職歴と実績の実装タスク"
 - [X] T031 [US1] ユースケースを src/features/project/application/ に 1 つずつ作る: register-project.ts・edit-project.ts・delete-project.ts・get-visitor-project.ts・get-project-for-edit.ts・list-projects.ts。読む→計算→書くの順（docs/SOFTWARE_DESIGN.md）
 - [X] T032 [US1] D1 の実装を src/features/project/server/d1-project-repository.ts に作る。編集は research.md の R7、削除は R8 の順で 1 つの `batch()`。組織は src/shared/server/organization-repository.ts で探すか作る
 - [X] T033 [US1] 組み立て用の関数（訪問者向けの取り出し、識別子と id の有無）を src/features/project/server/queries.ts に、Server Action（`registerProject`・`editProject`・`deleteProject`）を src/features/project/server/actions.ts に作る。Server Action は先頭でオーナーを確かめる
-- [X] T034 [US1] src/proxy.ts の matcher に `/projects/:slug` を足し、T033 の有無の関数で 404 の rewrite を足す。`/dash/projects/{id}` の有無も見る
+- [X] T034 [US1] src/proxy.ts の matcher に `/projects/:slug` を足し、T033 の有無の関数で 404 の rewrite を足す。`/dash/projects/{uid}` の有無も見る
 - [X] T035 [P] [US1] 訪問者向けの実績の表示（秘匿化しない側）を src/features/project/components/visitor-project.tsx に作る。本文は U4 が解けるまで出さない
 - [X] T036 [P] [US1] 実績の入力（組織名・種類・題・秘匿化した題・秘匿化するか・期間・本文・関連 URL）を src/features/project/components/project-form.tsx に作る。組織名は U3 が解けるまでネイティブの `input type="text"`。失敗の結果では送られた値を残す
 - [X] T037 [US1] 訪問者のページを src/app/projects/[slug]/page.tsx（`generateMetadata` も DTO の値だけを使う）と src/app/projects/[slug]/missing/page.tsx（`notFound()` だけ）に作る
@@ -144,7 +144,7 @@ description: "職歴と実績の実装タスク"
 - [X] T049 [US3] src/shared/server/organization-repository.ts に、組織名と秘匿化した組織名の編集・削除・指している職歴と実績の有無を足す
 - [X] T050 [US3] 組織のユースケース（edit-organization.ts・delete-organization.ts・list-organizations.ts）を src/features/organization/application/ に、組み立て用の関数と Server Action を src/features/organization/server/queries.ts・actions.ts に作る
 - [X] T051 [P] [US3] 組織の編集の入力を src/features/organization/components/organization-form.tsx に作る
-- [X] T052 [US3] 管理画面のページを src/app/dash/organizations/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/organizations/{id}` の有無を足す
+- [X] T052 [US3] 管理画面のページを src/app/dash/organizations/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/organizations/{uid}` の有無を足す
 - [ ] T053 [US3] 組織名の選択肢を出す入力の部品を src/shared/components/ に作り、src/features/project/components/project-form.tsx と src/features/career/components/career-form.tsx の組織名に使う。E2E で選択肢が出ることとキーボードで選べることを tests/e2e/organization-input.spec.ts で確かめる（FR-002）。**止める未決: U3**
 
 ---
@@ -165,7 +165,7 @@ description: "職歴と実績の実装タスク"
 - [X] T056 [P] [US4] スキルの型と Repository のインタフェースを src/features/skill/domain/skill.ts・skill-repository.ts に、D1 の実装を src/features/skill/server/d1-skill-repository.ts に作る
 - [X] T057 [US4] スキルのユースケース（register-skill.ts・edit-skill.ts・delete-skill.ts・list-skills.ts）を src/features/skill/application/ に、組み立て用の関数と Server Action を src/features/skill/server/queries.ts・actions.ts に作る。上書きは年と月で受け取り、月数で保存する
 - [X] T058 [P] [US4] スキルの入力（名前・上書きの年と月）を src/features/skill/components/skill-form.tsx に作る
-- [X] T059 [US4] 管理画面のページを src/app/dash/skills/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/skills/{id}` の有無を足す
+- [X] T059 [US4] 管理画面のページを src/app/dash/skills/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/skills/{uid}` の有無を足す
 - [X] T060 [US4] 実績の入力に、スキルをつなぐチェックボックスの並びを足す（src/features/project/components/project-form.tsx）。src/features/project/server/d1-project-repository.ts の登録と編集で `project_skill` を入れ直し、research.md の R7 の条件を付ける。訪問者向けの DTO の `skills` を埋める
 - [ ] T061 [US4] 経験年数の計算と、職歴の実績とスキルの求め方を src/shared/domain/period.ts に作り、スキルの一覧の画面（src/app/dash/skills/page.tsx）に年と月で出す。職歴の実績とスキルの求め方だけ **止める未決: U6 の残り（端の扱い）**
 
@@ -188,9 +188,9 @@ description: "職歴と実績の実装タスク"
 - [X] T065 [P] [US5] 職歴の型・Repository のインタフェース・D1 の実装を src/features/career/domain/career.ts・career-repository.ts・src/features/career/server/d1-career-repository.ts に作る。編集は research.md の R7、削除は R8
 - [X] T066 [US5] 職歴のユースケース（register-career.ts・edit-career.ts・delete-career.ts・get-career-for-edit.ts・list-careers.ts）を src/features/career/application/ に、組み立て用の関数と Server Action を src/features/career/server/queries.ts・actions.ts に作る。FR-001 の判定を src/shared/domain/organization.ts で行う
 - [X] T067 [P] [US5] 職歴の入力を src/features/career/components/career-form.tsx に作る
-- [X] T068 [US5] 管理画面のページを src/app/dash/careers/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/careers/{id}` の有無を足す
+- [X] T068 [US5] 管理画面のページを src/app/dash/careers/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/careers/{uid}` の有無を足す
 - [X] T069 [P] [US5] 学歴の型・Repository・D1 の実装・ユースケース・組み立て用の関数・Server Action・入力を src/features/education/ の domain/・application/・server/・components/ に作る
-- [X] T070 [US5] 管理画面のページを src/app/dash/educations/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/educations/{id}` の有無を足す
+- [X] T070 [US5] 管理画面のページを src/app/dash/educations/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/educations/{uid}` の有無を足す
 - [X] T071 [US5] オーナーとして職歴と学歴を登録・編集・削除し、2 つのタブで同じ職歴を開いて後から保存した側が止まり入力が残ることを tests/e2e/career-and-education.spec.ts で確かめる（FR-042）
 
 ---
