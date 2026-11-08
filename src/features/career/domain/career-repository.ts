@@ -34,5 +34,4 @@ export type CareerRepository = {
   >;
   /** 物理削除する（research.md の R8） */
   delete: (id: CareerId) => Promise<{ ok: boolean }>;
-  hasId: (id: CareerId) => Promise<boolean>;
 };

@@ -213,8 +213,5 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
     findIdByUid: async (uid) =>
       (await db.prepare('SELECT id FROM career WHERE uid = ?').bind(uid).first<{ id: number }>())
         ?.id ?? null,
-
-    hasId: async (id) =>
-      (await db.prepare('SELECT 1 AS found FROM career WHERE id = ?').bind(id).first()) !== null,
   };
 };
