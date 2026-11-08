@@ -23,7 +23,11 @@ Node.js 24 を使う（`.nvmrc`）。`package.json` の `engines` は 22 以上�
 
 ```bash
 npm i # 依存を入れる
+cp ../../assets/.dev.vars .dev.vars   # 手元の設定値を写す
+cp ../../assets/.env.local .env.local # 手元の環境変数を写す
 ```
+
+`.dev.vars` と `.env.local` の原本は、リポジトリの外の `synsk.me/assets/` に置く。値を変えるときは原本を直し、各ワークスペースへ写し直す。
 
 ```bash
 npm run dev        # 開発サーバー（http://localhost:3000）
