@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: deprecated
 date: 2026-08-27
 decision-makers: synsk
 ---
