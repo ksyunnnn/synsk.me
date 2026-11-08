@@ -85,6 +85,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 - 決めたこと: 取得元が ID を返す項目は `UNIQUE (source, external_id)`、返さない項目は部分 UNIQUE 索引 `activity_source_url`（0004）で 1 行にする。書き込みは `INSERT … ON CONFLICT … DO UPDATE … WHERE` で、題・URL・代表の画像の URL・公開日のどれかが変わった行だけを書き換える（FR-008、spec の「取得のとき、値が変わった activity だけを書くか」）
 - 1 回の取得の書き込みは 1 つの `batch()` で送る。`batch()` は「Batched statements are SQL transactions」で、Worker の 1 回の呼び出しの問い合わせの数に 1 回と数える（[D1 Limits](https://developers.cloudflare.com/d1/platform/limits/)、2026-11-09 に確認）
+- 書き換える文は `updated_at` も同じ文で入れる。入れないと `activity_updated_at` のトリガ（0004）が同じ行をもう 1 回書き、`meta.changes` と書き込みの行数が 2 になる（`tests/workers/activity-repository.test.ts` で確かめた）
 - 理由: 値が変わらない行を書かないと、D1 の 1 日の書き込みの上限（10 万行）に取得の回数が効かない
 - 退けた案: 取り直すたびに全件を書く（書き込みの数が取得の回数に比例する）
 
