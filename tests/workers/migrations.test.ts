@@ -210,3 +210,34 @@ describe('migration 0011 の uid', () => {
     ).rejects.toThrow(/CHECK constraint failed/);
   });
 });
+
+/** note の管理画面の URL に出す uid（specs/003-note/research.md の R1） */
+describe('migration 0015 の note.uid', () => {
+  it('note.uid は NOT NULL で、uid を挙げずに入れると DB が入れ、書き換えを拒む', async () => {
+    const column = (await columnsOf('note')).find((c) => c.name === 'uid');
+    expect(column).toMatchObject({ notnull: 1 });
+    const row = await env.DB.prepare(
+      "INSERT INTO note (slug) VALUES ('fake-0015-note') RETURNING id, uid",
+    ).first<{ id: number; uid: string }>();
+    expect(row?.uid).toMatch(/^[0-9a-f]{32}$/);
+    await expect(
+      env.DB.prepare('UPDATE note SET uid = ? WHERE id = ?').bind('0'.repeat(32), row?.id).run(),
+    ).rejects.toThrow(/note_uid_fixed/);
+    await env.DB.prepare('DELETE FROM note WHERE id = ?').bind(row?.id).run();
+  });
+
+  it.each([
+    'note_slug_fixed_after_publication',
+    'note_published_at_fixed',
+    'note_published_revision_valid',
+    'note_updated_at',
+    'note_uid_fixed',
+  ])('作り直した note にトリガ %s がある', async (name) => {
+    const trigger = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE type = 'trigger' AND tbl_name = 'note' AND name = ?",
+    )
+      .bind(name)
+      .first();
+    expect(trigger).not.toBeNull();
+  });
+});

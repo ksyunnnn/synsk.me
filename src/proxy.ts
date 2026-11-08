@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { hasCareerUid } from '@/features/career/server/queries';
 import { hasEducationUid } from '@/features/education/server/queries';
+import { hasNoteRevision, hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
 import { hasOrganizationUid } from '@/features/organization/server/queries';
 import { hasProjectSlug, hasProjectUid } from '@/features/project/server/queries';
 import {
@@ -27,12 +28,13 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  */
 
 export const config = {
-  matcher: ['/projects/:slug', '/resume/:path*', '/dash', '/dash/:path*'],
+  matcher: ['/projects/:slug', '/notes/:slug', '/resume/:path*', '/dash', '/dash/:path*'],
 };
 
 /** 404 と 403 の画面。`notFound()` か `forbidden()` を呼ぶだけのページ */
 const projectPageMissing = (slug: string) => `/projects/${slug}/missing`;
 const resumePageMissing = (slug: string) => `/resume/${slug}/missing`;
+const notePageMissing = (slug: string) => `/notes/${slug}/missing`;
 const DASH_FORBIDDEN = '/dash/forbidden';
 
 /**
@@ -47,6 +49,7 @@ const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
   careers: hasCareerUid,
   educations: hasEducationUid,
   resumes: hasResumeUid,
+  notes: hasNoteUid,
 };
 
 /**
@@ -75,6 +78,13 @@ const decide = async (request: NextRequest): Promise<string | null> => {
     return (await hasProjectSlug(slug)) ? null : projectPageMissing(slug);
   }
 
+  if (segments[0] === 'notes') {
+    // 下書きと削除した note も、無い識別子と同じ 404 にする（specs/003-note/research.md の R12）
+    const slug = segments[1];
+    if (!isRead || !slug) return null;
+    return (await hasNoteSlug(slug)) ? null : notePageMissing(slug);
+  }
+
   if (segments[0] === 'resume') {
     // 公開用は tasks.md の Phase 7（US5）で足すまで中身を返さず、404 になる
     const [, slug] = segments;
@@ -99,7 +109,14 @@ const decide = async (request: NextRequest): Promise<string | null> => {
     if (missing === 'resume') return `/dash/resumes/${uid}/missing`;
     return missing === 'row' ? `/dash/resumes/${uid}/${action}/${rowUid}/missing` : null;
   }
-  return (await exists(uid)) ? null : `/dash/${collection}/${uid}/missing`;
+  if (!(await exists(uid))) return `/dash/${collection}/${uid}/missing`;
+  if (collection === 'notes' && action === 'revisions' && rowUid && rowAction !== 'missing') {
+    // 版は note ごとの番号で開く（specs/003-note/research.md の R4）
+    return (await hasNoteRevision(uid, rowUid))
+      ? null
+      : `/dash/notes/${uid}/revisions/${rowUid}/missing`;
+  }
+  return null;
 };
 
 /**
