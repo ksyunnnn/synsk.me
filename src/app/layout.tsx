@@ -45,7 +45,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
         <Suspense>
           <Analytics />
         </Suspense>
-        <DevTabTitle />
+        {process.env.NODE_ENV === 'development' && <DevTabTitle />}
         <Script src="https://kit.fontawesome.com/fa9c201f80.js" crossOrigin="anonymous"></Script>
         {children}
       </body>

@@ -7,8 +7,9 @@ import { imagesOptimizer } from '@vinext/cloudflare/images/images-optimizer';
 
 export default defineConfig(({ command }) => ({
   define: {
-    // 開発サーバのタブの題に付ける名前。src/app/DevTabTitle.tsx が使う
-    __WORKSPACE_NAME__: JSON.stringify(command === 'serve' ? basename(process.cwd()) : ''),
+    // 開発サーバのタブの題に付ける名前。このファイルのあるディレクトリ名を使う。
+    // src/app/DevTabTitle.tsx が使う
+    __WORKSPACE_NAME__: JSON.stringify(command === 'serve' ? basename(import.meta.dirname) : ''),
   },
   plugins: [
     vinext({
