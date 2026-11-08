@@ -138,6 +138,19 @@ describe('edit', () => {
   });
 });
 
+describe('拒まれた登録はどの表にも書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）', () => {
+  it('秘匿化した組織名が要るとして拒んだら、新しい組織を作らない（FR-001）', async () => {
+    expect(
+      await careers.register(
+        content({ organizationName: '新しい組織', organizationNameMasked: null }),
+      ),
+    ).toEqual({ ok: false, reason: 'masked-name-required' });
+    expect(
+      await env.DB.prepare('SELECT 1 FROM organization WHERE name = ?').bind('新しい組織').first(),
+    ).toBeNull();
+  });
+});
+
 describe('拒まれた編集はどの表にも書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）', () => {
   const readOrganization = (name: string) =>
     env.DB.prepare('SELECT name, name_masked FROM organization WHERE name = ?').bind(name).first();

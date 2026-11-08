@@ -56,22 +56,27 @@ const MASKING_ALLOWED =
   '(? = 0 OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))';
 
 /**
- * 編集の UPDATE が当たるときだけ真になる条件。組織を探して作る文に渡し、拒まれる編集では組織も
- * 書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）。秘匿化した組織名を渡す編集は、組織を探して
+ * 登録の INSERT が当たるときだけ真になる条件。組織を探して作る文に渡し、拒まれる登録では組織も
+ * 書かない（docs/SOFTWARE_DESIGN.md の設計原則 1）。秘匿化した組織名を渡す保存は、組織を探して
  * 作る文がその組織名を入れるため、`MASKING_ALLOWED` を満たす
  */
-const editGuard = (id: number, openedUpdatedAt: string, content: CareerContent) => ({
-  sql: `(EXISTS (SELECT 1 FROM career WHERE id = ? AND updated_at = ?)
-    AND (? = 0 OR ? IS NOT NULL
-      OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL)))`,
-  values: [
-    id,
-    openedUpdatedAt,
-    content.isMasked ? 1 : 0,
-    content.organizationNameMasked,
-    content.organizationName,
-  ],
+const registerGuard = (content: CareerContent) => ({
+  sql: `(? = 0 OR ? IS NOT NULL
+    OR EXISTS (SELECT 1 FROM organization WHERE name = ? AND name_masked IS NOT NULL))`,
+  values: [content.isMasked ? 1 : 0, content.organizationNameMasked, content.organizationName],
 });
+
+/**
+ * 編集の UPDATE が当たるときだけ真になる条件。行があり、更新日時が開いたときと同じで、
+ * `registerGuard` を満たす
+ */
+const editGuard = (id: number, openedUpdatedAt: string, content: CareerContent) => {
+  const masking = registerGuard(content);
+  return {
+    sql: `(EXISTS (SELECT 1 FROM career WHERE id = ? AND updated_at = ?) AND ${masking.sql})`,
+    values: [id, openedUpdatedAt, ...masking.values],
+  };
+};
 
 export const createD1CareerRepository = (db: D1Database): CareerRepository => {
   const organizationStatements = (
@@ -151,7 +156,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
         )
         .bind(content.organizationName, ...contentValues(content), ...maskingValues(content));
       const results = await db.batch<{ id: number; uid: string }>([
-        ...organizationStatements(content),
+        ...organizationStatements(content, registerGuard(content)),
         insert,
       ]);
       const row = results.at(-1)?.results[0];
