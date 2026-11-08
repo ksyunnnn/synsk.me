@@ -7,9 +7,11 @@ import { getVisitorProject as getVisitorProjectUseCase } from '@/features/projec
 import { listProjects as listProjectsUseCase } from '@/features/project/application/list-projects';
 import type { Project, ProjectSummary, VisitorProject } from '@/features/project/domain/project';
 import { createD1ProjectRepository } from '@/features/project/server/d1-project-repository';
-import { requireAuthor } from '@/shared/server/author';
+import { isImageFile, toStorageKey } from '@/shared/domain/media-image';
+import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { findIdByUid } from '@/shared/domain/uid';
 import { readEnv } from '@/shared/server/env';
+import { createR2MediaStorage, type StoredMedia } from '@/shared/server/media-storage';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
 /**
@@ -18,10 +20,11 @@ import { createD1OrganizationRepository } from '@/shared/server/organization-rep
  */
 
 export const createProjectDeps = async (): Promise<ProjectDeps> => {
-  const { DB } = await readEnv();
+  const env = await readEnv();
   return {
-    projects: createD1ProjectRepository(DB),
-    organizations: createD1OrganizationRepository(DB),
+    projects: createD1ProjectRepository(env.DB),
+    organizations: createD1OrganizationRepository(env.DB),
+    images: createR2MediaStorage(env.NOTE_IMAGES),
   };
 };
 
@@ -45,6 +48,37 @@ export const getProjectForEdit = async (uid: string): Promise<Project | null> =>
   const { projects } = await createProjectDeps();
   const id = await findIdByUid(projects, uid);
   return id === null ? null : getProjectForEditUseCase(projects, id);
+};
+
+/**
+ * 訪問者に返す実績の画像（FR-030）。サイトに載せる秘匿化しない実績の、本文が指す画像か代表画像
+ * だけ。返せなければ null
+ */
+export const getVisitorProjectImage = async (
+  slug: string,
+  file: string,
+): Promise<StoredMedia | null> => {
+  if (!isImageFile(file)) return null;
+  const { projects } = await createProjectDeps();
+  const key = await projects.findVisitorImage(slug, toStorageKey('projects', file));
+  return key === null ? null : createR2MediaStorage((await readEnv()).NOTE_IMAGES).get(key);
+};
+
+/**
+ * オーナーが見る実績の画像。オーナーでなければ `forbidden`。その実績の画像でなければ null。
+ * route handler が呼ぶため、`forbidden()` で投げずに値で返す
+ */
+export const getOwnerProjectImage = async (
+  uid: string,
+  file: string,
+): Promise<StoredMedia | null | 'forbidden'> => {
+  if (!(await getCurrentAuthor())) return 'forbidden';
+  if (!isImageFile(file)) return null;
+  const { projects } = await createProjectDeps();
+  const id = await findIdByUid(projects, uid);
+  if (id === null) return null;
+  const key = await projects.findOwnerImage(id, toStorageKey('projects', file));
+  return key === null ? null : createR2MediaStorage((await readEnv()).NOTE_IMAGES).get(key);
 };
 
 /** 実績の入力でつなげるスキルの選択肢（FR-032）。オーナーでなければ 403 */

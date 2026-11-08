@@ -49,8 +49,34 @@ export type ProjectRepository = {
     content: ProjectContent & { slug: string },
     times: { openedUpdatedAt: string; now: string },
   ) => Promise<{ ok: true } | { ok: false; reason: ProjectWriteFailure | 'not-found' }>;
-  /** 物理削除する（research.md の R8）。無い id なら `ok: false` */
-  delete: (id: ProjectId) => Promise<{ ok: boolean }>;
+  /**
+   * 物理削除する（research.md の R8）。無い id なら `ok: false`。消した画像の R2 のキーを返し、
+   * ユースケースが置き場から消す
+   */
+  delete: (id: ProjectId) => Promise<{ ok: true; storageKeys: string[] } | { ok: false }>;
+  /**
+   * 画像の行を足す（FR-027・FR-028）。1 つの実績の画像が上限（`IMAGE_MAX_COUNT`）に達して
+   * いたら足さない。更新日時は変えない（編集の画面の入力を止めないため）
+   */
+  addImage: (
+    id: ProjectId,
+    storageKey: string,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'too-many-images' }>;
+  /**
+   * 代表画像を選ぶ（FR-028）。その実績の画像だけを選べる。null なら代表画像を外す。
+   * 実績の行を書き換えるため、更新日時が変わる（`project_updated_at` のトリガ）
+   */
+  chooseCardImage: (
+    id: ProjectId,
+    storageKey: string | null,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'not-own-image' }>;
+  /**
+   * 訪問者に返してよい画像の R2 のキー（FR-030）。サイトに載せる秘匿化しない実績の、本文が指す
+   * 画像か代表画像だけ。秘匿化した実績の画像は返さない。返せなければ null
+   */
+  findVisitorImage: (slug: string, storageKey: string) => Promise<string | null>;
+  /** オーナーが見る画像の R2 のキー。その実績の画像でなければ null */
+  findOwnerImage: (id: ProjectId, storageKey: string) => Promise<string | null>;
   /** 識別子の実績があるか。`findVisitorBySlug` が null を返さない識別子と一致する */
   hasSlug: (slug: string) => Promise<boolean>;
   /** 実績の入力でつなげるスキルの選択肢。名前の順（FR-032） */

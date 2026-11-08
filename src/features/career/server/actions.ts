@@ -3,6 +3,7 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
+import { addCareerImage as addCareerImageUseCase } from '@/features/career/application/add-career-image';
 import { deleteCareer as deleteCareerUseCase } from '@/features/career/application/delete-career';
 import { editCareer as editCareerUseCase } from '@/features/career/application/edit-career';
 import { registerCareer as registerCareerUseCase } from '@/features/career/application/register-career';
@@ -64,10 +65,37 @@ export const deleteCareer = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { careers } = await createCareerDeps();
-  const id = await findIdByUid(careers, readString(formData, CAREER_UID_FIELD));
+  const deps = await createCareerDeps();
+  const id = await findIdByUid(deps.careers, readString(formData, CAREER_UID_FIELD));
   if (id === null) redirect('/dash/careers');
-  const outcome = await deleteCareerUseCase(careers, author, id);
+  const outcome = await deleteCareerUseCase(deps, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
   redirect('/dash/careers?deleted=1');
+};
+
+/** 職歴に画像を足し、本文に貼る書き方を編集の画面に出す（FR-027） */
+export const addCareerImage = async (
+  _state: { status: string } | null,
+  formData: FormData,
+): Promise<{ status: string }> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const deps = await createCareerDeps();
+  const uid = readString(formData, CAREER_UID_FIELD);
+  const id = await findIdByUid(deps.careers, uid);
+  if (id === null) redirect('/dash/careers');
+  const file = formData.get('image');
+  const outcome = await addCareerImageUseCase(
+    deps,
+    author,
+    id,
+    file instanceof File && file.size > 0
+      ? { size: file.size, read: () => file.arrayBuffer() }
+      : null,
+  );
+  if (outcome.status === 'added') {
+    redirect(`/dash/careers/${uid}?done=image-added&image=${encodeURIComponent(outcome.file)}`);
+  }
+  if (outcome.status === 'not-found') redirect('/dash/careers');
+  return outcome;
 };

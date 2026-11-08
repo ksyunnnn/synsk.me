@@ -61,6 +61,10 @@ export type Project = {
   url: string | null;
   /** つないだスキルの id（FR-032） */
   skillIds: number[];
+  /** この実績の画像のファイル名。追加した順（FR-027・FR-028） */
+  images: string[];
+  /** 代表画像のファイル名。選んでいなければ null（FR-028） */
+  cardImageFile: string | null;
   /** 更新日時。編集の画面を開いたときの値を、楽観ロックに使う（research.md の R7） */
   updatedAt: string;
 };
@@ -246,7 +250,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
  * 出してよい列だけを読んで詰める。画面・`<title>`・OGP はこの値だけを使う
  */
 
-/** 秘匿化しない実績。代表画像は配る経路が決まるまで持たない（plan.md の U5） */
+/** 秘匿化しない実績 */
 export type UnmaskedVisitorProject = {
   isMasked: false;
   slug: string;
@@ -255,9 +259,11 @@ export type UnmaskedVisitorProject = {
   organizationName: string;
   period: Period;
   skills: string[];
-  /** 表示は本文の書式が決まってから（plan.md の U4） */
+  /** Markdown の本文（plan.md の U4）。本文の画像は `media:{file}` で指す */
   body: string | null;
   url: string | null;
+  /** 代表画像のファイル名。選んでいなければ null（FR-028） */
+  cardImageFile: string | null;
 };
 
 /** 秘匿化した実績。本文・関連 URL・画像を持たない（FR-021・FR-022・FR-026・FR-030） */

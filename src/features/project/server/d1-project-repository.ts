@@ -9,6 +9,7 @@ import type {
   UnmaskedVisitorProject,
 } from '@/features/project/domain/project';
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
+import { IMAGE_MAX_COUNT, MEDIA_SCHEME, toImageFile } from '@/shared/domain/media-image';
 import type { CalendarDate } from '@/shared/domain/period';
 import type { SiteStatus } from '@/shared/domain/site-status';
 import {
@@ -54,6 +55,7 @@ type UnmaskedVisitorRow = {
   ended_on: string | null;
   description: string | null;
   url: string | null;
+  card_key: string | null;
 };
 
 /**
@@ -75,7 +77,12 @@ const toPeriod = (row: { started_on: string; ended_on: string | null }) => ({
   endedOn: row.ended_on as CalendarDate | null,
 });
 
-const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
+const toProject = (
+  row: ProjectRow,
+  skillIds: number[],
+  images: string[],
+  cardKey: string | null,
+): Project => ({
   id: row.id,
   uid: row.uid,
   slug: row.slug,
@@ -93,6 +100,8 @@ const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
   description: row.description,
   url: row.url,
   skillIds,
+  images: images.map(toImageFile),
+  cardImageFile: cardKey === null ? null : toImageFile(cardKey),
   updatedAt: row.updated_at,
 });
 
@@ -148,7 +157,8 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         db
           .prepare(
             `SELECT p.slug, p.kind, p.title, o.name AS organization_name, p.started_on,
-               p.ended_on, p.description, p.url
+               p.ended_on, p.description, p.url,
+               (SELECT m.storage_key FROM media m WHERE m.id = p.card_media_id) AS card_key
              FROM project p JOIN organization o ON o.id = p.organization_id
              WHERE p.slug = ? AND p.status = 'published' AND p.is_masked = 0`,
           )
@@ -185,6 +195,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
           skills: skillNames,
           body: unmaskedRow.description,
           url: unmaskedRow.url,
+          cardImageFile: unmaskedRow.card_key === null ? null : toImageFile(unmaskedRow.card_key),
         };
         return dto;
       }
@@ -205,20 +216,26 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     },
 
     findForEdit: async (id) => {
-      const [project, skills] = await db.batch<ProjectRow | { skill_id: number }>([
+      const [project, skills, media] = await db.batch<
+        (ProjectRow & { card_key: string | null }) | { skill_id: number } | { storage_key: string }
+      >([
         db
           .prepare(
-            `SELECT ${EDIT_COLUMNS} FROM project p JOIN organization o ON o.id = p.organization_id
+            `SELECT ${EDIT_COLUMNS},
+               (SELECT m.storage_key FROM media m WHERE m.id = p.card_media_id) AS card_key
+             FROM project p JOIN organization o ON o.id = p.organization_id
              WHERE p.id = ?`,
           )
           .bind(id),
         db
           .prepare('SELECT skill_id FROM project_skill WHERE project_id = ? ORDER BY skill_id')
           .bind(id),
+        db.prepare('SELECT storage_key FROM media WHERE project_id = ? ORDER BY id').bind(id),
       ]);
-      const row = project.results[0] as ProjectRow | undefined;
+      const row = project.results[0] as (ProjectRow & { card_key: string | null }) | undefined;
       const skillIds = (skills.results as { skill_id: number }[]).map((r) => r.skill_id);
-      return row ? toProject(row, skillIds) : null;
+      const keys = (media.results as { storage_key: string }[]).map((r) => r.storage_key);
+      return row ? toProject(row, skillIds, keys, row.card_key) : null;
     },
 
     listSkillOptions: async () => {
@@ -364,16 +381,74 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
 
     delete: async (id) => {
       // 外部キーは NO ACTION のため、子の行を先に空にするか消す（research.md の R8）。
-      // 写した職務経歴書の行は残す。R2 の画像は、画像を扱うまで無い（plan.md の U5）
-      const results = await db.batch([
+      // 写した職務経歴書の行は残す。消す画像の R2 のキーを、同じトランザクションの初めに読む
+      const results = await db.batch<{ storage_key: string }>([
+        db.prepare('SELECT storage_key FROM media WHERE project_id = ?').bind(id),
         db.prepare('UPDATE resume_project SET project_id = NULL WHERE project_id = ?').bind(id),
         db.prepare('UPDATE project SET card_media_id = NULL WHERE id = ?').bind(id),
         db.prepare('DELETE FROM project_skill WHERE project_id = ?').bind(id),
         db.prepare('DELETE FROM media WHERE project_id = ?').bind(id),
         db.prepare('DELETE FROM project WHERE id = ?').bind(id),
       ]);
-      return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
+      if ((results.at(-1)?.meta.changes ?? 0) === 0) return { ok: false };
+      return { ok: true, storageKeys: results[0].results.map((row) => row.storage_key) };
     },
+
+    addImage: async (id, storageKey) => {
+      const result = await db
+        .prepare(
+          `INSERT INTO media (project_id, storage_key) SELECT ?, ?
+           WHERE EXISTS (SELECT 1 FROM project WHERE id = ?)
+             AND (SELECT count(*) FROM media WHERE project_id = ?) < ?`,
+        )
+        .bind(id, storageKey, id, id, IMAGE_MAX_COUNT)
+        .run();
+      if (result.meta.changes > 0) return { ok: true };
+      const exists = await db.prepare('SELECT 1 FROM project WHERE id = ?').bind(id).first();
+      return { ok: false, reason: exists ? 'too-many-images' : 'not-found' };
+    },
+
+    chooseCardImage: async (id, storageKey) => {
+      const result =
+        storageKey === null
+          ? await db.prepare('UPDATE project SET card_media_id = NULL WHERE id = ?').bind(id).run()
+          : await db
+              .prepare(
+                `UPDATE project
+                 SET card_media_id = (SELECT id FROM media WHERE project_id = ? AND storage_key = ?)
+                 WHERE id = ?
+                   AND EXISTS (SELECT 1 FROM media WHERE project_id = ? AND storage_key = ?)`,
+              )
+              .bind(id, storageKey, id, id, storageKey)
+              .run();
+      if (result.meta.changes > 0) return { ok: true };
+      const exists = await db.prepare('SELECT 1 FROM project WHERE id = ?').bind(id).first();
+      return { ok: false, reason: exists ? 'not-own-image' : 'not-found' };
+    },
+
+    findVisitorImage: async (slug, storageKey) =>
+      (
+        await db
+          .prepare(
+            // 秘匿化しない実績だけを見る。秘匿化した実績の画像は、本文が指していても返さない
+            // （FR-030）
+            `SELECT m.storage_key FROM project p
+             JOIN media m ON m.project_id = p.id
+             WHERE p.slug = ? AND p.status = 'published' AND p.is_masked = 0
+               AND m.storage_key = ?
+               AND (instr(coalesce(p.description, ''), ?) > 0 OR p.card_media_id = m.id)`,
+          )
+          .bind(slug, storageKey, `${MEDIA_SCHEME}${toImageFile(storageKey)}`)
+          .first<{ storage_key: string }>()
+      )?.storage_key ?? null,
+
+    findOwnerImage: async (id, storageKey) =>
+      (
+        await db
+          .prepare('SELECT storage_key FROM media WHERE project_id = ? AND storage_key = ?')
+          .bind(id, storageKey)
+          .first<{ storage_key: string }>()
+      )?.storage_key ?? null,
 
     hasSlug: async (slug) =>
       (await db

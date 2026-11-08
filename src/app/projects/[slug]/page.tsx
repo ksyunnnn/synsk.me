@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { VisitorProjectView } from '@/features/project/components/visitor-project';
+import {
+  VisitorProjectView,
+  visitorProjectImageUrl,
+} from '@/features/project/components/visitor-project';
 import { getVisitorProject } from '@/features/project/server/queries';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
@@ -14,7 +17,15 @@ type Props = { params: Promise<{ slug: string }> };
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
   const project = await getVisitorProject((await params).slug);
   if (!project) notFound();
-  return { title: `${project.title} | synsk.me`, openGraph: { title: project.title } };
+  // 代表画像は秘匿化しない実績の DTO だけが持つ（FR-030）
+  const image =
+    !project.isMasked && project.cardImageFile
+      ? visitorProjectImageUrl(project.slug, project.cardImageFile)
+      : undefined;
+  return {
+    title: `${project.title} | synsk.me`,
+    openGraph: { title: project.title, images: image ? [image] : undefined },
+  };
 };
 
 const Page = async ({ params }: Props) => {

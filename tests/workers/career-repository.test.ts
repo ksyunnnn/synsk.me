@@ -228,7 +228,7 @@ describe('delete', () => {
       .bind(resume?.id, id)
       .run();
 
-    expect(await careers.delete(id)).toEqual({ ok: true });
+    expect(await careers.delete(id)).toEqual({ ok: true, storageKeys: [] });
     expect(await careers.findForEdit(id)).toBeNull();
     expect(await env.DB.prepare('SELECT career_id, role FROM resume_career').first()).toEqual({
       career_id: null,

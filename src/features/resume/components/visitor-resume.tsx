@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { PrintButton } from '@/features/resume/components/print-button';
 import { RESUME_PROJECT_KIND_LABELS } from '@/features/resume/domain/resume';
 import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
+import { MarkdownBody } from '@/shared/components/markdown-body';
 import { toYearsAndMonths, type Period } from '@/shared/domain/period';
 
 /**
@@ -9,8 +10,7 @@ import { toYearsAndMonths, type Period } from '@/shared/domain/period';
  * だけを描画する。管理画面の「訪問者に見せたときの見た目」も同じ部品で描く。「PDF で保存」の
  * ボタンでブラウザの印刷を開く（research.md の R11）。
  *
- * 本文の書式は plan.md の U4 で決まっていない。決まるまでの仮の形として、本文は書式を持たない
- * 文字列として改行だけを残して出す。本文の画像は出さない。
+ * 写した本文は、写し元と同じ Markdown で描き、本文の画像は出さない（plan.md の U4）。
  *
  * 公開用で秘匿化した職歴・実績は、本文の場所に「非公開」と出す（FR-017、plan.md の U5）。contact の
  * ページへのリンクは、contact のページができてから足す（tasks.md の T077）。
@@ -27,8 +27,11 @@ const PeriodText = ({ period }: { period: Period }) => (
   </>
 );
 
-const Body = ({ text }: { text: string | null }) =>
-  text ? <p className="whitespace-pre-line">{text}</p> : null;
+/**
+ * 写した本文。実績・職歴の本文と同じ Markdown で描く。本文の画像は描かない（plan.md の U4）。
+ * 写した画像を配る経路を持たず、写し元を消すか秘匿化した後に画像が残らないようにするため
+ */
+const Body = ({ text }: { text: string | null }) => (text ? <MarkdownBody body={text} /> : null);
 
 /** 公開用で秘匿化した行の本文の場所（FR-017）。中身を持たず、伏せたことだけを示す */
 const MaskedBody = () => <p className="text-sm text-muted-foreground">非公開</p>;

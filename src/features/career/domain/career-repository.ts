@@ -41,6 +41,18 @@ export type CareerRepository = {
     organizationId: number,
     scope: 'all' | 'published',
   ) => Promise<CareerProjectSource[]>;
-  /** 物理削除する（research.md の R8） */
-  delete: (id: CareerId) => Promise<{ ok: boolean }>;
+  /**
+   * 物理削除する（research.md の R8）。消した画像の R2 のキーを返し、ユースケースが置き場から消す
+   */
+  delete: (id: CareerId) => Promise<{ ok: true; storageKeys: string[] } | { ok: false }>;
+  /**
+   * 画像の行を足す（FR-027）。1 つの職歴の画像が上限（`IMAGE_MAX_COUNT`）に達していたら
+   * 足さない。更新日時は変えない（編集の画面の入力を止めないため）
+   */
+  addImage: (
+    id: CareerId,
+    storageKey: string,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'too-many-images' }>;
+  /** オーナーが見る画像の R2 のキー。その職歴の画像でなければ null */
+  findOwnerImage: (id: CareerId, storageKey: string) => Promise<string | null>;
 };

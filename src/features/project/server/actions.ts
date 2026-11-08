@@ -3,6 +3,8 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
+import { addProjectImage as addProjectImageUseCase } from '@/features/project/application/add-project-image';
+import { chooseProjectCardImage as chooseProjectCardImageUseCase } from '@/features/project/application/choose-project-card-image';
 import { deleteProject as deleteProjectUseCase } from '@/features/project/application/delete-project';
 import { editProject as editProjectUseCase } from '@/features/project/application/edit-project';
 import { registerProject as registerProjectUseCase } from '@/features/project/application/register-project';
@@ -78,11 +80,68 @@ export const deleteProject = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { projects } = await createProjectDeps();
-  const id = await findIdByUid(projects, readString(formData, PROJECT_UID_FIELD));
+  const deps = await createProjectDeps();
+  const id = await findIdByUid(deps.projects, readString(formData, PROJECT_UID_FIELD));
   if (id === null) redirect('/dash/projects');
 
-  const outcome = await deleteProjectUseCase(projects, author, id);
+  const outcome = await deleteProjectUseCase(deps, author, id);
   if (outcome.status === 'forbidden') return outcome;
   redirect('/dash/projects?deleted=1');
+};
+
+/** 画像の操作の結果。成功したときは編集の画面へ移すため、返すのは止めたときだけ */
+type ImageOperationResult = { status: string };
+
+/** 画像の操作の前に、オーナーと実績を確かめる。オーナーでなければ null */
+const resolveImageTarget = async (formData: FormData) => {
+  const author = await getCurrentAuthor();
+  if (!author) return null;
+  const deps = await createProjectDeps();
+  const uid = readString(formData, PROJECT_UID_FIELD);
+  const id = await findIdByUid(deps.projects, uid);
+  if (id === null) redirect('/dash/projects');
+  return { author, deps, uid, id };
+};
+
+/** 実績に画像を足し、本文に貼る書き方を編集の画面に出す（FR-027・FR-028） */
+export const addProjectImage = async (
+  _state: ImageOperationResult | null,
+  formData: FormData,
+): Promise<ImageOperationResult> => {
+  const target = await resolveImageTarget(formData);
+  if (!target) return { status: 'forbidden' };
+  const file = formData.get('image');
+  const outcome = await addProjectImageUseCase(
+    target.deps,
+    target.author,
+    target.id,
+    file instanceof File && file.size > 0
+      ? { size: file.size, read: () => file.arrayBuffer() }
+      : null,
+  );
+  if (outcome.status === 'added') {
+    redirect(
+      `/dash/projects/${target.uid}?done=image-added&image=${encodeURIComponent(outcome.file)}`,
+    );
+  }
+  if (outcome.status === 'not-found') redirect('/dash/projects');
+  return outcome;
+};
+
+/** 実績の代表画像を選ぶ（FR-028）。空の値なら代表画像を外す */
+export const chooseProjectCardImage = async (
+  _state: ImageOperationResult | null,
+  formData: FormData,
+): Promise<ImageOperationResult> => {
+  const target = await resolveImageTarget(formData);
+  if (!target) return { status: 'forbidden' };
+  const outcome = await chooseProjectCardImageUseCase(
+    target.deps,
+    target.author,
+    target.id,
+    readString(formData, 'cardImage'),
+  );
+  if (outcome.status === 'done') redirect(`/dash/projects/${target.uid}?done=card-image`);
+  if (outcome.status === 'not-found') redirect('/dash/projects');
+  return outcome;
 };

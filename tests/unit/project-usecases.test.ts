@@ -1,6 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ProjectDeps } from '@/features/project/application/deps';
+import { addProjectImage } from '@/features/project/application/add-project-image';
+import { chooseProjectCardImage } from '@/features/project/application/choose-project-card-image';
 import { deleteProject } from '@/features/project/application/delete-project';
+import { IMAGE_MAX_BYTES, type ImageStorage } from '@/shared/domain/media-image';
 import { editProject } from '@/features/project/application/edit-project';
 import { registerProject } from '@/features/project/application/register-project';
 import {
@@ -38,6 +41,8 @@ const project = (overrides: Partial<Project> = {}): Project => ({
   description: null,
   url: null,
   skillIds: [],
+  images: [],
+  cardImageFile: null,
   updatedAt: OPENED_AT,
   ...overrides,
 });
@@ -59,17 +64,39 @@ const fakeProjects = (current: Project | null) =>
       uid: 'fedcba9876543210fedcba9876543210',
     })),
     edit: vi.fn(async () => ({ ok: true as const })),
-    delete: vi.fn(async () => ({ ok: true })),
+    delete: vi.fn(async (): Promise<{ ok: true; storageKeys: string[] } | { ok: false }> => ({
+      ok: true,
+      storageKeys: ['projects/a.png'],
+    })),
     hasSlug: vi.fn(),
     listSkillOptions: vi.fn(async () => []),
+    addImage: vi.fn(
+      async (): Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'too-many-images' }> => ({
+        ok: true,
+      }),
+    ),
+    chooseCardImage: vi.fn(
+      async (): Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'not-own-image' }> => ({
+        ok: true,
+      }),
+    ),
+    findVisitorImage: vi.fn(),
+    findOwnerImage: vi.fn(),
   }) satisfies ProjectRepository;
+
+const fakeImages = () => ({
+  put: vi.fn<ImageStorage['put']>(async () => {}),
+  delete: vi.fn<ImageStorage['delete']>(async () => {}),
+});
 
 let projects: ReturnType<typeof fakeProjects>;
 let organization: Organization | null;
+let images: ReturnType<typeof fakeImages>;
 let deps: ProjectDeps;
 
 beforeEach(() => {
   projects = fakeProjects(project());
+  images = fakeImages();
   organization = {
     id: 1,
     uid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
@@ -77,7 +104,11 @@ beforeEach(() => {
     nameMasked: 'ある会社',
     updatedAt: OPENED_AT,
   };
-  deps = { projects, organizations: { findByName: vi.fn(async () => organization) } };
+  deps = {
+    projects,
+    organizations: { findByName: vi.fn(async () => organization) },
+    images,
+  };
 });
 
 describe('オーナーでない呼び出しを拒む（FR-040）', () => {
@@ -97,7 +128,7 @@ describe('オーナーでない呼び出しを拒む（FR-040）', () => {
   });
 
   it('削除は何も書かない', async () => {
-    expect(await deleteProject(projects, null, 1)).toEqual({ status: 'forbidden' });
+    expect(await deleteProject(deps, null, 1)).toEqual({ status: 'forbidden' });
     expect(projects.delete).not.toHaveBeenCalled();
   });
 });
@@ -172,13 +203,92 @@ describe('editProject', () => {
 });
 
 describe('deleteProject', () => {
-  it('ある実績を消す', async () => {
-    expect(await deleteProject(projects, OWNER, 1)).toEqual({ status: 'deleted' });
+  it('ある実績を消し、その実績の画像を置き場から消す', async () => {
+    expect(await deleteProject(deps, OWNER, 1)).toEqual({ status: 'deleted' });
     expect(projects.delete).toHaveBeenCalledWith(1);
+    expect(images.delete).toHaveBeenCalledWith(['projects/a.png']);
   });
 
-  it('無い実績なら not-found', async () => {
+  it('無い実績なら not-found で、置き場に触れない', async () => {
     projects.delete.mockResolvedValue({ ok: false });
-    expect(await deleteProject(projects, OWNER, 9)).toEqual({ status: 'not-found' });
+    expect(await deleteProject(deps, OWNER, 9)).toEqual({ status: 'not-found' });
+    expect(images.delete).not.toHaveBeenCalled();
+  });
+});
+
+const PNG = new Uint8Array([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0, 0, 0, 0, 0,
+]);
+const upload = (bytes: Uint8Array, size = bytes.byteLength) => ({
+  size,
+  read: async () => bytes.slice().buffer,
+});
+
+describe('addProjectImage（FR-027・FR-028）', () => {
+  it('オーナーでなければ何も書かない（FR-040）', async () => {
+    expect(await addProjectImage(deps, null, 1, upload(PNG))).toEqual({ status: 'forbidden' });
+    expect(images.put).not.toHaveBeenCalled();
+    expect(projects.addImage).not.toHaveBeenCalled();
+  });
+
+  it('上限を超える大きさは、中身を読まずに拒む', async () => {
+    const read = vi.fn();
+    expect(await addProjectImage(deps, OWNER, 1, { size: IMAGE_MAX_BYTES + 1, read })).toEqual({
+      status: 'too-large',
+    });
+    expect(read).not.toHaveBeenCalled();
+  });
+
+  it('受け付けない形式は拒む', async () => {
+    expect(await addProjectImage(deps, OWNER, 1, upload(new Uint8Array(16)))).toEqual({
+      status: 'unsupported',
+    });
+    expect(images.put).not.toHaveBeenCalled();
+  });
+
+  it('置き場の projects/ に書いてから行を足す', async () => {
+    const outcome = await addProjectImage(deps, OWNER, 1, upload(PNG));
+    expect(outcome).toMatchObject({ status: 'added' });
+    const key = images.put.mock.calls[0]?.[0] as unknown as string;
+    expect(key).toMatch(/^projects\/[0-9a-f-]{36}\.png$/);
+    expect(projects.addImage).toHaveBeenCalledWith(1, key);
+  });
+
+  it('枚数の上限で行を足せなければ、書いた物を消す', async () => {
+    projects.addImage.mockResolvedValue({ ok: false, reason: 'too-many-images' });
+    expect(await addProjectImage(deps, OWNER, 1, upload(PNG))).toEqual({
+      status: 'too-many-images',
+    });
+    expect(images.delete).toHaveBeenCalledWith([images.put.mock.calls[0]?.[0]]);
+  });
+});
+
+describe('chooseProjectCardImage（FR-028）', () => {
+  const FILE = '0b6f3c1e-1111-4222-8333-444455556666.png';
+
+  it('オーナーでなければ何も書かない（FR-040）', async () => {
+    expect(await chooseProjectCardImage(deps, null, 1, FILE)).toEqual({ status: 'forbidden' });
+    expect(projects.chooseCardImage).not.toHaveBeenCalled();
+  });
+
+  it('ファイル名の形でなければ、その実績の画像ではないとして拒む', async () => {
+    expect(await chooseProjectCardImage(deps, OWNER, 1, '../x.png')).toEqual({
+      status: 'not-own-image',
+    });
+    expect(projects.chooseCardImage).not.toHaveBeenCalled();
+  });
+
+  it('画像のキーで選び、空なら外す', async () => {
+    expect(await chooseProjectCardImage(deps, OWNER, 1, FILE)).toEqual({ status: 'done' });
+    expect(projects.chooseCardImage).toHaveBeenCalledWith(1, `projects/${FILE}`);
+    expect(await chooseProjectCardImage(deps, OWNER, 1, '')).toEqual({ status: 'done' });
+    expect(projects.chooseCardImage).toHaveBeenLastCalledWith(1, null);
+  });
+
+  it('ほかの実績の画像は選べない', async () => {
+    projects.chooseCardImage.mockResolvedValue({ ok: false, reason: 'not-own-image' });
+    expect(await chooseProjectCardImage(deps, OWNER, 1, FILE)).toEqual({
+      status: 'not-own-image',
+    });
   });
 });

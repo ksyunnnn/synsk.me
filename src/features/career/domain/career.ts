@@ -27,6 +27,8 @@ export type Career = {
   period: Period;
   description: string | null;
   url: string | null;
+  /** この職歴の画像のファイル名。追加した順（FR-027）。職歴は代表画像を持たない（FR-029） */
+  images: string[];
   /** 更新日時。編集の画面を開いたときの値を、楽観ロックに使う（research.md の R7） */
   updatedAt: string;
 };

@@ -2,6 +2,7 @@ import 'server-only';
 
 import type { Career, CareerContent } from '@/features/career/domain/career';
 import type { CareerRepository } from '@/features/career/domain/career-repository';
+import { IMAGE_MAX_COUNT, toImageFile } from '@/shared/domain/media-image';
 import type { CalendarDate } from '@/shared/domain/period';
 import type { SiteStatus } from '@/shared/domain/site-status';
 import {
@@ -38,7 +39,7 @@ const toPeriod = (row: { started_on: string; ended_on: string | null }) => ({
   endedOn: row.ended_on as CalendarDate | null,
 });
 
-const toCareer = (row: CareerRow): Career => ({
+const toCareer = (row: CareerRow, images: string[]): Career => ({
   id: row.id,
   uid: row.uid,
   organization: {
@@ -52,6 +53,7 @@ const toCareer = (row: CareerRow): Career => ({
   period: toPeriod(row),
   description: row.description,
   url: row.url,
+  images: images.map(toImageFile),
   updatedAt: row.updated_at,
 });
 
@@ -126,16 +128,20 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
     },
 
     findForEdit: async (id) => {
-      const row = await db
-        .prepare(
-          `SELECT c.id, c.uid, c.organization_id, o.name AS organization_name,
-             o.name_masked AS organization_name_masked, c.role, c.is_masked, c.status, c.started_on,
-             c.ended_on, c.description, c.url, c.updated_at
-           FROM career c JOIN organization o ON o.id = c.organization_id WHERE c.id = ?`,
-        )
-        .bind(id)
-        .first<CareerRow>();
-      return row ? toCareer(row) : null;
+      const [career, media] = await db.batch<CareerRow | { storage_key: string }>([
+        db
+          .prepare(
+            `SELECT c.id, c.uid, c.organization_id, o.name AS organization_name,
+               o.name_masked AS organization_name_masked, c.role, c.is_masked, c.status,
+               c.started_on, c.ended_on, c.description, c.url, c.updated_at
+             FROM career c JOIN organization o ON o.id = c.organization_id WHERE c.id = ?`,
+          )
+          .bind(id),
+        db.prepare('SELECT storage_key FROM media WHERE career_id = ? ORDER BY id').bind(id),
+      ]);
+      const row = career.results[0] as CareerRow | undefined;
+      const keys = (media.results as { storage_key: string }[]).map((r) => r.storage_key);
+      return row ? toCareer(row, keys) : null;
     },
 
     list: async () => {
@@ -221,14 +227,38 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
 
     delete: async (id) => {
       // 写した職務経歴書の行は残し、指す id を空にする（research.md の R8）。
-      // R2 の画像は、画像を扱うまで無い（plan.md の U5）
-      const results = await db.batch([
+      // 消す画像の R2 のキーを、同じトランザクションの初めに読む
+      const results = await db.batch<{ storage_key: string }>([
+        db.prepare('SELECT storage_key FROM media WHERE career_id = ?').bind(id),
         db.prepare('UPDATE resume_career SET career_id = NULL WHERE career_id = ?').bind(id),
         db.prepare('DELETE FROM media WHERE career_id = ?').bind(id),
         db.prepare('DELETE FROM career WHERE id = ?').bind(id),
       ]);
-      return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
+      if ((results.at(-1)?.meta.changes ?? 0) === 0) return { ok: false };
+      return { ok: true, storageKeys: results[0].results.map((row) => row.storage_key) };
     },
+
+    addImage: async (id, storageKey) => {
+      const result = await db
+        .prepare(
+          `INSERT INTO media (career_id, storage_key) SELECT ?, ?
+           WHERE EXISTS (SELECT 1 FROM career WHERE id = ?)
+             AND (SELECT count(*) FROM media WHERE career_id = ?) < ?`,
+        )
+        .bind(id, storageKey, id, id, IMAGE_MAX_COUNT)
+        .run();
+      if (result.meta.changes > 0) return { ok: true };
+      const exists = await db.prepare('SELECT 1 FROM career WHERE id = ?').bind(id).first();
+      return { ok: false, reason: exists ? 'too-many-images' : 'not-found' };
+    },
+
+    findOwnerImage: async (id, storageKey) =>
+      (
+        await db
+          .prepare('SELECT storage_key FROM media WHERE career_id = ? AND storage_key = ?')
+          .bind(id, storageKey)
+          .first<{ storage_key: string }>()
+      )?.storage_key ?? null,
 
     findIdByUid: async (uid) =>
       (await db.prepare('SELECT id FROM career WHERE uid = ?').bind(uid).first<{ id: number }>())

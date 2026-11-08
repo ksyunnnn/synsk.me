@@ -274,7 +274,7 @@ describe('delete', () => {
       .bind(resume?.id, id)
       .run();
 
-    expect(await projects.delete(id)).toEqual({ ok: true });
+    expect(await projects.delete(id)).toEqual({ ok: true, storageKeys: [] });
     expect(await projects.findForEdit(id)).toBeNull();
     expect(await env.DB.prepare('SELECT project_id, title FROM resume_project').first()).toEqual({
       project_id: null,

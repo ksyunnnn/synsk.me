@@ -1,13 +1,19 @@
 import { PROJECT_KIND_LABELS, type VisitorProject } from '@/features/project/domain/project';
+import { MarkdownBody } from '@/shared/components/markdown-body';
 import type { Period } from '@/shared/domain/period';
 
 /**
  * 訪問者に見せる実績（specs/001-career-and-project/contracts/visitor-project.md）。
  * 受け取った DTO の値だけを描画する。秘匿化した実績の DTO は、本文・関連 URL・画像を持たない。
  *
- * 本文は、書式が決まるまで出さない（plan.md の U4）。秘匿化した実績は、本文の場所に「非公開」と
- * 出す（FR-021）。代表画像は、配る経路が決まるまで出さない（U5）
+ * 本文は Markdown で描き、本文の画像は `/projects/{slug}/images/{file}` から配る（plan.md の
+ * U4・U5）。秘匿化した実績は、本文の場所に「非公開」と出す（FR-021）。代表画像はページの URL が
+ * 他のサービスに貼られたときのカードにだけ使い、ページには出さない（note と同じ）
  */
+
+/** 訪問者に配る実績の画像の URL */
+export const visitorProjectImageUrl = (slug: string, file: string) =>
+  `/projects/${slug}/images/${file}`;
 
 const PeriodText = ({ period }: { period: Period }) => (
   <>
@@ -48,6 +54,12 @@ export const VisitorProjectView = ({ project }: { project: VisitorProject }) => 
         </h2>
         <p>非公開</p>
       </section>
+    )}
+    {!project.isMasked && project.body && (
+      <MarkdownBody
+        body={project.body}
+        imageUrl={(file) => visitorProjectImageUrl(project.slug, file)}
+      />
     )}
     {!project.isMasked && project.url && (
       <p>

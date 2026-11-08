@@ -126,6 +126,7 @@ describe('秘匿化しない実績', () => {
       skills: ['TypeScript'],
       body: REAL.description,
       url: REAL.url,
+      cardImageFile: null,
     });
   });
 });

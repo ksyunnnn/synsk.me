@@ -14,6 +14,7 @@ import { MaskingField } from '@/shared/components/masking-field';
 import { OrganizationNameField } from '@/shared/components/organization-name-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { DraftRetention } from '@/shared/components/draft-retention';
+import { BODY_HINT } from '@/shared/components/body-hint';
 
 /**
  * 職歴を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -133,6 +134,7 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
       <TextareaField
         name="description"
         label="本文"
+        hint={BODY_HINT}
         rows={8}
         defaultValue={values.description}
         error={errorOf('description')}
