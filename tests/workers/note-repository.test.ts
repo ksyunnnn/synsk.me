@@ -9,6 +9,7 @@ import {
   insertLinkPreview,
   insertNoteMedia,
   insertNoteRevision,
+  insertSyndication,
   publishNoteRow,
 } from '../support/note-rows';
 
@@ -545,5 +546,186 @@ describe('版の一覧と過去の版に戻す（FR-008・FR-009、User Story 3 
     expect(await notes.findMissingRevision(note.uid, note.revision.uid)).toBeNull();
     expect(await notes.findMissingRevision(note.uid, other.revision.uid)).toBe('revision');
     expect(await notes.findMissingRevision('0'.repeat(32), note.revision.uid)).toBe('note');
+  });
+});
+
+describe('転載先（FR-031・FR-032、User Story 7、research.md の R14）', () => {
+  it('2 つ記録でき、記録した順に読める', async () => {
+    const note = await insertNote(env.DB);
+    expect(await notes.addSyndication(note.id, 'https://example.com/one')).toEqual({ ok: true });
+    expect(await notes.addSyndication(note.id, 'https://example.com/two')).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.syndicationUrls).toEqual([
+      'https://example.com/one',
+      'https://example.com/two',
+    ]);
+  });
+
+  it('同じ URL を同じ note にも別の note にも記録できない（FR-032）', async () => {
+    const a = await insertNote(env.DB);
+    const b = await insertNote(env.DB);
+    await notes.addSyndication(a.id, 'https://example.com/taken');
+    expect(await notes.addSyndication(a.id, 'https://example.com/taken')).toEqual({
+      ok: false,
+      reason: 'url-taken',
+    });
+    expect(await notes.addSyndication(b.id, 'https://example.com/taken')).toEqual({
+      ok: false,
+      reason: 'url-taken',
+    });
+  });
+
+  it('削除した note には記録しない', async () => {
+    const note = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.addSyndication(note.id, 'https://example.com/deleted')).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('削除した note の転載先は外さない', async () => {
+    const note = await insertNote(env.DB);
+    await notes.addSyndication(note.id, 'https://example.com/kept');
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.removeSyndication(note.id, 'https://example.com/kept')).toEqual({
+      ok: false,
+    });
+    expect((await notes.findForEdit(note.id))?.syndicationUrls).toEqual([
+      'https://example.com/kept',
+    ]);
+  });
+
+  it('URL で指して外し、別の note の URL は外さない', async () => {
+    const a = await insertNote(env.DB);
+    const b = await insertNote(env.DB);
+    await notes.addSyndication(a.id, 'https://example.com/a');
+    await notes.addSyndication(b.id, 'https://example.com/b');
+    expect(await notes.removeSyndication(a.id, 'https://example.com/b')).toEqual({ ok: false });
+    expect(await notes.removeSyndication(a.id, 'https://example.com/a')).toEqual({ ok: true });
+    expect((await notes.findForEdit(a.id))?.syndicationUrls).toEqual([]);
+    expect((await notes.findForEdit(b.id))?.syndicationUrls).toEqual(['https://example.com/b']);
+  });
+});
+
+describe('代表画像と画像（FR-023〜FR-025、User Story 5 の 3）', () => {
+  it('代表画像の既定は generated で、site に変えられる', async () => {
+    const note = await insertNote(env.DB);
+    expect((await notes.findForEdit(note.id))?.cardImage).toBe('generated');
+    expect(await notes.changeCardImage(note.id, { kind: 'site' })).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.cardImage).toBe('site');
+    expect(await notes.changeCardImage(note.id, { kind: 'generated' })).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.cardImage).toBe('generated');
+  });
+
+  it('その note の画像を代表画像にできる', async () => {
+    const note = await insertNote(env.DB, { slug: 'card-media' });
+    const media = await insertNoteMedia(env.DB, note.id);
+    expect(await notes.changeCardImage(note.id, { kind: 'media', ...media })).toEqual({
+      ok: true,
+    });
+    expect(await notes.findForEdit(note.id)).toMatchObject({
+      cardImage: 'media',
+      cardMediaStorageKey: media.storageKey,
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect((await notes.findVisitorBySlug('card-media'))?.cardImage).toEqual({
+      kind: 'media',
+      storageKey: media.storageKey,
+    });
+  });
+
+  it('別の note の画像を代表画像に選べない（FR-025）', async () => {
+    const a = await insertNote(env.DB);
+    const b = await insertNote(env.DB);
+    const foreign = await insertNoteMedia(env.DB, b.id);
+    expect(
+      await notes.changeCardImage(a.id, { kind: 'media', storageKey: foreign.storageKey }),
+    ).toEqual({ ok: false, reason: 'media-not-owned' });
+    expect((await notes.findForEdit(a.id))?.cardImage).toBe('generated');
+  });
+
+  it('削除した note の代表画像は変えない', async () => {
+    const note = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.changeCardImage(note.id, { kind: 'site' })).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('画像をその note の画像として記録し、削除した note には記録しない', async () => {
+    const note = await insertNote(env.DB);
+    const key = crypto.randomUUID();
+    expect(await notes.addMedia(note.id, key)).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.mediaStorageKeys).toEqual([key]);
+
+    const deleted = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, deleted.id);
+    expect(await notes.addMedia(deleted.id, crypto.randomUUID())).toEqual({ ok: false });
+  });
+});
+
+describe('purge（FR-017、research.md の R6）', () => {
+  const countOf = async (table: string, column: string, id: number) =>
+    (
+      await env.DB.prepare(`SELECT count(*) AS n FROM ${table} WHERE ${column} = ?`)
+        .bind(id)
+        .first<{ n: number }>()
+    )?.n;
+
+  const remaining = async (id: number) => ({
+    note: await countOf('note', 'id', id),
+    note_revision: await countOf('note_revision', 'note_id', id),
+    media: await countOf('media', 'note_id', id),
+    syndication: await countOf('syndication', 'note_id', id),
+  });
+
+  it('公開して代表画像を持つ note を消し、画像のキーを返し、参照先の情報は残す', async () => {
+    const note = await insertNote(env.DB);
+    await insertNoteRevision(env.DB, note.id);
+    const media = await insertNoteMedia(env.DB, note.id);
+    await notes.changeCardImage(note.id, { kind: 'media', storageKey: media.storageKey });
+    await notes.publish(note.id, NOW);
+    await insertSyndication(env.DB, note.id, 'https://example.com/purged');
+    await insertLinkPreview(env.DB, { url: 'https://example.com/kept' });
+
+    expect(await notes.purge(note.id)).toEqual({ ok: true, storageKeys: [media.storageKey] });
+    expect(await remaining(note.id)).toEqual({
+      note: 0,
+      note_revision: 0,
+      media: 0,
+      syndication: 0,
+    });
+    expect(
+      await env.DB.prepare(
+        "SELECT count(*) AS n FROM link_preview WHERE url = 'https://example.com/kept'",
+      ).first(),
+    ).toEqual({ n: 1 });
+  });
+
+  it('途中の文が失敗すると何も消えない', async () => {
+    const note = await insertNote(env.DB);
+    await insertNoteMedia(env.DB, note.id);
+    await insertSyndication(env.DB, note.id, 'https://example.com/rollback');
+    // note の行を消す最後の文だけを失敗させる。作り物のトリガで、検査の終わりに外す
+    await env.DB.prepare(
+      `CREATE TRIGGER test_fail_note_delete BEFORE DELETE ON note
+       BEGIN SELECT RAISE(ABORT, 'test_fail_note_delete'); END`,
+    ).run();
+    try {
+      await expect(notes.purge(note.id)).rejects.toThrow(/test_fail_note_delete/);
+    } finally {
+      await env.DB.prepare('DROP TRIGGER test_fail_note_delete').run();
+    }
+    expect(await remaining(note.id)).toEqual({
+      note: 1,
+      note_revision: 1,
+      media: 1,
+      syndication: 1,
+    });
+  });
+
+  it('無い id は ok: false', async () => {
+    expect(await notes.purge(999_999)).toEqual({ ok: false });
   });
 });

@@ -17,6 +17,8 @@ export const planRemovals = (
   maxRemovals: number,
   confirmedGone: number[] = [],
 ): { deletes: number[]; keptOverLimit: number } => {
+  // すべて取ったと言う一覧が空なのは取得元の誤りの兆し。件数が上限より少ない取得元では、すべてを消してしまう
+  if (listing.isComplete && listing.items.length === 0) return { deletes: [], keptOverLimit: 0 };
   const candidates = listing.isComplete
     ? missingFrom(stored, listing.items).map((row) => row.id)
     : confirmedGone;

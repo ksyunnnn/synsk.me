@@ -114,3 +114,10 @@ export const toYearsAndMonths = (months: number): { years: number; months: numbe
   years: Math.floor(months / 12),
   months: months % 12,
 });
+
+/**
+ * 期間の文字列。`YYYY-MM-DD 〜 YYYY-MM-DD`。続いている期間は終わりを空にする。使い手は管理画面の
+ * 一覧と、職務経歴書の写し元の選択肢と設定の画面。訪問者の画面は src/shared/components/period-text.tsx
+ */
+export const formatPeriod = (period: Period): string =>
+  `${period.startedOn} 〜 ${period.endedOn ?? ''}`;

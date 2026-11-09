@@ -49,6 +49,7 @@ export const fetchListing = async (
     ? { Authorization: `Bearer ${accessToken}` }
     : {};
   const items: FetchedItem[] = [];
+  let firstTotal: number | undefined;
 
   for (let page = 1; page <= MAX_PAGE; page += 1) {
     if (http.remaining === 0) return { items, isComplete: false };
@@ -65,6 +66,9 @@ export const fetchListing = async (
     if (!Array.isArray(body)) throw shapeError(NAME, '項目の並びでない');
 
     items.push(...body.map(toItem));
+    // 頁を辿るあいだに総数が変わると頁の境目がずれ、取らなかった項目が出る（research.md の R6）
+    firstTotal ??= total;
+    if (total !== firstTotal) return { items, isComplete: false };
     if (items.length >= total) {
       const validators = page === 1 ? validatorsOf(response.headers) : undefined;
       return { items, isComplete: true, ...(validators && { validators }) };

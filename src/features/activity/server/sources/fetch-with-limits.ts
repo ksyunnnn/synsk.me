@@ -24,9 +24,14 @@ export class SourceHttpError extends Error {
   }
 }
 
-/** 4xx の応答。URL を指名する取得元では、その URL の項目を取れないことを表す */
+/**
+ * その URL の項目が無いことを表す応答（400・401・404・410）。URL を指名する取得元では「取れない」に
+ * する。ほかの 4xx（bot の challenge の 403、408、429 など）は取得元の不調として失敗にする
+ */
+const NOT_FOUND_STATUSES = new Set([400, 401, 404, 410]);
+
 export const isClientError = (error: unknown): boolean =>
-  error instanceof SourceHttpError && error.status >= 400 && error.status < 500;
+  error instanceof SourceHttpError && NOT_FOUND_STATUSES.has(error.status);
 
 export type SourceResponse = { status: number; headers: Headers; text: string };
 
@@ -53,8 +58,17 @@ export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceH
           headers: { ...headers, 'User-Agent': USER_AGENT },
           signal,
         });
-        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）
-        if (response.status === 304) {
+        // リダイレクトで別のホストへ移ったら読まない。要求を出すのは、その取得元のホストだけ（research.md の R10）
+        if (response.redirected && new URL(response.url).host !== new URL(url).host) {
+          await response.body?.cancel();
+          throw new Error(`取得元が別のホストへ移した: ${url}`);
+        }
+        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）。条件を
+        // 付けていない要求への 304（途中のキャッシュなど）は、中身を取れなかった失敗にする
+        const conditional = Object.keys(headers).some((name) =>
+          /^if-(none-match|modified-since)$/i.test(name),
+        );
+        if (response.status === 304 && conditional) {
           await response.body?.cancel();
           return { status: 304, headers: response.headers, text: '' };
         }
