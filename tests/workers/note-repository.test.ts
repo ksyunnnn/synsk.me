@@ -729,3 +729,87 @@ describe('purge（FR-017、research.md の R6）', () => {
     expect(await notes.purge(999_999)).toEqual({ ok: false });
   });
 });
+
+describe('参照先の情報（FR-028〜FR-030、User Story 6 の 3）', () => {
+  const URL_A = 'https://example.com/reference-a';
+
+  it('URL ごとに 1 行で、取り直すと同じ行が変わる', async () => {
+    await notes.saveLinkPreview({
+      url: URL_A,
+      title: '最初に取った題',
+      imageUrl: 'https://example.com/first.png',
+      fetchedAt: NOW,
+    });
+    await notes.saveLinkPreview({
+      url: URL_A,
+      title: '取り直した題',
+      imageUrl: 'https://example.com/second.png',
+      fetchedAt: LATER,
+    });
+    expect(
+      (await env.DB.prepare('SELECT * FROM link_preview WHERE url = ?').bind(URL_A).all()).results,
+    ).toEqual([
+      expect.objectContaining({
+        title: '取り直した題',
+        image_url: 'https://example.com/second.png',
+        fetched_at: LATER,
+      }),
+    ]);
+  });
+
+  it('2 つの note のどちらからも、取り直した中身が読める', async () => {
+    await notes.saveLinkPreview({ url: URL_A, title: '古い題', imageUrl: null, fetchedAt: NOW });
+    for (const slug of ['reference-one', 'reference-two']) {
+      const note = await insertNote(env.DB, { slug, body: URL_A });
+      await publishNoteRow(env.DB, note.id);
+    }
+    await notes.saveLinkPreview({
+      url: URL_A,
+      title: '新しい題',
+      imageUrl: null,
+      fetchedAt: LATER,
+    });
+    for (const slug of ['reference-one', 'reference-two']) {
+      expect((await notes.findVisitorBySlug(slug))?.linkPreviews).toEqual([
+        { url: URL_A, title: '新しい題', imageUrl: null },
+      ]);
+    }
+  });
+
+  it('URL を本文の読み方と同じ形に揃えて書き、本文の URL から読める', async () => {
+    await notes.saveLinkPreview({
+      url: 'https://Example.com',
+      title: '揃えた題',
+      imageUrl: null,
+      fetchedAt: NOW,
+    });
+    const note = await insertNote(env.DB, {
+      slug: 'reference-normalized',
+      body: 'https://example.com/',
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect((await notes.findVisitorBySlug('reference-normalized'))?.linkPreviews).toEqual([
+      { url: 'https://example.com/', title: '揃えた題', imageUrl: null },
+    ]);
+  });
+
+  it('後に取った中身を、遅れて終わった前の取得で書き換えない', async () => {
+    await notes.saveLinkPreview({ url: URL_A, title: '後の題', imageUrl: null, fetchedAt: LATER });
+    await notes.saveLinkPreview({ url: URL_A, title: '前の題', imageUrl: null, fetchedAt: NOW });
+    expect(await notes.findLinkPreviews([URL_A])).toEqual([
+      { url: URL_A, title: '後の題', imageUrl: null },
+    ]);
+  });
+
+  it('URL の並びで読み、取ったことのない URL は返さない。画像は URL だけ（FR-030）', async () => {
+    await notes.saveLinkPreview({
+      url: URL_A,
+      title: '題',
+      imageUrl: 'https://example.com/a.png',
+      fetchedAt: NOW,
+    });
+    expect(await notes.findLinkPreviews(['https://example.com/never-fetched', URL_A])).toEqual([
+      { url: URL_A, title: '題', imageUrl: 'https://example.com/a.png' },
+    ]);
+  });
+});
