@@ -9,6 +9,7 @@ import {
   type CareerFormResult,
   type CareerFormValues,
 } from '@/features/career/domain/career';
+import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
@@ -66,7 +67,13 @@ export const CareerForm = ({ action, initialValues, career }: Props) => {
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <DraftRetainingForm
+      action={formAction}
+      storageKey={`career:${career?.uid ?? 'new'}`}
+      version={career?.updatedAt}
+      result={result}
+      className="flex flex-col gap-6"
+    >
       {career && (
         <>
           <input type="hidden" name={CAREER_UID_FIELD} value={career.uid} />
@@ -143,6 +150,6 @@ export const CareerForm = ({ action, initialValues, career }: Props) => {
           {career ? '保存する' : '登録する'}
         </button>
       </div>
-    </form>
+    </DraftRetainingForm>
   );
 };

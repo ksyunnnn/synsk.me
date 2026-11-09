@@ -25,7 +25,7 @@ Repository の実装は `status` が `published` の行だけを読み、`is_mas
 | `organizationName` | `organization.name` |
 | `period` | `project.started_on`・`project.ended_on` |
 | `skills` | `project_skill` がつなぐ `skill.name` の並び |
-| `body` | `project.description`（空あり）。表示は本文の書式が決まってから（plan.md の U4） |
+| `body` | `project.description`（空あり）。Markdown として表示し、生の HTML を通さない（plan.md の U4）。表示は tasks.md の T077 が作る |
 | `url` | `project.url`（空あり） |
 | `cardImage` | `project.card_media_id` の画像（空あり）。配る経路は plan.md の U5 |
 

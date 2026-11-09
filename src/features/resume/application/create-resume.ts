@@ -6,7 +6,6 @@ import {
   MAX_COPIED_ROWS,
 } from '@/features/resume/domain/build-resume';
 import {
-  newResumeSlug,
   parseExpiresInput,
   parseResumeId,
   type ResumeAudience,
@@ -20,6 +19,7 @@ import type {
 } from '@/features/resume/domain/resume-forms';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
+import { newSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
 
 export type CreateResumeOutcome =
@@ -97,7 +97,9 @@ export const createResume = async (
   if (countCopiedRows(built.content) > MAX_COPIED_ROWS) {
     return { status: 'invalid', errors: { selection: 'too-many' }, values };
   }
-  const slug = newResumeSlug();
+  // 題や提出先から推測できない uid（FR-012・FR-037・FR-039）。限定公開用の URL はこの値だけで
+  // 開くため、推測できないことが読める人を絞る
+  const slug = newSlug();
 
   // 書く
   const { id, uid, updatedAt } = await resumes.create({

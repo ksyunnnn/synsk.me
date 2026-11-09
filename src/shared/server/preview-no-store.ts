@@ -8,7 +8,7 @@
 
 const PREVIEW_HOST_SUFFIX = '.workers.dev';
 
-const NO_STORE = 'no-store, must-revalidate';
+export const NO_STORE = 'no-store, must-revalidate';
 
 /**
  * Cloudflare は `CDN-Cache-Control` と `Cloudflare-CDN-Cache-Control` を
