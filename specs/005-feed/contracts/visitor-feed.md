@@ -23,7 +23,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 |---|---|
 | `type` | `'career'` |
 | `isMasked` | `career.is_masked` |
-| `organizationName` | 秘匿化しない行は `organization.name`、秘匿化した行は `organization.name_masked` |
+| `organizationName` | 秘匿化しない行はビューの `organization_name`（元は `organization.name`）、秘匿化した行は `organization_name_masked`（元は `organization.name_masked`） |
 | `role` | `career.role` |
 | `period` | `career.started_on`・`career.ended_on` |
 
@@ -35,8 +35,8 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 |---|---|
 | `type` | `'project'` |
 | `isMasked` | `project.is_masked` |
-| `title` | 秘匿化しない行は `project.title`、秘匿化した行は `project.title_masked` |
-| `organizationName` | 秘匿化しない行は `organization.name`、秘匿化した行は `organization.name_masked` |
+| `title` | 秘匿化しない行はビューの `title`（元は `project.title`）、秘匿化した行は `title_masked`（元は `project.title_masked`） |
+| `organizationName` | 秘匿化しない行はビューの `organization_name`、秘匿化した行は `organization_name_masked` |
 | `projectKind` | `project.kind` |
 | `period` | `project.started_on`・`project.ended_on` |
 

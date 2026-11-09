@@ -67,7 +67,7 @@ description: "一覧の実装タスク"
   - 終わりの日が空の職歴・実績も始まりの日で並ぶ（Edge Cases）
   - 同じ始まりの日の職歴と実績が `FEED_ITEM_TYPES` の順と主キーの順で並び、2 回続けて読んだ順が同じ（FR-010）
   - サイトに載せない職歴・実績が、秘匿化するかに関わらず並ばない（FR-004、US1 の Acceptance 7）
-  - 秘匿化した行は秘匿化した題と秘匿化した組織名で並び、秘匿化した組織名の無い組織を指す秘匿化した行は並ばない（FR-012、US2 の Acceptance 1、research.md の R4）
+  - 秘匿化した行は秘匿化した題と秘匿化した組織名で並び、DTO に実際の値が入らない。Repository は `is_masked` で `_masked` の列か実際の値の列かを選ぶ。秘匿化した組織名の無い組織を指す秘匿化した行は並ばない（FR-012、US2 の Acceptance 1、research.md の R4）
   - 学歴が並ばない（FR-001）
   - `FEED_ITEM_TYPES` に無い種類の行がビューにあっても、`list` はその行を返さない（data-model.md の「アプリケーションが守る決まり」）
 - [ ] T012 [P] [US2] 本番ビルドに対して、一覧の HTML と RSC の応答を tests/integration/feed.test.ts で確かめる。**止める依存: M1**。**止める未決: U1**

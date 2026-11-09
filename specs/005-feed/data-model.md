@@ -36,8 +36,10 @@
 | `item_number` | 種類ごとの元の行の主キー。並べる SQL の中だけで使い、DTO に入れない。外部キーではないので `_id` を付けない | M1 |
 | `sort_at` | 並びの日付。暦の日付（`YYYY-MM-DD`）か日時（`YYYY-MM-DDTHH:MM:SS.sssZ`）の文字列。`activity.sort_at` と同じ意味なので同じ名前にする | M1 |
 | `is_masked` | 秘匿化した職歴・実績なら 1。ほかは 0 | M1 |
-| `title` | 実績・note・外部の activity・life event の題。秘匿化した実績は `title_masked` | M1 |
-| `organization_name` | 職歴・実績の組織名。秘匿化した行は `organization.name_masked` | M1 |
+| `title` | 秘匿化しない実績・note・外部の activity・life event の題。秘匿化した実績と職歴は `NULL` | M1 |
+| `title_masked` | 秘匿化した実績の `project.title_masked`。ほかの行は `NULL` | M1 |
+| `organization_name` | 秘匿化しない職歴・実績の `organization.name`。秘匿化した行とほかの種類は `NULL` | M1 |
+| `organization_name_masked` | 秘匿化した職歴・実績の `organization.name_masked`。ほかの行は `NULL` | M1 |
 | `role` | 職歴の肩書 | M1 |
 | `project_kind` | 実績の種類（`project.kind`） | M1 |
 | `started_on`・`ended_on` | 職歴・実績の期間 | M1 |
@@ -47,14 +49,16 @@
 
 列の名前は `docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」に従う。種類は `kind` と呼ばない。`project.kind`（実績の種類）と `activity_source.kind`（分類）が別の意味で使っているため。
 
+実際の値と秘匿化した値を同じ列に混ぜない。秘匿化した値の列は `_masked` で終える（`docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」）。秘匿化した行では実際の値の列が `NULL` なので、Repository が `is_masked` を読み違えても実際の値は画面へ渡らない。
+
 腕ごとに同じ位置の列の型を揃え、使わない列は型を揃えた `NULL` を置く（research.md の R3）。
 
 ### 腕
 
 | 腕 | 読む行 | `sort_at` | 秘匿化 | migration |
 |---|---|---|---|---|
-| 職歴 | `career.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `career.started_on` | `is_masked = 1` なら `organization_name` は `name_masked`。`description`・`url` は出さない | M1 |
-| 実績 | `project.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `project.started_on` | `is_masked = 1` なら `title` は `title_masked`、`organization_name` は `name_masked`。`description`・`url`・`card_media_id` は出さない | M1 |
+| 職歴 | `career.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `career.started_on` | `is_masked = 1` なら `organization_name` は `NULL`、`organization_name_masked` は `name_masked`。`description`・`url` は出さない | M1 |
+| 実績 | `project.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `project.started_on` | `is_masked = 1` なら `title`・`organization_name` は `NULL`、`title_masked`・`organization_name_masked` に秘匿化した値。`description`・`url`・`card_media_id` は出さない | M1 |
 | note | `note.status = 'published' AND note.deleted_at IS NULL`。題と説明文は `note.published_revision_id` の版 | `note.created_at` | — | M2 |
 | 外部の activity | `activity.source <> 'life_event'` で、公開で削除していない note の `syndication.url` と `activity.url` が一致しない | `activity.sort_at` | — | M3（除外は M4） |
 | life event | `activity.source = 'life_event'` のすべて | `activity.sort_at` | — | M3 |
@@ -82,7 +86,7 @@ ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有
 |---|---|---|
 | `item_type` が `FEED_ITEM_TYPES` にある行だけを読む。腕を足す migration が、その種類を詰める実装より先に入っても、一覧は詰められる種類だけで成り立つ | NFR-02 | `src/features/activity/server/d1-feed-repository.ts` の `WHERE` |
 | 並べる順は `sort_at` の新しい順、種類の順、`item_number` の大きい順 | FR-010 | `src/features/activity/server/d1-feed-repository.ts` の `ORDER BY`。種類の順は `src/features/activity/domain/feed.ts` の配列（research.md の R5） |
-| 種類ごとに出す項目を列挙して DTO に詰める。`item_number` を詰めない | FR-012・FR-013・FR-015 | `src/features/activity/server/d1-feed-repository.ts`（contracts/visitor-feed.md） |
+| 種類ごとに出す項目を列挙して DTO に詰める。職歴・実績の題と組織名は、`is_masked` が 1 なら `_masked` の列から、0 なら実際の値の列から詰める。`item_number` を詰めない | FR-012・FR-013・FR-015 | `src/features/activity/server/d1-feed-repository.ts`（contracts/visitor-feed.md） |
 | 秘匿化した職歴・実績の本文は、伏せた見た目で出す | FR-013 | `src/features/activity/components/feed.tsx` が `isMasked` を見て決まった文字を出す |
 | ページ送りは番号のページで区切る | spec の Assumptions | `src/features/activity/server/d1-feed-repository.ts`。件数は測ってから決める（research.md の R8） |
 

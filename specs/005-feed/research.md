@@ -48,7 +48,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - 決めたこと:
   - サイトに載せる行だけを腕が読む（`status = 'published'`）。学歴の腕を持たない（FR-001・FR-004）
-  - 秘匿化した職歴・実績の腕は、題に `project.title_masked`、組織名に `organization.name_masked` を出し、`project.title`・`organization.name`・`description`・`url`・`card_media_id` と画像を列に出さない（FR-012・FR-013）。秘匿化しない行は実際の値を出す（FR-014）
+  - 秘匿化した職歴・実績の腕は、`title_masked` に `project.title_masked`、`organization_name_masked` に `organization.name_masked` を出し、`title`・`organization_name` を `NULL` にする。`description`・`url`・`card_media_id` と画像は列に出さない（FR-012・FR-013）。秘匿化しない行は `title`・`organization_name` に実際の値を出し、`_masked` の列を `NULL` にする（FR-014）。実際の値と秘匿化した値を同じ列に混ぜない（`docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」。2026-11-09 に PM が決めた）
   - 秘匿化した職歴・実績が、秘匿化した組織名の無い組織を指すときは、その行を出さない。001 の research.md の R5（2026-11-04 のオーナーの決定。DB のトリガを足さないため、取り出すときにも条件にする）と同じ条件で、実績のページの `VISITOR_VISIBLE`（`src/features/project/server/d1-project-repository.ts`）と揃える
   - 本文は、秘匿化した行では伏せた見た目で出す。001 の spec の FR-021（本文の場所に「非公開」と出す）に従い、画面が `isMasked` を見て決まった文字を出す。本文の中身も、本文が空かどうかも DTO に入れない（001 の contracts/visitor-project.md と同じ）
   - Repository の実装も、種類ごとに出す項目を列挙して DTO に詰める（constitution の Allowlist Visibility）。ビューと Repository の 2 段で、出してよい値だけが画面に渡る
