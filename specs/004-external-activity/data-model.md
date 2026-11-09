@@ -43,8 +43,8 @@
 |---|---|---|
 | 取得のユースケースは life event の行を書かない | FR-032 | `src/features/activity/server/d1-activity-repository.ts` の取得の書き込みの文が `source <> 'life_event'` を条件にする |
 | 公開日を返さない取得元から取り直すときは `published_at` を書かない | FR-012 | `src/features/activity/application/plan-refresh.ts`（計算の関数）。取得元の `FetchedItem.publishedAt` が無いときは列を直す対象にしない |
-| 一覧を取り切れない取得元では、一覧に無いことで消さない | FR-018 | 同上。`isComplete` が偽なら消す候補を作らない |
-| 1 回の取得で消す件数は上限まで | FR-019 | 同上。上限は引数 `limits`（research.md の R8） |
+| 一覧を取り切れない取得元では、一覧に無いことで消さない | FR-018 | `src/features/activity/application/plan-removals.ts`。`isComplete` が偽なら消す候補を作らない |
+| 1 回の取得で消す件数は上限まで。候補が上限を超えた回は 1 件も消さない | FR-019 | `src/features/activity/application/plan-removals.ts`。上限は引数 `limits`（research.md の R8） |
 | 取得に失敗した取得元では activity を書き換えない。`last_succeeded_at` は前の値を残す | FR-014・FR-016 | `src/features/activity/application/refresh-sources.ts` |
 | URL を指名する取得元の URL は、その取得元のホストに限る | FR-009、原則 2 | `src/features/activity/domain/sources.ts` |
 | 日付の無い外部の activity は保存しない | FR-011 | 登録のユースケース。取得では、公開日を返す取得元で公開日が欠けた項目を取り込まず、`fetch_result.reason` に書く |

@@ -120,9 +120,9 @@ description: "外部 activity の取得の実装タスク"
 
 **Independent Test**: `isComplete` が真の作り物の取得元から 1 件を外して取り直し、その行が消えることを確かめる。`isComplete` が偽の取得元では消えないことを確かめる
 
-- [ ] T045 [P] [US3] `planRefresh` が、`isComplete` が真のときだけ一覧に無い activity を消す候補にし、偽のときは候補にせず、候補が上限を超えたら超えた分を残して理由を返すことを tests/unit/activity-plan-refresh.test.ts で確かめる（FR-017〜FR-020・SC-003・SC-004）
-- [ ] T046 [P] [US3] 消す行が `batch()` で消え、life event の行と、ほかの取得元の行を消さないことを tests/workers/activity-repository.test.ts で確かめる（FR-017・FR-032）。**止める依存: 共有担当の migration**
-- [ ] T047 [US3] 消す候補と上限を src/features/activity/application/plan-refresh.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
+- [x] T045 [P] [US3] `planRemovals` が、`isComplete` が真のときだけ一覧に無い activity を消す候補にし、偽のときは候補にせず、候補が上限を超えた回は 1 件も消さずに残した数を返すことを tests/unit/activity-plan-removals.test.ts で、`refreshSources` が止めた旨を取得の結果の理由に書くことを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-017〜FR-020・SC-003・SC-004）
+- [x] T046 [P] [US3] 消す行が `batch()` で消え、life event の行と、ほかの取得元の行を消さないことを tests/workers/activity-repository.test.ts で確かめる（FR-017・FR-032）
+- [x] T047 [US3] 消す候補と上限を src/features/activity/application/plan-removals.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
 - [ ] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
 
 ---

@@ -11,3 +11,12 @@ export type FetchLimits = {
   /** 1 本の応答の大きさ（バイト）。超えたら失敗にする */
   maxBytes: number;
 };
+
+/** 取り直しのユースケースが受け取る上限 */
+export type RefreshLimits = FetchLimits & {
+  /**
+   * 1 回の取得で 1 つの取得元から消す件数。消す候補がこれを超えた回は 1 件も消さない
+   * （FR-019、research.md の R6）
+   */
+  maxRemovals: number;
+};

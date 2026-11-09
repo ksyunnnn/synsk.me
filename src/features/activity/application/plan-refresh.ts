@@ -1,7 +1,7 @@
 import type {
   ItemChanges,
-  RefreshPlan,
   StoredItem,
+  UpsertPlan,
 } from '@/features/activity/domain/activity-repository';
 import type { FetchedItem } from '@/features/activity/domain/fetched-item';
 
@@ -14,7 +14,7 @@ import type { FetchedItem } from '@/features/activity/domain/fetched-item';
  * - 公開日の無い項目で、保存した公開日を書き換えない（FR-012）。公開日の無い新しい項目は
  *   足さない（FR-011）
  */
-export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): RefreshPlan => {
+export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): UpsertPlan => {
   const byExternalId = new Map<string, StoredItem>();
   const byUrl = new Map<string, StoredItem>();
   for (const row of stored) {
@@ -22,7 +22,7 @@ export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): Refre
     else byExternalId.set(row.externalId, row);
   }
 
-  const plan: RefreshPlan = { inserts: [], updates: [], skippedWithoutDate: 0 };
+  const plan: UpsertPlan = { inserts: [], updates: [], skippedWithoutDate: 0 };
   for (const item of fetched) {
     const row =
       item.externalId === undefined ? byUrl.get(item.url) : byExternalId.get(item.externalId);
