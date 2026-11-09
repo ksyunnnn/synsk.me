@@ -403,5 +403,67 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       if (!row) return 'note';
       return row.has_revision === 1 ? null : 'revision';
     },
+
+    addSyndication: async (id, url) => {
+      try {
+        const result = await db
+          .prepare(
+            `INSERT INTO syndication (note_id, url)
+             SELECT id, ? FROM note WHERE id = ? AND deleted_at IS NULL`,
+          )
+          .bind(url, id)
+          .run();
+        return result.meta.changes > 0 ? { ok: true } : { ok: false, reason: 'not-found' };
+      } catch (error) {
+        if (errorIncludes(error, 'UNIQUE constraint failed: syndication.url')) {
+          return { ok: false, reason: 'url-taken' };
+        }
+        throw error;
+      }
+    },
+
+    removeSyndication: async (id, url) => {
+      const result = await db
+        .prepare(
+          `DELETE FROM syndication WHERE note_id = ? AND url = ?
+             AND EXISTS (SELECT 1 FROM note WHERE note.id = syndication.note_id AND deleted_at IS NULL)`,
+        )
+        .bind(id, url)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    changeCardImage: async (id, cardImage) => {
+      const result =
+        cardImage.kind === 'media'
+          ? await db
+              .prepare(
+                `UPDATE note SET card_image = 'media',
+                   card_media_id = (SELECT id FROM media WHERE note_id = ?1 AND storage_key = ?2)
+                 WHERE id = ?1 AND deleted_at IS NULL
+                   AND EXISTS (SELECT 1 FROM media WHERE note_id = ?1 AND storage_key = ?2)`,
+              )
+              .bind(id, cardImage.storageKey)
+              .run()
+          : await db
+              .prepare(
+                'UPDATE note SET card_image = ?, card_media_id = NULL WHERE id = ? AND deleted_at IS NULL',
+              )
+              .bind(cardImage.kind, id)
+              .run();
+      if (result.meta.changes > 0) return { ok: true };
+      return { ok: false, reason: (await isMissing(id)) ? 'not-found' : 'media-not-owned' };
+    },
+
+    addMedia: async (id, storageKey) => {
+      const result = await db
+        .prepare(
+          `INSERT INTO media (note_id, storage_key)
+           SELECT id, ? FROM note WHERE id = ? AND deleted_at IS NULL`,
+        )
+        .bind(storageKey, id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
   };
 };

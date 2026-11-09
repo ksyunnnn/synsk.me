@@ -15,7 +15,10 @@ test('note を作って保存し、公開すると訪問者が読め、識別子
 }) => {
   await actAsAuthor(context);
   const slug = uniqueSlug('publish');
-  await createNote(page, { slug, title: 'E2E の note の題' });
+  const editUrl = await createNote(page, { slug, title: 'E2E の note の題' });
+  // 作った後の `?saved=1` の画面のまま打つと、保存した本文が画面に出ないことがある
+  // （tests/e2e/note-concurrency.spec.ts）。開き直してから打つ
+  await page.goto(editUrl);
   await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
   await expect(textbox(page, '識別子')).toBeEditable();
 
@@ -85,6 +88,42 @@ test('キーボードだけで note を作り、保存し、公開できる（co
     page.keyboard.press('Enter'),
   ]);
   await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
+});
+
+test('転載先を 2 つ記録でき、同じ URL を別の note に記録すると拒まれる（User Story 7）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const suffix = crypto.randomUUID().slice(0, 8);
+  const first = `https://example.com/e2e-syndication-${suffix}-1`;
+  const second = `https://example.com/e2e-syndication-${suffix}-2`;
+
+  await createNote(page, { slug: uniqueSlug('syndication-a'), title: 'E2E 転載先 A' });
+  for (const url of [first, second]) {
+    await textbox(page, '転載先の URL').fill(url);
+    await submitAndWait(page, '転載先を記録する');
+    await expect(page.getByRole('status')).toHaveText('転載先を記録しました');
+  }
+  await expect(page.getByText(first, { exact: true })).toBeVisible();
+  await expect(page.getByText(second, { exact: true })).toBeVisible();
+
+  await createNote(page, { slug: uniqueSlug('syndication-b'), title: 'E2E 転載先 B' });
+  await textbox(page, '転載先の URL').fill(first);
+  await submitAndWait(page, '転載先を記録する');
+  await expect(page.getByText('この URL は、この note かほかの note に記録済みです')).toBeVisible();
+  await expect(textbox(page, '転載先の URL')).toHaveValue(first);
+
+  // 拒まれた後に別の URL を記録すると、前の知らせと入力が残らない
+  const third = `https://example.com/e2e-syndication-${suffix}-3`;
+  await textbox(page, '転載先の URL').fill(third);
+  await submitAndWait(page, '転載先を記録する');
+  await expect(page.getByRole('status')).toHaveText('転載先を記録しました');
+  await expect(page.getByText(third, { exact: true })).toBeVisible();
+  await expect(page.getByText('この URL は、この note かほかの note に記録済みです')).toHaveCount(
+    0,
+  );
+  await expect(textbox(page, '転載先の URL')).toHaveValue('');
 });
 
 test('続けて保存しても、保存できた書きかけがその端末に残らない（FR-019）', async ({

@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { hasLifeEventSlug, hasLifeEventUid } from '@/features/activity/server/queries';
 import { hasCareerUid } from '@/features/career/server/queries';
 import { hasEducationUid } from '@/features/education/server/queries';
 import { findMissingNoteRevision, hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
@@ -28,11 +29,22 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  */
 
 export const config = {
-  matcher: ['/projects/:slug', '/resume/:path*', '/notes/:slug', '/dash', '/dash/:path*'],
+  // `/notes/:slug/media/:key` は経路を dynamic に固定するために入れる（ADR-0040 の Consequences）。
+  // 見せてよいかは route.ts が確かめ、proxy は D1 を読まない（specs/003-note/research.md の R9）
+  matcher: [
+    '/projects/:slug',
+    '/life-events/:slug',
+    '/resume/:path*',
+    '/notes/:slug',
+    '/notes/:slug/media/:key',
+    '/dash',
+    '/dash/:path*',
+  ],
 };
 
 /** 404 と 403 の画面。`notFound()` か `forbidden()` を呼ぶだけのページ */
 const projectPageMissing = (slug: string) => `/projects/${slug}/missing`;
+const lifeEventPageMissing = (slug: string) => `/life-events/${slug}/missing`;
 const resumePageMissing = (slug: string) => `/resume/${slug}/missing`;
 const notePageMissing = (slug: string) => `/notes/${slug}/missing`;
 const DASH_FORBIDDEN = '/dash/forbidden';
@@ -49,6 +61,7 @@ const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
   careers: hasCareerUid,
   educations: hasEducationUid,
   resumes: hasResumeUid,
+  'life-events': hasLifeEventUid,
   notes: hasNoteUid,
 };
 
@@ -78,6 +91,12 @@ const decide = async (request: NextRequest): Promise<string | null> => {
     return (await hasProjectSlug(slug)) ? null : projectPageMissing(slug);
   }
 
+  if (segments[0] === 'life-events') {
+    const slug = segments[1];
+    if (!isRead || !slug) return null;
+    return (await hasLifeEventSlug(slug)) ? null : lifeEventPageMissing(slug);
+  }
+
   if (segments[0] === 'resume') {
     // 公開用は tasks.md の Phase 7（US5）で足すまで中身を返さず、404 になる
     const [, slug] = segments;
@@ -88,7 +107,7 @@ const decide = async (request: NextRequest): Promise<string | null> => {
   if (segments[0] === 'notes') {
     // 下書き・下書きに戻した・削除した note は、無い識別子と同じ 404（specs/003-note/plan.md の U10）
     const slug = segments[1];
-    if (!isRead || !slug) return null;
+    if (!isRead || !slug || segments.length !== 2) return null;
     return (await hasNoteSlug(slug)) ? null : notePageMissing(slug);
   }
 

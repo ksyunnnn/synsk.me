@@ -43,6 +43,7 @@ export const fetchListing = async (
   if (!apiKey) throw new Error('CONNPASS_API_KEY が無いので、connpass に要求を出さなかった');
   const http = createSourceHttp(fetcher, limits);
   const items: FetchedItem[] = [];
+  let firstTotal: number | undefined;
 
   for (let start = 1; ; start += COUNT) {
     if (http.remaining === 0) return { items, isComplete: false };
@@ -56,6 +57,9 @@ export const fetchListing = async (
       throw shapeError(NAME, 'events と results_available が無い');
     }
     items.push(...body.events.map(toItem));
+    // 頁を辿るあいだに総数が変わると頁の境目がずれ、取らなかった項目が出る（research.md の R6）
+    firstTotal ??= body.results_available;
+    if (body.results_available !== firstTotal) return { items, isComplete: false };
     if (items.length >= body.results_available) return { items, isComplete: true };
     if (body.events.length === 0) return { items, isComplete: false };
   }

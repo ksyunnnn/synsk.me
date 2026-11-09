@@ -7,7 +7,9 @@ import type {
   NoteRevisionSummary,
   NoteSummary,
   VisitorNote,
+  VisitorNoteCardImage,
 } from '@/features/note/domain/note';
+import type { MediaStorageKey } from '@/shared/domain/media';
 
 /**
  * note の取り出し方と保存の仕方（docs/SOFTWARE_DESIGN.md の Repository）。
@@ -96,4 +98,30 @@ export type NoteRepository = {
    * `revision`、どちらもあれば null。note と版を 1 回の問い合わせで確かめる
    */
   findMissingRevision: (uid: Uid, revisionUid: Uid) => Promise<'note' | 'revision' | null>;
+  /**
+   * 転載先の URL を記録する（FR-031）。同じ URL がどの note にも記録済みなら `url-taken`（FR-032、
+   * `syndication.url` の UNIQUE）。無いか削除した note なら `not-found`
+   */
+  addSyndication: (
+    id: NoteId,
+    url: string,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'url-taken' | 'not-found' }>;
+  /**
+   * その note の転載先の URL を外す（research.md の R14）。その note に無い URL か、削除した note
+   * なら何も書かず `ok: false`
+   */
+  removeSyndication: (id: NoteId, url: string) => Promise<{ ok: boolean }>;
+  /**
+   * 代表画像の出どころを変える（FR-024・FR-025）。`media` は、その note の画像の置き場のキーだけを
+   * 選べる（`note` の複合の外部キー）。別の note の画像なら `media-not-owned`
+   */
+  changeCardImage: (
+    id: NoteId,
+    cardImage: VisitorNoteCardImage,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
+  /**
+   * 置き場に置いた画像を、その note の画像として記録する（FR-023、research.md の R12）。無いか
+   * 削除した note なら `ok: false`
+   */
+  addMedia: (id: NoteId, storageKey: MediaStorageKey) => Promise<{ ok: boolean }>;
 };
