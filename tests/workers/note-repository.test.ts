@@ -368,3 +368,93 @@ describe('findVisitorBySlug の本文の読み出し（T006、research.md の R1
     ]);
   });
 });
+
+describe('unpublish・delete・restore（FR-014・FR-016・SC-007、research.md の R5）', () => {
+  it('下書きに戻しても、公開した版と初めて公開した日時が残る（FR-014）', async () => {
+    const note = await insertNote(env.DB, { slug: 'unpublished' });
+    await notes.publish(note.id, NOW);
+    expect(await notes.unpublish(note.id)).toEqual({ ok: true });
+    expect(await notes.findForEdit(note.id)).toMatchObject({
+      status: 'draft',
+      publishedAt: NOW,
+      publishedRevisionUid: note.revision.uid,
+    });
+    expect(await notes.findVisitorBySlug('unpublished')).toBeNull();
+  });
+
+  it('下書きに戻して公開し直すと、初めて公開した日時は戻す前と同じ（User Story 2 の 2）', async () => {
+    const note = await insertNote(env.DB);
+    await notes.publish(note.id, NOW);
+    await notes.unpublish(note.id);
+    await notes.publish(note.id, LATER);
+    expect((await notes.findForEdit(note.id))?.publishedAt).toBe(NOW);
+  });
+
+  it('削除した note は下書きに戻さない', async () => {
+    const note = await insertNote(env.DB);
+    await notes.publish(note.id, NOW);
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.unpublish(note.id)).toEqual({ ok: false });
+    expect((await readNoteRow(note.id))?.status).toBe('published');
+  });
+
+  it('削除しても状態と版が残り、訪問者に出さない（FR-016）', async () => {
+    const note = await insertNote(env.DB, { slug: 'removed-published' });
+    await notes.publish(note.id, NOW);
+    expect(await notes.delete(note.id, LATER)).toEqual({ ok: true });
+    expect(await notes.findForEdit(note.id)).toMatchObject({
+      status: 'published',
+      deletedAt: LATER,
+      publishedRevisionUid: note.revision.uid,
+    });
+    expect(await revisionsOf(note.id)).toHaveLength(1);
+    expect(await notes.findVisitorBySlug('removed-published')).toBeNull();
+  });
+
+  it('公開した note を削除して元に戻すと、公開に戻り同じ版を訪問者が読める（User Story 2 の 5）', async () => {
+    const note = await insertNote(env.DB, { slug: 'restored-published', title: '戻した題' });
+    await notes.publish(note.id, NOW);
+    await notes.delete(note.id, LATER);
+    expect(await notes.restore(note.id)).toEqual({ ok: true });
+    expect(await notes.findForEdit(note.id)).toMatchObject({
+      status: 'published',
+      deletedAt: null,
+      slug: 'restored-published',
+    });
+    expect((await notes.findVisitorBySlug('restored-published'))?.title).toBe('戻した題');
+  });
+
+  it('下書きの note を削除して元に戻すと、下書きに戻り削除前の版を持つ（User Story 2 の 6）', async () => {
+    const note = await insertNote(env.DB, { title: '下書きの題' });
+    await notes.delete(note.id, LATER);
+    await notes.restore(note.id);
+    expect(await notes.findForEdit(note.id)).toMatchObject({
+      status: 'draft',
+      deletedAt: null,
+      latestRevision: { uid: note.revision.uid, title: '下書きの題' },
+    });
+  });
+
+  it('削除した note の識別子で別の note を作れない（User Story 2 の 4）', async () => {
+    const note = await insertNote(env.DB, { slug: 'sample-note' });
+    await notes.delete(note.id, LATER);
+    expect(await notes.create(input({ slug: 'sample-note' }))).toEqual({
+      ok: false,
+      reason: 'slug-taken',
+    });
+  });
+
+  it('無い id は ok: false', async () => {
+    expect(await notes.delete(999_999, NOW)).toEqual({ ok: false });
+    expect(await notes.restore(999_999)).toEqual({ ok: false });
+  });
+
+  it('状態の変わらない操作は書かず ok: false（下書きを下書きに戻す、削除済みを削除する、削除していない note を元に戻す）', async () => {
+    const note = await insertNote(env.DB);
+    expect(await notes.unpublish(note.id)).toEqual({ ok: false });
+    expect(await notes.restore(note.id)).toEqual({ ok: false });
+    await notes.delete(note.id, NOW);
+    expect(await notes.delete(note.id, LATER)).toEqual({ ok: false });
+    expect((await notes.findForEdit(note.id))?.deletedAt).toBe(NOW);
+  });
+});
