@@ -21,6 +21,7 @@ type StoredRow = {
   published_at: string | null;
   image_url: string | null;
   gone_checked_at: string | null;
+  consecutive_gone_count: number;
 };
 
 /** `ItemChanges` の項目と列の名前 */
@@ -41,7 +42,7 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
   listStoredForRefresh: async (source) => {
     const { results } = await db
       .prepare(
-        "SELECT id, external_id, url, title, published_at, image_url, gone_checked_at FROM activity WHERE source = ? AND source <> 'life_event' ORDER BY id",
+        "SELECT id, external_id, url, title, published_at, image_url, gone_checked_at, consecutive_gone_count FROM activity WHERE source = ? AND source <> 'life_event' ORDER BY id",
       )
       .bind(source)
       .all<StoredRow>();
@@ -53,6 +54,7 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
       publishedAt: row.published_at,
       imageUrl: row.image_url,
       goneCheckedAt: row.gone_checked_at,
+      goneStreak: row.consecutive_gone_count,
     }));
   },
 
@@ -91,20 +93,28 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
         .bind(id, source),
     );
     // 確かめた日時は確かめる順を決めるためだけの値で、消えた印ではない（research.md の R6）。
-    // 404 が続いた回数（goneStreak）は書かない。回数の列の読み書きは T048b（migration 0019 の
-    // `consecutive_gone_count`）が足す。書かない間は回数が毎回 0 から始まり、自動では消さない
-    const goneChecked = (plan.goneChecked ?? []).map(({ id }) =>
+    // 404 が続いた回数（StoredItem の goneStreak）は consecutive_gone_count に持ち、取得の回をまたいで
+    // 数える。どちらの列だけを書く UPDATE も updated_at を進めない（migrations/0015・0019 のトリガ）
+    const goneChecked = (plan.goneChecked ?? []).map(({ id, goneStreak }) =>
       db
         .prepare(
-          "UPDATE activity SET gone_checked_at = ? WHERE id = ? AND source = ? AND source <> 'life_event'",
+          "UPDATE activity SET gone_checked_at = ?, consecutive_gone_count = ? WHERE id = ? AND source = ? AND source <> 'life_event'",
         )
-        .bind(result.fetchedAt, id, source),
+        .bind(result.fetchedAt, goneStreak, id, source),
+    );
+    const goneResets = (plan.goneResets ?? []).map((id) =>
+      db
+        .prepare(
+          "UPDATE activity SET consecutive_gone_count = 0 WHERE id = ? AND source = ? AND source <> 'life_event'",
+        )
+        .bind(id, source),
     );
     await db.batch([
       ...inserts,
       ...updates,
       ...deletes,
       ...goneChecked,
+      ...goneResets,
       db
         .prepare(UPSERT_FETCH_RESULT)
         .bind(

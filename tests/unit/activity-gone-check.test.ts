@@ -220,4 +220,48 @@ describe('refreshSources で確かめる', () => {
     expect(applied[0]?.plan.deletes).toEqual([]);
     expect(applied[0]?.plan.goneChecked).toEqual([{ id: 1, goneStreak: 0 }]);
   });
+
+  it('一覧に載った行の 404 が続いた回数を 0 に戻す（T048b）', async () => {
+    const { repository, applied } = createFakeActivityRepository({
+      fake_feed: [stored(1, NOW, 1), stored(2, NOW, 0)],
+    });
+
+    await refreshSources(
+      {
+        activities: repository,
+        fetchListing: async () => ({
+          items: [
+            { url: 'https://example.com/1', title: '作り物 1', publishedAt: NOW },
+            { url: 'https://example.com/2', title: '作り物 2', publishedAt: NOW },
+          ],
+          isComplete: false,
+        }),
+      },
+      ['fake_feed'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(applied[0]?.plan.goneResets).toEqual([1]);
+  });
+
+  it('2 回の取り直しを続けて回すと、回数が持ち越され、2 回目の 404 で消える（T048b）', async () => {
+    const { repository, applied } = createFakeActivityRepository({ fake_feed: [stored(1)] });
+    const run = () =>
+      refreshSources(
+        deps(repository, { 'https://example.com/1': 'gone' }, []),
+        ['fake_feed'],
+        NOW,
+        {
+          ...LIMITS,
+          maxGoneChecks: 1,
+        },
+      );
+
+    await run();
+    await run();
+
+    expect(applied.map((write) => write.plan.deletes)).toEqual([[], [1]]);
+    expect(applied[0]?.plan.goneChecked).toEqual([{ id: 1, goneStreak: 1 }]);
+  });
 });

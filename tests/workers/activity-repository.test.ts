@@ -1,6 +1,7 @@
 import { env, applyD1Migrations } from 'cloudflare:test';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { refreshSources } from '@/features/activity/application/refresh-sources';
+import type { GoneCheck } from '@/features/activity/domain/fetched-item';
 import { SOURCES } from '@/features/activity/domain/sources';
 import { createD1ActivityRepository } from '@/features/activity/server/d1-activity-repository';
 import {
@@ -183,6 +184,7 @@ describe('applyRefresh', () => {
       publishedAt: PUBLISHED,
       imageUrl: null,
       goneCheckedAt: null,
+      goneStreak: 0,
     });
   });
 });
@@ -484,5 +486,78 @@ describe('確かめた日時', () => {
 
     expect((await activities.listStoredForRefresh('zenn'))[0]?.goneCheckedAt).toBe(T1);
     expect((await activities.listStoredForRefresh('medium'))[0]?.goneCheckedAt).toBeNull();
+  });
+});
+
+/**
+ * 404 が続いた回数（T048b、migrations/0019 の `consecutive_gone_count`、research.md の R6）。
+ * 回数は取得の回をまたいで D1 に持ち越す
+ */
+describe('404 が続いた回数', () => {
+  const OLD_URL = 'https://zenn.dev/ksyunnnn/articles/fake-old';
+  const GONE_LIMITS = { ...LIMITS, maxGoneChecks: 1 };
+
+  const readCount = async (id: number) =>
+    (await env.DB.prepare(
+      'SELECT consecutive_gone_count AS n, updated_at FROM activity WHERE id = ?',
+    )
+      .bind(id)
+      .first<{ n: number; updated_at: string }>()) ?? null;
+
+  const run = (listed: string[], answer: GoneCheck, at: string) =>
+    refreshSources(
+      {
+        activities,
+        fetchListing: async () => ({
+          items: listed.map((url) => ({ url, title: '作り物', publishedAt: PUBLISHED })),
+          isComplete: false,
+        }),
+        goneCheckOf: () => async () => answer,
+      },
+      ['zenn'],
+      at,
+      GONE_LIMITS,
+    );
+
+  const insertOld = () =>
+    insertActivity(env.DB, {
+      source: 'zenn',
+      url: OLD_URL,
+      title: '作り物',
+      publishedAt: PUBLISHED,
+    });
+
+  it('1 回目の 404 で回数を 1 にして残し、次の回の 404 で消す（回数を持ち越す）', async () => {
+    const id = await insertOld();
+    const before = await readCount(id);
+
+    await run([], 'gone', T1);
+    const after = await readCount(id);
+    expect(after?.n).toBe(1);
+    expect(after?.updated_at).toBe(before?.updated_at);
+    expect((await activities.listStoredForRefresh('zenn'))[0]?.goneStreak).toBe(1);
+
+    await run([], 'gone', T2);
+    expect(await readCount(id)).toBeNull();
+  });
+
+  it('間に 2xx か判定できない応答が挟まったら、回数を 0 に戻し、次の 404 では消さない', async () => {
+    const id = await insertOld();
+
+    await run([], 'gone', T1);
+    await run([], 'unknown', T2);
+    expect((await readCount(id))?.n).toBe(0);
+
+    await run([], 'gone', '2026-11-03T00:00:00.000Z');
+    expect((await readCount(id))?.n).toBe(1);
+  });
+
+  it('一覧に載った行の回数を 0 に戻す', async () => {
+    const id = await insertOld();
+    await run([], 'gone', T1);
+
+    await run([OLD_URL], 'gone', T2);
+
+    expect((await readCount(id))?.n).toBe(0);
   });
 });

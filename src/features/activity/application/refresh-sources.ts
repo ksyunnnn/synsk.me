@@ -2,6 +2,7 @@ import type { ActivityDeps } from '@/features/activity/application/deps';
 import { planRefresh } from '@/features/activity/application/plan-refresh';
 import {
   GONE_STREAK_TO_REMOVE,
+  listedWithGoneStreak,
   pickGoneChecks,
   planRemovals,
 } from '@/features/activity/application/plan-removals';
@@ -127,10 +128,12 @@ const refreshSource = async (
   const removals = planRemovals(stored, listing, limits.maxRemovals, checks.gone);
   const deleted = new Set(removals.deletes);
   const goneChecked = checks.checked.filter(({ id }) => !deleted.has(id));
+  const goneResets = listedWithGoneStreak(stored, listing.items);
   const plan = {
     ...upserts,
     deletes: removals.deletes,
     ...(goneChecked.length > 0 && { goneChecked }),
+    ...(goneResets.length > 0 && { goneResets }),
   };
   const reasons = [
     upserts.skippedWithoutDate > 0
