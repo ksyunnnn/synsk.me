@@ -1,6 +1,12 @@
 import 'server-only';
 
-import type { FetchedItem, SourceListing } from '@/features/activity/domain/fetched-item';
+import type {
+  FetchedItem,
+  NotModified,
+  SourceListing,
+  Validators,
+} from '@/features/activity/domain/fetched-item';
+import { conditionalHeaders, validatorsOf } from '@/features/activity/server/sources/conditional';
 import type { FetchLimits } from '@/features/activity/domain/limits';
 import {
   createSourceHttp,
@@ -36,7 +42,8 @@ export const fetchListing = async (
   fetcher: Fetcher,
   limits: FetchLimits,
   accessToken?: string,
-): Promise<SourceListing> => {
+  previous?: Validators | null,
+): Promise<SourceListing | NotModified> => {
   const http = createSourceHttp(fetcher, limits);
   const headers: Record<string, string> = accessToken
     ? { Authorization: `Bearer ${accessToken}` }
@@ -46,7 +53,12 @@ export const fetchListing = async (
 
   for (let page = 1; page <= MAX_PAGE; page += 1) {
     if (http.remaining === 0) return { items, isComplete: false };
-    const response = await http.get(pageUrl(page), headers);
+    // 前の取得を 1 頁で取り切ったときだけ値を持つので、条件は 1 頁目にだけ付ける（research.md の R9）
+    const response = await http.get(
+      pageUrl(page),
+      page === 1 ? { ...headers, ...conditionalHeaders(previous) } : headers,
+    );
+    if (response.status === 304) return { notModified: true };
     const totalHeader = response.headers.get('Total-Count')?.trim() ?? '';
     const total = totalHeader === '' ? Number.NaN : Number(totalHeader);
     if (!Number.isInteger(total)) throw shapeError(NAME, 'Total-Count が無い');
@@ -57,7 +69,10 @@ export const fetchListing = async (
     // 頁を辿るあいだに総数が変わると頁の境目がずれ、取らなかった項目が出る（research.md の R6）
     firstTotal ??= total;
     if (total !== firstTotal) return { items, isComplete: false };
-    if (items.length >= total) return { items, isComplete: true };
+    if (items.length >= total) {
+      const validators = page === 1 ? validatorsOf(response.headers) : undefined;
+      return { items, isComplete: true, ...(validators && { validators }) };
+    }
     if (body.length === 0) return { items, isComplete: false };
   }
   return { items, isComplete: false };

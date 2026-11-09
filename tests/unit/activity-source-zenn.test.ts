@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fetchListing } from '@/features/activity/server/sources/zenn';
 import type { FetchLimits } from '@/features/activity/domain/limits';
-import { createFakeFetcher, xmlResponse } from '../support/activity-fakes';
+import { asListing, createFakeFetcher, xmlResponse } from '../support/activity-fakes';
 
 /**
  * Zenn の RSS を `FetchedItem` に詰め替える（FR-006・FR-007、research.md の R7）。応答の形は
@@ -19,7 +19,7 @@ describe('Zenn', () => {
   it('RSS の項目を、URL・題・公開日・画像の URL に詰め替え、ID を持たない', async () => {
     const { fetcher } = createFakeFetcher({ [FEED]: xmlResponse(rss) });
 
-    const listing = await fetchListing(fetcher, LIMITS);
+    const listing = asListing(await fetchListing(fetcher, LIMITS));
 
     expect(listing.items).toEqual([
       {
@@ -34,7 +34,7 @@ describe('Zenn', () => {
   it('RSS は 20 件で打ち切るので、すべて取ったことにしない（FR-018）', async () => {
     const { fetcher } = createFakeFetcher({ [FEED]: xmlResponse(rss) });
 
-    expect((await fetchListing(fetcher, LIMITS)).isComplete).toBe(false);
+    expect(asListing(await fetchListing(fetcher, LIMITS)).isComplete).toBe(false);
   });
 
   it('題か URL の無い項目があれば、応答の形の誤りとして失敗する（FR-020）', async () => {

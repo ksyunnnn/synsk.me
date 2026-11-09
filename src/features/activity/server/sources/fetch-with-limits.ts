@@ -13,12 +13,32 @@ export type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 /** 検証記録の再現の手順と同じ値。dev.to は空の User-Agent に 403 を返す */
 export const USER_AGENT = 'synsk.me (+https://synsk.me)';
 
+/** 取得元が 2xx でない応答を返した。状態の値で、取れない（4xx）と取得元の不調を分けられる */
+export class SourceHttpError extends Error {
+  constructor(
+    readonly status: number,
+    url: string,
+  ) {
+    super(`取得元が HTTP ${status} を返した: ${url}`);
+    this.name = 'SourceHttpError';
+  }
+}
+
+/**
+ * その URL の項目が無いことを表す応答（400・401・404・410）。URL を指名する取得元では「取れない」に
+ * する。ほかの 4xx（bot の challenge の 403、408、429 など）は取得元の不調として失敗にする
+ */
+const NOT_FOUND_STATUSES = new Set([400, 401, 404, 410]);
+
+export const isClientError = (error: unknown): boolean =>
+  error instanceof SourceHttpError && NOT_FOUND_STATUSES.has(error.status);
+
 export type SourceResponse = { status: number; headers: Headers; text: string };
 
 export type SourceHttp = {
   /** まだ出せる要求の数 */
   readonly remaining: number;
-  /** 2xx の応答の本文を返す。上限を超えたとき・2xx でないときは投げる */
+  /** 2xx の応答の本文を返す。304 は本文の無い応答として返す。上限を超えたとき・ほかの状態では投げる */
   get: (url: string, headers?: Record<string, string>) => Promise<SourceResponse>;
 };
 
@@ -38,9 +58,23 @@ export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceH
           headers: { ...headers, 'User-Agent': USER_AGENT },
           signal,
         });
+        // リダイレクトで別のホストへ移ったら読まない。要求を出すのは、その取得元のホストだけ（research.md の R10）
+        if (response.redirected && new URL(response.url).host !== new URL(url).host) {
+          await response.body?.cancel();
+          throw new Error(`取得元が別のホストへ移した: ${url}`);
+        }
+        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）。条件を
+        // 付けていない要求への 304（途中のキャッシュなど）は、中身を取れなかった失敗にする
+        const conditional = Object.keys(headers).some((name) =>
+          /^if-(none-match|modified-since)$/i.test(name),
+        );
+        if (response.status === 304 && conditional) {
+          await response.body?.cancel();
+          return { status: 304, headers: response.headers, text: '' };
+        }
         if (!response.ok) {
           await response.body?.cancel();
-          throw new Error(`取得元が HTTP ${response.status} を返した: ${url}`);
+          throw new SourceHttpError(response.status, url);
         }
         const text = await readText(response, limits.maxBytes);
         return { status: response.status, headers: response.headers, text };
