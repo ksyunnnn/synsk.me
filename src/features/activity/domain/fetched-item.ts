@@ -41,6 +41,10 @@ export type RefreshOutcome =
       ok: true;
       added: number;
       updated: number;
+      /** 取得元で消えたと確かめて消した行の数（FR-017） */
+      removed: number;
+      /** 消す候補が上限を超えたので、消さずに残した行の数（FR-019） */
+      keptOverLimit: number;
       /** 公開日が無いので取り込まなかった項目の数（FR-011） */
       skippedWithoutDate: number;
     }

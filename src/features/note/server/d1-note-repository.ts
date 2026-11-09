@@ -403,5 +403,34 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       if (!row) return 'note';
       return row.has_revision === 1 ? null : 'revision';
     },
+
+    addSyndication: async (id, url) => {
+      try {
+        const result = await db
+          .prepare(
+            `INSERT INTO syndication (note_id, url)
+             SELECT id, ? FROM note WHERE id = ? AND deleted_at IS NULL`,
+          )
+          .bind(url, id)
+          .run();
+        return result.meta.changes > 0 ? { ok: true } : { ok: false, reason: 'not-found' };
+      } catch (error) {
+        if (errorIncludes(error, 'UNIQUE constraint failed: syndication.url')) {
+          return { ok: false, reason: 'url-taken' };
+        }
+        throw error;
+      }
+    },
+
+    removeSyndication: async (id, url) => {
+      const result = await db
+        .prepare(
+          `DELETE FROM syndication WHERE note_id = ? AND url = ?
+             AND EXISTS (SELECT 1 FROM note WHERE note.id = syndication.note_id AND deleted_at IS NULL)`,
+        )
+        .bind(id, url)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
   };
 };
