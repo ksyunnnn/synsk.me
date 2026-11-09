@@ -19,4 +19,9 @@ export type RefreshLimits = FetchLimits & {
    * （FR-019、research.md の R6）
    */
   maxRemovals: number;
+  /**
+   * すべて取らない取得元で、1 回の取得で個別の URL を取り直して消えたかを確かめる本数
+   * （research.md の R6）。無ければ確かめない。本番の値は U13（決まるまでは 1）
+   */
+  maxGoneChecks?: number;
 };

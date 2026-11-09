@@ -7,6 +7,7 @@ import type {
   Validators,
 } from '@/features/activity/domain/fetched-item';
 import { conditionalHeaders, validatorsOf } from '@/features/activity/server/sources/conditional';
+import { checkGoneByStatus } from '@/features/activity/server/sources/gone';
 import type { FetchLimits } from '@/features/activity/domain/limits';
 import {
   createSourceHttp,
@@ -46,3 +47,6 @@ export const fetchListing = async (
   const validators = validatorsOf(response.headers);
   return { items, isComplete: false, ...(validators && { validators }) };
 };
+
+/** 一覧に無い記事の URL が消えたかを確かめる。404 で消えた（research.md の R6） */
+export const checkGone = checkGoneByStatus;
