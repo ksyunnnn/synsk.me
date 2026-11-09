@@ -92,6 +92,6 @@ ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有
 - `FEED_ITEM_TYPES`: `career`・`project`・`note`・`external_activity`・`life_event` の `as const` の配列。並びの日付が同じときの種類の順を兼ねる（仮の順。plan.md の U2）
 - `FeedItemType`: `FEED_ITEM_TYPES` から作る型
 - `FeedItem`: 種類で分けた型。項目は [contracts/visitor-feed.md](./contracts/visitor-feed.md) が持つ
-- `FeedRepository`（`src/features/activity/domain/feed-repository.ts`）: `list(page)` が `FeedItem` の並びを返す
+- `FeedRepository`（`src/features/activity/domain/feed-repository.ts`）: `list` が `FeedItem` の並びを返す。ページの引数は tasks.md の Phase 5 で足す
 - 職歴と実績の期間は `src/shared/domain/period.ts` の `Period` を使う
 - 表の行の型は `server/d1-feed-repository.ts` の中だけで書く（001 の research.md の R3）

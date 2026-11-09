@@ -37,7 +37,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `isMasked` | `project.is_masked` |
 | `title` | 秘匿化しない行は `project.title`、秘匿化した行は `project.title_masked` |
 | `organizationName` | 秘匿化しない行は `organization.name`、秘匿化した行は `organization.name_masked` |
-| `kind` | `project.kind` |
+| `projectKind` | `project.kind` |
 | `period` | `project.started_on`・`project.ended_on` |
 
 秘匿化した実績は、本文の中身・本文が空かどうか・関連 URL・代表画像・本文の画像を持たない（FR-012・FR-013）。
