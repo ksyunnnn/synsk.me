@@ -1,5 +1,5 @@
 import { env, applyD1Migrations } from 'cloudflare:test';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 /**
  * 本番と同じ `migrations/` を当てた D1 が、001 が前提とする表の形を持つことを確かめる
@@ -336,5 +336,267 @@ describe('migration 0012', () => {
       { source: 'github', kind: 'other' },
       { source: 'unlisted', kind: 'other' },
     ]);
+  });
+});
+
+/**
+ * 一覧のビュー activity_feed の職歴と実績の腕（ADR-0046、specs/005-feed/data-model.md の
+ * 「一覧のビュー」の M1、005 の FR-012〜FR-014）
+ */
+describe('migration 0013 の activity_feed', () => {
+  const SECRETS = [
+    '0013 の実名の組織',
+    '0013 の実際の題',
+    '0013 の秘密の職歴の説明',
+    '0013 の秘密の実績の説明',
+    'https://secret.example/0013/career',
+    'https://secret.example/0013/project',
+    'project/0013-secret-key',
+  ];
+
+  type FeedRow = {
+    item_type: string;
+    item_id: number;
+    sort_key: string;
+    is_masked: number;
+    title: string | null;
+    organization_name: string | null;
+    role: string | null;
+    project_kind: string | null;
+    started_on: string;
+    ended_on: string | null;
+  };
+
+  const ids = { organizations: [] as number[], careers: [] as number[], projects: [] as number[] };
+  let mediaId = 0;
+
+  const insertId = async (sql: string, ...values: unknown[]) => {
+    const row = await env.DB.prepare(`${sql} RETURNING id`)
+      .bind(...values)
+      .first<{ id: number }>();
+    if (!row) throw new Error(sql);
+    return row.id;
+  };
+
+  const insertCareer = (
+    organizationId: number,
+    role: string,
+    startedOn: string,
+    isMasked: number,
+    status: string,
+    description: string | null,
+    url: string | null,
+  ) =>
+    insertId(
+      'INSERT INTO career (organization_id, role, started_on, is_masked, status, description, url) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      organizationId,
+      role,
+      startedOn,
+      isMasked,
+      status,
+      description,
+      url,
+    );
+
+  const insertProject = (
+    organizationId: number,
+    slug: string,
+    title: string,
+    isMasked: number,
+    startedOn: string,
+    description: string | null,
+    url: string | null,
+  ) =>
+    insertId(
+      "INSERT INTO project (organization_id, kind, slug, title, title_masked, is_masked, status, started_on, ended_on, description, url) VALUES (?, 'talk', ?, ?, '0013 の伏せた題', ?, 'published', ?, '2014-12-31', ?, ?)",
+      organizationId,
+      slug,
+      title,
+      isMasked,
+      startedOn,
+      description,
+      url,
+    );
+
+  /** 検査が入れた行だけを、並べるキーの順で読む。ほかの検査の行を拾わない */
+  const feedRows = async () => {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM activity_feed ORDER BY sort_key, item_type, item_id',
+    ).all<FeedRow>();
+    return results.filter((row) =>
+      (row.item_type === 'career' ? ids.careers : ids.projects).includes(row.item_id),
+    );
+  };
+
+  beforeAll(async () => {
+    const named = await insertId(
+      'INSERT INTO organization (name, name_masked) VALUES (?, ?)',
+      '0013 の実名の組織',
+      '0013 の伏せた組織',
+    );
+    const unnamed = await insertId(
+      'INSERT INTO organization (name) VALUES (?)',
+      '0013 の秘匿化した名前の無い組織',
+    );
+    ids.organizations.push(named, unnamed);
+    ids.careers.push(
+      await insertCareer(
+        named,
+        '伏せた職歴',
+        '2010-04-01',
+        1,
+        'published',
+        '0013 の秘密の職歴の説明',
+        'https://secret.example/0013/career',
+      ),
+      await insertCareer(named, '出す職歴', '2011-04-01', 0, 'published', '出す説明', null),
+      await insertCareer(unnamed, '出せない職歴', '2012-04-01', 1, 'published', null, null),
+      await insertCareer(named, '下書きの職歴', '2013-04-01', 0, 'draft', null, null),
+    );
+    ids.projects.push(
+      await insertProject(
+        named,
+        'migration-0013-masked',
+        '0013 の実際の題',
+        1,
+        '2010-05-01',
+        '0013 の秘密の実績の説明',
+        'https://secret.example/0013/project',
+      ),
+      await insertProject(
+        named,
+        'migration-0013-open',
+        '0013 の出す題',
+        0,
+        '2011-05-01',
+        null,
+        null,
+      ),
+    );
+    mediaId = await insertId(
+      'INSERT INTO media (project_id, storage_key) VALUES (?, ?)',
+      ids.projects[0],
+      'project/0013-secret-key',
+    );
+    await env.DB.prepare('UPDATE project SET card_media_id = ? WHERE id = ?')
+      .bind(mediaId, ids.projects[0])
+      .run();
+  });
+
+  afterAll(async () => {
+    await env.DB.batch([
+      env.DB.prepare('UPDATE project SET card_media_id = NULL WHERE id = ?').bind(ids.projects[0]),
+      env.DB.prepare('DELETE FROM media WHERE id = ?').bind(mediaId),
+      ...ids.projects.map((id) => env.DB.prepare('DELETE FROM project WHERE id = ?').bind(id)),
+      ...ids.careers.map((id) => env.DB.prepare('DELETE FROM career WHERE id = ?').bind(id)),
+      ...ids.organizations.map((id) =>
+        env.DB.prepare('DELETE FROM organization WHERE id = ?').bind(id),
+      ),
+    ]);
+  });
+
+  it('列は data-model.md の M1 の列だけを持つ', async () => {
+    const names = (await columnsOf('activity_feed')).map((c) => c.name);
+    expect(names).toEqual([
+      'item_type',
+      'item_id',
+      'sort_key',
+      'is_masked',
+      'title',
+      'organization_name',
+      'role',
+      'project_kind',
+      'started_on',
+      'ended_on',
+    ]);
+  });
+
+  it('サイトに載せる職歴と実績を、秘匿化した行は秘匿化した値で、ほかは実際の値で出す', async () => {
+    expect(await feedRows()).toEqual([
+      {
+        item_type: 'career',
+        item_id: ids.careers[0],
+        sort_key: '2010-04-01',
+        is_masked: 1,
+        title: null,
+        organization_name: '0013 の伏せた組織',
+        role: '伏せた職歴',
+        project_kind: null,
+        started_on: '2010-04-01',
+        ended_on: null,
+      },
+      {
+        item_type: 'project',
+        item_id: ids.projects[0],
+        sort_key: '2010-05-01',
+        is_masked: 1,
+        title: '0013 の伏せた題',
+        organization_name: '0013 の伏せた組織',
+        role: null,
+        project_kind: 'talk',
+        started_on: '2010-05-01',
+        ended_on: '2014-12-31',
+      },
+      {
+        item_type: 'career',
+        item_id: ids.careers[1],
+        sort_key: '2011-04-01',
+        is_masked: 0,
+        title: null,
+        organization_name: '0013 の実名の組織',
+        role: '出す職歴',
+        project_kind: null,
+        started_on: '2011-04-01',
+        ended_on: null,
+      },
+      {
+        item_type: 'project',
+        item_id: ids.projects[1],
+        sort_key: '2011-05-01',
+        is_masked: 0,
+        title: '0013 の出す題',
+        organization_name: '0013 の実名の組織',
+        role: null,
+        project_kind: 'talk',
+        started_on: '2011-05-01',
+        ended_on: '2014-12-31',
+      },
+    ]);
+  });
+
+  it('秘匿化した行の実際の値（題・組織名・説明・URL・画像）をどの列にも持たない', async () => {
+    const masked = (await feedRows()).filter((row) => row.is_masked === 1);
+    expect(masked).toHaveLength(2);
+    const values = masked.flatMap((row) => Object.values(row));
+    for (const secret of SECRETS) expect(values).not.toContain(secret);
+  });
+
+  it('下書きの行と、秘匿化した組織名の無い組織を指す秘匿化した行を出さない', async () => {
+    const careerIds = (await feedRows())
+      .filter((row) => row.item_type === 'career')
+      .map((row) => row.item_id);
+    expect(careerIds).not.toContain(ids.careers[2]);
+    expect(careerIds).not.toContain(ids.careers[3]);
+  });
+
+  it('腕の列の型が揃い、ビューの外の条件が腕の中へ下りて主キーで引く（005 の research.md の R3）', async () => {
+    const { results } = await env.DB.prepare(
+      "EXPLAIN QUERY PLAN SELECT * FROM activity_feed WHERE item_type = 'project' AND item_id = ?",
+    )
+      .bind(ids.projects[0])
+      .all<{ detail: string }>();
+    const details = results.map((row) => row.detail);
+    expect(details).toEqual(
+      expect.arrayContaining([
+        'SEARCH c USING INTEGER PRIMARY KEY (rowid=?)',
+        'SEARCH p USING INTEGER PRIMARY KEY (rowid=?)',
+      ]),
+    );
+    expect(details.filter((detail) => detail.startsWith('SCAN'))).toEqual([]);
+  });
+
+  it('外部キーの違反が無い', async () => {
+    const { results } = await env.DB.prepare('PRAGMA foreign_key_check').all();
+    expect(results).toEqual([]);
   });
 });
