@@ -56,3 +56,16 @@ export type NoteFeedItem = {
 };
 
 export type FeedItem = CareerFeedItem | ProjectFeedItem | NoteFeedItem;
+
+/**
+ * 1 ページに並べる件数。仮の値（plan.md の U8）。読み取り行数は件数で変わらない
+ * （research.md の R8）
+ */
+export const FEED_PAGE_SIZE = 20;
+
+/** 番号のページの 1 つ（research.md の R8）。ページは 1 から数える */
+export type FeedPage = {
+  items: FeedItem[];
+  /** 次のページに項目があるか */
+  hasNextPage: boolean;
+};

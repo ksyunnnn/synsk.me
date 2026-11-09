@@ -30,7 +30,12 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/careers">職歴の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">職歴を編集する</h1>
-      {saved === '1' && <DraftSavedNotice version={career.updatedAt} />}
+      {saved === '1' && (
+        <DraftSavedNotice
+          storageKeys={['career:new', `career:${career.uid}`]}
+          version={career.updatedAt}
+        />
+      )}
       {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
       <CareerForm
         key={career.updatedAt}

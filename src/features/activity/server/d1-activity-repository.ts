@@ -20,6 +20,7 @@ type StoredRow = {
   title: string | null;
   published_at: string | null;
   image_url: string | null;
+  gone_checked_at: string | null;
 };
 
 /** `ItemChanges` の項目と列の名前 */
@@ -40,7 +41,7 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
   listStoredForRefresh: async (source) => {
     const { results } = await db
       .prepare(
-        "SELECT id, external_id, url, title, published_at, image_url FROM activity WHERE source = ? AND source <> 'life_event' ORDER BY id",
+        "SELECT id, external_id, url, title, published_at, image_url, gone_checked_at FROM activity WHERE source = ? AND source <> 'life_event' ORDER BY id",
       )
       .bind(source)
       .all<StoredRow>();
@@ -51,6 +52,7 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
       title: row.title,
       publishedAt: row.published_at,
       imageUrl: row.image_url,
+      goneCheckedAt: row.gone_checked_at,
     }));
   },
 
@@ -88,10 +90,19 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
         .prepare("DELETE FROM activity WHERE id = ? AND source = ? AND source <> 'life_event'")
         .bind(id, source),
     );
+    // 確かめた日時は確かめる順を決めるためだけの値で、消えた印ではない（research.md の R6）
+    const goneChecked = (plan.goneChecked ?? []).map((id) =>
+      db
+        .prepare(
+          "UPDATE activity SET gone_checked_at = ? WHERE id = ? AND source = ? AND source <> 'life_event'",
+        )
+        .bind(result.fetchedAt, id, source),
+    );
     await db.batch([
       ...inserts,
       ...updates,
       ...deletes,
+      ...goneChecked,
       db
         .prepare(UPSERT_FETCH_RESULT)
         .bind(

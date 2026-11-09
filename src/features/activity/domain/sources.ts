@@ -38,3 +38,6 @@ export const LIST_SOURCES = (Object.keys(SOURCES) as ExternalSourceName[]).filte
 
 export const isExternalSourceName = (value: string): value is ExternalSourceName =>
   Object.hasOwn(SOURCES, value);
+
+export const isListSourceName = (value: string): value is ListSourceName =>
+  isExternalSourceName(value) && SOURCES[value].intake === 'list';

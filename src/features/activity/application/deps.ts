@@ -1,5 +1,6 @@
 import type { ActivityRepository } from '@/features/activity/domain/activity-repository';
 import type {
+  GoneCheck,
   NotModified,
   SourceListing,
   SourceName,
@@ -8,6 +9,9 @@ import type {
 import type { FetchLimits } from '@/features/activity/domain/limits';
 
 /** activity のユースケースが受け取るもの（docs/SOFTWARE_DESIGN.md の Dependency Injection） */
+/** 1 つの URL が取得元で消えたかを確かめる */
+export type GoneChecker = (url: string, limits: FetchLimits) => Promise<GoneCheck>;
+
 export type ActivityDeps = {
   activities: ActivityRepository;
   /**
@@ -20,4 +24,9 @@ export type ActivityDeps = {
     limits: FetchLimits,
     previous?: Validators | null,
   ) => Promise<SourceListing | NotModified>;
+  /**
+   * 取得元で 1 つの URL が消えたかを確かめる関数を、取得元ごとに引く（research.md の R6）。確かめる
+   * 手段を持つ取得元（Zenn・Speaker Deck）だけが関数を返し、ほかは undefined で、確かめない
+   */
+  goneCheckOf?: (source: SourceName) => GoneChecker | undefined;
 };

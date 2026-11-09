@@ -59,7 +59,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T014 [P] 単体の検査で渡す作り物の Repository と、作り物の応答を返す `fetcher` を tests/support/activity-fakes.ts に作る
 - [ ] T015 D1 の実装を src/features/activity/server/d1-activity-repository.ts に作る。行の型はこのファイルの中だけで書く。取得の書き込みの文は `source <> 'life_event'` を条件にする（FR-032、research.md の R13）
 - [x] T016 [P] 作り物の activity の行を D1 に入れる道具を tests/support/activity-rows.ts に作る
-- [ ] T017 ユースケースが受け取るもの（`ActivityDeps`）を src/features/activity/application/deps.ts に、組み立て用の関数を src/features/activity/server/queries.ts に作る。手本は src/features/project/application/deps.ts と src/features/project/server/queries.ts
+- [x] T017 ユースケースが受け取るもの（`ActivityDeps`）を src/features/activity/application/deps.ts に、組み立て用の関数を src/features/activity/server/refresh-queries.ts（取得）と src/features/activity/server/queries.ts（life event）に、取得元の名前から処理を引く表を src/features/activity/server/sources/registry.ts に作る。手本は src/features/project/application/deps.ts と src/features/project/server/queries.ts
 - [ ] T018 本番の上限の値を src/features/activity/domain/limits.ts に置く（research.md の R8）。**止める未決: U13**
 - [ ] T019 src/app/dash/page.tsx の入口に「life event」と「外部の activity」を足す
 
@@ -124,7 +124,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T045 [P] [US3] `planRemovals` が、`isComplete` が真のときだけ一覧に無い activity を消す候補にし、偽のときは候補にせず、候補が上限を超えた回は 1 件も消さずに残した数を返すことを tests/unit/activity-plan-removals.test.ts で、`refreshSources` が止めた旨を取得の結果の理由に書くことを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-017〜FR-020・SC-003・SC-004）
 - [x] T046 [P] [US3] 消す行が `batch()` で消え、life event の行と、ほかの取得元の行を消さないことを tests/workers/activity-repository.test.ts で確かめる（FR-017・FR-032）
 - [x] T047 [US3] 消す候補と上限を src/features/activity/application/plan-removals.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
-- [ ] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
+- [x] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
 
 ---
 
