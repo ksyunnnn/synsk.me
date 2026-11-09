@@ -219,3 +219,41 @@ test('キーボードだけで下書きに戻し、削除し、元に戻せる�
   await expect(page.getByRole('status')).toHaveText('元に戻しました');
   await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
 });
+
+test('キーボードだけで過去の版を開き、その版に戻せる（constitution V、T055）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('keyboard-revert');
+  const editUrl = await createNote(page, {
+    slug,
+    title: `E2E のキーボードの版の題 ${slug}`,
+    body: 'E2E の 1 つ目の版の本文',
+  });
+  await openNoteEditor(page, editUrl);
+  await textbox(page, '本文').fill('E2E の 2 つ目の版の本文');
+  await saveEdit(page);
+  await expect(textbox(page, '本文')).toHaveValue('E2E の 2 つ目の版の本文');
+
+  await tabTo(page, page.getByRole('link', { name: '版の一覧' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('版の一覧');
+
+  // 版の一覧は新しい順。最後のリンクが 1 つ目の版
+  const oldest = page.getByRole('list').getByRole('link').last();
+  await tabTo(page, oldest);
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('過去の版');
+  await expect(page.getByText('E2E の 1 つ目の版の本文')).toBeVisible();
+
+  const revert = page.getByRole('button', { name: 'この版に戻す' });
+  await waitForHydration(revert);
+  await tabTo(page, revert);
+  await Promise.all([
+    page.waitForResponse((res) => res.request().method() === 'POST'),
+    page.keyboard.press('Enter'),
+  ]);
+  await expect(page.getByRole('status')).toHaveText('過去の版の中身を、新しい版として保存しました');
+  await expect(textbox(page, '本文')).toHaveValue('E2E の 1 つ目の版の本文');
+});

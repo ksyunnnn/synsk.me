@@ -138,7 +138,7 @@ description: "note の実装タスク"
 
 - [X] T027 [P] [US3] D1 の実装（版の一覧が新しい順、1 つの版の読み出しが別の note の版を返さない、戻すと戻した版の中身が新しい版として足され 3 つの版が残る、開いた版が最も新しい版でなければ戻さない、公開した版が変わらない）を tests/workers/note-repository.test.ts に足す（FR-008・FR-009、User Story 3 の 1・2）
 - [X] T028 [P] [US3] 公開した note を過去の版に戻し公開し直さないと、`/notes/{slug}` に戻す前に公開していた版が出ること、JWT のない `revertNote` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-009・FR-033、User Story 3 の 3）
-- [ ] T055 [P] [US3] オーナーとして、キーボードだけで版の一覧から過去の版を開き、その版に戻せることを tests/e2e/note.spec.ts で確かめる（contracts/dash.md の検査の E2E、constitution V）
+- [X] T055 [P] [US3] オーナーとして、キーボードだけで版の一覧から過去の版を開き、その版に戻せることを tests/e2e/note.spec.ts で確かめる（contracts/dash.md の検査の E2E、constitution V）
 
 ### Implementation for User Story 3
 
