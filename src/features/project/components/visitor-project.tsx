@@ -1,5 +1,6 @@
-import { PROJECT_KIND_LABELS, type VisitorProject } from '@/features/project/domain/project';
-import type { Period } from '@/shared/domain/period';
+import { type VisitorProject } from '@/features/project/domain/project';
+import { PeriodText } from '@/shared/components/period-text';
+import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 /**
  * 訪問者に見せる実績（specs/001-career-and-project/contracts/visitor-project.md）。
@@ -8,14 +9,6 @@ import type { Period } from '@/shared/domain/period';
  * 本文は、Markdown の表示を作るまで出さない（tasks.md の T077）。秘匿化した実績は、本文の場所に
  * 「非公開」と出す（FR-021）。代表画像は、配る経路を作るまで出さない（tasks.md の T076）
  */
-
-const PeriodText = ({ period }: { period: Period }) => (
-  <>
-    <time dateTime={period.startedOn}>{period.startedOn}</time>
-    {' 〜 '}
-    {period.endedOn && <time dateTime={period.endedOn}>{period.endedOn}</time>}
-  </>
-);
 
 export const VisitorProjectView = ({ project }: { project: VisitorProject }) => (
   <article className="flex flex-col gap-6">

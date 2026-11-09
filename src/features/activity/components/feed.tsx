@@ -1,10 +1,10 @@
 import {
-  FEED_PROJECT_KIND_LABELS,
   type CareerFeedItem,
   type FeedItem,
   type ProjectFeedItem,
 } from '@/features/activity/domain/feed';
-import type { Period } from '@/shared/domain/period';
+import { PeriodText } from '@/shared/components/period-text';
+import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 /**
  * 訪問者に見せる一覧（specs/005-feed/contracts/visitor-feed.md）。受け取った DTO の値だけを
@@ -13,14 +13,6 @@ import type { Period } from '@/shared/domain/period';
  *
  * 並べる値と見せ方は、UI を考えるときに決める（plan.md の U7）。ここでは契約の最小の値だけを出す
  */
-
-const PeriodText = ({ period }: { period: Period }) => (
-  <>
-    <time dateTime={period.startedOn}>{period.startedOn}</time>
-    {' 〜 '}
-    {period.endedOn && <time dateTime={period.endedOn}>{period.endedOn}</time>}
-  </>
-);
 
 const MaskedBody = () => <p>非公開</p>;
 
@@ -38,7 +30,7 @@ const CareerRow = ({ item }: { item: CareerFeedItem }) => (
 
 const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
   <article className="flex flex-col gap-1">
-    <p className="text-sm text-muted-foreground">{FEED_PROJECT_KIND_LABELS[item.projectKind]}</p>
+    <p className="text-sm text-muted-foreground">{PROJECT_KIND_LABELS[item.projectKind]}</p>
     <h2 className="font-bold">{item.title}</h2>
     <p>{item.organizationName}</p>
     <p className="text-sm text-muted-foreground">

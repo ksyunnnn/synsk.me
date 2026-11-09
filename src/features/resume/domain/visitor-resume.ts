@@ -1,7 +1,8 @@
 import type { Profile } from '@/features/resume/domain/profile';
-import type { ResumeContent, ResumeProjectKind } from '@/features/resume/domain/resume';
+import type { ResumeContent } from '@/features/resume/domain/resume';
 import { listResumeSkills, type ResumeSkill } from '@/features/resume/domain/resume-skills';
 import type { Period } from '@/shared/domain/period';
+import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * 訪問者に渡す職務経歴書の形（specs/002-resume/contracts/visitor-resume.md の DTO）。画面・
@@ -21,7 +22,7 @@ export type VisitorResumeCareer = {
 export type VisitorResumeProject = {
   isMasked: false;
   organizationName: string;
-  kind: ResumeProjectKind;
+  kind: ProjectKind;
   title: string;
   period: Period;
   skills: string[];

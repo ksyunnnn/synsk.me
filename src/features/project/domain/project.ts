@@ -6,28 +6,13 @@ import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import { isSlug, newSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
+import { PROJECT_KINDS, isProjectKind, type ProjectKind } from '@/shared/domain/project-kind';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 
 /**
  * 実績の型と決まり（specs/001-career-and-project/spec.md の FR-011〜FR-019・FR-026・FR-044、
  * data-model.md の「アプリケーションが守る決まり」）。
  */
-
-/**
- * 実績の種類（FR-012）。`project.kind` の CHECK と同じ値を、ここ 1 か所に置く
- * （research.md の R3）。順は入力の選択肢の順
- */
-export const PROJECT_KINDS = ['application', 'talk', 'event', 'other'] as const;
-export type ProjectKind = (typeof PROJECT_KINDS)[number];
-
-export const PROJECT_KIND_LABELS: Record<ProjectKind, string> = {
-  application: 'アプリ',
-  talk: '登壇',
-  event: 'イベント',
-  other: 'その他',
-};
-
-const isProjectKind = (value: string): value is ProjectKind =>
-  (PROJECT_KINDS as readonly string[]).includes(value);
 
 export type ProjectId = number;
 
@@ -169,7 +154,7 @@ export const parseProjectContent = (
       isMasked: values.isMasked !== IS_MASKED_VALUES.unmasked,
       status: parseSiteStatus(values.status),
       period: period.period,
-      description: emptyToNull(values.description.replace(/\r\n?/g, '\n')),
+      description: emptyToNull(normalizeNewlines(values.description)),
       url: url?.trim() ?? null,
       skillIds: [...new Set(skillIds as number[])],
     },
