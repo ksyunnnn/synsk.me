@@ -1,6 +1,11 @@
 import 'server-only';
 
-import { FEED_ITEM_TYPES, isFeedItemType, type FeedItem } from '@/features/activity/domain/feed';
+import {
+  FEED_ITEM_TYPES,
+  FEED_PAGE_SIZE,
+  isFeedItemType,
+  type FeedItem,
+} from '@/features/activity/domain/feed';
 import type { FeedRepository } from '@/features/activity/domain/feed-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
 import { isProjectKind } from '@/shared/domain/project-kind';
@@ -96,11 +101,22 @@ const LIST_SQL = `SELECT ${COLUMNS} FROM activity_feed
   WHERE item_type IN (${typeLiterals.join(', ')})
   ORDER BY sort_at DESC,
     CASE item_type ${typeLiterals.map((literal, index) => `WHEN ${literal} THEN ${index}`).join(' ')} END,
-    item_number DESC`;
+    item_number DESC
+  LIMIT ? OFFSET ?`;
 
 export const createD1FeedRepository = (db: D1Database): FeedRepository => ({
-  list: async () => {
-    const { results } = await db.prepare(LIST_SQL).all<FeedRow>();
-    return results.flatMap((row) => toFeedItem(row) ?? []);
+  list: async (page) => {
+    // ページは 1 から数える整数。それ以外は OFFSET が負や小数になり、1 ページ目と同じ項目を返すか
+    // D1 が投げる。どのページでもないとして項目を返さない
+    if (!Number.isSafeInteger(page) || page < 1) return { items: [], hasNextPage: false };
+    // 次のページがあるかを知るため、1 件多く読む
+    const { results } = await db
+      .prepare(LIST_SQL)
+      .bind(FEED_PAGE_SIZE + 1, (page - 1) * FEED_PAGE_SIZE)
+      .all<FeedRow>();
+    return {
+      items: results.slice(0, FEED_PAGE_SIZE).flatMap((row) => toFeedItem(row) ?? []),
+      hasNextPage: results.length > FEED_PAGE_SIZE,
+    };
   },
 });
