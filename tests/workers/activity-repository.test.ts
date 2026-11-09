@@ -418,7 +418,7 @@ describe('条件に使う値', () => {
     expect(await activities.readValidators('zenn')).toBeNull();
   });
 
-  it('失敗を書くと値を消す', async () => {
+  it('失敗を書いても値を残す。順番を取る書き込みも失敗として書くため（R9）', async () => {
     await activities.applyRefresh('zenn', insertsOnly([]), {
       fetchedAt: T1,
       reason: null,
@@ -426,7 +426,7 @@ describe('条件に使う値', () => {
     });
     await activities.recordFetchFailure('zenn', T2, '作り物の失敗');
 
-    expect(await activities.readValidators('zenn')).toBeNull();
+    expect(await activities.readValidators('zenn')).toEqual(VALIDATORS);
   });
 
   it('変わっていない回は、値と activity を残して成功を書く', async () => {

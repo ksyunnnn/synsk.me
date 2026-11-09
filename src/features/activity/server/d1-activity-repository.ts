@@ -106,10 +106,16 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
     ]);
   },
 
+  // 条件に使う値は残す。前の値は書き終えた回の中身に対応するので、次の要求に付けても、変わって
+  // いれば取得元が中身を返す（research.md の R9）。取り直しの前に順番を取る書き込み（T040）も
+  // これを使うので、消すと条件付きの要求が一度も送られない
   recordFetchFailure: async (source, fetchedAt, reason) => {
     await db
-      .prepare(UPSERT_FETCH_RESULT)
-      .bind(source, fetchedAt, 0, reason, null, null, null)
+      .prepare(
+        'INSERT INTO fetch_result (source, fetched_at, is_ok, reason) VALUES (?, ?, 0, ?) ' +
+          'ON CONFLICT (source) DO UPDATE SET fetched_at = excluded.fetched_at, is_ok = 0, reason = excluded.reason',
+      )
+      .bind(source, fetchedAt, reason)
       .run();
   },
 

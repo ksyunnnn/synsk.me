@@ -38,8 +38,12 @@ export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceH
           headers: { ...headers, 'User-Agent': USER_AGENT },
           signal,
         });
-        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）
-        if (response.status === 304) {
+        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）。条件を
+        // 付けていない要求への 304（途中のキャッシュなど）は、中身を取れなかった失敗にする
+        const conditional = Object.keys(headers).some((name) =>
+          /^if-(none-match|modified-since)$/i.test(name),
+        );
+        if (response.status === 304 && conditional) {
           await response.body?.cancel();
           return { status: 304, headers: response.headers, text: '' };
         }
