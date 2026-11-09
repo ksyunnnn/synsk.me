@@ -82,6 +82,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T023 [US1] 取得のユースケース `refreshSources` を src/features/activity/application/refresh-sources.ts に作る。取得元ごとに読む → `planRefresh` → 1 回の `batch()` で書く。`batch()` が失敗したら、その取得元の `fetch_result` に失敗と理由を別に書く（FR-016、research.md の R4）。上限は引数 `limits` で受け取る（contracts/fetch.md）
 - [x] T024 [US1] 取得元の書き込み（足す・直す・`fetch_result` の上書き）を 1 回の `batch()` で行う関数を src/features/activity/server/d1-activity-repository.ts に足す
 - [x] T025 [US1] `fetcher` に User-Agent・待ち時間・応答の大きさの上限をかける関数を src/features/activity/server/sources/fetch-with-limits.ts に作る（research.md の R8、contracts/fetch.md）。待ち時間と大きさを超えたら失敗になることを tests/unit/activity-fetch-with-limits.test.ts で確かめる
+- [x] T026 [US1] 1 回の実行で取り直す取得元を、取り直したことの無いものを先に、次に `fetch_result.fetched_at` の古い順に、上限の数まで選ぶ `pickSourcesForRun` を src/features/activity/application/pick-sources.ts に、取得元ごとの `fetched_at` を読む `listFetchedAt` を src/features/activity/server/d1-activity-repository.ts に作り、tests/unit/activity-pick-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる（research.md の R9）
 
 ### 取得元ごとの処理（各取得元は T022〜T025 の後に並べられる）
 
@@ -97,7 +98,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### 取得の入口
 
-- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
+- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `pickSourcesForRun` で選んだ取得元の順番を取り（`recordFetchFailure` で「取り直しを始めて終わらなかった」と書く、research.md の R9）、`refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
 - [ ] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を、activity を書く `batch()` の中で `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。2 頁目以降を取った・失敗した・上限で消さずに残した・公開日の欠けた項目を取り込まなかったときは値を NULL にする。**止める依存: 共有担当の migration**（`fetch_result` の列）
 
 ---
@@ -108,9 +109,9 @@ description: "外部 activity の取得の実装タスク"
 
 **Independent Test**: 作り物の取得元 A を失敗させ B を成功させて `refreshSources` を走らせ、A の行が残り、B が取り込まれ、A の `fetch_result` に失敗と理由が書かれることを確かめる
 
-- [ ] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることと、A の書き込みの `batch()` が失敗したときも A の `fetch_result` に失敗が書かれることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
-- [ ] T043 [P] [US2] 失敗した取得元の `fetch_result` に取り直した日時・失敗・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が前の値のまま残り、取得元 B の `batch()` は A の失敗で戻らないことを tests/workers/activity-repository.test.ts で確かめる（FR-016、US2 の Acceptance 3・4）。**止める依存: 共有担当の migration**
-- [ ] T044 [US2] T042・T043 が通るように src/features/activity/application/refresh-sources.ts と src/features/activity/server/d1-activity-repository.ts の失敗の扱いを直す。`Promise.allSettled` で並べ、投げない（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）
+- [x] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることと、A の書き込みの `batch()` が失敗したときも A の `fetch_result` に失敗が書かれることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
+- [x] T043 [P] [US2] 失敗した取得元の `fetch_result` に取り直した日時・失敗・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が前の値のまま残り、取得元 B の `batch()` は A の失敗で戻らないことを tests/workers/activity-repository.test.ts で確かめる（FR-016、US2 の Acceptance 3・4）。**止める依存: 共有担当の migration**
+- [x] T044 [US2] T042・T043 が通るように src/features/activity/application/refresh-sources.ts と src/features/activity/server/d1-activity-repository.ts の失敗の扱いを直す。`Promise.allSettled` で並べ、投げない（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）
 
 ---
 

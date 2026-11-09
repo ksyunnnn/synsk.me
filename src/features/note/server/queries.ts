@@ -4,10 +4,20 @@ import { cache } from 'react';
 import type { NoteDeps } from '@/features/note/application/deps';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getVisitorNote as getVisitorNoteUseCase } from '@/features/note/application/get-visitor-note';
+import {
+  getNoteRevision as getNoteRevisionUseCase,
+  listNoteRevisions as listNoteRevisionsUseCase,
+} from '@/features/note/application/list-note-revisions';
 import { listNotes as listNotesUseCase } from '@/features/note/application/list-notes';
-import type { Note, NoteSummary, VisitorNote } from '@/features/note/domain/note';
+import type {
+  Note,
+  NoteRevision,
+  NoteRevisionSummary,
+  NoteSummary,
+  VisitorNote,
+} from '@/features/note/domain/note';
 import { createD1NoteRepository } from '@/features/note/server/d1-note-repository';
-import { findIdByUid } from '@/shared/domain/uid';
+import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
 
@@ -43,6 +53,43 @@ export const getNoteForEdit = async (uid: string): Promise<Note | null> => {
   return id === null ? null : getNoteForEditUseCase(notes, id);
 };
 
+/**
+ * オーナーが見る note と版の一覧（FR-008）。オーナーでなければ 403。無い uid なら null
+ */
+export const listNoteRevisions = async (
+  uid: string,
+): Promise<{ note: Note; revisions: NoteRevisionSummary[] } | null> => {
+  await requireAuthor();
+  const { notes } = await createNoteDeps();
+  const id = await findIdByUid(notes, uid);
+  if (id === null) return null;
+  const [note, revisions] = await Promise.all([
+    getNoteForEditUseCase(notes, id),
+    listNoteRevisionsUseCase(notes, id),
+  ]);
+  return note ? { note, revisions } : null;
+};
+
+/**
+ * オーナーが見る note と、その note の 1 つの版（FR-008）。オーナーでなければ 403。note が無いか、
+ * 版がその note に無ければ null
+ */
+export const getNoteRevision = async (
+  uid: string,
+  revisionUid: string,
+): Promise<{ note: Note; revision: NoteRevision } | null> => {
+  await requireAuthor();
+  const { notes } = await createNoteDeps();
+  const id = await findIdByUid(notes, uid);
+  const parsedRevisionUid = parseUid(revisionUid);
+  if (id === null || parsedRevisionUid === null) return null;
+  const [note, revision] = await Promise.all([
+    getNoteForEditUseCase(notes, id),
+    getNoteRevisionUseCase(notes, id, parsedRevisionUid),
+  ]);
+  return note && revision ? { note, revision } : null;
+};
+
 /*
  * 以下は `src/proxy.ts` が描画の前に呼ぶ。題や本文を読まず、有無だけを返す
  */
@@ -57,3 +104,20 @@ export const hasNoteSlug = async (slug: string): Promise<boolean> =>
  */
 export const hasNoteUid = async (uid: string): Promise<boolean> =>
   (await findIdByUid((await createNoteDeps()).notes, uid)) !== null;
+
+/**
+ * 過去の版の画面（`/dash/notes/{uid}/revisions/{revisionUid}`）の有無。note が無ければ `note`、
+ * 版がその note に無ければ `revision`。`getNoteRevision` が null を返さない組と一致する
+ */
+export const findMissingNoteRevision = async (
+  uid: string,
+  revisionUid: string,
+): Promise<'note' | 'revision' | null> => {
+  const noteUid = parseUid(uid);
+  if (noteUid === null) return 'note';
+  const { notes } = await createNoteDeps();
+  const parsedRevisionUid = parseUid(revisionUid);
+  if (parsedRevisionUid === null)
+    return (await notes.findIdByUid(noteUid)) === null ? 'note' : 'revision';
+  return notes.findMissingRevision(noteUid, parsedRevisionUid);
+};

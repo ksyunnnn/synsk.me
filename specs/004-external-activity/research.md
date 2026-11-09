@@ -51,7 +51,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   2. 計算: 足す行・直す行・消す行を、外への要求も D1 も触らない関数 `planRefresh` で求める（R5・R6）
   3. 書く: 1 つの取得元の書き込みと `fetch_result` の 1 行を、1 回の `batch()` で書く
 - 取得に失敗した取得元では、activity を 1 行も書き換えず、`fetch_result` だけを書く（FR-014）。`last_succeeded_at` は前の値を残す（FR-016）
-- 3 の `batch()` が失敗したとき（例: 同じ URL が応答に 2 回あり、`activity_source_url` の UNIQUE に当たる）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
+- 3 の `batch()` が失敗したとき（例: 取得元の値が activity の CHECK に反する。同じ項目が応答に 2 回あるときは、`planRefresh` が 1 つにする）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
 - 理由: `docs/SOFTWARE_DESIGN.md` の「失敗の表し方」と「読む → 計算 → 書く」、constitution IV。`batch()` は 1 文が失敗すると全体を戻す（[D1 Database API](https://developers.cloudflare.com/d1/worker-api/d1-database/)、001 の research.md の R2）ので、1 つの取得元の書き込みが途中で止まらない
 - 退けた案: すべての取得元を 1 回の `batch()` で書く。1 つの取得元の書き込みの失敗で、ほかの取得元の結果も戻る（FR-015 に反する）
 
@@ -115,11 +115,12 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | 1 本の応答の大きさ | 1 MB で打ち切り、失敗にする | Qiita の 1 頁は 214 KB、Medium の RSS は 87 KB（検証記録） |
 | 1 回の取得で 1 つの取得元から消す件数 | 5 件 | FR-019。超えた分は残し、`fetch_result.reason` に書く |
 | connpass の要求の間隔 | 5 秒に 1 回 | 検証記録（申請の条件） |
-| Cron の実行の間隔 | 1 日 1 回 | 更新が無いのに実行が回り続ける無駄を抑える（R9）。一覧に載るのが最大 1 日遅れる |
+| Cron の実行の間隔 | 1 日 1 回 | 更新が無いのに実行が回り続ける無駄を抑える（R9）。1 つの取得元を取り直す間隔は「実行の間隔 × 一覧を取る取得元の数（7）÷ 1 回の実行で扱う取得元の数」で、1 日 1 回・1 回に 1 つなら 7 日に 1 回になり、一覧に載るのが最大 7 日遅れる |
+| 1 回の実行で扱う取得元の数 | 未定（U13）。決まるまでは 1 | R9 の解析の時間の実測の表で、Qiita の取得元ごとの処理だけで 4〜6 ms かかる。1 にすれば、取得元 1 つの解析と D1 の呼び出しだけが 1 回の実行に載る |
 | 1 回の実行で出す要求の総数と、取得元への配り方 | 未定（U13） | Workers Free の 1 回の呼び出しの subrequest の上限 50 本（R9）は、外への要求と D1 の呼び出しを合わせて数える。1 つの取得元に 10 本では 7 つの取得元で外への要求だけで 70 本になり、超える |
 
 - 値はユースケースに引数で渡し（`limits`）、単体の検査では作り物の値を渡す。本番の値は `src/features/activity/domain/limits.ts` の 1 か所に置く
-- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。1 日 1 回の実行なら、1 日に書く行は「新しい項目＋直った項目＋取得元の数（7）」で、上限に届かない
+- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。1 日の実行の回数を n とすると、1 日に書く行は「新しい項目＋直った項目＋n × 1 回の実行で扱う取得元の数」（実行の前に順番を取る 1 文を含めると、その倍）で、n が 24 でも上限に届かない
 
 ## R9 取得を走らせる時機
 
@@ -147,7 +148,24 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - GitHub は、`Authorization` ヘッダを付けた条件付きの要求が 304 を返したとき、primary rate limit に数えない。`GITHUB_TOKEN` が無い環境（R15）では 304 も 60 回/時/IP に数える（[Best practices for using the REST API](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)）
 - Workers Free の上限（[Workers の Limits](https://developers.cloudflare.com/workers/platform/limits/)、2026-11-09 に読んだ）: Cron Triggers はアカウントで 5 個、1 回の Cron の実行の CPU 時間は 10 ms、1 回の呼び出しの subrequest は 50 本。subrequest は「A subrequest is any request a Worker makes using the Fetch API or to Cloudflare services like R2, KV, or D1」（同じ頁）で、D1 の呼び出しも数える。外への要求を待つ時間は CPU 時間に数えない（同じ頁）。CPU 時間は応答を読んで詰め替える処理に掛かるので、実装の後に測る（原則 6）
-- CPU 時間が 10 ms を超えると、取得元ごとの失敗ではなく実行の全体が止まり、残りの取得元の `fetch_result` が書かれない（FR-015・FR-016 を満たさない）。1 回の実行で扱う取得元を分けるか（例: 実行ごとに `fetch_result.fetched_at` の最も古い取得元から順に回す）は U13 に含めて決める
+- CPU 時間が 10 ms を超えると、取得元ごとの失敗ではなく実行の全体が止まり、残りの取得元の `fetch_result` が書かれない（FR-015・FR-016 を満たさない）
+- 決めたこと（2026-11-09、PM）: 1 回の実行で扱う取得元を分ける。実行ごとに、取り直したことの無い取得元を先に、次に `fetch_result.fetched_at` の古い順に、上限の数まで選び、残りを次の回へ送る（`src/features/activity/application/pick-sources.ts`、原則 2・4）。`fetched_at` は成否を問わず書く（`refreshSources`）ので、失敗し続ける取得元がほかの取得元の順番を奪わない
+- 選んだ取得元は、取り直す前に順番を取る: 取得の結果に「取り直しを始めて終わらなかった」と失敗を書き（`recordFetchFailure`。`fetched_at` が進み、`last_succeeded_at` は残る）、取り直し終えたら結果で上書きする。CPU 時間の上限で実行が止まると `refreshSources` は結果を書けず、順番を取らないと、その取得元が毎回先に選ばれ、ほかの取得元を取り直さなくなる
+- 上限は取得元の数で持つ。本番の Worker では CPU だけを使うあいだ `performance.now()` と `Date.now()` が進まない（[Performance and timers](https://developers.cloudflare.com/workers/runtime-apis/performance/)）ため、実行の中で CPU 時間を測って止めることはできない。数の値は U13（R8）
+- 解析の時間の実測（2026-11-09 に取った実データを作り物の `fetcher` で渡し、取得元ごとの処理の `fetchListing` を 30 回ずつ回した）。`wrangler dev` と同じ workerd ではタイマーが CPU の処理でも進む（同じ頁）。workerd の値は 1 ms 刻み
+
+| 取得元 | 応答 | workerd（1 回目・中央値） | 手元の Node（中央値） |
+|---|---|---|---|
+| Qiita | 77 件・853 KB（`per_page=100` の 1 頁） | 6 ms・4 ms | 3.9 ms |
+| GitHub（JSON を読むだけ） | 56 件・295 KB | 1 ms・1 ms | 1.0 ms |
+| Medium | 50 KB | 0 ms・0 ms | 0.5 ms |
+| Zenn | 30 KB | 1 ms・0 ms | 0.3 ms（1 回目 10.8 ms） |
+| Speaker Deck・dev.to | 3 KB 以下 | 1 ms 以下 | 0.1 ms 未満 |
+| connpass | 未測（API キーが無い） | 未測 | 未測 |
+
+- 上の値は取得元ごとの処理（`fetchListing`）だけで、1 回の実行の全体（D1 の行の詰め替え・`planRefresh`・`batch()` の文の組み立て・isolate の立ち上がり）を含まない。Qiita は `per_page=100` の 1 頁で測っており、本番の要求（R7 の 20 件の頁）とは形が違う。1 回の実行で扱う取得元の数を 1 にして 10 ms に収まるかは、本番の値で確かめる
+
+- 本番の 1 回ごとの CPU 時間は、Workers の Metrics の「CPU Time per execution」で見る（[Metrics and analytics](https://developers.cloudflare.com/workers/observability/metrics-and-analytics/)）。Cron の実行だけに絞れるかは、その頁に書かれていない
 
 ## R10 URL を指名する・手で入力する登録
 
