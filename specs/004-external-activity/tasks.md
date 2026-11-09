@@ -53,7 +53,7 @@ description: "外部 activity の取得の実装タスク"
 **Purpose**: どの User Story も使う型・取得元の表・Repository・組み立て・proxy
 
 - [ ] T010 [P] 分類（`SourceKind`）・取り込み方（`IntakeMode`）・`FetchedItem`・`SourceListing`・`RefreshOutcome` の型を src/features/activity/domain/fetched-item.ts に作る（data-model.md の「domain の型」）
-- [ ] T011 取得元の表（取得元の名前・取り込み方・URL を指名する取得元が受け付けるホスト）を src/features/activity/domain/sources.ts に `as const` で作る。分類は D1 の `activity_source.kind` を正とし、ここに写さない（FR-001〜FR-005、research.md の R3・R10）
+- [ ] T011 取得元の表（取得元の名前・取り込み方・URL を指名する取得元が受け付けるホスト）を src/features/activity/domain/sources.ts に `as const` で作る。分類は D1 の `activity_source.kind` を正とし、ここに写さない（FR-001〜FR-005、research.md の R3・R10）。取得元の名前は T001 が migration から写す。**止める依存: 共有担当の migration**
 - [ ] T012 [P] 外部の activity と life event の型を src/features/activity/domain/external-activity.ts と src/features/activity/domain/life-event.ts に作る。管理画面の型は uid を持ち、id を画面に出さない
 - [ ] T013 Repository のインタフェース（外部の activity の取り出し・取得の書き込み・登録・削除、life event の取り出し・登録・編集・削除・slug の有無、`findIdByUid`）を src/features/activity/domain/activity-repository.ts に作る。手本は src/features/project/domain/project-repository.ts
 - [ ] T014 [P] 単体の検査で渡す作り物の Repository と、作り物の応答を返す `fetcher` を tests/support/activity-fakes.ts に作る
@@ -79,13 +79,13 @@ description: "外部 activity の取得の実装タスク"
 ### Implementation for User Story 1
 
 - [ ] T022 [US1] 足す・直す・消す行を求める計算だけの関数 `planRefresh` を src/features/activity/application/plan-refresh.ts に作る。外への要求も D1 も触らない（research.md の R4・R5）
-- [ ] T023 [US1] 取得のユースケース `refreshSources` を src/features/activity/application/refresh-sources.ts に作る。取得元ごとに読む → `planRefresh` → 1 回の `batch()` で書く。上限は引数 `limits` で受け取る（contracts/fetch.md）
+- [ ] T023 [US1] 取得のユースケース `refreshSources` を src/features/activity/application/refresh-sources.ts に作る。取得元ごとに読む → `planRefresh` → 1 回の `batch()` で書く。`batch()` が失敗したら、その取得元の `fetch_result` に失敗と理由を別に書く（FR-016、research.md の R4）。上限は引数 `limits` で受け取る（contracts/fetch.md）
 - [ ] T024 [US1] 取得元の書き込み（足す・直す・`fetch_result` の上書き）を 1 回の `batch()` で行う関数を src/features/activity/server/d1-activity-repository.ts に足す
 - [ ] T025 [US1] `fetcher` に User-Agent・待ち時間・応答の大きさの上限をかける関数を src/features/activity/server/sources/fetch-with-limits.ts に作る（research.md の R8、contracts/fetch.md）。待ち時間と大きさを超えたら失敗になることを tests/unit/activity-fetch-with-limits.test.ts で確かめる
 
 ### 取得元ごとの処理（各取得元は T022〜T025 の後に並べられる）
 
-各タスクは、取得元の処理を src/features/activity/server/sources/<取得元>.ts に作り、作り物の応答（検証記録の実データの形）から `FetchedItem` に詰め替えることと `isComplete` の値を tests/unit/activity-source-<取得元>.test.ts で確かめる（FR-006・FR-007、constitution VII）。
+各タスクは、取得元の処理を src/features/activity/server/sources/<取得元>.ts に作り、作り物の応答（検証記録の実データの形）から `FetchedItem` に詰め替えることと `isComplete` の値を tests/unit/activity-source-<取得元>.test.ts で確かめる（FR-006・FR-007、constitution VII）。頁を辿る取得元（T031・T032・T035・T036）では、要求の数の上限で辿るのを止めたときに `isComplete` が偽になることも確かめる（research.md の R7、FR-018・FR-020）。
 
 - [ ] T030 [P] [US1] Zenn（RSS、guid が URL、20 件固定で `isComplete` は偽）。src/features/activity/server/sources/zenn.ts（#168「外部の取得の仕組みを作り、Zenn を取り込む」）
 - [ ] T031 [P] [US1] Qiita（REST、ID、`total-count` まで頁を辿る。`QIITA_ACCESS_TOKEN` が欠ければ未認証で取る）。src/features/activity/server/sources/qiita.ts（#169「Qiita を取り込む」）
@@ -108,7 +108,7 @@ description: "外部 activity の取得の実装タスク"
 
 **Independent Test**: 作り物の取得元 A を失敗させ B を成功させて `refreshSources` を走らせ、A の行が残り、B が取り込まれ、A の `fetch_result` に失敗と理由が書かれることを確かめる
 
-- [ ] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
+- [ ] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることと、A の書き込みの `batch()` が失敗したときも A の `fetch_result` に失敗が書かれることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
 - [ ] T043 [P] [US2] 失敗した取得元の `fetch_result` に取り直した日時・失敗・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が前の値のまま残り、取得元 B の `batch()` は A の失敗で戻らないことを tests/workers/activity-repository.test.ts で確かめる（FR-016、US2 の Acceptance 3・4）。**止める依存: 共有担当の migration**
 - [ ] T044 [US2] T042・T043 が通るように src/features/activity/application/refresh-sources.ts と src/features/activity/server/d1-activity-repository.ts の失敗の扱いを直す。`Promise.allSettled` で並べ、投げない（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）
 
@@ -135,7 +135,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### Tests for User Story 4
 
-- [ ] T049 [P] [US4] 登録のユースケースが、日付の無い登録を拒み、取得元のホストでない URL を拒み、題を取って保存し、手で入力する取得元では送られた値で保存し、削除のユースケースが一覧を取る取得元の activity を拒むことを tests/unit/activity-register.test.ts で確かめる（FR-009〜FR-011・FR-022・FR-033、US4 の Acceptance 1・3・5）
+- [ ] T049 [P] [US4] 登録のユースケースが、日付の無い登録を拒み、取得元のホストでない URL を拒み、一覧を取る取得元への登録を拒み、題を取って保存し、手で入力する取得元では送られた値で保存し、削除のユースケースが一覧を取る取得元の activity を拒むことを tests/unit/activity-register.test.ts で確かめる（FR-009〜FR-011・FR-022・FR-033、US4 の Acceptance 1・3・5）
 
 ### Implementation for User Story 4
 
@@ -167,7 +167,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### Implementation for User Story 5
 
-- [ ] T064 [US5] 登録・編集・削除・訪問者向けの取り出しのユースケースを src/features/activity/application/register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts に作る。識別子の形と既定値は共有担当の slug の部品を使う（research.md の R11）
+- [ ] T064 [US5] 登録・編集・削除・訪問者向けの取り出しのユースケースを src/features/activity/application/register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts に作る。識別子の形と既定値は共有担当の src/shared/domain/slug.ts の `isSlug`・`newSlug` を使う（research.md の R11）
 - [ ] T065 [US5] 訪問者向けの DTO `VisitorLifeEvent` と、出してよい列だけを読む取り出しを src/features/activity/domain/life-event.ts と src/features/activity/server/d1-activity-repository.ts に足す（contracts/visitor-life-event.md、constitution の Allowlist Visibility）
 - [ ] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
 - [ ] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
@@ -176,7 +176,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### 画像（共有担当の src/shared/server/media-storage.ts が入ってから）
 
-- [ ] T070 [US5] 共有担当の src/shared/server/media-storage.ts を使い、life event の代表画像の登録と、その life event の画像だけを選べることを作り、tests/workers/activity-life-event.test.ts で確かめる1 つの life event の画像は 1 枚までで、新しく登録すると前の画像を消す。形式（JPEG・PNG・WebP・GIF）と 10 MB の上限は共有担当の部品で確かめる（FR-028・FR-029、US5 の Acceptance 4・5、research.md の R12）。**止める依存: 共有担当の media-storage**
+- [ ] T070 [US5] 共有担当の src/shared/server/media-storage.ts を使い、life event の代表画像の登録と、その life event の画像だけを選べることを作り、tests/workers/activity-life-event.test.ts で確かめる。1 つの life event の画像は 1 枚までで、新しく登録すると前の画像を消す。形式（JPEG・PNG・WebP・GIF）と 10 MB の上限は共有担当の部品で確かめる（FR-028・FR-029、US5 の Acceptance 4・5、research.md の R12）。**止める依存: 共有担当の media-storage**
 - [ ] T071 [US5] life event の代表画像を配る経路を src/app/life-events/[slug]/media/[id]/route.ts に作り、DTO に `cardImageUrl` を足す。その life event の代表画像だけが 200 で、ほかの持ち主の画像が 404 になることを tests/integration/life-events.test.ts で確かめる（FR-029・FR-030、contracts/visitor-life-event.md）。**止める依存: 共有担当の media-storage**
 - [ ] T072 [US5] life event を消すときに、その life event の `media` の行と R2 のものを一緒に消し、残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027・SC-006、US5 の Acceptance 6、research.md の R12）。**止める依存: 共有担当の media-storage**
 
@@ -195,8 +195,9 @@ description: "外部 activity の取得の実装タスク"
 
 ### Phase Dependencies
 
-- Phase 1 → Phase 2 → Phase 3 以降
+- Phase 1 → Phase 2 → Phase 3 以降。ただし「止める未決」「止める依存」の印の付いたタスクは、印の付かないタスクを止めない
 - 「止める依存: 共有担当の migration」の付いたタスクは T001 の後
+- 取得元の名前を使うタスク（T030〜T036・T051）は T011 の後
 - Phase 3（US1）は MVP。Phase 4（US2）と Phase 5（US3）は Phase 3 の T022〜T024 の後
 - Phase 6（US4）は Phase 2 と T025 の後。Phase 7（US5）は Phase 2 の後に、Phase 3〜6 と並べられる
 - Phase 8 は各 User Story の後
@@ -217,8 +218,8 @@ description: "外部 activity の取得の実装タスク"
 | U11 | T050 の題を取れないときの分岐、T053 |
 | U12 | T050・T052・T053 |
 | U13 | T018・T040・T041 |
-| 共有担当の migration | T001・T021・T043・T046・T055・T057・T061・T067 |
-| 共有担当の slug の部品 | T064（パスは共有担当の PR に合わせる） |
+| 共有担当の migration | T001・T011・T021・T043・T046・T055・T057・T061・T067 |
+| 共有担当の slug の部品（PR #222） | T064 |
 | 共有担当の書きかけの保持（001 の T072） | T056・T066 |
 | 共有担当の media-storage（001 の T075） | T070・T071・T072 |
 

@@ -49,7 +49,7 @@
 | 日付の無い外部の activity は保存しない | FR-011 | 登録のユースケース。取得では、公開日を返す取得元で公開日が欠けた項目を取り込まず、`fetch_result.reason` に書く |
 | 削除の操作は、URL を指名した・手で入力した activity と life event だけ | FR-022・FR-033 | 削除のユースケースが取得元の取り込み方を確かめる |
 | 作るときの slug は推測できない値。オーナーは書き換えられる | FR-035 | life event の登録・編集のユースケース。形の検査は共有担当の slug の部品 |
-| life event を消すときは画像の行と R2 のものを一緒に消す | FR-027 | life event の削除のユースケース。D1 の行は 1 回の `batch()` で消し、R2 のものは共有担当の部品で消す（research.md の R12） |
+| life event を消すときは画像の行と R2 のものを一緒に消す | FR-027 | life event の削除のユースケース。D1 の行は `media`・`activity` の順に 1 回の `batch()` で消し（`media.activity_id` の外部キーは送らずに確かめるため）、R2 のものは共有担当の部品で消す（research.md の R12） |
 | 1 つの life event が持つ画像は 1 枚まで（代表画像だけ） | FR-028、constitution II | life event の画像の登録のユースケース。新しい画像を登録すると前の画像を消す（research.md の R12） |
 
 ## domain の型

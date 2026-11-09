@@ -51,6 +51,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   2. 計算: 足す行・直す行・消す行を、外への要求も D1 も触らない関数 `planRefresh` で求める（R5・R6）
   3. 書く: 1 つの取得元の書き込みと `fetch_result` の 1 行を、1 回の `batch()` で書く
 - 取得に失敗した取得元では、activity を 1 行も書き換えず、`fetch_result` だけを書く（FR-014）。`last_succeeded_at` は前の値を残す（FR-016）
+- 3 の `batch()` が失敗したとき（例: 同じ URL が応答に 2 回あり、`activity_source_url` の UNIQUE に当たる）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
 - 理由: `docs/SOFTWARE_DESIGN.md` の「失敗の表し方」と「読む → 計算 → 書く」、constitution IV。`batch()` は 1 文が失敗すると全体を戻す（[D1 Database API](https://developers.cloudflare.com/d1/worker-api/d1-database/)、001 の research.md の R2）ので、1 つの取得元の書き込みが途中で止まらない
 - 退けた案: すべての取得元を 1 回の `batch()` で書く。1 つの取得元の書き込みの失敗で、ほかの取得元の結果も戻る（FR-015 に反する）
 
@@ -97,6 +98,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | CodePen | すべて手で入力する | 埋め込み | なし（全経路 403） | URL | — | 手で入力 |
 | 登録していないサイト | 未決（U11） | その他 | — | URL（FR-005） | — | 手で入力 |
 
+- 頁を辿る取得元（Qiita・dev.to・GitHub・connpass）で、R8 の要求の数の上限に当たって辿るのを止めたときは、`isComplete` を偽にする。上限で止めた一覧に無い activity を消す候補にしないため（FR-018・FR-020）
 - 注意（検証記録から）: dev.to は User-Agent が空だと 403 を返し、Workers の `fetch` は既定の User-Agent を付けない。CodeSandbox は無い ID でもサイト既定の OG を 200 で返すので、`og:title` が既定値なら「取れない」とする。GitHub の `pushed_at` は null がありうる。Medium の `link` は問い合わせの部分を除いて使う。connpass は API キーが必須で、要求は 5 秒に 1 回まで
 - issue #177「CodePen と CodeSandbox を手で登録できるようにする」は CodeSandbox を手で入力するとするが、spec の Assumptions と ADR-0052 は URL を指名するとする。spec に従う（2026-11-09、PM の回答）
 
@@ -132,9 +134,10 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - 手で入力する取得元（CodePen）: オーナーが URL・題・日付を送り、そのまま保存する（FR-010）
 - 登録していないサイト: 題を URL から取るか、手で入力するかが未決（U11）。spec の「取得元が題を返さない URL を指名したときの扱い」も U11 にまとめる
   - 案 (a) すべて手で入力する。推奨。理由: 任意の URL へ要求を出さずに済む（原則 2）。003 の URL カード（`link_preview`）と同じ取得を 2 か所に作らない（原則 9）
-  - 案 (b) URL の OG メタから題を取る。003 の URL カードの取得と同じ処理を使う
+  - 案 (b) URL の OG メタから題を取る。003 の URL カードの取得と同じ処理を使う。機能どうしは import しない（ADR-0026）ので、その処理を `src/shared/` に移すことを共有担当に頼む
 - オーナーが入れる日付の持ち方が未決（U12）。日付は暦の日付で、`activity.published_at` は日時の列（0004）
-  - 案 (a) Asia/Tokyo の 00:00 を UTC の日時にして `published_at` に入れる。推奨。理由: migration が要らず、`sort_at` の並びが崩れない
+  - 案 (a) その日の UTC の 00:00（例: 2020-04-01 なら `2020-04-01T00:00:00.000Z`）を `published_at` に入れる。推奨。理由: migration が要らない。`sort_at` は文字列で比べるので、同じ日の life event の `happened_on`（`2020-04-01`）より後に並び、0004 の注釈「暦の日付は、同じ日の日時より前に並ぶ」と合う。UTC の日付として読めば、オーナーが入れた日付のまま出る
+  - 退けた形: Asia/Tokyo の 00:00 を UTC にして入れる（`2020-03-31T15:00:00.000Z`）。前の日の値になり、同じ日の life event より前に並び、UTC で日付を出す画面では 1 日ずれる
   - 案 (b) 暦の日付の列を足す migration を共有担当に頼む
 - URL は `src/shared/domain/web-url.ts` の `isWebUrl` で http か https だけを通す。URL を指名する取得元では、さらにその取得元のホストの URL だけを通す（任意のホストへ要求を出さない。原則 2）
 - 削除（FR-033）は、URL を指名した・手で入力した activity だけに出す。一覧を取る取得元の activity には削除の操作を持たない（FR-022）
@@ -142,7 +145,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R11 life event の識別子と管理画面の URL
 
 - 訪問者の URL: `/life-events/{slug}`。ADR-0048 の「コレクション名と識別子で表す」と、既にある `/projects/{slug}` の形に合わせる
-- slug の作り方: 作るときに識別子を入れなければ、題や起きた日から推測できない値を入れる（FR-035）。形と重複の検査は共有担当の slug の部品を使う（2026-11-09、PM の回答。パスは共有担当の PR に合わせる）。実績の `newProjectSlug`（`crypto.randomUUID()` の 36 文字）と同じ形にする
+- slug の作り方: 作るときに識別子を入れなければ、題や起きた日から推測できない値を入れる（FR-035）。形の検査と既定値は共有担当の `src/shared/domain/slug.ts` の `isSlug`・`newSlug`（`crypto.randomUUID()` の 36 文字。PR #222「書きかけの保持の部品と slug の検査を src/shared/ にまとめた」）を使う（2026-11-09、PM の回答）。重複は `activity_slug` の UNIQUE が拒む
 - 管理画面の URL: `/dash/life-events/{uid}` と `/dash/activities/{uid}`。`activity.uid`（ADR-0051、DB が入れる 32 文字）を使い、主キーと slug を出さない。`src/shared/domain/uid.ts` の `parseUid`・`findIdByUid` を使う
 - issue #219 の調査が挙げた「uid」の食い違い（FR-035 の uid は 36 文字、ADR-0051 の uid は 32 文字）: 前者は slug に入れる値、後者は `activity.uid` の列で、別の列である。004 では slug の既定値を「uid」と呼ばず「推測できない値」と書く
 - 同時編集: 004 の spec は先に保存された画面の保存を止める要件を持たないため、作らない（constitution III）
@@ -152,9 +155,9 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - 決めたこと: 代表画像は `activity.card_media_id` で、その life event の `media` の行だけを指す（複合の外部キー、FR-029）。画像の記録は `media.activity_id` に持つ（FR-030）
 - 画像の保存と配信は共有担当の `src/shared/server/media-storage.ts`（001 の T075）を使い、004 では作らない
 - 形式と上限と経路: 001 の plan.md の U5 の決定（2026-11-09、issue #219 のコメント「U5 を Claude が決めた」）に従う。R2 の原本を Worker が見せてよいかを確かめてから変換せずに返す。JPEG・PNG・WebP・GIF を受け、1 枚 10 MB まで
-- 1 つの life event が持つ画像は 1 枚まで（代表画像だけ）。新しい画像を登録すると前の画像の行と R2 のものを消す。理由: spec は代表画像を 0 枚か 1 枚とし（FR-028）、説明の中に画像を置けるかを決めていない。constitution II の量の上限を、1 つの life event につき 10 MB に抑える
+- 1 つの life event が持つ画像は 1 枚まで（代表画像だけ）。新しい画像を登録すると前の画像の行と R2 のものを消す。1 回の `batch()` で、新しい `media` の行を入れ、`activity.card_media_id` を新しい行に書き換え、前の `media` の行を消す。その後に前の画像の R2 のものを消す。理由: spec は代表画像を 0 枚か 1 枚とし（FR-028）、説明の中に画像を置けるかを決めていない。constitution II の量の上限を、1 つの life event につき 10 MB に抑える
 - 配る経路: `/life-events/{slug}/media/{画像}`。その life event の代表画像のときだけ返し、ほかは 404。life event は訪問者に見せない状態を持たない（FR-026）
-- 消すとき（FR-027）: D1 の `media` の行と `activity` の行を 1 回の `batch()` で消し、その後に R2 のものを消す。R2 の削除が失敗しても、D1 から辿れる行は残らない。R2 に残ったものの扱いは共有担当の部品に合わせる
+- 消すとき（FR-027）: D1 の `media` の行、`activity` の行の順に 1 回の `batch()` で消し、その後に R2 のものを消す。R2 の削除が失敗しても、D1 から辿れる行は残らない。R2 に残ったものの扱いは共有担当の部品に合わせる
 
 ## R13 書き換えの経路とオーナーの判定
 

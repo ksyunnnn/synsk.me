@@ -81,7 +81,7 @@
 | proxy | `src/proxy.ts` | matcher に `/life-events/:slug` を足し、`/dash/life-events/{uid}`・`/dash/activities/{uid}` の有無を足す |
 | 手本の形 | `src/features/project/` の `domain/project-repository.ts`・`server/d1-project-repository.ts`・`server/queries.ts`・`server/actions.ts`・`application/deps.ts`・`application/register-project.ts`・`components/visitor-project.tsx`、`src/app/projects/[slug]/page.tsx`・`missing/page.tsx`、`src/app/dash/projects/*` | 同じ構成で `src/features/activity/` と画面を作る |
 | 検査の土台 | `tests/support/access.ts`、`tests/integration/support/`、`tests/e2e/support/author.ts`、`tests/workers/migrations.test.ts` | 結合・E2E のオーナー、D1 の作り物の行 |
-| 共有担当が作る: slug の部品 | 共有担当の PR で決まる | life event の slug の形と既定値（FR-035）。パスは PR が出たら tasks.md に合わせる |
+| 共有担当が作る: slug の部品 | `src/shared/domain/slug.ts`（`isSlug`・`newSlug`。PR #222「書きかけの保持の部品と slug の検査を src/shared/ にまとめた」） | life event の slug の形と既定値（FR-035） |
 | 共有担当が作る: 書きかけの保持 | `src/shared/components/draft-retention.tsx`（001 の T072） | life event と外部の activity の入力（REQUIREMENTS.md の FR-14） |
 | 共有担当が作る: 画像の保存と配信 | `src/shared/server/media-storage.ts`（001 の T075） | life event の代表画像の保存・配信・削除。形式と大きさの検査もこの部品を使う |
 
@@ -122,7 +122,7 @@
 |---|---|---|---|---|
 | U10 | 取得を走らせる時機（spec の未決、issue #107） | オーナー | (a) Cron (b) 管理画面の操作だけ (c) 両方。推奨 (a)（R9） | 取得の入口（T040・T041） |
 | U11 | 登録していないサイトの題の取り方と、取得元が題を返さない URL を指名したときの扱い（spec の未決） | オーナー | (a) 手で入力する (b) OG メタから取る。推奨 (a)（R10） | 登録していないサイトの登録（T053）と、題を取れないときの扱い（T050 の分岐） |
-| U12 | オーナーが登録する日付の持ち方 | オーナー | (a) Asia/Tokyo の 00:00 を UTC の日時で `published_at` に入れる (b) 暦の日付の列を足す。推奨 (a)（R10） | URL を指名する・手で入力する登録の保存（T050〜T053）と、共有担当への migration の依頼 |
+| U12 | オーナーが登録する日付の持ち方 | オーナー | (a) その日の UTC の 00:00 を `published_at` に入れる (b) 暦の日付の列を足す。推奨 (a)（R10） | URL を指名する・手で入力する登録の保存（T050〜T053）と、共有担当への migration の依頼 |
 | U13 | 外への要求の上限の値（constitution II） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040・T041）。ユースケースは上限を引数で受け取るので止めない |
 
 依存（未決ではない）: `activity.uid` と取得元の行を足す共有担当の migration（data-model.md の「要る migration の変更」）。D1 を使う検査（workerd・結合・E2E）のうち、uid と取得元の行を使うものは、その migration が epic に入ってから回す。tasks.md は「止める依存: 共有担当の migration」と書く。
@@ -149,7 +149,7 @@ issue #219 のコメント「spec どうしの重複・干渉・矛盾・依存�
 | 指摘 | 扱い |
 |---|---|
 | 画像の保存と配信の持ち主が決まっていない（004 の FR-030 だけが「003 が持つ」とする） | 共有担当の `src/shared/server/media-storage.ts` を使い、004 では作らない（2026-11-09、PM の回答） |
-| slug の形が 001・002・003・004 で同じ | 共有担当の slug の部品を使い、`src/features/activity/` に同じ関数を書かない |
+| slug の形が 001・002・003・004 で同じ | 共有担当の `src/shared/domain/slug.ts` を使い、`src/features/activity/` に同じ関数を書かない |
 | 書きかけの保持（001 の T072、003 の FR-018） | 共有担当の `src/shared/components/draft-retention.tsx` を使う |
 | migration の番号が 003 と 004 で重なりうる | 004 は migration を書かない。要る変更は共有担当がまとめて書く |
 | media の表に 001・003・004 が書き込む | 004 は `media.activity_id` の行だけを、共有担当の部品越しに書く |
@@ -188,11 +188,11 @@ src/
 ├── app/
 │   ├── life-events/[slug]/page.tsx    life event の個別のページ（訪問者）
 │   ├── life-events/[slug]/missing/page.tsx
+│   ├── life-events/[slug]/media/[id]/route.ts  life event の代表画像を配る
 │   └── dash/
 │       ├── page.tsx                   入口に 2 つを足す
-│       ├── life-events/  activities/
-│   ├── life-events/[slug]/media/[id]/route.ts  life event の代表画像を配る
-│       │   各 page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx
+│       └── life-events/  activities/
+│           各 page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx
 ├── features/
 │   └── activity/
 │       ├── domain/        sources.ts（取得元の表）・limits.ts・fetched-item.ts・external-activity.ts・life-event.ts・activity-repository.ts
@@ -201,7 +201,7 @@ src/
 │       └── server/
 │           ├── d1-activity-repository.ts
 │           ├── queries.ts  actions.ts
-│           └── sources/   zenn.ts・qiita.ts・devto.ts・medium.ts・github.ts・speakerdeck.ts・connpass.ts・spotify.ts・x.ts・codesandbox.ts・youtube.ts
+│           └── sources/   fetch-with-limits.ts・zenn.ts・qiita.ts・devto.ts・medium.ts・github.ts・speakerdeck.ts・connpass.ts・spotify.ts・x.ts・codesandbox.ts・youtube.ts
 └── shared/                            既存を使う。新しく足さない（共有担当の部品を除く）
 
 worker/index.ts                        scheduled を足す（U10 で (a)・(c) のとき）
