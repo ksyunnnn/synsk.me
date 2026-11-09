@@ -23,6 +23,7 @@ import { deleteActivityRows, insertActivity } from '../support/activity-rows';
  * 一覧の Repository が、本物の migration を当てた D1 のビュー activity_feed から、サイトに載せる
  * 職歴と実績を並びの順で返し、秘匿化した行を出してよい値だけで返すこと
  * （specs/005-feed/spec.md の FR-001・FR-004・FR-007・FR-009・FR-010・FR-012、tasks.md の T011）。
+ * 転載先と一致する外部の activity を除くこと（FR-016・FR-017、tasks.md の T050）。
  * 値はすべて作り物
  */
 
@@ -593,8 +594,7 @@ describe('重なりの除外（tasks.md の T050）', () => {
       publishedAt: '2023-02-01T00:00:00.000Z',
     });
 
-    expect(await titles()).toEqual(expect.arrayContaining(['転載した note', '別の記事']));
-    expect(await titles()).not.toContain('転載先の記事');
+    expect(await titles()).toEqual(['転載した note', '別の記事']);
   });
 
   it('転載先を記録した note を下書きに戻すと、同じ URL の外部の activity が並ぶ（FR-016、US4 の Acceptance 3）', async () => {
@@ -620,9 +620,20 @@ describe('重なりの除外（tasks.md の T050）', () => {
       externalId: 'fake-slash',
       url: `${SYNDICATED_URL}/`,
       title: '末尾にスラッシュの付いた記事',
+      publishedAt: '2023-01-02T00:00:00.000Z',
+    });
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-case',
+      url: SYNDICATED_URL.replace('fake', 'Fake'),
+      title: '大文字と小文字の違う記事',
       publishedAt: '2023-01-01T00:00:00.000Z',
     });
 
-    expect(await titles()).toContain('末尾にスラッシュの付いた記事');
+    expect(await titles()).toEqual([
+      '転載した note',
+      '末尾にスラッシュの付いた記事',
+      '大文字と小文字の違う記事',
+    ]);
   });
 });
