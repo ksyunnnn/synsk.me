@@ -138,7 +138,7 @@ education = [
 skill = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
-    ("# id", "integer"), ("→ source", "text"), ("slug", "text · unique · life event だけ"),
+    ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ source", "text"), ("slug", "text · unique · life event だけ"),
     ("external_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
     ("description", "text · 空可"), ("image_url", "text · 空可"), ("published_at", "text · 空可"),
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
@@ -146,11 +146,11 @@ activity = [
 ] + TS
 fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可")]
 note = [
-    ("# id", "integer"), ("slug", "text · unique"), ("status", "text · CHECK"),
+    ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("status", "text · CHECK"),
     ("→ published_revision_id", "integer · 空可"), ("published_at", "text · 空可"),
     ("deleted_at", "text · 空可"), ("card_image", "text · CHECK"), ("→ card_media_id", "integer · 空可"),
 ] + TS
-revision = [("# id", "integer"), ("→ note_id", "integer"), ("title", "text"), ("description", "text · 空可"), ("body", "text")] + C
+revision = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ note_id", "integer"), ("title", "text"), ("description", "text · 空可"), ("body", "text")] + C
 media = [("# id", "integer"), ("→ note_id", "integer · 空可"), ("→ project_id", "integer · 空可"), ("→ career_id", "integer · 空可"), ("→ activity_id", "integer · 空可"), ("storage_key", "text · unique")] + C
 synd = [("# id", "integer"), ("→ note_id", "integer"), ("url", "text · unique")] + C
 link_preview = [("# id", "integer"), ("url", "text · unique"), ("title", "text · 空可"), ("image_url", "text · 空可"), ("fetched_at", "text")]
@@ -206,17 +206,17 @@ el += label(1618, 250, "0..1") + label(1588, 250, "1")
 el += path("M 1420,716 H 1480")
 el += label(1432, 698, "1") + label(1460, 698, "1..N")
 el += rel_label(1450, 724, "NOTE_ID")
-el += path("M 1420,796 H 1480")
-el += label(1436, 778, "0..1") + label(1466, 778, "0..1")
-el += rel_label(1450, 804, "PUBLISHED")
-el += path("M 1420,904 H 1480")
-el += label(1432, 886, "1") + label(1460, 886, "0..N")
-el += path("M 1250,932 V 1012")
-el += path("M 1330,932 V 1012")
-el += label(1264, 938, "1") + label(1272, 994, "0..N")
-el += rel_label(1215, 966, "NOTE_ID")
-el += label(1352, 938, "0..1") + label(1352, 994, "0..1")
-el += rel_label(1356, 966, "CARD")
+el += path("M 1420,816 H 1480")
+el += label(1436, 798, "0..1") + label(1466, 798, "0..1")
+el += rel_label(1450, 824, "PUBLISHED")
+el += path("M 1420,924 H 1480")
+el += label(1432, 906, "1") + label(1460, 906, "0..N")
+el += path("M 1250,952 V 1032")
+el += path("M 1330,952 V 1032")
+el += label(1264, 958, "1") + label(1272, 1014, "0..N")
+el += rel_label(1215, 986, "NOTE_ID")
+el += label(1352, 958, "0..1") + label(1352, 1014, "0..1")
+el += rel_label(1356, 986, "CARD")
 
 el += entity(40, 60, 260, "resume", "職務経歴書の版。複数持つ", resume)
 el += entity(335, 60, 210, "resume_career", "職務経歴書に写した職歴", resume_career)
@@ -233,10 +233,10 @@ el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の
 el += entity(1500, 260, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
 el += entity(1500, 404, 200, "activity_feed", "一覧。4 つの表を UNION ALL でつなぐ", [("activity", "外部・life event"), ("note", "公開中だけ"), ("project", "published・秘匿化"), ("career", "published・秘匿化"), ("career の日付", "started_on"), ("並び", "(日付, 種類, id)")], kind="VIEW")
 el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
-el += entity(1480, 656, 220, "note_revision", "note の版。保存と公開のたびに 1 行", revision)
-el += entity(1160, 1012, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)
-el += entity(1480, 880, 220, "syndication", "note を転載した先の URL（POSSE）", synd)
-el += entity(1480, 1056, 220, "link_preview", "URL カードの情報。本文の URL で引く", link_preview)
+el += entity(1480, 656, 220, "note_revision", "note の版。保存のたびに 1 行", revision)
+el += entity(1160, 1032, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)
+el += entity(1480, 900, 220, "syndication", "note を転載した先の URL（POSSE）", synd)
+el += entity(1480, 1076, 220, "link_preview", "URL カードの情報。本文の URL で引く", link_preview)
 el += kinds_note(40, 1140)
 el += rules_note(400, 1150)
 el += entity(335, 716, 210, "resume_project_skill", "写した実績で使ったスキル", [("# → resume_project_id", "integer"), ("# skill_name", "text")])
