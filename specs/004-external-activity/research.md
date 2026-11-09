@@ -75,7 +75,8 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   - `isComplete` が偽のとき（Zenn は 20 件、Medium は 10 件で打ち切る）: 一覧に無いことを候補の根拠にしない（FR-018）
   - URL を指名する取得元と、確かめる手段を持たない取得元: 自動では消さない。オーナーが synsk.me の側で削除する（FR-033）
   - `isComplete` が偽で、個別の URL で確かめる手段を持つ取得元（Zenn・Speaker Deck）: 一覧に無い activity の URL を 1 本ずつ取り直し、404 なら消えた候補にする。2xx なら残っている。ほか（5xx・待ち時間・大きさ・ほかの 4xx・取り直しの失敗）は判定せず、消さない（FR-020。2026-11-09、PM の決定。根拠は FR-017 と原則 2）。実装は `src/features/activity/server/sources/gone.ts` と、`zenn.ts`・`speakerdeck.ts` の `checkGone`
-  - 1 回の取得で取り直す本数に上限を持つ（R8 の表、U13。決まるまでは 1）。どれを取り直すかは、確かめたことの無い行を先に、次に `activity.gone_checked_at`（migrations/0015）の古い順に選ぶ（`src/features/activity/application/plan-removals.ts` の `pickGoneChecks`）。取り直した行のうち消さなかった行に、取り直した日時を書く
+  - 1 回の取得で取り直す本数に上限を持つ（R8 の表、U13。決まるまでは 1）。どれを取り直すかは、確かめたことの無い行を先に、次に `activity.gone_checked_at`（migrations/0015）の古い順に、同じなら公開日の古い順に選ぶ（`src/features/activity/application/plan-removals.ts` の `pickGoneChecks`）。取り直した行のうち消さなかった行に、取り直した日時を書く
+  - 取り直すときはリダイレクトを辿らない。移った先の 404 は元の URL が消えた証拠にならず、3xx は判定しない
   - `gone_checked_at` は確かめる順を決めるための日時で、消えた印ではない。消えたと確かめた行は、ほかの消えた行と同じく行ごと消す。一覧（005）は `gone_checked_at` を読まない
   - 取得元が条件付きの要求に 304 を返した回（R9）も取り直す。一覧に載らない古い記事を消しても RSS は変わらず、304 が続くため。一覧の中身が無いので、保存したすべての行から同じ順で選ぶ（一覧に載っている行を選ぶと 2xx で残り、確かめた日時だけが進む）
   - 消えたと確かめた行も、消す候補の上限（下の項）に数える。上限を超えた回は 1 件も消さない

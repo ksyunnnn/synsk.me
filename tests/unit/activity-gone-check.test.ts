@@ -55,11 +55,15 @@ describe('取得元ごとの確かめ方', () => {
     const { fetcher } = createFakeFetcher({
       'https://example.com/ok': () => new Response('作り物'),
       'https://example.com/down': () => new Response('', { status: 503 }),
+      'https://example.com/moved': () =>
+        new Response('', { status: 302, headers: { Location: 'https://example.com/missing' } }),
     });
 
     expect(await checkGone(fetcher, 'https://example.com/missing', LIMITS)).toBe('gone');
     expect(await checkGone(fetcher, 'https://example.com/ok', LIMITS)).toBe('present');
     expect(await checkGone(fetcher, 'https://example.com/down', LIMITS)).toBe('unknown');
+    // リダイレクトを辿らない。移った先が 404 でも、元の URL が消えた証拠にしない
+    expect(await checkGone(fetcher, 'https://example.com/moved', LIMITS)).toBe('unknown');
   });
 });
 

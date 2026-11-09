@@ -29,7 +29,7 @@ export const planRemovals = (
 
 /**
  * すべて取らない取得元で、個別の URL を取り直して確かめる行を選ぶ（R6）。一覧に無い行のうち、
- * 確かめたことの無い行を先に、次に確かめた日時（`gone_checked_at`）の古い順に、上限の数まで。
+ * 確かめたことの無い行を先に、次に確かめた日時（`gone_checked_at`）の古い順に、同じなら公開日の古い順に、上限の数まで。
  * 確かめた日時は確かめる順を決めるためだけの値で、消えた印ではない
  */
 export const pickGoneChecks = (
@@ -41,7 +41,11 @@ export const pickGoneChecks = (
     .sort((a, b) => {
       const at = a.goneCheckedAt ?? '';
       const bt = b.goneCheckedAt ?? '';
-      return at === bt ? a.id - b.id : at < bt ? -1 : 1;
+      if (at !== bt) return at < bt ? -1 : 1;
+      // 同じなら公開日の古い順。304 の回は一覧に載る新しい行も候補に入るので、載らない古い行を先にする
+      const ap = a.publishedAt ?? '';
+      const bp = b.publishedAt ?? '';
+      return ap === bp ? a.id - b.id : ap < bp ? -1 : 1;
     })
     .slice(0, Math.max(0, maxChecks));
 

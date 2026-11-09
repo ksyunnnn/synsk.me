@@ -43,7 +43,7 @@ export type UpsertPlan = {
 export type RefreshPlan = UpsertPlan & {
   /** 取得元で消えたと確かめた行の id（FR-017） */
   deletes: number[];
-  /** 個別の URL を取り直して、消えていないか判定できなかった行の id。確かめた日時を書く（R6） */
+  /** 個別の URL を取り直して消さなかった行（残っていた行と、判定できなかった行）の id。確かめた日時を書く（R6） */
   goneChecked?: number[];
 };
 
