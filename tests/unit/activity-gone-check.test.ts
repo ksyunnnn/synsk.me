@@ -105,11 +105,12 @@ describe('refreshSources で確かめる', () => {
       LIMITS,
     );
 
-    expect(checked).toEqual(['https://example.com/1', 'https://example.com/2']);
+    // 404 が続いている行（2）を先に確かめる
+    expect(checked).toEqual(['https://example.com/2', 'https://example.com/1']);
     expect(applied[0]?.plan.deletes).toEqual([]);
     expect(applied[0]?.plan.goneChecked).toEqual([
-      { id: 1, goneStreak: 1 },
       { id: 2, goneStreak: 0 },
+      { id: 1, goneStreak: 1 },
     ]);
     expect(outcomes).toMatchObject([{ source: 'fake_feed', ok: true, removed: 0 }]);
   });
