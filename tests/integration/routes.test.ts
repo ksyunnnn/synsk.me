@@ -48,6 +48,16 @@ describe('訪問者が到達する経路', () => {
     expect(html).toMatch(/<title>[^<]+<\/title>/);
   });
 
+  /**
+   * リンクが貼られたときのカードの画像（docs/CRAWLING.md）。クローラは絶対 URL で読む。
+   * ビルドに SITE_ORIGIN を渡さないときは、本番の origin を指す（next.config.js）
+   */
+  it('/ の og:image が本番の origin の絶対 URL を指す', async () => {
+    const html = await (await server.fetch('/')).text();
+    const image = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1];
+    expect(image).toMatch(/^https:\/\/synsk\.me\/opengraph-image/);
+  });
+
   it('存在しない経路は 404 を返す', async () => {
     const res = await server.fetch('/__nonexistent');
     expect(res.status).toBe(404);
