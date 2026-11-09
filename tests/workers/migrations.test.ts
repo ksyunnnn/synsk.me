@@ -834,6 +834,9 @@ describe('migration 0016 の activity_feed の note の腕', () => {
       started_on: null,
       ended_on: null,
       description: 'migration-0016-published の公開した説明',
+      source: null,
+      source_kind: null,
+      url: null,
     });
   });
 
@@ -904,13 +907,14 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
 
   it('source・source_kind・url の列を、0016 までの列の後に持つ', async () => {
     const names = (await columnsOf('activity_feed')).map((c) => c.name);
-    expect(names.slice(13, 16)).toEqual(['source', 'source_kind', 'url']);
+    expect(names.slice(M1_COLUMNS.length + 1)).toEqual(['source', 'source_kind', 'url']);
   });
 
   it('外部の activity を、題・取得元・分類・URL で出す。説明と画像は出さない', async () => {
     const row = (await activityRows()).find((r) => r.item_number === external);
-    expect(row).toMatchObject({
+    expect(row).toEqual({
       item_type: 'external_activity',
+      item_number: external,
       sort_at: '2026-01-05T00:00:00.000Z',
       is_masked: 0,
       title: '0017 の記事',
@@ -931,11 +935,19 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
 
   it('life event を、題・説明・起きた日で出す。URL は出さない', async () => {
     const row = (await activityRows()).find((r) => r.item_number === lifeEvent);
-    expect(row).toMatchObject({
+    expect(row).toEqual({
       item_type: 'life_event',
+      item_number: lifeEvent,
       sort_at: '2026-01-06',
       is_masked: 0,
       title: '0017 の出来事',
+      title_masked: null,
+      organization_name: null,
+      organization_name_masked: null,
+      role: null,
+      project_kind: null,
+      started_on: null,
+      ended_on: null,
       description: '0017 の出来事の説明',
       source: 'life_event',
       source_kind: 'life_event',
@@ -950,23 +962,19 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
     ]);
   });
 
-  it('職歴・実績・note の腕の source・source_kind・url は NULL', async () => {
-    const { results } = await env.DB.prepare(
-      "SELECT count(*) AS n FROM activity_feed WHERE item_type IN ('career', 'project', 'note') AND (source IS NOT NULL OR source_kind IS NOT NULL OR url IS NOT NULL)",
-    ).all<{ n: number }>();
-    expect(results).toEqual([{ n: 0 }]);
-  });
-
-  it.each(['external_activity', 'life_event'])(
+  it.each([
+    ['external_activity', 'a'],
+    ['life_event', 'l'],
+  ])(
     '%s の腕でも、種類と主キーの条件が腕の中へ下りて主キーで引く（005 の research.md の R3）',
-    async (itemType) => {
+    async (itemType, alias) => {
       const { results } = await env.DB.prepare(
         'EXPLAIN QUERY PLAN SELECT * FROM activity_feed WHERE item_type = ? AND item_number = ?',
       )
         .bind(itemType, itemType === 'life_event' ? lifeEvent : external)
         .all<{ detail: string }>();
       const details = results.map((row) => row.detail);
-      expect(details).toContain('SEARCH a USING INTEGER PRIMARY KEY (rowid=?)');
+      expect(details).toContain(`SEARCH ${alias} USING INTEGER PRIMARY KEY (rowid=?)`);
       expect(details.filter((detail) => detail.startsWith('SCAN'))).toEqual([]);
     },
   );

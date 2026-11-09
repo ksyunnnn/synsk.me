@@ -15,8 +15,17 @@
 -- どちらも sort_at は activity.sort_at（published_at か happened_on）。秘匿化しないので
 -- is_masked は 0
 --
+-- life event の腕は、0016 が足した description に life event の説明を出す。外部の activity の
+-- 腕では NULL（005 の data-model.md）
+--
+-- 腕の別名は腕ごとに分ける（外部の activity は a、life event は l）。EXPLAIN QUERY PLAN の
+-- 行から、どちらの腕が主キーで引くかを見分けるため
+--
+-- 腕はこれで 5 つになる。手元の workerd の D1 は、腕が 6 つの compound SELECT を
+-- too many terms in compound SELECT で拒んだ（2026-11-09 に tests/workers/feed-repository.test.ts で
+-- 実測）。腕を足すときは、まずこの上限を確かめる
+--
 -- 足す列:
--- - description: life event の説明。外部の activity の腕では NULL（005 の data-model.md）
 -- - source: 外部の activity と life event の取得元（activity.source）。ほかの腕では NULL
 -- - source_kind: 取得元の分類（activity_source.kind）。ほかの腕では NULL。kind と呼ばない
 --   理由は 0013 の item_type の注釈のとおり
@@ -110,10 +119,10 @@ WHERE a.source <> 'life_event'
 UNION ALL
 SELECT
   'life_event' AS item_type,
-  a.id AS item_number,
-  a.sort_at AS sort_at,
+  l.id AS item_number,
+  l.sort_at AS sort_at,
   CAST(0 AS INTEGER) AS is_masked,
-  a.title AS title,
+  l.title AS title,
   CAST(NULL AS TEXT) AS title_masked,
   CAST(NULL AS TEXT) AS organization_name,
   CAST(NULL AS TEXT) AS organization_name_masked,
@@ -121,10 +130,10 @@ SELECT
   CAST(NULL AS TEXT) AS project_kind,
   CAST(NULL AS TEXT) AS started_on,
   CAST(NULL AS TEXT) AS ended_on,
-  a.description AS description,
-  a.source AS source,
-  s.kind AS source_kind,
+  l.description AS description,
+  l.source AS source,
+  ls.kind AS source_kind,
   CAST(NULL AS TEXT) AS url
-FROM activity AS a
-JOIN activity_source AS s ON s.source = a.source
-WHERE a.source = 'life_event';
+FROM activity AS l
+JOIN activity_source AS ls ON ls.source = l.source
+WHERE l.source = 'life_event';

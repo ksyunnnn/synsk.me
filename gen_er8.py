@@ -72,7 +72,7 @@ def rules_note(x, y):
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
         "互いを指す外部キー（note.published_revision_id・*.card_media_id）は、検査をトランザクションの終わりに送る（DEFERRABLE）",
         "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガが入れ直す（activity.gone_checked_at だけを書いたときは入れ直さない）",
-        "activity_feed: published の行だけを出す。秘匿化した行は *_masked の列だけに値を持ち、title・organization_name・description・url・画像を持たない",
+        "activity_feed: 職歴・実績・note は published の行だけを出す。秘匿化した行は *_masked の列だけに値を持ち、title・organization_name・description・url・画像を持たない",
         "activity_feed: name_masked の無い組織を指す秘匿化した行は出さない。並べるキーは (sort_at, 種類, item_number)",
         "activity_feed: note は公開中で削除していないものを、公開した版の題と説明文で出す。sort_at は note.created_at",
         "activity_feed: 外部の activity と life event は activity の行をすべて出す。sort_at は activity.sort_at。url は外部の activity だけ",
