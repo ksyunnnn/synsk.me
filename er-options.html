@@ -69,7 +69,7 @@
       </p>
       <div class="scroll">
         <svg
-          viewBox="0 0 2030 1720"
+          viewBox="0 0 2030 1740"
           xmlns="http://www.w3.org/2000/svg"
           role="img"
           aria-labelledby="er-title er-desc"
@@ -2885,7 +2885,7 @@
             x="1160"
             y="60"
             width="300"
-            height="396"
+            height="416"
             rx="6"
             fill="#ffffff"
             stroke="#2d3142"
@@ -3203,7 +3203,7 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            created_at
+            consecutive_gone_count
           </text>
           <text
             x="1444"
@@ -3213,7 +3213,7 @@
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
             text-anchor="end"
           >
-            text
+            integer · 既定 0
           </text>
           <text
             x="1176"
@@ -3222,11 +3222,30 @@
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
           >
-            updated_at
+            created_at
           </text>
           <text
             x="1444"
             y="436"
+            fill="#4f5d75"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+            text-anchor="end"
+          >
+            text
+          </text>
+          <text
+            x="1176"
+            y="456"
+            fill="#2d3142"
+            font-size="10"
+            font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
+          >
+            updated_at
+          </text>
+          <text
+            x="1444"
+            y="456"
             fill="#4f5d75"
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -5025,7 +5044,7 @@
             x="400"
             y="1150"
             width="720"
-            height="488"
+            height="506"
             rx="6"
             fill="#ffffff"
             stroke="#4f5d75"
@@ -5079,8 +5098,7 @@
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
             created_at・updated_at は DB が既定値で入れ、updated_at
-            は行を書き換えたときにトリガが入れ直す（activity.gone_checked_at
-            だけを書いたときは入れ直さない）
+            は行を書き換えたときにトリガが入れ直す
           </text>
           <text
             x="416"
@@ -5090,7 +5108,7 @@
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
             activity_feed: 職歴・実績・note は published の行だけを出す。秘匿化した行は *_masked
-            の列だけに値を持ち、title・organization_name・description・url・画像を持たない
+            の列だけに値を持ち、実際の値・説明・url・画像を持たない
           </text>
           <text
             x="416"
@@ -5236,7 +5254,8 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            activity.gone_checked_at は外部の activity の行だけが持つ（CHECK）
+            activity.gone_checked_at は外部の activity の行だけが持つ。consecutive_gone_count は 0
+            以上で、life event の行は 0（CHECK）
           </text>
           <text
             x="416"
@@ -5245,11 +5264,21 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            activity.sort_at は published_at か happened_on から求め、NOT NULL
+            activity.gone_checked_at・consecutive_gone_count だけを書いたときは、トリガが updated_at
+            を入れ直さない
           </text>
           <text
             x="416"
             y="1568"
+            fill="#2d3142"
+            font-size="9"
+            font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
+          >
+            activity.sort_at は published_at か happened_on から求め、NOT NULL
+          </text>
+          <text
+            x="416"
+            y="1586"
             fill="#2d3142"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5259,7 +5288,7 @@
           </text>
           <text
             x="416"
-            y="1586"
+            y="1604"
             fill="#2d3142"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5268,7 +5297,7 @@
           </text>
           <text
             x="416"
-            y="1604"
+            y="1622"
             fill="#2d3142"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5278,7 +5307,7 @@
           </text>
           <text
             x="416"
-            y="1622"
+            y="1640"
             fill="#2d3142"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5467,15 +5496,15 @@
           </text>
           <line
             x1="40"
-            y1="1664"
+            y1="1684"
             x2="1990"
-            y2="1664"
+            y2="1684"
             stroke="rgba(45,49,66,0.10)"
             stroke-width="0.8"
           />
           <text
             x="40"
-            y="1680"
+            y="1700"
             fill="#4f5d75"
             font-size="8"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -5485,7 +5514,7 @@
           </text>
           <text
             x="40"
-            y="1702"
+            y="1722"
             fill="#2d3142"
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -5495,7 +5524,7 @@
           </text>
           <text
             x="54"
-            y="1702"
+            y="1722"
             fill="#4f5d75"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5504,7 +5533,7 @@
           </text>
           <text
             x="112"
-            y="1702"
+            y="1722"
             fill="#2d3142"
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -5514,7 +5543,7 @@
           </text>
           <text
             x="128"
-            y="1702"
+            y="1722"
             fill="#4f5d75"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5523,7 +5552,7 @@
           </text>
           <text
             x="240"
-            y="1702"
+            y="1722"
             fill="#4f5d75"
             font-size="10"
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
@@ -5533,7 +5562,7 @@
           </text>
           <text
             x="356"
-            y="1702"
+            y="1722"
             fill="#4f5d75"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5542,7 +5571,7 @@
           </text>
           <text
             x="600"
-            y="1702"
+            y="1722"
             fill="#4f5d75"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
@@ -5551,7 +5580,7 @@
           </text>
           <text
             x="780"
-            y="1702"
+            y="1722"
             fill="#4f5d75"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
