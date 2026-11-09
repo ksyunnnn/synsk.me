@@ -364,7 +364,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
 
     delete: async (id) => {
       // 外部キーは NO ACTION のため、子の行を先に空にするか消す（research.md の R8）。
-      // 写した職務経歴書の行は残す。R2 の画像は、画像を扱うまで無い（plan.md の U5）
+      // 写した職務経歴書の行は残す。R2 の画像は、画像を扱うまで無い（tasks.md の T075）
       const results = await db.batch([
         db.prepare('UPDATE resume_project SET project_id = NULL WHERE project_id = ?').bind(id),
         db.prepare('UPDATE project SET card_media_id = NULL WHERE id = ?').bind(id),

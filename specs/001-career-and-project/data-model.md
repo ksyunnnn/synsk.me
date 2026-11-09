@@ -22,7 +22,7 @@
 | `project_skill` | 実績とスキルのつながり | 書く | FR-032 |
 | `skill` | スキル | 書く | FR-031、FR-033、FR-034 |
 | `education` | 学歴 | 書く | FR-036、FR-037 |
-| `media` | 画像（持ち主が職歴か実績の行） | 書く（R14 の未決が解けてから） | FR-027〜FR-030 |
+| `media` | 画像（持ち主が職歴か実績の行） | 書く（tasks.md の T075） | FR-027〜FR-030 |
 | `resume_career`・`resume_project`・`resume_education` | 職務経歴書の写し | 削除のときに `*_id` を NULL にするだけ | spec の Edge Cases |
 
 スキーマが守る決まり（001 のコードで重ねて書かない）: 組織名の重複（`organization.name` の UNIQUE、FR-003）、スキル名の大文字と小文字だけの重複（`skill.name` の `COLLATE NOCASE` の UNIQUE、FR-031）、識別子の形と重複（`project.slug` の CHECK と UNIQUE、FR-013）、種類（`project.kind` の CHECK、FR-012）、日付の形と前後（`*_on` の CHECK、FR-038・FR-039）、既定で秘匿化（`is_masked` の DEFAULT 1、FR-010・FR-015）、既定でサイトに載せないことと値の 2 つ（`career.status`・`project.status` の DEFAULT `draft` と CHECK、FR-044）、代表画像がその実績の画像であること（複合の外部キー、FR-028）、画像の持ち主が 1 つ（`media` の CHECK）、指されている組織の削除（NO ACTION の外部キー、FR-006）、上書きの月数が 0 以上（`skill.months_override` の CHECK、FR-034）、管理画面の URL の識別子の形・重複・書き換えの拒否（`*.uid` の CHECK・UNIQUE・トリガ、research.md の R17）。
