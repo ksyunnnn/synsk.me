@@ -4,12 +4,12 @@ import { deleteProject } from '@/features/project/application/delete-project';
 import { editProject } from '@/features/project/application/edit-project';
 import { registerProject } from '@/features/project/application/register-project';
 import {
-  isProjectSlug,
   toProjectFormValues,
   type Project,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
+import { isSlug } from '@/shared/domain/slug';
 import type { Author } from '@/shared/domain/author';
 import type { Organization } from '@/shared/domain/organization';
 import type { CalendarDate } from '@/shared/domain/period';
@@ -111,7 +111,7 @@ describe('registerProject', () => {
     });
     const [saved] = projects.register.mock.calls[0] as unknown as [{ slug: string }];
     expect(saved.slug).not.toBe('ignored');
-    expect(isProjectSlug(saved.slug)).toBe(true);
+    expect(isSlug(saved.slug)).toBe(true);
   });
 
   it('秘匿化するかを送らなければ、秘匿化して登録する（FR-015）', async () => {

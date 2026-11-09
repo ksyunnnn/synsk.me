@@ -29,19 +29,10 @@ export const parseResumeId = (value: string): ResumeId | null => {
   return Number.isSafeInteger(id) ? id : null;
 };
 
-/** 識別子の形（FR-002、`resume.slug` の CHECK）。1〜100 文字の英小文字・数字・ハイフン */
-export const isResumeSlug = (value: string): boolean => /^[a-z0-9-]{1,100}$/.test(value);
-
-/**
- * 新しい識別子。題や提出先から推測できない uid（FR-012・FR-037・FR-039）。限定公開用の URL は
- * この値だけで開くため、推測できないことが読める人を絞る。URL を出し直すときも、この関数で作り直す
- */
-export const newResumeSlug = (): string => crypto.randomUUID();
-
 /**
  * 識別子を手で書き換えられるか。限定公開用は拒み、公開用は許す（FR-037・FR-039）。
  * 限定公開用は URL を出し直すとき（FR-040）だけ、新しい uid に作り直す。
- * 形と重複は書き換えるときに別に確かめる
+ * 形（`src/shared/domain/slug.ts` の `isSlug`）と重複は書き換えるときに別に確かめる
  */
 export const canChangeSlug = (audience: ResumeAudience): boolean => audience === 'public';
 
