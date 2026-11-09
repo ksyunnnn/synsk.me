@@ -15,6 +15,11 @@
 -- migration は当たらない。値を黙って消さない（docs/SOFTWARE_DESIGN.md の原則 2）。004 のコードは
 -- life event の行にこれらを書かない（src/features/activity/server/d1-life-event-repository.ts が
 -- 書くのは slug・title・description・happened_on・card_media_id だけ）
+-- 当てる前に、本番と preview の D1 で次の文が 0 行を返すことを確かめる。行があれば、その行の値を
+-- 直してから当てる
+--   SELECT id, uid FROM activity WHERE source = 'life_event'
+--     AND (published_at IS NOT NULL OR url IS NOT NULL OR external_id IS NOT NULL
+--       OR image_url IS NOT NULL);
 --
 -- SQLite は ALTER TABLE で CHECK を足せないため、表を作り直す。作り直し方は 0012 と同じで、
 -- 行・uid・sqlite_sequence を保ち、指している表（media）は作り直さず、外部キーの検査を
