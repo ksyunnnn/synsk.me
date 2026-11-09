@@ -38,7 +38,7 @@ export type SourceResponse = { status: number; headers: Headers; text: string };
 export type SourceHttp = {
   /** まだ出せる要求の数 */
   readonly remaining: number;
-  /** 2xx の応答の本文を返す。上限を超えたとき・2xx でないときは投げる */
+  /** 2xx の応答の本文を返す。304 は本文の無い応答として返す。上限を超えたとき・ほかの状態では投げる */
   get: (url: string, headers?: Record<string, string>) => Promise<SourceResponse>;
 };
 
@@ -62,6 +62,15 @@ export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceH
         if (response.redirected && new URL(response.url).host !== new URL(url).host) {
           await response.body?.cancel();
           throw new Error(`取得元が別のホストへ移した: ${url}`);
+        }
+        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）。条件を
+        // 付けていない要求への 304（途中のキャッシュなど）は、中身を取れなかった失敗にする
+        const conditional = Object.keys(headers).some((name) =>
+          /^if-(none-match|modified-since)$/i.test(name),
+        );
+        if (response.status === 304 && conditional) {
+          await response.body?.cancel();
+          return { status: 304, headers: response.headers, text: '' };
         }
         if (!response.ok) {
           await response.body?.cancel();

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fetchListing } from '@/features/activity/server/sources/medium';
 import type { FetchLimits } from '@/features/activity/domain/limits';
-import { createFakeFetcher, xmlResponse } from '../support/activity-fakes';
+import { asListing, createFakeFetcher, xmlResponse } from '../support/activity-fakes';
 
 /**
  * Medium の RSS を `FetchedItem` に詰め替える（FR-006・FR-007、research.md の R7）。応答の形は
@@ -35,7 +35,7 @@ describe('Medium', () => {
       ),
     });
 
-    const listing = await fetchListing(fetcher, LIMITS);
+    const listing = asListing(await fetchListing(fetcher, LIMITS));
 
     expect(listing.items).toEqual([
       {
@@ -51,7 +51,7 @@ describe('Medium', () => {
   it('本文に画像が無ければ画像の URL を持たない', async () => {
     const { fetcher } = createFakeFetcher({ [FEED]: xmlResponse(rss(item('<p>作り物</p>'))) });
 
-    const [first] = (await fetchListing(fetcher, LIMITS)).items;
+    const [first] = asListing(await fetchListing(fetcher, LIMITS)).items;
 
     expect(first).not.toHaveProperty('imageUrl');
   });
@@ -59,7 +59,7 @@ describe('Medium', () => {
   it('RSS は 10 件で打ち切るので、すべて取ったことにしない（FR-018）', async () => {
     const { fetcher } = createFakeFetcher({ [FEED]: xmlResponse(rss(item('<p>作り物</p>'))) });
 
-    expect((await fetchListing(fetcher, LIMITS)).isComplete).toBe(false);
+    expect(asListing(await fetchListing(fetcher, LIMITS)).isComplete).toBe(false);
   });
 
   it('guid の無い項目があれば、応答の形の誤りとして失敗する（FR-020）', async () => {
