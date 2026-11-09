@@ -61,14 +61,16 @@ export type NoteRepository = {
   ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'untitled' }>;
   /**
    * 下書きに戻す（FR-014）。状態だけを書き、公開した版と初めて公開した日時は残す。無いか削除した
-   * note なら `ok: false`
+   * note か、公開でない note なら何も書かず `ok: false`
    */
   unpublish: (id: NoteId) => Promise<{ ok: boolean }>;
   /**
-   * 削除済みの印を付ける（FR-016）。状態と版は変えない。削除済みの note は印を付けた日時のまま。
-   * 無い id なら `ok: false`
+   * 削除済みの印を付ける（FR-016）。状態と版は変えない。無い id か削除済みの note なら何も書かず
+   * `ok: false`
    */
   delete: (id: NoteId, now: string) => Promise<{ ok: boolean }>;
-  /** 削除済みの印を外す（FR-016・SC-007）。状態・版・識別子は削除の前のまま。無い id なら `ok: false` */
+  /** 削除済みの印を外す（FR-016・SC-007）。状態・版・識別子は削除の前のまま。無い id か削除していない
+   * note なら何も書かず `ok: false`
+   */
   restore: (id: NoteId) => Promise<{ ok: boolean }>;
 };
