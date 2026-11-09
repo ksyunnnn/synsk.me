@@ -121,4 +121,10 @@ export type NoteRepository = {
    * 削除した note なら `ok: false`
    */
   addMedia: (id: NoteId, storageKey: MediaStorageKey) => Promise<{ ok: boolean }>;
+  /**
+   * note を完全に消す（FR-017、research.md の R6）。画像の記録・転載先・版・note を 1 つの
+   * トランザクションで消し、参照先の情報は残す。消した画像の置き場のキーを返す。置き場の実体は
+   * 呼び手が消す。無い id なら `ok: false`
+   */
+  purge: (id: NoteId) => Promise<{ ok: true; storageKeys: MediaStorageKey[] } | { ok: false }>;
 };

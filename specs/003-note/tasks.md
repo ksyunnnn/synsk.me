@@ -221,9 +221,9 @@ description: "note の実装タスク"
 
 ## Phase 10: Polish
 
-- [ ] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
+- [X] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
 - [ ] T049 [P] 見た目の確認のページ src/app/dash/notes/[id]/preview/page.tsx を、最も新しい版を訪問者向けの部品で描く形で作り、下書きの note でも最も新しい版が出ることを tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13、research.md の R15）
-- [ ] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
+- [X] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
 - [ ] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
 - [ ] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
 - [ ] T053 quickstart.md の「手で確かめる」をブランチの Preview で行う

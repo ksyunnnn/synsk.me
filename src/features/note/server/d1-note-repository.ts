@@ -462,5 +462,24 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         .run();
       return { ok: result.meta.changes > 0 };
     },
+
+    purge: async (id) => {
+      // note から版と画像を指す外部キーの検査はトランザクションの終わりに送られる（migrations/0005
+      // の冒頭）ため、指す先を空にせずにこの順で消せる。公開したことのある note の
+      // published_revision_id は CHECK とトリガが空にさせない（research.md の R6）。消す画像の
+      // キーは、同じ batch() の最初の文で読む
+      const [mediaResult, , , , noteResult] = await db.batch<{ storage_key: string }>([
+        db.prepare('SELECT storage_key FROM media WHERE note_id = ? ORDER BY id').bind(id),
+        db.prepare('DELETE FROM media WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM syndication WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM note WHERE id = ?').bind(id),
+      ]);
+      if ((noteResult?.meta.changes ?? 0) === 0) return { ok: false };
+      return {
+        ok: true,
+        storageKeys: (mediaResult?.results ?? []).map((row) => row.storage_key),
+      };
+    },
   };
 };
