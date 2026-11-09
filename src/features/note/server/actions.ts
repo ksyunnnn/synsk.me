@@ -4,8 +4,11 @@ import 'server-only';
 
 import { redirect } from 'next/navigation';
 import { createNote as createNoteUseCase } from '@/features/note/application/create-note';
+import { deleteNote as deleteNoteUseCase } from '@/features/note/application/delete-note';
 import { publishNote as publishNoteUseCase } from '@/features/note/application/publish-note';
+import { restoreNote as restoreNoteUseCase } from '@/features/note/application/restore-note';
 import { saveNote as saveNoteUseCase } from '@/features/note/application/save-note';
+import { unpublishNote as unpublishNoteUseCase } from '@/features/note/application/unpublish-note';
 import {
   NOTE_FIELDS,
   NOTE_UID_FIELD,
@@ -89,4 +92,51 @@ export const publishNote = async (
   if (outcome.status === 'published') redirect(`${editPath(uid)}?published=1`);
   if (outcome.status === 'not-found') redirect(LIST);
   return outcome;
+};
+
+/** 下書きに戻し、同じ画面へ移る（FR-014） */
+export const unpublishNote = async (
+  _state: NoteFormResult | null,
+  formData: FormData,
+): Promise<NoteFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const outcome = await unpublishNoteUseCase(deps.notes, author, id);
+  if (outcome.status === 'forbidden') return outcome;
+  if (outcome.status === 'not-found') redirect(LIST);
+  redirect(`${editPath(uid)}?unpublished=1`);
+};
+
+/** 削除済みの印を付け、一覧へ移る（FR-016）。確認の画面（`/dash/notes/{uid}/delete`）のフォームが呼ぶ */
+export const deleteNote = async (
+  _state: { status: 'forbidden' } | null,
+  formData: FormData,
+): Promise<{ status: 'forbidden' }> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const outcome = await deleteNoteUseCase(deps.notes, author, id, new Date().toISOString());
+  if (outcome.status === 'forbidden') return outcome;
+  redirect(outcome.status === 'deleted' ? `${LIST}?deleted=1` : LIST);
+};
+
+/** 削除済みの印を外し、編集の画面へ移る（FR-016） */
+export const restoreNote = async (
+  _state: { status: 'forbidden' } | null,
+  formData: FormData,
+): Promise<{ status: 'forbidden' }> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const outcome = await restoreNoteUseCase(deps.notes, author, id);
+  if (outcome.status === 'forbidden') return outcome;
+  if (outcome.status === 'not-found') redirect(LIST);
+  redirect(`${editPath(uid)}?restored=1`);
 };

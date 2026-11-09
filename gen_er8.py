@@ -146,7 +146,7 @@ activity = [
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
     ("happened_on", "text（年月日）· 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"),
 ] + TS
-fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可")]
+fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可"), ("etag", "text · 空可"), ("last_modified", "text · 空可")]
 note = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("status", "text · CHECK"),
     ("→ published_revision_id", "integer · 空可"), ("published_at", "text · 空可"),
@@ -204,11 +204,11 @@ el += label(832, 702, "1") + label(860, 702, "0..N")
 el += path("M 980,700 V 656")
 el += label(994, 662, "1") + label(1002, 686, "0..N")
 # timeline の中
-el += path("M 1460,300 H 1500")
-el += label(1472, 282, "0..N") + label(1492, 318, "1")
+el += path("M 1460,340 H 1500")
+el += label(1472, 322, "0..N") + label(1492, 358, "1")
 # timeline → note
-el += path("M 1600,236 V 260")
-el += label(1618, 250, "0..1") + label(1588, 250, "1")
+el += path("M 1600,276 V 300")
+el += label(1618, 290, "0..1") + label(1588, 290, "1")
 # note の中
 el += path("M 1420,716 H 1480")
 el += label(1432, 698, "1") + label(1460, 698, "1..N")
@@ -237,7 +237,7 @@ el += entity(880, 460, 210, "skill", "スキル。経験年数は実績から計
 el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", project_skill)
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
-el += entity(1500, 260, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
+el += entity(1500, 300, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
 el += entity(1740, 60, 270, "activity_feed", "一覧。career と project の腕を UNION ALL", feed, kind="VIEW")
 el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
 el += entity(1480, 656, 220, "note_revision", "note の版。保存のたびに 1 行", revision)

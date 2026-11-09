@@ -308,5 +308,31 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         throw error;
       }
     },
+
+    unpublish: async (id) => {
+      const result = await db
+        .prepare(
+          "UPDATE note SET status = 'draft' WHERE id = ? AND status = 'published' AND deleted_at IS NULL",
+        )
+        .bind(id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    delete: async (id, now) => {
+      const result = await db
+        .prepare('UPDATE note SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL')
+        .bind(now, id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    restore: async (id) => {
+      const result = await db
+        .prepare('UPDATE note SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL')
+        .bind(id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
   };
 };

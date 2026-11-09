@@ -26,6 +26,9 @@ const INPUT = {
 let ctx: TestServer;
 let draft: { uid: string; revision: { uid: string } };
 let republishedId: number;
+let publishedUid: string;
+let deletedUid: string;
+let lifecycleUid: string;
 let ownMediaKey: string;
 const MISSING_MEDIA_KEY = '00000000-0000-4000-8000-000000000000';
 
@@ -123,6 +126,16 @@ beforeAll(async () => {
       const deleted = await insertNote(db, HIDDEN.deleted);
       await publishNoteRow(db, deleted.id);
       await deleteNoteRow(db, deleted.id);
+      deletedUid = deleted.uid;
+
+      publishedUid = published.uid;
+      const lifecycle = await insertNote(db, {
+        slug: 'integration-lifecycle',
+        title: '下書きに戻す・削除する題',
+        body: '下書きに戻す・削除する本文',
+      });
+      lifecycleUid = lifecycle.uid;
+      await publishNoteRow(db, lifecycle.id);
 
       const noDescription = await insertNote(db, {
         slug: 'integration-no-description',
@@ -281,6 +294,9 @@ describe('オーナーの JWT がない書き込み（FR-033）', () => {
           openedRevisionUid: draft.revision.uid,
         },
       ],
+      ['unpublishNote', `/dash/notes/${publishedUid}`, 1, { noteUid: publishedUid }],
+      ['deleteNote', `/dash/notes/${publishedUid}/delete`, 0, { noteUid: publishedUid }],
+      ['restoreNote', `/dash/notes/${deletedUid}`, 0, { noteUid: deletedUid }],
     ] as const;
 
   describe.each(['submit', 'call'] as const)('%s', (how) => {
@@ -311,5 +327,50 @@ describe('オーナーの JWT がない書き込み（FR-033）', () => {
       await res.arrayBuffer();
       expect((await readRows(ctx, 'note')).length).toBe(before + 1);
     });
+  });
+});
+
+describe('下書きに戻す・削除する・元に戻す（FR-014・FR-016・SC-007、User Story 2 の 1・3・5）', () => {
+  const PATH = '/notes/integration-lifecycle';
+  const BODY = '下書きに戻す・削除する本文';
+
+  const send = async (formPath: string, formIndex: number) => {
+    const res = await sendNoteForm({
+      how: 'submit',
+      formPath,
+      formIndex,
+      values: { noteUid: lifecycleUid },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+  };
+
+  const visitorStatus = async () => {
+    const res = await ctx.server.fetch(PATH);
+    return { status: res.status, text: await res.text() };
+  };
+
+  it('下書きに戻すと 404 で中身が無く、公開し直すと同じ版が出る', async () => {
+    await send(`/dash/notes/${lifecycleUid}`, 1);
+    const hidden = await visitorStatus();
+    expect(hidden.status).toBe(404);
+    expect(hidden.text).not.toContain(BODY);
+
+    await send(`/dash/notes/${lifecycleUid}`, 0);
+    const republished = await visitorStatus();
+    expect(republished.status).toBe(200);
+    expect(republished.text).toContain(BODY);
+  });
+
+  it('公開した note を削除すると 404 で中身が無く、元に戻すと同じ版が 200 で出る', async () => {
+    await send(`/dash/notes/${lifecycleUid}/delete`, 0);
+    const hidden = await visitorStatus();
+    expect(hidden.status).toBe(404);
+    expect(hidden.text).not.toContain(BODY);
+
+    await send(`/dash/notes/${lifecycleUid}`, 0);
+    const restored = await visitorStatus();
+    expect(restored.status).toBe(200);
+    expect(restored.text).toContain(BODY);
   });
 });
