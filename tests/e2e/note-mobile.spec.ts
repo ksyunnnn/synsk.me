@@ -33,6 +33,8 @@ test('スマートフォンで note を作り、保存し、公開できる', as
     page.waitForResponse((res) => res.request().method() === 'POST'),
     page.getByRole('button', { name: '保存する' }).tap(),
   ]);
+  // 打った値が欄に残っているだけでないことを、読み込み直して確かめる
+  await page.reload();
   await expect(textbox(page, '本文')).toHaveValue('E2E のスマートフォンで直した本文');
 
   await Promise.all([
