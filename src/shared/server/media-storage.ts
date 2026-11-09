@@ -10,7 +10,7 @@ import {
   type MediaStorage,
 } from '@/shared/domain/media';
 import { readEnv } from '@/shared/server/env';
-import { withNoStore } from '@/shared/server/preview-no-store';
+import { NO_STORE } from '@/shared/server/preview-no-store';
 
 /**
  * 画像の置き場の R2 の実装と、画像の応答の組み立て（U5 の決定、2026-11-09）。R2 を使うのは
@@ -22,6 +22,17 @@ import { withNoStore } from '@/shared/server/preview-no-store';
 
 /** 条件つきで読んだときは、条件に合わず中身を返さなければ `body` を持たない */
 const hasBody = (object: R2Object | R2ObjectBody): object is R2ObjectBody => 'body' in object;
+
+/** R2 の `delete` が 1 回で受けるキーの数の上限 */
+const R2_DELETE_MAX_KEYS = 1000;
+
+/**
+ * `If-None-Match` の値が ETag の並びの形（RFC 9110 の 13.1.2）か。R2 は形の違う値で例外を投げる
+ * ため、形の違う値は条件として渡さない
+ */
+const ENTITY_TAG = String.raw`(?:W\/)?"[\x21\x23-\x7e]*"`;
+const IF_NONE_MATCH = new RegExp(`^(?:\\*|${ENTITY_TAG}(?:[ \\t]*,[ \\t]*${ENTITY_TAG})*)$`);
+const isIfNoneMatch = (value: string) => IF_NONE_MATCH.test(value.trim());
 
 export const createR2MediaStorage = (bucket: R2Bucket): MediaStorage => ({
   save: async (file) => {
@@ -38,19 +49,25 @@ export const createR2MediaStorage = (bucket: R2Bucket): MediaStorage => ({
 
   read: async (storageKey, options = {}) => {
     const { ifNoneMatch } = options;
-    const object: R2Object | R2ObjectBody | null = ifNoneMatch
-      ? await bucket.get(storageKey, { onlyIf: new Headers({ 'If-None-Match': ifNoneMatch }) })
-      : await bucket.get(storageKey);
+    const object: R2Object | R2ObjectBody | null =
+      ifNoneMatch && isIfNoneMatch(ifNoneMatch)
+        ? await bucket.get(storageKey, { onlyIf: new Headers({ 'If-None-Match': ifNoneMatch }) })
+        : await bucket.get(storageKey);
     if (object === null) return null;
     const type = object.httpMetadata?.contentType ?? '';
     // 受ける形式を確かめて置いた画像だけを返す。ほかの経路で置かれた値は配らない
-    if (!isMediaType(type)) return null;
+    if (!isMediaType(type)) {
+      if (hasBody(object)) await object.body.cancel();
+      return null;
+    }
     if (!hasBody(object)) return { notModified: true, etag: object.httpEtag };
     return { body: object.body, type, size: object.size, etag: object.httpEtag };
   },
 
   remove: async (storageKeys) => {
-    if (storageKeys.length > 0) await bucket.delete(storageKeys);
+    for (let start = 0; start < storageKeys.length; start += R2_DELETE_MAX_KEYS) {
+      await bucket.delete(storageKeys.slice(start, start + R2_DELETE_MAX_KEYS));
+    }
   },
 });
 
@@ -66,12 +83,16 @@ export const createMediaStorage = async (): Promise<MediaStorage> =>
  */
 const PUBLIC_CACHE_CONTROL = 'no-cache';
 
-const notFound = () => new Response(null, { status: 404 });
+/**
+ * 404 は、どのキャッシュにも残さない。公開していない画像の経路の応答をキャッシュに置かず（NFR-09）、
+ * 見せない画像を公開した後に 404 が残らないようにする
+ */
+const notFound = () => new Response(null, { status: 404, headers: { 'Cache-Control': NO_STORE } });
 
 /**
  * 画像の応答を作る。`hidden` と、形の違うキーは置き場を読まずに 404。公開していない画像
- * （`restricted`）は、どのキャッシュにも残さない（NFR-09）。`ifNoneMatch` は要求の
- * `If-None-Match`。公開している画像でだけ使う
+ * （`restricted`）は、どのキャッシュにも残さず、ETag を付けない（NFR-09）。`ifNoneMatch` は要求の
+ * `If-None-Match`。公開している画像でだけ使い、ETag の並びの形でない値は無視する
  */
 export const respondWithMedia = async (
   storage: MediaStorage,
@@ -82,21 +103,19 @@ export const respondWithMedia = async (
   const storageKey = parseMediaStorageKey(key);
   if (access === 'hidden' || storageKey === null) return notFound();
 
-  const media = await storage.read(storageKey, {
-    ifNoneMatch: access === 'public' ? ifNoneMatch : null,
-  });
+  const isPublic = access === 'public';
+  const media = await storage.read(storageKey, { ifNoneMatch: isPublic ? ifNoneMatch : null });
   if (media === null) return notFound();
 
   const headers = new Headers({
-    ETag: media.etag,
-    'Cache-Control': PUBLIC_CACHE_CONTROL,
+    'Cache-Control': isPublic ? PUBLIC_CACHE_CONTROL : NO_STORE,
     // 宣言した形式のまま扱わせる。ブラウザに中身から形式を推測させない
     'X-Content-Type-Options': 'nosniff',
   });
+  if (isPublic) headers.set('ETag', media.etag);
   if ('notModified' in media) return new Response(null, { status: 304, headers });
 
   headers.set('Content-Type', media.type);
   headers.set('Content-Length', String(media.size));
-  const response = new Response(media.body, { headers });
-  return access === 'public' ? response : withNoStore(response);
+  return new Response(media.body, { headers });
 };

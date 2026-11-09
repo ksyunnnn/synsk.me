@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
-import { MEDIA_MAX_BYTES, type MediaStorage } from '@/shared/domain/media';
+import { MEDIA_MAX_BYTES, parseMediaStorageKey, type MediaStorage } from '@/shared/domain/media';
 import { createR2MediaStorage, respondWithMedia } from '@/shared/server/media-storage';
 
 /**
@@ -28,7 +28,7 @@ describe('save', () => {
     // 送り手の付けた形式は信じない
     const media = await saveOrFail(new Blob([png()], { type: 'text/html' }));
     expect(media.type).toBe('image/png');
-    expect(media.storageKey).toMatch(/^[0-9a-f-]{36}$/);
+    expect(parseMediaStorageKey(media.storageKey)).toBe(media.storageKey);
     const object = await env.NOTE_IMAGES.head(media.storageKey);
     expect(object?.httpMetadata?.contentType).toBe('image/png');
     expect(object?.size).toBe(64);
@@ -54,6 +54,15 @@ describe('remove', () => {
     const media = await saveOrFail(png());
     await storage.remove([media.storageKey, crypto.randomUUID()]);
     expect(await env.NOTE_IMAGES.head(media.storageKey)).toBeNull();
+  });
+
+  it('R2 が 1 回で受ける 1000 件を超えるキーも消す', async () => {
+    const first = await saveOrFail(png());
+    const last = await saveOrFail(png());
+    const missing = Array.from({ length: 1000 }, () => crypto.randomUUID());
+    await storage.remove([first.storageKey, ...missing, last.storageKey]);
+    expect(await env.NOTE_IMAGES.head(first.storageKey)).toBeNull();
+    expect(await env.NOTE_IMAGES.head(last.storageKey)).toBeNull();
   });
 });
 
@@ -87,13 +96,26 @@ describe('respondWithMedia', () => {
     await changed.arrayBuffer();
   });
 
-  it('公開していない画像は、どのキャッシュにも残さず、If-None-Match に 304 で応えない', async () => {
+  it.each(['foo', 'W/abc', '"a", b', '"a'])(
+    '公開している画像は、If-None-Match が ETag の形でなければ（%s）無視して 200',
+    async (ifNoneMatch) => {
+      const media = await saveOrFail(png());
+      const response = await respondWithMedia(storage, media.storageKey, 'public', ifNoneMatch);
+      expect(response.status).toBe(200);
+      await response.arrayBuffer();
+    },
+  );
+
+  it('公開していない画像は、どのキャッシュにも残さず、ETag を付けず、If-None-Match に 304 で応えない', async () => {
     const media = await saveOrFail(png());
     const first = await respondWithMedia(storage, media.storageKey, 'restricted');
     await first.arrayBuffer();
     expect(first.headers.get('Cache-Control')).toBe('no-store, must-revalidate');
+    expect(first.headers.get('ETag')).toBeNull();
 
-    const etag = first.headers.get('ETag') as string;
+    const publicResponse = await respondWithMedia(storage, media.storageKey, 'public');
+    await publicResponse.arrayBuffer();
+    const etag = publicResponse.headers.get('ETag') as string;
     const second = await respondWithMedia(storage, media.storageKey, 'restricted', etag);
     expect(second.status).toBe(200);
     await second.arrayBuffer();
@@ -103,17 +125,26 @@ describe('respondWithMedia', () => {
     const read = vi.fn<MediaStorage['read']>();
     const spy: MediaStorage = { ...storage, read };
     const media = await saveOrFail(png());
-    expect((await respondWithMedia(spy, media.storageKey, 'hidden')).status).toBe(404);
+    const hidden = await respondWithMedia(spy, media.storageKey, 'hidden');
+    expect(hidden.status).toBe(404);
+    expect(hidden.headers.get('Cache-Control')).toBe('no-store, must-revalidate');
     expect((await respondWithMedia(spy, '1', 'public')).status).toBe(404);
     expect(read).not.toHaveBeenCalled();
   });
 
-  it('無い画像と、受けない形式で置かれた値は 404', async () => {
-    expect((await respondWithMedia(storage, crypto.randomUUID(), 'public')).status).toBe(404);
-    const key = crypto.randomUUID();
-    await env.NOTE_IMAGES.put(key, '<svg></svg>', {
-      httpMetadata: { contentType: 'image/svg+xml' },
-    });
-    expect((await respondWithMedia(storage, key, 'public')).status).toBe(404);
-  });
+  it.each(['public', 'restricted'] as const)(
+    '無い画像と、受けない形式で置かれた値は、%s でも 404 で、どのキャッシュにも残さない',
+    async (access) => {
+      const missing = await respondWithMedia(storage, crypto.randomUUID(), access);
+      expect(missing.status).toBe(404);
+      expect(missing.headers.get('Cache-Control')).toBe('no-store, must-revalidate');
+      const key = crypto.randomUUID();
+      await env.NOTE_IMAGES.put(key, '<svg></svg>', {
+        httpMetadata: { contentType: 'image/svg+xml' },
+      });
+      const svg = await respondWithMedia(storage, key, access);
+      expect(svg.status).toBe(404);
+      expect(svg.headers.get('Cache-Control')).toBe('no-store, must-revalidate');
+    },
+  );
 });

@@ -80,7 +80,7 @@ export type MediaStorage = {
   ) => Promise<{ ok: true; media: SavedMedia } | { ok: false; reason: MediaRejection }>;
   /**
    * 読む。無いか、受けない形式で置かれていれば null。`ifNoneMatch` が今の ETag に合えば、中身を
-   * 読まずに `not-modified` を返す
+   * 読まずに `{ notModified: true, etag }` を返す。`ifNoneMatch` が ETag の並びの形でなければ無視する
    */
   read: (
     storageKey: MediaStorageKey,
