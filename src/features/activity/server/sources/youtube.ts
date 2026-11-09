@@ -3,6 +3,7 @@ import 'server-only';
 import type { FetchedItem } from '@/features/activity/domain/fetched-item';
 import type { FetchLimits } from '@/features/activity/domain/limits';
 import type { Fetcher } from '@/features/activity/server/sources/fetch-with-limits';
+import { SOURCES } from '@/features/activity/domain/sources';
 import { fetchOEmbed } from '@/features/activity/server/sources/oembed';
 
 /**
@@ -30,7 +31,7 @@ const VIDEO_ID = /^[\w-]+$/;
 
 /**
  * 同じ動画を指す URL の表記を `https://www.youtube.com/watch?v=<ID>` に揃える（research.md の R10）。
- * `youtu.be/<ID>`・`m.youtube.com/watch?v=<ID>`・`www.youtube.com/shorts/<ID>` と、共有の印
+ * `youtu.be/<ID>`・`m.youtube.com/watch?v=<ID>`・`www.youtube.com/shorts/<ID>`・`/live/<ID>`・`/embed/<ID>` と、共有の印
  * `si` などのクエリが付いた形は、oEmbed がどれも同じ動画を返した（2026-11-09 実測）。動画の ID を
  * 読めない URL はそのまま返す
  */
@@ -41,12 +42,15 @@ export const canonicalYouTubeUrl = (url: string): string => {
   } catch {
     return url;
   }
-  const host = parsed.hostname.toLowerCase();
+  // 取得元のホストの URL だけを揃える（research.md の R10）
+  if (!(SOURCES.youtube.hosts as readonly string[]).includes(parsed.hostname)) return url;
+  // プレイリストの中の再生は、動画 1 本の URL にすると別のプレイリストが 1 つにまとまるので揃えない
+  if (parsed.searchParams.has('list')) return url;
   const [first, second] = parsed.pathname.split('/').filter(Boolean);
   const id =
-    host === 'youtu.be'
+    parsed.hostname === 'youtu.be'
       ? first
-      : first === 'shorts'
+      : first === 'shorts' || first === 'live' || first === 'embed'
         ? second
         : first === 'watch'
           ? (parsed.searchParams.get('v') ?? undefined)

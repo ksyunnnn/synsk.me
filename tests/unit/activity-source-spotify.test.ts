@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fetchByUrl } from '@/features/activity/server/sources/spotify';
+import { canonicalSpotifyUrl, fetchByUrl } from '@/features/activity/server/sources/spotify';
 import type { FetchLimits } from '@/features/activity/domain/limits';
 import { createFakeFetcher, jsonResponse } from '../support/activity-fakes';
 
@@ -59,6 +59,10 @@ describe('Spotify', () => {
       await expect(fetchByUrl(fetcher, URL_, LIMITS)).rejects.toThrow(String(status));
     },
   );
+
+  it('si を除くときに、ほかのクエリの表記を変えない', () => {
+    expect(canonicalSpotifyUrl(`${URL_}?foo=a%20b&si=fake-share`)).toBe(`${URL_}?foo=a%20b`);
+  });
 
   it('共有の印 si を除いた URL に揃えて取る（research.md の R10）', async () => {
     const { fetcher, requested } = createFakeFetcher({

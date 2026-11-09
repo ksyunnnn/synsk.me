@@ -147,6 +147,19 @@ describe('planRefresh', () => {
     expect(updated.updates).toEqual([{ id: 10, changes: { url: 'https://example.com/c' } }]);
   });
 
+  it('揃えると同じ値になる保存した行が 2 つあれば、揃えた値で保存した行を使い、直す行を出さない', () => {
+    const plan = planRefresh(
+      [
+        stored({ id: 12, url: 'https://example.com/d' }),
+        stored({ id: 13, url: 'https://example.com/d#top' }),
+      ],
+      [fetched({ url: 'https://example.com/d' })],
+    );
+
+    // id 13 を揃えた値に直すと、id 12 と UNIQUE (source, url) に当たる
+    expect(plan).toEqual({ inserts: [], updates: [], skippedWithoutDate: 0 });
+  });
+
   it('末尾のスラッシュとクエリは揃えない。別の資源を指しうる（src/shared/domain/web-url.ts）', () => {
     const plan = planRefresh([stored({ id: 11 })], [fetched({ url: 'https://example.com/a/' })]);
 

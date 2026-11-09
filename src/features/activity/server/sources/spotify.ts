@@ -37,6 +37,11 @@ export const canonicalSpotifyUrl = (url: string): string => {
     return url;
   }
   if (!parsed.searchParams.has('si')) return url;
-  parsed.searchParams.delete('si');
+  // `si` の組だけを文字列から除く。searchParams で書き直すと、ほかのクエリの表記（%20 と +）も変わる
+  const rest = parsed.search
+    .slice(1)
+    .split('&')
+    .filter((pair) => !/^si(=|$)/.test(pair));
+  parsed.search = rest.length > 0 ? `?${rest.join('&')}` : '';
   return parsed.href;
 };

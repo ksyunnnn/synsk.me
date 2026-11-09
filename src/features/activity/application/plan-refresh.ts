@@ -23,8 +23,12 @@ export const planRefresh = (stored: StoredItem[], fetchedItems: FetchedItem[]): 
   const byExternalId = new Map<string, StoredItem>();
   const byUrl = new Map<string, StoredItem>();
   for (const row of stored) {
-    if (row.externalId === null) byUrl.set(urlKey(row.url), row);
-    else byExternalId.set(row.externalId, row);
+    if (row.externalId === null) {
+      // 揃えると同じ値になる行が 2 つあれば、保存した値が揃えた値と同じ行を使う。別の行を選んで
+      // 揃えた値に直すと、UNIQUE (source, url) に当たって、その取得元の書き込みが毎回戻る
+      const key = urlKey(row.url);
+      if (!byUrl.has(key) || row.url === key) byUrl.set(key, row);
+    } else byExternalId.set(row.externalId, row);
   }
   const fetched = fetchedItems.map((item) => ({ ...item, url: urlKey(item.url) }));
 

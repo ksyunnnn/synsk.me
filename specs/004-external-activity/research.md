@@ -59,7 +59,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R5 同じ項目の判定と書き方
 
 - 決めたこと: 取得元が ID を返すときは `(source, external_id)` で、返さないときは `(source, url)` で同じ項目を判定する（FR-008）。スキーマの `UNIQUE (source, external_id)` と部分 UNIQUE 索引 `activity_source_url` が最後の守り
-- URL で判定するときは、取った URL と保存した URL の両方を共有の `normalizeWebUrl`（`src/shared/domain/web-url.ts`）で揃えてから比べ、揃えた値で書く（`src/features/activity/application/plan-refresh.ts` の `urlKey`）。揃えるのはスキームとホスト名の大小・既定のポート・パーセントエンコード・フラグメントだけで、末尾のスラッシュとクエリは揃えない（理由はその関数の注釈）。一覧を取る取得元の URL は取得元の一覧がいつも同じ形で返すので、取得元ごとに揃え足すものは無い（Zenn は末尾にスラッシュを付けた URL を 308 で付けない URL へ移す。2026-11-09 実測）
+- URL で判定するときは、取った URL と保存した URL の両方を共有の `normalizeWebUrl`（`src/shared/domain/web-url.ts`）で揃えてから比べ、揃えた値で書く（`src/features/activity/application/plan-refresh.ts` の `urlKey`）。揃えると同じ値になる保存した行が 2 つあれば、保存した値が揃えた値と同じ行を同じ項目とする（もう一方を揃えた値に直すと UNIQUE に当たる）。揃えるのはスキームとホスト名の大小・既定のポート・パーセントエンコード・フラグメントだけで、末尾のスラッシュとクエリは揃えない（理由はその関数の注釈）。一覧を取る取得元の URL は取得元の一覧がいつも同じ形で返すので、取得元ごとに揃え足すものは無い（Zenn は末尾にスラッシュを付けた URL を 308 で付けない URL へ移す。2026-11-09 実測）
 - 書き方: 足す行は INSERT、直す行は値が変わった列だけを UPDATE する。値が変わらない行は書かない
 - 公開日を返さない取得元（URL を指名する取得元）を取り直すときは、`published_at` を書かない（FR-012）
 - `created_at` は初めて取り込んだ日時（FR-013、0004 の注釈）。UPDATE で書き換えない
@@ -196,7 +196,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   - 案 (b) 暦の日付の列を足す migration を共有担当に頼む
 - URL は `src/shared/domain/web-url.ts` の `isWebUrl` で http か https だけを通す。URL を指名する取得元では、さらにその取得元のホストの URL だけを通す（任意のホストへ要求を出さない。原則 2）
 - URL を指名する取得元では、オーナーが貼る URL の表記がゆれる。取得元ごとの処理が、同じ項目を指す表記を 1 つに揃えてから題を取り、揃えた URL を返す（2026-11-09 実測。どれも oEmbed が同じ項目を返した）
-  - YouTube: `youtu.be/<ID>`・`m.youtube.com/watch?v=<ID>`・`www.youtube.com/shorts/<ID>`・共有の印 `si` などの付いた形を `https://www.youtube.com/watch?v=<ID>` にする（`canonicalYouTubeUrl`）
+  - YouTube: `youtu.be/<ID>`・`m.youtube.com/watch?v=<ID>`・`www.youtube.com/shorts/<ID>`・`/live/<ID>`・`/embed/<ID>`・共有の印 `si` などの付いた形を `https://www.youtube.com/watch?v=<ID>` にする（`canonicalYouTubeUrl`）。`sources.ts` の YouTube のホストの URL だけを揃える。`list` の付いたプレイリストの中の再生は揃えない（動画 1 本の URL にすると、先頭の動画が同じ別のプレイリストが 1 つにまとまる）
   - Spotify: アプリの「共有」が付ける `si` を除く。ほかのクエリは残す（`canonicalSpotifyUrl`）
   - CodeSandbox: `/s/<id>`・`/embed/<id>`・`/p/sandbox/<id>` が同じ sandbox を指すかを確かめていないので、揃えない
   - X: 題の扱い（U11）が決まってから決める
