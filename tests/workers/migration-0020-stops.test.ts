@@ -13,7 +13,7 @@ type Row = Record<string, unknown>;
 /** activity の索引・トリガと、ビュー・表の定義 */
 const schemaOf = async () => {
   const { results } = await env.DB.prepare(
-    "SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'activity' OR name = 'activity_feed' OR name LIKE '%_copy' ORDER BY type, name",
+    "SELECT type, name, sql FROM sqlite_master WHERE tbl_name = 'activity' OR name = 'activity_feed' OR name LIKE '%\\_copy' ESCAPE '\\' ORDER BY type, name",
   ).all<Row>();
   return results;
 };
