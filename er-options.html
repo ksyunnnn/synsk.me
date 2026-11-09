@@ -3118,7 +3118,7 @@
             font-family="'Geist Mono', 'Hiragino Kaku Gothic ProN', monospace"
             text-anchor="end"
           >
-            text · 空可
+            text · 空可（外部だけ）
           </text>
           <text
             x="1176"
@@ -5283,7 +5283,8 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            activity.sort_at は published_at か happened_on から求め、NOT NULL
+            activity.sort_at は published_at か happened_on から求め、NOT NULL。life event の行は
+            published_at を持たない（CHECK）
           </text>
           <text
             x="416"
