@@ -106,7 +106,12 @@ test('続けて保存しても、保存できた書きかけがその端末に�
   context,
 }) => {
   await actAsAuthor(context);
-  await createNote(page, { slug: uniqueSlug('drafts'), title: 'E2E の書きかけの題' });
+  const editUrl = await createNote(page, {
+    slug: uniqueSlug('drafts'),
+    title: 'E2E の書きかけの題',
+  });
+  // 1 回目の保存で `?saved=1` へ移り、2 回目の保存で同じ URL へ移る形にするため、開き直す
+  await page.goto(editUrl);
   await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
   for (const body of ['E2E の 1 回目', 'E2E の 2 回目']) {
     await textbox(page, '本文').fill(body);
