@@ -1,8 +1,13 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { LifeEventForm } from '@/features/activity/components/life-event-form';
+import { LifeEventImageForm } from '@/features/activity/components/life-event-image-form';
 import { toLifeEventFormValues } from '@/features/activity/domain/life-event';
-import { editLifeEvent } from '@/features/activity/server/actions';
+import {
+  editLifeEvent,
+  registerLifeEventImage,
+  removeLifeEventImage,
+} from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
 import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { TextLink } from '@/shared/components/text-link';
@@ -15,14 +20,18 @@ export const metadata: Metadata = { title: 'life event を編集する | synsk.m
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string | string[] }>;
+  searchParams: Promise<{
+    saved?: string | string[];
+    imageSaved?: string | string[];
+    imageRemoved?: string | string[];
+  }>;
 };
 
 const Page = async ({ params, searchParams }: Props) => {
   // オーナーでなければ、life event を読む前に 403 になる
   const lifeEvent = await getLifeEventForEdit((await params).id);
   if (!lifeEvent) notFound();
-  const { saved } = await searchParams;
+  const { saved, imageSaved, imageRemoved } = await searchParams;
   const values = toLifeEventFormValues(lifeEvent);
 
   return (
@@ -41,6 +50,14 @@ const Page = async ({ params, searchParams }: Props) => {
         action={editLifeEvent}
         initialValues={values}
         uid={lifeEvent.uid}
+      />
+      {imageSaved === '1' && <p role="status">代表画像を登録しました</p>}
+      {imageRemoved === '1' && <p role="status">代表画像を外しました</p>}
+      <LifeEventImageForm
+        uid={lifeEvent.uid}
+        cardImageUrl={lifeEvent.cardImageUrl}
+        register={registerLifeEventImage}
+        remove={removeLifeEventImage}
       />
       <p>
         <TextLink href={`/dash/life-events/${lifeEvent.uid}/delete`}>

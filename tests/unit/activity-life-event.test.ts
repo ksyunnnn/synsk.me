@@ -22,6 +22,7 @@ const lifeEvent = (overrides: Partial<LifeEvent> = {}): LifeEvent => ({
   title: '作り物の出来事',
   description: null,
   happenedOn: '2020-04-01' as CalendarDate,
+  cardImageUrl: null,
   ...overrides,
 });
 
@@ -48,7 +49,10 @@ const fakeLifeEvents = (current: LifeEvent | null) =>
     edit: vi.fn<LifeEventRepository['edit']>(async () => ({
       ok: true as const,
     })),
-    delete: vi.fn(async () => ({ ok: true })),
+    delete: vi.fn<LifeEventRepository['delete']>(async () => ({ ok: true, removedKeys: [] })),
+    replaceCardImage: vi.fn(),
+    removeCardImage: vi.fn(),
+    isCardImage: vi.fn(),
   }) satisfies LifeEventRepository;
 
 let lifeEvents: ReturnType<typeof fakeLifeEvents>;
@@ -152,13 +156,15 @@ describe('editLifeEvent', () => {
 });
 
 describe('deleteLifeEvent', () => {
+  const storage = { save: vi.fn(), read: vi.fn(), remove: vi.fn(async () => {}) };
+
   it('life event を消す（FR-023）', async () => {
-    expect(await deleteLifeEvent(lifeEvents, OWNER, 1)).toEqual({ status: 'deleted' });
+    expect(await deleteLifeEvent(lifeEvents, storage, OWNER, 1)).toEqual({ status: 'deleted' });
     expect(lifeEvents.delete).toHaveBeenCalledWith(1);
   });
 
   it('オーナーでなければ何も消さない', async () => {
-    expect(await deleteLifeEvent(lifeEvents, null, 1)).toEqual({ status: 'forbidden' });
+    expect(await deleteLifeEvent(lifeEvents, storage, null, 1)).toEqual({ status: 'forbidden' });
     expect(lifeEvents.delete).not.toHaveBeenCalled();
   });
 });
