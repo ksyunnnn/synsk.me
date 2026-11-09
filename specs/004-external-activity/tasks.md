@@ -97,7 +97,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### 取得の入口
 
-- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。**止める未決: U13**
+- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
 - [ ] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。頁を辿った取得元では値を消す。**止める依存: 共有担当の migration**（`fetch_result` の列）
 
 ---

@@ -98,6 +98,7 @@
 | FR-009・FR-010・FR-011 | URL を指名して日付つきで登録すると題を取って保存する。日付が無ければ保存しない。手で入力した値で保存する | 単（ユースケース）・W（保存）・E（入力） |
 | FR-012・SC-005 | 公開日の無い項目で `published_at` を書かない。URL を指名した activity は取得で取り直さず、日付はオーナーの入力の値だけで書く（research.md の R5） | 単（`planRefresh`）・W |
 | FR-013 | 取り直しても `created_at` が変わらない | W |
+| FR-036 | `wrangler.jsonc` に `triggers` があり、`scheduled` が `refreshSources` を呼ぶ（research.md の R9） | 単 |
 | FR-014・FR-015・SC-002 | 2 つのうち 1 つの取得元が失敗しても、失敗した側の行が残り、もう一方が取り込まれる | 単（`refreshSources`）・W（`batch()` の分け方） |
 | FR-016 | 失敗の結果に日時・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が残る | 単・W |
 | FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRefresh`）・W |
@@ -133,7 +134,6 @@ spec の「決定が無く、この spec では決めない」のうち、作る
 | spec の未決 | この plan の扱い |
 |---|---|
 | 取得の結果をオーナーに見せる画面を持つか | 作らない。`fetch_result` に書くだけ |
-| 取得を走らせる時機 | Cron Triggers の定期実行（U10 の決定、research.md の R9） |
 | 外部の activity の代表の画像の出し方 | `image_url` に URL を持つだけで、画像を保管しない。出し方は 005 と issue #186「URL カードの画像の出し方を決める」 |
 | life event の題を必ず入れるか | 必須にしない（`activity.title` は NULL 可、spec に要件が無い） |
 | life event の説明の書式と、説明の中に画像を置けるか | 説明は文字列で持ち、改行を保つ文字だけで見せる。書式は 001 の U4（本文の書式）が決まってから合わせる |
