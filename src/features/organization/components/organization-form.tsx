@@ -24,6 +24,8 @@ type Props = {
     formData: FormData,
   ) => Promise<OrganizationFormResult>;
   organizationUid: string;
+  /** 開いたときの行の更新日時。職歴・実績の保存が秘匿化した組織名を足すと変わる */
+  updatedAt: string;
   initialValues: OrganizationFormValues;
   /** 秘匿化した職歴・実績が指している。秘匿化した組織名を空にできないことを示す */
   isReferencedByMasked: boolean;
@@ -39,6 +41,7 @@ const ERROR_MESSAGES: Record<OrganizationFieldError, string> = {
 export const OrganizationForm = ({
   action,
   organizationUid,
+  updatedAt,
   initialValues,
   isReferencedByMasked,
 }: Props) => {
@@ -55,6 +58,7 @@ export const OrganizationForm = ({
     <DraftRetainingForm
       action={formAction}
       storageKey={`organization:${organizationUid}`}
+      version={updatedAt}
       result={result}
       className="flex flex-col gap-6"
     >

@@ -47,7 +47,7 @@
 | 決まり | 要件 | 置き場 |
 |---|---|---|
 | 限定公開用の識別子は uid で、書き換えを拒む | FR-037 | `src/features/resume/domain/resume.ts` |
-| 公開用の識別子の既定は uid。書き換えは FR-002 の形と重複を確かめる | FR-002・FR-039 | 同上 |
+| 公開用の識別子の既定は uid。書き換えは FR-002 の形と重複を確かめる | FR-002・FR-039 | `src/shared/domain/slug.ts` の `newSlug` と `isSlug`。重複は `resume.slug` の UNIQUE |
 | 2 つ目の公開用は、保存の前に拒む | FR-019 | 作成のユースケース。索引 `resume_public` は最後の守り |
 | 限定公開用の URL は識別子（uid）だけで作る。出し直すと識別子を新しい uid に書き換える | FR-011・FR-012・FR-040 | `src/shared/domain/slug.ts` の `newSlug`（research.md の R5） |
 | 中身を返すのは、識別子が合い、公開中で、限定公開用なら期限の前か期限が無いときだけ | FR-014・FR-020・FR-022・FR-023 | 訪問者向けの取り出しの SQL の WHERE（research.md の R6） |

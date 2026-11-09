@@ -1,6 +1,13 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { fillCareer, fillProject, registerCareer, registerSkill } from './support/dash';
+import {
+  fillCareer,
+  fillProject,
+  registerCareer,
+  registerSkill,
+  saveEdit,
+  textbox,
+} from './support/dash';
 
 /**
  * 保存操作をしていない入力が、再読み込みしても残ること（docs/REQUIREMENTS.md の FR-14、
@@ -12,8 +19,6 @@ import { fillCareer, fillProject, registerCareer, registerSkill } from './suppor
  *
  * テストは同じ手元の D1 を並行して使う。名前は、ほかのテストと重ならない値にする。
  */
-
-const textbox = (page: Page, name: string) => page.getByRole('textbox', { name, exact: true });
 
 /** 書きかけの名前の一覧。名前は `synsk:draft:<scope>:...` */
 const draftKeys = (page: Page) =>
@@ -64,7 +69,7 @@ test('職歴の登録の画面で、保存せずに再読み込みしても入�
 
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
-  expect(await draftKeys(page)).toEqual([]);
+  await expect.poll(() => draftKeys(page)).toEqual([]);
   await page.goto('/dash/careers/new');
   await expect(textbox(page, '肩書')).toHaveValue('');
 });
@@ -86,6 +91,33 @@ test('職歴の登録で項目の不備があっても、再読み込みする�
   await expect(textbox(page, '肩書')).toHaveValue('E2E 不備のある書きかけ');
 });
 
+test('職歴の登録の送信が応答を返さずに失敗しても、再読み込みすると入力が残る', async ({
+  page,
+  context,
+}) => {
+  const role = `E2E 送れなかった肩書 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  await page.goto('/dash/careers/new');
+  await fillUntilDrafted(page, 'career', () =>
+    fillCareer(page, {
+      organizationName: 'E2E 送れなかった組織',
+      organizationNameMasked: 'E2E 送れなかった秘匿化した組織名',
+      role,
+      startedOn: '2020-04-01',
+    }),
+  );
+  // Server Action の送信を切る。失敗の結果は来ない
+  await page.route('**/dash/careers/new', (route) =>
+    route.request().method() === 'POST' ? route.abort() : route.continue(),
+  );
+  const aborted = page.waitForEvent('requestfailed', (req) => req.method() === 'POST');
+  await page.getByRole('button', { name: '登録する' }).click();
+  await aborted;
+  await page.unroute('**/dash/careers/new');
+  await page.goto('/dash/careers/new');
+  await expect(textbox(page, '肩書')).toHaveValue(role);
+});
+
 test('職歴の編集の画面で、保存せずに再読み込みしても入力が残り、保存すると消える', async ({
   page,
   context,
@@ -105,9 +137,9 @@ test('職歴の編集の画面で、保存せずに再読み込みしても入�
 
   const openedUpdatedAt = page.locator('input[name="openedUpdatedAt"]');
   const updatedAtBeforeSave = await openedUpdatedAt.inputValue();
-  await page.getByRole('button', { name: '保存する' }).click();
+  await saveEdit(page);
   await expect(openedUpdatedAt).not.toHaveValue(updatedAtBeforeSave);
-  expect(await draftKeys(page)).toEqual([]);
+  await expect.poll(() => draftKeys(page)).toEqual([]);
   await page.goto(editUrl);
   await expect(textbox(page, '肩書')).toHaveValue('E2E 保存していない肩書');
 });

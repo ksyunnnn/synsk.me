@@ -8,8 +8,10 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
  *
  * - 入力のたびに、フォームの値を `storageKey` の名前で持つ
  * - 画面を開くと、持っている値を入力に戻す。隠れた入力（uid と楽観ロックの値）は戻さない
- * - 送信すると消す。Server Action が失敗の結果を返したら、送った値を持ち直す。成功した Server
- *   Action は別の画面へ移すため、失敗の結果が来ないことが成功を表す
+ * - 送信しても消さない。保存に成功した Server Action は `?saved=1` を付けた画面へ移し、その画面の
+ *   `DraftSavedNotice` が、送った書きかけを消す。Server Action が失敗の結果を返したら、送った値を
+ *   持ち直す。結果を返さずに投げた（通信の切断、D1 の失敗）ときは、書きかけが残る
+ * - 画面を開いたとき、JavaScript が動く前にオーナーが入力を変えていたら、書きかけを戻さない
  * - `version` は、編集の画面が開いたときの行の更新日時で、持つ名前に含める。別の画面で先に
  *   保存された後に開き直すと名前が変わり、前の更新日時の書きかけは消さずに残し、自動では戻さない。
  *   戻すと、触っていない項目まで古い値で先の保存を上書きする（specs/001-career-and-project/spec.md
@@ -34,6 +36,9 @@ type Props = Omit<ComponentPropsWithoutRef<'form'>, 'action'> & {
 };
 
 const STORAGE_PREFIX = 'synsk:draft:';
+
+/** 送信して、保存の成功をまだ確かめていない書きかけの名前を持つ場所 */
+const SENT_KEY = 'synsk:draft-sent';
 
 /** 書きかけを持つ名前。編集の画面は開いたときの更新日時を含める */
 const toStorageKey = (storageKey: string, version: string | undefined) =>
@@ -110,6 +115,23 @@ const applyValues = (form: HTMLFormElement, values: DraftValues) => {
   }
 };
 
+/** JavaScript が動く前に、オーナーが入力を変えたか。隠れた入力は見ない */
+const isTouched = (form: HTMLFormElement): boolean =>
+  Array.from(form.elements).some((element) => {
+    if (element instanceof HTMLInputElement) {
+      if (element.type === 'hidden' || element.type === 'file') return false;
+      return element.type === 'checkbox' || element.type === 'radio'
+        ? element.checked !== element.defaultChecked
+        : element.value !== element.defaultValue;
+    }
+    if (element instanceof HTMLTextAreaElement) return element.value !== element.defaultValue;
+    if (element instanceof HTMLSelectElement)
+      return Array.from(element.options).some(
+        (option) => option.selected !== option.defaultSelected,
+      );
+    return false;
+  });
+
 const read = (key: string): string | null => {
   try {
     return window.localStorage.getItem(key);
@@ -118,9 +140,9 @@ const read = (key: string): string | null => {
   }
 };
 
-const write = (key: string, values: DraftValues) => {
+const write = (key: string, value: DraftValues | string) => {
   try {
-    window.localStorage.setItem(key, JSON.stringify(values));
+    window.localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
   } catch {
     // 保存先が使えない（容量の超過、使わせない設定）ときは持たない。入力と送信は続けられる
   }
@@ -150,21 +172,23 @@ export const DraftRetainingForm = ({
   useEffect(() => {
     const form = formRef.current;
     if (!form) return;
+    // 開き直したので、前の送信の成功を待つのをやめる。残った書きかけは、この画面で戻す
+    if (read(SENT_KEY) === key) remove(SENT_KEY);
     const draft = parseDraft(read(key));
     const save = () => write(key, toValues(form));
-    if (draft) applyValues(form, draft);
+    if (draft && !isTouched(form)) applyValues(form, draft);
 
-    const clear = () => {
+    const send = () => {
       submittedRef.current = toValues(form);
-      remove(key);
+      write(SENT_KEY, key);
     };
     form.addEventListener('input', save);
     form.addEventListener('change', save);
-    form.addEventListener('submit', clear);
+    form.addEventListener('submit', send);
     return () => {
       form.removeEventListener('input', save);
       form.removeEventListener('change', save);
-      form.removeEventListener('submit', clear);
+      form.removeEventListener('submit', send);
     };
   }, [key]);
 
@@ -172,7 +196,9 @@ export const DraftRetainingForm = ({
     const submitted = submittedRef.current;
     if (!result || !submitted) return;
     submittedRef.current = null;
-    if (result.status !== 'saved') write(key, submitted);
+    if (result.status === 'saved') return;
+    if (read(SENT_KEY) === key) remove(SENT_KEY);
+    write(key, submitted);
   }, [result, key]);
 
   return (
@@ -180,4 +206,18 @@ export const DraftRetainingForm = ({
       {children}
     </form>
   );
+};
+
+/**
+ * 保存の成功を知らせる。Server Action が保存に成功して移した `?saved=1` の画面に置き、送った
+ * 書きかけを消す
+ */
+export const DraftSavedNotice = () => {
+  useEffect(() => {
+    const sent = read(SENT_KEY);
+    if (sent === null) return;
+    remove(sent);
+    remove(SENT_KEY);
+  }, []);
+  return <p role="status">保存しました</p>;
 };
