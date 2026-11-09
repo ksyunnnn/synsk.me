@@ -262,14 +262,34 @@ export const DraftRetainingForm = ({
  *
  * 編集の画面で続けて保存すると、同じ `?saved=1` の画面へ移り、この部品は置き直されない。
  * `version` に保存した行の更新日時を渡すと、保存のたびに値が変わり、送った書きかけを消し直す。
- * 一覧の画面へ移す入力（学歴・スキル）は、登録・編集の画面を挟むたびに置き直されるので渡さない
+ * 一覧の画面へ移す入力（学歴・スキル）は、登録・編集の画面を挟むたびに置き直されるので渡さない。
+ *
+ * `storageKeys` には、保存に成功するとこの画面へ移るフォームの `storageKey` を挙げる。送った
+ * 書きかけの名前がどれにも合わなければ消さない。ほかの画面の送信が応答を返さずに失敗した後、
+ * ブラウザの「戻る」でこの画面へ戻ったときに、その画面の書きかけを消さないため（FR-14）
  */
-export const DraftSavedNotice = ({ version }: { version?: string }) => {
+export const DraftSavedNotice = ({
+  storageKeys,
+  version,
+}: {
+  storageKeys: string[];
+  version?: string;
+}) => {
+  const keys = storageKeys.join('\n');
   useEffect(() => {
     const sent = read(SENT_KEY);
     if (sent === null) return;
-    remove(sent);
+    // 別の画面の書きかけは消さない。送った印だけを外し、後で同じ種類の `?saved=1` の画面を
+    // 開いたときに、保存していない書きかけを消さないようにする。書きかけは、その画面を開き直すと戻る
+    if (isSentFrom(sent, keys.split('\n'))) remove(sent);
     remove(SENT_KEY);
-  }, [version]);
+  }, [keys, version]);
   return <p role="status">保存しました</p>;
 };
+
+/** 送った書きかけの名前が、挙げた `storageKey` のどれかの書きかけか。名前は更新日時を含みうる */
+const isSentFrom = (sent: string, storageKeys: string[]) =>
+  storageKeys.some((storageKey) => {
+    const name = toStorageKey(storageKey, undefined);
+    return sent === name || sent.startsWith(`${name}@`);
+  });
