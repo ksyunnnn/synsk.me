@@ -10,12 +10,19 @@
 
 ## Contents
 
+- Clarifications
 - Terms
 - User Scenarios & Testing（User Story 1〜5、Edge Cases）
 - Requirements（取得元と分類・取得と保存・取得の失敗・取得元で消えた activity・手で付ける値・life event・画像・書き換え）
 - Key Entities
 - Success Criteria
 - Assumptions
+
+## Clarifications
+
+### Session 2026-11-09
+
+- Q: 一覧を取る取得元からの取得は、いつ走るか？ → A: システムが定期的に自動で走らせる。オーナーが画面から取り直す操作は持たない（2026-11-09、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6732950051)）
 
 ## Terms
 
@@ -154,6 +161,7 @@
 - **FR-011**: 公開日を返さない取得元の activity は、オーナーが日付を登録する。日付の無い外部の activity は保存しない
 - **FR-012**: 公開日を返さない取得元から取り直すとき、オーナーが登録した日付を上書きしない
 - **FR-013**: 外部の activity を初めて取り込んだ日時を記録する
+- **FR-036**: システムは、一覧を取る取得元を定期的に自動で取り直す。取り直すのにオーナーの操作を要さない
 
 **取得の失敗**
 
@@ -247,7 +255,6 @@
 **決定が無く、この spec では決めない**
 
 - 取得の結果をオーナーに見せる画面を持つか
-- 取得を走らせる時機
 - 外部の activity の代表の画像の出し方
 - life event の題を必ず入れるか
 - life event の説明の書式と、説明の中に画像を置けるか

@@ -12,7 +12,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - R6 取得元で消えた activity
 - R7 取得元ごとに取れるもの
 - R8 外への要求の上限
-- R9 取得を走らせる時機（未決）
+- R9 取得を走らせる時機
 - R10 URL を指名する・手で入力する登録
 - R11 life event の識別子と管理画面の URL
 - R12 life event の画像
@@ -41,7 +41,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - 型（domain に置く）: 一覧を取る取得元は `{ items: FetchedItem[]; isComplete: boolean }` を返す。`isComplete` は、取得元の項目をすべて取ったか（FR-018 の判定に使う）。URL を指名する取得元は、1 つの URL から `FetchedItem` か「取れない」を返す
 - 取得元の一覧（取得元の名前・分類・取り込み方・担当のファイル）は `src/features/activity/domain/sources.ts` に `as const` で 1 か所に置く。分類は `activity_source.kind` に持ち、コードは D1 の値を正とする（FR-001・FR-002）
 - 理由: `docs/SOFTWARE_DESIGN.md` の Anti-Corruption Layer、constitution VII。取得元の仕様が変わったときに直すファイルを 1 つに限る
-- RSS の XML の読み方: Workers には `DOMParser` が無い（推測。実装の前に確かめ、結果をこの項に書く）。package を足すときは constitution IX に従い、Zenn・Medium・Speaker Deck の 3 つの使い手を名前で書く
+- RSS の XML の読み方: workerd に `DOMParser` は無い（2026-11-09、`npm run test:workers` の中で `typeof DOMParser` が `undefined`）。`HTMLRewriter` はあるが HTML として読むため、RSS の `<link>`（HTML では空の要素）と CDATA を読めない。そこで package を足さず、RSS 2.0 の項目の子の要素だけを読む最小の読み手 `src/features/activity/server/sources/rss.ts` を持つ。使い手は Zenn・Medium・Speaker Deck の 3 つ（constitution IX）
 - 退けた案: 取得元の取り方を `activity_source` の列に持つ。FR-004 が退ける
 
 ## R4 取得の流れと失敗の表し方
@@ -51,7 +51,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   2. 計算: 足す行・直す行・消す行を、外への要求も D1 も触らない関数 `planRefresh` で求める（R5・R6）
   3. 書く: 1 つの取得元の書き込みと `fetch_result` の 1 行を、1 回の `batch()` で書く
 - 取得に失敗した取得元では、activity を 1 行も書き換えず、`fetch_result` だけを書く（FR-014）。`last_succeeded_at` は前の値を残す（FR-016）
-- 3 の `batch()` が失敗したとき（例: 同じ URL が応答に 2 回あり、`activity_source_url` の UNIQUE に当たる）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
+- 3 の `batch()` が失敗したとき（例: 取得元の値が activity の CHECK に反する。同じ項目が応答に 2 回あるときは、`planRefresh` が 1 つにする）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
 - 理由: `docs/SOFTWARE_DESIGN.md` の「失敗の表し方」と「読む → 計算 → 書く」、constitution IV。`batch()` は 1 文が失敗すると全体を戻す（[D1 Database API](https://developers.cloudflare.com/d1/worker-api/d1-database/)、001 の research.md の R2）ので、1 つの取得元の書き込みが途中で止まらない
 - 退けた案: すべての取得元を 1 回の `batch()` で書く。1 つの取得元の書き込みの失敗で、ほかの取得元の結果も戻る（FR-015 に反する）
 
@@ -98,6 +98,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | CodePen | すべて手で入力する | 埋め込み | なし（全経路 403） | URL | — | 手で入力 |
 | 登録していないサイト | 未決（U11） | その他 | — | URL（FR-005） | — | 手で入力 |
 
+- Qiita の 1 頁は 20 件にする。項目が本文の全文を持ち、`per_page=100` の頁は 941 KB だった（2026-11-09、77 件を実測）。R8 の 1 本の応答の大きさの上限（1 MB）の内側に収めるため
 - 頁を辿る取得元（Qiita・dev.to・GitHub・connpass）で、R8 の要求の数の上限に当たって辿るのを止めたときは、`isComplete` を偽にする。上限で止めた一覧に無い activity を消す候補にしないため（FR-018・FR-020）
 - 注意（検証記録から）: dev.to は User-Agent が空だと 403 を返し、Workers の `fetch` は既定の User-Agent を付けない。CodeSandbox は無い ID でもサイト既定の OG を 200 で返すので、`og:title` が既定値なら「取れない」とする。GitHub の `pushed_at` は null がありうる。Medium の `link` は問い合わせの部分を除いて使う。connpass は API キーが必須で、要求は 5 秒に 1 回まで
 - issue #177「CodePen と CodeSandbox を手で登録できるようにする」は CodeSandbox を手で入力するとするが、spec の Assumptions と ADR-0052 は URL を指名するとする。spec に従う（2026-11-09、PM の回答）
@@ -114,19 +115,39 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | 1 本の応答の大きさ | 1 MB で打ち切り、失敗にする | Qiita の 1 頁は 214 KB、Medium の RSS は 87 KB（検証記録） |
 | 1 回の取得で 1 つの取得元から消す件数 | 5 件 | FR-019。超えた分は残し、`fetch_result.reason` に書く |
 | connpass の要求の間隔 | 5 秒に 1 回 | 検証記録（申請の条件） |
+| Cron の実行の間隔 | 1 日 1 回 | 更新が無いのに実行が回り続ける無駄を抑える（R9）。一覧に載るのが最大 1 日遅れる |
+| 1 回の実行で出す要求の総数と、取得元への配り方 | 未定（U13） | Workers Free の 1 回の呼び出しの subrequest の上限 50 本（R9）は、外への要求と D1 の呼び出しを合わせて数える。1 つの取得元に 10 本では 7 つの取得元で外への要求だけで 70 本になり、超える |
 
 - 値はユースケースに引数で渡し（`limits`）、単体の検査では作り物の値を渡す。本番の値は `src/features/activity/domain/limits.ts` の 1 か所に置く
-- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。取得の頻度は U10 が決まってから、この上限に照らして書く
+- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。1 日 1 回の実行なら、1 日に書く行は「新しい項目＋直った項目＋取得元の数（7）」で、上限に届かない
 
-## R9 取得を走らせる時機（未決）
+## R9 取得を走らせる時機
 
-- spec の Assumptions「決定が無く、この spec では決めない」と、issue #107「定期実行の入口を持つかを決める」が未決にしている。U10
-- 案
-  - (a) Cron Triggers。`worker/index.ts` に `scheduled` を足し、`wrangler.jsonc` に `triggers` を書く
-  - (b) 管理画面の「取り直す」の操作だけ
-  - (c) (a) と (b) の両方
-- 推奨: (a)。理由: 検証記録は、connpass が「訪問者の操作でリアルタイムに API を呼ぶ構成は承認されない場合がある」とする。オーナーの手番が増えない
-- 止める範囲: 取得の入口（T040・T041）。取得のユースケース（R4）は入口に依らず作り、単体と workerd で確かめる
+- 決めたこと: Cron Triggers で定期的に取得する。`worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。管理画面の「取り直す」の操作は持たない（2026-11-09、オーナー。[issue #219 のコメント「取得を走らせる時機（004-external-activity の U10）と、epic 宛ての PR の CI の扱いをオーナーが決めた」](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6732950051)）
+- 理由: オーナーが操作する回数が増えない。費用は無料枠の中に収める前提
+- 退けた案: 管理画面の操作だけ、Cron と管理画面の操作の両方
+- 更新が無いのに実行が回り続ける無駄を、次の 3 つで抑える
+  1. 実行の間隔を長めにとる。値は R8 の表（U13）
+  2. 条件付きの要求: 取得元が返した `ETag`（無ければ `Last-Modified`）を取得元ごとに持ち、次の実行で `If-None-Match`（`If-Modified-Since`）を付けて送る。304 が返れば中身を読まず、その取得元の activity を書かず、`fetch_result` を成功として書く。持つ列は `fetch_result` に無いので、共有担当に migration を頼む（data-model.md の「要る migration の変更」）
+     - 新しい値は、その取得元の activity を書く `batch()` の中でだけ書く。値を持つのは、応答の中身をすべて書き終えた取得元だけにする
+     - 次のときは値を書かず、持っていた値を NULL にする: 取得が失敗した（`batch()` の失敗の後に `fetch_result` を書き直すときを含む）、上限で消さずに残した activity がある（`keptOverLimit` が 0 でない、FR-019）、公開日の欠けた項目を取り込まなかった。値を残すと、次の実行が 304 になり、残した分を取得元が変わるまで扱わない
+  3. 1 回の実行で外へ出す要求の数に上限を設け、超えたら止める（R8、U13、原則 2）
+- 条件付きの要求は、1 本の要求で取得を終えた取得元にだけ使う: RSS の Zenn・Medium・Speaker Deck と、1 頁目の件数が `per_page` に満たない Qiita・GitHub。dev.to は空の頁まで辿る（R7）ため使わない。2 頁目以降を取った取得元では、1 頁目が変わらなくても後の頁が変わりうるため、持っていた値を消し、次も中身を取る。下の実測は `per_page=1` で測ったもので、本番の要求の URL とは違う
+- 実測（2026-11-09、`curl` で `-A 'synsk.me (+https://synsk.me)'` を付け、1 回目の応答の値を 2 回目の要求に付けた）
+
+| 取得元 | 1 回目の応答が持つ値 | 2 回目の応答 |
+|---|---|---|
+| Zenn（RSS） | `Last-Modified` | 304 |
+| Qiita（`per_page=1`） | `ETag`（弱い） | 304 |
+| dev.to（`per_page=1`） | `ETag`（弱い） | 304 |
+| Medium（RSS） | どちらも無い | 200（毎回中身を取る） |
+| GitHub（`per_page=1`） | `ETag`（弱い） | 304 |
+| Speaker Deck（RSS） | `ETag`（弱い） | 304 |
+| connpass | 未測（API キーが無い） | 未測 |
+
+- GitHub は、`Authorization` ヘッダを付けた条件付きの要求が 304 を返したとき、primary rate limit に数えない。`GITHUB_TOKEN` が無い環境（R15）では 304 も 60 回/時/IP に数える（[Best practices for using the REST API](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)）
+- Workers Free の上限（[Workers の Limits](https://developers.cloudflare.com/workers/platform/limits/)、2026-11-09 に読んだ）: Cron Triggers はアカウントで 5 個、1 回の Cron の実行の CPU 時間は 10 ms、1 回の呼び出しの subrequest は 50 本。subrequest は「A subrequest is any request a Worker makes using the Fetch API or to Cloudflare services like R2, KV, or D1」（同じ頁）で、D1 の呼び出しも数える。外への要求を待つ時間は CPU 時間に数えない（同じ頁）。CPU 時間は応答を読んで詰め替える処理に掛かるので、実装の後に測る（原則 6）
+- CPU 時間が 10 ms を超えると、取得元ごとの失敗ではなく実行の全体が止まり、残りの取得元の `fetch_result` が書かれない（FR-015・FR-016 を満たさない）。1 回の実行で扱う取得元を分けるか（例: 実行ごとに `fetch_result.fetched_at` の最も古い取得元から順に回す）は U13 に含めて決める
 
 ## R10 URL を指名する・手で入力する登録
 
@@ -163,7 +184,6 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - 書き込みの Server Action は、何より先に `src/shared/server/author.ts` でオーナーを確かめる（ADR-0036、001 の research.md の R4）。オーナーでない呼び出しは何も書かない（FR-031、constitution I）
 - 取得のユースケースは `activity` の外部の行と `fetch_result` だけを書く。life event の行（`source = 'life_event'`）を書く文を持たず、SQL の WHERE でも `source <> 'life_event'` を条件にする（FR-032）
-- U10 で (b) を選んだときの「取り直す」の操作も、Server Action の先頭でオーナーを確かめる
 
 ## R14 キャッシュと 404・403
 

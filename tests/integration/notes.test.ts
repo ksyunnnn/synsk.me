@@ -400,7 +400,9 @@ describe('下書きに戻す・削除する・元に戻す（FR-014・FR-016・S
     expect(hidden.text).not.toContain(BODY);
 
     await send(`/dash/notes/${lifecycleUid}`, 0);
-    expect((await visitorStatus()).status).toBe(200);
+    const republished = await visitorStatus();
+    expect(republished.status).toBe(200);
+    expect(republished.text).toContain(BODY);
   });
 
   it('公開した note を削除すると 404 で中身が無く、元に戻すと同じ版が 200 で出る', async () => {
