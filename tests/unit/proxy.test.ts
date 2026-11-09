@@ -451,3 +451,15 @@ describe('/dash/notes/{uid}/revisions/{revisionUid}', () => {
     },
   );
 });
+
+/** note の画像の経路（specs/003-note/research.md の R9） */
+describe('/notes/{slug}/media/{key}', () => {
+  const PATH = '/notes/a-slug/media/11111111-1111-4111-8111-111111111111';
+
+  it('proxy の対象にし、D1 を読まずに通す', async () => {
+    expect(unstable_doesMiddlewareMatch({ config, url: PATH })).toBe(true);
+    notes.hasNoteSlug.mockResolvedValue(false);
+    expect(await rewrittenPath(PATH)).toBeNull();
+    expect(notes.hasNoteSlug).not.toHaveBeenCalled();
+  });
+});
