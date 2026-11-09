@@ -547,3 +547,61 @@ describe('版の一覧と過去の版に戻す（FR-008・FR-009、User Story 3 
     expect(await notes.findMissingRevision('0'.repeat(32), note.revision.uid)).toBe('note');
   });
 });
+
+describe('転載先（FR-031・FR-032、User Story 7、research.md の R14）', () => {
+  it('2 つ記録でき、記録した順に読める', async () => {
+    const note = await insertNote(env.DB);
+    expect(await notes.addSyndication(note.id, 'https://example.com/one')).toEqual({ ok: true });
+    expect(await notes.addSyndication(note.id, 'https://example.com/two')).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.syndicationUrls).toEqual([
+      'https://example.com/one',
+      'https://example.com/two',
+    ]);
+  });
+
+  it('同じ URL を同じ note にも別の note にも記録できない（FR-032）', async () => {
+    const a = await insertNote(env.DB);
+    const b = await insertNote(env.DB);
+    await notes.addSyndication(a.id, 'https://example.com/taken');
+    expect(await notes.addSyndication(a.id, 'https://example.com/taken')).toEqual({
+      ok: false,
+      reason: 'url-taken',
+    });
+    expect(await notes.addSyndication(b.id, 'https://example.com/taken')).toEqual({
+      ok: false,
+      reason: 'url-taken',
+    });
+  });
+
+  it('削除した note には記録しない', async () => {
+    const note = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.addSyndication(note.id, 'https://example.com/deleted')).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('削除した note の転載先は外さない', async () => {
+    const note = await insertNote(env.DB);
+    await notes.addSyndication(note.id, 'https://example.com/kept');
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.removeSyndication(note.id, 'https://example.com/kept')).toEqual({
+      ok: false,
+    });
+    expect((await notes.findForEdit(note.id))?.syndicationUrls).toEqual([
+      'https://example.com/kept',
+    ]);
+  });
+
+  it('URL で指して外し、別の note の URL は外さない', async () => {
+    const a = await insertNote(env.DB);
+    const b = await insertNote(env.DB);
+    await notes.addSyndication(a.id, 'https://example.com/a');
+    await notes.addSyndication(b.id, 'https://example.com/b');
+    expect(await notes.removeSyndication(a.id, 'https://example.com/b')).toEqual({ ok: false });
+    expect(await notes.removeSyndication(a.id, 'https://example.com/a')).toEqual({ ok: true });
+    expect((await notes.findForEdit(a.id))?.syndicationUrls).toEqual([]);
+    expect((await notes.findForEdit(b.id))?.syndicationUrls).toEqual(['https://example.com/b']);
+  });
+});
