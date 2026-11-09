@@ -204,7 +204,7 @@ description: "職歴と実績の実装タスク"
 - [ ] T076 秘匿化しない実績の画像を配る経路を作り、秘匿化した実績の画像が返らないことを結合で確かめる（FR-030）。**止める未決: U5**
 - [ ] T077 本文の表示と、本文の中に画像とキャプションを置く入力を作る（FR-027）。**止める未決: U4**
 - [X] T078 訪問者向けの実績の取り出しと識別子の有無（src/features/project/server/d1-project-repository.ts）を、秘匿化した組織名の無い組織を指す秘匿化した実績を出さない形にし、tests/workers/project-masking.test.ts と tests/integration/project-masking.test.ts で 404 と応答の中身を確かめる（U2 の決定、research.md の R5）。トリガの migration は足さない
-- [ ] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース・失敗の表し方・見た目と操作を分ける）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
+- [X] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース・失敗の表し方・見た目と操作を分ける）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
 - [ ] T080 PR の CI が 10 分以内に収まることを GitHub Actions のステップの所要時間で確かめる（ADR-0019）
 - [ ] T081 quickstart.md の手順をブランチの Preview で行う
 - [ ] T082 問い合わせの場所のページ（別の spec）ができたら、秘匿化した実績の「非公開」の近くに、そのページへのリンクを src/features/project/components/visitor-project.tsx に足す（FR-021、plan.md の U7）。**止める依存: 問い合わせの場所のページ**
