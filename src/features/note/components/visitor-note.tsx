@@ -1,4 +1,4 @@
-import type { VisitorNote } from '@/features/note/domain/note';
+import type { NotePreview, VisitorNote } from '@/features/note/domain/note';
 import { MarkdownBody } from '@/shared/components/markdown-body';
 
 /**
@@ -19,7 +19,11 @@ const formatPublishedOn = (publishedAt: string) =>
     day: 'numeric',
   }).format(new Date(publishedAt));
 
-export const VisitorNoteView = ({ note }: { note: VisitorNote }) => {
+/**
+ * 見た目の確認（`/dash/notes/{uid}/preview`）も同じ部品で描く（research.md の R15）。一度も公開して
+ * いない note は初めて公開した日時を持たない
+ */
+export const VisitorNoteView = ({ note }: { note: VisitorNote | NotePreview }) => {
   const visibleMedia = new Set(note.media);
   return (
     <article className="flex flex-col gap-6">
@@ -27,7 +31,11 @@ export const VisitorNoteView = ({ note }: { note: VisitorNote }) => {
         <h1 className="text-3xl font-bold">{note.title}</h1>
         {note.description && <p className="text-muted-foreground">{note.description}</p>}
         <p className="text-sm text-muted-foreground">
-          <time dateTime={note.publishedAt}>{formatPublishedOn(note.publishedAt)}</time>
+          {note.publishedAt === null ? (
+            '公開していません'
+          ) : (
+            <time dateTime={note.publishedAt}>{formatPublishedOn(note.publishedAt)}</time>
+          )}
         </p>
       </header>
       <div className="flex flex-col gap-4">

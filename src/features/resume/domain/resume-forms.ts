@@ -1,5 +1,4 @@
 import {
-  isResumeProjectKind,
   type ResumeAudience,
   type ResumeCareer,
   type ResumeCareerContent,
@@ -13,6 +12,8 @@ import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { isWebUrl } from '@/shared/domain/web-url';
+import { isProjectKind } from '@/shared/domain/project-kind';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 
 /**
  * 職務経歴書の管理画面の入力の名前と、入力を保存する内容に読み替える決まり
@@ -25,8 +26,6 @@ export const ROW_UID_FIELD = 'rowUid';
 export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 export type FieldError = 'missing' | 'invalid' | 'ended-before-started';
-
-const normalizeNewlines = (value: string) => value.replace(/\r\n?/g, '\n');
 
 type Parsed<F extends string, C> =
   { ok: true; content: C } | { ok: false; errors: Partial<Record<F, FieldError>> };
@@ -185,7 +184,7 @@ export const parseResumeProject = (
 ): Parsed<ResumeProjectField, ResumeProjectContent> => {
   const errors: Partial<Record<ResumeProjectField, FieldError>> = {};
   if (values.organizationName.trim() === '') errors.organizationName = 'missing';
-  if (!isResumeProjectKind(values.kind)) errors.kind = 'invalid';
+  if (!isProjectKind(values.kind)) errors.kind = 'invalid';
   if (values.title.trim() === '') errors.title = 'missing';
   const period = readPeriod(values, errors);
   const url = readUrl(values.url, errors);
@@ -199,7 +198,7 @@ export const parseResumeProject = (
   ];
   // スキルは 1 つごとに D1 の文を 1 つ積む。写すときと同じ上限で止める（research.md の R15）
   if (skills.length > MAX_COPIED_ROWS) errors.skills = 'invalid';
-  if (Object.keys(errors).length > 0 || period === null || !isResumeProjectKind(values.kind)) {
+  if (Object.keys(errors).length > 0 || period === null || !isProjectKind(values.kind)) {
     return { ok: false, errors };
   }
   return {

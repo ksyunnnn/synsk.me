@@ -117,6 +117,7 @@ description: "note の実装タスク"
 
 - [X] T023 [P] [US2] 下書きに戻す・削除・元に戻すのユースケース（オーナーでない呼び出しを拒む、削除した note への保存・公開を `not-found` にする）を tests/unit/note-usecases.test.ts に、D1 の実装（下書きに戻しても公開した版と初めて公開した日時が残る、削除しても状態と版が残る、元に戻すと削除前の状態と版と識別子、削除した note の識別子で別の note を作れない）を tests/workers/note-repository.test.ts に足す（FR-014・FR-016・SC-007、User Story 2 の 2・4〜6）
 - [X] T024 [P] [US2] tests/integration/notes.test.ts に足す: 下書きに戻した note と削除した note の `/notes/{slug}` が 404 で中身が無い、公開した note を削除して元に戻すと同じ版が 200 で出る、JWT のない `unpublishNote`・`deleteNote`・`restoreNote` が D1 を変えない（SC-001・FR-033、User Story 2 の 1・3・5）
+- [X] T054 [P] [US2] オーナーとして、キーボードだけで公開した note を下書きに戻し、削除し、元に戻せることを tests/e2e/note.spec.ts で確かめる（contracts/dash.md の検査の E2E、constitution V）
 
 ### Implementation for User Story 2
 
@@ -220,11 +221,11 @@ description: "note の実装タスク"
 
 ## Phase 10: Polish
 
-- [ ] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
-- [ ] T049 [P] 見た目の確認のページ src/app/dash/notes/[id]/preview/page.tsx を、最も新しい版を訪問者向けの部品で描く形で作り、下書きの note でも最も新しい版が出ることを tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13、research.md の R15）
-- [ ] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
-- [ ] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
-- [ ] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
+- [X] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
+- [X] T049 [P] 見た目の確認のページ src/app/dash/notes/[id]/preview/page.tsx を、最も新しい版を訪問者向けの部品で描く形で作り、下書きの note でも最も新しい版が出ることを tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13、research.md の R15）
+- [X] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
+- [X] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
+- [X] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
 - [ ] T053 quickstart.md の「手で確かめる」をブランチの Preview で行う
 
 ---
