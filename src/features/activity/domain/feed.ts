@@ -9,8 +9,8 @@ import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * Repository の実装が詰められる種類。並びの日付が同じときの種類の順を兼ねる。仮の順は
- * note・external_activity・life_event・project・career（plan.md の U2）で、note・外部の
- * activity・life event は詰める実装を足すときに、仮の順の位置に足す
+ * note・external_activity・life_event・project・career（plan.md の U2）。詰める実装の無い種類
+ * （外部の activity・life event）は入れず、入れるときは仮の順の位置に足す
  */
 export const FEED_ITEM_TYPES = ['note', 'project', 'career'] as const;
 export type FeedItemType = (typeof FEED_ITEM_TYPES)[number];

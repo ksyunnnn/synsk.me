@@ -42,8 +42,8 @@ const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
 );
 
 /**
- * note。個別のページへのリンクは付けない（plan.md の U4）。作成日時は、日の境目の時刻帯が
- * 決まるまで（plan.md の U3）保存した値のまま出す
+ * note。個別のページへのリンクは付けない（plan.md の U4）。作成日時は保存した値（UTC）のまま
+ * 出す。日の境目の時刻帯は plan.md の U3
  */
 const NoteRow = ({ item }: { item: NoteFeedItem }) => (
   <article className="flex flex-col gap-1">
