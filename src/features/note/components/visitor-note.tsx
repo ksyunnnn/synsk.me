@@ -21,9 +21,17 @@ const formatPublishedOn = (publishedAt: string) =>
 
 /**
  * 見た目の確認（`/dash/notes/{uid}/preview`）も同じ部品で描く（research.md の R15）。一度も公開して
- * いない note は初めて公開した日時を持たない
+ * いない note は初めて公開した日時を持たない。見た目の確認は `mediaBase` にオーナーだけが通る画像の
+ * 経路を渡す。訪問者の経路は公開した版の画像だけを返すため（spec の FR-026）
  */
-export const VisitorNoteView = ({ note }: { note: VisitorNote | NotePreview }) => {
+export const VisitorNoteView = ({
+  note,
+  mediaBase = `/notes/${encodeURIComponent(note.slug)}/media`,
+}: {
+  note: VisitorNote | NotePreview;
+  /** 画像の `src` の前に付ける経路。置き場のキーを `/` でつなぐ */
+  mediaBase?: string;
+}) => {
   const visibleMedia = new Set(note.media);
   return (
     <article className="flex flex-col gap-6">
@@ -42,9 +50,7 @@ export const VisitorNoteView = ({ note }: { note: VisitorNote | NotePreview }) =
         <MarkdownBody
           body={note.body}
           mediaSrc={(storageKey) =>
-            visibleMedia.has(storageKey)
-              ? `/notes/${encodeURIComponent(note.slug)}/media/${storageKey}`
-              : null
+            visibleMedia.has(storageKey) ? `${mediaBase}/${storageKey}` : null
           }
         />
       </div>
