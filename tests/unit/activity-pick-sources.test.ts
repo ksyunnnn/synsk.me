@@ -33,6 +33,17 @@ describe('pickSourcesForRun', () => {
     expect(pickSourcesForRun(SOURCES, { a: at, b: at, c: at, d: at }, 3)).toEqual(['a', 'b', 'c']);
   });
 
+  it('選んだ取得元の日時を進めながら回すと、取得元の数の回でどれも 1 度ずつ選ばれる', () => {
+    const fetchedAt: Record<string, string> = {};
+    const picked = SOURCES.map((_, run) => {
+      const [name = ''] = pickSourcesForRun(SOURCES, fetchedAt, 1);
+      fetchedAt[name] = `2026-11-0${run + 1}T00:00:00.000Z`;
+      return name;
+    });
+
+    expect(picked).toEqual(SOURCES);
+  });
+
   it('上限の数が 0 以下なら、どれも選ばない', () => {
     expect(pickSourcesForRun(SOURCES, {}, 0)).toEqual([]);
   });
