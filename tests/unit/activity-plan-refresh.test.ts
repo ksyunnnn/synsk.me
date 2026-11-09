@@ -104,6 +104,20 @@ describe('planRefresh', () => {
     expect(plan.skippedWithoutDate).toBe(1);
   });
 
+  it('1 回の取得の中で同じ項目が 2 回出たら、最初の 1 つだけを使う', () => {
+    const plan = planRefresh(
+      [],
+      [
+        fetched({ externalId: 'x', title: '一つ目' }),
+        fetched({ externalId: 'x', title: '二つ目' }),
+        fetched({ url: 'https://example.com/b' }),
+        fetched({ url: 'https://example.com/b', title: '重なり' }),
+      ],
+    );
+
+    expect(plan.inserts.map((item) => item.title)).toEqual(['一つ目', '作り物の記事 A']);
+  });
+
   it('取得元が画像を返さなくなったら、画像の URL を空にする', () => {
     const plan = planRefresh(
       [stored({ id: 8, imageUrl: 'https://example.com/a.png' })],

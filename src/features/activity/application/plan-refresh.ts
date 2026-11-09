@@ -13,6 +13,9 @@ import type { FetchedItem } from '@/features/activity/domain/fetched-item';
  * - 値の変わった列だけを直し、変わらない行は書かない（R5）
  * - 公開日の無い項目で、保存した公開日を書き換えない（FR-012）。公開日の無い新しい項目は
  *   足さない（FR-011）
+ * - 1 回の取得の中で同じ項目が 2 回出たら、最初の 1 つだけを使う。頁を辿るあいだに新しい項目が
+ *   出て頁の境目がずれると、同じ項目が 2 つの頁に出る。両方を足す行にすると、UNIQUE が
+ *   `batch()` を拒み、その取得元の書き込みがすべて戻る
  */
 export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): RefreshPlan => {
   const byExternalId = new Map<string, StoredItem>();
@@ -23,7 +26,11 @@ export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): Refre
   }
 
   const plan: RefreshPlan = { inserts: [], updates: [], skippedWithoutDate: 0 };
+  const seen = new Set<string>();
   for (const item of fetched) {
+    const key = item.externalId === undefined ? `url:${item.url}` : `id:${item.externalId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
     const row =
       item.externalId === undefined ? byUrl.get(item.url) : byExternalId.get(item.externalId);
     if (row) {
