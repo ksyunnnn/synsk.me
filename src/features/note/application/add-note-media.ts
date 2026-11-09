@@ -14,7 +14,7 @@ export type AddNoteMediaOutcome =
  * 共有担当の `MediaStorage` が持つ。オーナーでなければ何も書かない（FR-033）。
  *
  * 読む（note があるか）→ 置き場に置く → 記録する、の順。記録の前に note が削除されていたら、
- * 置いた画像を消して not-found を返す
+ * 置いた画像を消して not-found を返す。記録が例外で失敗したときも、置いた画像を消してから投げ直す
  */
 export const addNoteMedia = async (
   { notes, media }: NoteDeps,
@@ -32,7 +32,14 @@ export const addNoteMedia = async (
   if (!saved.ok) return { status: 'invalid', error: saved.reason };
 
   const { storageKey } = saved.media;
-  if ((await notes.addMedia(id, storageKey)).ok) return { status: 'added', storageKey };
+  let recorded: boolean;
+  try {
+    recorded = (await notes.addMedia(id, storageKey)).ok;
+  } catch (error) {
+    await media.remove([storageKey]);
+    throw error;
+  }
+  if (recorded) return { status: 'added', storageKey };
   await media.remove([storageKey]);
   return { status: 'not-found' };
 };

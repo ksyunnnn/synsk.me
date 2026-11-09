@@ -448,6 +448,18 @@ describe('addNoteMedia（FR-023・FR-033、research.md の R12）', () => {
     expect(await addNoteMedia({ notes, media }, OWNER, 1, file)).toEqual({ status: 'not-found' });
     expect(media.remove).toHaveBeenCalledWith([KEY]);
   });
+
+  it('記録が例外で失敗したら、置いた画像を消してから投げ直す', async () => {
+    const failure = new Error('D1 の失敗');
+    const notes = fakeNotes(note(), {
+      addMedia: vi.fn(async () => {
+        throw failure;
+      }),
+    });
+    const media = fakeStorage();
+    await expect(addNoteMedia({ notes, media }, OWNER, 1, file)).rejects.toBe(failure);
+    expect(media.remove).toHaveBeenCalledWith([KEY]);
+  });
 });
 
 describe('getVisitorNoteMedia（FR-026）', () => {
