@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
 import { PrintButton } from '@/features/resume/components/print-button';
-import { RESUME_PROJECT_KIND_LABELS } from '@/features/resume/domain/resume';
 import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
-import { toYearsAndMonths, type Period } from '@/shared/domain/period';
+import { PeriodText } from '@/shared/components/period-text';
+import { toYearsAndMonths } from '@/shared/domain/period';
+import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 /**
  * 訪問者に見せる職務経歴書（specs/002-resume/contracts/visitor-resume.md）。受け取った DTO の値
@@ -15,14 +16,6 @@ import { toYearsAndMonths, type Period } from '@/shared/domain/period';
  * メールアドレスは、環境変数で渡したときだけ出す。スパム対策（FR-035）は plan.md の U8 で
  * 決まっておらず、本番の応答で Email Address Obfuscation が効くかを確かめる（tasks.md の T072）
  */
-
-const PeriodText = ({ period }: { period: Period }) => (
-  <>
-    <time dateTime={period.startedOn}>{period.startedOn}</time>
-    {' 〜 '}
-    {period.endedOn ? <time dateTime={period.endedOn}>{period.endedOn}</time> : '現在'}
-  </>
-);
 
 const Body = ({ text }: { text: string | null }) =>
   text ? <p className="whitespace-pre-line">{text}</p> : null;
@@ -96,7 +89,7 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
               <li key={index} className="flex flex-col gap-2 break-inside-avoid">
                 <h3 className="text-lg font-bold">{career.organizationName}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {career.role}・<PeriodText period={career.period} />
+                  {career.role}・<PeriodText period={career.period} ongoing="現在" />
                 </p>
                 <Body text={career.body} />
                 <ExternalLink href={career.url} />
@@ -113,8 +106,8 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
               <li key={index} className="flex flex-col gap-2 break-inside-avoid">
                 <h3 className="text-lg font-bold">{project.title}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {RESUME_PROJECT_KIND_LABELS[project.kind]}・{project.organizationName}・
-                  <PeriodText period={project.period} />
+                  {PROJECT_KIND_LABELS[project.kind]}・{project.organizationName}・
+                  <PeriodText period={project.period} ongoing="現在" />
                 </p>
                 {project.skills.length > 0 && (
                   <p className="text-sm">{project.skills.join('、')}</p>
@@ -137,7 +130,7 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
                   {education.department && ` ${education.department}`}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  <PeriodText period={education.period} />
+                  <PeriodText period={education.period} ongoing="現在" />
                 </p>
                 <Body text={education.remarks} />
               </li>

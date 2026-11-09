@@ -30,7 +30,12 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/organizations">組織の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">組織を編集する</h1>
-      {saved === '1' && <DraftSavedNotice version={organization.updatedAt} />}
+      {saved === '1' && (
+        <DraftSavedNotice
+          storageKeys={[`organization:${organization.uid}`]}
+          version={organization.updatedAt}
+        />
+      )}
       <OrganizationForm
         key={organization.updatedAt}
         action={editOrganization}

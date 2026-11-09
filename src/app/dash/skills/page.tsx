@@ -29,7 +29,11 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href="/dash">管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">スキル</h1>
-      {saved === '1' && <DraftSavedNotice />}
+      {saved === '1' && (
+        <DraftSavedNotice
+          storageKeys={['skill:new', ...skills.map((skill) => `skill:${skill.uid}`)]}
+        />
+      )}
       {deleted === '1' && <p role="status">スキルを削除しました</p>}
       <p>
         <TextLink href="/dash/skills/new">スキルを登録する</TextLink>

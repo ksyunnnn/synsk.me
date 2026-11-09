@@ -3,9 +3,11 @@ import 'server-only';
 import type {
   Note,
   NoteCardImage,
+  NotePreview,
   NoteRevisionSummary,
   NoteStatus,
   NoteSummary,
+  VisitorLinkPreview,
   VisitorNote,
   VisitorNoteCardImage,
 } from '@/features/note/domain/note';
@@ -50,6 +52,9 @@ type VisitorRow = {
   card_media_storage_key: string | null;
 };
 
+/** 見た目の確認で読む行。一度も公開していない note は初めて公開した日時を持たない */
+type PreviewRow = Omit<VisitorRow, 'published_at'> & { published_at: string | null };
+
 const toRevision = (row: RevisionRow) => ({
   uid: row.uid,
   title: row.title,
@@ -88,6 +93,16 @@ const toCardImage = (cardImage: NoteCardImage, storageKey: string | null): Visit
   return cardImage === 'site' ? { kind: 'site' } : { kind: 'generated' };
 };
 
+type LinkPreviewRow = { url: string; title: string | null; image_url: string | null };
+
+/** 読んだ参照先の情報を、渡した URL の順に並べる。取ったことのない URL は外す */
+const toLinkPreviews = (urls: string[], rows: LinkPreviewRow[]): VisitorLinkPreview[] => {
+  const byUrl = new Map(
+    rows.map((row) => [row.url, { url: row.url, title: row.title, imageUrl: row.image_url }]),
+  );
+  return urls.flatMap((url) => byUrl.get(url) ?? []);
+};
+
 export const createD1NoteRepository = (db: D1Database): NoteRepository => {
   /** 無いか削除した note か */
   const isMissing = async (id: number) =>
@@ -102,34 +117,47 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
    */
   const readBodyReferences = async (noteId: number, body: string) => {
     const { mediaKeys, urlLines, firstParagraph } = readMarkdown(body);
-    const [mediaResult, previewResult] = await db.batch<
-      { storage_key: string } | { url: string; title: string | null; image_url: string | null }
-    >([
+    const [mediaResult, previewResult] = await db.batch<{ storage_key: string } | LinkPreviewRow>([
       db
         .prepare(
           `SELECT storage_key FROM media
            WHERE note_id = ? AND storage_key IN (SELECT value FROM json_each(?))`,
         )
         .bind(noteId, JSON.stringify(mediaKeys)),
-      db
-        .prepare(
-          `SELECT url, title, image_url FROM link_preview
-           WHERE url IN (SELECT value FROM json_each(?))`,
-        )
-        .bind(JSON.stringify(urlLines)),
+      linkPreviewsOf(urlLines),
     ]);
     const owned = new Set(
       (mediaResult.results as { storage_key: string }[]).map((r) => r.storage_key),
     );
-    const previews = new Map(
-      (
-        previewResult.results as { url: string; title: string | null; image_url: string | null }[]
-      ).map((r) => [r.url, { url: r.url, title: r.title, imageUrl: r.image_url }]),
-    );
     return {
       media: mediaKeys.filter((key) => owned.has(key)),
-      linkPreviews: urlLines.flatMap((url) => previews.get(url) ?? []),
+      linkPreviews: toLinkPreviews(urlLines, previewResult.results as LinkPreviewRow[]),
       firstParagraph,
+    };
+  };
+
+  /** 参照先の情報を URL の並びで読む文。URL ごとに 1 行（`link_preview.url` の UNIQUE） */
+  const linkPreviewsOf = (urls: string[]) =>
+    db
+      .prepare(
+        `SELECT url, title, image_url FROM link_preview
+         WHERE url IN (SELECT value FROM json_each(?))`,
+      )
+      .bind(JSON.stringify(urls));
+
+  /** 版の行を訪問者向けの形に詰める。公開した版（訪問者）と最も新しい版（見た目の確認）が使う */
+  const toNotePreview = async (row: PreviewRow): Promise<NotePreview> => {
+    const { media, linkPreviews, firstParagraph } = await readBodyReferences(row.id, row.body);
+    return {
+      slug: row.slug,
+      title: row.title,
+      description: row.description,
+      summary: row.description ?? firstParagraph,
+      body: row.body,
+      publishedAt: row.published_at,
+      cardImage: toCardImage(row.card_image, row.card_media_storage_key),
+      media,
+      linkPreviews,
     };
   };
 
@@ -143,19 +171,25 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         .bind(slug)
         .first<VisitorRow>();
       if (!row) return null;
-      const { media, linkPreviews, firstParagraph } = await readBodyReferences(row.id, row.body);
-      const dto: VisitorNote = {
-        slug: row.slug,
-        title: row.title,
-        description: row.description,
-        summary: row.description ?? firstParagraph,
-        body: row.body,
-        publishedAt: row.published_at,
-        cardImage: toCardImage(row.card_image, row.card_media_storage_key),
-        media,
-        linkPreviews,
-      };
+      const dto: VisitorNote = { ...(await toNotePreview(row)), publishedAt: row.published_at };
       return dto;
+    },
+
+    findPreview: async (id) => {
+      // 最も新しい版を、状態と削除に関わらず読む（research.md の R15）。オーナーだけが呼ぶ
+      const row = await db
+        .prepare(
+          `SELECT n.id, n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
+             m.storage_key AS card_media_storage_key
+           FROM note n
+           JOIN note_revision r
+             ON r.id = (SELECT max(id) FROM note_revision WHERE note_id = n.id)
+           LEFT JOIN media m ON m.id = n.card_media_id AND m.note_id = n.id
+           WHERE n.id = ?`,
+        )
+        .bind(id)
+        .first<PreviewRow>();
+      return row ? toNotePreview(row) : null;
     },
 
     hasVisitorSlug: async (slug) =>
@@ -464,6 +498,45 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         .bind(storageKey, id)
         .run();
       return { ok: result.meta.changes > 0 };
+    },
+
+    purge: async (id) => {
+      // note から版と画像を指す外部キーの検査はトランザクションの終わりに送られる（migrations/0005
+      // の冒頭）ため、指す先を空にせずにこの順で消せる。公開したことのある note の
+      // published_revision_id は CHECK とトリガが空にさせない（research.md の R6）。消す画像の
+      // キーは、同じ batch() の最初の文で読む
+      const [mediaResult, , , , noteResult] = await db.batch<{ storage_key: string }>([
+        db.prepare('SELECT storage_key FROM media WHERE note_id = ? ORDER BY id').bind(id),
+        db.prepare('DELETE FROM media WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM syndication WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM note WHERE id = ?').bind(id),
+      ]);
+      if ((noteResult?.meta.changes ?? 0) === 0) return { ok: false };
+      return {
+        ok: true,
+        storageKeys: (mediaResult?.results ?? []).map((row) => row.storage_key),
+      };
+    },
+
+    findLinkPreviews: async (urls) => {
+      const { results } = await linkPreviewsOf(urls).all<LinkPreviewRow>();
+      return toLinkPreviews(urls, results);
+    },
+
+    saveLinkPreview: async ({ url, title, imageUrl, fetchedAt }) => {
+      // URL ごとに 1 行。取り直すと同じ行を書き換え、その URL を書いたすべての note が読む（FR-029）。
+      // 訪問者向けの取り出しは本文の URL を `URL` の形に揃えて引くため、同じ形で書く。遅れて
+      // 終わった前の取得では、後の取得の中身を書き換えない
+      await db
+        .prepare(
+          `INSERT INTO link_preview (url, title, image_url, fetched_at) VALUES (?, ?, ?, ?)
+           ON CONFLICT (url) DO UPDATE SET
+             title = excluded.title, image_url = excluded.image_url, fetched_at = excluded.fetched_at
+           WHERE excluded.fetched_at >= link_preview.fetched_at`,
+        )
+        .bind(new URL(url).href, title, imageUrl, fetchedAt)
+        .run();
     },
   };
 };

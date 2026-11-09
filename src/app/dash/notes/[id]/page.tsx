@@ -93,7 +93,9 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/notes">note の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">note を編集する</h1>
-      {flags.saved === '1' && <NoteSavedNotice revisionUid={note.latestRevision.uid} />}
+      {flags.saved === '1' && (
+        <NoteSavedNotice noteUid={note.uid} revisionUid={note.latestRevision.uid} />
+      )}
       {notice && <p role="status">{NOTICES[notice]}</p>}
       {note.status === 'published' && (
         <p>
@@ -141,6 +143,11 @@ const Page = async ({ params, searchParams }: Props) => {
       <ul className="flex flex-col gap-2">
         <li>
           <TextLink href={`/dash/notes/${note.uid}/revisions`}>版の一覧</TextLink>
+        </li>
+        <li>
+          <TextLink href={`/dash/notes/${note.uid}/preview`}>
+            最も新しい版を、訪問者に見せたときの見た目で確かめる
+          </TextLink>
         </li>
         <li>
           <TextLink href={`/dash/notes/${note.uid}/delete`}>この note を削除する</TextLink>

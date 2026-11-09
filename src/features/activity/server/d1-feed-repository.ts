@@ -4,11 +4,11 @@ import {
   FEED_ITEM_TYPES,
   FEED_PAGE_SIZE,
   isFeedItemType,
-  isFeedProjectKind,
   type FeedItem,
 } from '@/features/activity/domain/feed';
 import type { FeedRepository } from '@/features/activity/domain/feed-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
+import { isProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018）だけを読み、表を
@@ -62,7 +62,7 @@ const toCareerOrProjectItem = (row: FeedRow, type: 'career' | 'project'): FeedIt
   if (title === null) return null;
   // 種類は CHECK が 4 値に絞る。読めない値は `other` と同じ扱いにする
   const projectKind =
-    row.project_kind !== null && isFeedProjectKind(row.project_kind) ? row.project_kind : 'other';
+    row.project_kind !== null && isProjectKind(row.project_kind) ? row.project_kind : 'other';
   return { type: 'project', isMasked, title, organizationName, projectKind, period };
 };
 

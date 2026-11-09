@@ -3,7 +3,6 @@
 import { useActionState, type ReactNode } from 'react';
 import type { EditOutcome } from '@/features/resume/application/edit-outcome';
 import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
-import { RESUME_PROJECT_KINDS, RESUME_PROJECT_KIND_LABELS } from '@/features/resume/domain/resume';
 import {
   OPENED_UPDATED_AT_FIELD,
   OVERRIDE_MONTHS_FIELD,
@@ -18,6 +17,7 @@ import {
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
@@ -202,9 +202,9 @@ export const ResumeProjectForm = ({
         defaultValue={values.kind}
         error={errorText(errors, 'kind')}
       >
-        {RESUME_PROJECT_KINDS.map((kind) => (
+        {PROJECT_KINDS.map((kind) => (
           <option key={kind} value={kind}>
-            {RESUME_PROJECT_KIND_LABELS[kind]}
+            {PROJECT_KIND_LABELS[kind]}
           </option>
         ))}
       </SelectField>

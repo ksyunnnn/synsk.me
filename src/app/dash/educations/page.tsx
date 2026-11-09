@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { listEducations } from '@/features/education/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { formatPeriod } from '@/shared/domain/period';
 import { DraftSavedNotice } from '@/shared/components/draft-retention';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -22,7 +23,14 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href="/dash">管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">学歴</h1>
-      {saved === '1' && <DraftSavedNotice />}
+      {saved === '1' && (
+        <DraftSavedNotice
+          storageKeys={[
+            'education:new',
+            ...educations.map((education) => `education:${education.uid}`),
+          ]}
+        />
+      )}
       {deleted === '1' && <p role="status">学歴を削除しました</p>}
       <p>学歴は、職務経歴書を通してだけ訪問者に出ます。</p>
       <p>
@@ -39,7 +47,7 @@ const Page = async ({ searchParams }: Props) => {
                 {education.department && `・${education.department}`}
               </TextLink>
               <span className="text-sm text-muted-foreground">
-                {education.period.startedOn} 〜 {education.period.endedOn ?? ''}
+                {formatPeriod(education.period)}
               </span>
             </li>
           ))}

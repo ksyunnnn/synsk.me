@@ -59,7 +59,11 @@ describe('取得元の表', () => {
 
 describe('applyRefresh', () => {
   it('足す行と取得の結果を書き、取得元は activity_source の取得元になる', async () => {
-    await activities.applyRefresh('zenn', insertsOnly([item(1)]), { fetchedAt: T1, reason: null });
+    await activities.applyRefresh('zenn', insertsOnly([item(1)]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: null,
+    });
 
     expect(await readActivityRows(env.DB, 'zenn')).toMatchObject([
       {
@@ -97,7 +101,7 @@ describe('applyRefresh', () => {
         deletes: [],
         skippedWithoutDate: 0,
       },
-      { fetchedAt: T2, reason: null },
+      { fetchedAt: T2, reason: null, validators: null },
     );
 
     expect(await readActivityRows(env.DB, 'qiita')).toEqual([
@@ -134,7 +138,7 @@ describe('applyRefresh', () => {
         deletes: [],
         skippedWithoutDate: 0,
       },
-      { fetchedAt: T1, reason: null },
+      { fetchedAt: T1, reason: null, validators: null },
     );
 
     const titles = await env.DB.prepare('SELECT title FROM activity ORDER BY id').all<{
@@ -148,6 +152,7 @@ describe('applyRefresh', () => {
       activities.applyRefresh('zenn', insertsOnly([item(1), item(1)]), {
         fetchedAt: T1,
         reason: null,
+        validators: null,
       }),
     ).rejects.toThrow();
 
@@ -156,13 +161,17 @@ describe('applyRefresh', () => {
   });
 
   it('同じ項目を取り直しても行が増えない（FR-008。同じ URL は UNIQUE が拒む）', async () => {
-    await activities.applyRefresh('zenn', insertsOnly([item(1)]), { fetchedAt: T1, reason: null });
+    await activities.applyRefresh('zenn', insertsOnly([item(1)]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: null,
+    });
     const [stored] = await activities.listStoredForRefresh('zenn');
 
     await activities.applyRefresh(
       'zenn',
       { inserts: [], updates: [], deletes: [], skippedWithoutDate: 0 },
-      { fetchedAt: T2, reason: null },
+      { fetchedAt: T2, reason: null, validators: null },
     );
 
     expect(await readActivityRows(env.DB, 'zenn')).toHaveLength(1);
@@ -173,6 +182,7 @@ describe('applyRefresh', () => {
       title: '作り物の記事 1',
       publishedAt: PUBLISHED,
       imageUrl: null,
+      goneCheckedAt: null,
     });
   });
 });
@@ -199,7 +209,11 @@ describe('listStoredForRefresh', () => {
 
 describe('recordFetchFailure', () => {
   it('失敗と理由を書き、最後に成功した日時を残す（FR-016）', async () => {
-    await activities.applyRefresh('zenn', insertsOnly([]), { fetchedAt: T1, reason: null });
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: null,
+    });
 
     await activities.recordFetchFailure('zenn', T2, '作り物の失敗');
 
@@ -214,7 +228,11 @@ describe('recordFetchFailure', () => {
 
 describe('listFetchedAt', () => {
   it('取得元ごとの最後に取り直した日時を返す。成否を問わない（research.md の R9）', async () => {
-    await activities.applyRefresh('zenn', insertsOnly([]), { fetchedAt: T1, reason: null });
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: null,
+    });
     await activities.recordFetchFailure('medium', T2, '作り物の失敗');
 
     expect(await activities.listFetchedAt()).toEqual({ zenn: T1, medium: T2 });
@@ -227,7 +245,11 @@ describe('listFetchedAt', () => {
  */
 describe('取得元の失敗', () => {
   it('2 回続けて失敗しても、最後に成功した日時が前の値のまま残る', async () => {
-    await activities.applyRefresh('zenn', insertsOnly([]), { fetchedAt: T1, reason: null });
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: null,
+    });
 
     await activities.recordFetchFailure('zenn', T2, '1 回目の作り物の失敗');
     await activities.recordFetchFailure('zenn', '2026-11-03T00:00:00.000Z', '2 回目の作り物の失敗');
@@ -326,7 +348,7 @@ describe('消す行', () => {
     await activities.applyRefresh(
       'qiita',
       { inserts: [], updates: [], deletes: [goneId, lifeEventId, otherId], skippedWithoutDate: 0 },
-      { fetchedAt: T1, reason: null },
+      { fetchedAt: T1, reason: null, validators: null },
     );
 
     const ids = await env.DB.prepare('SELECT id FROM activity ORDER BY id').all<{ id: number }>();
@@ -362,5 +384,96 @@ describe('消す行', () => {
     );
 
     expect(await readActivityRows(env.DB, 'qiita')).toMatchObject([{ external_id: 'fake-kept' }]);
+  });
+});
+
+/**
+ * 条件付きの要求の値（T041、research.md の R9、migrations/0014）
+ */
+describe('条件に使う値', () => {
+  const VALIDATORS = { etag: 'W/"fake"', lastModified: 'Mon, 09 Nov 2026 05:27:54 GMT' };
+
+  it('取り込みと同じ書き込みで値を書き、読み戻せる', async () => {
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: VALIDATORS,
+    });
+
+    expect(await activities.readValidators('zenn')).toEqual(VALIDATORS);
+    expect(await activities.readValidators('medium')).toBeNull();
+  });
+
+  it('値を持たない回の書き込みは、持っていた値を消す', async () => {
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: VALIDATORS,
+    });
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T2,
+      reason: '作り物の理由',
+      validators: null,
+    });
+
+    expect(await activities.readValidators('zenn')).toBeNull();
+  });
+
+  it('失敗を書いても値を残す。順番を取る書き込みも失敗として書くため（R9）', async () => {
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: VALIDATORS,
+    });
+    await activities.recordFetchFailure('zenn', T2, '作り物の失敗');
+
+    expect(await activities.readValidators('zenn')).toEqual(VALIDATORS);
+  });
+
+  it('変わっていない回は、値と activity を残して成功を書く', async () => {
+    await activities.applyRefresh('zenn', insertsOnly([item(1)]), {
+      fetchedAt: T1,
+      reason: '前の理由',
+      validators: VALIDATORS,
+    });
+
+    await activities.recordNotModified('zenn', T2);
+
+    expect(await readFetchResult(env.DB, 'zenn')).toEqual({
+      fetched_at: T2,
+      is_ok: 1,
+      reason: null,
+      last_succeeded_at: T2,
+    });
+    expect(await activities.readValidators('zenn')).toEqual(VALIDATORS);
+    expect(await readActivityRows(env.DB, 'zenn')).toHaveLength(1);
+  });
+});
+
+/**
+ * 取得元で消えたかを確かめた日時（T048、research.md の R6、migrations/0015）
+ */
+describe('確かめた日時', () => {
+  it('確かめた行に取得の日時を書き、読み戻せる。ほかの取得元の行には書かない', async () => {
+    const id = await insertActivity(env.DB, {
+      source: 'zenn',
+      url: 'https://zenn.dev/ksyunnnn/articles/fake-old',
+      publishedAt: PUBLISHED,
+    });
+    const otherId = await insertActivity(env.DB, {
+      source: 'medium',
+      externalId: 'https://medium.com/p/fake',
+      url: 'https://medium.com/fake',
+      publishedAt: PUBLISHED,
+    });
+
+    await activities.applyRefresh(
+      'zenn',
+      { inserts: [], updates: [], deletes: [], goneChecked: [id, otherId], skippedWithoutDate: 0 },
+      { fetchedAt: T1, reason: null, validators: null },
+    );
+
+    expect((await activities.listStoredForRefresh('zenn'))[0]?.goneCheckedAt).toBe(T1);
+    expect((await activities.listStoredForRefresh('medium'))[0]?.goneCheckedAt).toBeNull();
   });
 });
