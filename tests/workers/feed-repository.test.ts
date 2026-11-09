@@ -1,0 +1,262 @@
+import { env, applyD1Migrations } from 'cloudflare:test';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { createD1FeedRepository } from '@/features/activity/server/d1-feed-repository';
+import {
+  deleteCareerAndProjectRows,
+  insertCareer,
+  insertEducation,
+  insertOrganization,
+  insertProject,
+} from '../support/career-and-project-rows';
+
+/**
+ * 一覧の Repository が、本物の migration を当てた D1 のビュー activity_feed から、サイトに載せる
+ * 職歴と実績を並びの順で返し、秘匿化した行を出してよい値だけで返すこと
+ * （specs/005-feed/spec.md の FR-001・FR-004・FR-007・FR-009・FR-010・FR-012、tasks.md の T011）。
+ * 値はすべて作り物
+ */
+
+const feed = createD1FeedRepository(env.DB);
+
+beforeAll(async () => {
+  await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+});
+
+beforeEach(async () => {
+  await deleteCareerAndProjectRows(env.DB);
+});
+
+const REAL = {
+  organization: '作り物の実名の会社',
+  title: '作り物の実際の題',
+  description: '作り物の秘密の本文',
+  url: 'https://secret.example/feed',
+};
+
+describe('並びの順', () => {
+  it('職歴と実績が始まりの日の新しい順に並び、終わりの日を使わない（FR-007・FR-009）', async () => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '古い職歴',
+      startedOn: '2015-04-01',
+      endedOn: '2025-03-31',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '新しい実績',
+      startedOn: '2022-04-01',
+      endedOn: '2022-06-30',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '終わりの日が空の実績',
+      startedOn: '2018-04-01',
+      endedOn: null,
+      isMasked: false,
+      status: 'published',
+    });
+
+    expect((await feed.list()).map((item) => item.period.startedOn)).toEqual([
+      '2022-04-01',
+      '2018-04-01',
+      '2015-04-01',
+    ]);
+  });
+
+  it('同じ始まりの日は FEED_ITEM_TYPES の順、同じ種類は主キーの大きい順で、2 回読んでも同じ順（FR-010）', async () => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    const day = '2020-04-01';
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '先に入れた職歴',
+      startedOn: day,
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '先に入れた実績',
+      startedOn: day,
+      isMasked: false,
+      status: 'published',
+    });
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '後に入れた職歴',
+      startedOn: day,
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '後に入れた実績',
+      startedOn: day,
+      isMasked: false,
+      status: 'published',
+    });
+
+    const names = (items: Awaited<ReturnType<typeof feed.list>>) =>
+      items.map((item) => (item.type === 'career' ? item.role : item.title));
+    const first = names(await feed.list());
+    expect(first).toEqual(['後に入れた実績', '先に入れた実績', '後に入れた職歴', '先に入れた職歴']);
+    expect(names(await feed.list())).toEqual(first);
+  });
+});
+
+describe('並べる行', () => {
+  it('サイトに載せない職歴と実績は、秘匿化するかに関わらず並ばない（FR-004）', async () => {
+    const organizationId = await insertOrganization(env.DB, {
+      name: REAL.organization,
+      nameMasked: 'ある会社',
+    });
+    for (const isMasked of [true, false]) {
+      await insertCareer(env.DB, { organizationId, isMasked, status: 'draft' });
+      await insertProject(env.DB, { organizationId, isMasked, status: 'draft' });
+    }
+
+    expect(await feed.list()).toEqual([]);
+  });
+
+  it('学歴は並ばない（FR-001）', async () => {
+    await insertEducation(env.DB, { school: '作り物大学' });
+
+    expect(await feed.list()).toEqual([]);
+  });
+
+  it('秘匿化した組織名の無い組織を指す秘匿化した行は並ばない（research.md の R4）', async () => {
+    const organizationId = await insertOrganization(env.DB, {
+      name: REAL.organization,
+      nameMasked: null,
+    });
+    await insertCareer(env.DB, { organizationId, isMasked: true, status: 'published' });
+    await insertProject(env.DB, { organizationId, isMasked: true, status: 'published' });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '秘匿化しない実績',
+      isMasked: false,
+      status: 'published',
+    });
+
+    expect(await feed.list()).toEqual([
+      expect.objectContaining({ type: 'project', isMasked: false, title: '秘匿化しない実績' }),
+    ]);
+  });
+});
+
+describe('秘匿化', () => {
+  it('秘匿化した職歴と実績は、秘匿化した題と秘匿化した組織名で並び、実際の値を持たない（FR-012）', async () => {
+    const organizationId = await insertOrganization(env.DB, {
+      name: REAL.organization,
+      nameMasked: 'ある会社',
+    });
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '作り物の肩書',
+      startedOn: '2019-04-01',
+      endedOn: '2021-03-31',
+      description: REAL.description,
+      url: REAL.url,
+      isMasked: true,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      kind: 'talk',
+      title: REAL.title,
+      titleMasked: '業務システムの開発',
+      startedOn: '2020-04-01',
+      description: REAL.description,
+      url: REAL.url,
+      isMasked: true,
+      status: 'published',
+    });
+
+    const items = await feed.list();
+    expect(items).toStrictEqual([
+      {
+        type: 'project',
+        isMasked: true,
+        title: '業務システムの開発',
+        organizationName: 'ある会社',
+        projectKind: 'talk',
+        period: { startedOn: '2020-04-01', endedOn: null },
+      },
+      {
+        type: 'career',
+        isMasked: true,
+        organizationName: 'ある会社',
+        role: '作り物の肩書',
+        period: { startedOn: '2019-04-01', endedOn: '2021-03-31' },
+      },
+    ]);
+    const text = JSON.stringify(items);
+    for (const value of Object.values(REAL)) expect(text).not.toContain(value);
+  });
+
+  it('秘匿化しない職歴と実績は、実際の題と実際の組織名で並ぶ（FR-014）', async () => {
+    const organizationId = await insertOrganization(env.DB, {
+      name: '作り物株式会社',
+      nameMasked: 'ある会社',
+    });
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '作り物の肩書',
+      startedOn: '2019-04-01',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '作り物の受託開発',
+      startedOn: '2020-04-01',
+      isMasked: false,
+      status: 'published',
+    });
+
+    expect(await feed.list()).toMatchObject([
+      {
+        type: 'project',
+        isMasked: false,
+        title: '作り物の受託開発',
+        organizationName: '作り物株式会社',
+      },
+      { type: 'career', isMasked: false, organizationName: '作り物株式会社' },
+    ]);
+  });
+});
+
+describe('詰められない種類', () => {
+  it('FEED_ITEM_TYPES に無い種類の行がビューにあっても返さない（data-model.md の「アプリケーションが守る決まり」）', async () => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '作り物の受託開発',
+      isMasked: false,
+      status: 'published',
+    });
+
+    // 腕を足す migration が、その種類を詰める実装より先に入った状態を作る。検査の後に元に戻す
+    const original = await env.DB.prepare(
+      "SELECT sql FROM sqlite_master WHERE type = 'view' AND name = 'activity_feed'",
+    ).first<{ sql: string }>();
+    if (!original) throw new Error('ビュー activity_feed が無い');
+    const unknownArm = `UNION ALL SELECT 'unknown_type', 1, '2099-01-01', 0, '詰められない種類の題',
+      NULL, '作り物株式会社', NULL, '作り物の肩書', 'application', '2099-01-01', NULL`;
+    await env.DB.batch([
+      env.DB.prepare('DROP VIEW activity_feed'),
+      env.DB.prepare(`${original.sql} ${unknownArm}`),
+    ]);
+    try {
+      expect(await feed.list()).toEqual([
+        expect.objectContaining({ type: 'project', title: '作り物の受託開発' }),
+      ]);
+    } finally {
+      await env.DB.batch([env.DB.prepare('DROP VIEW activity_feed'), env.DB.prepare(original.sql)]);
+    }
+  });
+});

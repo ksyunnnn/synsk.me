@@ -42,9 +42,9 @@ description: "外部 activity の取得の実装タスク"
 
 **Purpose**: スキーマと道具の前提を確かめる
 
-- [ ] T001 共有担当の migration（`activity.uid`・取得元の行）が `epic/219-complete-specs` に入っていることを確かめ、入った migration の取得元の `source` の値を src/features/activity/domain/sources.ts（T011）に写す。入るまで、この印の付いたタスクを止める（research.md の R1）。取得元を種類ごとに分けること（FR-003）と、手で付ける値の列が無いこと（FR-021）はスキーマが持つ（data-model.md）。**止める依存: 共有担当の migration**
-- [ ] T002 [P] 取得元の認証情報（`GITHUB_TOKEN`・`QIITA_ACCESS_TOKEN`・`CONNPASS_API_KEY`）の型を src/shared/server/env.ts に足し、値の雛形を .dev.vars.example に足す（research.md の R15）
-- [ ] T003 [P] workerd で RSS の XML を読む手段（`DOMParser` の有無、無ければ使う package）を確かめ、結果と確かめた日付を specs/004-external-activity/research.md の R3 に書く。package を足すときは使い手（Zenn・Medium・Speaker Deck）を R3 に書く（constitution IX）
+- [x] T001 共有担当の migration（`activity.uid`・取得元の行）が `epic/219-complete-specs` に入っていることを確かめ、入った migration の取得元の `source` の値を src/features/activity/domain/sources.ts（T011）に写す。入るまで、この印の付いたタスクを止める（research.md の R1）。取得元を種類ごとに分けること（FR-003）と、手で付ける値の列が無いこと（FR-021）はスキーマが持つ（data-model.md）。**止める依存: 共有担当の migration**
+- [x] T002 [P] 取得元の認証情報（`GITHUB_TOKEN`・`QIITA_ACCESS_TOKEN`・`CONNPASS_API_KEY`）の型を src/shared/server/env.ts に足し、値の雛形を .dev.vars.example に足す（research.md の R15）
+- [x] T003 [P] workerd で RSS の XML を読む手段（`DOMParser` の有無、無ければ使う package）を確かめ、結果と確かめた日付を specs/004-external-activity/research.md の R3 に書く。package を足すときは使い手（Zenn・Medium・Speaker Deck）を R3 に書く（constitution IX）
 
 ---
 
@@ -52,13 +52,13 @@ description: "外部 activity の取得の実装タスク"
 
 **Purpose**: どの User Story も使う型・取得元の表・Repository・組み立て・proxy
 
-- [ ] T010 [P] 分類（`SourceKind`）・取り込み方（`IntakeMode`）・`FetchedItem`・`SourceListing`・`RefreshOutcome` の型を src/features/activity/domain/fetched-item.ts に作る（data-model.md の「domain の型」）
-- [ ] T011 取得元の表（取得元の名前・取り込み方・URL を指名する取得元が受け付けるホスト）を src/features/activity/domain/sources.ts に `as const` で作る。分類は D1 の `activity_source.kind` を正とし、ここに写さない（FR-001〜FR-005、research.md の R3・R10）。取得元の名前は T001 が migration から写す。**止める依存: 共有担当の migration**
+- [x] T010 [P] 分類（`SourceKind`）・取り込み方（`IntakeMode`）・`FetchedItem`・`SourceListing`・`RefreshOutcome` の型を src/features/activity/domain/fetched-item.ts に作る（data-model.md の「domain の型」）
+- [x] T011 取得元の表（取得元の名前・取り込み方・URL を指名する取得元が受け付けるホスト）を src/features/activity/domain/sources.ts に `as const` で作る。分類は D1 の `activity_source.kind` を正とし、ここに写さない（FR-001〜FR-005、research.md の R3・R10）。取得元の名前は T001 が migration から写す。**止める依存: 共有担当の migration**
 - [ ] T012 [P] 外部の activity と life event の型を src/features/activity/domain/external-activity.ts と src/features/activity/domain/life-event.ts に作る。管理画面の型は uid を持ち、id を画面に出さない
 - [ ] T013 Repository のインタフェース（外部の activity の取り出し・取得の書き込み・登録・削除、life event の取り出し・登録・編集・削除・slug の有無、`findIdByUid`）を src/features/activity/domain/activity-repository.ts に作る。手本は src/features/project/domain/project-repository.ts
-- [ ] T014 [P] 単体の検査で渡す作り物の Repository と、作り物の応答を返す `fetcher` を tests/support/activity-fakes.ts に作る
+- [x] T014 [P] 単体の検査で渡す作り物の Repository と、作り物の応答を返す `fetcher` を tests/support/activity-fakes.ts に作る
 - [ ] T015 D1 の実装を src/features/activity/server/d1-activity-repository.ts に作る。行の型はこのファイルの中だけで書く。取得の書き込みの文は `source <> 'life_event'` を条件にする（FR-032、research.md の R13）
-- [ ] T016 [P] 作り物の activity の行を D1 に入れる道具を tests/support/activity-rows.ts に作る
+- [x] T016 [P] 作り物の activity の行を D1 に入れる道具を tests/support/activity-rows.ts に作る
 - [ ] T017 ユースケースが受け取るもの（`ActivityDeps`）を src/features/activity/application/deps.ts に、組み立て用の関数を src/features/activity/server/queries.ts に作る。手本は src/features/project/application/deps.ts と src/features/project/server/queries.ts
 - [ ] T018 本番の上限の値を src/features/activity/domain/limits.ts に置く（research.md の R8）。**止める未決: U13**
 - [ ] T019 src/app/dash/page.tsx の入口に「life event」と「外部の activity」を足す
@@ -73,32 +73,33 @@ description: "外部 activity の取得の実装タスク"
 
 ### Tests for User Story 1
 
-- [ ] T020 [P] [US1] `planRefresh` が、新しい項目を足す行に、値の変わった項目を直す行に、変わらない項目を書かない行にすることと、ID を返す取得元は ID で・返さない取得元は URL で同じ項目を判定することを tests/unit/activity-plan-refresh.test.ts で確かめる（FR-005・FR-008・SC-001）
-- [ ] T021 [P] [US1] 取り直しても行が増えず、`created_at` が変わらず、取り込んだ行の取得元が `activity_source` の取得元であることを tests/workers/activity-repository.test.ts で確かめる（FR-002・FR-008・FR-013、US1 の Acceptance 4）。**止める依存: 共有担当の migration**
+- [x] T020 [P] [US1] `planRefresh` が、新しい項目を足す行に、値の変わった項目を直す行に、変わらない項目を書かない行にすることと、ID を返す取得元は ID で・返さない取得元は URL で同じ項目を判定することを tests/unit/activity-plan-refresh.test.ts で確かめる（FR-005・FR-008・SC-001）
+- [x] T021 [P] [US1] 取り直しても行が増えず、`created_at` が変わらず、取り込んだ行の取得元が `activity_source` の取得元であることを tests/workers/activity-repository.test.ts で確かめる（FR-002・FR-008・FR-013、US1 の Acceptance 4）。**止める依存: 共有担当の migration**
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] 足す・直す・消す行を求める計算だけの関数 `planRefresh` を src/features/activity/application/plan-refresh.ts に作る。外への要求も D1 も触らない（research.md の R4・R5）
-- [ ] T023 [US1] 取得のユースケース `refreshSources` を src/features/activity/application/refresh-sources.ts に作る。取得元ごとに読む → `planRefresh` → 1 回の `batch()` で書く。`batch()` が失敗したら、その取得元の `fetch_result` に失敗と理由を別に書く（FR-016、research.md の R4）。上限は引数 `limits` で受け取る（contracts/fetch.md）
-- [ ] T024 [US1] 取得元の書き込み（足す・直す・`fetch_result` の上書き）を 1 回の `batch()` で行う関数を src/features/activity/server/d1-activity-repository.ts に足す
-- [ ] T025 [US1] `fetcher` に User-Agent・待ち時間・応答の大きさの上限をかける関数を src/features/activity/server/sources/fetch-with-limits.ts に作る（research.md の R8、contracts/fetch.md）。待ち時間と大きさを超えたら失敗になることを tests/unit/activity-fetch-with-limits.test.ts で確かめる
+- [x] T022 [US1] 足す・直す・消す行を求める計算だけの関数 `planRefresh` を src/features/activity/application/plan-refresh.ts に作る。外への要求も D1 も触らない（research.md の R4・R5）
+- [x] T023 [US1] 取得のユースケース `refreshSources` を src/features/activity/application/refresh-sources.ts に作る。取得元ごとに読む → `planRefresh` → 1 回の `batch()` で書く。`batch()` が失敗したら、その取得元の `fetch_result` に失敗と理由を別に書く（FR-016、research.md の R4）。上限は引数 `limits` で受け取る（contracts/fetch.md）
+- [x] T024 [US1] 取得元の書き込み（足す・直す・`fetch_result` の上書き）を 1 回の `batch()` で行う関数を src/features/activity/server/d1-activity-repository.ts に足す
+- [x] T025 [US1] `fetcher` に User-Agent・待ち時間・応答の大きさの上限をかける関数を src/features/activity/server/sources/fetch-with-limits.ts に作る（research.md の R8、contracts/fetch.md）。待ち時間と大きさを超えたら失敗になることを tests/unit/activity-fetch-with-limits.test.ts で確かめる
+- [x] T026 [US1] 1 回の実行で取り直す取得元を、取り直したことの無いものを先に、次に `fetch_result.fetched_at` の古い順に、上限の数まで選ぶ `pickSourcesForRun` を src/features/activity/application/pick-sources.ts に、取得元ごとの `fetched_at` を読む `listFetchedAt` を src/features/activity/server/d1-activity-repository.ts に作り、tests/unit/activity-pick-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる（research.md の R9）
 
 ### 取得元ごとの処理（各取得元は T022〜T025 の後に並べられる）
 
 各タスクは、取得元の処理を src/features/activity/server/sources/<取得元>.ts に作り、作り物の応答（検証記録の実データの形）から `FetchedItem` に詰め替えることと `isComplete` の値を tests/unit/activity-source-<取得元>.test.ts で確かめる（FR-006・FR-007、constitution VII）。頁を辿る取得元（T031・T032・T035・T036）では、要求の数の上限で辿るのを止めたときに `isComplete` が偽になることも確かめる（research.md の R7、FR-018・FR-020）。
 
-- [ ] T030 [P] [US1] Zenn（RSS、guid が URL、20 件固定で `isComplete` は偽）。src/features/activity/server/sources/zenn.ts（#168「外部の取得の仕組みを作り、Zenn を取り込む」）
-- [ ] T031 [P] [US1] Qiita（REST、ID、`total-count` まで頁を辿る。`QIITA_ACCESS_TOKEN` が欠ければ未認証で取る）。src/features/activity/server/sources/qiita.ts（#169「Qiita を取り込む」）
-- [ ] T032 [P] [US1] dev.to（REST、ID、User-Agent を必ず付ける）。src/features/activity/server/sources/devto.ts（#170「dev.to を取り込む」）
-- [ ] T033 [P] [US1] Medium（RSS、guid が ID、`link` の問い合わせの部分を除く、10 件固定で `isComplete` は偽、画像は `content:encoded` の先頭の `<img>`）。src/features/activity/server/sources/medium.ts（#171「Medium を取り込む」）
-- [ ] T034 [P] [US1] Speaker Deck（RSS、guid が URL、`isComplete` は偽）。src/features/activity/server/sources/speakerdeck.ts（#172「Speaker Deck を取り込む」）
+- [x] T030 [P] [US1] Zenn（RSS、guid が URL、20 件固定で `isComplete` は偽）。src/features/activity/server/sources/zenn.ts（#168「外部の取得の仕組みを作り、Zenn を取り込む」）
+- [x] T031 [P] [US1] Qiita（REST、ID、`total-count` まで頁を辿る。`QIITA_ACCESS_TOKEN` が欠ければ未認証で取る）。src/features/activity/server/sources/qiita.ts（#169「Qiita を取り込む」）
+- [x] T032 [P] [US1] dev.to（REST、ID、User-Agent を必ず付ける）。src/features/activity/server/sources/devto.ts（#170「dev.to を取り込む」）
+- [x] T033 [P] [US1] Medium（RSS、guid が ID、`link` の問い合わせの部分を除く、10 件固定で `isComplete` は偽、画像は `content:encoded` の先頭の `<img>`）。src/features/activity/server/sources/medium.ts（#171「Medium を取り込む」）
+- [x] T034 [P] [US1] Speaker Deck（RSS、guid が URL、`isComplete` は偽）。src/features/activity/server/sources/speakerdeck.ts（#172「Speaker Deck を取り込む」）
 - [ ] T035 [P] [US1] GitHub（REST、ID、`pushed_at` が null なら `created_at`、`GITHUB_TOKEN` が欠ければ未認証）。src/features/activity/server/sources/github.ts（#173「GitHub を取り込む」）
-- [ ] T036 [P] [US1] connpass（REST v2、ID、`CONNPASS_API_KEY` が欠ければ要求を出さず失敗、要求は 5 秒に 1 回まで）。src/features/activity/server/sources/connpass.ts（#174「connpass を取り込む」）
+- [x] T036 [P] [US1] connpass（REST v2、ID、`CONNPASS_API_KEY` が欠ければ要求を出さず失敗、要求は 5 秒に 1 回まで）。src/features/activity/server/sources/connpass.ts（#174「connpass を取り込む」）
 
 ### 取得の入口
 
-- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
-- [ ] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を、activity を書く `batch()` の中で `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。2 頁目以降を取った・失敗した・上限で消さずに残した・公開日の欠けた項目を取り込まなかったときは値を NULL にする。**止める依存: 共有担当の migration**（`fetch_result` の列）
+- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `pickSourcesForRun` で選んだ取得元の順番を取り（`recordFetchFailure` で「取り直しを始めて終わらなかった」と書く、research.md の R9）、`refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
+- [ ] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を、activity を書く `batch()` の中で `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。2 頁目以降を取った・失敗した・上限で消さずに残した・公開日の欠けた項目を取り込まなかったときは値を NULL にする（`applyRefresh` に、値を書いてよいかを渡す）。**止める依存: 共有担当の migration**（`fetch_result` の列）
 
 ---
 
@@ -108,9 +109,9 @@ description: "外部 activity の取得の実装タスク"
 
 **Independent Test**: 作り物の取得元 A を失敗させ B を成功させて `refreshSources` を走らせ、A の行が残り、B が取り込まれ、A の `fetch_result` に失敗と理由が書かれることを確かめる
 
-- [ ] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることと、A の書き込みの `batch()` が失敗したときも A の `fetch_result` に失敗が書かれることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
-- [ ] T043 [P] [US2] 失敗した取得元の `fetch_result` に取り直した日時・失敗・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が前の値のまま残り、取得元 B の `batch()` は A の失敗で戻らないことを tests/workers/activity-repository.test.ts で確かめる（FR-016、US2 の Acceptance 3・4）。**止める依存: 共有担当の migration**
-- [ ] T044 [US2] T042・T043 が通るように src/features/activity/application/refresh-sources.ts と src/features/activity/server/d1-activity-repository.ts の失敗の扱いを直す。`Promise.allSettled` で並べ、投げない（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）
+- [x] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることと、A の書き込みの `batch()` が失敗したときも A の `fetch_result` に失敗が書かれることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
+- [x] T043 [P] [US2] 失敗した取得元の `fetch_result` に取り直した日時・失敗・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が前の値のまま残り、取得元 B の `batch()` は A の失敗で戻らないことを tests/workers/activity-repository.test.ts で確かめる（FR-016、US2 の Acceptance 3・4）。**止める依存: 共有担当の migration**
+- [x] T044 [US2] T042・T043 が通るように src/features/activity/application/refresh-sources.ts と src/features/activity/server/d1-activity-repository.ts の失敗の扱いを直す。`Promise.allSettled` で並べ、投げない（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）
 
 ---
 
@@ -120,9 +121,9 @@ description: "外部 activity の取得の実装タスク"
 
 **Independent Test**: `isComplete` が真の作り物の取得元から 1 件を外して取り直し、その行が消えることを確かめる。`isComplete` が偽の取得元では消えないことを確かめる
 
-- [ ] T045 [P] [US3] `planRefresh` が、`isComplete` が真のときだけ一覧に無い activity を消す候補にし、偽のときは候補にせず、候補が上限を超えたら超えた分を残して理由を返すことを tests/unit/activity-plan-refresh.test.ts で確かめる（FR-017〜FR-020・SC-003・SC-004）
-- [ ] T046 [P] [US3] 消す行が `batch()` で消え、life event の行と、ほかの取得元の行を消さないことを tests/workers/activity-repository.test.ts で確かめる（FR-017・FR-032）。**止める依存: 共有担当の migration**
-- [ ] T047 [US3] 消す候補と上限を src/features/activity/application/plan-refresh.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
+- [x] T045 [P] [US3] `planRemovals` が、`isComplete` が真のときだけ一覧に無い activity を消す候補にし、偽のときは候補にせず、候補が上限を超えた回は 1 件も消さずに残した数を返すことを tests/unit/activity-plan-removals.test.ts で、`refreshSources` が止めた旨を取得の結果の理由に書くことを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-017〜FR-020・SC-003・SC-004）
+- [x] T046 [P] [US3] 消す行が `batch()` で消え、life event の行と、ほかの取得元の行を消さないことを tests/workers/activity-repository.test.ts で確かめる（FR-017・FR-032）
+- [x] T047 [US3] 消す候補と上限を src/features/activity/application/plan-removals.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
 - [ ] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
 
 ---
@@ -172,7 +173,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
 - [x] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
 - [x] T068 [US5] 訪問者のページを src/app/life-events/[slug]/page.tsx・src/app/life-events/[slug]/missing/page.tsx と src/features/activity/components/visitor-life-event.tsx に作り、src/proxy.ts の matcher に `/life-events/:slug` を足す
-- [x] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/activity-dash.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
+- [x] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/life-events.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
 
 ### 画像（共有担当の src/shared/server/media-storage.ts が入ってから）
 

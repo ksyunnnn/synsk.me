@@ -108,15 +108,19 @@ export const createD1LifeEventRepository = (db: D1Database): LifeEventRepository
     },
 
     list: async () => {
+      // 一覧は説明と代表画像を使わないので読まない
       const { results } = await db
         .prepare(
-          `${SELECT_LIFE_EVENT} WHERE ${IS_LIFE_EVENT} ORDER BY a.happened_on DESC, a.id DESC`,
+          `SELECT a.id, a.uid, a.slug, a.title, a.happened_on FROM activity a WHERE ${IS_LIFE_EVENT} ORDER BY a.happened_on DESC, a.id DESC`,
         )
-        .all<LifeEventRow>();
-      return results.map((row) => {
-        const { id, uid, slug, title, happenedOn } = toLifeEvent(row);
-        return { id, uid, slug, title, happenedOn };
-      });
+        .all<Pick<LifeEventRow, 'id' | 'uid' | 'slug' | 'title' | 'happened_on'>>();
+      return results.map((row) => ({
+        id: row.id,
+        uid: row.uid,
+        slug: row.slug,
+        title: row.title,
+        happenedOn: row.happened_on as CalendarDate,
+      }));
     },
 
     register: async (content) => {

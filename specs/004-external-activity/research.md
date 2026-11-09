@@ -42,17 +42,17 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - 型（domain に置く）: 一覧を取る取得元は `{ items: FetchedItem[]; isComplete: boolean }` を返す。`isComplete` は、取得元の項目をすべて取ったか（FR-018 の判定に使う）。URL を指名する取得元は、1 つの URL から `FetchedItem` か「取れない」を返す
 - 取得元の一覧（取得元の名前・分類・取り込み方・担当のファイル）は `src/features/activity/domain/sources.ts` に `as const` で 1 か所に置く。分類は `activity_source.kind` に持ち、コードは D1 の値を正とする（FR-001・FR-002）
 - 理由: `docs/SOFTWARE_DESIGN.md` の Anti-Corruption Layer、constitution VII。取得元の仕様が変わったときに直すファイルを 1 つに限る
-- RSS の XML の読み方: Workers には `DOMParser` が無い（推測。実装の前に確かめ、結果をこの項に書く）。package を足すときは constitution IX に従い、Zenn・Medium・Speaker Deck の 3 つの使い手を名前で書く
+- RSS の XML の読み方: workerd に `DOMParser` は無い（2026-11-09、`npm run test:workers` の中で `typeof DOMParser` が `undefined`）。`HTMLRewriter` はあるが HTML として読むため、RSS の `<link>`（HTML では空の要素）と CDATA を読めない。そこで package を足さず、RSS 2.0 の項目の子の要素だけを読む最小の読み手 `src/features/activity/server/sources/rss.ts` を持つ。使い手は Zenn・Medium・Speaker Deck の 3 つ（constitution IX）
 - 退けた案: 取得元の取り方を `activity_source` の列に持つ。FR-004 が退ける
 
 ## R4 取得の流れと失敗の表し方
 
 - 決めたこと: 取得のユースケース `refreshSources(deps, sourceNames, now, limits)` は、取得元ごとに「読む → 計算 → 書く」を行う。取得元どうしは `Promise.allSettled` で並べ、1 つの失敗でほかを止めない（FR-015）。結果は、取得元ごとの成否と理由の一覧で返し、投げない
   1. 読む: 取得元の項目を取る（R3）。保存した同じ取得元の activity を読む
-  2. 計算: 足す行・直す行・消す行を、外への要求も D1 も触らない関数 `planRefresh` で求める（R5・R6）
+  2. 計算: 足す行・直す行を `planRefresh` で、消す行を `planRemovals` で求める。どちらも外への要求も D1 も触らない（R5・R6）
   3. 書く: 1 つの取得元の書き込みと `fetch_result` の 1 行を、1 回の `batch()` で書く
 - 取得に失敗した取得元では、activity を 1 行も書き換えず、`fetch_result` だけを書く（FR-014）。`last_succeeded_at` は前の値を残す（FR-016）
-- 3 の `batch()` が失敗したとき（例: 同じ URL が応答に 2 回あり、`activity_source_url` の UNIQUE に当たる）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
+- 3 の `batch()` が失敗したとき（例: 取得元の値が activity の CHECK に反する。同じ項目が応答に 2 回あるときは、`planRefresh` が 1 つにする）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
 - 理由: `docs/SOFTWARE_DESIGN.md` の「失敗の表し方」と「読む → 計算 → 書く」、constitution IV。`batch()` は 1 文が失敗すると全体を戻す（[D1 Database API](https://developers.cloudflare.com/d1/worker-api/d1-database/)、001 の research.md の R2）ので、1 つの取得元の書き込みが途中で止まらない
 - 退けた案: すべての取得元を 1 回の `batch()` で書く。1 つの取得元の書き込みの失敗で、ほかの取得元の結果も戻る（FR-015 に反する）
 
@@ -70,12 +70,15 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - 決めたこと: 取得元で消えたと確かめた activity は、`activity` の行を消す（2026-11-09、PM の回答。印の列を足さない）。消した行は一覧の対象から外れ、消えたことを示す値も残らない（FR-017）
 - 確かめ方は取得元ごとの処理が持つ（spec の Assumptions「実装のときに決める」）。この plan は次の型を決める
-  - 一覧を取る取得元で `isComplete` が真のとき: 保存した activity のうち、取った一覧に無いものを、消えた候補にする
+  - 一覧を取る取得元で `isComplete` が真のとき: 保存した activity のうち、取った一覧に無いものを、消えた候補にする。取った一覧が空なら候補にしない（取得元の誤りの兆しで、件数が上限より少ない取得元ではすべてを消してしまう）
+- 頁を辿る取得元（Qiita の `Total-Count`、connpass の `results_available`）は、頁ごとに返す総数が 1 頁目と違えば `isComplete` を偽にする。頁を辿るあいだに項目が消えたり増えたりすると頁の境目がずれ、取らなかった項目を消えた候補にするため
   - `isComplete` が偽のとき（Zenn は 20 件、Medium は 10 件で打ち切る）: 一覧に無いことを候補の根拠にしない（FR-018）
   - URL を指名する取得元と、確かめる手段を持たない取得元: 自動では消さない。オーナーが synsk.me の側で削除する（FR-033）
   - 個別の URL を取り直して消えたと判定する手段（404 の扱いを含む）は、取得元ごとに実装のときに決め、決めた条件と実測の日付をこの項に書いてから使う
-- 上限: 1 回の取得で 1 つの取得元から消す件数に上限を設け、超えた分は残す（FR-019）。上限を超えたときは `fetch_result.reason` にその旨を書く。値は R8
-- 判定できないとき（取得の失敗、応答の形の誤り、上限を超えた分）は消さない（FR-020）
+- 上限: 1 回の取得で 1 つの取得元から消す件数に上限を設ける。消す候補が上限を超えた回は 1 件も消さず、`fetch_result.reason` に止めた旨を書く。次の回も同じなら同じく止め、オーナーが確かめる（FR-019。2026-11-09、PM が原則 2 から導いた）。理由: 一度に多く消えるのは取得元の誤り（空の一覧が返るなど）の兆しで、消したものは取り消せない。値は R8。計算は `src/features/activity/application/plan-removals.ts`
+- 取得の結果をオーナーに見せる画面は持たない（plan.md の「spec が決めないものの扱い」）。止めた旨は `fetch_result.reason` に書くだけ
+- 個別の URL を取り直したときの応答の実測（2026-11-09、`curl` で `-A 'synsk.me (+https://synsk.me)' -L` を付けた）: Zenn はある記事が 200、無い記事（作り物の URL）が 404。Speaker Deck もある資料が 200、無い資料が 404。Medium は、ある記事（`/p/<ID>`）も無い記事も 403 を返す。Medium は個別の URL で判定できないので、自動では消さない（FR-020）。Zenn と Speaker Deck で消した記事・資料が 404 を返すかは、消したものが無いので確かめていない
+- 判定できないとき（取得の失敗、応答の形の誤り、消す候補が上限を超えた回）は消さない（FR-020）
 - 理由: ADR-0052（ADR-0045 を置き換える）。行を消す形は、印を持つ列と、一覧の側で印を見る条件を足さずに済む（原則 9）。REQUIREMENTS.md の FR-11（永続化したデータを完全に削除できる）にも合う
 - 退けた案: 消えた印の列を持ち、一覧の側で除く。005 の一覧の取り出しに条件が 1 つ増え、印を見落とした画面から消えた activity が出る
 
@@ -99,6 +102,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | CodePen | すべて手で入力する | 埋め込み | なし（全経路 403） | URL | — | 手で入力 |
 | 登録していないサイト | 未決（U11） | その他 | — | URL（FR-005） | — | 手で入力 |
 
+- Qiita の 1 頁は 20 件にする。項目が本文の全文を持ち、`per_page=100` の頁は 941 KB だった（2026-11-09、77 件を実測）。R8 の 1 本の応答の大きさの上限（1 MB）の内側に収めるため
 - 頁を辿る取得元（Qiita・dev.to・GitHub・connpass）で、R8 の要求の数の上限に当たって辿るのを止めたときは、`isComplete` を偽にする。上限で止めた一覧に無い activity を消す候補にしないため（FR-018・FR-020）
 - 注意（検証記録から）: dev.to は User-Agent が空だと 403 を返し、Workers の `fetch` は既定の User-Agent を付けない。CodeSandbox は無い ID でもサイト既定の OG を 200 で返すので、`og:title` が既定値なら「取れない」とする。GitHub の `pushed_at` は null がありうる。Medium の `link` は問い合わせの部分を除いて使う。connpass は API キーが必須で、要求は 5 秒に 1 回まで
 - issue #177「CodePen と CodeSandbox を手で登録できるようにする」は CodeSandbox を手で入力するとするが、spec の Assumptions と ADR-0052 は URL を指名するとする。spec に従う（2026-11-09、PM の回答）
@@ -113,13 +117,14 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | 1 回の取得で 1 つの取得元に出す要求の数 | 10 本 | Qiita の未認証の上限は 60 回/時/IP、GitHub は 60 回/時/IP（検証記録）。Workers は共有の IP から出る |
 | 1 本の要求の待ち時間 | 10 秒で打ち切り、失敗にする | 応答しない取得元で取得全体を待たせない（FR-015） |
 | 1 本の応答の大きさ | 1 MB で打ち切り、失敗にする | Qiita の 1 頁は 214 KB、Medium の RSS は 87 KB（検証記録） |
-| 1 回の取得で 1 つの取得元から消す件数 | 5 件 | FR-019。超えた分は残し、`fetch_result.reason` に書く |
+| 1 回の取得で 1 つの取得元から消す件数 | 5 件 | FR-019。候補がこれを超えた回は 1 件も消さず、`fetch_result.reason` に書く |
 | connpass の要求の間隔 | 5 秒に 1 回 | 検証記録（申請の条件） |
-| Cron の実行の間隔 | 1 日 1 回 | 更新が無いのに実行が回り続ける無駄を抑える（R9）。一覧に載るのが最大 1 日遅れる |
+| Cron の実行の間隔 | 1 日 1 回 | 更新が無いのに実行が回り続ける無駄を抑える（R9）。1 つの取得元を取り直す間隔は「実行の間隔 × 一覧を取る取得元の数（7）÷ 1 回の実行で扱う取得元の数」で、1 日 1 回・1 回に 1 つなら 7 日に 1 回になり、一覧に載るのが最大 7 日遅れる |
+| 1 回の実行で扱う取得元の数 | 未定（U13）。決まるまでは 1 | R9 の解析の時間の実測の表で、Qiita の取得元ごとの処理だけで 4〜6 ms かかる。1 にすれば、取得元 1 つの解析と D1 の呼び出しだけが 1 回の実行に載る |
 | 1 回の実行で出す要求の総数と、取得元への配り方 | 未定（U13） | Workers Free の 1 回の呼び出しの subrequest の上限 50 本（R9）は、外への要求と D1 の呼び出しを合わせて数える。1 つの取得元に 10 本では 7 つの取得元で外への要求だけで 70 本になり、超える |
 
 - 値はユースケースに引数で渡し（`limits`）、単体の検査では作り物の値を渡す。本番の値は `src/features/activity/domain/limits.ts` の 1 か所に置く
-- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。1 日 1 回の実行なら、1 日に書く行は「新しい項目＋直った項目＋取得元の数（7）」で、上限に届かない
+- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。1 日の実行の回数を n とすると、1 日に書く行は「新しい項目＋直った項目＋n × 1 回の実行で扱う取得元の数」（実行の前に順番を取る 1 文を含めると、その倍）で、n が 24 でも上限に届かない
 
 ## R9 取得を走らせる時機
 
@@ -147,7 +152,24 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - GitHub は、`Authorization` ヘッダを付けた条件付きの要求が 304 を返したとき、primary rate limit に数えない。`GITHUB_TOKEN` が無い環境（R15）では 304 も 60 回/時/IP に数える（[Best practices for using the REST API](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)）
 - Workers Free の上限（[Workers の Limits](https://developers.cloudflare.com/workers/platform/limits/)、2026-11-09 に読んだ）: Cron Triggers はアカウントで 5 個、1 回の Cron の実行の CPU 時間は 10 ms、1 回の呼び出しの subrequest は 50 本。subrequest は「A subrequest is any request a Worker makes using the Fetch API or to Cloudflare services like R2, KV, or D1」（同じ頁）で、D1 の呼び出しも数える。外への要求を待つ時間は CPU 時間に数えない（同じ頁）。CPU 時間は応答を読んで詰め替える処理に掛かるので、実装の後に測る（原則 6）
-- CPU 時間が 10 ms を超えると、取得元ごとの失敗ではなく実行の全体が止まり、残りの取得元の `fetch_result` が書かれない（FR-015・FR-016 を満たさない）。1 回の実行で扱う取得元を分けるか（例: 実行ごとに `fetch_result.fetched_at` の最も古い取得元から順に回す）は U13 に含めて決める
+- CPU 時間が 10 ms を超えると、取得元ごとの失敗ではなく実行の全体が止まり、残りの取得元の `fetch_result` が書かれない（FR-015・FR-016 を満たさない）
+- 決めたこと（2026-11-09、PM）: 1 回の実行で扱う取得元を分ける。実行ごとに、取り直したことの無い取得元を先に、次に `fetch_result.fetched_at` の古い順に、上限の数まで選び、残りを次の回へ送る（`src/features/activity/application/pick-sources.ts`、原則 2・4）。`fetched_at` は成否を問わず書く（`refreshSources`）ので、失敗し続ける取得元がほかの取得元の順番を奪わない
+- 選んだ取得元は、取り直す前に順番を取る: 取得の結果に「取り直しを始めて終わらなかった」と失敗を書き（`recordFetchFailure`。`fetched_at` が進み、`last_succeeded_at` は残る）、取り直し終えたら結果で上書きする。CPU 時間の上限で実行が止まると `refreshSources` は結果を書けず、順番を取らないと、その取得元が毎回先に選ばれ、ほかの取得元を取り直さなくなる
+- 上限は取得元の数で持つ。本番の Worker では CPU だけを使うあいだ `performance.now()` と `Date.now()` が進まない（[Performance and timers](https://developers.cloudflare.com/workers/runtime-apis/performance/)）ため、実行の中で CPU 時間を測って止めることはできない。数の値は U13（R8）
+- 解析の時間の実測（2026-11-09 に取った実データを作り物の `fetcher` で渡し、取得元ごとの処理の `fetchListing` を 30 回ずつ回した）。`wrangler dev` と同じ workerd ではタイマーが CPU の処理でも進む（同じ頁）。workerd の値は 1 ms 刻み
+
+| 取得元 | 応答 | workerd（1 回目・中央値） | 手元の Node（中央値） |
+|---|---|---|---|
+| Qiita | 77 件・853 KB（`per_page=100` の 1 頁） | 6 ms・4 ms | 3.9 ms |
+| GitHub（JSON を読むだけ） | 56 件・295 KB | 1 ms・1 ms | 1.0 ms |
+| Medium | 50 KB | 0 ms・0 ms | 0.5 ms |
+| Zenn | 30 KB | 1 ms・0 ms | 0.3 ms（1 回目 10.8 ms） |
+| Speaker Deck・dev.to | 3 KB 以下 | 1 ms 以下 | 0.1 ms 未満 |
+| connpass | 未測（API キーが無い） | 未測 | 未測 |
+
+- 上の値は取得元ごとの処理（`fetchListing`）だけで、1 回の実行の全体（D1 の行の詰め替え・`planRefresh`・`batch()` の文の組み立て・isolate の立ち上がり）を含まない。Qiita は `per_page=100` の 1 頁で測っており、本番の要求（R7 の 20 件の頁）とは形が違う。1 回の実行で扱う取得元の数を 1 にして 10 ms に収まるかは、本番の値で確かめる
+
+- 本番の 1 回ごとの CPU 時間は、Workers の Metrics の「CPU Time per execution」で見る（[Metrics and analytics](https://developers.cloudflare.com/workers/observability/metrics-and-analytics/)）。Cron の実行だけに絞れるかは、その頁に書かれていない
 
 ## R10 URL を指名する・手で入力する登録
 

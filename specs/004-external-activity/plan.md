@@ -27,7 +27,7 @@
 
 **Language/Version**: TypeScript 6.0（`typescript` ~6.0.3）、Node.js 22 以上
 
-**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。RSS の XML の読み方は実装の前に確かめる（[research.md](./research.md) の R3）
+**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。RSS は package を足さずに読む（[research.md](./research.md) の R3）
 
 **Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0011` と共有担当の migration（`activity.uid`・取得元の行。research.md の R1）。画像は R2（binding `NOTE_IMAGES`）を共有担当の `src/shared/server/media-storage.ts` 越しに使う。形式は JPEG・PNG・WebP・GIF、1 枚 10 MB まで（U5 の決定）
 
@@ -101,9 +101,9 @@
 | FR-036 | `wrangler.jsonc` に `triggers` があり、`scheduled` が `refreshSources` を呼ぶ（research.md の R9）。ビルドした `dist/server/wrangler.json` に `triggers` があることは quickstart.md の手順 1 で確かめる | 単 |
 | FR-014・FR-015・SC-002 | 2 つのうち 1 つの取得元が失敗しても、失敗した側の行が残り、もう一方が取り込まれる | 単（`refreshSources`）・W（`batch()` の分け方） |
 | FR-016 | 失敗の結果に日時・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が残る | 単・W |
-| FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRefresh`）・W |
-| FR-018・SC-004 | `isComplete` が偽の取得元で、一覧に無い activity を消さない | 単（`planRefresh`） |
-| FR-019 | 消す候補が上限を超えたら、超えた分を残し、理由を書く | 単（`planRefresh`） |
+| FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRemovals`）・W |
+| FR-018・SC-004 | `isComplete` が偽の取得元で、一覧に無い activity を消さない | 単（`planRemovals`） |
+| FR-019 | 消す候補が上限を超えた回は 1 件も消さず、理由を書く | 単（`planRemovals`・`refreshSources`） |
 | FR-020 | 応答の形の誤り・取得の失敗で消さない | 単 |
 | FR-021 | 手で付ける値の列が無い | スキーマが持つ（ADR-0052 の Confirmation） |
 | FR-022・FR-033 | URL を指名した・手で入力した activity を削除できる。一覧を取る取得元の activity は削除の操作が無く、Server Action も拒む | 単（ユースケース）・W・E |
@@ -123,7 +123,7 @@
 |---|---|---|---|---|
 | U11 | 登録していないサイトの題の取り方と、取得元が題を返さない URL を指名したときの扱い（spec の未決） | オーナー | (a) 手で入力する (b) OG メタから取る。推奨 (a)（R10） | 登録していないサイトの登録（T053）と、題を取れないときの扱い（T050 の分岐） |
 | U12 | オーナーが登録する日付の持ち方 | オーナー | (a) その日の UTC の 00:00 を `published_at` に入れる (b) 暦の日付の列を足す。推奨 (a)（R10） | URL を指名する・手で入力する登録の保存（T050〜T053）と、共有担当への migration の依頼 |
-| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の分け方（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
+| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の数（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
 
 依存（未決ではない）: `activity.uid` と取得元の行を足す共有担当の migration（data-model.md の「要る migration の変更」）。D1 を使う検査（workerd・結合・E2E）のうち、uid と取得元の行を使うものは、その migration が epic に入ってから回す。tasks.md は「止める依存: 共有担当の migration」と書く。
 

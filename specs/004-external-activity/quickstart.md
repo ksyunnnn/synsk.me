@@ -12,7 +12,7 @@
 
 | 段階 | コマンド | 確かめること |
 |---|---|---|
-| 単体 | `npm test` | 取得元ごとの詰め替え、`planRefresh`（同じ項目・公開日の保持・消す候補・上限）、`refreshSources`（1 つの失敗でほかを止めない）、登録のユースケース、proxy の rewrite |
+| 単体 | `npm test` | 取得元ごとの詰め替え、`planRefresh`（同じ項目・公開日の保持）、`planRemovals`（消す候補・上限）、`refreshSources`（1 つの失敗でほかを止めない）、登録のユースケース、proxy の rewrite |
 | workerd | `npm run test:workers` | Repository の実装が本物の migration の上で動く。取得元ごとの `batch()`、`fetch_result` の上書き、life event の行を書かない、slug の重複 |
 | 結合 | `npm run test:integration` | `/life-events/{slug}` の 200・404 と応答の中身、JWT のない書き込みが何も書かない |
 | E2E | `npm run test:e2e` | オーナーとしての life event と外部の activity の登録・編集・削除と、キーボードだけの操作 |

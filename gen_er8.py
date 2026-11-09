@@ -2,7 +2,7 @@ import sys
 
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
-W = 1740
+W = 2030
 H = 1644
 
 
@@ -72,7 +72,8 @@ def rules_note(x, y):
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
         "互いを指す外部キー（note.published_revision_id・*.card_media_id）は、検査をトランザクションの終わりに送る（DEFERRABLE）",
         "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガが入れ直す",
-        "activity_feed のビューは、並べる列を UI で決めてから作る",
+        "activity_feed: published の行だけを出す。秘匿化した行は *_masked の列だけに値を持ち、title・organization_name・description・url・画像を持たない",
+        "activity_feed: name_masked の無い組織を指す秘匿化した行は出さない。並べるキーは (sort_at, 種類, item_number)",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public（既定は limited）。project.kind は application・talk・event・other",
         "CHECK の値: activity_source.kind は article・embed・life_event・other。note.card_image は generated・media・site",
         "年月日の列は、形と「終わり ≥ 始まり」を CHECK で守る",
@@ -145,7 +146,7 @@ activity = [
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
     ("happened_on", "text（年月日）· 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"),
 ] + TS
-fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可")]
+fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可"), ("etag", "text · 空可"), ("last_modified", "text · 空可")]
 note = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("status", "text · CHECK"),
     ("→ published_revision_id", "integer · 空可"), ("published_at", "text · 空可"),
@@ -155,6 +156,11 @@ revision = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("�
 media = [("# id", "integer"), ("→ note_id", "integer · 空可"), ("→ project_id", "integer · 空可"), ("→ career_id", "integer · 空可"), ("→ activity_id", "integer · 空可"), ("storage_key", "text · unique")] + C
 synd = [("# id", "integer"), ("→ note_id", "integer"), ("url", "text · unique")] + C
 link_preview = [("# id", "integer"), ("url", "text · unique"), ("title", "text · 空可"), ("image_url", "text · 空可"), ("fetched_at", "text")]
+feed = [
+    ("item_type", "career・project"), ("item_number", "integer"), ("sort_at", "text（started_on）"),
+    ("is_masked", "integer"), ("title", "text · 空可"), ("title_masked", "text · 空可"), ("organization_name", "text · 空可"), ("organization_name_masked", "text · 空可"), ("role", "text · 空可"),
+    ("project_kind", "text · 空可"), ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"),
+]
 resume = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),
     ("limited_expires_at", "text · 空可"),
@@ -167,7 +173,7 @@ resume_education = [("# id", "integer"), ("uid", "text · unique · 変更不可
 el = []
 el += zone(20, 20, 535, 1100, "職務経歴書")
 el += zone(560, 20, 540, 1088, "経歴（職歴・実績・学歴・スキル）")
-el += zone(1120, 20, 600, 584, "activity")
+el += zone(1120, 20, 890, 584, "activity")
 el += zone(1120, 608, 600, 684, "note（転載先・URL カード・画像）")
 
 # 職務経歴書
@@ -198,11 +204,11 @@ el += label(832, 702, "1") + label(860, 702, "0..N")
 el += path("M 980,700 V 656")
 el += label(994, 662, "1") + label(1002, 686, "0..N")
 # timeline の中
-el += path("M 1460,300 H 1500")
-el += label(1472, 282, "0..N") + label(1492, 318, "1")
+el += path("M 1460,340 H 1500")
+el += label(1472, 322, "0..N") + label(1492, 358, "1")
 # timeline → note
-el += path("M 1600,236 V 260")
-el += label(1618, 250, "0..1") + label(1588, 250, "1")
+el += path("M 1600,276 V 300")
+el += label(1618, 290, "0..1") + label(1588, 290, "1")
 # note の中
 el += path("M 1420,716 H 1480")
 el += label(1432, 698, "1") + label(1460, 698, "1..N")
@@ -231,8 +237,8 @@ el += entity(880, 460, 210, "skill", "スキル。経験年数は実績から計
 el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", project_skill)
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
-el += entity(1500, 260, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
-el += entity(1500, 404, 200, "activity_feed", "一覧。4 つの表を UNION ALL でつなぐ", [("activity", "外部・life event"), ("note", "公開中だけ"), ("project", "published・秘匿化"), ("career", "published・秘匿化"), ("career の日付", "started_on"), ("並び", "(日付, 種類, id)")], kind="VIEW")
+el += entity(1500, 300, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
+el += entity(1740, 60, 270, "activity_feed", "一覧。career と project の腕を UNION ALL", feed, kind="VIEW")
 el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
 el += entity(1480, 656, 220, "note_revision", "note の版。保存のたびに 1 行", revision)
 el += entity(1160, 1032, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)
@@ -263,7 +269,7 @@ html = f'''<!DOCTYPE html>
   <style>
     *, *::before, *::after {{ box-sizing: border-box; margin: 0; padding: 0; }}
     body {{ font-family: 'Geist', 'Hiragino Kaku Gothic ProN', sans-serif; background: {PAPER}; color: {INK}; padding: 3rem 1rem; }}
-    .frame {{ max-width: 1780px; margin: 0 auto; }}
+    .frame {{ max-width: 2070px; margin: 0 auto; }}
     .eyebrow {{ font-family: 'Geist Mono', monospace; font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; color: {MUTED}; margin-bottom: 0.5rem; }}
     h1 {{ font-family: 'Instrument Serif', 'Hiragino Mincho ProN', serif; font-size: 2rem; font-weight: 400; margin-bottom: 0.5rem; }}
     p.note {{ font-size: 0.85rem; color: {MUTED}; margin-bottom: 0.75rem; }}
