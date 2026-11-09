@@ -47,8 +47,9 @@ const refreshSource = async (
   limits: RefreshLimits,
 ): Promise<RefreshOutcome> => {
   let read;
+  let previous;
   try {
-    const previous = await deps.activities.readValidators(source);
+    previous = await deps.activities.readValidators(source);
     read = await Promise.all([
       deps.fetchListing(source, limits, previous),
       deps.activities.listStoredForRefresh(source),
@@ -57,22 +58,65 @@ const refreshSource = async (
     return fail(deps, source, now, `取得に失敗した: ${messageOf(error)}`);
   }
   const [listing, stored] = read;
-  // 取得元が変わっていないと答えた。activity を書かず、取得の結果を成功として書く（research.md の R9）
+  // 取得元が変わっていないと答えた。activity を書かず、取得の結果を成功として書く（research.md の R9）。
+  // 一覧に載らない古い記事を消しても RSS は変わらないので、304 の回も保存した行を個別の URL で
+  // 確かめる（R6）。一覧の中身が無いので、保存したすべての行から確かめた日時の古い順に選ぶ
   if ('notModified' in listing) {
+    const checks = await checkGoneOf(
+      deps,
+      source,
+      stored,
+      { items: [], isComplete: false },
+      limits,
+    );
     try {
-      await deps.activities.recordNotModified(source, now);
+      if (checks.checked.length === 0) {
+        await deps.activities.recordNotModified(source, now);
+        return {
+          source,
+          ok: true,
+          added: 0,
+          updated: 0,
+          removed: 0,
+          keptOverLimit: 0,
+          skippedWithoutDate: 0,
+        };
+      }
+      const removals = planRemovals(
+        stored,
+        { items: [], isComplete: false },
+        limits.maxRemovals,
+        checks.gone,
+      );
+      const deleted = new Set(removals.deletes);
+      const goneChecked = checks.checked.filter((id) => !deleted.has(id));
+      const reason =
+        removals.keptOverLimit > 0
+          ? `消す候補が ${removals.keptOverLimit} 件で、上限（${limits.maxRemovals} 件）を超えたので、1 件も消さなかった`
+          : null;
+      await deps.activities.applyRefresh(
+        source,
+        {
+          inserts: [],
+          updates: [],
+          skippedWithoutDate: 0,
+          deletes: removals.deletes,
+          ...(goneChecked.length > 0 && { goneChecked }),
+        },
+        { fetchedAt: now, reason, validators: reason === null ? previous : null },
+      );
+      return {
+        source,
+        ok: true,
+        added: 0,
+        updated: 0,
+        removed: removals.deletes.length,
+        keptOverLimit: removals.keptOverLimit,
+        skippedWithoutDate: 0,
+      };
     } catch (error) {
       return fail(deps, source, now, `書き込みに失敗した: ${messageOf(error)}`);
     }
-    return {
-      source,
-      ok: true,
-      added: 0,
-      updated: 0,
-      removed: 0,
-      keptOverLimit: 0,
-      skippedWithoutDate: 0,
-    };
   }
   const upserts = planRefresh(stored, listing.items);
   const checks = await checkGoneOf(deps, source, stored, listing, limits);

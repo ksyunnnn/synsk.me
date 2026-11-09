@@ -100,6 +100,26 @@ describe('refreshSources で確かめる', () => {
     expect(outcomes).toMatchObject([{ source: 'fake_feed', ok: true, removed: 1 }]);
   });
 
+  it('取得元が変わっていないと答えた（304）回も、保存した行を確かめ、404 の行を消す（R6）', async () => {
+    const { repository, applied } = createFakeActivityRepository({
+      fake_feed: [stored(1), stored(2, NOW)],
+    });
+    const checked: string[] = [];
+
+    await refreshSources(
+      {
+        ...deps(repository, { 'https://example.com/1': 'gone' }, checked),
+        fetchListing: async () => ({ notModified: true }),
+      },
+      ['fake_feed'],
+      NOW,
+      { ...LIMITS, maxGoneChecks: 1 },
+    );
+
+    expect(checked).toEqual(['https://example.com/1']);
+    expect(applied[0]?.plan.deletes).toEqual([1]);
+  });
+
   it('確かめる手段を持たない取得元（Medium など）では確かめない', async () => {
     const { repository, applied } = createFakeActivityRepository({ fake_feed: [stored(1)] });
 
