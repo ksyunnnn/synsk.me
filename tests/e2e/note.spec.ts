@@ -120,6 +120,17 @@ test('転載先を 2 つ記録でき、同じ URL を別の note に記録する
   await submitAndWait(page, '転載先を記録する');
   await expect(page.getByText('この URL は、この note かほかの note に記録済みです')).toBeVisible();
   await expect(textbox(page, '転載先の URL')).toHaveValue(first);
+
+  // 拒まれた後に別の URL を記録すると、前の知らせと入力が残らない
+  const third = `https://example.com/e2e-syndication-${suffix}-3`;
+  await textbox(page, '転載先の URL').fill(third);
+  await submitAndWait(page, '転載先を記録する');
+  await expect(page.getByRole('status')).toHaveText('転載先を記録しました');
+  await expect(page.getByText(third, { exact: true })).toBeVisible();
+  await expect(page.getByText('この URL は、この note かほかの note に記録済みです')).toHaveCount(
+    0,
+  );
+  await expect(textbox(page, '転載先の URL')).toHaveValue('');
 });
 
 test('続けて保存しても、保存できた書きかけがその端末に残らない（FR-019）', async ({

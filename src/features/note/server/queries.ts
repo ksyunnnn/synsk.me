@@ -20,6 +20,7 @@ import type {
   VisitorNote,
 } from '@/features/note/domain/note';
 import { createD1NoteRepository } from '@/features/note/server/d1-note-repository';
+import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
@@ -45,7 +46,11 @@ export const respondWithNoteMedia = async (
   ifNoneMatch: string | null,
 ): Promise<Response> => {
   const { notes, media } = await createNoteDeps();
-  const access = await getVisitorNoteMediaUseCase(notes, slug, key);
+  // 形の違うキーは、D1 を読まずに `respondWithMedia` が 404 にする
+  const access =
+    parseMediaStorageKey(key) === null
+      ? 'hidden'
+      : await getVisitorNoteMediaUseCase(notes, slug, key);
   return respondWithMedia(media, key, access, ifNoneMatch);
 };
 

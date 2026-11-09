@@ -583,6 +583,18 @@ describe('転載先（FR-031・FR-032、User Story 7、research.md の R14）', 
     });
   });
 
+  it('削除した note の転載先は外さない', async () => {
+    const note = await insertNote(env.DB);
+    await notes.addSyndication(note.id, 'https://example.com/kept');
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.removeSyndication(note.id, 'https://example.com/kept')).toEqual({
+      ok: false,
+    });
+    expect((await notes.findForEdit(note.id))?.syndicationUrls).toEqual([
+      'https://example.com/kept',
+    ]);
+  });
+
   it('URL で指して外し、別の note の URL は外さない', async () => {
     const a = await insertNote(env.DB);
     const b = await insertNote(env.DB);

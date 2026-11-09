@@ -39,7 +39,7 @@ description: "一覧の実装タスク"
 
 **Purpose**: ビューの M1 が入ったスキーマで検査を回せることを確かめる
 
-- [ ] T001 共有担当の M1（ビュー `activity_feed` の職歴と実績の腕）が epic に入ったことを確かめ、`npm run test:workers` が通ることを確かめる。**止める依存: M1**
+- [x] T001 共有担当の M1（ビュー `activity_feed` の職歴と実績の腕）が epic に入ったことを確かめ、`npm run test:workers` が通ることを確かめる。**止める依存: M1**
 
 ---
 
@@ -47,9 +47,9 @@ description: "一覧の実装タスク"
 
 **Purpose**: 一覧の型と Repository のインタフェース。Phase 3 以降のすべてが使う
 
-- [ ] T002 [P] 種類の `as const` の配列 `FEED_ITEM_TYPES`（Phase 3 では実績・職歴の 2 つ。仮の順は note・外部の activity・life event・実績・職歴。plan.md の U2、data-model.md の「domain の型」）と、種類で分けた型 `FeedItem` の職歴と実績の分を src/features/activity/domain/feed.ts に作る（contracts/visitor-feed.md、research.md の R5・R6）
-- [ ] T003 [P] `FeedRepository`（`list()` が `FeedItem` の並びを返す。ページの引数は Phase 5 の T032 で足す）を src/features/activity/domain/feed-repository.ts に作る
-- [ ] T004 ユースケース `listFeed` を src/features/activity/application/list-feed.ts に作り、作り物の `FeedRepository` を渡して並びをそのまま返すことを tests/unit/list-feed.test.ts で確かめる
+- [x] T002 [P] 種類の `as const` の配列 `FEED_ITEM_TYPES`（Phase 3 では実績・職歴の 2 つ。仮の順は note・外部の activity・life event・実績・職歴。plan.md の U2、data-model.md の「domain の型」）と、種類で分けた型 `FeedItem` の職歴と実績の分を src/features/activity/domain/feed.ts に作る（contracts/visitor-feed.md、research.md の R5・R6）
+- [x] T003 [P] `FeedRepository`（`list()` が `FeedItem` の並びを返す。ページの引数は Phase 5 の T032 で足す）を src/features/activity/domain/feed-repository.ts に作る
+- [x] T004 ユースケース `listFeed` を src/features/activity/application/list-feed.ts に作り、作り物の `FeedRepository` を渡して並びをそのまま返すことを tests/unit/list-feed.test.ts で確かめる
 
 ---
 
@@ -61,8 +61,8 @@ description: "一覧の実装タスク"
 
 ### Tests
 
-- [ ] T010 [P] [US2] ビューの行から `FeedItem` への詰め替えが、職歴は種類・秘匿化するか・組織名・肩書・期間だけを、実績は種類・秘匿化するか・題・組織名・実績の種類・期間だけを持ち、`item_number` を持たないことを tests/unit/feed.test.ts で確かめる（FR-012・FR-013、contracts/visitor-feed.md）
-- [ ] T011 [P] [US1] 本物の migration を当てた D1 で、`list` が次を満たすことを tests/workers/feed-repository.test.ts で確かめる。**止める依存: M1**
+- [x] T010 [P] [US2] ビューの行から `FeedItem` への詰め替えが、職歴は種類・秘匿化するか・組織名・肩書・期間だけを、実績は種類・秘匿化するか・題・組織名・実績の種類・期間だけを持ち、`item_number` を持たないことを tests/unit/feed.test.ts で確かめる（FR-012・FR-013、contracts/visitor-feed.md）
+- [x] T011 [P] [US1] 本物の migration を当てた D1 で、`list` が次を満たすことを tests/workers/feed-repository.test.ts で確かめる。**止める依存: M1**
   - サイトに載せる職歴と実績が始まりの日の新しい順に並び、終わりの日を使わない（FR-007・FR-009、US1 の Acceptance 3）
   - 終わりの日が空の職歴・実績も始まりの日で並ぶ（Edge Cases）
   - 同じ始まりの日の職歴と実績が `FEED_ITEM_TYPES` の順と主キーの順で並び、2 回続けて読んだ順が同じ（FR-010）
@@ -80,9 +80,9 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T013 [US1] `createD1FeedRepository` を src/features/activity/server/d1-feed-repository.ts に作る。ビュー `activity_feed` から職歴と実績の列を列挙して SELECT し、`WHERE item_type IN (<FEED_ITEM_TYPES>)` と `ORDER BY sort_at DESC, <FEED_ITEM_TYPES から作る CASE>, item_number DESC` で読み、種類ごとに `FeedItem` に詰める（research.md の R4・R5）。表の行の型はこのファイルの中だけに書く
-- [ ] T014 [US1] 組み立て用の関数 `listFeedItems` を src/features/activity/server/feed-queries.ts に作る（ADR-0030）。先頭で `import 'server-only'`
-- [ ] T015 [US2] 一覧の部品を src/features/activity/components/feed.tsx に作る。職歴と実績の行を種類ごとに見せ、秘匿化した行の本文の場所に「非公開」を出す（001 の spec の FR-021）。React の key は並びの位置で付ける（research.md の R6）。0 件の表示を持つ
+- [x] T013 [US1] `createD1FeedRepository` を src/features/activity/server/d1-feed-repository.ts に作る。ビュー `activity_feed` から職歴と実績の列を列挙して SELECT し、`WHERE item_type IN (<FEED_ITEM_TYPES>)` と `ORDER BY sort_at DESC, <FEED_ITEM_TYPES から作る CASE>, item_number DESC` で読み、種類ごとに `FeedItem` に詰める（research.md の R4・R5）。表の行の型はこのファイルの中だけに書く
+- [x] T014 [US1] 組み立て用の関数 `listFeedItems` を src/features/activity/server/feed-queries.ts に作る（ADR-0030）。先頭で `import 'server-only'`
+- [x] T015 [US2] 一覧の部品を src/features/activity/components/feed.tsx に作る。職歴と実績の行を種類ごとに見せ、秘匿化した行の本文の場所に「非公開」を出す（001 の spec の FR-021）。React の key は並びの位置で付ける（research.md の R6）。0 件の表示を持つ
 - [ ] T016 [US1] 一覧の画面の `page.tsx` を、U1 の URL の下の src/app/ に作る。`export const instant = false` で D1 を `<Suspense>` の外で読み、`loading.tsx` を置かない。`'use cache'`・`revalidate`・`dynamic` を書かない（research.md の R9）。U1 が `/` なら src/app/page.tsx を置き換え、`/` を開く tests/e2e/home.spec.ts・tests/e2e/no-js.spec.ts・tests/integration/routes.test.ts を直す。**止める未決: U1**
 - [ ] T017 `npm test`・`npm run test:workers`・`npm run test:integration`・`npx tsc --noEmit`・`npm run lint`・`npm run format:check` が通ることを確かめる
 
