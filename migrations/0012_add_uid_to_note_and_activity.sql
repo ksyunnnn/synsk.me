@@ -250,22 +250,13 @@ BEGIN
 END;
 
 -- uid を書き換えると、開いている管理画面の URL が別の行を指すか、どの行も指さなくなる。
--- note_revision は note_revision_immutable がどの列の書き換えも拒むが、ほかの表と同じ名前の
--- トリガを置き、uid を書き換えないことを 1 つの形で確かめられるようにする
+-- note_revision の uid は、どの列の書き換えも拒む note_revision_immutable が守る
 CREATE TRIGGER note_uid_fixed
 BEFORE UPDATE OF uid ON note
 FOR EACH ROW
 WHEN NEW.uid IS NOT OLD.uid
 BEGIN
   SELECT RAISE(ABORT, 'note_uid_fixed');
-END;
-
-CREATE TRIGGER note_revision_uid_fixed
-BEFORE UPDATE OF uid ON note_revision
-FOR EACH ROW
-WHEN NEW.uid IS NOT OLD.uid
-BEGIN
-  SELECT RAISE(ABORT, 'note_revision_uid_fixed');
 END;
 
 CREATE TRIGGER activity_uid_fixed

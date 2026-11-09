@@ -218,28 +218,82 @@ describe('migration 0011 の uid', () => {
 describe('migration 0012', () => {
   const TABLES = ['note', 'note_revision', 'activity'];
 
-  it.each(TABLES)('%s.uid は NOT NULL で、書き換えを拒むトリガがある', async (table) => {
+  it.each(TABLES)('%s.uid は NOT NULL', async (table) => {
     const column = (await columnsOf(table)).find((c) => c.name === 'uid');
     expect(column).toMatchObject({ notnull: 1 });
-    const trigger = await env.DB.prepare(
-      "SELECT name FROM sqlite_master WHERE type = 'trigger' AND tbl_name = ? AND name = ?",
-    )
-      .bind(table, `${table}_uid_fixed`)
-      .first();
-    expect(trigger).not.toBeNull();
   });
 
   it('uid を挙げずに入れると、DB が 32 文字の 16 進を入れる。書き換えは拒む', async () => {
-    const row = await env.DB.prepare(
+    const note = await env.DB.prepare(
+      "INSERT INTO note (slug) VALUES ('migration-0012') RETURNING id, uid",
+    ).first<{ id: number; uid: string }>();
+    const revision = await env.DB.prepare(
+      "INSERT INTO note_revision (note_id, title, body) VALUES (?, '作り物の 0012 の題', '') RETURNING id, uid",
+    )
+      .bind(note?.id)
+      .first<{ id: number; uid: string }>();
+    const activity = await env.DB.prepare(
       "INSERT INTO activity (source, happened_on, title, slug) VALUES ('life_event', '2026-01-01', '作り物の 0012 の出来事', 'migration-0012') RETURNING id, uid",
     ).first<{ id: number; uid: string }>();
-    expect(row?.uid).toMatch(/^[0-9a-f]{32}$/);
+
+    const cases = [
+      { table: 'note', row: note, trigger: /note_uid_fixed/ },
+      { table: 'note_revision', row: revision, trigger: /note_revision_immutable/ },
+      { table: 'activity', row: activity, trigger: /activity_uid_fixed/ },
+    ];
+    for (const { table, row, trigger } of cases) {
+      expect(row?.uid).toMatch(/^[0-9a-f]{32}$/);
+      await expect(
+        env.DB.prepare(`UPDATE ${table} SET uid = ? WHERE id = ?`)
+          .bind('0'.repeat(32), row?.id)
+          .run(),
+      ).rejects.toThrow(trigger);
+    }
+
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM note_revision WHERE id = ?').bind(revision?.id),
+      env.DB.prepare('DELETE FROM note WHERE id = ?').bind(note?.id),
+      env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(activity?.id),
+    ]);
+  });
+
+  it('形の違う uid を拒む', async () => {
     await expect(
-      env.DB.prepare('UPDATE activity SET uid = ? WHERE id = ?')
-        .bind('0'.repeat(32), row?.id)
+      env.DB.prepare("INSERT INTO note (slug, uid) VALUES ('migration-0012-bad', '12345')").run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
+    await expect(
+      env.DB.prepare(
+        "INSERT INTO activity (source, happened_on, title, slug, uid) VALUES ('life_event', '2026-01-01', '作り物', 'migration-0012-bad', ?)",
+      )
+        .bind('G'.repeat(32))
         .run(),
-    ).rejects.toThrow(/activity_uid_fixed/);
-    await env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(row?.id).run();
+    ).rejects.toThrow(/CHECK constraint failed/);
+  });
+
+  it('作り直した表は、UNIQUE の列を持ち直す', async () => {
+    const uniques: string[] = [];
+    for (const table of TABLES) {
+      const { results: indexes } = await env.DB.prepare(
+        'SELECT name FROM pragma_index_list(?) WHERE "unique" = 1 AND origin = \'u\'',
+      )
+        .bind(table)
+        .all<{ name: string }>();
+      for (const { name } of indexes) {
+        const { results: columns } = await env.DB.prepare(
+          'SELECT name FROM pragma_index_info(?) ORDER BY seqno',
+        )
+          .bind(name)
+          .all<{ name: string }>();
+        uniques.push(`${table}(${columns.map((c) => c.name).join(', ')})`);
+      }
+    }
+    expect(uniques.sort()).toEqual([
+      'activity(source, external_id)',
+      'activity(uid)',
+      'note(slug)',
+      'note(uid)',
+      'note_revision(uid)',
+    ]);
   });
 
   it('作り直した表は、0004・0005・0009 の索引とトリガを持ち直す', async () => {
@@ -256,7 +310,6 @@ describe('migration 0012', () => {
       'note_published_revision_valid',
       'note_revision_immutable',
       'note_revision_note_id',
-      'note_revision_uid_fixed',
       'note_slug_fixed_after_publication',
       'note_uid_fixed',
       'note_updated_at',
