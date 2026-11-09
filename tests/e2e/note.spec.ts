@@ -167,3 +167,44 @@ test('識別子を書きかけたまま公開すると、識別子は公開し�
   await expect(page.getByText(slug, { exact: true })).toBeVisible();
   await expect(textbox(page, '本文')).toHaveValue('E2E の公開した後の本文');
 });
+
+test('キーボードだけで下書きに戻し、削除し、元に戻せる（constitution V、T054）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('keyboard-lifecycle');
+  const title = `E2E のキーボードの状態の題 ${slug}`;
+  const editUrl = await createNote(page, { slug, title });
+
+  /** Tab のキーだけで `target` に移り、Enter で押して、送った操作の応答を待つ */
+  const pressWithKeyboard = async (name: string, role: 'button' | 'link' = 'button') => {
+    await tabTo(page, page.getByRole(role, { name }));
+    await Promise.all([
+      role === 'button'
+        ? page.waitForResponse((res) => res.request().method() === 'POST')
+        : page.waitForURL((url) => url.pathname.endsWith('/delete')),
+      page.keyboard.press('Enter'),
+    ]);
+  };
+
+  await pressWithKeyboard('最も新しい版を公開する');
+  await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
+
+  await pressWithKeyboard('下書きに戻す');
+  await expect(page.getByRole('status')).toHaveText('下書きに戻しました');
+  await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
+
+  await pressWithKeyboard('この note を削除する', 'link');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('note を削除する');
+  await waitForHydration(page.getByRole('button', { name: '削除する' }));
+  await pressWithKeyboard('削除する');
+  await expect(page.getByRole('status')).toHaveText('note を削除しました');
+
+  await page.goto(editUrl);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('削除した note');
+  await waitForHydration(page.getByRole('button', { name: '元に戻す' }));
+  await pressWithKeyboard('元に戻す');
+  await expect(page.getByRole('status')).toHaveText('元に戻しました');
+  await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
+});
