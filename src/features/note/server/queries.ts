@@ -45,13 +45,14 @@ export const createNoteDeps = async (): Promise<NoteDeps> => {
 export const respondWithPreviewNoteMedia = async (uid: string, key: string): Promise<Response> => {
   const deps = await createNoteDeps();
   const author = await getCurrentAuthor();
-  const id = author === null ? null : await findIdByUid(deps.notes, uid);
-  // 形の違うキーは、D1 を読まずに `respondWithMedia` が 404 にする。`restricted` は ETag を
-  // 付けず、どのキャッシュにも残さない（NFR-09）
+  // オーナーでないときと形の違うキーは、D1 を読まずに `respondWithMedia` が 404 にする。
+  // `restricted` は ETag を付けず、どのキャッシュにも残さない（NFR-09）
+  const id =
+    author === null || parseMediaStorageKey(key) === null
+      ? null
+      : await findIdByUid(deps.notes, uid);
   const access =
-    id === null || parseMediaStorageKey(key) === null
-      ? 'hidden'
-      : await getPreviewNoteMediaUseCase(deps.notes, author, id, key);
+    id === null ? 'hidden' : await getPreviewNoteMediaUseCase(deps.notes, author, id, key);
   return respondWithMedia(deps.media, key, access);
 };
 
