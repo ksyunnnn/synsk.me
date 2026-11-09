@@ -65,12 +65,14 @@ const refreshSource = async (
   const [listing, stored] = read;
   // 取得元が変わっていないと答えた。activity を書かず、取得の結果を成功として書く（research.md の R9）。
   // 一覧に載らない古い記事を消しても RSS は変わらないので、304 の回も保存した行を個別の URL で
-  // 確かめる（R6）。一覧の中身が無いので、保存したすべての行から確かめた日時の古い順に選ぶ
+  // 確かめる（R6）。一覧の中身が無いので、前の回までに一覧に無いとして確かめたことのある行
+  // （確かめた日時を持つ行）から選ぶ。一覧に載っている行を選ぶと、一時の 404 が 304 の回に 2 回
+  // 続いただけで、一覧に載っている行を消す
   if ('notModified' in listing) {
     const checks = await checkGoneOf(
       deps,
       source,
-      stored,
+      stored.filter((row) => row.goneCheckedAt != null),
       { items: [], isComplete: false },
       limits,
     );
@@ -94,7 +96,7 @@ const refreshSource = async (
         checks.gone,
       );
       const deleted = new Set(removals.deletes);
-      const goneChecked = checks.checked.filter(({ id }) => !deleted.has(id));
+      const goneChecked = keptStreaks(checks.checked, deleted, removals.keptOverLimit);
       const reason =
         removals.keptOverLimit > 0
           ? `消す候補が ${removals.keptOverLimit} 件で、上限（${limits.maxRemovals} 件）を超えたので、1 件も消さなかった`
@@ -127,7 +129,7 @@ const refreshSource = async (
   const checks = await checkGoneOf(deps, source, stored, listing, limits);
   const removals = planRemovals(stored, listing, limits.maxRemovals, checks.gone);
   const deleted = new Set(removals.deletes);
-  const goneChecked = checks.checked.filter(({ id }) => !deleted.has(id));
+  const goneChecked = keptStreaks(checks.checked, deleted, removals.keptOverLimit);
   const goneResets = listedWithGoneStreak(stored, listing.items);
   const plan = {
     ...upserts,
@@ -193,6 +195,19 @@ const checkGoneOf = async (
     checked,
   };
 };
+
+/**
+ * 確かめて消さなかった行と、書く回数。消す候補が上限を超えた回（FR-019）は、取得元の誤りの兆しと
+ * して回数を 0 に戻す。回数を残すと、次の回に候補が上限に収まったとき、1 回の 404 で消す
+ */
+const keptStreaks = (
+  checked: { id: number; goneStreak: number }[],
+  deleted: Set<number>,
+  keptOverLimit: number,
+) =>
+  checked
+    .filter(({ id }) => !deleted.has(id))
+    .map((row) => (keptOverLimit > 0 ? { ...row, goneStreak: 0 } : row));
 
 /** 取得の結果に失敗を書く。それも失敗したら、両方の理由を返す */
 const fail = async (

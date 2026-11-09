@@ -126,7 +126,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T047 [US3] 消す候補と上限を src/features/activity/application/plan-removals.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
 - [x] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
 - [x] T048a [US3] 続けて 2 回 404 が返った行だけを消えたと確かめ、1 回目の 404 では 404 が続いた回数を 1 にし、2xx と判定できない応答で 0 に戻すことを tests/unit/activity-gone-check.test.ts で確かめる（research.md の R6、2026-11-09 の決定）
-- [x] T048b [US3] 404 が続いた回数を D1 に読み書きし、取得元の一覧に載った行の回数を 0 に戻すことを tests/workers/activity-repository.test.ts で確かめる。2 回の取り直しを続けて回して、回数が持ち越されて消えることを単体の検査でも確かめる
+- [x] T048b [US3] 404 が続いた回数を D1 に読み書きし、取得元の一覧に載った行の回数を 0 に戻すことを tests/workers/activity-repository.test.ts で確かめる。2 回の取り直しを続けて回して、回数が持ち越されて消えることを単体の検査でも確かめる。**止める依存: 共有担当の migration 0019**
 
 ---
 
@@ -220,7 +220,7 @@ description: "外部 activity の取得の実装タスク"
 | U11 | T050 の題を取れないときの分岐、T053 |
 | U12 | T050・T052・T053 |
 | U13 | T018・T040 |
-| 共有担当の migration | T001・T011・T021・T041・T043・T046・T055・T057・T061・T067 |
+| 共有担当の migration | T001・T011・T021・T041・T043・T046・T048b（0019）・T055・T057・T061・T067 |
 | 共有担当の slug の部品（PR #222） | T064 |
 | 共有担当の書きかけの保持（001 の T072） | T056・T066 |
 | 共有担当の media-storage（001 の T075） | T070・T071・T072 |

@@ -150,7 +150,7 @@ describe('refreshSources で確かめる', () => {
 
   it('取得元が変わっていないと答えた（304）回も、保存した行を確かめ、続けて 2 回 404 の行を消す（R6）', async () => {
     const { repository, applied } = createFakeActivityRepository({
-      fake_feed: [stored(1, null, 1), stored(2, NOW)],
+      fake_feed: [stored(1, '2026-11-08T00:00:00.000Z', 1), stored(2, NOW)],
     });
     const checked: string[] = [];
 
@@ -166,6 +166,23 @@ describe('refreshSources で確かめる', () => {
 
     expect(checked).toEqual(['https://example.com/1']);
     expect(applied[0]?.plan.deletes).toEqual([1]);
+  });
+
+  it('304 の回は、一覧に無いとして確かめたことの無い行（一覧に載っている見込みの行）を確かめない', async () => {
+    const { repository } = createFakeActivityRepository({ fake_feed: [stored(1), stored(2)] });
+    const checked: string[] = [];
+
+    await refreshSources(
+      {
+        ...deps(repository, { 'https://example.com/1': 'gone' }, checked),
+        fetchListing: async () => ({ notModified: true }),
+      },
+      ['fake_feed'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(checked).toEqual([]);
   });
 
   it('確かめる手段を持たない取得元（Medium など）では確かめない', async () => {
@@ -199,6 +216,11 @@ describe('refreshSources で確かめる', () => {
 
     expect(applied[0]?.plan.deletes).toEqual([]);
     expect(applied[0]?.result.reason).toMatch(/1 件も消さなかった/);
+    // 回数を残すと、次の回に候補が上限に収まったとき 1 回の 404 で消すので、0 に戻す
+    expect(applied[0]?.plan.goneChecked).toEqual([
+      { id: 1, goneStreak: 0 },
+      { id: 2, goneStreak: 0 },
+    ]);
   });
 
   it('確かめるのに失敗しても、その行を消さない（FR-020）', async () => {
