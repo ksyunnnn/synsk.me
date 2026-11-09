@@ -60,6 +60,17 @@ export const pickGoneChecks = (
     })
     .slice(0, Math.max(0, maxChecks));
 
+/**
+ * 取った一覧に載った行のうち、404 が続いた回数が 0 でないもの。一覧に載ったのは消えていない証拠なので、
+ * 回数を 0 に戻す（research.md の R6）。戻さないと、次に一覧から外れた回の 1 回の 404 で消える
+ */
+export const listedWithGoneStreak = (stored: StoredItem[], listed: FetchedItem[]): number[] => {
+  const missing = new Set(missingFrom(stored, listed).map((row) => row.id));
+  return stored
+    .filter((row) => (row.goneStreak ?? 0) > 0 && !missing.has(row.id))
+    .map((row) => row.id);
+};
+
 /** 保存した行のうち、取った一覧に無いもの */
 const missingFrom = (stored: StoredItem[], listed: FetchedItem[]): StoredItem[] => {
   const externalIds = new Set<string>();

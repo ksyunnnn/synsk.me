@@ -32,6 +32,21 @@ export const createFakeActivityRepository = (
         throw new Error('作り物の書き込みの失敗');
       }
       applied.push({ source, plan, result });
+      // 404 が続いた回数と消した行を、次の取り直しが読む保存した行に写す。回数の持ち越しを確かめるため
+      const rows = initial[source];
+      if (!rows) return;
+      const deleted = new Set(plan.deletes);
+      const counts = new Map(
+        (plan.goneChecked ?? []).map(({ id, goneStreak }) => [id, goneStreak]),
+      );
+      const resets = new Set(plan.goneResets ?? []);
+      initial[source] = rows
+        .filter((row) => !deleted.has(row.id))
+        .map((row) => ({
+          ...row,
+          goneStreak: resets.has(row.id) ? 0 : (counts.get(row.id) ?? row.goneStreak),
+          goneCheckedAt: counts.has(row.id) ? result.fetchedAt : row.goneCheckedAt,
+        }));
     },
     recordFetchFailure: async (source, fetchedAt, reason) => {
       failures.push({ source, fetchedAt, reason });

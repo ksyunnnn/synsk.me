@@ -126,7 +126,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T047 [US3] 消す候補と上限を src/features/activity/application/plan-removals.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
 - [x] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
 - [x] T048a [US3] 続けて 2 回 404 が返った行だけを消えたと確かめ、1 回目の 404 では 404 が続いた回数を 1 にし、2xx と判定できない応答で 0 に戻すことを tests/unit/activity-gone-check.test.ts で確かめる（research.md の R6、2026-11-09 の決定）
-- [ ] T048b [US3] 404 が続いた回数を D1 に読み書きし、取得元の一覧に載った行の回数を 0 に戻すことを tests/workers/activity-repository.test.ts で確かめる。2 回の取り直しを続けて回して、回数が持ち越されて消えることを単体の検査でも確かめる。**止める依存: 共有担当の migration 0019**
+- [x] T048b [US3] 404 が続いた回数を D1 に読み書きし、取得元の一覧に載った行の回数を 0 に戻すことを tests/workers/activity-repository.test.ts で確かめる。2 回の取り直しを続けて回して、回数が持ち越されて消えることを単体の検査でも確かめる。**止める依存: 共有担当の migration 0019**
 
 ---
 
