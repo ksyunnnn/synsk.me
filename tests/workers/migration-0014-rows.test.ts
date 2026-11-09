@@ -39,6 +39,10 @@ beforeAll(async () => {
 describe('migration 0014 を行のある D1 に当てる', () => {
   it('既にある行は変わらず、足した列は NULL になる', async () => {
     expect(before).toHaveLength(2);
+    for (const row of before) {
+      expect(row).not.toHaveProperty('etag');
+      expect(row).not.toHaveProperty('last_modified');
+    }
     expect(await rowsOf()).toEqual(
       before.map((row) => ({ ...row, etag: null, last_modified: null })),
     );
