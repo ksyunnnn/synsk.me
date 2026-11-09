@@ -5,7 +5,7 @@ import { toCareerFormValues } from '@/features/career/domain/career';
 import { editCareer } from '@/features/career/server/actions';
 import { getCareerForEdit, getCareerProjectsForEdit } from '@/features/career/server/queries';
 import { TextLink } from '@/shared/components/text-link';
-import { listOrganizationNames } from '@/shared/server/organization-names';
+import { listOrganizationNames } from '@/features/organization/server/queries';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）

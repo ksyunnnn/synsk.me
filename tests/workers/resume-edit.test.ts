@@ -29,6 +29,14 @@ import {
  */
 
 const resumes = createD1ResumeRepository(env.DB);
+
+/** 写した中身だけを読む。管理画面向けの取り出しから、職務経歴書そのものの値を除く */
+const readContent = async (id: number) => {
+  const resume = await resumes.findForEdit(id);
+  if (!resume) throw new Error(`職務経歴書が無い: ${id}`);
+  const { careers, projects, educations, skillOverrides } = resume;
+  return { careers, projects, educations, skillOverrides };
+};
 const NOW = '2026-11-04T00:00:00.000Z';
 
 let target: InsertedResume;
@@ -106,26 +114,22 @@ describe('写した行を直す（FR-031・FR-032）', () => {
     expect(
       await resumes.editCareer(target.id, rows.career, careerContent(), await times(target.id)),
     ).toEqual({ ok: true });
-    expect((await resumes.readContent(target.id)).careers[0].organizationName).toBe(
-      '直した作り物の組織名',
-    );
-    expect((await resumes.readContent(other.id)).careers[0].organizationName).toBe(
-      '元の作り物の組織名',
-    );
+    expect((await readContent(target.id)).careers[0].organizationName).toBe('直した作り物の組織名');
+    expect((await readContent(other.id)).careers[0].organizationName).toBe('元の作り物の組織名');
     const org = await env.DB.prepare('SELECT name FROM organization').first<{ name: string }>();
     expect(org?.name).toBe('元の作り物の組織名');
   });
 
   it('秘匿化していたかと写し元の id は変わらない', async () => {
     await resumes.editCareer(target.id, rows.career, careerContent(), await times(target.id));
-    expect((await resumes.readContent(target.id)).careers[0]).toMatchObject({
+    expect((await readContent(target.id)).careers[0]).toMatchObject({
       isMasked: true,
       careerId: sourceCareerId,
     });
   });
 
   it('写した実績の始まりの日を直すと、並びが変わる（User Story 4 の 2）', async () => {
-    expect((await resumes.readContent(target.id)).projects.map((p) => p.title)).toEqual([
+    expect((await readContent(target.id)).projects.map((p) => p.title)).toEqual([
       '新しい題',
       '古い題',
     ]);
@@ -138,7 +142,7 @@ describe('写した行を直す（FR-031・FR-032）', () => {
       }),
       await times(target.id),
     );
-    expect((await resumes.readContent(target.id)).projects.map((p) => p.title)).toEqual([
+    expect((await readContent(target.id)).projects.map((p) => p.title)).toEqual([
       '古い題',
       '新しい題',
     ]);
@@ -146,9 +150,7 @@ describe('写した行を直す（FR-031・FR-032）', () => {
 
   it('写した実績のスキルの名前を入れ直す', async () => {
     await resumes.editProject(target.id, rows.project, projectContent(), await times(target.id));
-    const project = (await resumes.readContent(target.id)).projects.find(
-      (p) => p.id === rows.project,
-    );
+    const project = (await readContent(target.id)).projects.find((p) => p.id === rows.project);
     expect(project?.skills.sort()).toEqual(['Go', 'Rust']);
     expect(project?.description).toBe('直した本文');
   });
@@ -159,7 +161,7 @@ describe('写した行を直す（FR-031・FR-032）', () => {
       [{ skillName: 'Go', months: 71 }],
       await times(target.id),
     );
-    expect((await resumes.readContent(target.id)).skillOverrides).toEqual([
+    expect((await readContent(target.id)).skillOverrides).toEqual([
       { skillName: 'Go', months: 71 },
     ]);
   });
@@ -173,9 +175,7 @@ describe('写した行を直す（FR-031・FR-032）', () => {
         await times(target.id),
       ),
     ).toEqual({ ok: false, reason: 'not-found' });
-    expect((await resumes.readContent(other.id)).careers[0].organizationName).toBe(
-      '元の作り物の組織名',
-    );
+    expect((await readContent(other.id)).careers[0].organizationName).toBe('元の作り物の組織名');
   });
 });
 
@@ -210,7 +210,7 @@ describe('楽観ロック（FR-038、research.md の R8）', () => {
       reason: 'conflict',
     });
     expect((await resumes.findForEdit(target.id))?.slug).toBe(target.slug);
-    const content = await resumes.readContent(target.id);
+    const content = await readContent(target.id);
     expect(content.careers[0].organizationName).toBe('元の作り物の組織名');
     expect(content.projects.find((p) => p.id === rows.project)?.skills).toEqual(['TypeScript']);
     expect(content.skillOverrides).toHaveLength(1);
@@ -280,7 +280,7 @@ describe('作ったあとに足す（FR-041、research.md の R14）', () => {
   it('写した行を足し、既にある行は変えない。更新日時が新しい値になる', async () => {
     expect(await resumes.addRows(target.id, added(), await times(target.id))).toEqual({ ok: true });
     expect(await updatedAtOf(target.id)).toBe(NOW);
-    const content = await resumes.readContent(target.id);
+    const content = await readContent(target.id);
     expect(content.careers.map((c) => c.organizationName)).toEqual([
       '足した作り物の組織名',
       '元の作り物の組織名',
@@ -299,26 +299,26 @@ describe('作ったあとに足す（FR-041、research.md の R14）', () => {
       '写した作り物大学',
       '足した作り物大学',
     ]);
-    expect((await resumes.readContent(other.id)).projects).toEqual([]);
+    expect((await readContent(other.id)).projects).toEqual([]);
   });
 
   it('写した経験年数の上書きは、同じ名前の上書きが無いものだけを足す', async () => {
     await resumes.addRows(target.id, added(), await times(target.id));
-    expect((await resumes.readContent(target.id)).skillOverrides).toEqual([
+    expect((await readContent(target.id)).skillOverrides).toEqual([
       { skillName: 'Go', months: 12 },
       { skillName: 'TypeScript', months: 30 },
     ]);
   });
 
   it('開いたときの更新日時が違えば、何も足さない（FR-038）', async () => {
-    const before = await resumes.readContent(target.id);
+    const before = await readContent(target.id);
     expect(
       await resumes.addRows(target.id, added(), {
         openedUpdatedAt: '2000-01-01T00:00:00.000Z',
         now: NOW,
       }),
     ).toEqual({ ok: false, reason: 'conflict' });
-    expect(await resumes.readContent(target.id)).toEqual(before);
+    expect(await readContent(target.id)).toEqual(before);
   });
 
   it('無い職務経歴書は not-found で、何も足さない', async () => {
@@ -359,7 +359,7 @@ describe('URL の出し直し（FR-040）', () => {
   it('識別子を渡した uid に書き換え、古い識別子では訪問者向けに読めない', async () => {
     await resumes.changeStatus(target.id, 'published', await times(target.id));
     expect(await resumes.findLimitedIdForVisitor(target.slug, NOW)).toBe(target.id);
-    const content = await resumes.readContent(target.id);
+    const content = await readContent(target.id);
     const slug = crypto.randomUUID();
     expect(
       await resumes.regenerateLimitedSlug(target.id, slug, {
@@ -373,7 +373,7 @@ describe('URL の出し直し（FR-040）', () => {
     });
     expect(await resumes.findLimitedIdForVisitor(target.slug, NOW)).toBeNull();
     expect(await resumes.findLimitedIdForVisitor(slug, NOW)).toBe(target.id);
-    expect(await resumes.readContent(target.id)).toEqual(content);
+    expect(await readContent(target.id)).toEqual(content);
   });
 
   it('公開用と無い id は not-found で、書き換えない', async () => {
@@ -436,7 +436,7 @@ describe('管理画面の uid から id を引く（ADR-0048、specs/001-career-
   });
 
   it('読み出した写した行は uid を持つ', async () => {
-    const content = await resumes.readContent(target.id);
+    const content = await readContent(target.id);
     for (const row of [...content.careers, ...content.projects, ...content.educations]) {
       expect(row.uid).toMatch(/^[0-9a-f]{32}$/);
     }

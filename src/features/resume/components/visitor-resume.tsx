@@ -15,8 +15,9 @@ import { toYearsAndMonths, type Period } from '@/shared/domain/period';
  * 公開用で秘匿化した職歴・実績は、本文の場所に「非公開」と出す（FR-017、plan.md の U5）。contact の
  * ページへのリンクは、contact のページができてから足す（tasks.md の T077）。
  *
- * メールアドレスは、環境変数で渡したときだけ出す。スパム対策（FR-035）は plan.md の U8 で
- * 決まっておらず、本番の応答で Email Address Obfuscation が効くかを確かめる（tasks.md の T072）
+ * メールアドレスは、限定公開用で環境変数を渡したときだけ出す。公開用の DTO は持たない。スパム対策
+ * （FR-035）は plan.md の U8 で決まっておらず、本番の応答で Email Address Obfuscation が効くかを
+ * 確かめる（tasks.md の T072）
  */
 
 const PeriodText = ({ period }: { period: Period }) => (

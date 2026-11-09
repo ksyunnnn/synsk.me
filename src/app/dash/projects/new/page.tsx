@@ -4,7 +4,7 @@ import { toProjectFormValues } from '@/features/project/domain/project';
 import { registerProject } from '@/features/project/server/actions';
 import { listSkillOptions } from '@/features/project/server/queries';
 import { TextLink } from '@/shared/components/text-link';
-import { listOrganizationNames } from '@/shared/server/organization-names';
+import { listOrganizationNames } from '@/features/organization/server/queries';
 
 // 要求時のデータ（オーナーの確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）

@@ -44,7 +44,7 @@ export const getCareerForEdit = async (uid: string): Promise<Career | null> => {
  */
 export const getCareerProjectsForEdit = async (career: Career): Promise<CareerProjects> => {
   await requireAuthor();
-  return listCareerProjects((await createCareerDeps()).careers, career, 'all');
+  return listCareerProjects((await createCareerDeps()).careers, career);
 };
 
 /** `src/proxy.ts` が呼ぶ。職歴がある uid か */

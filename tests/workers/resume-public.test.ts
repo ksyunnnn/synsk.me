@@ -22,6 +22,14 @@ import {
  */
 
 const resumes = createD1ResumeRepository(env.DB);
+
+/** 写した中身だけを読む。管理画面向けの取り出しから、職務経歴書そのものの値を除く */
+const readContent = async (id: number) => {
+  const resume = await resumes.findForEdit(id);
+  if (!resume) throw new Error(`職務経歴書が無い: ${id}`);
+  const { careers, projects, educations, skillOverrides } = resume;
+  return { careers, projects, educations, skillOverrides };
+};
 const TIMES = { openedUpdatedAt: '', now: '2026-11-04T00:00:00.000Z' };
 
 beforeAll(async () => {
@@ -195,7 +203,7 @@ describe('公開用の写し方を D1 の写し元で（FR-016）', () => {
       limitedExpiresAt: null,
       content: built.content,
     });
-    const text = JSON.stringify(await resumes.readContent(id));
+    const text = JSON.stringify(await readContent(id));
     expect(text).not.toContain('実際の作り物株式会社');
     expect(text).not.toContain('実際の作り物の題');
   });

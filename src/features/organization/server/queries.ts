@@ -15,6 +15,15 @@ import { createD1OrganizationRepository } from '@/shared/server/organization-rep
 export const createOrganizationRepository = async (): Promise<OrganizationRepository> =>
   createD1OrganizationRepository((await readEnv()).DB);
 
+/**
+ * 組織名の入力の選択肢（specs/001-career-and-project/spec.md の FR-002）。登録した組織名を名前の
+ * 順に返す。実績と職歴の入力の画面が呼ぶ。オーナーでなければ、読む前に 403 になる
+ */
+export const listOrganizationNames = async (): Promise<string[]> => {
+  await requireAuthor();
+  return (await createOrganizationRepository()).listNames();
+};
+
 /** オーナーの一覧。オーナーでなければ 403 */
 export const listOrganizations = async (): Promise<Organization[]> => {
   await requireAuthor();

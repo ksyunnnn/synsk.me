@@ -161,7 +161,7 @@ describe('職歴の実績とスキル（FR-017・FR-035）', () => {
   };
 
   it('同じ組織で期間が重なる実績を選び、そのスキルを重ねずに名前の順で合わせる', async () => {
-    const { projects, skills } = await listCareerProjects(careers, career, 'all');
+    const { projects, skills } = await listCareerProjects(careers, career);
     expect(projects.map((p) => p.title)).toEqual(['重なる実績', '端で接する実績']);
     expect(skills).toEqual(['Go', 'TypeScript']);
   });

@@ -580,8 +580,6 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
         .bind(slug, exceptId)
         .first()) !== null,
 
-    readContent,
-
     readVisitorContent: async (id) => {
       const row = await db
         .prepare('SELECT audience FROM resume WHERE id = ?')

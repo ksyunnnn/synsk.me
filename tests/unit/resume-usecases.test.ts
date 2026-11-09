@@ -66,7 +66,6 @@ const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   findPublicIdForVisitor: vi.fn<Repo['findPublicIdForVisitor']>(),
   hasPublic: vi.fn<Repo['hasPublic']>(async () => false),
   isSlugTaken: vi.fn<Repo['isSlugTaken']>(async () => false),
-  readContent: vi.fn<Repo['readContent']>(),
   readVisitorContent: vi.fn<Repo['readVisitorContent']>(),
   editSettings: vi.fn<Repo['editSettings']>(async () => OK),
   changeStatus: vi.fn<Repo['changeStatus']>(async () => OK),

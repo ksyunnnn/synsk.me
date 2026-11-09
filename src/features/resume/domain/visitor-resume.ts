@@ -77,7 +77,8 @@ export type VisitorResume = {
 /**
  * 訪問者に見せる DTO。限定公開用は、すべての写した職歴・実績を秘匿化しない形で返す（FR-010）。
  * 公開用は、写したときに秘匿化していた行を `isMasked: true` の形にし、本文と関連 URL を落とす
- * （FR-017）。経験年数は `now` の時点で求める（research.md の R12）
+ * （FR-017）。公開用はメールアドレスを持たない（オーナーの決定、2026-11-09、PR #212 のレビュー）。
+ * 経験年数は `now` の時点で求める（research.md の R12）
  */
 export const toVisitorResume = (
   audience: ResumeAudience,
@@ -88,7 +89,7 @@ export const toVisitorResume = (
   const hides = (row: { isMasked: boolean }) => audience === 'public' && row.isMasked;
   return {
     audience,
-    profile,
+    profile: audience === 'public' ? { ...profile, email: null } : profile,
     careers: content.careers.map((career): VisitorResumeCareer => {
       const base = {
         organizationName: career.organizationName,
@@ -120,10 +121,3 @@ export const toVisitorResume = (
     skills: listResumeSkills(content.projects, content.skillOverrides, now),
   };
 };
-
-/** 限定公開用の DTO（FR-010） */
-export const toLimitedVisitorResume = (
-  content: ResumeContent,
-  profile: Profile,
-  now: Date,
-): VisitorResume => toVisitorResume('limited', content, profile, now);

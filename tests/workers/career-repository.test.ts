@@ -242,7 +242,7 @@ describe('delete', () => {
 });
 
 describe('listProjectsOfOrganization（FR-017・FR-035）', () => {
-  it('組織の実績とスキルを返し、published ならサイトに載せる実績だけを返す', async () => {
+  it('組織の実績とスキルを、サイトに載せるかによらず返す', async () => {
     const org = await insertOrganization(env.DB, { name: '実績を読む作り物の組織' });
     const other = await insertOrganization(env.DB, { name: '別の作り物の組織' });
     const skill = await insertSkill(env.DB, { name: 'TypeScript' });
@@ -261,14 +261,12 @@ describe('listProjectsOfOrganization（FR-017・FR-035）', () => {
     });
     await insertProject(env.DB, { organizationId: other, title: '別の組織の作り物の実績' });
 
-    const all = await careers.listProjectsOfOrganization(org, 'all');
+    const all = await careers.listProjectsOfOrganization(org);
     expect(all.map((p) => p.title)).toEqual(['載せる作り物の実績', '載せない作り物の実績']);
     expect(all[0]).toMatchObject({
       organizationId: org,
       period: { startedOn: '2021-04-01' },
       skills: ['TypeScript'],
     });
-    const published = await careers.listProjectsOfOrganization(org, 'published');
-    expect(published.map((p) => p.title)).toEqual(['載せる作り物の実績']);
   });
 });

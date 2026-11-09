@@ -97,6 +97,18 @@ describe('公開用（FR-017・FR-018）', () => {
   });
 });
 
+describe('メールアドレス', () => {
+  const withEmail = { ...PROFILE, email: 'owner@example.com' };
+  it('公開用は持たない', () => {
+    expect(toVisitorResume('public', CONTENT, withEmail, NOW).profile.email).toBeNull();
+  });
+  it('限定公開用は持つ', () => {
+    expect(toVisitorResume('limited', CONTENT, withEmail, NOW).profile.email).toBe(
+      'owner@example.com',
+    );
+  });
+});
+
 it('限定公開用は、秘匿化した行も本文と関連 URL を出す（FR-010）', () => {
   const resume = toVisitorResume('limited', CONTENT, PROFILE, NOW);
   expect(resume.careers[0]).toMatchObject({ isMasked: false, body: '書き足した職歴の本文' });

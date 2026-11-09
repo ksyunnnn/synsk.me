@@ -82,14 +82,13 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
   ];
 
   return {
-    listProjectsOfOrganization: async (organizationId, scope) => {
+    listProjectsOfOrganization: async (organizationId) => {
       // 職歴は project を import せず、要る列だけを SQL で読む（ADR-0026）
-      const published = scope === 'published' ? "AND p.status = 'published'" : '';
       const [projects, skills] = await db.batch([
         db
           .prepare(
             `SELECT p.id, p.organization_id, p.title, p.started_on, p.ended_on FROM project p
-             WHERE p.organization_id = ? ${published}
+             WHERE p.organization_id = ?
              ORDER BY p.started_on DESC, p.id DESC`,
           )
           .bind(organizationId),
@@ -98,7 +97,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
             `SELECT ps.project_id, s.name FROM project_skill ps
              JOIN skill s ON s.id = ps.skill_id
              JOIN project p ON p.id = ps.project_id
-             WHERE p.organization_id = ? ${published}`,
+             WHERE p.organization_id = ?`,
           )
           .bind(organizationId),
       ]);

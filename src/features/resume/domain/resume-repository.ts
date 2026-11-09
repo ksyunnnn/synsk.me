@@ -58,8 +58,6 @@ export type ResumeRepository = {
   hasPublic: () => Promise<boolean>;
   /** `slug` を、`exceptId` 以外の職務経歴書が使っているか（`resume.slug` の UNIQUE、FR-039） */
   isSlugTaken: (slug: string, exceptId: ResumeId) => Promise<boolean>;
-  /** 写した中身。始まりの日の新しい順（FR-009） */
-  readContent: (id: ResumeId) => Promise<ResumeContent>;
   /**
    * 訪問者に見せる中身と、限定公開用か公開用か。公開用で秘匿化した行の `description`・`url` は
    * SQL で読まず null にする（FR-017・FR-018、contracts/visitor-resume.md）。無い id なら null

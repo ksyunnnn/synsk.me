@@ -34,13 +34,10 @@ export type CareerRepository = {
     { ok: true } | { ok: false; reason: 'masked-name-required' | 'conflict' | 'not-found' }
   >;
   /**
-   * 組織の実績と、つないだスキルの名前。始まりの日の新しい順。`published` ならサイトに載せる
-   * 実績だけ（FR-035）。職歴の実績を求めるのに使う（FR-017）
+   * 組織の実績と、つないだスキルの名前。始まりの日の新しい順。管理画面の職歴の実績を求めるのに
+   * 使う（FR-017）。実際の題を返すため、訪問者に出す画面では使わない
    */
-  listProjectsOfOrganization: (
-    organizationId: number,
-    scope: 'all' | 'published',
-  ) => Promise<CareerProjectSource[]>;
+  listProjectsOfOrganization: (organizationId: number) => Promise<CareerProjectSource[]>;
   /** 物理削除する（research.md の R8） */
   delete: (id: CareerId) => Promise<{ ok: boolean }>;
 };
