@@ -58,7 +58,7 @@
 | IX. Simplicity | 通る | `shared/` に新しく置くものは無い（共有担当が置くものは、001・003・004 を 2 つ以上の使い手として共有担当が挙げる）。Repository のインタフェースは、単体の検査で渡す作り物の実装が 2 つ目の使い手（ADR-0026 のルール 2） |
 | Test Layering | 通る | 同じことを 2 つの段階で確かめない（下の表の「段階」） |
 | Display Speed | 通る | `/notes/{slug}` は NFR-03〜NFR-07 の対象。判定はフィールドの計測 |
-| Cacheability | 通る | `'use cache'`・`revalidate`・`dynamic` を書かない。404 と 403 は `src/proxy.ts` が決め、`tests/unit/proxy.test.ts` が確かめる（R9） |
+| Cacheability | 通る | `'use cache'`・`revalidate`・`dynamic` を書かない。ページの 404 と 403 は `src/proxy.ts` が決め、`tests/unit/proxy.test.ts` が確かめる。描画しない画像の `route.ts` は自分で 404 と `no-store` を返す（R9） |
 | Allowlist Visibility | 通る | 訪問者向けの DTO が出す項目を列挙する（contracts/visitor-note.md） |
 
 ## 再利用する既存の部品
@@ -181,7 +181,7 @@ ADR-0026 のディレクトリの形と依存の向きに従う。機能どう�
 
 ```text
 src/
-├── proxy.ts                         /notes/:slug と /notes/:slug/media/:key の 404、/dash/notes/* の 404 を足す
+├── proxy.ts                         /notes/:slug の 404、/dash/notes/* の 404、matcher に /notes/:slug/media/:key を足す
 ├── app/
 │   ├── notes/[slug]/page.tsx        note のページ（訪問者）
 │   ├── notes/[slug]/missing/page.tsx

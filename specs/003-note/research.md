@@ -51,7 +51,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 - 決めたこと（FR-005〜FR-009、FR-020・FR-021）:
   - 作成は、`note` の行と 1 つ目の版を 1 回の `batch()` で入れる。どの note も 1 つ以上の版を持つ
-  - 編集の画面は、開いたときの最も新しい版の uid を隠しフィールドで持つ。保存は `INSERT INTO note_revision (note_id, title, description, body) SELECT ?, ?, ?, ? WHERE (SELECT uid FROM note_revision WHERE note_id = ? ORDER BY id DESC LIMIT 1) = ?開いたときの版の uid` で行う。`meta.changes` が 0 なら保存を止め、送られた内容をフォームに戻して知らせる
+  - 編集の画面は、開いたときの最も新しい版の uid を隠しフィールドで持つ。保存は `INSERT INTO note_revision (note_id, title, description, body) SELECT ?, ?, ?, ? WHERE (SELECT uid FROM note_revision WHERE note_id = ? ORDER BY id DESC LIMIT 1) = ?開いたときの版の uid` に、`AND EXISTS (SELECT 1 FROM note WHERE id = ? AND deleted_at IS NULL)` を足して行う。`meta.changes` が 0 なら、Repository が note を読み直し、無いか削除していれば `not-found`、そうでなければ `conflict` を返す。`conflict` は保存を止め、送られた内容をフォームに戻して知らせる。`not-found` は 001 の `editProject` と同じく一覧へ 303 で移す（contracts/dash.md）
   - 同じ保存で識別子を変えるとき（FR-003）は、同じ `batch()` の版の INSERT より前に、同じ条件を付けた `UPDATE note SET slug = ?` を置く。条件に合わなければどちらも書かない。識別子の重複は UNIQUE が拒み、`batch()` 全体が戻る
   - 保存に成功したら編集の画面へ 303 で移り、画面は最も新しい版（保存した版）を読み直して隠しフィールドに置く（FR-021）
   - 過去の版に戻す（FR-009）は、戻す版の題・説明文・本文を、上と同じ条件の INSERT で新しい版として足す。公開した版は変えない
@@ -99,6 +99,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 - 決めたこと: `/notes/[slug]` と `/dash/notes/*` は `'use cache'` を使わない。データを読んでから決まる 404（識別子の公開の note が無い、管理画面の uid の note・版が無い）と 403（オーナーでない `/dash`）は `src/proxy.ts` が描画の前に決め、`notFound()` か `forbidden()` を呼ぶだけのページへ rewrite する。`export const revalidate` と `export const dynamic` は書かない
 - `src/proxy.ts` の matcher に `/notes/:slug` と `/notes/:slug/media/:key`（R12）を足し、`DASH_ROW_EXISTS` に `notes` を足す。過去の版の画面（`/dash/notes/{uid}/revisions/{revisionUid}`）は、002 の写した行と同じく、note と版の有無を 1 回で確かめる
+- 画像の経路（`/notes/{slug}/media/{key}`）は matcher に入れて dynamic に固定する（ADR-0040 の Consequences）が、proxy は D1 を読まない。見せてよいかは `route.ts` が 1 回だけ確かめ、見せなければ自分で 404 と `Cache-Control: no-store` を返す。ADR-0040 が proxy で 404 を決める理由は、描画をストリーミングすると状態コードが保てないことで、`route.ts` は描画せずに `Response` を返すため当たらない。proxy でも確かめると、画像 1 枚ごとに公開した版の本文（100,000 文字まで）を 2 回読んで構文木にする。proxy は判定に失敗すると素通しにする（`respond` の `catch`）ため、`route.ts` の確かめは省けない
 - 理由: constitution の Cacheability（ADR-0040）。キャッシュを使わないため、公開・下書きに戻す・削除の直後の要求から新しい状態で出る。公開の操作のあと見えるまでの時機とキャッシュの扱いは未決（U12）で、計測値が閾値を割るまでキャッシュを足さない（constitution VI）
 - `src/proxy.ts` は 001・002 の作業者も直すため、003 の変更は既にある分岐を変えずに足す
 - 退けた案: `/notes/[slug]` を `'use cache'` にし、公開のたびに無効化する（計測値が無い）
@@ -116,10 +117,10 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 決定（2026-11-09、オーナー。plan.md の U4）: 本文は Markdown で書き、生の HTML を通さない。画像は `media` の id で指し、キャプションを添える。URL カードは、行に URL だけを書いた行から作る
 - 決めたこと:
   - 本文は `note_revision.body` に文字列で持つ（100,000 文字まで、FR-005）。入力は `<textarea>`
-  - 表示は `react-markdown`（10.1.0、peer は `react` >=18）を使う。Markdown を React の要素に変え、`dangerouslySetInnerHTML` を使わない。生の HTML は既定でエスケープされ、HTML として働かない。`rehype-raw` を足さず、`urlTransform` を既定（`http`・`https`・`irc`・`ircs`・`mailto`・`xmpp` と相対の URL だけを通す）から緩めない。下の画像の印だけを、画像の部品が自分で解く（[react-markdown の README](https://github.com/remarkjs/react-markdown)、2026-11-09 に確認）
+  - 表示は `react-markdown`（10.1.0、peer は `react` >=18）を使う。Markdown を React の要素に変え、`dangerouslySetInnerHTML` を使わない。生の HTML は既定でエスケープされ、HTML として働かない。`rehype-raw` を足さず、`urlTransform` には、`img` の `src` が `media:` で始まるときだけ値をそのまま返し、ほかは `defaultUrlTransform`（`http`・`https`・`irc`・`ircs`・`mailto`・`xmpp` と相対の URL だけを通す）に任せる関数を渡す。既定のままだと `media:<id>` が空の文字列になり、画像の部品が id を読めない（react-markdown 10.1.0 の `lib/index.js` の `safeProtocol` と `defaultUrlTransform`、2026-11-09 に確かめた）。`media:` の値は画像の部品が自分で解き、`src` には R12 の配る経路だけを出す（[react-markdown の README](https://github.com/remarkjs/react-markdown)）
   - 本文の中身を読む処理（本文が指す画像の id、カードにする URL、説明文が空のときの冒頭）は、`mdast-util-from-markdown`（^2。`react-markdown` 10.1.0 が使う `remark-parse` 11 と同じ構文木を作る）で構文木にしてから読む。正規表現で本文を読むと、コードの中に書いた印まで拾い、表示しない画像を訪問者に出す
   - 画像の印: `![代替テキスト](media:<media の id> "キャプション")`。訪問者には `<figure>` の中に `<img alt>` と `<figcaption>` で出す。画像の URL は R12 の配る経路から作る。本文の部品は Server Component にし、`media:<id>` を含む本文の元の文字列を RSC の応答に載せない <!-- check-ignore: 本文の画像の記法の例 -->
-  - カードにする行: 段落の中身が `http` か `https` の URL の文字列 1 つだけの行。行の中に文と並べて書いた URL はカードにせず、リンクのまま出す
+  - カードにする行: 段落の中身が `http` か `https` の URL の文字列 1 つだけの行。行の中に文と並べて書いた URL はカードにしない。GFM を使わないため、`<https://…>` の autolink かリンクの記法で書いた URL だけがリンクになり、そのまま書いた URL は文字列で出る（CommonMark の Autolinks）。カードにする行も、U9 が解けるまでは文字列で出る
   - 説明文が空のときの説明: 本文の最初の段落の文字列（改行は空白にする）
   - 書式は CommonMark だけを使い、GFM の表・打ち消し線などのための package を足さない
 - 理由: 原則 1（守る over 手軽さ）。HTML の文字列を作って差し込む形（`marked` など）は、出力をもう一度無害にする処理が要る。原則 9: package.json に Markdown の package は無く、表示と構文木の 2 つの用途に、同じ構文木の系列の 2 つだけを足す
@@ -131,7 +132,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 決定（2026-11-09。オーナーから任されて Claude が決めた。plan.md の U5、[issue #219 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6732716576)）: R2 に原本を置き、Worker が持ち主ごとに見せてよいかを確かめてから、変換せずに返す。公開していない画像の応答には `Cache-Control: no-store` を付ける。形式は JPEG・PNG・WebP・GIF で、SVG は受けない。1 枚 10 MB まで
 - 決めたこと:
   - 画像の記録は `media` に持ち、持ち主の列は `note_id`。R2 への読み書き・形式と大きさの検査は共有担当の `src/shared/server/media-storage.ts` が持つ。003 は、note の画像を足す操作と、note の画像を訪問者に出してよいかの確かめを持つ（FR-023・FR-026）
-  - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は主キーでない、推測できない値で、共有担当の `media-storage.ts` の決まりに従う（ADR-0048 の「主キーは URL に出さない」）。`media` の列は主キーと `storage_key` だけのため、`{key}` は `storage_key` か、共有担当の migration で足す列になる。どちらかは共有担当の PR で確かめ、`storage_key` なら contracts/visitor-note.md の「DTO が持たないもの」から外す`src/proxy.ts` が描画の前に確かめ、見せてよくなければ 404 にする
+  - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は主キーでない、推測できない値で、共有担当の `media-storage.ts` の決まりに従う（ADR-0048 の「主キーは URL に出さない」）。`media` の列は主キーと `storage_key` だけのため、`{key}` は `storage_key` か、共有担当の migration で足す列になる。どちらかは共有担当の PR で確かめ、`storage_key` なら contracts/visitor-note.md の「DTO が持たないもの」から外す。見せてよいかは `route.ts` が確かめ、見せなければ 404 と `Cache-Control: no-store` を返す（R9）
   - 量の上限（constitution II）: 1 枚 10 MB、1 回の操作で 1 枚
   - 代表画像の出どころは `note.card_image`（`generated`・`media`・`site`）。既定は `generated`（FR-024）。`media` を選べるのは、その note の画像だけ（複合の外部キー、FR-025）
   - 訪問者に出してよい画像は、note が公開で削除していないときの、公開した版の本文が指す画像と、代表画像だけ（FR-026）。この確かめは画像を配る経路の中で、Repository が取り出すときに行う。公開した版の本文が指す画像の id は、R11 の構文木から読む

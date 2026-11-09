@@ -7,10 +7,11 @@
 003 で足すこと:
 
 - 保存と過去の版に戻すは、開いたときの最も新しい版の uid を隠しフィールドで送る。その note の最も新しい版と違えば何も書かず、`conflict` の結果で送られた値を返す（FR-020、research.md の R4）。比べるのは版で、`note.updated_at` は送らない
+- 失敗の理由の「無い・削除した」「戻す版がその note に無い」「その note の転載先に無い」は `ActionResult` に入れず、ユースケースの `not-found` として返し、Server Action は一覧（`/dash/notes`）へ 303 で移す。001 の `editProject` と同じ形（`src/features/project/server/actions.ts`）
 - 公開・下書きに戻す・削除・元に戻す・代表画像の出どころ・転載先の操作は、開いたときの版を送らない（research.md の R5。公開でも比べるかは plan.md の U6）
 - 削除した note の画面も `/dash/notes/{uid}` で開ける。削除した note の画面は、中身を読み取りだけで出し、「元に戻す」だけを置く
 - 過去の版の画面（`/dash/notes/{uid}/revisions/{revisionUid}`）は、版が無いか、その note に属さなければ `src/proxy.ts` が `/dash/notes/{uid}/revisions/{revisionUid}/missing` へ rewrite する（404）
-- 編集の画面は、共有担当の `DraftRetainingForm`（`src/shared/components/draft-retention.tsx`）で、書きかけの内容をその端末に持つ。`version` に開いた版の uid を渡す。保存に成功したら消し、`conflict` のときは消さない（research.md の R10）
+- 編集の画面は、共有担当の `DraftRetainingForm`（`src/shared/components/draft-retention.tsx`）で、書きかけの内容をその端末に持つ。`version` に開いた版の uid を渡す。部品は送信で消し、`saved` 以外の結果（`conflict` を含む）が返ると送った値を持ち直す（research.md の R10）
 
 ## 画面
 
