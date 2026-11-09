@@ -11,6 +11,10 @@
 --
 -- URL は文字列のまま比べる。syndication.url の UNIQUE の索引で引くので、外部の activity の
 -- 1 行ごとに syndication を読み通さない
+--
+-- 除く条件の note の状態（status = 'published' AND deleted_at IS NULL）は、note の腕の WHERE と
+-- 同じにする。note の腕に出ない note が外部の activity を隠すと、どちらも一覧から消えるため。
+-- note の腕の条件を変える migration は、この条件も変える
 DROP VIEW activity_feed;
 
 CREATE VIEW activity_feed AS
@@ -106,10 +110,10 @@ WHERE a.source <> 'life_event'
 UNION ALL
 SELECT
   'life_event' AS item_type,
-  a.id AS item_number,
-  a.sort_at AS sort_at,
+  l.id AS item_number,
+  l.sort_at AS sort_at,
   CAST(0 AS INTEGER) AS is_masked,
-  a.title AS title,
+  l.title AS title,
   CAST(NULL AS TEXT) AS title_masked,
   CAST(NULL AS TEXT) AS organization_name,
   CAST(NULL AS TEXT) AS organization_name_masked,
@@ -117,10 +121,10 @@ SELECT
   CAST(NULL AS TEXT) AS project_kind,
   CAST(NULL AS TEXT) AS started_on,
   CAST(NULL AS TEXT) AS ended_on,
-  a.description AS description,
-  a.source AS source,
-  s.kind AS source_kind,
+  l.description AS description,
+  l.source AS source,
+  ls.kind AS source_kind,
   CAST(NULL AS TEXT) AS url
-FROM activity AS a
-JOIN activity_source AS s ON s.source = a.source
-WHERE a.source = 'life_event';
+FROM activity AS l
+JOIN activity_source AS ls ON ls.source = l.source
+WHERE l.source = 'life_event';

@@ -989,10 +989,13 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
   const activityIds: number[] = [];
   const syndicationIds: number[] = [];
 
-  /** 転載先の URL を 1 つ持つ note を作る。状態は公開・下書き・削除のどれか */
+  /**
+   * 転載先の URL を 1 つ持つ note を作る。状態は公開・公開したことの無い下書き・公開してから
+   * 下書きに戻したもの・削除のどれか
+   */
   const insertSyndicatedNote = async (
     slug: string,
-    state: 'published' | 'draft' | 'deleted',
+    state: 'published' | 'draft' | 'reverted' | 'deleted',
     url: string,
   ) => {
     const noteId = await insertId('INSERT INTO note (slug) VALUES (?)', slug);
@@ -1009,6 +1012,9 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
         .bind(revisionId, noteId)
         .run();
     }
+    if (state === 'reverted') {
+      await env.DB.prepare("UPDATE note SET status = 'draft' WHERE id = ?").bind(noteId).run();
+    }
     if (state === 'deleted') {
       await env.DB.prepare("UPDATE note SET deleted_at = '2026-02-01T00:00:00.000Z' WHERE id = ?")
         .bind(noteId)
@@ -1017,6 +1023,7 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
     syndicationIds.push(
       await insertId('INSERT INTO syndication (note_id, url) VALUES (?, ?)', noteId, url),
     );
+    return noteId;
   };
 
   const insertExternal = async (url: string) => {
@@ -1035,13 +1042,15 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
     return results.map((row) => row.item_number).filter((n) => activityIds.includes(n));
   };
 
+  let publishedNote = 0;
   let toPublished = 0;
+  let toReverted = 0;
   let toDraft = 0;
   let toDeleted = 0;
   let unrelated = 0;
 
   beforeAll(async () => {
-    await insertSyndicatedNote(
+    publishedNote = await insertSyndicatedNote(
       'migration-0018-published',
       'published',
       'https://example.com/0018/published',
@@ -1053,7 +1062,13 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
       'https://example.com/0018/deleted',
     );
     toPublished = await insertExternal('https://example.com/0018/published');
+    await insertSyndicatedNote(
+      'migration-0018-reverted',
+      'reverted',
+      'https://example.com/0018/reverted',
+    );
     toDraft = await insertExternal('https://example.com/0018/draft');
+    toReverted = await insertExternal('https://example.com/0018/reverted');
     toDeleted = await insertExternal('https://example.com/0018/deleted');
     unrelated = await insertExternal('https://example.com/0018/unrelated');
   });
@@ -1080,7 +1095,24 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
   it('転載した note が下書きか削除済みなら、外部の activity を出す', async () => {
     const shown = await shownExternals();
     expect(shown).toContain(toDraft);
+    expect(shown).toContain(toReverted);
     expect(shown).toContain(toDeleted);
+  });
+
+  it('note を下書きに戻す・削除すると出し直し、公開し直す・元に戻すと再び除く', async () => {
+    const setNote = (sql: string) => env.DB.prepare(sql).bind(publishedNote).run();
+    try {
+      await setNote("UPDATE note SET status = 'draft' WHERE id = ?");
+      expect(await shownExternals()).toContain(toPublished);
+      await setNote("UPDATE note SET status = 'published' WHERE id = ?");
+      expect(await shownExternals()).not.toContain(toPublished);
+      await setNote("UPDATE note SET deleted_at = '2026-02-01T00:00:00.000Z' WHERE id = ?");
+      expect(await shownExternals()).toContain(toPublished);
+      await setNote('UPDATE note SET deleted_at = NULL WHERE id = ?');
+      expect(await shownExternals()).not.toContain(toPublished);
+    } finally {
+      await setNote("UPDATE note SET status = 'published', deleted_at = NULL WHERE id = ?");
+    }
   });
 
   it('転載先と一致しない外部の activity は出す', async () => {
@@ -1094,7 +1126,11 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
       .bind(unrelated)
       .all<{ detail: string }>();
     const details = results.map((row) => row.detail);
-    expect(details).toContain('SEARCH y USING INDEX sqlite_autoindex_syndication_1 (url=?)');
+    expect(details).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/^SEARCH y USING (COVERING )?INDEX \S+ \(url=\?\)$/),
+      ]),
+    );
     expect(details.filter((detail) => detail.startsWith('SCAN'))).toEqual([]);
   });
 });
