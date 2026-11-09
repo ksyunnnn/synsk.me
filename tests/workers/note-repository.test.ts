@@ -776,6 +776,31 @@ describe('参照先の情報（FR-028〜FR-030、User Story 6 の 3）', () => {
     }
   });
 
+  it('URL を本文の読み方と同じ形に揃えて書き、本文の URL から読める', async () => {
+    await notes.saveLinkPreview({
+      url: 'https://Example.com',
+      title: '揃えた題',
+      imageUrl: null,
+      fetchedAt: NOW,
+    });
+    const note = await insertNote(env.DB, {
+      slug: 'reference-normalized',
+      body: 'https://example.com/',
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect((await notes.findVisitorBySlug('reference-normalized'))?.linkPreviews).toEqual([
+      { url: 'https://example.com/', title: '揃えた題', imageUrl: null },
+    ]);
+  });
+
+  it('後に取った中身を、遅れて終わった前の取得で書き換えない', async () => {
+    await notes.saveLinkPreview({ url: URL_A, title: '後の題', imageUrl: null, fetchedAt: LATER });
+    await notes.saveLinkPreview({ url: URL_A, title: '前の題', imageUrl: null, fetchedAt: NOW });
+    expect(await notes.findLinkPreviews([URL_A])).toEqual([
+      { url: URL_A, title: '後の題', imageUrl: null },
+    ]);
+  });
+
   it('URL の並びで読み、取ったことのない URL は返さない。画像は URL だけ（FR-030）', async () => {
     await notes.saveLinkPreview({
       url: URL_A,

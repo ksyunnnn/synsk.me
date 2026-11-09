@@ -525,14 +525,17 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
     },
 
     saveLinkPreview: async ({ url, title, imageUrl, fetchedAt }) => {
-      // URL ごとに 1 行。取り直すと同じ行を書き換え、その URL を書いたすべての note が読む（FR-029）
+      // URL ごとに 1 行。取り直すと同じ行を書き換え、その URL を書いたすべての note が読む（FR-029）。
+      // 訪問者向けの取り出しは本文の URL を `URL` の形に揃えて引くため、同じ形で書く。遅れて
+      // 終わった前の取得では、後の取得の中身を書き換えない
       await db
         .prepare(
           `INSERT INTO link_preview (url, title, image_url, fetched_at) VALUES (?, ?, ?, ?)
            ON CONFLICT (url) DO UPDATE SET
-             title = excluded.title, image_url = excluded.image_url, fetched_at = excluded.fetched_at`,
+             title = excluded.title, image_url = excluded.image_url, fetched_at = excluded.fetched_at
+           WHERE excluded.fetched_at >= link_preview.fetched_at`,
         )
-        .bind(url, title, imageUrl, fetchedAt)
+        .bind(new URL(url).href, title, imageUrl, fetchedAt)
         .run();
     },
   };

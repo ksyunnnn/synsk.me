@@ -8,7 +8,7 @@ import type {
   NoteRevisionSummary,
   NoteSummary,
   VisitorNote,
-  VisitorLinkPreview as LinkPreview,
+  VisitorLinkPreview,
   VisitorNoteCardImage,
 } from '@/features/note/domain/note';
 import type { MediaStorageKey } from '@/shared/domain/media';
@@ -141,10 +141,11 @@ export type NoteRepository = {
    * 参照先の情報を URL の並びで読む（FR-028・FR-029）。取ったことのない URL は返さない。並びは
    * 渡した順
    */
-  findLinkPreviews: (urls: string[]) => Promise<LinkPreview[]>;
+  findLinkPreviews: (urls: string[]) => Promise<VisitorLinkPreview[]>;
   /**
    * 参照先の情報を URL ごとに書く（FR-029・FR-030）。同じ URL の行があれば、その行を取り直した
-   * 中身に書き換える。画像は URL だけを持つ。参照先への取得は plan.md の U9 が決まってから作る
+   * 中身に書き換える。持っている行より前に取った中身では書き換えない。URL は本文の読み方
+   * （`src/shared/domain/markdown.ts` の `urlLineOf`）と同じ `URL` の形に揃えて持つ。画像は URL だけを持つ
    */
-  saveLinkPreview: (preview: LinkPreview & { fetchedAt: string }) => Promise<void>;
+  saveLinkPreview: (preview: VisitorLinkPreview & { fetchedAt: string }) => Promise<void>;
 };
