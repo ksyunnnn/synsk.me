@@ -15,7 +15,8 @@ import { toYearsAndMonths, type Period } from '@/shared/domain/period';
  *
  * 印刷は A4 縦（用紙と余白は globals.css）。本文は 10.5pt にする（厚生労働省・ハローワーク
  * 『職務経歴書の作り方』の「本文部分で 10.5〜12 ポイント程度」）。写真は証明写真ではなく、
- * プロフィールの画像として丸く切り抜いて出す。
+ * プロフィールの画像として丸く切り抜いて出す。印刷での左の列の幅 50mm は選んだ値で、出典はない。
+ * スキルの行（スキル名と経験年数）が 1 行に収まる幅として選んだ。
  *
  * 本文の書式は plan.md の U4 で決まっていない。決まるまでの仮の形として、本文は書式を持たない
  * 文字列として改行だけを残して出す。本文の画像は出さない。
@@ -58,18 +59,29 @@ const formatMonths = (months: number) => {
 /** 補足の行（役職・期間など）。印刷では本文と同じ大きさにする */
 const META = 'text-sm text-muted-foreground print:text-[10.5pt]';
 
+/**
+ * 節の見出し。印刷では節をまるごと次のページへ送らず、項目（li）1 つずつを切らないようにする。
+ * 見出しだけがページの末に残らないよう、見出しの直後で改ページしない指定を付ける。この指定は
+ * Chrome だけが効き、Safari と Firefox は効かない（MDN の break-after の互換表）
+ */
+const HEADING_PRINT = 'print:break-after-avoid';
+
 /** 右の列の節 */
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-4 break-inside-avoid-page">
-    <h2 className="text-xl font-semibold border-b pb-2 print:text-[13pt]">{title}</h2>
+  <section className="flex flex-col gap-4">
+    <h2 className={`text-xl font-semibold border-b pb-2 print:text-[13pt] ${HEADING_PRINT}`}>
+      {title}
+    </h2>
     {children}
   </section>
 );
 
 /** 左の列の節 */
 const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-4 break-inside-avoid">
-    <h2 className="text-base font-semibold border-b pb-2 print:text-[11pt]">{title}</h2>
+  <section className="flex flex-col gap-4">
+    <h2 className={`text-base font-semibold border-b pb-2 print:text-[11pt] ${HEADING_PRINT}`}>
+      {title}
+    </h2>
     {children}
   </section>
 );
@@ -92,7 +104,7 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
         </div>
       </div>
 
-      <article className="mx-auto grid max-w-5xl gap-12 px-6 pt-12 pb-24 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] print:max-w-none print:grid-cols-[45mm_minmax(0,1fr)] print:gap-[8mm] print:p-0 print:text-[10.5pt]">
+      <article className="mx-auto grid max-w-5xl gap-12 px-6 pt-12 pb-24 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] print:max-w-none print:grid-cols-[50mm_minmax(0,1fr)] print:gap-[8mm] print:p-0 print:text-[10.5pt]">
         <aside className="flex flex-col gap-12 print:gap-[8mm]">
           <header className="flex flex-col gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element -- 写真は `public/` の 1 枚で、最適化の経路を通さない */}
@@ -123,9 +135,11 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
             <SideSection title="スキル">
               <ul className="flex flex-col gap-2 text-sm print:text-[10.5pt]">
                 {resume.skills.map((skill) => (
-                  <li key={skill.name} className="flex justify-between gap-4">
-                    <span>{skill.name}</span>
-                    <span className="text-muted-foreground">{formatMonths(skill.months)}</span>
+                  <li key={skill.name} className="flex justify-between gap-4 break-inside-avoid">
+                    <span className="min-w-0">{skill.name}</span>
+                    <span className="whitespace-nowrap text-muted-foreground">
+                      {formatMonths(skill.months)}
+                    </span>
                   </li>
                 ))}
               </ul>
