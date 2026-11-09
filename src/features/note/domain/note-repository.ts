@@ -96,4 +96,17 @@ export type NoteRepository = {
    * `revision`、どちらもあれば null。note と版を 1 回の問い合わせで確かめる
    */
   findMissingRevision: (uid: Uid, revisionUid: Uid) => Promise<'note' | 'revision' | null>;
+  /**
+   * 転載先の URL を記録する（FR-031）。同じ URL がどの note にも記録済みなら `url-taken`（FR-032、
+   * `syndication.url` の UNIQUE）。無いか削除した note なら `not-found`
+   */
+  addSyndication: (
+    id: NoteId,
+    url: string,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'url-taken' | 'not-found' }>;
+  /**
+   * その note の転載先の URL を外す（research.md の R14）。その note に無い URL か、削除した note
+   * なら何も書かず `ok: false`
+   */
+  removeSyndication: (id: NoteId, url: string) => Promise<{ ok: boolean }>;
 };
