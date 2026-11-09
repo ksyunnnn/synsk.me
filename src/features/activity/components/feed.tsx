@@ -2,6 +2,7 @@ import {
   FEED_PROJECT_KIND_LABELS,
   type CareerFeedItem,
   type FeedItem,
+  type NoteFeedItem,
   type ProjectFeedItem,
 } from '@/features/activity/domain/feed';
 import type { Period } from '@/shared/domain/period';
@@ -48,6 +49,32 @@ const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
   </article>
 );
 
+/**
+ * note。個別のページへのリンクは付けない（plan.md の U4）。作成日時は、日の境目の時刻帯が
+ * 決まるまで（plan.md の U3）保存した値のまま出す
+ */
+const NoteRow = ({ item }: { item: NoteFeedItem }) => (
+  <article className="flex flex-col gap-1">
+    <p className="text-sm text-muted-foreground">note</p>
+    <h2 className="font-bold">{item.title}</h2>
+    {item.description && <p>{item.description}</p>}
+    <p className="text-sm text-muted-foreground">
+      <time dateTime={item.createdAt}>{item.createdAt}</time>
+    </p>
+  </article>
+);
+
+const FeedRow = ({ item }: { item: FeedItem }) => {
+  switch (item.type) {
+    case 'career':
+      return <CareerRow item={item} />;
+    case 'project':
+      return <ProjectRow item={item} />;
+    case 'note':
+      return <NoteRow item={item} />;
+  }
+};
+
 export const Feed = ({ items }: { items: FeedItem[] }) =>
   items.length === 0 ? (
     <p>まだ何もない</p>
@@ -56,7 +83,7 @@ export const Feed = ({ items }: { items: FeedItem[] }) =>
       {items.map((item, index) => (
         // 主キーを応答に出さないため、key は並びの位置で付ける（research.md の R6）
         <li key={index}>
-          {item.type === 'career' ? <CareerRow item={item} /> : <ProjectRow item={item} />}
+          <FeedRow item={item} />
         </li>
       ))}
     </ol>
