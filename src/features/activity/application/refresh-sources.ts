@@ -169,11 +169,11 @@ const checkGoneOf = async (
   listing: SourceListing,
   limits: RefreshLimits,
 ): Promise<{ gone: number[]; checked: number[] }> => {
-  const { checkGone } = deps;
+  const checkGone = deps.goneCheckOf?.(source);
   if (listing.isComplete || !checkGone) return { gone: [], checked: [] };
   const rows = pickGoneChecks(stored, listing.items, limits.maxGoneChecks ?? 0);
   const results = await Promise.all(
-    rows.map((row) => checkGone(source, row.url, limits).catch((): GoneCheck => 'unknown')),
+    rows.map((row) => checkGone(row.url, limits).catch((): GoneCheck => 'unknown')),
   );
   return {
     gone: rows.filter((_, index) => results[index] === 'gone').map((row) => row.id),

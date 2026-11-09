@@ -4,6 +4,7 @@ import { cache } from 'react';
 import type { NoteDeps } from '@/features/note/application/deps';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getNotePreview as getNotePreviewUseCase } from '@/features/note/application/get-note-preview';
+import { getPreviewNoteMedia as getPreviewNoteMediaUseCase } from '@/features/note/application/get-preview-note-media';
 import { getVisitorNote as getVisitorNoteUseCase } from '@/features/note/application/get-visitor-note';
 import { getVisitorNoteMedia as getVisitorNoteMediaUseCase } from '@/features/note/application/get-visitor-note-media';
 import {
@@ -22,7 +23,7 @@ import type {
 import { createD1NoteRepository } from '@/features/note/server/d1-note-repository';
 import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
-import { requireAuthor } from '@/shared/server/author';
+import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
 import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
 
@@ -34,6 +35,25 @@ import { createMediaStorage, respondWithMedia } from '@/shared/server/media-stor
 export const createNoteDeps = async (): Promise<NoteDeps> => {
   const { DB } = await readEnv();
   return { notes: createD1NoteRepository(DB), media: await createMediaStorage() };
+};
+
+/**
+ * 見た目の確認の画面の画像（docs/REQUIREMENTS.md の FR-13）。`/dash/notes/{uid}/preview/media/{key}`
+ * の `route.ts` が呼ぶ。オーナーにだけ、確認している版の本文が指す画像と代表画像を返す。オーナーで
+ * なければ D1 の note を読まずに 404 にする（`/dash` 配下は `src/proxy.ts` も 403 にする）
+ */
+export const respondWithPreviewNoteMedia = async (uid: string, key: string): Promise<Response> => {
+  const deps = await createNoteDeps();
+  const author = await getCurrentAuthor();
+  // オーナーでないときと形の違うキーは、D1 を読まずに `respondWithMedia` が 404 にする。
+  // `restricted` は ETag を付けず、どのキャッシュにも残さない（NFR-09）
+  const id =
+    author === null || parseMediaStorageKey(key) === null
+      ? null
+      : await findIdByUid(deps.notes, uid);
+  const access =
+    id === null ? 'hidden' : await getPreviewNoteMediaUseCase(deps.notes, author, id, key);
+  return respondWithMedia(deps.media, key, access);
 };
 
 /**
