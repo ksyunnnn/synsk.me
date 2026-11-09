@@ -47,4 +47,6 @@ export type ActivityRepository = {
   applyRefresh: (source: SourceName, plan: RefreshPlan, result: FetchResultWrite) => Promise<void>;
   /** 取得の結果に失敗と理由を書く。`last_succeeded_at` は前の値を残す（FR-016） */
   recordFetchFailure: (source: SourceName, fetchedAt: string, reason: string) => Promise<void>;
+  /** 取得元ごとの、最後に取り直した日時（成否を問わない）。取り直したことの無い取得元は持たない */
+  listFetchedAt: () => Promise<Partial<Record<SourceName, string>>>;
 };
