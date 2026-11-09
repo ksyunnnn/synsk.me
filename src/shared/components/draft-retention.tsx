@@ -19,8 +19,8 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
  *   の FR-042）。残した書きかけをオーナーにどう見せるかは決まっていない
  *
  * 使い手は 001 の実績・職歴・学歴・組織・スキルの入力。003 の note の入力も使う（R16）。
- * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前の入力も持たない。
- * 動く前の入力を開いたときに持つと、動く前にふつうのフォームとして送って保存した値が、消されずに
+ * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前の入力は、書きかけ
+ * （localStorage）に書かない。動く前の入力を開いたときに書くと、動く前にふつうのフォームとして送って保存した値が、消されずに
  * 残る
  */
 
@@ -176,8 +176,10 @@ const hydratedKeys = new Set<string>();
 
 const captureTyped = (form: HTMLFormElement) => {
   const key = form.getAttribute(DRAFT_KEY_ATTRIBUTE);
-  if (key === null || hydratedKeys.has(key) || !isTouched(form)) return;
-  typedBeforeHydration.set(key, toValues(form));
+  if (key === null || hydratedKeys.has(key)) return;
+  // 打った後に初めの値へ戻したら、持った値を捨てる。捨てないと、戻した入力が動き始めた後に戻る
+  if (isTouched(form)) typedBeforeHydration.set(key, toValues(form));
+  else typedBeforeHydration.delete(key);
 };
 
 if (typeof document !== 'undefined') {
