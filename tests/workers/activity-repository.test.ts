@@ -1,5 +1,6 @@
 import { env, applyD1Migrations } from 'cloudflare:test';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { refreshSources } from '@/features/activity/application/refresh-sources';
 import { SOURCES } from '@/features/activity/domain/sources';
 import { createD1ActivityRepository } from '@/features/activity/server/d1-activity-repository';
 import {
@@ -209,5 +210,90 @@ describe('listFetchedAt', () => {
     await activities.recordFetchFailure('medium', T2, '作り物の失敗');
 
     expect(await activities.listFetchedAt()).toEqual({ zenn: T1, medium: T2 });
+  });
+});
+
+/**
+ * 取得元の失敗が、その取得元の取得の結果だけに残り、ほかの取得元を戻さない
+ * （User Story 2 の Acceptance 3・4、FR-015・FR-016、research.md の R4）
+ */
+describe('取得元の失敗', () => {
+  const LIMITS = { maxRequests: 1, timeoutMs: 1000, maxBytes: 1000 };
+
+  it('2 回続けて失敗しても、最後に成功した日時が前の値のまま残る', async () => {
+    await activities.applyRefresh('zenn', insertsOnly([]), { fetchedAt: T1, reason: null });
+
+    await activities.recordFetchFailure('zenn', T2, '1 回目の作り物の失敗');
+    await activities.recordFetchFailure('zenn', '2026-11-03T00:00:00.000Z', '2 回目の作り物の失敗');
+
+    expect(await readFetchResult(env.DB, 'zenn')).toEqual({
+      fetched_at: '2026-11-03T00:00:00.000Z',
+      is_ok: 0,
+      reason: '2 回目の作り物の失敗',
+      last_succeeded_at: T1,
+    });
+  });
+
+  it('取得元 A の書き込みが失敗しても、取得元 B の書き込みは戻らず、A の取得の結果に失敗が残る', async () => {
+    const outcomes = await refreshSources(
+      {
+        activities,
+        fetchListing: async (source) => ({
+          items:
+            source === 'zenn'
+              ? // 2 件目の公開日が activity の CHECK に反し、A の batch() が 1 件目ごと戻る
+                [item(1), item(2, { publishedAt: '形の違う日時' })]
+              : [item(2, { url: 'https://medium.com/fake2', externalId: 'm2' })],
+          isComplete: false,
+        }),
+      },
+      ['zenn', 'medium'],
+      T1,
+      LIMITS,
+    );
+
+    expect(outcomes.map((outcome) => [outcome.source, outcome.ok])).toEqual([
+      ['zenn', false],
+      ['medium', true],
+    ]);
+    expect(await readActivityRows(env.DB, 'zenn')).toEqual([]);
+    expect(await readActivityRows(env.DB, 'medium')).toHaveLength(1);
+    expect(await readFetchResult(env.DB, 'zenn')).toMatchObject({
+      fetched_at: T1,
+      is_ok: 0,
+      reason: expect.stringMatching(/書き込みに失敗した/),
+      last_succeeded_at: null,
+    });
+    expect(await readFetchResult(env.DB, 'medium')).toMatchObject({
+      is_ok: 1,
+      last_succeeded_at: T1,
+    });
+  });
+
+  it('取得に失敗した取得元の activity を書き換えない（FR-014）', async () => {
+    const id = await insertActivity(env.DB, {
+      source: 'zenn',
+      url: 'https://zenn.dev/ksyunnnn/articles/fake1',
+      title: '前の題',
+      publishedAt: PUBLISHED,
+    });
+
+    await refreshSources(
+      {
+        activities,
+        fetchListing: async () => {
+          throw new Error('作り物の通信の失敗');
+        },
+      },
+      ['zenn'],
+      T1,
+      LIMITS,
+    );
+
+    expect(await readActivityRows(env.DB, 'zenn')).toMatchObject([{ id, title: '前の題' }]);
+    expect(await readFetchResult(env.DB, 'zenn')).toMatchObject({
+      is_ok: 0,
+      reason: expect.stringMatching(/作り物の通信の失敗/),
+    });
   });
 });

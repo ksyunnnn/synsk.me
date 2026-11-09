@@ -109,9 +109,9 @@ description: "外部 activity の取得の実装タスク"
 
 **Independent Test**: 作り物の取得元 A を失敗させ B を成功させて `refreshSources` を走らせ、A の行が残り、B が取り込まれ、A の `fetch_result` に失敗と理由が書かれることを確かめる
 
-- [ ] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることと、A の書き込みの `batch()` が失敗したときも A の `fetch_result` に失敗が書かれることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
-- [ ] T043 [P] [US2] 失敗した取得元の `fetch_result` に取り直した日時・失敗・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が前の値のまま残り、取得元 B の `batch()` は A の失敗で戻らないことを tests/workers/activity-repository.test.ts で確かめる（FR-016、US2 の Acceptance 3・4）。**止める依存: 共有担当の migration**
-- [ ] T044 [US2] T042・T043 が通るように src/features/activity/application/refresh-sources.ts と src/features/activity/server/d1-activity-repository.ts の失敗の扱いを直す。`Promise.allSettled` で並べ、投げない（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）
+- [x] T042 [P] [US2] 取得元 A が投げる・形の違う応答を返す・上限を超えるとき、A の activity を書き換えず、B の取り込みが止まらず、`RefreshOutcome` に A の失敗と理由が入ることと、A の書き込みの `batch()` が失敗したときも A の `fetch_result` に失敗が書かれることを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-014・FR-015・FR-020・SC-002）
+- [x] T043 [P] [US2] 失敗した取得元の `fetch_result` に取り直した日時・失敗・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が前の値のまま残り、取得元 B の `batch()` は A の失敗で戻らないことを tests/workers/activity-repository.test.ts で確かめる（FR-016、US2 の Acceptance 3・4）。**止める依存: 共有担当の migration**
+- [x] T044 [US2] T042・T043 が通るように src/features/activity/application/refresh-sources.ts と src/features/activity/server/d1-activity-repository.ts の失敗の扱いを直す。`Promise.allSettled` で並べ、投げない（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）
 
 ---
 
