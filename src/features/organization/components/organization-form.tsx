@@ -7,6 +7,7 @@ import {
   type OrganizationFieldError,
   type OrganizationFormValues,
 } from '@/features/organization/application/edit-organization';
+import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { InputField } from '@/shared/components/field';
 
@@ -51,7 +52,12 @@ export const OrganizationForm = ({
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <DraftRetainingForm
+      action={formAction}
+      storageKey={`organization:${organizationUid}`}
+      result={result}
+      className="flex flex-col gap-6"
+    >
       <input type="hidden" name={ORGANIZATION_UID_FIELD} value={organizationUid} />
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
@@ -91,6 +97,6 @@ export const OrganizationForm = ({
           保存する
         </button>
       </div>
-    </form>
+    </DraftRetainingForm>
   );
 };

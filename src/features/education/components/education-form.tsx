@@ -8,6 +8,7 @@ import {
   type EducationFormResult,
   type EducationFormValues,
 } from '@/features/education/domain/education';
+import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import { InputField, TextareaField } from '@/shared/components/field';
 
 /**
@@ -47,7 +48,12 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <DraftRetainingForm
+      action={formAction}
+      storageKey={`education:${educationUid ?? 'new'}`}
+      result={result}
+      className="flex flex-col gap-6"
+    >
       {educationUid !== undefined && (
         <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
       )}
@@ -99,6 +105,6 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
           {educationUid === undefined ? '登録する' : '保存する'}
         </button>
       </div>
-    </form>
+    </DraftRetainingForm>
   );
 };
