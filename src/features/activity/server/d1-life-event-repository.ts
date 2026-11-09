@@ -50,19 +50,22 @@ const toLifeEvent = (row: LifeEventRow): LifeEvent => ({
 });
 
 export const createD1LifeEventRepository = (db: D1Database): LifeEventRepository => {
-  /** life event の画像の置き場のキー。life event でない id なら null */
-  const readMediaKeys = async (id: number): Promise<string[] | null> => {
-    const exists = await db
-      .prepare(`SELECT 1 AS found FROM activity a WHERE ${IS_LIFE_EVENT} AND a.id = ?`)
-      .bind(id)
-      .first();
-    if (exists === null) return null;
-    const { results } = await db
-      .prepare('SELECT storage_key FROM media WHERE activity_id = ? ORDER BY id')
-      .bind(id)
-      .all<{ storage_key: string }>();
-    return results.map((row) => row.storage_key);
-  };
+  /**
+   * その life event の画像の行を消し、消した行の置き場のキーを返す文。消す行とキーを同じ文で
+   * 決めるので、並んで走った登録の行を消しても、そのキーを取りこぼさない
+   */
+  const deleteMedia = (id: number, keep: string | null = null) =>
+    db
+      .prepare(
+        `DELETE FROM media WHERE activity_id = ?1
+         AND activity_id IN (SELECT id FROM activity WHERE source = 'life_event')
+         AND (?2 IS NULL OR storage_key <> ?2)
+         RETURNING storage_key`,
+      )
+      .bind(id, keep);
+
+  const keysOf = (result: D1Result | undefined): string[] =>
+    ((result?.results ?? []) as { storage_key: string }[]).map((row) => row.storage_key);
 
   return {
     findVisitorBySlug: async (slug) => {
@@ -155,47 +158,47 @@ export const createD1LifeEventRepository = (db: D1Database): LifeEventRepository
     },
 
     delete: async (id) => {
-      const removedKeys = await readMediaKeys(id);
-      if (removedKeys === null) return { ok: false };
       // media.activity_id の外部キーは送らずに確かめるため、media の行を先に消す（data-model.md）
-      await db.batch([
-        db.prepare('DELETE FROM media WHERE activity_id = ?').bind(id),
+      const [media, activity] = await db.batch([
+        deleteMedia(id),
         db.prepare("DELETE FROM activity WHERE source = 'life_event' AND id = ?").bind(id),
       ]);
-      return { ok: true, removedKeys };
+      return (activity?.meta.changes ?? 0) > 0
+        ? { ok: true, removedKeys: keysOf(media) }
+        : { ok: false };
     },
 
     replaceCardImage: async (id, storageKey) => {
-      const removedKeys = await readMediaKeys(id);
-      if (removedKeys === null) return { ok: false };
-      await db.batch([
+      const [inserted, , removed] = await db.batch([
         db
-          .prepare('INSERT INTO media (activity_id, storage_key) VALUES (?, ?)')
+          .prepare(
+            "INSERT INTO media (activity_id, storage_key) SELECT ?1, ?2 WHERE EXISTS (SELECT 1 FROM activity WHERE source = 'life_event' AND id = ?1)",
+          )
           .bind(id, storageKey),
         db
           .prepare(
             "UPDATE activity SET card_media_id = (SELECT id FROM media WHERE storage_key = ?) WHERE source = 'life_event' AND id = ?",
           )
           .bind(storageKey, id),
-        db
-          .prepare('DELETE FROM media WHERE activity_id = ? AND storage_key <> ?')
-          .bind(id, storageKey),
+        deleteMedia(id, storageKey),
       ]);
-      return { ok: true, removedKeys };
+      return (inserted?.meta.changes ?? 0) > 0
+        ? { ok: true, removedKeys: keysOf(removed) }
+        : { ok: false };
     },
 
     removeCardImage: async (id) => {
-      const removedKeys = await readMediaKeys(id);
-      if (removedKeys === null) return { ok: false };
-      await db.batch([
+      const [updated, removed] = await db.batch([
         db
           .prepare(
             "UPDATE activity SET card_media_id = NULL WHERE source = 'life_event' AND id = ?",
           )
           .bind(id),
-        db.prepare('DELETE FROM media WHERE activity_id = ?').bind(id),
+        deleteMedia(id),
       ]);
-      return { ok: true, removedKeys };
+      return (updated?.meta.changes ?? 0) > 0
+        ? { ok: true, removedKeys: keysOf(removed) }
+        : { ok: false };
     },
 
     isCardImage: async (slug, storageKey) =>

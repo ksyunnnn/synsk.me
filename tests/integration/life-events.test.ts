@@ -188,7 +188,12 @@ describe('オーナーの JWT がない書き込み（FR-031、constitution I）
         objects: (await NOTE_IMAGES.list()).objects.length,
       };
 
-      const values = { lifeEventUid: editUid };
+      // 形式の正しい PNG を送る。ファイルが無いと、オーナーの判定が無くても空として拒まれる
+      const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+      const values = {
+        lifeEventUid: editUid,
+        image: new File([png], 'fake.png', { type: 'image/png' }),
+      };
       const request =
         how === 'submit'
           ? await encodeForm(fields, values).then(({ body, contentType }) => ({
