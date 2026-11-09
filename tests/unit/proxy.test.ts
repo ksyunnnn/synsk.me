@@ -52,6 +52,14 @@ const resumes = vi.hoisted(() => ({
 }));
 vi.mock('@/features/resume/server/queries', () => resumes);
 
+const notes = vi.hoisted(() => ({
+  hasNoteSlug: vi.fn<(slug: string) => Promise<boolean>>(),
+  hasNoteUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  findMissingNoteRevision:
+    vi.fn<(uid: string, revisionUid: string) => Promise<'note' | 'revision' | null>>(),
+}));
+vi.mock('@/features/note/server/queries', () => notes);
+
 const { config, proxy } = await import('@/proxy');
 
 /** 管理画面の URL の識別子（作り物の uid） */
@@ -78,12 +86,16 @@ beforeEach(() => {
   resumes.hasVisitorResume.mockResolvedValue(true);
   resumes.hasResumeUid.mockResolvedValue(true);
   resumes.findMissingResumeRow.mockResolvedValue(null);
+  notes.hasNoteSlug.mockResolvedValue(true);
+  notes.hasNoteUid.mockResolvedValue(true);
+  notes.findMissingNoteRevision.mockResolvedValue(null);
 });
 
 describe('対象の経路', () => {
   it.each([
     '/projects/a-slug',
     '/resume/a-slug',
+    '/notes/a-slug',
     '/dash',
     '/dash/projects',
     `/dash/projects/${UID}/delete`,
@@ -91,12 +103,16 @@ describe('対象の経路', () => {
     expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true);
   });
 
-  it.each(['/', '/about', '/opengraph-image', '/dashboard', '/projects/a-slug/missing'])(
-    '%s では動かない',
-    (url) => {
-      expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
-    },
-  );
+  it.each([
+    '/',
+    '/about',
+    '/opengraph-image',
+    '/dashboard',
+    '/projects/a-slug/missing',
+    '/notes/a-slug/missing',
+  ])('%s では動かない', (url) => {
+    expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
+  });
 });
 
 describe('/projects/{slug}', () => {
@@ -193,6 +209,7 @@ describe.each([
   ['skills', rows.hasSkillUid],
   ['careers', rows.hasCareerUid],
   ['educations', rows.hasEducationUid],
+  ['notes', notes.hasNoteUid],
 ] as const)('/dash/%s/{uid}', (collection, has) => {
   it('無い uid は 404 の画面へ rewrite する', async () => {
     has.mockResolvedValue(false);
@@ -326,4 +343,70 @@ describe('/dash/resumes/{uid}/<種類>/{rowUid}（specs/002-resume/contracts/das
     resumes.hasResumeUid.mockResolvedValue(false);
     expect(await rewrittenPath(`/dash/resumes/${UID}`)).toBe(`/dash/resumes/${UID}/missing`);
   });
+});
+
+/** note のページ（specs/003-note/contracts/visitor-note.md、research.md の R9） */
+describe('/notes/{slug}', () => {
+  it('訪問者に見せる note がある識別子は rewrite しない', async () => {
+    expect(await rewrittenPath('/notes/a-slug')).toBeNull();
+    expect(notes.hasNoteSlug).toHaveBeenCalledWith('a-slug');
+  });
+
+  it('無い・下書き・削除した note の識別子は 404 の画面へ rewrite する', async () => {
+    notes.hasNoteSlug.mockResolvedValue(false);
+    expect(await rewrittenPath('/notes/no-such')).toBe('/notes/no-such/missing');
+  });
+
+  it('オーナーかを確かめず、no-store を付けない', async () => {
+    const response = await proxy(request('/notes/a-slug'));
+    expect(author.getAuthorFromHeaders).not.toHaveBeenCalled();
+    expect(response.headers.get('cache-control')).toBeNull();
+  });
+
+  it('書き込みの要求は判定しない', async () => {
+    notes.hasNoteSlug.mockResolvedValue(false);
+    expect(await rewrittenPath('/notes/a-slug', 'POST')).toBeNull();
+    expect(notes.hasNoteSlug).not.toHaveBeenCalled();
+  });
+
+  it('D1 から読み出せなければ、判定せずにページへ通す', async () => {
+    notes.hasNoteSlug.mockRejectedValue(new Error('D1_ERROR'));
+    expect(await rewrittenPath('/notes/a-slug')).toBeNull();
+  });
+});
+
+/** note の過去の版の画面（specs/003-note/contracts/dash.md、research.md の R9） */
+describe('/dash/notes/{uid}/revisions/{revisionUid}', () => {
+  it('ある版は rewrite しない', async () => {
+    expect(await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`)).toBeNull();
+    expect(notes.findMissingNoteRevision).toHaveBeenCalledWith(UID, ROW_UID);
+  });
+
+  it('その note に無い版は、版の 404 の画面へ rewrite する', async () => {
+    notes.findMissingNoteRevision.mockResolvedValue('revision');
+    expect(await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`)).toBe(
+      `/dash/notes/${UID}/revisions/${ROW_UID}/missing`,
+    );
+  });
+
+  it('無い note は、note の 404 の画面へ rewrite する', async () => {
+    notes.findMissingNoteRevision.mockResolvedValue('note');
+    expect(await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`)).toBe(
+      `/dash/notes/${UID}/missing`,
+    );
+  });
+
+  it('note の有無を、版の有無と別に問い合わせない', async () => {
+    await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`);
+    expect(notes.hasNoteUid).not.toHaveBeenCalled();
+  });
+
+  it.each([`/dash/notes/${UID}/revisions`, `/dash/notes/${UID}/revisions/${ROW_UID}/missing`])(
+    '%s は版の有無を見ない',
+    async (path) => {
+      notes.findMissingNoteRevision.mockResolvedValue('revision');
+      expect(await rewrittenPath(path)).toBeNull();
+      expect(notes.findMissingNoteRevision).not.toHaveBeenCalled();
+    },
+  );
 });

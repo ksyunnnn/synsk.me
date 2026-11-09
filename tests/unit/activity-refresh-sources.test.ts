@@ -144,6 +144,26 @@ describe('refreshSources の失敗の扱い', () => {
     ]);
   });
 
+  it('読む・書くの外で投げても、A の取得の結果に失敗を書く', async () => {
+    const { repository, failures } = createFakeActivityRepository();
+    const broken = async () => ({ isComplete: false }) as unknown as SourceListing;
+
+    const outcomes = await refreshSources(
+      failingDeps(repository, broken),
+      ['fake_a', 'fake_b'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(outcomes.map((outcome) => [outcome.source, outcome.ok])).toEqual([
+      ['fake_a', false],
+      ['fake_b', true],
+    ]);
+    expect(failures).toEqual([
+      { source: 'fake_a', fetchedAt: NOW, reason: expect.stringMatching(/取り直しに失敗した/) },
+    ]);
+  });
+
   it('取得元 A の書き込みが失敗しても、B の書き込みは止まらない', async () => {
     const { repository, applied, failures } = createFakeActivityRepository(
       {},

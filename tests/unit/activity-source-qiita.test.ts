@@ -85,6 +85,11 @@ describe('Qiita', () => {
     const noCount = createFakeFetcher({ [page(1)]: jsonResponse(items(1, 1)) });
     await expect(fetchListing(noCount.fetcher, LIMITS)).rejects.toThrow(/形/);
 
+    const emptyCount = createFakeFetcher({
+      [page(1)]: jsonResponse(items(1, 20), { 'Total-Count': '' }),
+    });
+    await expect(fetchListing(emptyCount.fetcher, LIMITS)).rejects.toThrow(/形/);
+
     const broken = createFakeFetcher({
       [page(1)]: jsonResponse([{ id: 1, title: null }], { 'Total-Count': '1' }),
     });
