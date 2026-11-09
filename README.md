@@ -23,11 +23,11 @@ Node.js 24 を使う（`.nvmrc`）。`package.json` の `engines` は 22 以上�
 
 ```bash
 npm i # 依存を入れる
-cp ../../assets/.dev.vars .dev.vars   # 手元の設定値を写す
-cp ../../assets/.env.local .env.local # 手元の環境変数を写す
+cp ../../private/.dev.vars .dev.vars   # 手元の設定値を写す
+cp ../../private/.env.local .env.local # 手元の環境変数を写す
 ```
 
-`.dev.vars` と `.env.local` の原本は、リポジトリの外の `synsk.me/assets/` に置く。値を変えるときは原本を直し、各ワークスペースへ写し直す。
+`.dev.vars` と `.env.local` の原本は、リポジトリの外の `synsk.me/private/` に置く。`synsk.me/private/` は git で手元だけに管理し、リモートを持たない。値を変えるときは原本を直し、各ワークスペースへ写し直す。
 
 ```bash
 npm run dev        # 開発サーバー（http://localhost:3000）
@@ -51,11 +51,11 @@ pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() が�
 手元の D1 はワークスペース（`desk-NN`）ごとに別で、`npm run dev` か `wrangler d1 … --local` を初めて実行したときに `.wrangler/state` の下に作られる。表を作って seed を入れるには、ワークスペースの直下で次を実行する。
 
 ```bash
-npx wrangler d1 migrations apply synsk-me --local                           # 手元の D1 に表を作る
-npx wrangler d1 execute synsk-me --local --file ../../assets/seed-local.sql # seed を入れる
+npx wrangler d1 migrations apply synsk-me --local                            # 手元の D1 に表を作る
+npx wrangler d1 execute synsk-me --local --file ../../private/seed-local.sql # seed を入れる
 ```
 
-seed は実名を含むため、リポジトリに入れず `synsk.me/assets/seed-local.sql` に置く。
+seed は実名を含むため、リポジトリに入れず `synsk.me/private/seed-local.sql` に置く。
 
 ## データベース
 
