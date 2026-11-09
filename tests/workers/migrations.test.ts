@@ -18,6 +18,14 @@ const columnsOf = async (table: string) => {
   return results;
 };
 
+const insertId = async (sql: string, ...values: unknown[]) => {
+  const row = await env.DB.prepare(`${sql} RETURNING id`)
+    .bind(...values)
+    .first<{ id: number }>();
+  if (!row) throw new Error(sql);
+  return row.id;
+};
+
 beforeAll(async () => {
   await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
 });
@@ -411,6 +419,22 @@ describe('migration 0012', () => {
  * 「一覧のビュー」の M1、005 の FR-012〜FR-014）
  */
 describe('migration 0013 の activity_feed', () => {
+  /** 0013 が作った列。後の migration が足した列は、この describe では読まない */
+  const M1_COLUMNS = [
+    'item_type',
+    'item_number',
+    'sort_at',
+    'is_masked',
+    'title',
+    'title_masked',
+    'organization_name',
+    'organization_name_masked',
+    'role',
+    'project_kind',
+    'started_on',
+    'ended_on',
+  ];
+
   const SECRETS = [
     '0013 の実名の組織',
     '0013 の実際の題',
@@ -438,14 +462,6 @@ describe('migration 0013 の activity_feed', () => {
 
   const ids = { organizations: [] as number[], careers: [] as number[], projects: [] as number[] };
   let mediaId = 0;
-
-  const insertId = async (sql: string, ...values: unknown[]) => {
-    const row = await env.DB.prepare(`${sql} RETURNING id`)
-      .bind(...values)
-      .first<{ id: number }>();
-    if (!row) throw new Error(sql);
-    return row.id;
-  };
 
   const insertCareer = (
     organizationId: number,
@@ -490,7 +506,7 @@ describe('migration 0013 の activity_feed', () => {
   /** 検査が入れた行だけを、並べるキーの順で読む。ほかの検査の行を拾わない */
   const feedRows = async () => {
     const { results } = await env.DB.prepare(
-      'SELECT * FROM activity_feed ORDER BY sort_at, item_type, item_number',
+      `SELECT ${M1_COLUMNS.join(', ')} FROM activity_feed ORDER BY sort_at, item_type, item_number`,
     ).all<FeedRow>();
     return results.filter((row) =>
       (row.item_type === 'career' ? ids.careers : ids.projects).includes(row.item_number),
@@ -572,22 +588,9 @@ describe('migration 0013 の activity_feed', () => {
     ]);
   });
 
-  it('列は data-model.md の M1 の列だけを持つ', async () => {
+  it('data-model.md の M1 の列を、この順で先頭に持つ（後の migration は列を最後に足す）', async () => {
     const names = (await columnsOf('activity_feed')).map((c) => c.name);
-    expect(names).toEqual([
-      'item_type',
-      'item_number',
-      'sort_at',
-      'is_masked',
-      'title',
-      'title_masked',
-      'organization_name',
-      'organization_name_masked',
-      'role',
-      'project_kind',
-      'started_on',
-      'ended_on',
-    ]);
+    expect(names.slice(0, M1_COLUMNS.length)).toEqual(M1_COLUMNS);
   });
 
   it('サイトに載せる職歴と実績を、秘匿化した行は秘匿化した値で、ほかは実際の値で出す', async () => {
@@ -700,5 +703,159 @@ describe('migration 0013 の activity_feed', () => {
   it('外部キーの違反が無い', async () => {
     const { results } = await env.DB.prepare('PRAGMA foreign_key_check').all();
     expect(results).toEqual([]);
+  });
+});
+
+/**
+ * 一覧のビュー activity_feed の note の腕と description の列（specs/005-feed/data-model.md の
+ * 「一覧のビュー」の M2、005 の FR-005・FR-006）
+ */
+describe('migration 0016 の activity_feed の note の腕', () => {
+  const ids = { notes: [] as number[], organization: 0, project: 0 };
+
+  /** 版を足し、その版で公開した note を作る。下書きの版を後に足し、公開した版と分ける */
+  const insertPublishedNote = async (slug: string, createdAt: string) => {
+    const noteId = await insertId(
+      'INSERT INTO note (slug, created_at, updated_at) VALUES (?, ?, ?)',
+      slug,
+      createdAt,
+      createdAt,
+    );
+    const revisionId = await insertId(
+      'INSERT INTO note_revision (note_id, title, description, body) VALUES (?, ?, ?, ?)',
+      noteId,
+      `${slug} の公開した題`,
+      `${slug} の公開した説明`,
+      '本文',
+    );
+    await env.DB.prepare(
+      "UPDATE note SET status = 'published', published_revision_id = ?, published_at = ? WHERE id = ?",
+    )
+      .bind(revisionId, createdAt, noteId)
+      .run();
+    await env.DB.prepare(
+      'INSERT INTO note_revision (note_id, title, description, body) VALUES (?, ?, ?, ?)',
+    )
+      .bind(noteId, `${slug} の下書きの題`, `${slug} の下書きの説明`, '本文')
+      .run();
+    ids.notes.push(noteId);
+    return noteId;
+  };
+
+  type NoteRow = Record<string, unknown> & { item_number: number };
+
+  /** 検査が入れた note の行だけを読む。ほかの検査の行を拾わない */
+  const noteRows = async () => {
+    const { results } = await env.DB.prepare(
+      "SELECT * FROM activity_feed WHERE item_type = 'note' ORDER BY item_number",
+    ).all<NoteRow>();
+    return results.filter((row) => ids.notes.includes(row.item_number));
+  };
+
+  let published = 0;
+  let unpublished = 0;
+  let deleted = 0;
+  let draftOnly = 0;
+
+  beforeAll(async () => {
+    published = await insertPublishedNote('migration-0016-published', '2026-01-02T03:04:05.000Z');
+    unpublished = await insertPublishedNote(
+      'migration-0016-unpublished',
+      '2026-01-03T00:00:00.000Z',
+    );
+    await env.DB.prepare("UPDATE note SET status = 'draft' WHERE id = ?").bind(unpublished).run();
+    deleted = await insertPublishedNote('migration-0016-deleted', '2026-01-04T00:00:00.000Z');
+    await env.DB.prepare("UPDATE note SET deleted_at = '2026-02-01T00:00:00.000Z' WHERE id = ?")
+      .bind(deleted)
+      .run();
+    draftOnly = await insertId("INSERT INTO note (slug) VALUES ('migration-0016-draft-only')");
+    await env.DB.prepare(
+      "INSERT INTO note_revision (note_id, title, description, body) VALUES (?, '下書きだけの題', '下書きだけの説明', '本文')",
+    )
+      .bind(draftOnly)
+      .run();
+    ids.notes.push(draftOnly);
+
+    ids.organization = await insertId("INSERT INTO organization (name) VALUES ('0016 の組織')");
+    ids.project = await insertId(
+      "INSERT INTO project (organization_id, kind, slug, title, title_masked, is_masked, status, started_on, description) VALUES (?, 'talk', 'migration-0016', '0016 の題', '0016 の伏せた題', 0, 'published', '2016-01-01', '0016 の実績の説明')",
+      ids.organization,
+    );
+  });
+
+  // note.published_revision_id の外部キーは検査をトランザクションの終わりに送るので、1 回の
+  // batch で版、note の順に消せる
+  afterAll(async () => {
+    await env.DB.batch([
+      ...ids.notes.map((id) =>
+        env.DB.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
+      ),
+      ...ids.notes.map((id) => env.DB.prepare('DELETE FROM note WHERE id = ?').bind(id)),
+      env.DB.prepare('DELETE FROM project WHERE id = ?').bind(ids.project),
+      env.DB.prepare('DELETE FROM organization WHERE id = ?').bind(ids.organization),
+    ]);
+  });
+
+  it('description の列を、0013 の列の後に持つ', async () => {
+    const names = (await columnsOf('activity_feed')).map((c) => c.name);
+    expect(names.indexOf('description')).toBe(12);
+  });
+
+  it('公開中で削除していない note を、公開した版の題と説明文で出す', async () => {
+    const rows = await noteRows();
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      item_type: 'note',
+      item_number: published,
+      sort_at: '2026-01-02T03:04:05.000Z',
+      is_masked: 0,
+      title: 'migration-0016-published の公開した題',
+      title_masked: null,
+      organization_name: null,
+      organization_name_masked: null,
+      role: null,
+      project_kind: null,
+      started_on: null,
+      ended_on: null,
+      description: 'migration-0016-published の公開した説明',
+    });
+  });
+
+  it('下書きに戻した note、削除した note、公開したことの無い note を出さない', async () => {
+    const numbers = (await noteRows()).map((row) => row.item_number);
+    expect(numbers).not.toContain(unpublished);
+    expect(numbers).not.toContain(deleted);
+    expect(numbers).not.toContain(draftOnly);
+  });
+
+  it('公開した後に足した下書きの版の題と説明文を出さない', async () => {
+    const values = (await noteRows()).flatMap((row) => Object.values(row));
+    expect(values).not.toContain('migration-0016-published の下書きの題');
+    expect(values).not.toContain('migration-0016-published の下書きの説明');
+  });
+
+  it('職歴と実績の腕の description は NULL（005 の FR-012・FR-013）', async () => {
+    const row = await env.DB.prepare(
+      "SELECT description FROM activity_feed WHERE item_type = 'project' AND item_number = ?",
+    )
+      .bind(ids.project)
+      .first();
+    expect(row).toEqual({ description: null });
+  });
+
+  it('note の腕でも、種類と主キーの条件が腕の中へ下りて主キーで引く（005 の research.md の R3）', async () => {
+    const { results } = await env.DB.prepare(
+      "EXPLAIN QUERY PLAN SELECT * FROM activity_feed WHERE item_type = 'note' AND item_number = ?",
+    )
+      .bind(published)
+      .all<{ detail: string }>();
+    const details = results.map((row) => row.detail);
+    expect(details).toEqual(
+      expect.arrayContaining([
+        'SEARCH n USING INTEGER PRIMARY KEY (rowid=?)',
+        'SEARCH r USING INTEGER PRIMARY KEY (rowid=?)',
+      ]),
+    );
+    expect(details.filter((detail) => detail.startsWith('SCAN'))).toEqual([]);
   });
 });
