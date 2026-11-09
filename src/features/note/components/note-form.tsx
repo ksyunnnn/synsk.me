@@ -95,19 +95,28 @@ export const NoteForm = ({ action, initialValues, note }: Props) => {
         </p>
       )}
 
-      <InputField
-        name="slug"
-        label="識別子"
-        hint={
-          note?.hasBeenPublished
-            ? '一度でも公開した note の識別子は変えられません'
-            : 'URL に出ます。英小文字・数字・ハイフンで、100 文字まで。公開した後は変えられません'
-        }
-        defaultValue={values.slug}
-        readOnly={note?.hasBeenPublished}
-        autoComplete="off"
-        error={errorOf('slug')}
-      />
+      {note?.hasBeenPublished ? (
+        // 入力の欄にしない。欄にすると、公開する前に書きかけた識別子が欄と書きかけに残り、
+        // 読み取りだけの欄から直せないまま送られる。送る値は隠しフィールドで、書きかけに持たない
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">識別子</p>
+          <p className="text-sm text-muted-foreground">
+            一度でも公開した note の識別子は変えられません
+          </p>
+          <p>{initialValues.slug}</p>
+          <input type="hidden" name="slug" value={initialValues.slug} />
+          {errorOf('slug') && <p className="text-sm text-destructive">{errorOf('slug')}</p>}
+        </div>
+      ) : (
+        <InputField
+          name="slug"
+          label="識別子"
+          hint="URL に出ます。英小文字・数字・ハイフンで、100 文字まで。公開した後は変えられません"
+          defaultValue={values.slug}
+          autoComplete="off"
+          error={errorOf('slug')}
+        />
+      )}
       <InputField
         name="title"
         label="題"
