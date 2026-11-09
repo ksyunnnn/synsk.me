@@ -423,3 +423,27 @@ test('JavaScript が動く前に本文を打ち、保存せずに再読み込み
   await page.reload();
   await expect(textbox(page, '本文')).toHaveValue(typed);
 });
+
+test('保存の知らせの画面で JavaScript が動く前に本文を打ち、保存せずに再読み込みしても、本文が残る', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 知らせの画面で動く前に打った本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 知らせの画面で動く前に打つ組織',
+    organizationNameMasked: 'E2E 知らせの画面で動く前に打つ秘匿化した組織名',
+    role: 'E2E 知らせの画面で動く前に打つ肩書',
+    description: 'E2E 保存した本文',
+  });
+
+  const release = await holdScripts(page);
+  await page.goto(`${editUrl}?saved=1`, { waitUntil: 'commit' });
+  await textbox(page, '本文').fill(typed);
+  await release();
+  await waitForHydration(page);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+
+  await page.reload();
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
