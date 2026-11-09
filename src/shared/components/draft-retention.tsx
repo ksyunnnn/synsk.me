@@ -12,16 +12,17 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
  *   `DraftSavedNotice` が、送った書きかけを消す。Server Action が失敗の結果を返したら、送った値を
  *   持ち直す。結果を返さずに投げた（通信の切断、D1 の失敗）ときは、書きかけが残る
  * - 画面を開いたとき、JavaScript が動く前にオーナーが入力を変えていたら、書きかけを戻さない。
- *   動く前に打った値は、動き始めた後もそのまま残す（下の `typedBeforeHydration`）
+ *   動く前に打った値は、動き始めた後もそのまま残し、その時点で書きかけに書く（下の
+ *   `typedBeforeHydration`）
  * - `version` は、編集の画面が開いたときの行の更新日時で、持つ名前に含める。別の画面で先に
  *   保存された後に開き直すと名前が変わり、前の更新日時の書きかけは消さずに残し、自動では戻さない。
  *   戻すと、触っていない項目まで古い値で先の保存を上書きする（specs/001-career-and-project/spec.md
  *   の FR-042）。残した書きかけをオーナーにどう見せるかは決まっていない
  *
  * 使い手は 001 の実績・職歴・学歴・組織・スキルの入力。003 の note の入力も使う（R16）。
- * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前の入力は、書きかけ
- * （localStorage）に書かない。動く前の入力を開いたときに書くと、動く前にふつうのフォームとして送って保存した値が、消されずに
- * 残る
+ * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前にふつうの
+ * フォームとして送った値は、書きかけ（localStorage）に書かない。書くと、送って保存した値が
+ * 消されずに残る。動き始めるまで送られなかった入力は、動き始めた時点で書きかけに書く
  */
 
 type DraftValues = Record<string, string[]>;
@@ -167,8 +168,8 @@ const DRAFT_KEY_ATTRIBUTE = 'data-draft-key';
  * （`react-dom-client` の `initTextarea` が `element.value = textContent` を入れる）。そのままでは、
  * 動く前に打った本文が消え、保存は初めの本文を送る（FR-14）。このモジュールは、フォームを
  * hydration する前に読み込まれる。読み込んだ時点の値と、それから hydration までの入力を持ち、
- * フォームが動き始めたら戻す。書きかけには書き込まない（JavaScript が動く前の入力を持たない
- * 理由は、このファイルの冒頭のとおり）。動き始めた後の入力で、ふつうに書き込まれる
+ * フォームが動き始めたら戻し、書きかけに書く（FR-14）。動き始めた時点まで来た入力は、まだ
+ * 送られていない。送って保存した値が残るおそれ（このファイルの冒頭）には当たらない
  */
 const typedBeforeHydration = new Map<string, DraftValues>();
 /** 動き始めたフォームの書きかけの名前。これより後の入力は、フォームが自分で持つ */
@@ -221,10 +222,16 @@ export const DraftRetainingForm = ({
     hydratedKeys.add(key);
     const typed = typedBeforeHydration.get(key);
     typedBeforeHydration.delete(key);
-    // 動く前に打った値を戻す。hydration が `<textarea>` を初めの値に戻した後なので、
-    // `isTouched` だけでは打ったことが分からない
-    if (typed) applyValues(form, typed);
-    else if (draft && !isTouched(form)) applyValues(form, draft);
+    // 動く前に打った値を戻し、書きかけにも書く。hydration が `<textarea>` を初めの値に戻した
+    // 後なので、`isTouched` だけでは打ったことが分からない。ここまで来た値は、まだ送られていない
+    if (typed) {
+      applyValues(form, typed);
+      save();
+      // 動き始める前にふつうのフォームとして送られ、保存に成功したかもしれない。送った書きかけと
+      // 同じく扱い、移った先の `DraftSavedNotice` が消す。送られていなければ、開き直した
+      // ときに上の行が印を外し、書きかけを戻す
+      write(SENT_KEY, key);
+    } else if (draft && !isTouched(form)) applyValues(form, draft);
 
     const send = () => {
       submittedRef.current = toValues(form);
