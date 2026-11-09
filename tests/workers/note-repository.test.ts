@@ -9,6 +9,7 @@ import {
   insertLinkPreview,
   insertNoteMedia,
   insertNoteRevision,
+  insertSyndication,
   publishNoteRow,
 } from '../support/note-rows';
 
@@ -661,5 +662,70 @@ describe('代表画像と画像（FR-023〜FR-025、User Story 5 の 3）', () =
     const deleted = await insertNote(env.DB);
     await deleteNoteRow(env.DB, deleted.id);
     expect(await notes.addMedia(deleted.id, crypto.randomUUID())).toEqual({ ok: false });
+  });
+});
+
+describe('purge（FR-017、research.md の R6）', () => {
+  const countOf = async (table: string, column: string, id: number) =>
+    (
+      await env.DB.prepare(`SELECT count(*) AS n FROM ${table} WHERE ${column} = ?`)
+        .bind(id)
+        .first<{ n: number }>()
+    )?.n;
+
+  const remaining = async (id: number) => ({
+    note: await countOf('note', 'id', id),
+    note_revision: await countOf('note_revision', 'note_id', id),
+    media: await countOf('media', 'note_id', id),
+    syndication: await countOf('syndication', 'note_id', id),
+  });
+
+  it('公開して代表画像を持つ note を消し、画像のキーを返し、参照先の情報は残す', async () => {
+    const note = await insertNote(env.DB);
+    await insertNoteRevision(env.DB, note.id);
+    const media = await insertNoteMedia(env.DB, note.id);
+    await notes.changeCardImage(note.id, { kind: 'media', storageKey: media.storageKey });
+    await notes.publish(note.id, NOW);
+    await insertSyndication(env.DB, note.id, 'https://example.com/purged');
+    await insertLinkPreview(env.DB, { url: 'https://example.com/kept' });
+
+    expect(await notes.purge(note.id)).toEqual({ ok: true, storageKeys: [media.storageKey] });
+    expect(await remaining(note.id)).toEqual({
+      note: 0,
+      note_revision: 0,
+      media: 0,
+      syndication: 0,
+    });
+    expect(
+      await env.DB.prepare(
+        "SELECT count(*) AS n FROM link_preview WHERE url = 'https://example.com/kept'",
+      ).first(),
+    ).toEqual({ n: 1 });
+  });
+
+  it('途中の文が失敗すると何も消えない', async () => {
+    const note = await insertNote(env.DB);
+    await insertNoteMedia(env.DB, note.id);
+    await insertSyndication(env.DB, note.id, 'https://example.com/rollback');
+    // note の行を消す最後の文だけを失敗させる。作り物のトリガで、検査の終わりに外す
+    await env.DB.prepare(
+      `CREATE TRIGGER test_fail_note_delete BEFORE DELETE ON note
+       BEGIN SELECT RAISE(ABORT, 'test_fail_note_delete'); END`,
+    ).run();
+    try {
+      await expect(notes.purge(note.id)).rejects.toThrow(/test_fail_note_delete/);
+    } finally {
+      await env.DB.prepare('DROP TRIGGER test_fail_note_delete').run();
+    }
+    expect(await remaining(note.id)).toEqual({
+      note: 1,
+      note_revision: 1,
+      media: 1,
+      syndication: 1,
+    });
+  });
+
+  it('無い id は ok: false', async () => {
+    expect(await notes.purge(999_999)).toEqual({ ok: false });
   });
 });
