@@ -93,8 +93,9 @@ describe('/dash の外への POST の本文の上限', () => {
 
   it('1 MB までの本文は、入口で止めない', async () => {
     const response = await submitWithFile('結合の検査の dash の外の小さい本文', 512 * 1024, '/');
-    expect(response.status).not.toBe(413);
-    expect(response.status).not.toBe(411);
+    // 入口が通し、Server Action が動いて行を作る。/ のページは送った後の画面を 200 で返す
+    expect(response.status).toBe(200);
+    expect(await skillExists('結合の検査の dash の外の小さい本文')).toBe(true);
   }, 30_000);
 
   it('本文の長さを示さない POST は 411 で拒む', async () => {

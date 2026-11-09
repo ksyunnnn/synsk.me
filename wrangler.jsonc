@@ -1,7 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "synsk-me",
-  // vinext の fetch ハンドラを呼ぶ入口。プレビュー配信の応答だけを書き換える
+  // vinext の fetch ハンドラを呼ぶ入口。/dash の外への大きい POST を vinext に渡す前に拒み、
+  // プレビュー配信の応答だけを書き換える
   "main": "./worker/index.ts",
   // synsk.me だけを入口にする。workers.dev で同じ内容が配信されると
   // 検索エンジンから見て重複する

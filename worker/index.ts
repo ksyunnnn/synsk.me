@@ -13,7 +13,10 @@ import { isPreviewRequest, withNoStore } from '@/shared/server/preview-no-store'
 const worker = {
   ...handler,
   async fetch(request: Request, env: Cloudflare.Env, ctx: ExecutionContext) {
-    const response = rejectLargePublicPost(request) ?? (await handler.fetch(request, env, ctx));
+    const rejected = rejectLargePublicPost(request);
+    // 拒んだ要求の本文は読まずに捨てる。読み残すと、手元の workerd が接続を切ることがある
+    if (rejected) await request.body?.cancel();
+    const response = rejected ?? (await handler.fetch(request, env, ctx));
     return isPreviewRequest(request.url) ? withNoStore(response) : response;
   },
 };
