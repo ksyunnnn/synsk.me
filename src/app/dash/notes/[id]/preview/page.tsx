@@ -30,7 +30,7 @@ const Page = async ({ params }: Props) => {
       <p role="note" className="rounded-md border border-input px-4 py-2 text-sm">
         最も新しい版を、訪問者に見せたときの見た目で出しています
       </p>
-      <VisitorNoteView note={note} />
+      <VisitorNoteView note={note} mediaBase={`/dash/notes/${id}/preview/media`} />
     </main>
   );
 };
