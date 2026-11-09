@@ -27,4 +27,4 @@ Preview は全体が Access の後ろにあり、D1 は本番と分けた `synsk
 3. 保存した life event の識別子で `/life-events/{識別子}` を開き、題と起きた日が出る
 4. 起きた日を空にして保存すると、保存されずに理由が出る
 5. `/dash/activities/new` で取得元 Spotify と実在するプレイリストの URL と日付を入れて保存し、題が入る。日付を空にすると保存されない
-6. 取得を走らせる（入口は U10 が決める）。`fetch_result` に取得元ごとの行があり、Zenn の記事が `activity` に入る。もう一度走らせても行が増えない
+6. 取得を走らせる（Cron Triggers の `scheduled`）。`fetch_result` に取得元ごとの行があり、Zenn の記事が `activity` に入る。もう一度走らせても行が増えない
