@@ -1,4 +1,4 @@
-import { expect, type Browser, type Page } from '@playwright/test';
+import { expect, type Browser, type Locator, type Page } from '@playwright/test';
 
 /**
  * E2E でオーナーが管理画面で行う操作と、訪問者として確かめる操作。
@@ -51,6 +51,18 @@ const textbox = (page: Page, name: string) => page.getByRole('textbox', { name, 
 /** 入力を省いた項目は、いまの値のまま触らない */
 const fillIfGiven = async (page: Page, name: string, value: string | undefined) => {
   if (value !== undefined) await textbox(page, name).fill(value);
+};
+
+/**
+ * Tab のキーだけで `target` にフォーカスを移す。`focus()` で直接移さないのは、キーボードで
+ * たどり着けることを確かめるため。`maxTabs` 回押しても届かなければ失敗にする
+ */
+export const tabTo = async (page: Page, target: Locator, maxTabs = 200) => {
+  for (let i = 0; i < maxTabs; i += 1) {
+    await page.keyboard.press('Tab');
+    if (await target.evaluate((el) => el === document.activeElement)) return;
+  }
+  throw new Error(`Tab を ${maxTabs} 回押しても ${target} にフォーカスが移らない`);
 };
 
 /** 秘匿化するか・サイトに載せるかのラジオボタンを選ぶ。省いたものは触らない */

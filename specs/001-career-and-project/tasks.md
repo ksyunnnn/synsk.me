@@ -199,7 +199,7 @@ description: "職歴と実績の実装タスク"
 
 - [ ] T072 入力中の内容を `localStorage` に持ち、保存に成功したら消す部品を src/shared/components/draft-retention.tsx に作り、実績・職歴・学歴・組織・スキルの入力に使う。E2E で、保存せずに再読み込みしても入力が残ることを tests/e2e/draft-retention.spec.ts で確かめる（REQUIREMENTS.md の FR-14、research.md の R16）
 - [ ] T073 本番の D1 にオーナーが個人の組織を登録した後、その行の id を src/shared/domain/organization.ts の定数に書き、個人の組織を消せないことを tests/workers/organization-edit.test.ts に足す（FR-041、research.md の R9）
-- [ ] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
+- [X] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
 - [ ] T075 R2 の読み書きを src/shared/server/media-storage.ts に閉じ込め、実績・職歴の画像の追加と、実績の代表画像の選択と登録（その実績の画像だけ）を作る。画像の上限を plan.md に書いてから作る（constitution II）。**止める未決: U5**
 - [ ] T076 秘匿化しない実績の画像を配る経路を作り、秘匿化した実績の画像が返らないことを結合で確かめる（FR-030）。**止める未決: U5**
 - [ ] T077 本文の表示と、本文の中に画像とキャプションを置く入力を作る（FR-027）。**止める未決: U4**
