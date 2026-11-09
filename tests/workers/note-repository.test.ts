@@ -448,6 +448,15 @@ describe('unpublish・delete・restore（FR-014・FR-016・SC-007、research.md 
     expect(await notes.delete(999_999, NOW)).toEqual({ ok: false });
     expect(await notes.restore(999_999)).toEqual({ ok: false });
   });
+
+  it('状態の変わらない操作は書かず ok: false（下書きを下書きに戻す、削除済みを削除する、削除していない note を元に戻す）', async () => {
+    const note = await insertNote(env.DB);
+    expect(await notes.unpublish(note.id)).toEqual({ ok: false });
+    expect(await notes.restore(note.id)).toEqual({ ok: false });
+    await notes.delete(note.id, NOW);
+    expect(await notes.delete(note.id, LATER)).toEqual({ ok: false });
+    expect((await notes.findForEdit(note.id))?.deletedAt).toBe(NOW);
+  });
 });
 
 describe('版の一覧と過去の版に戻す（FR-008・FR-009、User Story 3 の 1・2）', () => {

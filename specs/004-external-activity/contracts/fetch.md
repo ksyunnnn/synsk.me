@@ -8,7 +8,8 @@
 
 - 入力: 取り直す取得元の名前の並び（一覧を取る取得元だけ）、今の日時、上限（research.md の R8）
 - 出力: 取得元ごとの成否（data-model.md の `RefreshOutcome`）。投げない。1 つの取得元の失敗で、ほかの取得元を止めない（FR-015）
-- 呼ぶもの: U10 が決める入口（Cron の `scheduled` か、管理画面の `refreshNow` か、両方）。**止める未決: U10**
+- 呼ぶもの: Cron Triggers の `scheduled`（`worker/index.ts`。U10 の決定、research.md の R9）
+- 取得元が条件付きの要求に 304 を返したときは、その取得元の activity を書かず、`fetch_result` を成功として書く（research.md の R9）
 
 ## 取得元ごとの処理
 

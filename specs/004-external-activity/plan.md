@@ -19,7 +19,7 @@
 
 ## Summary
 
-システムが一覧を取る取得元（Zenn・Qiita・dev.to・Medium・GitHub・Speaker Deck・connpass）から項目を取り、取得元ごとの処理の中で synsk.me の型に詰め替え（Anti-Corruption Layer）、`activity` に保存する。取得元ごとに「読む → 計算 → 書く」を行い、`Promise.allSettled` で並べて、1 つの失敗でほかを止めない（失敗の表し方）。取得元で消えたと確かめた activity は行を消し、確かめられないあいだと上限を超えた分は残す。URL を指名する取得元（Spotify・X・CodeSandbox・YouTube）と手で入力する取得元（CodePen）の activity は、オーナーが `/dash/activities` で登録・削除する。life event はオーナーが `/dash/life-events` で作り、訪問者は `/life-events/{slug}` で個別のページを見る。life event の代表画像は R2 の原本を Worker が確かめて変換せずに返す（U5 の決定、2026-11-09）。
+システムが一覧を取る取得元（Zenn・Qiita・dev.to・Medium・GitHub・Speaker Deck・connpass）から項目を取り、取得元ごとの処理の中で synsk.me の型に詰め替え（Anti-Corruption Layer）、`activity` に保存する。取得は Cron Triggers の定期実行で走らせる（U10 の決定、2026-11-09）。取得元ごとに「読む → 計算 → 書く」を行い、`Promise.allSettled` で並べて、1 つの失敗でほかを止めない（失敗の表し方）。取得元で消えたと確かめた activity は行を消し、確かめられないあいだと上限を超えた分は残す。URL を指名する取得元（Spotify・X・CodeSandbox・YouTube）と手で入力する取得元（CodePen）の activity は、オーナーが `/dash/activities` で登録・削除する。life event はオーナーが `/dash/life-events` で作り、訪問者は `/life-events/{slug}` で個別のページを見る。life event の代表画像は R2 の原本を Worker が確かめて変換せずに返す（U5 の決定、2026-11-09）。
 
 001・002 の作り（機能のディレクトリの形、Repository・DTO・組み立て用の関数・Server Action・proxy・オーナーの判定）をそのまま使う。004 は migration を書かず、要る変更を共有担当に渡す（[data-model.md](./data-model.md) の「要る migration の変更」）。
 
@@ -27,7 +27,7 @@
 
 **Language/Version**: TypeScript 6.0（`typescript` ~6.0.3）、Node.js 22 以上
 
-**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。RSS の XML の読み方は実装の前に確かめる（[research.md](./research.md) の R3）
+**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。RSS は package を足さずに読む（[research.md](./research.md) の R3）
 
 **Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0011` と共有担当の migration（`activity.uid`・取得元の行。research.md の R1）。画像は R2（binding `NOTE_IMAGES`）を共有担当の `src/shared/server/media-storage.ts` 越しに使う。形式は JPEG・PNG・WebP・GIF、1 枚 10 MB まで（U5 の決定）
 
@@ -56,7 +56,7 @@
 | V. Accessible Controls | 通る | 入力はネイティブの要素と `<form>`。削除の確認は別のページ（001 と同じ）。E2E でキーボードだけの操作を確かめる |
 | VI. Measure Before Optimizing | 通る | キャッシュ・索引の追加・非正規化を含めない。値が変わった行だけを書くのは D1 の書き込みの上限という費用の上限のためで、速さのためではない（R5） |
 | VII. Boundary Translation | 通る | 取得元の応答は `server/sources/<取得元>.ts` の中で `FetchedItem` に詰め替え、外部の型をファイルの外に出さない（R3、[contracts/fetch.md](./contracts/fetch.md)） |
-| VIII. Portable Core | 通る | D1 は `src/features/activity/server/d1-activity-repository.ts`、R2 は `src/shared/server/media-storage.ts`、env は `src/shared/server/env.ts` だけで使う。Cron の `scheduled` は `worker/index.ts` だけに置く（U10 で (a)・(c) を選んだとき） |
+| VIII. Portable Core | 通る | D1 は `src/features/activity/server/d1-activity-repository.ts`、R2 は `src/shared/server/media-storage.ts`、env は `src/shared/server/env.ts` だけで使う。Cron の `scheduled` は `worker/index.ts` だけに置く |
 | IX. Simplicity | 通る | `shared/` に新しく置くものは無い。Repository のインタフェースは、単体の検査で渡す作り物の実装が 2 つ目の使い手（ADR-0026 のルール 2）。`fetcher` の引数は、単体の検査で渡す作り物の応答が 2 つ目の使い手 |
 | Test Layering | 通る | 同じことを 2 つの段階で確かめない（下の表の「段階」） |
 | Display Speed | 通る | life event のページは NFR-03〜NFR-07 の対象。判定はフィールドの計測 |
@@ -98,6 +98,7 @@
 | FR-009・FR-010・FR-011 | URL を指名して日付つきで登録すると題を取って保存する。日付が無ければ保存しない。手で入力した値で保存する | 単（ユースケース）・W（保存）・E（入力） |
 | FR-012・SC-005 | 公開日の無い項目で `published_at` を書かない。URL を指名した activity は取得で取り直さず、日付はオーナーの入力の値だけで書く（research.md の R5） | 単（`planRefresh`）・W |
 | FR-013 | 取り直しても `created_at` が変わらない | W |
+| FR-036 | `wrangler.jsonc` に `triggers` があり、`scheduled` が `refreshSources` を呼ぶ（research.md の R9）。ビルドした `dist/server/wrangler.json` に `triggers` があることは quickstart.md の手順 1 で確かめる | 単 |
 | FR-014・FR-015・SC-002 | 2 つのうち 1 つの取得元が失敗しても、失敗した側の行が残り、もう一方が取り込まれる | 単（`refreshSources`）・W（`batch()` の分け方） |
 | FR-016 | 失敗の結果に日時・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が残る | 単・W |
 | FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRefresh`）・W |
@@ -116,14 +117,13 @@
 
 ## 未決
 
-この plan では決めない。止めるタスクは tasks.md が「止める未決: U<n>」で示す。004 で足す未決は、001 の plan.md の未決（U1〜U9）と番号が重ならないよう U10 から付ける。001 の U5（画像の形式と大きさの上限、画像を配る経路）は 2026-11-09 に決まった（issue #219 のコメント「U5 を Claude が決めた」）: R2 の原本を Worker が確かめて変換せずに返す。JPEG・PNG・WebP・GIF、1 枚 10 MB まで。
+この plan では決めない。止めるタスクは tasks.md が「止める未決: U<n>」で示す。004 で足す未決は、001 の plan.md の未決（U1〜U9）と番号が重ならないよう U10 から付ける。001 の U5（画像の形式と大きさの上限、画像を配る経路）は 2026-11-09 に決まった（issue #219 のコメント「U5 を Claude が決めた」）: R2 の原本を Worker が確かめて変換せずに返す。JPEG・PNG・WebP・GIF、1 枚 10 MB まで。U10（取得を走らせる時機）は 2026-11-09 にオーナーが Cron Triggers の定期実行に決めた（issue #219 のコメント「取得を走らせる時機（004-external-activity の U10）と、epic 宛ての PR の CI の扱いをオーナーが決めた」）。更新が無いのに実行が回り続ける無駄を抑える作りは research.md の R9 が持つ。
 
 | ID | 未決 | 決める人 | 案と推奨（理由は research.md） | 止める範囲 |
 |---|---|---|---|---|
-| U10 | 取得を走らせる時機（spec の未決、issue #107） | オーナー | (a) Cron (b) 管理画面の操作だけ (c) 両方。推奨 (a)（R9） | 取得の入口（T040・T041） |
 | U11 | 登録していないサイトの題の取り方と、取得元が題を返さない URL を指名したときの扱い（spec の未決） | オーナー | (a) 手で入力する (b) OG メタから取る。推奨 (a)（R10） | 登録していないサイトの登録（T053）と、題を取れないときの扱い（T050 の分岐） |
 | U12 | オーナーが登録する日付の持ち方 | オーナー | (a) その日の UTC の 00:00 を `published_at` に入れる (b) 暦の日付の列を足す。推奨 (a)（R10） | URL を指名する・手で入力する登録の保存（T050〜T053）と、共有担当への migration の依頼 |
-| U13 | 外への要求の上限の値（constitution II） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040・T041）。ユースケースは上限を引数で受け取るので止めない |
+| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の分け方（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
 
 依存（未決ではない）: `activity.uid` と取得元の行を足す共有担当の migration（data-model.md の「要る migration の変更」）。D1 を使う検査（workerd・結合・E2E）のうち、uid と取得元の行を使うものは、その migration が epic に入ってから回す。tasks.md は「止める依存: 共有担当の migration」と書く。
 
@@ -134,7 +134,6 @@ spec の「決定が無く、この spec では決めない」のうち、作る
 | spec の未決 | この plan の扱い |
 |---|---|
 | 取得の結果をオーナーに見せる画面を持つか | 作らない。`fetch_result` に書くだけ |
-| 取得を走らせる時機 | U10 |
 | 外部の activity の代表の画像の出し方 | `image_url` に URL を持つだけで、画像を保管しない。出し方は 005 と issue #186「URL カードの画像の出し方を決める」 |
 | life event の題を必ず入れるか | 必須にしない（`activity.title` は NULL 可、spec に要件が無い） |
 | life event の説明の書式と、説明の中に画像を置けるか | 説明は文字列で持ち、改行を保つ文字だけで見せる。書式は 001 の U4（本文の書式）が決まってから合わせる |
@@ -204,7 +203,7 @@ src/
 │           └── sources/   fetch-with-limits.ts・zenn.ts・qiita.ts・devto.ts・medium.ts・github.ts・speakerdeck.ts・connpass.ts・spotify.ts・x.ts・codesandbox.ts・youtube.ts
 └── shared/                            既存を使う。新しく足さない（共有担当の部品を除く）
 
-worker/index.ts                        scheduled を足す（U10 で (a)・(c) のとき）
+worker/index.ts                        scheduled を足す（U10 の決定）
 
 tests/
 ├── unit/          取得元ごとの処理（作り物の応答）・plan-refresh・refresh-sources・各ユースケース・proxy
