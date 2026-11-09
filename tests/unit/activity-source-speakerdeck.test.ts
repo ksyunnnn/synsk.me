@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fetchListing } from '@/features/activity/server/sources/speakerdeck';
 import type { FetchLimits } from '@/features/activity/domain/limits';
-import { createFakeFetcher, xmlResponse } from '../support/activity-fakes';
+import { asListing, createFakeFetcher, xmlResponse } from '../support/activity-fakes';
 
 /**
  * Speaker Deck の RSS を `FetchedItem` に詰め替える（FR-006・FR-007、research.md の R7）。
@@ -31,7 +31,7 @@ describe('Speaker Deck', () => {
   it('RSS の項目を、URL・題・公開日・1 枚目の画像の URL に詰め替え、ID を持たない', async () => {
     const { fetcher } = createFakeFetcher({ [FEED]: xmlResponse(rss) });
 
-    const listing = await fetchListing(fetcher, LIMITS);
+    const listing = asListing(await fetchListing(fetcher, LIMITS));
 
     expect(listing.items).toEqual([
       {
@@ -46,6 +46,6 @@ describe('Speaker Deck', () => {
   it('全件を返すかを確かめていないので、すべて取ったことにしない（FR-018）', async () => {
     const { fetcher } = createFakeFetcher({ [FEED]: xmlResponse(rss) });
 
-    expect((await fetchListing(fetcher, LIMITS)).isComplete).toBe(false);
+    expect(asListing(await fetchListing(fetcher, LIMITS)).isComplete).toBe(false);
   });
 });

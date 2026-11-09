@@ -18,7 +18,7 @@ export type SourceResponse = { status: number; headers: Headers; text: string };
 export type SourceHttp = {
   /** まだ出せる要求の数 */
   readonly remaining: number;
-  /** 2xx の応答の本文を返す。上限を超えたとき・2xx でないときは投げる */
+  /** 2xx の応答の本文を返す。304 は本文の無い応答として返す。上限を超えたとき・ほかの状態では投げる */
   get: (url: string, headers?: Record<string, string>) => Promise<SourceResponse>;
 };
 
@@ -38,6 +38,11 @@ export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceH
           headers: { ...headers, 'User-Agent': USER_AGENT },
           signal,
         });
+        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）
+        if (response.status === 304) {
+          await response.body?.cancel();
+          return { status: 304, headers: response.headers, text: '' };
+        }
         if (!response.ok) {
           await response.body?.cancel();
           throw new Error(`取得元が HTTP ${response.status} を返した: ${url}`);

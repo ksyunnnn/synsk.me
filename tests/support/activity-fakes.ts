@@ -4,7 +4,12 @@ import type {
   RefreshPlan,
   StoredItem,
 } from '@/features/activity/domain/activity-repository';
-import type { SourceName } from '@/features/activity/domain/fetched-item';
+import type {
+  NotModified,
+  SourceListing,
+  SourceName,
+  Validators,
+} from '@/features/activity/domain/fetched-item';
 import type { Fetcher } from '@/features/activity/server/sources/fetch-with-limits';
 
 /**
@@ -15,10 +20,11 @@ import type { Fetcher } from '@/features/activity/server/sources/fetch-with-limi
 /** 取得の書き込みを覚える、メモリの上の Repository */
 export const createFakeActivityRepository = (
   initial: Record<SourceName, StoredItem[]> = {},
-  options: { failApplyFor?: SourceName[] } = {},
+  options: { failApplyFor?: SourceName[]; validators?: Record<SourceName, Validators> } = {},
 ) => {
   const applied: { source: SourceName; plan: RefreshPlan; result: FetchResultWrite }[] = [];
   const failures: { source: SourceName; fetchedAt: string; reason: string }[] = [];
+  const notModified: { source: SourceName; fetchedAt: string }[] = [];
   const repository: ActivityRepository = {
     listStoredForRefresh: async (source) => initial[source] ?? [],
     applyRefresh: async (source, plan, result) => {
@@ -30,8 +36,12 @@ export const createFakeActivityRepository = (
     recordFetchFailure: async (source, fetchedAt, reason) => {
       failures.push({ source, fetchedAt, reason });
     },
+    readValidators: async (source) => options.validators?.[source] ?? null,
+    recordNotModified: async (source, fetchedAt) => {
+      notModified.push({ source, fetchedAt });
+    },
   };
-  return { repository, applied, failures };
+  return { repository, applied, failures, notModified };
 };
 
 /** URL ごとに決めた応答を返す fetcher。決めていない URL には 404 を返し、要求した URL を覚える */
@@ -58,3 +68,9 @@ export const jsonResponse =
 /** XML の本文を持つ応答 */
 export const xmlResponse = (body: string) => () =>
   new Response(body, { headers: { 'Content-Type': 'application/rss+xml' } });
+
+/** 条件を付けずに取った一覧。304 は条件を付けた要求にだけ返るので、ここに来れば検査の誤り */
+export const asListing = (result: SourceListing | NotModified): SourceListing => {
+  if ('notModified' in result) throw new Error('条件を付けていない要求に 304 が返った');
+  return result;
+};

@@ -31,9 +31,10 @@ const COLUMNS = {
 } as const satisfies Record<keyof ItemChanges, string>;
 
 const UPSERT_FETCH_RESULT =
-  'INSERT INTO fetch_result (source, fetched_at, is_ok, reason, last_succeeded_at) VALUES (?, ?, ?, ?, ?) ' +
+  'INSERT INTO fetch_result (source, fetched_at, is_ok, reason, last_succeeded_at, etag, last_modified) VALUES (?, ?, ?, ?, ?, ?, ?) ' +
   'ON CONFLICT (source) DO UPDATE SET fetched_at = excluded.fetched_at, is_ok = excluded.is_ok, ' +
-  'reason = excluded.reason, last_succeeded_at = coalesce(excluded.last_succeeded_at, fetch_result.last_succeeded_at)';
+  'reason = excluded.reason, last_succeeded_at = coalesce(excluded.last_succeeded_at, fetch_result.last_succeeded_at), ' +
+  'etag = excluded.etag, last_modified = excluded.last_modified';
 
 export const createD1ActivityRepository = (db: D1Database): ActivityRepository => ({
   listStoredForRefresh: async (source) => {
@@ -93,11 +94,41 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
       ...deletes,
       db
         .prepare(UPSERT_FETCH_RESULT)
-        .bind(source, result.fetchedAt, 1, result.reason, result.fetchedAt),
+        .bind(
+          source,
+          result.fetchedAt,
+          1,
+          result.reason,
+          result.fetchedAt,
+          result.validators?.etag ?? null,
+          result.validators?.lastModified ?? null,
+        ),
     ]);
   },
 
   recordFetchFailure: async (source, fetchedAt, reason) => {
-    await db.prepare(UPSERT_FETCH_RESULT).bind(source, fetchedAt, 0, reason, null).run();
+    await db
+      .prepare(UPSERT_FETCH_RESULT)
+      .bind(source, fetchedAt, 0, reason, null, null, null)
+      .run();
+  },
+
+  readValidators: async (source) => {
+    const row = await db
+      .prepare('SELECT etag, last_modified FROM fetch_result WHERE source = ?')
+      .bind(source)
+      .first<{ etag: string | null; last_modified: string | null }>();
+    return row && (row.etag !== null || row.last_modified !== null)
+      ? { etag: row.etag, lastModified: row.last_modified }
+      : null;
+  },
+
+  recordNotModified: async (source, fetchedAt) => {
+    await db
+      .prepare(
+        'UPDATE fetch_result SET fetched_at = ?, is_ok = 1, reason = NULL, last_succeeded_at = ? WHERE source = ?',
+      )
+      .bind(fetchedAt, fetchedAt, source)
+      .run();
   },
 });

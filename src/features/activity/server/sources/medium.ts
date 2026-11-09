@@ -1,6 +1,12 @@
 import 'server-only';
 
-import type { FetchedItem, SourceListing } from '@/features/activity/domain/fetched-item';
+import type {
+  FetchedItem,
+  NotModified,
+  SourceListing,
+  Validators,
+} from '@/features/activity/domain/fetched-item';
+import { conditionalHeaders, validatorsOf } from '@/features/activity/server/sources/conditional';
 import type { FetchLimits } from '@/features/activity/domain/limits';
 import {
   createSourceHttp,
@@ -21,8 +27,11 @@ const NAME = 'Medium';
 export const fetchListing = async (
   fetcher: Fetcher,
   limits: FetchLimits,
-): Promise<SourceListing> => {
-  const { text } = await createSourceHttp(fetcher, limits).get(FEED);
+  previous?: Validators | null,
+): Promise<SourceListing | NotModified> => {
+  const response = await createSourceHttp(fetcher, limits).get(FEED, conditionalHeaders(previous));
+  if (response.status === 304) return { notModified: true };
+  const { text } = response;
   const items = readRssItems(text).map((item): FetchedItem => {
     const { title, link, guid, pubDate } = item;
     if (!isText(title) || !isText(link) || !isText(guid)) {
@@ -37,7 +46,8 @@ export const fetchListing = async (
       ...(imageUrl !== null && { imageUrl }),
     };
   });
-  return { items, isComplete: false };
+  const validators = validatorsOf(response.headers);
+  return { items, isComplete: false, ...(validators && { validators }) };
 };
 
 const withoutQuery = (link: string): string => {

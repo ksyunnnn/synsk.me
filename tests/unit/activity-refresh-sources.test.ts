@@ -54,7 +54,7 @@ describe('refreshSources', () => {
       {
         source: 'fake_feed',
         plan: { inserts: [item], updates: [], deletes: [], skippedWithoutDate: 0 },
-        result: { fetchedAt: NOW, reason: null },
+        result: { fetchedAt: NOW, reason: null, validators: null },
       },
     ]);
   });
