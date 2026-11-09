@@ -30,7 +30,6 @@
 | `registerExternalActivity` | 取得元・URL・日付（手で入力する取得元は題も） | 一覧へ 303 | オーナーでない／取得元が URL を指名する・手で入力する取得元でない（一覧を取る取得元の activity は登録も削除もしない。FR-022）／日付が無い（FR-011）／URL の形・ホストが取得元と違う／題を取れない（U11）／同じ URL が既にある |
 | `editExternalActivity` | uid・日付（手で入力する取得元は URL と題も） | 同じ画面へ 303 | オーナーでない／無い／日付が無い |
 | `deleteExternalActivity` | uid | 一覧へ 303 | オーナーでない／無い／一覧を取る取得元の activity（FR-022） |
-| `refreshNow` | 無し | 同じ画面で結果を知らせる | オーナーでない。**止める未決: U10**（案 (b)・(c) のときだけ作る） |
 | `registerLifeEventImage` | uid・画像のファイル | 同じ画面へ 303 | オーナーでない／無い／形式が JPEG・PNG・WebP・GIF でない／10 MB を超える（U5 の決定）。登録すると前の画像を消す |
 | `removeLifeEventImage` | uid | 同じ画面へ 303 | オーナーでない／無い |
 

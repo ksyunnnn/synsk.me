@@ -12,7 +12,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - R6 取得元で消えた activity
 - R7 取得元ごとに取れるもの
 - R8 外への要求の上限
-- R9 取得を走らせる時機（未決）
+- R9 取得を走らせる時機
 - R10 URL を指名する・手で入力する登録
 - R11 life event の識別子と管理画面の URL
 - R12 life event の画像
@@ -114,19 +114,39 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | 1 本の応答の大きさ | 1 MB で打ち切り、失敗にする | Qiita の 1 頁は 214 KB、Medium の RSS は 87 KB（検証記録） |
 | 1 回の取得で 1 つの取得元から消す件数 | 5 件 | FR-019。超えた分は残し、`fetch_result.reason` に書く |
 | connpass の要求の間隔 | 5 秒に 1 回 | 検証記録（申請の条件） |
+| Cron の実行の間隔 | 1 日 1 回 | 更新が無いのに実行が回り続ける無駄を抑える（R9）。一覧に載るのが最大 1 日遅れる |
+| 1 回の実行で出す要求の総数と、取得元への配り方 | 未定（U13） | Workers Free の 1 回の呼び出しの subrequest の上限 50 本（R9）は、外への要求と D1 の呼び出しを合わせて数える。1 つの取得元に 10 本では 7 つの取得元で外への要求だけで 70 本になり、超える |
 
 - 値はユースケースに引数で渡し（`limits`）、単体の検査では作り物の値を渡す。本番の値は `src/features/activity/domain/limits.ts` の 1 か所に置く
-- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。取得の頻度は U10 が決まってから、この上限に照らして書く
+- D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。1 日 1 回の実行なら、1 日に書く行は「新しい項目＋直った項目＋取得元の数（7）」で、上限に届かない
 
-## R9 取得を走らせる時機（未決）
+## R9 取得を走らせる時機
 
-- spec の Assumptions「決定が無く、この spec では決めない」と、issue #107「定期実行の入口を持つかを決める」が未決にしている。U10
-- 案
-  - (a) Cron Triggers。`worker/index.ts` に `scheduled` を足し、`wrangler.jsonc` に `triggers` を書く
-  - (b) 管理画面の「取り直す」の操作だけ
-  - (c) (a) と (b) の両方
-- 推奨: (a)。理由: 検証記録は、connpass が「訪問者の操作でリアルタイムに API を呼ぶ構成は承認されない場合がある」とする。オーナーの手番が増えない
-- 止める範囲: 取得の入口（T040・T041）。取得のユースケース（R4）は入口に依らず作り、単体と workerd で確かめる
+- 決めたこと: Cron Triggers で定期的に取得する。`worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。管理画面の「取り直す」の操作は持たない（2026-11-09、オーナー。[issue #219 のコメント「取得を走らせる時機（004-external-activity の U10）と、epic 宛ての PR の CI の扱いをオーナーが決めた」](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6732950051)）
+- 理由: オーナーが操作する回数が増えない。費用は無料枠の中に収める前提
+- 退けた案: 管理画面の操作だけ、Cron と管理画面の操作の両方
+- 更新が無いのに実行が回り続ける無駄を、次の 3 つで抑える
+  1. 実行の間隔を長めにとる。値は R8 の表（U13）
+  2. 条件付きの要求: 取得元が返した `ETag`（無ければ `Last-Modified`）を取得元ごとに持ち、次の実行で `If-None-Match`（`If-Modified-Since`）を付けて送る。304 が返れば中身を読まず、その取得元の activity を書かず、`fetch_result` を成功として書く。持つ列は `fetch_result` に無いので、共有担当に migration を頼む（data-model.md の「要る migration の変更」）
+     - 新しい値は、その取得元の activity を書く `batch()` の中でだけ書く。値を持つのは、応答の中身をすべて書き終えた取得元だけにする
+     - 次のときは値を書かず、持っていた値を NULL にする: 取得が失敗した（`batch()` の失敗の後に `fetch_result` を書き直すときを含む）、上限で消さずに残した activity がある（`keptOverLimit` が 0 でない、FR-019）、公開日の欠けた項目を取り込まなかった。値を残すと、次の実行が 304 になり、残した分を取得元が変わるまで扱わない
+  3. 1 回の実行で外へ出す要求の数に上限を設け、超えたら止める（R8、U13、原則 2）
+- 条件付きの要求は、1 本の要求で取得を終えた取得元にだけ使う: RSS の Zenn・Medium・Speaker Deck と、1 頁目の件数が `per_page` に満たない Qiita・GitHub。dev.to は空の頁まで辿る（R7）ため使わない。2 頁目以降を取った取得元では、1 頁目が変わらなくても後の頁が変わりうるため、持っていた値を消し、次も中身を取る。下の実測は `per_page=1` で測ったもので、本番の要求の URL とは違う
+- 実測（2026-11-09、`curl` で `-A 'synsk.me (+https://synsk.me)'` を付け、1 回目の応答の値を 2 回目の要求に付けた）
+
+| 取得元 | 1 回目の応答が持つ値 | 2 回目の応答 |
+|---|---|---|
+| Zenn（RSS） | `Last-Modified` | 304 |
+| Qiita（`per_page=1`） | `ETag`（弱い） | 304 |
+| dev.to（`per_page=1`） | `ETag`（弱い） | 304 |
+| Medium（RSS） | どちらも無い | 200（毎回中身を取る） |
+| GitHub（`per_page=1`） | `ETag`（弱い） | 304 |
+| Speaker Deck（RSS） | `ETag`（弱い） | 304 |
+| connpass | 未測（API キーが無い） | 未測 |
+
+- GitHub は、`Authorization` ヘッダを付けた条件付きの要求が 304 を返したとき、primary rate limit に数えない。`GITHUB_TOKEN` が無い環境（R15）では 304 も 60 回/時/IP に数える（[Best practices for using the REST API](https://docs.github.com/en/rest/using-the-rest-api/best-practices-for-using-the-rest-api)）
+- Workers Free の上限（[Workers の Limits](https://developers.cloudflare.com/workers/platform/limits/)、2026-11-09 に読んだ）: Cron Triggers はアカウントで 5 個、1 回の Cron の実行の CPU 時間は 10 ms、1 回の呼び出しの subrequest は 50 本。subrequest は「A subrequest is any request a Worker makes using the Fetch API or to Cloudflare services like R2, KV, or D1」（同じ頁）で、D1 の呼び出しも数える。外への要求を待つ時間は CPU 時間に数えない（同じ頁）。CPU 時間は応答を読んで詰め替える処理に掛かるので、実装の後に測る（原則 6）
+- CPU 時間が 10 ms を超えると、取得元ごとの失敗ではなく実行の全体が止まり、残りの取得元の `fetch_result` が書かれない（FR-015・FR-016 を満たさない）。1 回の実行で扱う取得元を分けるか（例: 実行ごとに `fetch_result.fetched_at` の最も古い取得元から順に回す）は U13 に含めて決める
 
 ## R10 URL を指名する・手で入力する登録
 
@@ -163,7 +183,6 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - 書き込みの Server Action は、何より先に `src/shared/server/author.ts` でオーナーを確かめる（ADR-0036、001 の research.md の R4）。オーナーでない呼び出しは何も書かない（FR-031、constitution I）
 - 取得のユースケースは `activity` の外部の行と `fetch_result` だけを書く。life event の行（`source = 'life_event'`）を書く文を持たず、SQL の WHERE でも `source <> 'life_event'` を条件にする（FR-032）
-- U10 で (b) を選んだときの「取り直す」の操作も、Server Action の先頭でオーナーを確かめる
 
 ## R14 キャッシュと 404・403
 
