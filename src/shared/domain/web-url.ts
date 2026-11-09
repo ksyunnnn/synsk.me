@@ -20,7 +20,8 @@ export const isWebUrl = (value: string): boolean => {
  * フラグメントだけ（URL の構文は WHATWG URL Standard の `URL` が読む）。
  * - スキームとホスト名を小文字にする。国際化ドメイン名は Punycode にする
  * - 既定のポート（http の 80、https の 443）を消す。空のパスは `/` にする
- * - パスの `.` と `..` を解く。パーセントエンコードの 16 進を大文字にする
+ * - パスの `.` と `..` を解く。パーセントエンコードの 16 進を大文字にし、非予約文字（英数字と
+ *   `-`・`.`・`_`・`~`）のパーセントエンコードは文字に戻す（6.2.2.2）
  * - フラグメント（`#` から後）を消す。フラグメントはサーバに送られず、同じ文書の中の位置を指す
  *
  * 揃えないもの: パスとクエリの大文字と小文字、末尾のスラッシュ、クエリの順と追跡用の値、
@@ -36,9 +37,15 @@ export const normalizeWebUrl = (value: string): string | null => {
   }
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
   url.hash = '';
-  const upperHex = (text: string) => text.replace(/%[0-9a-f]{2}/gi, (code) => code.toUpperCase());
+  const normalizeEncoding = (text: string) =>
+    text.replace(/%[0-9a-f]{2}/gi, (code) => {
+      const char = String.fromCharCode(parseInt(code.slice(1), 16));
+      return /^[A-Za-z0-9\-._~]$/.test(char) ? char : code.toUpperCase();
+    });
   // 変わるときだけ入れ直す。空のクエリ（末尾の `?`）を入れ直すと `?` が消える
-  if (upperHex(url.pathname) !== url.pathname) url.pathname = upperHex(url.pathname);
-  if (upperHex(url.search) !== url.search) url.search = upperHex(url.search);
+  const pathname = normalizeEncoding(url.pathname);
+  if (pathname !== url.pathname) url.pathname = pathname;
+  const search = normalizeEncoding(url.search);
+  if (search !== url.search) url.search = search;
   return url.href;
 };

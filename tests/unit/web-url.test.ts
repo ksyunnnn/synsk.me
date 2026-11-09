@@ -16,6 +16,7 @@ describe('normalizeWebUrl', () => {
     ['https://example.com/a#section', 'https://example.com/a'],
     ['https://example.com/a%2fb?q=%e3%81%82', 'https://example.com/a%2Fb?q=%E3%81%82'],
     ['  https://example.com/a  ', 'https://example.com/a'],
+    ['https://example.com/%7euser/%41?q=%2D', 'https://example.com/~user/A?q=-'],
     ['https://例え.jp/', 'https://xn--r8jz45g.jp/'],
   ])('%s を %s に揃える', (value, expected) => {
     expect(normalizeWebUrl(value)).toBe(expected);
