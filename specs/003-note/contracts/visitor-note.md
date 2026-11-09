@@ -23,13 +23,13 @@ Repository の実装は `note.status = 'published' AND note.deleted_at IS NULL` 
 | `slug` | `note.slug` |
 | `title` | 公開した版の `note_revision.title` |
 | `description` | 公開した版の `note_revision.description`（空あり） |
-| `body` | 公開した版の `note_revision.body`。Markdown を `react-markdown` で描き、生の HTML を通さない（research.md の R11） |
+| `body` | 公開した版の `note_revision.body`。共有担当の Markdown の部品で描き、生の HTML を通さない（research.md の R11） |
 | `publishedAt` | `note.published_at`（初めて公開した日時、FR-013） |
 | `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`generated` の画像は plan.md の U8、`media` の画像は `/notes/{slug}/media/{key}`。`site` はサイト共通の画像 |
-| `media` | 公開した版の本文が指す画像の、本文の印の id と配る経路の key の対応。id は画面の部品の中だけで使い、応答に出さない（research.md の R11） |
+| `media` | 公開した版の本文が指す画像のうち、その note の `media` の行にある `storage_key` の並び。画像の `src` はこの並びにある値だけから作る（research.md の R11・R12） |
 | `linkPreviews` | 公開した版の本文の URL が指す `link_preview` の `url`・`title`・`image_url`。カードにするのは行に URL だけを書いた行（research.md の R11）。出し方は U9 が解けてから |
 
-DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開した後に保存した版・`deleted_at`・`syndication.url`（訪問者に見せるかは plan.md の U11）・`media.storage_key`（`{key}` に使うかは research.md の R12）。
+DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開した後に保存した版・`deleted_at`・`syndication.url`（訪問者に見せるかは plan.md の U11）。
 
 ## OGP
 

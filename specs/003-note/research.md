@@ -114,28 +114,33 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R11 本文の書式
 
-- 決定（2026-11-09、オーナー。plan.md の U4）: 本文は Markdown で書き、生の HTML を通さない。画像は `media` の id で指し、キャプションを添える。URL カードは、行に URL だけを書いた行から作る
+- 決定（2026-11-09、オーナー。plan.md の U4）: 本文は Markdown で書き、生の HTML を通さない。画像は `media` を指す識別子で指し、キャプションを添える。URL カードは、行に URL だけを書いた行から作る
+- 決定（2026-11-09、PM）: 画像を指す識別子は `media.storage_key`（共有担当の `src/shared/server/media-storage.ts` が作る UUID の `storageKey`、PR #225）で、主キーではない。ADR-0051 が主キーを管理画面のフォームに出さないとするため。U4 の決定の記録の「media の id」は、この識別子を指す
+- 決定（2026-11-09、PM）: Markdown を読む部品と描く部品は共有担当が `src/shared/` に作り、003 は使う。使い手は 001 の職歴・実績の本文（001 の T077）と 003 の note の本文の 2 つ（constitution IX）。package（`react-markdown`・`mdast-util-from-markdown`）も共有担当が足す。ファイル名は共有担当の PR で確かめる
+- 003 が共有担当の部品に求めること（下の決めたことを満たすため）:
+  - 本文を構文木にして、画像の印の `storageKey` の並び、行に URL だけを書いた行の URL の並び、最初の段落の文字列を返す関数。正規表現で読むと、コードの中に書いた印まで拾い、表示しない画像を訪問者に出す
+  - 描く部品が、画像の `src` を作る関数（note は `/notes/{slug}/media/{storageKey}`）と、行に URL だけを書いた行を描く部品（note は URL カード、U9 が解けてから）を受け取れること
+  - `urlTransform` が `img` の `media:` だけをそのまま通し、ほかを `defaultUrlTransform` に任せること。既定のままだと `media:<storageKey>` が空の文字列になる（react-markdown 10.1.0 の `lib/index.js` の `safeProtocol` と `defaultUrlTransform`、2026-11-09 に確かめた）
 - 決めたこと:
   - 本文は `note_revision.body` に文字列で持つ（100,000 文字まで、FR-005）。入力は `<textarea>`
-  - 表示は `react-markdown`（10.1.0、peer は `react` >=18）を使う。Markdown を React の要素に変え、`dangerouslySetInnerHTML` を使わない。生の HTML は既定でエスケープされ、HTML として働かない。`rehype-raw` を足さず、`urlTransform` には、`img` の `src` が `media:` で始まるときだけ値をそのまま返し、ほかは `defaultUrlTransform`（`http`・`https`・`irc`・`ircs`・`mailto`・`xmpp` と相対の URL だけを通す）に任せる関数を渡す。既定のままだと `media:<id>` が空の文字列になり、画像の部品が id を読めない（react-markdown 10.1.0 の `lib/index.js` の `safeProtocol` と `defaultUrlTransform`、2026-11-09 に確かめた）。`media:` の値は画像の部品が自分で解き、`src` には R12 の配る経路だけを出す（[react-markdown の README](https://github.com/remarkjs/react-markdown)）
-  - 本文の中身を読む処理（本文が指す画像の id、カードにする URL、説明文が空のときの冒頭）は、`mdast-util-from-markdown`（^2。`react-markdown` 10.1.0 が使う `remark-parse` 11 と同じ構文木を作る）で構文木にしてから読む。正規表現で本文を読むと、コードの中に書いた印まで拾い、表示しない画像を訪問者に出す
-  - 画像の印: `![代替テキスト](media:<media の id> "キャプション")`。訪問者には `<figure>` の中に `<img alt>` と `<figcaption>` で出す。画像の URL は R12 の配る経路から作る。本文の部品は Server Component にし、`media:<id>` を含む本文の元の文字列を RSC の応答に載せない <!-- check-ignore: 本文の画像の記法の例 -->
+  - 生の HTML を通さない: `dangerouslySetInnerHTML` を使わず、`rehype-raw` を足さない
+  - 画像の印: `![代替テキスト](media:<storageKey> "キャプション")`。訪問者には `<figure>` の中に `<img alt>` と `<figcaption>` で出す。画像の URL は R12 の配る経路から作る <!-- check-ignore: 本文の画像の記法の例 -->
   - カードにする行: 段落の中身が `http` か `https` の URL の文字列 1 つだけの行。行の中に文と並べて書いた URL はカードにしない。GFM を使わないため、`<https://…>` の autolink かリンクの記法で書いた URL だけがリンクになり、そのまま書いた URL は文字列で出る（CommonMark の Autolinks）。カードにする行も、U9 が解けるまでは文字列で出る
   - 説明文が空のときの説明: 本文の最初の段落の文字列（改行は空白にする）
-  - 書式は CommonMark だけを使い、GFM の表・打ち消し線などのための package を足さない
-- 理由: 原則 1（守る over 手軽さ）。HTML の文字列を作って差し込む形（`marked` など）は、出力をもう一度無害にする処理が要る。原則 9: package.json に Markdown の package は無く、表示と構文木の 2 つの用途に、同じ構文木の系列の 2 つだけを足す
-- 退けた案: `marked`・`markdown-it`（HTML の文字列を返し、`dangerouslySetInnerHTML` と無害化の package が要る）。正規表現で画像の印と URL を拾う（上の理由）
-- plan で決めたこと（オーナーの決定の外）: 画像の印の書き方（URL の欄を `media:<id>`、キャプションを題の欄にする）、カードにする行の見分け方、説明の抜き出し方。覆れば `src/features/note/domain/note-body.ts` だけを直す
+  - 書式は CommonMark だけを使う
+- 理由: 原則 1（守る over 手軽さ）。HTML の文字列を作って差し込む形（`marked` など）は、出力をもう一度無害にする処理が要る
+- 退けた案: `marked`・`markdown-it`（HTML の文字列を返し、`dangerouslySetInnerHTML` と無害化の package が要る）。正規表現で画像の印と URL を拾う（上の理由）。note の中に Markdown の部品を作る（001 の T077 と同じものを 2 つ作る）
+- plan で決めたこと（オーナーの決定の外）: 画像の印の書き方（URL の欄を `media:<storageKey>`、キャプションを題の欄にする）、カードにする行の見分け方、説明の抜き出し方。001 と同じ書き方にするため、共有担当の部品の決まりに合わせる
 
 ## R12 画像と代表画像
 
 - 決定（2026-11-09。オーナーから任されて Claude が決めた。plan.md の U5、[issue #219 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6732716576)）: R2 に原本を置き、Worker が持ち主ごとに見せてよいかを確かめてから、変換せずに返す。公開していない画像の応答には `Cache-Control: no-store` を付ける。形式は JPEG・PNG・WebP・GIF で、SVG は受けない。1 枚 10 MB まで
 - 決めたこと:
   - 画像の記録は `media` に持ち、持ち主の列は `note_id`。R2 への読み書き・形式と大きさの検査は共有担当の `src/shared/server/media-storage.ts` が持つ。003 は、note の画像を足す操作と、note の画像を訪問者に出してよいかの確かめを持つ（FR-023・FR-026）
-  - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は主キーでない、推測できない値で、共有担当の `media-storage.ts` の決まりに従う（ADR-0048 の「主キーは URL に出さない」）。`media` の列は主キーと `storage_key` だけのため、`{key}` は `storage_key` か、共有担当の migration で足す列になる。どちらかは共有担当の PR で確かめ、`storage_key` なら contracts/visitor-note.md の「DTO が持たないもの」から外す。見せてよいかは `route.ts` が確かめ、見せなければ 404 と `Cache-Control: no-store` を返す（R9）
+  - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は `media.storage_key`（UUID、PR #225）で、本文の画像の印と同じ値（R11）。主キーは URL に出さない（ADR-0048）。見せてよいかは `route.ts` が確かめ、結果を共有担当の `respondWithMedia` に渡して応答を作る（R9）
   - 量の上限（constitution II）: 1 枚 10 MB、1 回の操作で 1 枚
   - 代表画像の出どころは `note.card_image`（`generated`・`media`・`site`）。既定は `generated`（FR-024）。`media` を選べるのは、その note の画像だけ（複合の外部キー、FR-025）
-  - 訪問者に出してよい画像は、note が公開で削除していないときの、公開した版の本文が指す画像と、代表画像だけ（FR-026）。この確かめは画像を配る経路の中で、Repository が取り出すときに行う。公開した版の本文が指す画像の id は、R11 の構文木から読む
+  - 訪問者に出してよい画像は、note が公開で削除していないときの、公開した版の本文が指す画像と、代表画像だけ（FR-026）。この確かめは画像を配る経路の中で、Repository が取り出すときに行う。公開した版の本文が指す画像の `storageKey` は、共有担当の Markdown の部品で読む（R11）。その note の `media` の行に無い `storageKey` は出さない
 - 未決:
   - U14: 本文から消した画像のデータを残すか、画像の置き場と保管するデータのずれの扱い（spec の「決定が無く」）。決まるまで、本文から消した画像も `media` と R2 に残す。訪問者には公開した版の本文が指す画像だけを出すため、残しても出ない
   - U8: 題を入れて自動で作る画像の作り方と使い回し方。`docs/CRAWLING.md` の「取得の負荷」は、カード画像を一度作ったら使い回し、取得のたびには作らないとする。作り方と使い回し方を決めるまで、自動で作る画像を出さない
@@ -190,6 +195,6 @@ issue #219 の報告「spec どうしの重複・干渉・矛盾・依存を調�
 | ER 図の note_revision の説明「保存と公開のたびに 1 行」 | FR-006・FR-011 と 0005 は保存のたびに 1 行。ER 図の修正を共有担当に渡した |
 | 0005 の注釈が旧名 `specs/005-note-write-and-read` を指す | 注釈の修正の扱いを共有担当に渡した。003 の要件番号との対応は data-model.md が持つ |
 | 「uid」の意味の食い違い（36 文字と 32 文字） | 003 の uid は管理画面の URL の 32 文字だけ。識別子（slug）に uid を使わない（R8） |
-| 本文の書式（U4）を 001 の職歴・実績の本文（001 の T077）と 003 が使う | 本文の読み方（`note-body.ts`）と表示（`note-body.tsx`）の使い手が 2 つになる（constitution IX）。置き場を `src/shared/` にして共有担当が作るかは PM に渡した。決まるまで tasks.md の T001・T006・T007・T021・T040 は `src/features/note/` に置く |
+| 本文の書式（U4）を 001 の職歴・実績の本文（001 の T077）と 003 が使う | Markdown を読む部品と描く部品は共有担当が `src/shared/` に作る（2026-11-09、PM。R11） |
 | 004 の research.md が、題の取り方の案 (b) で 003 の URL カードの取得を使うとする | 004 が (b) を選べば、参照先への取得（U9、T043）の使い手が 2 つになり、共有担当の部品にする。004 の推奨は (a) で、003 は U9 が解けるまで取得を作らない |
 | 依存 003 → 001、004 → 003（画像）、005 → 003 | 001・002 の部品を使う（R2）。005 が読む列の意味を変えない（R3）。004 とは画像の部品を共有担当経由で共有する |

@@ -46,7 +46,8 @@ description: "note の実装タスク"
 | `note.uid`・`note_revision.uid` の migration | 共有担当 | T003 以降の D1 を使うタスク |
 | `src/shared/domain/slug.ts`（`isSlug`） | 共有担当（PR #222） | T004 |
 | `src/shared/components/draft-retention.tsx`（`DraftRetainingForm`） | 共有担当（001 の T072、PR #222） | T033 |
-| `src/shared/server/media-storage.ts`（R2 の読み書き、形式と大きさの検査） | 共有担当 | T038・T039・T050 |
+| `src/shared/server/media-storage.ts`（R2 の読み書き、形式と大きさの検査、`respondWithMedia`） | 共有担当（PR #225） | T038・T039・T050 |
+| `src/shared/` の Markdown を読む部品と描く部品（package を含む。ファイル名は共有担当の PR で確かめる） | 共有担当（001 の T077 と共有） | T006・T021・T039・T040 |
 | `src/shared/server/author.ts`・`env.ts`・`form-data.ts`、`src/shared/domain/action-result.ts`・`uid.ts`・`web-url.ts`・`empty-to-null.ts`、`src/shared/components/field.tsx`・`delete-form.tsx` | 001（済み） | すべて |
 | `src/proxy.ts` | 001・002（済み） | T012。既にある分岐を変えずに足す |
 
@@ -54,9 +55,9 @@ description: "note の実装タスク"
 
 ## Phase 1: Setup
 
-**Purpose**: 003 が足す package と、検査の土台
+**Purpose**: 検査の土台
 
-- [ ] T001 `react-markdown@10.1.0` と `mdast-util-from-markdown@^2` を package.json の dependencies に足し、package-lock.json を更新する（research.md の R11）
+- [X] T001 欠番。Markdown の package は共有担当の Markdown の部品が足し、003 は package を足さない（research.md の R11）
 - [ ] T002 [P] workerd と結合の検査が、作り物の note・版・転載先・参照先の情報（`note`・`note_revision`・`syndication`・`link_preview`）と持ち主が note の `media` の行を SQL で入れる関数と、消す関数を tests/support/note-rows.ts に作る
 - [ ] T003 [P] tests/workers/migrations.test.ts に、0005 のトリガ（`note_revision_immutable`・`note_slug_fixed_after_publication`・`note_published_at_fixed`・`note_published_revision_valid`）が共有担当の migration の後も残ることを足す
 
@@ -68,8 +69,8 @@ description: "note の実装タスク"
 
 - [ ] T004 [P] note の型、`NoteStatus`・`NoteCardImage` の `as const` の配列、入力の読み方（題 200 文字・本文 100,000 文字、説明文の空を null、識別子は `src/shared/domain/slug.ts` の `isSlug`、題は前後の空白を除く。001 の `src/features/project/domain/project.ts` と同じ）、一度でも公開した note の識別子の書き換えを拒む判定、題が空の版を公開しない判定を src/features/note/domain/note.ts に作る（FR-002・FR-003・FR-005・FR-010・FR-011、data-model.md の「domain の型」）
 - [ ] T005 [P] T004 を tests/unit/note-domain.test.ts で確かめる（201 文字の題・100,001 文字の本文・101 文字や大文字の識別子を拒む、公開したことのある note の識別子の書き換えを拒む、題が空か空白だけの公開を拒む）
-- [ ] T006 [P] 本文の読み方（`mdast-util-from-markdown` で構文木にし、画像の印 `media:<id>` の id の並び、行に URL だけを書いた行の URL の並び、最初の段落の文字列を返す）を src/features/note/domain/note-body.ts に作る（research.md の R11）
-- [ ] T007 [P] T006 を tests/unit/note-body.test.ts で確かめる（コードの中の画像の印と URL を拾わない、文の中の URL を拾わない、`http`・`https` でない URL を拾わない、最初の段落の改行が空白になる）
+- [ ] T006 [P] 共有担当の Markdown を読む部品で、公開した版の本文から画像の印の `storageKey` の並び・行に URL だけを書いた行の URL の並び・最初の段落の文字列を読み、note の DTO に詰める処理を src/features/note/server/d1-note-repository.ts の訪問者向けの取り出しに足す（research.md の R11、contracts/visitor-note.md の DTO）
+- [ ] T007 [P] T006 を tests/workers/note-repository.test.ts で確かめる（その note の `media` の行に無い `storageKey` を DTO に入れない、説明文が空なら最初の段落が説明になる）。本文の読み方そのもの（コードの中の印を拾わないなど）は共有担当の部品の検査が持つ（constitution の Test Layering）
 - [ ] T008 note の Repository のインタフェース（作成・編集用に読む・一覧・版の一覧と 1 つの版・開いた版と比べた保存・公開・下書きに戻す・削除・元に戻す・代表画像の出どころ・転載先の追加と削除・参照先の情報・完全に消す・訪問者向けに読む・uid と版の uid と識別子の有無）を src/features/note/domain/note-repository.ts に作る。手本は src/features/project/domain/project-repository.ts
 - [ ] T009 D1 の実装の骨組み（行の型と domain の型への詰め替え、`findIdByUid`、版の uid から版の id を引く、識別子の有無）を src/features/note/server/d1-note-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
 - [ ] T010 組み立て用の関数の骨組み（`createNoteDeps`・`hasNoteSlug`・`hasNoteUid`・`findMissingNoteRevision`）を src/features/note/server/queries.ts に作る。`hasNoteUid` は削除した note でも真を返す（contracts/dash.md の共通）
@@ -99,7 +100,7 @@ description: "note の実装タスク"
 - [ ] T018 [US1] ユースケース deps.ts・create-note.ts・save-note.ts・publish-note.ts・get-note-for-edit.ts・list-notes.ts・get-visitor-note.ts を src/features/note/application/ に作る。読む→計算→書くの順（docs/SOFTWARE_DESIGN.md）
 - [ ] T019 [US1] Server Action `createNote`・`saveNote`・`publishNote` を src/features/note/server/actions.ts に作る。先頭でオーナーを確かめ、uid と開いた版の uid を隠しフィールドから読む（contracts/dash.md）。組み立て用の関数 `getVisitorNote`・`getNoteForEdit`・`listNotes` を src/features/note/server/queries.ts に足す
 - [ ] T020 [P] [US1] 入力（識別子・題・説明文・本文・開いた版の uid の隠しフィールド。一度でも公開したら識別子を読み取りだけで出す。保存を止めたときの知らせ）を src/features/note/components/note-form.tsx に、公開の操作を src/features/note/components/note-status-form.tsx に作る
-- [ ] T021 [P] [US1] 本文の表示（`react-markdown`、`rehype-raw` を使わず、`urlTransform` は `img` の `media:` だけを通して残りを `defaultUrlTransform` に任せる。画像の印は T040 で足すまで出さない）を src/features/note/components/note-body.tsx に、訪問者向けの note の表示を src/features/note/components/visitor-note.tsx に作る（research.md の R11）
+- [ ] T021 [P] [US1] 訪問者向けの note の表示を src/features/note/components/visitor-note.tsx に作り、本文は共有担当の Markdown を描く部品で出す。画像の印は T040 で足すまで出さない（research.md の R11）
 - [ ] T022 [US1] ページを作る: src/app/notes/[slug]/page.tsx（`generateMetadata` は DTO の題と、説明文か本文の最初の段落だけを使う）・src/app/notes/[slug]/missing/page.tsx（`notFound()` だけ）・src/app/dash/notes/page.tsx・new/page.tsx・[id]/page.tsx・[id]/missing/page.tsx。管理画面のページは描画の前にオーナーを確かめる
 
 **Checkpoint**: User Story 1 が単独で動く
@@ -177,8 +178,8 @@ description: "note の実装タスク"
 - [ ] T036 [US5] 代表画像の出どころの変更（`generated` と `site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` に `site` のときのサイト共通の画像を足す（research.md の R12）
 - [ ] T037 [US5] 題を入れて自動で作る代表画像を作り、一度作ったものを使い回す（`docs/CRAWLING.md` の「取得の負荷」）。**止める未決: U8**
 - [ ] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚。JPEG・PNG・WebP・GIF・10 MB までの検査は media-storage.ts が持ち、その検査で確かめる）と、代表画像に note の画像を選ぶ入力を作る。media-storage.ts が拒んだ画像を項目の誤りで返すことを tests/unit/note-usecases.test.ts で、別の note の画像を代表画像に選べないことを tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12、constitution の Test Layering）
-- [ ] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.tsを作り、src/proxy.ts の matcher に `/notes/:slug/media/:key` を足す（proxy は D1 を読まない。research.md の R9）。公開で削除していない note の、公開した版の本文が指す画像（src/features/note/domain/note-body.ts で読む）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）
-- [ ] T040 [US5] src/features/note/components/note-body.tsx で画像の印を `<figure>`・`<img alt>`・`<figcaption>` で出し、`src` を T039 の経路にする。本文の元の文字列（`media:<id>`）が RSC の応答に含まれないことを tests/integration/notes.test.ts で確かめる（research.md の R11）
+- [ ] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.tsを作り、src/proxy.ts の matcher に `/notes/:slug/media/:key` を足す（proxy は D1 を読まない。research.md の R9）。公開で削除していない note の、公開した版の本文が指す画像（T006 が DTO に詰めた `storageKey` の並び）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）
+- [ ] T040 [US5] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に、画像の `src` を `/notes/{slug}/media/{storageKey}` にする関数を渡す。DTO の `media` に無い `storageKey` の画像を出さないことと、`<figure>`・`<img alt>`・`<figcaption>` で出ることを tests/integration/notes.test.ts で確かめる（research.md の R11）
 
 ---
 
@@ -196,7 +197,7 @@ description: "note の実装タスク"
 
 - [ ] T042 [US6] 参照先の情報を URL の並びで読む処理と、URL ごとに書く処理を src/features/note/server/d1-note-repository.ts に足す
 - [ ] T043 [US6] 参照先への取得を作る。取得した HTML を取得のモジュールの中で題と画像の URL に詰め替える（Anti-Corruption Layer）。1 回の保存で取りに行く URL の数・1 回の取得の時間と大きさの上限を plan.md に書いてから作る（FR-027、constitution II・VII、research.md の R13）。**止める未決: U9**
-- [ ] T044 [US6] src/features/note/components/note-body.tsx で、行に URL だけを書いた行を `link_preview` の題と画像を添えたカードで出し、URL カードを含む note の表示で参照先への `fetch` が 0 回であることを tests/integration/notes.test.ts で確かめる（FR-027・FR-028・SC-005、User Story 6 の 1・2）。**止める未決: U9**
+- [ ] T044 [US6] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に渡す部品として、行に URL だけを書いた行を `link_preview` の題と画像を添えたカードで出し、URL カードを含む note の表示で参照先への `fetch` が 0 回であることを tests/integration/notes.test.ts で確かめる（FR-027・FR-028・SC-005、User Story 6 の 1・2）。**止める未決: U9**
 
 ---
 

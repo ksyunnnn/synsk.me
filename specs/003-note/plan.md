@@ -19,13 +19,13 @@
 
 オーナーが管理画面（`/dash/notes`）で note を作り、保存のたびに版を 1 つ足し、公開・下書きに戻す・削除・元に戻す・過去の版に戻すを行う。訪問者は `/notes/{slug}` で、公開で削除していない note の公開した版だけを読む。版は `note_revision` に足すだけで書き換えず、保存は開いたときの最も新しい版と比べて、違えば止める（[research.md](./research.md) の R4。2026-11-09 にオーナーが決めた）。
 
-オーナーの判定・env・Server Action の結果の型・入力の部品・uid の引き方・proxy の形は 001・002 のものを使う（下の「再利用する既存の部品」）。書きかけの保持・slug の形の検査・画像の保存と配信は共有担当が `src/shared/` に作り、003 は使う。本文は Markdown で、生の HTML を通さない（U4、2026-11-09 にオーナーが決めた。R11）。画像は R2 の原本を Worker が確かめて変換せずに返す（U5、2026-11-09 に決めた。R12）。残る未決に依るタスクは、tasks.md が「止める未決: U<n>」で示す。
+オーナーの判定・env・Server Action の結果の型・入力の部品・uid の引き方・proxy の形は 001・002 のものを使う（下の「再利用する既存の部品」）。書きかけの保持・slug の形の検査・画像の保存と配信・Markdown を読む部品と描く部品は共有担当が `src/shared/` に作り、003 は使う。本文は Markdown で、生の HTML を通さない（U4、2026-11-09 にオーナーが決めた。R11）。画像は R2 の原本を Worker が確かめて変換せずに返す（U5、2026-11-09 に決めた。R12）。残る未決に依るタスクは、tasks.md が「止める未決: U<n>」で示す。
 
 ## Technical Context
 
 **Language/Version**: TypeScript 6.0（`typescript` ~6.0.3）、Node.js 22 以上
 
-**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。足す package は `react-markdown`（10.1.0、本文の表示）と `mdast-util-from-markdown`（^2、本文の中身を読む）の 2 つ（research.md の R11）
+**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。003 は package を足さない。Markdown の package は共有担当の Markdown の部品が足す（research.md の R11）
 
 **Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0011` と、共有担当の migration で足す `note.uid`・`note_revision.uid`（research.md の R1）。画像は R2（binding `NOTE_IMAGES`）を共有担当の `src/shared/server/media-storage.ts` 越しに使う（R12）
 
@@ -79,7 +79,8 @@
 | プレビュー配信の no-store | `src/shared/server/preview-no-store.ts` | 変えずに効く |
 | 書きかけの保持 | `src/shared/components/draft-retention.tsx`（`DraftRetainingForm`。共有担当、001 の T072、PR #222） | 編集の画面。`version` に開いた版の uid を渡す（R10） |
 | slug の形の検査 | `src/shared/domain/slug.ts`（`isSlug`。共有担当、PR #222） | 識別子の検査（R8）。`newSlug` は使わない |
-| 画像の保存と配信の共通部分 | `src/shared/server/media-storage.ts`（共有担当） | note の画像の追加と配信（R12） |
+| 画像の保存と配信の共通部分 | `src/shared/server/media-storage.ts`（共有担当、PR #225） | note の画像の追加と配信。配る応答は `respondWithMedia`（R12） |
+| Markdown を読む部品と描く部品 | `src/shared/` の Markdown の部品（共有担当。ファイル名は共有担当の PR で確かめる） | 本文の表示、本文が指す画像と URL の読み出し、説明文が空のときの冒頭（R11） |
 
 形の手本（同じ形で書く。import はしない）:
 
@@ -141,7 +142,7 @@
 | U1 | D1 の表から TypeScript の型を作る方法（#188） | #188 | 無し（001 の U1 と同じ） |
 | U2 | 訪問者の note の URL の形。plan は ADR-0048（コレクション名と識別子、`/notes` を切れば一覧）から `/notes/{slug}` と導いた。spec は未決とする | オーナー（確認） | 無し。覆れば経路のタスクを直す |
 | U3 | 識別子の候補を題から示すか（ADR-0048 は示すとし、spec は未決とする） | オーナー | 無し。決まるまで候補を示さない |
-| U4 | 決定済み（2026-11-09、オーナー）。本文は Markdown で、生の HTML を通さない。画像は `media` の id で指し、キャプションを添える。URL カードは行に URL だけを書く。ライブラリと印の書き方は research.md の R11 | — | 無し |
+| U4 | 決定済み（2026-11-09、オーナー）。本文は Markdown で、生の HTML を通さない。画像は `media.storage_key` で指し（2026-11-09、PM。主キーは ADR-0051 によりフォームに出さない）、キャプションを添える。URL カードは行に URL だけを書く。印の書き方と共有担当の部品は research.md の R11 | — | 無し |
 | U5 | 決定済み（2026-11-09、オーナーから任されて Claude が決めた。001 と共有）。R2 の原本を Worker が確かめて変換せずに返し、公開していない画像は `no-store`。JPEG・PNG・WebP・GIF、1 枚 10 MB まで（research.md の R12） | — | 無し |
 | U6 | 公開の操作でも、保存と同じく編集を始めたときの版と比べるか | オーナー | 無し。決まるまで比べず、その時点の最も新しい版を公開する（FR-011） |
 | U7 | 保存を止めたあと、オーナーが内容を合わせる手順 | オーナー | 無し。決まるまで、知らせて入力を残すだけ（FR-020） |
@@ -155,7 +156,7 @@
 
 決定済み: 同時編集で比べる値は最も新しい版（2026-11-09、オーナー。spec の FR-020・FR-021・Assumptions、research.md の R4）。本文の書式（U4）と画像（U5）は上の表。
 
-依存（未決ではない）: 共有担当の migration（`note.uid`・`note_revision.uid`）、書きかけの保持の部品（001 の T072）、slug の形の検査、画像を配る経路の `{key}` に使う値（共有担当の `media-storage.ts` が決める。research.md の R12）。`src/proxy.ts` は 001・002 の作業者も直すため、003 の変更は既にある分岐を変えずに足す。
+依存（未決ではない）: 共有担当の migration（`note.uid`・`note_revision.uid`）、書きかけの保持の部品（001 の T072）、slug の形の検査、Markdown の部品（research.md の R11）。`src/proxy.ts` は 001・002 の作業者も直すため、003 の変更は既にある分岐を変えずに足す。
 
 ## Project Structure
 
@@ -194,13 +195,13 @@ src/
 │           [id]/revisions/[revisionId]/page.tsx・[id]/revisions/[revisionId]/missing/page.tsx
 └── features/
     └── note/
-        ├── domain/       note.ts・note-body.ts・note-repository.ts
+        ├── domain/       note.ts・note-repository.ts
         ├── application/  deps.ts・create-note.ts・save-note.ts・revert-note.ts・publish-note.ts・
         │                 unpublish-note.ts・delete-note.ts・restore-note.ts・change-note-card-image.ts・
         │                 add-note-syndication.ts・remove-note-syndication.ts・add-note-media.ts・get-visitor-note-media.ts・
         │                 get-visitor-note.ts・get-note-for-edit.ts・list-notes.ts・list-note-revisions.ts
         ├── components/   note-form.tsx・note-status-form.tsx・note-card-image-form.tsx・
-        │                 note-syndication-form.tsx・note-revision-list.tsx・note-body.tsx・visitor-note.tsx
+        │                 note-syndication-form.tsx・note-revision-list.tsx・visitor-note.tsx
         └── server/       d1-note-repository.ts・queries.ts・actions.ts
 
 tests/
