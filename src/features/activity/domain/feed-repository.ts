@@ -9,7 +9,7 @@ export type FeedRepository = {
   /**
    * 一覧の `page` ページ目（1 から数える）。並びの日付の新しい順、同じ日付なら `FEED_ITEM_TYPES`
    * の順、同じ種類なら元の行の主キーの大きい順（FR-010）で、`FEED_PAGE_SIZE` 件ずつに区切る。
-   * 最後のページの先は項目を持たない（research.md の R8）
+   * 最後のページの先と、1 以上の整数でない `page` は項目を持たない（research.md の R8）
    */
   list: (page: number) => Promise<FeedPage>;
 };

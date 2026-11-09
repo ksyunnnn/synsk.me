@@ -106,6 +106,9 @@ const LIST_SQL = `SELECT ${COLUMNS} FROM activity_feed
 
 export const createD1FeedRepository = (db: D1Database): FeedRepository => ({
   list: async (page) => {
+    // ページは 1 から数える整数。それ以外は OFFSET が負や小数になり、1 ページ目と同じ項目を返すか
+    // D1 が投げる。どのページでもないとして項目を返さない
+    if (!Number.isSafeInteger(page) || page < 1) return { items: [], hasNextPage: false };
     // 次のページがあるかを知るため、1 件多く読む
     const { results } = await db
       .prepare(LIST_SQL)
