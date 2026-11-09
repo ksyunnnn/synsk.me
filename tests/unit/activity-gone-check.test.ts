@@ -55,11 +55,15 @@ describe('取得元ごとの確かめ方', () => {
     const { fetcher } = createFakeFetcher({
       'https://example.com/ok': () => new Response('作り物'),
       'https://example.com/down': () => new Response('', { status: 503 }),
+      'https://example.com/moved': () =>
+        new Response('', { status: 302, headers: { Location: 'https://example.com/missing' } }),
     });
 
     expect(await checkGone(fetcher, 'https://example.com/missing', LIMITS)).toBe('gone');
     expect(await checkGone(fetcher, 'https://example.com/ok', LIMITS)).toBe('present');
     expect(await checkGone(fetcher, 'https://example.com/down', LIMITS)).toBe('unknown');
+    // リダイレクトを辿らない。移った先が 404 でも、元の URL が消えた証拠にしない
+    expect(await checkGone(fetcher, 'https://example.com/moved', LIMITS)).toBe('unknown');
   });
 });
 
@@ -98,6 +102,26 @@ describe('refreshSources で確かめる', () => {
     expect(applied[0]?.plan.deletes).toEqual([1]);
     expect(applied[0]?.plan.goneChecked).toEqual([2]);
     expect(outcomes).toMatchObject([{ source: 'fake_feed', ok: true, removed: 1 }]);
+  });
+
+  it('取得元が変わっていないと答えた（304）回も、保存した行を確かめ、404 の行を消す（R6）', async () => {
+    const { repository, applied } = createFakeActivityRepository({
+      fake_feed: [stored(1), stored(2, NOW)],
+    });
+    const checked: string[] = [];
+
+    await refreshSources(
+      {
+        ...deps(repository, { 'https://example.com/1': 'gone' }, checked),
+        fetchListing: async () => ({ notModified: true }),
+      },
+      ['fake_feed'],
+      NOW,
+      { ...LIMITS, maxGoneChecks: 1 },
+    );
+
+    expect(checked).toEqual(['https://example.com/1']);
+    expect(applied[0]?.plan.deletes).toEqual([1]);
   });
 
   it('確かめる手段を持たない取得元（Medium など）では確かめない', async () => {

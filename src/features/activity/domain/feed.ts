@@ -1,4 +1,5 @@
 import type { Period } from '@/shared/domain/period';
+import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * 一覧の 1 件の形（specs/005-feed/contracts/visitor-feed.md、research.md の R5・R6）。
@@ -8,31 +9,14 @@ import type { Period } from '@/shared/domain/period';
 
 /**
  * Repository の実装が詰められる種類。並びの日付が同じときの種類の順を兼ねる。仮の順は
- * note・external_activity・life_event・project・career（plan.md の U2）で、note・外部の
- * activity・life event は詰める実装を足すときに、仮の順の位置に足す
+ * note・external_activity・life_event・project・career（plan.md の U2）。詰める実装の無い種類
+ * （外部の activity・life event）は入れず、入れるときは仮の順の位置に足す
  */
-export const FEED_ITEM_TYPES = ['project', 'career'] as const;
+export const FEED_ITEM_TYPES = ['note', 'project', 'career'] as const;
 export type FeedItemType = (typeof FEED_ITEM_TYPES)[number];
 
 export const isFeedItemType = (value: string): value is FeedItemType =>
   (FEED_ITEM_TYPES as readonly string[]).includes(value);
-
-/**
- * 実績の種類。値の意味は 001 の `project.kind` と同じ（migration 0011 の CHECK）。機能どうしは
- * import しないため、`src/features/project` の定義を使わずに持つ（ADR-0026）
- */
-export const FEED_PROJECT_KINDS = ['application', 'talk', 'event', 'other'] as const;
-export type FeedProjectKind = (typeof FEED_PROJECT_KINDS)[number];
-
-export const FEED_PROJECT_KIND_LABELS: Record<FeedProjectKind, string> = {
-  application: 'アプリ',
-  talk: '登壇',
-  event: 'イベント',
-  other: 'その他',
-};
-
-export const isFeedProjectKind = (value: string): value is FeedProjectKind =>
-  (FEED_PROJECT_KINDS as readonly string[]).includes(value);
 
 /**
  * 職歴。秘匿化した職歴の組織名は秘匿化した組織名。本文・関連 URL・画像を持たない
@@ -55,8 +39,20 @@ export type ProjectFeedItem = {
   isMasked: boolean;
   title: string;
   organizationName: string;
-  projectKind: FeedProjectKind;
+  projectKind: ProjectKind;
   period: Period;
 };
 
-export type FeedItem = CareerFeedItem | ProjectFeedItem;
+/**
+ * note。題と説明文は公開した版のもの。最も新しい版・転載先・代表画像を持たない（FR-006）
+ */
+export type NoteFeedItem = {
+  type: 'note';
+  title: string;
+  /** 空なら null */
+  description: string | null;
+  /** 作成日時。`YYYY-MM-DDTHH:MM:SS.sssZ`。並びの日付で、公開の操作で変わらない（FR-008） */
+  createdAt: string;
+};
+
+export type FeedItem = CareerFeedItem | ProjectFeedItem | NoteFeedItem;

@@ -24,6 +24,17 @@ describe('createSourceHttp', () => {
     expect(seen[0]?.get('X-Fake')).toBe('1');
   });
 
+  it('リダイレクトで別のホストへ移った応答は読まずに失敗にする（R10）', async () => {
+    const http = createSourceHttp(async () => {
+      const response = new Response('別のホスト', { status: 200 });
+      Object.defineProperty(response, 'redirected', { value: true });
+      Object.defineProperty(response, 'url', { value: 'https://other.example/x' });
+      return response;
+    }, LIMITS);
+
+    await expect(http.get('https://example.com/feed')).rejects.toThrow(/別のホスト/);
+  });
+
   it('要求の数が上限に達したら、要求を出さずに失敗する', async () => {
     let calls = 0;
     const http = createSourceHttp(async () => {

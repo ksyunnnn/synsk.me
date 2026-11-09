@@ -5,6 +5,7 @@ import { toPeriod, type Period } from '@/shared/domain/period';
 import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 
 /**
  * 職歴の型と決まり（specs/001-career-and-project/spec.md の FR-007・FR-008・FR-010・FR-044）。
@@ -111,7 +112,7 @@ export const parseCareerContent = (
       isMasked: values.isMasked !== IS_MASKED_VALUES.unmasked,
       status: parseSiteStatus(values.status),
       period: period.period,
-      description: emptyToNull(values.description.replace(/\r\n?/g, '\n')),
+      description: emptyToNull(normalizeNewlines(values.description)),
       url: url?.trim() ?? null,
     },
   };

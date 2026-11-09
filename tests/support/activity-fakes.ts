@@ -40,6 +40,7 @@ export const createFakeActivityRepository = (
     recordNotModified: async (source, fetchedAt) => {
       notModified.push({ source, fetchedAt });
     },
+    listFetchedAt: async () => ({}),
   };
   return { repository, applied, failures, notModified };
 };

@@ -35,10 +35,18 @@ const respond =
     new Response(status === 304 ? null : body, { status, headers });
 
 describe('createSourceHttp の 304', () => {
-  it('304 は失敗にせず、本文の無い応答として返す', async () => {
+  it('条件を付けた要求への 304 は失敗にせず、本文の無い応答として返す', async () => {
     const http = createSourceHttp(async () => new Response(null, { status: 304 }), LIMITS);
 
-    expect((await http.get('https://example.com/feed')).status).toBe(304);
+    expect(
+      (await http.get('https://example.com/feed', { 'If-None-Match': 'W/"fake"' })).status,
+    ).toBe(304);
+  });
+
+  it('条件を付けていない要求への 304 は、中身を取れなかった失敗にする', async () => {
+    const http = createSourceHttp(async () => new Response(null, { status: 304 }), LIMITS);
+
+    await expect(http.get('https://example.com/feed')).rejects.toThrow(/304/);
   });
 });
 

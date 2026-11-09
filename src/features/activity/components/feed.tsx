@@ -1,10 +1,11 @@
 import {
-  FEED_PROJECT_KIND_LABELS,
   type CareerFeedItem,
   type FeedItem,
+  type NoteFeedItem,
   type ProjectFeedItem,
 } from '@/features/activity/domain/feed';
-import type { Period } from '@/shared/domain/period';
+import { PeriodText } from '@/shared/components/period-text';
+import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 /**
  * 訪問者に見せる一覧（specs/005-feed/contracts/visitor-feed.md）。受け取った DTO の値だけを
@@ -13,14 +14,6 @@ import type { Period } from '@/shared/domain/period';
  *
  * 並べる値と見せ方は、UI を考えるときに決める（plan.md の U7）。ここでは契約の最小の値だけを出す
  */
-
-const PeriodText = ({ period }: { period: Period }) => (
-  <>
-    <time dateTime={period.startedOn}>{period.startedOn}</time>
-    {' 〜 '}
-    {period.endedOn && <time dateTime={period.endedOn}>{period.endedOn}</time>}
-  </>
-);
 
 const MaskedBody = () => <p>非公開</p>;
 
@@ -38,7 +31,7 @@ const CareerRow = ({ item }: { item: CareerFeedItem }) => (
 
 const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
   <article className="flex flex-col gap-1">
-    <p className="text-sm text-muted-foreground">{FEED_PROJECT_KIND_LABELS[item.projectKind]}</p>
+    <p className="text-sm text-muted-foreground">{PROJECT_KIND_LABELS[item.projectKind]}</p>
     <h2 className="font-bold">{item.title}</h2>
     <p>{item.organizationName}</p>
     <p className="text-sm text-muted-foreground">
@@ -48,6 +41,32 @@ const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
   </article>
 );
 
+/**
+ * note。個別のページへのリンクは付けない（plan.md の U4）。作成日時は保存した値（UTC）のまま
+ * 出す。日の境目の時刻帯は plan.md の U3
+ */
+const NoteRow = ({ item }: { item: NoteFeedItem }) => (
+  <article className="flex flex-col gap-1">
+    <p className="text-sm text-muted-foreground">note</p>
+    <h2 className="font-bold">{item.title}</h2>
+    {item.description && <p>{item.description}</p>}
+    <p className="text-sm text-muted-foreground">
+      <time dateTime={item.createdAt}>{item.createdAt}</time>
+    </p>
+  </article>
+);
+
+const FeedRow = ({ item }: { item: FeedItem }) => {
+  switch (item.type) {
+    case 'career':
+      return <CareerRow item={item} />;
+    case 'project':
+      return <ProjectRow item={item} />;
+    case 'note':
+      return <NoteRow item={item} />;
+  }
+};
+
 export const Feed = ({ items }: { items: FeedItem[] }) =>
   items.length === 0 ? (
     <p>まだ何もない</p>
@@ -56,7 +75,7 @@ export const Feed = ({ items }: { items: FeedItem[] }) =>
       {items.map((item, index) => (
         // 主キーを応答に出さないため、key は並びの位置で付ける（research.md の R6）
         <li key={index}>
-          {item.type === 'career' ? <CareerRow item={item} /> : <ProjectRow item={item} />}
+          <FeedRow item={item} />
         </li>
       ))}
     </ol>

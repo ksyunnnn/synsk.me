@@ -137,6 +137,7 @@ E2E の前に `npx playwright install chromium` でブラウザを入れる。
 | `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
 | `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `'use cache'` と `cacheLife()` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
+| `/` の `og:image` が `https://synsk.me` の絶対 URL を指す | `next.config.js` の `SITE_ORIGIN`、`src/app/layout.tsx` の `metadataBase` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
 | 認証なしの `/dash` と `/dash/notes/new` が Access のログイン（`*.cloudflareaccess.com`）へ移される | Access のアプリケーションの対象の経路 |
 | プレビュー配信では、認証なしの `/` も Access のログインへ移される | プレビュー全体を対象にする Access のアプリケーション |
@@ -176,11 +177,13 @@ Cloudflare の資格情報の名前は `synsk.me - <呼び出し元>: <用途> (
 名前と権限は `.env.example` のコメントが持つ。手元に置かない
 `synsk.me - Workers Builds: deploy (production)` は、Workers Builds が `main` をデプロイするときに使う。
 
-ビルドのときに決まる変数が2つある。どちらも `.env.local` には書かない。
+ビルドのときに決まる変数が3つある。どれも `.env.local` には書かない。
 
 **`WORKERS_CI_BRANCH`** は、Workers Builds が渡すブランチ名。`next.config.js` がこれを
 見て、`main` なら本番、それ以外はプレビューと判定し、結果を `NEXT_PUBLIC_DEPLOY_ENV`
 として画面へ渡す。
+
+**`SITE_ORIGIN`** は、カードの画像などの絶対 URL の origin（`src/app/layout.tsx` の `metadataBase`）。`next.config.js` が決める。Workers Builds のビルド（本番とプレビュー）は `https://synsk.me` にする。プレビューの URL はビルドに渡る値から作れないため、プレビューのカードの画像の URL も本番の origin を指す。手元のビルドは、渡せばその値、渡さないか空なら `https://synsk.me` にする。origin 以外（パスなど）を渡すとビルドが止まる。
 
 **`NEXT_PUBLIC_GA_MEASUREMENT_ID`** は、訪問者の数を Google アナリティクスで測るための
 Google タグ マネージャーのコンテナ ID。値は `.env`（git が追跡する）にある。画面に

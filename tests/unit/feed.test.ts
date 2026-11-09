@@ -22,18 +22,20 @@ const row = (overrides: Partial<FeedRow>): FeedRow => ({
   project_kind: null,
   started_on: '2021-04-01',
   ended_on: null,
+  sort_at: '2021-04-01',
+  description: null,
   ...overrides,
 });
 
 describe('FEED_ITEM_TYPES', () => {
   it('詰められる種類を、並びの日付が同じときの順で持つ（plan.md の U2 の仮の順）', () => {
-    expect(FEED_ITEM_TYPES).toEqual(['project', 'career']);
+    expect(FEED_ITEM_TYPES).toEqual(['note', 'project', 'career']);
   });
 });
 
 describe('toFeedItem', () => {
   it('秘匿化しない職歴は、種類・秘匿化するか・実際の組織名・肩書・期間だけを持つ', () => {
-    // ビューを SELECT * で読んだときの item_number と sort_at を足しても、詰めない
+    // ビューを SELECT * で読んだときの item_number を足しても、詰めない
     const viewRow = {
       ...row({
         item_type: 'career',
@@ -43,7 +45,6 @@ describe('toFeedItem', () => {
         ended_on: '2021-03-31',
       }),
       item_number: 7,
-      sort_at: '2020-04-01',
     };
     expect(toFeedItem(viewRow)).toStrictEqual({
       type: 'career',
@@ -143,6 +144,36 @@ describe('toFeedItem', () => {
     expect(
       toFeedItem(row({ item_type: 'career', organization_name: '作り物株式会社' })),
     ).toBeNull();
-    expect(toFeedItem(row({ item_type: 'note', title: '作り物の題' }))).toBeNull();
+    expect(toFeedItem(row({ item_type: 'unknown_type', title: '作り物の題' }))).toBeNull();
+  });
+});
+
+describe('toFeedItem の note（FR-006）', () => {
+  const noteRow = (overrides: Partial<FeedRow> = {}) =>
+    row({
+      item_type: 'note',
+      title: '作り物の note の題',
+      description: '作り物の説明文',
+      sort_at: '2020-01-15T09:00:00.000Z',
+      started_on: null,
+      ...overrides,
+    });
+
+  it('題・説明文・作成日だけを持つ', () => {
+    const viewRow = { ...noteRow(), item_number: 3 };
+    expect(toFeedItem(viewRow)).toStrictEqual({
+      type: 'note',
+      title: '作り物の note の題',
+      description: '作り物の説明文',
+      createdAt: '2020-01-15T09:00:00.000Z',
+    });
+  });
+
+  it('説明文が空の note は、説明文を null で持つ', () => {
+    expect(toFeedItem(noteRow({ description: null }))).toMatchObject({ description: null });
+  });
+
+  it('題の欠けた行は詰めない', () => {
+    expect(toFeedItem(noteRow({ title: null }))).toBeNull();
   });
 });

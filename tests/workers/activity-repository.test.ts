@@ -226,6 +226,19 @@ describe('recordFetchFailure', () => {
   });
 });
 
+describe('listFetchedAt', () => {
+  it('取得元ごとの最後に取り直した日時を返す。成否を問わない（research.md の R9）', async () => {
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: null,
+    });
+    await activities.recordFetchFailure('medium', T2, '作り物の失敗');
+
+    expect(await activities.listFetchedAt()).toEqual({ zenn: T1, medium: T2 });
+  });
+});
+
 /**
  * 取得元の失敗が、その取得元の取得の結果だけに残り、ほかの取得元を戻さない
  * （User Story 2 の Acceptance 3・4、FR-015・FR-016、research.md の R4）
@@ -351,13 +364,26 @@ describe('消す行', () => {
     });
 
     await refreshSources(
-      { activities, fetchListing: async () => ({ items: [], isComplete: true }) },
+      {
+        activities,
+        fetchListing: async () => ({
+          items: [
+            {
+              url: 'https://qiita.com/ksyunnnn/items/fake-kept',
+              title: '残る作り物',
+              publishedAt: PUBLISHED,
+              externalId: 'fake-kept',
+            },
+          ],
+          isComplete: true,
+        }),
+      },
       ['qiita'],
       T1,
       LIMITS,
     );
 
-    expect(await readActivityRows(env.DB, 'qiita')).toEqual([]);
+    expect(await readActivityRows(env.DB, 'qiita')).toMatchObject([{ external_id: 'fake-kept' }]);
   });
 });
 
@@ -393,7 +419,7 @@ describe('条件に使う値', () => {
     expect(await activities.readValidators('zenn')).toBeNull();
   });
 
-  it('失敗を書くと値を消す', async () => {
+  it('失敗を書いても値を残す。順番を取る書き込みも失敗として書くため（R9）', async () => {
     await activities.applyRefresh('zenn', insertsOnly([]), {
       fetchedAt: T1,
       reason: null,
@@ -401,7 +427,7 @@ describe('条件に使う値', () => {
     });
     await activities.recordFetchFailure('zenn', T2, '作り物の失敗');
 
-    expect(await activities.readValidators('zenn')).toBeNull();
+    expect(await activities.readValidators('zenn')).toEqual(VALIDATORS);
   });
 
   it('変わっていない回は、値と activity を残して成功を書く', async () => {

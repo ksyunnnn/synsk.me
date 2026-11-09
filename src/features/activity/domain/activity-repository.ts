@@ -43,7 +43,7 @@ export type UpsertPlan = {
 export type RefreshPlan = UpsertPlan & {
   /** 取得元で消えたと確かめた行の id（FR-017） */
   deletes: number[];
-  /** 個別の URL を取り直して、消えていないか判定できなかった行の id。確かめた日時を書く（R6） */
+  /** 個別の URL を取り直して消さなかった行（残っていた行と、判定できなかった行）の id。確かめた日時を書く（R6） */
   goneChecked?: number[];
 };
 
@@ -75,4 +75,6 @@ export type ActivityRepository = {
    * 書き換えない（research.md の R9）
    */
   recordNotModified: (source: SourceName, fetchedAt: string) => Promise<void>;
+  /** 取得元ごとの、最後に取り直した日時（成否を問わない）。取り直したことの無い取得元は持たない */
+  listFetchedAt: () => Promise<Partial<Record<SourceName, string>>>;
 };

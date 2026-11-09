@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { VisitorNoteView } from '@/features/note/components/visitor-note';
+import type { VisitorNote } from '@/features/note/domain/note';
 import { getVisitorNote } from '@/features/note/server/queries';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
@@ -16,11 +17,29 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
   const note = await getVisitorNote((await params).slug);
   if (!note) notFound();
   const description = note.summary ?? undefined;
+  const images = cardImageUrl(note);
   return {
     title: `${note.title} | synsk.me`,
     description,
-    openGraph: { title: note.title, description, type: 'article' },
+    openGraph: {
+      title: note.title,
+      description,
+      type: 'article',
+      ...(images ? { images } : {}),
+    },
   };
+};
+
+/**
+ * 代表画像の URL（research.md の R12）。`site` はサイト共通の画像（`src/app/opengraph-image.tsx`）、
+ * `media` はその note の画像の配る経路。題を入れて自動で作る画像は作り方が決まるまで出さない
+ * （plan.md の U8）
+ */
+const cardImageUrl = ({ slug, cardImage }: VisitorNote): string | null => {
+  if (cardImage.kind === 'site') return '/opengraph-image';
+  if (cardImage.kind === 'media')
+    return `/notes/${encodeURIComponent(slug)}/media/${cardImage.storageKey}`;
+  return null;
 };
 
 const Page = async ({ params }: Props) => {
