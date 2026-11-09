@@ -153,8 +153,8 @@ description: "note の実装タスク"
 
 ### Tests for User Story 4
 
-- [ ] T031 [P] [US4] 2 つのタブで同じ note を開き、後から保存した側が止まり、知らせが出て、入力が残ること、1 つのタブで続けて 2 回保存すると 2 回とも保存されることを tests/e2e/note-concurrency.spec.ts で確かめる（FR-020・FR-021・SC-002、User Story 4 の 3・4）
-- [ ] T032 [P] [US4] 本文を書きかけて保存せずに再読み込みすると書きかけが残ること、別のブラウザの文脈（別の端末にあたる）で開くと最後に保存した版が出ること、保存を止められたときに書きかけが消えないことを tests/e2e/note-draft.spec.ts で確かめる（FR-018・FR-019、User Story 4 の 1・2、spec の Edge Cases）
+- [X] T031 [P] [US4] 2 つのタブで同じ note を開き、後から保存した側が止まり、知らせが出て、入力が残ること、1 つのタブで続けて 2 回保存すると 2 回とも保存されることを tests/e2e/note-concurrency.spec.ts で確かめる（FR-020・FR-021・SC-002、User Story 4 の 3・4）
+- [X] T032 [P] [US4] 本文を書きかけて保存せずに再読み込みすると書きかけが残ること、別のブラウザの文脈（別の端末にあたる）で開くと最後に保存した版が出ること、保存を止められたときに書きかけが消えないことを tests/e2e/note-draft.spec.ts で確かめる（FR-018・FR-019、User Story 4 の 1・2、spec の Edge Cases）
 
 ### Implementation for User Story 4
 

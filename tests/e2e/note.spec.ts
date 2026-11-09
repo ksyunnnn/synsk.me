@@ -1,26 +1,12 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import { openVisitor, saveEdit, submitAndWait, tabTo, textbox, visit } from './support/dash';
+import { createNote, uniqueNoteSlug as uniqueSlug } from './support/note';
 
 /**
  * オーナーとしての note の作成・保存・公開（specs/003-note/spec.md の User Story 1、FR-001・
- * FR-003・FR-011、constitution V）。HTTP の状態コードと D1 の行は結合と workerd の検査が持つ。
- *
- * テストは同じ手元の D1 を並行して使う。識別子は、ほかのテストと重ならない値にする
+ * FR-003・FR-011、constitution V）。HTTP の状態コードと D1 の行は結合と workerd の検査が持つ
  */
-
-const uniqueSlug = (label: string) => `e2e-${label}-${crypto.randomUUID().slice(0, 8)}`;
-
-/** note を作り、編集の画面に移ったことを確かめる。編集の画面の URL を返す */
-const createNote = async (page: Page, { slug, title }: { slug: string; title: string }) => {
-  await page.goto('/dash/notes/new');
-  await textbox(page, '識別子').fill(slug);
-  await textbox(page, '題').fill(title);
-  await textbox(page, '本文').fill('E2E の本文');
-  await page.getByRole('button', { name: '作る' }).click();
-  await expect(page.getByRole('status')).toHaveText('保存しました');
-  return page.url().replace(/\?.*$/, '');
-};
 
 test('note を作って保存し、公開すると訪問者が読め、識別子が読み取りだけになる', async ({
   page,
