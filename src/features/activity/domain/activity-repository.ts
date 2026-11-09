@@ -25,13 +25,19 @@ export type ItemChanges = Partial<{
   imageUrl: string | null;
 }>;
 
-/** 1 つの取得元の取り直しで書くもの。`planRefresh` が求める */
-export type RefreshPlan = {
+/** 1 つの取得元の取り直しで足す行と直す行。`planRefresh` が求める */
+export type UpsertPlan = {
   /** 足す行。どれも公開日を持つ（FR-011） */
   inserts: (FetchedItem & { publishedAt: string })[];
   updates: { id: number; changes: ItemChanges }[];
   /** 公開日が無いので足さなかった項目の数 */
   skippedWithoutDate: number;
+};
+
+/** 1 つの取得元の取り直しで書くもの。消す行は `planRemovals` が求める */
+export type RefreshPlan = UpsertPlan & {
+  /** 取得元で消えたと確かめた行の id（FR-017） */
+  deletes: number[];
 };
 
 /** 成功した取り直しの取得の結果。`last_succeeded_at` は `fetchedAt` になる */

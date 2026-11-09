@@ -3,7 +3,9 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
+import { addNoteMedia as addNoteMediaUseCase } from '@/features/note/application/add-note-media';
 import { addNoteSyndication as addNoteSyndicationUseCase } from '@/features/note/application/add-note-syndication';
+import { changeNoteCardImage as changeNoteCardImageUseCase } from '@/features/note/application/change-note-card-image';
 import { createNote as createNoteUseCase } from '@/features/note/application/create-note';
 import { deleteNote as deleteNoteUseCase } from '@/features/note/application/delete-note';
 import { publishNote as publishNoteUseCase } from '@/features/note/application/publish-note';
@@ -13,11 +15,15 @@ import { revertNote as revertNoteUseCase } from '@/features/note/application/rev
 import { saveNote as saveNoteUseCase } from '@/features/note/application/save-note';
 import { unpublishNote as unpublishNoteUseCase } from '@/features/note/application/unpublish-note';
 import {
+  CARD_IMAGE_FIELD,
+  MEDIA_FILE_FIELD,
   NOTE_FIELDS,
   NOTE_UID_FIELD,
   OPENED_REVISION_UID_FIELD,
   REVISION_UID_FIELD,
   SYNDICATION_URL_FIELD,
+  type CardImageFormResult,
+  type MediaFormResult,
   type NoteFormResult,
   type RevertNoteResult,
   type SyndicationFormResult,
@@ -211,4 +217,49 @@ export const removeNoteSyndication = async (
   if (outcome.status === 'forbidden') return outcome;
   if (outcome.status === 'not-found') redirect(LIST);
   redirect(`${editPath(uid)}?unsyndicated=1`);
+};
+
+/** 代表画像の出どころを変え、同じ画面へ移る（FR-024・FR-025） */
+export const changeNoteCardImage = async (
+  _state: CardImageFormResult | null,
+  formData: FormData,
+): Promise<CardImageFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const outcome = await changeNoteCardImageUseCase(
+    deps.notes,
+    author,
+    id,
+    readString(formData, CARD_IMAGE_FIELD),
+  );
+  if (outcome.status === 'changed') redirect(`${editPath(uid)}?cardImageChanged=1`);
+  if (outcome.status === 'not-found') redirect(LIST);
+  if (outcome.status === 'forbidden') return outcome;
+  return { status: 'invalid', errors: { [CARD_IMAGE_FIELD]: outcome.error }, values: {} };
+};
+
+/** 画像を 1 枚足し、同じ画面へ移る（FR-023、research.md の R12） */
+export const addNoteMedia = async (
+  _state: MediaFormResult | null,
+  formData: FormData,
+): Promise<MediaFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const file = formData.get(MEDIA_FILE_FIELD);
+  const outcome = await addNoteMediaUseCase(
+    deps,
+    author,
+    id,
+    file instanceof Blob && file.size > 0 ? file : null,
+  );
+  if (outcome.status === 'added') redirect(`${editPath(uid)}?mediaAdded=1`);
+  if (outcome.status === 'not-found') redirect(LIST);
+  if (outcome.status === 'forbidden') return outcome;
+  return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
 };

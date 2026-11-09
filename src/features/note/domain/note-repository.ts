@@ -3,11 +3,14 @@ import type {
   Note,
   NoteId,
   NoteInput,
+  NotePreview,
   NoteRevision,
   NoteRevisionSummary,
   NoteSummary,
   VisitorNote,
+  VisitorNoteCardImage,
 } from '@/features/note/domain/note';
+import type { MediaStorageKey } from '@/shared/domain/media';
 
 /**
  * note の取り出し方と保存の仕方（docs/SOFTWARE_DESIGN.md の Repository）。
@@ -34,6 +37,11 @@ export type NoteRepository = {
   findVisitorBySlug: (slug: string) => Promise<VisitorNote | null>;
   /** 訪問者に見せる note がある識別子か。`findVisitorBySlug` が null を返さない識別子と一致する */
   hasVisitorSlug: (slug: string) => Promise<boolean>;
+  /**
+   * 見た目の確認で描く形（research.md の R15）。最も新しい版を、状態と削除に関わらず詰める。
+   * オーナーだけが使う。無い id なら null
+   */
+  findPreview: (id: NoteId) => Promise<NotePreview | null>;
   /** オーナーが編集する note。削除した note も返す。無い id なら null */
   findForEdit: (id: NoteId) => Promise<Note | null>;
   /** 管理画面の URL とフォームの uid が指す note の id。削除した note も返す。無ければ null */
@@ -109,4 +117,23 @@ export type NoteRepository = {
    * なら何も書かず `ok: false`
    */
   removeSyndication: (id: NoteId, url: string) => Promise<{ ok: boolean }>;
+  /**
+   * 代表画像の出どころを変える（FR-024・FR-025）。`media` は、その note の画像の置き場のキーだけを
+   * 選べる（`note` の複合の外部キー）。別の note の画像なら `media-not-owned`
+   */
+  changeCardImage: (
+    id: NoteId,
+    cardImage: VisitorNoteCardImage,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
+  /**
+   * 置き場に置いた画像を、その note の画像として記録する（FR-023、research.md の R12）。無いか
+   * 削除した note なら `ok: false`
+   */
+  addMedia: (id: NoteId, storageKey: MediaStorageKey) => Promise<{ ok: boolean }>;
+  /**
+   * note を完全に消す（FR-017、research.md の R6）。画像の記録・転載先・版・note を 1 つの
+   * トランザクションで消し、参照先の情報は残す。消した画像の置き場のキーを返す。置き場の実体は
+   * 呼び手が消す。無い id なら `ok: false`
+   */
+  purge: (id: NoteId) => Promise<{ ok: true; storageKeys: MediaStorageKey[] } | { ok: false }>;
 };

@@ -56,7 +56,7 @@
 | V. Accessible Controls | 通る | 入力はネイティブの要素と `<form>`。削除の確認は別のページ（001 と同じ）。E2E でキーボードだけの操作を確かめる |
 | VI. Measure Before Optimizing | 通る | キャッシュ・索引の追加・非正規化を含めない。値が変わった行だけを書くのは D1 の書き込みの上限という費用の上限のためで、速さのためではない（R5） |
 | VII. Boundary Translation | 通る | 取得元の応答は `server/sources/<取得元>.ts` の中で `FetchedItem` に詰め替え、外部の型をファイルの外に出さない（R3、[contracts/fetch.md](./contracts/fetch.md)） |
-| VIII. Portable Core | 通る | D1 は `src/features/activity/server/d1-activity-repository.ts`、R2 は `src/shared/server/media-storage.ts`、env は `src/shared/server/env.ts` だけで使う。Cron の `scheduled` は `worker/index.ts` だけに置く |
+| VIII. Portable Core | 通る | D1 は `src/features/activity/server/d1-activity-repository.ts` と `d1-life-event-repository.ts`、R2 は `src/shared/server/media-storage.ts`、env は `src/shared/server/env.ts` だけで使う。Cron の `scheduled` は `worker/index.ts` だけに置く |
 | IX. Simplicity | 通る | `shared/` に新しく置くものは無い。Repository のインタフェースは、単体の検査で渡す作り物の実装が 2 つ目の使い手（ADR-0026 のルール 2）。`fetcher` の引数は、単体の検査で渡す作り物の応答が 2 つ目の使い手 |
 | Test Layering | 通る | 同じことを 2 つの段階で確かめない（下の表の「段階」） |
 | Display Speed | 通る | life event のページは NFR-03〜NFR-07 の対象。判定はフィールドの計測 |
@@ -101,9 +101,9 @@
 | FR-036 | `wrangler.jsonc` に `triggers` があり、`scheduled` が `refreshSources` を呼ぶ（research.md の R9）。ビルドした `dist/server/wrangler.json` に `triggers` があることは quickstart.md の手順 1 で確かめる | 単 |
 | FR-014・FR-015・SC-002 | 2 つのうち 1 つの取得元が失敗しても、失敗した側の行が残り、もう一方が取り込まれる | 単（`refreshSources`）・W（`batch()` の分け方） |
 | FR-016 | 失敗の結果に日時・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が残る | 単・W |
-| FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRefresh`）・W |
-| FR-018・SC-004 | `isComplete` が偽の取得元で、一覧に無い activity を消さない | 単（`planRefresh`） |
-| FR-019 | 消す候補が上限を超えたら、超えた分を残し、理由を書く | 単（`planRefresh`） |
+| FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRemovals`）・W |
+| FR-018・SC-004 | `isComplete` が偽の取得元で、一覧に無い activity を消さない | 単（`planRemovals`） |
+| FR-019 | 消す候補が上限を超えた回は 1 件も消さず、理由を書く | 単（`planRemovals`・`refreshSources`） |
 | FR-020 | 応答の形の誤り・取得の失敗で消さない | 単 |
 | FR-021 | 手で付ける値の列が無い | スキーマが持つ（ADR-0052 の Confirmation） |
 | FR-022・FR-033 | URL を指名した・手で入力した activity を削除できる。一覧を取る取得元の activity は削除の操作が無く、Server Action も拒む | 単（ユースケース）・W・E |
@@ -198,7 +198,7 @@ src/
 │       ├── application/   refresh-sources.ts・plan-refresh.ts・register-external-activity.ts・edit-external-activity.ts・delete-external-activity.ts・register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts・deps.ts
 │       ├── components/    life-event-form.tsx・external-activity-form.tsx・visitor-life-event.tsx
 │       └── server/
-│           ├── d1-activity-repository.ts
+│           ├── d1-activity-repository.ts  d1-life-event-repository.ts
 │           ├── queries.ts  actions.ts
 │           └── sources/   fetch-with-limits.ts・zenn.ts・qiita.ts・devto.ts・medium.ts・github.ts・speakerdeck.ts・connpass.ts・spotify.ts・x.ts・codesandbox.ts・youtube.ts
 └── shared/                            既存を使う。新しく足さない（共有担当の部品を除く）

@@ -107,6 +107,51 @@ const sendNoteForm = async ({
   });
 };
 
+/**
+ * オーナーとして画面を開き、`marker`（入力の名前など）を含むフォームの操作を取り出し、`values` を
+ * JavaScript なしのブラウザと同じ multipart で送る。ファイルを送れるよう、値に Blob を取る
+ */
+const submitFormWith = async ({
+  formPath,
+  marker,
+  values,
+  asAuthor,
+  to = formPath,
+}: {
+  formPath: string;
+  marker: string;
+  values: Record<string, string | Blob>;
+  asAuthor: boolean;
+  to?: string;
+}) => {
+  const page = await ctx.server.fetch(formPath, { headers: await authorHeaders() });
+  expect(page.status).toBe(200);
+  const forms = (await page.text()).match(/<form\b[\s\S]*?<\/form>/g) ?? [];
+  const form = forms.find((html) => html.includes(marker));
+  if (!form) throw new Error(`${formPath} に ${marker} を含むフォームがない`);
+  const body = new FormData();
+  for (const [name, value] of Object.entries(readActionFields(form))) body.append(name, value);
+  for (const [name, value] of Object.entries(values)) body.append(name, value);
+  const encoded = new Response(body);
+  return ctx.server.fetch(to, {
+    method: 'POST',
+    body: await encoded.arrayBuffer(),
+    headers: {
+      ...(asAuthor ? await authorHeaders() : {}),
+      'content-type': encoded.headers.get('content-type') ?? '',
+    },
+    redirect: 'manual',
+  });
+};
+
+/** 1×1 の PNG（作り物）。共有担当の media-storage.ts が先頭のバイトで形式を見分ける */
+const PNG = Uint8Array.from(
+  atob(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  ),
+  (char) => char.charCodeAt(0),
+);
+
 const readNoteTables = async () => ({
   note: await readRows(ctx, 'note'),
   note_revision: await readRows(ctx, 'note_revision'),
@@ -448,5 +493,166 @@ describe('過去の版（FR-008・FR-009、User Story 3 の 3）', () => {
     const html = await (await ctx.server.fetch('/notes/integration-revert')).text();
     expect(html).toContain('戻す前に公開していた本文');
     expect(html).not.toContain('戻す先の版の本文');
+  });
+});
+
+describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 5 の 1・4・5）', () => {
+  /** オーナーとして画像を足し、足した画像の置き場のキーを返す */
+  const upload = async (noteUid: string) => {
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${noteUid}`,
+      marker: 'name="mediaFile"',
+      values: {
+        noteUid,
+        mediaFile: new Blob([PNG], { type: 'image/png' }),
+      },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+    const row = await ctx.db
+      .prepare(
+        'SELECT m.storage_key FROM media m JOIN note n ON n.id = m.note_id WHERE n.uid = ? ORDER BY m.id DESC',
+      )
+      .bind(noteUid)
+      .first<{ storage_key: string }>();
+    if (!row) throw new Error('画像が記録されていない');
+    return row.storage_key;
+  };
+
+  const fetchMedia = (slug: string, key: string) => ctx.server.fetch(`/notes/${slug}/media/${key}`);
+
+  const expectHidden = async (res: Awaited<ReturnType<typeof fetchMedia>>) => {
+    expect(res.status).toBe(404);
+    expect(res.headers.get('cache-control')).toContain('no-store');
+    expect((await res.arrayBuffer()).byteLength).toBe(0);
+  };
+
+  it('下書きの note の画像は 404 で no-store。公開した版の本文が指せば 200 で原本を返す', async () => {
+    const note = await insertNote(ctx.db, { slug: 'integration-image' });
+    const key = await upload(note.uid);
+    await expectHidden(await fetchMedia('integration-image', key));
+
+    await insertNoteRevision(ctx.db, note.id, {
+      title: '画像の題',
+      body: `![代替テキスト](media:${key} "キャプション")`,
+    });
+    await publishNoteRow(ctx.db, note.id);
+    const res = await fetchMedia('integration-image', key);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('image/png');
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
+  });
+
+  it('公開した後に保存した版にだけ置いた画像は、公開し直すまで返らない（User Story 5 の 5）', async () => {
+    const note = await insertNote(ctx.db, { slug: 'integration-later-image' });
+    await publishNoteRow(ctx.db, note.id);
+    const key = await upload(note.uid);
+    await insertNoteRevision(ctx.db, note.id, { body: `![後の画像](media:${key})` });
+    await expectHidden(await fetchMedia('integration-later-image', key));
+  });
+
+  it('別の note の画像は、その note の経路で返らない', async () => {
+    const other = await insertNote(ctx.db, { slug: 'integration-other-image' });
+    const key = await upload(other.uid);
+    await expectHidden(await fetchMedia('integration-published', key));
+  });
+
+  it('削除した note の画像は返らない', async () => {
+    const note = await insertNote(ctx.db, { slug: 'integration-deleted-image' });
+    const key = await upload(note.uid);
+    await insertNoteRevision(ctx.db, note.id, { title: '題', body: `![画像](media:${key})` });
+    await publishNoteRow(ctx.db, note.id);
+    await deleteNoteRow(ctx.db, note.id);
+    await expectHidden(await fetchMedia('integration-deleted-image', key));
+  });
+
+  it('代表画像に選んだ画像は、本文に無くても返り、OGP に出る', async () => {
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-card-media',
+      title: '代表画像の題',
+    });
+    const key = await upload(note.uid);
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${note.uid}`,
+      marker: 'name="cardImage"',
+      values: { noteUid: note.uid, cardImage: `media:${key}` },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+    await publishNoteRow(ctx.db, note.id);
+    expect((await fetchMedia('integration-card-media', key)).status).toBe(200);
+    const html = await (await ctx.server.fetch('/notes/integration-card-media')).text();
+    expect(html).toMatch(
+      new RegExp(
+        `<meta property="og:image" content="[^"]*/notes/integration-card-media/media/${key}"`,
+      ),
+    );
+  });
+
+  it('代表画像を site にすると、サイト共通の画像が OGP に出る（FR-024）', async () => {
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-card-site',
+      title: 'サイトの画像の題',
+    });
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${note.uid}`,
+      marker: 'name="cardImage"',
+      values: { noteUid: note.uid, cardImage: 'site' },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+    await publishNoteRow(ctx.db, note.id);
+    const html = await (await ctx.server.fetch('/notes/integration-card-site')).text();
+    expect(html).toMatch(/<meta property="og:image" content="[^"]*\/opengraph-image"/);
+  });
+
+  it('JWT のない changeNoteCardImage・addNoteMedia は D1 を変えない（FR-033）', async () => {
+    const before = { ...(await readNoteTables()), media: await readRows(ctx, 'media') };
+    for (const [marker, values] of [
+      ['name="cardImage"', { noteUid: draft.uid, cardImage: 'site' }],
+      [
+        'name="mediaFile"',
+        { noteUid: draft.uid, mediaFile: new Blob([PNG], { type: 'image/png' }) },
+      ],
+    ] as const) {
+      const res = await submitFormWith({
+        formPath: `/dash/notes/${draft.uid}`,
+        marker,
+        values,
+        asAuthor: false,
+        to: '/',
+      });
+      await res.arrayBuffer();
+    }
+    expect({ ...(await readNoteTables()), media: await readRows(ctx, 'media') }).toEqual(before);
+  });
+});
+
+describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
+  it('下書きの note でも、最も新しい版を訪問者向けの部品で出す', async () => {
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-preview',
+      title: '見た目の確認の古い題',
+    });
+    await insertNoteRevision(ctx.db, note.id, {
+      title: '見た目の確認の新しい題',
+      body: '見た目の確認の **新しい** 本文',
+    });
+    const res = await ctx.server.fetch(`/dash/notes/${note.uid}/preview`, {
+      headers: await authorHeaders(),
+    });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('<h1 class="text-3xl font-bold">見た目の確認の新しい題</h1>');
+    expect(html).toContain('<strong>新しい</strong>');
+    expect(html).toContain('公開していません');
+    expect(html).not.toContain('見た目の確認の古い題');
+  });
+
+  it('オーナーの JWT がなければ 403 で、中身を返さない', async () => {
+    const note = await insertNote(ctx.db, { title: '見た目の確認の隠す題' });
+    const res = await ctx.server.fetch(`/dash/notes/${note.uid}/preview`);
+    expect(res.status).toBe(403);
+    expect(await res.text()).not.toContain('見た目の確認の隠す題');
   });
 });

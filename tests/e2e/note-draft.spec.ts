@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import { saveEdit, textbox } from './support/dash';
-import { createNote, uniqueNoteSlug } from './support/note';
+import { createNote, openNoteEditor, uniqueNoteSlug } from './support/note';
 
 /**
  * 書きかけの note の保持（specs/003-note/spec.md の FR-018・FR-019、User Story 4 の 1・2、
@@ -29,7 +29,7 @@ test('本文を書きかけて保存せずに再読み込みすると、書き�
 }) => {
   await actAsAuthor(context);
   const editUrl = await createNote(page, { slug: uniqueNoteSlug('draft'), title: 'E2E 書きかけ' });
-  await page.goto(editUrl);
+  await openNoteEditor(page, editUrl);
   await fillUntilDrafted(page, 'E2E 保存していない本文');
   await page.reload();
   await expect(textbox(page, '本文')).toHaveValue('E2E 保存していない本文');
@@ -46,14 +46,14 @@ test('別のブラウザの文脈で開くと、書きかけは出ず、最後�
     title: 'E2E 別の端末',
     body: 'E2E 最後に保存した本文',
   });
-  await page.goto(editUrl);
+  await openNoteEditor(page, editUrl);
   await fillUntilDrafted(page, 'E2E この端末だけの書きかけ');
 
   // 別の context は別の localStorage を持つ。別の端末にあたる
   const otherContext = await browser.newContext();
   await actAsAuthor(otherContext);
   const other = await otherContext.newPage();
-  await other.goto(editUrl);
+  await openNoteEditor(other, editUrl);
   await expect(textbox(other, '本文')).toHaveValue('E2E 最後に保存した本文');
   await otherContext.close();
 });
@@ -67,9 +67,9 @@ test('保存を止められたとき、書きかけが消えない（spec の Ed
     slug: uniqueNoteSlug('conflict-draft'),
     title: 'E2E 止められた書きかけ',
   });
-  await page.goto(editUrl);
+  await openNoteEditor(page, editUrl);
   const other = await context.newPage();
-  await other.goto(editUrl);
+  await openNoteEditor(other, editUrl);
   await textbox(other, '本文').fill('先に保存した本文');
   await saveEdit(other);
   await other.close();
