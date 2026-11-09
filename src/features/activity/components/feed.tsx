@@ -1,9 +1,13 @@
 import {
   FEED_PROJECT_KIND_LABELS,
   type CareerFeedItem,
+  type ExternalActivityFeedItem,
+  type ExternalActivitySourceKind,
   type FeedItem,
+  type LifeEventFeedItem,
   type NoteFeedItem,
   type ProjectFeedItem,
+  toTokyoCalendarDate,
 } from '@/features/activity/domain/feed';
 import type { Period } from '@/shared/domain/period';
 
@@ -50,8 +54,8 @@ const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
 );
 
 /**
- * note。個別のページへのリンクは付けない（plan.md の U4）。作成日時は、日の境目の時刻帯が
- * 決まるまで（plan.md の U3）保存した値のまま出す
+ * note。個別のページへのリンクは付けない（plan.md の U4）。作成日時は日本時間の暦の日付で出す。
+ * 並びの日の境目（plan.md の U3）とは別に決めた、表示だけの形
  */
 const NoteRow = ({ item }: { item: NoteFeedItem }) => (
   <article className="flex flex-col gap-1">
@@ -59,7 +63,51 @@ const NoteRow = ({ item }: { item: NoteFeedItem }) => (
     <h2 className="font-bold">{item.title}</h2>
     {item.description && <p>{item.description}</p>}
     <p className="text-sm text-muted-foreground">
-      <time dateTime={item.createdAt}>{item.createdAt}</time>
+      <time dateTime={item.createdAt}>{toTokyoCalendarDate(item.createdAt)}</time>
+    </p>
+  </article>
+);
+
+const SOURCE_KIND_LABELS: Record<ExternalActivitySourceKind, string> = {
+  article: '記事',
+  embed: '埋め込み',
+  other: 'その他',
+};
+
+/**
+ * 外部の activity。取得元の URL へ `<a>` で直接リンクする（FR-020）。`src/shared/components/text-link.tsx`
+ * は管理画面の移動のための `next/link` なので使わない。見せ方は分類で分ける（FR-019）。埋め込みの
+ * 見せ方は取得元で決めることになるが、決まるまで（plan.md の U7）は取得元の名前を添えたリンクで
+ * 出す。代表の画像は出さない（plan.md の U5）
+ */
+const ExternalActivityRow = ({ item }: { item: ExternalActivityFeedItem }) => (
+  <article className="flex flex-col gap-1">
+    <p className="text-sm text-muted-foreground">
+      {SOURCE_KIND_LABELS[item.sourceKind]}・{item.source}
+    </p>
+    <h2 className="font-bold">
+      <a
+        href={item.url}
+        rel="noopener noreferrer"
+        className="underline underline-offset-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+      >
+        {item.title ?? item.url}
+      </a>
+    </h2>
+    <p className="text-sm text-muted-foreground">
+      <time dateTime={item.publishedAt}>{toTokyoCalendarDate(item.publishedAt)}</time>
+    </p>
+  </article>
+);
+
+/** life event。個別のページへのリンクは付けない（plan.md の U4） */
+const LifeEventRow = ({ item }: { item: LifeEventFeedItem }) => (
+  <article className="flex flex-col gap-1">
+    <p className="text-sm text-muted-foreground">life event</p>
+    {item.title && <h2 className="font-bold">{item.title}</h2>}
+    {item.description && <p>{item.description}</p>}
+    <p className="text-sm text-muted-foreground">
+      <time dateTime={item.happenedOn}>{item.happenedOn}</time>
     </p>
   </article>
 );
@@ -72,6 +120,10 @@ const FeedRow = ({ item }: { item: FeedItem }) => {
       return <ProjectRow item={item} />;
     case 'note':
       return <NoteRow item={item} />;
+    case 'external_activity':
+      return <ExternalActivityRow item={item} />;
+    case 'life_event':
+      return <LifeEventRow item={item} />;
   }
 };
 

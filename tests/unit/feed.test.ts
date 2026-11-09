@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FEED_ITEM_TYPES } from '@/features/activity/domain/feed';
+import { FEED_ITEM_TYPES, toTokyoCalendarDate } from '@/features/activity/domain/feed';
 import { toFeedItem } from '@/features/activity/server/d1-feed-repository';
 
 /**
@@ -24,12 +24,21 @@ const row = (overrides: Partial<FeedRow>): FeedRow => ({
   ended_on: null,
   sort_at: '2021-04-01',
   description: null,
+  source: null,
+  source_kind: null,
+  url: null,
   ...overrides,
 });
 
 describe('FEED_ITEM_TYPES', () => {
   it('詰められる種類を、並びの日付が同じときの順で持つ（plan.md の U2 の仮の順）', () => {
-    expect(FEED_ITEM_TYPES).toEqual(['note', 'project', 'career']);
+    expect(FEED_ITEM_TYPES).toEqual([
+      'note',
+      'external_activity',
+      'life_event',
+      'project',
+      'career',
+    ]);
   });
 });
 
@@ -175,5 +184,92 @@ describe('toFeedItem の note（FR-006）', () => {
 
   it('題の欠けた行は詰めない', () => {
     expect(toFeedItem(noteRow({ title: null }))).toBeNull();
+  });
+});
+
+describe('toFeedItem の外部の activity（FR-018・FR-019）', () => {
+  const activityRow = (overrides: Partial<FeedRow> = {}) =>
+    row({
+      item_type: 'external_activity',
+      title: '作り物の記事',
+      sort_at: '2024-05-01T12:00:00.000Z',
+      source: 'zenn',
+      source_kind: 'article',
+      url: 'https://example.com/fake-article',
+      started_on: null,
+      ...overrides,
+    });
+
+  it('題・URL・公開日・取得元・分類だけを持つ', () => {
+    const viewRow = { ...activityRow(), item_number: 5 };
+    expect(toFeedItem(viewRow)).toStrictEqual({
+      type: 'external_activity',
+      title: '作り物の記事',
+      url: 'https://example.com/fake-article',
+      publishedAt: '2024-05-01T12:00:00.000Z',
+      source: 'zenn',
+      sourceKind: 'article',
+    });
+  });
+
+  it('分類が埋め込みの取得元は、分類を埋め込みで持つ', () => {
+    expect(toFeedItem(activityRow({ source: 'speakerdeck', source_kind: 'embed' }))).toMatchObject({
+      source: 'speakerdeck',
+      sourceKind: 'embed',
+    });
+  });
+
+  it('題が空の行は、題を null で持つ', () => {
+    expect(toFeedItem(activityRow({ title: null }))).toMatchObject({ title: null });
+  });
+
+  it('読めない分類は、その他として詰める', () => {
+    expect(toFeedItem(activityRow({ source_kind: 'x' }))).toMatchObject({ sourceKind: 'other' });
+  });
+
+  it('URL か取得元の欠けた行は詰めない', () => {
+    expect(toFeedItem(activityRow({ url: null }))).toBeNull();
+    expect(toFeedItem(activityRow({ source: null }))).toBeNull();
+  });
+});
+
+describe('toFeedItem の life event（FR-018・FR-019）', () => {
+  const lifeEventRow = (overrides: Partial<FeedRow> = {}) =>
+    row({
+      item_type: 'life_event',
+      title: '作り物の出来事',
+      description: '作り物の説明',
+      sort_at: '2020-04-01',
+      source: 'life_event',
+      source_kind: 'life_event',
+      started_on: null,
+      ...overrides,
+    });
+
+  it('題・説明・起きた日・取得元・分類だけを持つ', () => {
+    const viewRow = { ...lifeEventRow(), item_number: 9 };
+    expect(toFeedItem(viewRow)).toStrictEqual({
+      type: 'life_event',
+      title: '作り物の出来事',
+      description: '作り物の説明',
+      happenedOn: '2020-04-01',
+      source: 'life_event',
+      sourceKind: 'life_event',
+    });
+  });
+
+  it('題と説明が空の行は、どちらも null で持つ', () => {
+    expect(toFeedItem(lifeEventRow({ title: null, description: null }))).toMatchObject({
+      title: null,
+      description: null,
+    });
+  });
+});
+
+describe('toTokyoCalendarDate', () => {
+  it('日時を、日本時間の暦の日付の YYYY-MM-DD にする（001 の職歴・実績の日付と同じ形）', () => {
+    expect(toTokyoCalendarDate('2020-01-15T14:59:59.999Z')).toBe('2020-01-15');
+    expect(toTokyoCalendarDate('2020-01-15T15:00:00.000Z')).toBe('2020-01-16');
+    expect(toTokyoCalendarDate('2024-12-31T15:00:00.000Z')).toBe('2025-01-01');
   });
 });

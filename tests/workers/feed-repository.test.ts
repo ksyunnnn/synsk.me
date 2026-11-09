@@ -16,6 +16,7 @@ import {
   insertNoteRevision,
   publishNoteRow,
 } from '../support/note-rows';
+import { deleteActivityRows, insertActivity } from '../support/activity-rows';
 
 /**
  * 一覧の Repository が、本物の migration を当てた D1 のビュー activity_feed から、サイトに載せる
@@ -36,6 +37,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await deleteCareerAndProjectRows(env.DB);
   await deleteNoteRows(env.DB);
+  await deleteActivityRows(env.DB);
 });
 
 const REAL = {
@@ -426,5 +428,130 @@ describe('ページ送り（tasks.md の T031）', () => {
 
     expect(await feed.list(2)).toEqual({ items: [], hasNextPage: false });
     expect(await feed.list(100)).toEqual({ items: [], hasNextPage: false });
+  });
+});
+
+describe('外部の activity と life event（tasks.md の T041）', () => {
+  const insertLifeEvent = async (
+    title: string,
+    happenedOn: string,
+    description: string | null = null,
+  ) => {
+    const id = await insertActivity(env.DB, {
+      source: 'life_event',
+      title,
+      happenedOn,
+      slug: `life-${crypto.randomUUID()}`,
+    });
+    await env.DB.prepare('UPDATE activity SET description = ? WHERE id = ?')
+      .bind(description, id)
+      .run();
+    return id;
+  };
+
+  it('5 つの種類が並びの日付の新しい順に並ぶ（US1 の Acceptance 1）', async () => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '職歴',
+      startedOn: '2020-01-01',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '実績',
+      startedOn: '2021-01-01',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertLifeEvent('life event', '2022-01-01');
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-1',
+      url: 'https://example.com/fake-1',
+      title: '外部の activity',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+    const note = await insertNote(env.DB, { title: 'note' });
+    await env.DB.prepare("UPDATE note SET created_at = '2024-01-01T00:00:00.000Z' WHERE id = ?")
+      .bind(note.id)
+      .run();
+    await publishNoteRow(env.DB, note.id);
+
+    expect((await firstPage()).map((item) => item.type)).toEqual([
+      'note',
+      'external_activity',
+      'life_event',
+      'project',
+      'career',
+    ]);
+  });
+
+  it('分類が埋め込みの取得元の外部の activity は、種類・分類・取得元・URL を持って並ぶ（US1 の Acceptance 4・5）', async () => {
+    await insertActivity(env.DB, {
+      source: 'speakerdeck',
+      externalId: 'fake-slide',
+      url: 'https://example.com/fake-slide',
+      title: '作り物のスライド',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+      imageUrl: 'https://example.com/fake-slide.png',
+    });
+
+    const items = await firstPage();
+    expect(items).toStrictEqual([
+      {
+        type: 'external_activity',
+        title: '作り物のスライド',
+        url: 'https://example.com/fake-slide',
+        publishedAt: '2023-01-01T00:00:00.000Z',
+        source: 'speakerdeck',
+        sourceKind: 'embed',
+      },
+    ]);
+    expect(JSON.stringify(items)).not.toContain('fake-slide.png');
+  });
+
+  it('保存した life event はすべて、起きた日と説明を持って並ぶ（FR-003）', async () => {
+    await insertLifeEvent('1 つ目の出来事', '2019-04-01', '作り物の説明');
+    await insertLifeEvent('2 つ目の出来事', '2020-04-01');
+    await insertLifeEvent('3 つ目の出来事', '2021-04-01');
+
+    expect(await firstPage()).toStrictEqual([
+      {
+        type: 'life_event',
+        title: '3 つ目の出来事',
+        description: null,
+        happenedOn: '2021-04-01',
+        source: 'life_event',
+        sourceKind: 'life_event',
+      },
+      expect.objectContaining({ title: '2 つ目の出来事', happenedOn: '2020-04-01' }),
+      expect.objectContaining({
+        title: '1 つ目の出来事',
+        description: '作り物の説明',
+        happenedOn: '2019-04-01',
+      }),
+    ]);
+  });
+
+  it('行を消した外部の activity は並ばない（FR-002）', async () => {
+    const id = await insertActivity(env.DB, {
+      source: 'qiita',
+      externalId: 'fake-gone',
+      url: 'https://example.com/fake-gone',
+      title: '消える記事',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+    await insertActivity(env.DB, {
+      source: 'qiita',
+      externalId: 'fake-stay',
+      url: 'https://example.com/fake-stay',
+      title: '残る記事',
+      publishedAt: '2023-02-01T00:00:00.000Z',
+    });
+    await env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(id).run();
+
+    expect(await firstPage()).toMatchObject([{ type: 'external_activity', title: '残る記事' }]);
   });
 });
