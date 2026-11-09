@@ -15,7 +15,10 @@ test('note を作って保存し、公開すると訪問者が読め、識別子
 }) => {
   await actAsAuthor(context);
   const slug = uniqueSlug('publish');
-  await createNote(page, { slug, title: 'E2E の note の題' });
+  const editUrl = await createNote(page, { slug, title: 'E2E の note の題' });
+  // 作った後の `?saved=1` の画面のまま打つと、保存した本文が画面に出ないことがある
+  // （tests/e2e/note-concurrency.spec.ts）。開き直してから打つ
+  await page.goto(editUrl);
   await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
   await expect(textbox(page, '識別子')).toBeEditable();
 
