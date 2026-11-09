@@ -1,4 +1,4 @@
-import type { Period } from '@/shared/domain/period';
+import type { CalendarDate, Period } from '@/shared/domain/period';
 import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
@@ -8,11 +8,16 @@ import type { ProjectKind } from '@/shared/domain/project-kind';
  */
 
 /**
- * Repository の実装が詰められる種類。並びの日付が同じときの種類の順を兼ねる。仮の順は
- * note・external_activity・life_event・project・career（plan.md の U2）。詰める実装の無い種類
- * （外部の activity・life event）は入れず、入れるときは仮の順の位置に足す
+ * Repository の実装が詰められる種類。並びの日付が同じときの種類の順を兼ねる。仮の順
+ * （plan.md の U2）
  */
-export const FEED_ITEM_TYPES = ['note', 'project', 'career'] as const;
+export const FEED_ITEM_TYPES = [
+  'note',
+  'external_activity',
+  'life_event',
+  'project',
+  'career',
+] as const;
 export type FeedItemType = (typeof FEED_ITEM_TYPES)[number];
 
 export const isFeedItemType = (value: string): value is FeedItemType =>
@@ -55,4 +60,75 @@ export type NoteFeedItem = {
   createdAt: string;
 };
 
-export type FeedItem = CareerFeedItem | ProjectFeedItem | NoteFeedItem;
+/**
+ * 外部の activity の分類（`activity_source.kind` のうち life event でないもの、migration 0007 の
+ * CHECK）。画面は分類で見せ方を分ける（FR-019）
+ */
+export const EXTERNAL_ACTIVITY_SOURCE_KINDS = ['article', 'embed', 'other'] as const;
+export type ExternalActivitySourceKind = (typeof EXTERNAL_ACTIVITY_SOURCE_KINDS)[number];
+
+export const isExternalActivitySourceKind = (value: string): value is ExternalActivitySourceKind =>
+  (EXTERNAL_ACTIVITY_SOURCE_KINDS as readonly string[]).includes(value);
+
+/**
+ * 外部の activity。画面は取得元の URL へ直接リンクする（FR-020）。代表の画像を持たない
+ * （plan.md の U5）
+ */
+export type ExternalActivityFeedItem = {
+  type: 'external_activity';
+  /** 取得元が題を返さなかった行は null */
+  title: string | null;
+  url: string;
+  /** 公開日時。`YYYY-MM-DDTHH:MM:SS.sssZ` */
+  publishedAt: string;
+  /** 取得元の名前（`activity.source`）。埋め込みの見せ方は取得元で決める（FR-019） */
+  source: string;
+  sourceKind: ExternalActivitySourceKind;
+};
+
+/** life event。slug と代表画像を持たない（plan.md の U4・U5） */
+export type LifeEventFeedItem = {
+  type: 'life_event';
+  /** 空なら null */
+  title: string | null;
+  /** 空なら null */
+  description: string | null;
+  happenedOn: CalendarDate;
+  source: 'life_event';
+  sourceKind: 'life_event';
+};
+
+export type FeedItem =
+  CareerFeedItem | ProjectFeedItem | NoteFeedItem | ExternalActivityFeedItem | LifeEventFeedItem;
+
+/** 日時を出すときの時刻帯。並びの日の境目（plan.md の U3）とは別に、表示だけに使う */
+const DISPLAY_TIME_ZONE = 'Asia/Tokyo';
+
+/**
+ * 日時（`YYYY-MM-DDTHH:MM:SS.sssZ`）を、日本時間の暦の日付（`YYYY-MM-DD`）にする。note の作成日と
+ * 外部の activity の公開日を、001 の職歴・実績の日付と同じ形で出すため
+ */
+export const toTokyoCalendarDate = (dateTime: string): CalendarDate => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: DISPLAY_TIME_ZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(dateTime));
+  const valueOf = (type: 'year' | 'month' | 'day') =>
+    parts.find((part) => part.type === type)?.value ?? '';
+  return `${valueOf('year')}-${valueOf('month')}-${valueOf('day')}` as CalendarDate;
+};
+
+/**
+ * 1 ページに並べる件数。仮の値（plan.md の U8）。読み取り行数は件数で変わらない
+ * （research.md の R8）
+ */
+export const FEED_PAGE_SIZE = 20;
+
+/** 番号のページの 1 つ（research.md の R8）。ページは 1 から数える */
+export type FeedPage = {
+  items: FeedItem[];
+  /** 次のページに項目があるか */
+  hasNextPage: boolean;
+};

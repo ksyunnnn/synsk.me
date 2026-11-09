@@ -120,9 +120,9 @@ description: "一覧の実装タスク"
 
 **Purpose**: ADR-0046 の Confirmation として D1 で一覧の読み取り行数を測り、外部の activity で行が増える前に 1 ページの件数を決めて区切る（research.md の R8）
 
-- [ ] T030 職歴・実績・note・外部の activity・life event を作り物の行（外部の activity 500 件、ほかの種類は各 50 件）入れた D1 で、1 ページ目を読む文の `meta.rows_read` と所要時間を測る。値と件数を research.md の R8 に書く。測った値が遅いことを示し、写して持つ形に移す必要があれば、ADR-0046 を覆すことになるので PM に伝えて止める。**止める依存: M3**（外部の activity と life event の腕が無いと、その行を読む量を測れない）
-- [ ] T031 [P] 番号のページ（`?page=n`）で区切り、最後のページの先で項目を返さないことを tests/workers/feed-repository.test.ts に足す（research.md の R8）。**止める依存: M3**（件数は T030 で決まる）
-- [ ] T032 src/features/activity/server/d1-feed-repository.ts の `list` にページの引数と `LIMIT`・`OFFSET` を足し（src/features/activity/domain/feed-repository.ts のインタフェースも直す）、件数を src/features/activity/domain/feed.ts の定数に置く。**止める依存: M3**（件数は T030 で決まる）
+- [x] T030 職歴・実績・note・外部の activity・life event を作り物の行（外部の activity 500 件、ほかの種類は各 50 件）入れた D1 で、1 ページ目を読む文の `meta.rows_read` と所要時間を測る。値と件数を research.md の R8 に書く。測った値が遅いことを示し、写して持つ形に移す必要があれば、ADR-0046 を覆すことになるので PM に伝えて止める。**止める依存: M3**（外部の activity と life event の腕が無いと、その行を読む量を測れない）
+- [x] T031 [P] 番号のページ（`?page=n`）で区切り、最後のページの先で項目を返さないことを tests/workers/feed-repository.test.ts に足す（research.md の R8）。**止める依存: M3**（件数は T030 で決まる）
+- [x] T032 src/features/activity/server/d1-feed-repository.ts の `list` にページの引数と `LIMIT`・`OFFSET` を足し（src/features/activity/domain/feed-repository.ts のインタフェースも直す）、件数を src/features/activity/domain/feed.ts の定数に置く。**止める依存: M3**（件数は T030 で決まる）
 - [ ] T033 src/features/activity/components/feed.tsx に次のページへのリンクを足し、一覧の画面が `page` の問い合わせの値を読む。数でない値と 1 より小さい値は 1 ページ目として読む。最後のページの先では「まだ何もない」を出さず、1 ページ目へのリンクを出す。ページ送りは `<a>` で作る。リンクに主キーを含めないことを tests/integration/feed.test.ts で確かめる（ADR-0048）。**止める依存: M3**。**止める未決: U1**
 
 ---
@@ -135,8 +135,8 @@ description: "一覧の実装タスク"
 
 ### Tests
 
-- [ ] T040 [P] [US1] 外部の activity の詰め替えが題・URL・公開日・取得元・分類だけを、life event の詰め替えが題・説明・起きた日・取得元・分類だけを持つことを tests/unit/feed.test.ts に足す（FR-018・FR-019、contracts/visitor-feed.md）
-- [ ] T041 [P] [US1] 本物の migration を当てた D1 に activity の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M3**
+- [x] T040 [P] [US1] 外部の activity の詰め替えが題・URL・公開日・取得元・分類だけを、life event の詰め替えが題・説明・起きた日・取得元・分類だけを持つことを tests/unit/feed.test.ts に足す（FR-018・FR-019、contracts/visitor-feed.md）
+- [x] T041 [P] [US1] 本物の migration を当てた D1 に activity の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M3**
   - US1 の Acceptance 1 の 5 件が、note・外部の activity・life event・実績・職歴の順に並ぶ
   - 分類が埋め込みの取得元の外部の activity が、種類・分類・取得元を持って並ぶ（US1 の Acceptance 4）。分類が埋め込みの取得元は 0012 が入れた行（例: `speakerdeck`）を使い、検査の中で `activity_source` に行を足さない
   - 保存した life event がすべて並ぶ（FR-003）
@@ -146,9 +146,9 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T044 [US1] `FEED_ITEM_TYPES` と `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
-- [ ] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す
-- [ ] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `<a>` で取得元の URL へリンクする（`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない）。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
+- [x] T044 [US1] `FEED_ITEM_TYPES` と `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
+- [x] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す
+- [x] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `<a>` で取得元の URL へリンクする（`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない）。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
 
 **Checkpoint**: 5 つの種類の一覧（quickstart.md の 6 の前半）
 
@@ -160,7 +160,7 @@ description: "一覧の実装タスク"
 
 **Independent Test**: 公開の note に転載先の URL を記録し、同じ URL の外部の activity を入れる。一覧に note が並び、その外部の activity が並ばないことを確かめる
 
-- [ ] T050 [US4] tests/workers/feed-repository.test.ts に次を足す。**止める依存: M4**
+- [x] T050 [US4] tests/workers/feed-repository.test.ts に次を足す。**止める依存: M4**
   - 公開の note の転載先と同じ URL の外部の activity が並ばず、note は並ぶ（FR-016、SC-003、US4 の Acceptance 1）
   - 転載先と一致しない外部の activity は並ぶ（FR-017、US4 の Acceptance 2）
   - 転載先を記録した note を下書きに戻すか削除すると、同じ URL の外部の activity が並ぶ（FR-016、US4 の Acceptance 3）

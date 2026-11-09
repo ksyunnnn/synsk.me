@@ -12,16 +12,19 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
  *   `DraftSavedNotice` が、送った書きかけを消す。Server Action が失敗の結果を返したら、送った値を
  *   持ち直す。結果を返さずに投げた（通信の切断、D1 の失敗）ときは、書きかけが残る
  * - 画面を開いたとき、JavaScript が動く前にオーナーが入力を変えていたら、書きかけを戻さない。
- *   動く前に打った値は、動き始めた後もそのまま残す（下の `typedBeforeHydration`）
+ *   動く前に打った値は、動き始めた後もそのまま残し、その時点で書きかけに書く（下の
+ *   `typedBeforeHydration`）
  * - `version` は、編集の画面が開いたときの行の更新日時で、持つ名前に含める。別の画面で先に
  *   保存された後に開き直すと名前が変わり、前の更新日時の書きかけは消さずに残し、自動では戻さない。
  *   戻すと、触っていない項目まで古い値で先の保存を上書きする（specs/001-career-and-project/spec.md
  *   の FR-042）。残した書きかけをオーナーにどう見せるかは決まっていない
  *
  * 使い手は 001 の実績・職歴・学歴・組織・スキルの入力。003 の note の入力も使う（R16）。
- * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前の入力は、書きかけ
- * （localStorage）に書かない。動く前の入力を開いたときに書くと、動く前にふつうのフォームとして送って保存した値が、消されずに
- * 残る
+ * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前に打った入力は、
+ * 動き始めた時点で書きかけ（localStorage）に書く。動く前に送られ、応答を待つ間に動き始めた
+ * かもしれないので、送った書きかけの印も付け、移った先の `DraftSavedNotice` が消す。印は
+ * 送信を見ずに付けるので、保存の成功と読むのは付けてから 60 秒の内に、送った応答で開いた
+ * 画面だけにする（下の `SENT_BEFORE_HYDRATION_TTL_MS`）
  */
 
 type DraftValues = Record<string, string[]>;
@@ -40,6 +43,28 @@ const STORAGE_PREFIX = 'synsk:draft:';
 
 /** 送信して、保存の成功をまだ確かめていない書きかけの名前を持つ場所 */
 const SENT_KEY = 'synsk:draft-sent';
+
+/**
+ * `SENT_KEY` の印を、送信を見ずに、動き始めた時点で付けたことを示す場所。値は付けた時刻
+ * （ミリ秒）。動く前に送られたかは分からない（下の `typedBeforeHydration`）
+ */
+const SENT_BEFORE_HYDRATION_KEY = 'synsk:draft-sent-before-hydration';
+
+/**
+ * 動き始めた時点で付けた印を、保存の成功と読んでよい時間。動く前の送信の応答は、この時間の
+ * 内に返る。過ぎた印は送っていない書きかけのものとして扱い、消さない（REQUIREMENTS.md の
+ * FR-14、docs/SOFTWARE_DESIGN.md の原則 2。推測に頼る範囲に上限を置く）
+ */
+const SENT_BEFORE_HYDRATION_TTL_MS = 60_000;
+
+/**
+ * この文書を、再読み込みか「戻る」「進む」で開いたか。動く前の送信の応答なら、ふつうの移動
+ * （`navigate`）で開く（https://developer.mozilla.org/en-US/docs/Web/API/PerformanceNavigationTiming/type）
+ */
+const isReopened = () => {
+  const [entry] = performance.getEntriesByType('navigation') as PerformanceNavigationTiming[];
+  return entry !== undefined && entry.type !== 'navigate';
+};
 
 /** 書きかけを持つ名前。編集の画面は開いたときの更新日時を含める */
 const toStorageKey = (storageKey: string, version: string | undefined) =>
@@ -167,8 +192,8 @@ const DRAFT_KEY_ATTRIBUTE = 'data-draft-key';
  * （`react-dom-client` の `initTextarea` が `element.value = textContent` を入れる）。そのままでは、
  * 動く前に打った本文が消え、保存は初めの本文を送る（FR-14）。このモジュールは、フォームを
  * hydration する前に読み込まれる。読み込んだ時点の値と、それから hydration までの入力を持ち、
- * フォームが動き始めたら戻す。書きかけには書き込まない（JavaScript が動く前の入力を持たない
- * 理由は、このファイルの冒頭のとおり）。動き始めた後の入力で、ふつうに書き込まれる
+ * フォームが動き始めたら戻し、書きかけに書く（FR-14）。動き始める前にふつうのフォームとして
+ * 送られ、その応答を待つ間に動き始めることがあるので、送った書きかけの印も付ける
  */
 const typedBeforeHydration = new Map<string, DraftValues>();
 /** 動き始めたフォームの書きかけの名前。これより後の入力は、フォームが自分で持つ */
@@ -215,20 +240,31 @@ export const DraftRetainingForm = ({
     const form = formRef.current;
     if (!form) return;
     // 開き直したので、前の送信の成功を待つのをやめる。残った書きかけは、この画面で戻す
-    if (read(SENT_KEY) === key) remove(SENT_KEY);
+    if (read(SENT_KEY) === key) {
+      remove(SENT_KEY);
+      remove(SENT_BEFORE_HYDRATION_KEY);
+    }
     const draft = parseDraft(read(key));
     const save = () => write(key, toValues(form));
     hydratedKeys.add(key);
     const typed = typedBeforeHydration.get(key);
     typedBeforeHydration.delete(key);
-    // 動く前に打った値を戻す。hydration が `<textarea>` を初めの値に戻した後なので、
-    // `isTouched` だけでは打ったことが分からない
-    if (typed) applyValues(form, typed);
-    else if (draft && !isTouched(form)) applyValues(form, draft);
+    // 動く前に打った値を戻し、書きかけにも書く。hydration が `<textarea>` を初めの値に戻した
+    // 後なので、`isTouched` だけでは打ったことが分からない
+    if (typed) {
+      applyValues(form, typed);
+      save();
+      // 動き始める前にふつうのフォームとして送られ、保存に成功したかもしれない。送った書きかけと
+      // 同じく扱い、移った先の `DraftSavedNotice` が消す。送られていなければ、開き直した
+      // ときに上の行が印を外し、書きかけを戻す
+      write(SENT_KEY, key);
+      write(SENT_BEFORE_HYDRATION_KEY, String(Date.now()));
+    } else if (draft && !isTouched(form)) applyValues(form, draft);
 
     const send = () => {
       submittedRef.current = toValues(form);
       write(SENT_KEY, key);
+      remove(SENT_BEFORE_HYDRATION_KEY);
     };
     form.addEventListener('input', save);
     form.addEventListener('change', save);
@@ -246,6 +282,7 @@ export const DraftRetainingForm = ({
     submittedRef.current = null;
     if (result.status === 'saved') return;
     if (read(SENT_KEY) === key) remove(SENT_KEY);
+    remove(SENT_BEFORE_HYDRATION_KEY);
     write(key, submitted);
   }, [result, key]);
 
@@ -279,6 +316,21 @@ export const DraftSavedNotice = ({
   useEffect(() => {
     const sent = read(SENT_KEY);
     if (sent === null) return;
+    // 動き始めた時点で付けた印は、付けてから `SENT_BEFORE_HYDRATION_TTL_MS` の内に、送った応答で
+    // 開いたときだけ保存の成功と読む。保存の知らせの画面で動く前に打ち、再読み込みしたとき
+    // （印は、その書きかけのフォームが開いたときに外す）と、送らずに離れた後で知らせの画面を
+    // 開いたときに、送っていない書きかけを消さないため
+    const markedAt = read(SENT_BEFORE_HYDRATION_KEY);
+    if (markedAt !== null) {
+      // 時刻として読めない値も、過ぎた印として扱う
+      if (!(Date.now() - Number(markedAt) <= SENT_BEFORE_HYDRATION_TTL_MS)) {
+        remove(SENT_KEY);
+        remove(SENT_BEFORE_HYDRATION_KEY);
+        return;
+      }
+      if (isReopened()) return;
+    }
+    remove(SENT_BEFORE_HYDRATION_KEY);
     // 別の画面の書きかけは消さない。送った印だけを外し、後で同じ種類の `?saved=1` の画面を
     // 開いたときに、保存していない書きかけを消さないようにする。書きかけは、その画面を開き直すと戻る
     if (isSentFrom(sent, keys.split('\n'))) remove(sent);

@@ -59,6 +59,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R5 同じ項目の判定と書き方
 
 - 決めたこと: 取得元が ID を返すときは `(source, external_id)` で、返さないときは `(source, url)` で同じ項目を判定する（FR-008）。スキーマの `UNIQUE (source, external_id)` と部分 UNIQUE 索引 `activity_source_url` が最後の守り
+- URL で判定するときは、取った URL と保存した URL の両方を共有の `normalizeWebUrl`（`src/shared/domain/web-url.ts`）で揃えてから比べ、揃えた値で書く（`src/features/activity/application/plan-refresh.ts` の `urlKey`）。揃えると同じ値になる保存した行が 2 つあれば、保存した値が揃えた値と同じ行を同じ項目とする（もう一方を揃えた値に直すと UNIQUE に当たる）。揃えるのはスキームとホスト名の大小・既定のポート・パーセントエンコード・フラグメントだけで、末尾のスラッシュとクエリは揃えない（理由はその関数の注釈）。一覧を取る取得元の URL は取得元の一覧がいつも同じ形で返すので、取得元ごとに揃え足すものは無い（Zenn は末尾にスラッシュを付けた URL を 308 で付けない URL へ移す。2026-11-09 実測）
 - 書き方: 足す行は INSERT、直す行は値が変わった列だけを UPDATE する。値が変わらない行は書かない
 - 公開日を返さない取得元（URL を指名する取得元）を取り直すときは、`published_at` を書かない（FR-012）
 - `created_at` は初めて取り込んだ日時（FR-013、0004 の注釈）。UPDATE で書き換えない
@@ -74,12 +75,12 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - 頁を辿る取得元（Qiita の `Total-Count`、connpass の `results_available`）は、頁ごとに返す総数が 1 頁目と違えば `isComplete` を偽にする。頁を辿るあいだに項目が消えたり増えたりすると頁の境目がずれ、取らなかった項目を消えた候補にするため
   - `isComplete` が偽のとき（Zenn は 20 件、Medium は 10 件で打ち切る）: 一覧に無いことを候補の根拠にしない（FR-018）
   - URL を指名する取得元と、確かめる手段を持たない取得元: 自動では消さない。オーナーが synsk.me の側で削除する（FR-033）
-  - `isComplete` が偽で、個別の URL で確かめる手段を持つ取得元（Zenn・Speaker Deck）: 一覧に無い activity の URL を 1 本ずつ取り直し、404 なら消えた候補にする。2xx なら残っている。ほか（5xx・待ち時間・大きさ・ほかの 4xx・取り直しの失敗）は判定せず、消さない（FR-020。2026-11-09、PM の決定。根拠は FR-017 と原則 2）。実装は `src/features/activity/server/sources/gone.ts` と、`zenn.ts`・`speakerdeck.ts` の `checkGone`
-  - 1 回の取得で取り直す本数に上限を持つ（R8 の表、U13。決まるまでは 1）。どれを取り直すかは、確かめたことの無い行を先に、次に `activity.gone_checked_at`（migrations/0015）の古い順に、同じなら公開日の古い順に選ぶ（`src/features/activity/application/plan-removals.ts` の `pickGoneChecks`）。取り直した行のうち消さなかった行に、取り直した日時を書く
+  - `isComplete` が偽で、個別の URL で確かめる手段を持つ取得元（Zenn・Speaker Deck）: 一覧に無い activity の URL を 1 本ずつ取り直す。続けて 2 回 404 が返った行を消えた候補にする。1 回目の 404 では消さず、404 が続いた回数を 1 にする。2xx なら残っている。ほか（5xx・待ち時間・大きさ・ほかの 4xx・取り直しの失敗）は判定せず、消さない（FR-020）。2xx と判定できない応答は回数を 0 に戻す。理由: 1 回の 404 は取得元の一時の誤りでも返ることがあり、消したものは取り消せない（2026-11-09、PM の決定。根拠は FR-017 と原則 2）。判定できない応答でも 0 に戻すのは、「続けて 2 回」を、間に判定できない回を挟まない 2 回にするため。回数を残すと、404 と判定できない回が交互に続いたときにも消し、消す方へ進む（原則 2）。回数を持つ列は共有担当の migration 0019 が足す `activity.consecutive_gone_count`（INTEGER NOT NULL DEFAULT 0、PR #271）。回数を D1 に読み書きしない間（T048b が終わるまで）は、回数が毎回 0 から始まり、自動では消さない。取得元の一覧に載った行は残っている証拠なので、回数を 0 に戻す（T048b）。実装は `src/features/activity/server/sources/gone.ts` と、`zenn.ts`・`speakerdeck.ts` の `checkGone`
+  - 1 回の取得で取り直す本数に上限を持つ（R8 の表、U13。決まるまでは 1）。どれを取り直すかは、確かめたことの無い行を先に、次に `activity.gone_checked_at`（migrations/0015）の古い順に、同じなら公開日の古い順に選ぶ（`src/features/activity/application/plan-removals.ts` の `pickGoneChecks`）。取り直した行のうち消さなかった行に、取り直した日時と 404 が続いた回数を書く（回数の D1 の読み書きは T048b）。404 が続いている行は、確かめたことの無い行より先に選ぶ。後に回すと、2 回目を確かめるまでに一覧に無いほかの行をすべて回る
   - 取り直すときはリダイレクトを辿らない。移った先の 404 は元の URL が消えた証拠にならず、3xx は判定しない
   - `gone_checked_at` は確かめる順を決めるための日時で、消えた印ではない。消えたと確かめた行は、ほかの消えた行と同じく行ごと消す。一覧（005）は `gone_checked_at` を読まない
   - 取得元が条件付きの要求に 304 を返した回（R9）も取り直す。一覧に載らない古い記事を消しても RSS は変わらず、304 が続くため。一覧の中身が無いので、保存したすべての行から同じ順で選ぶ（一覧に載っている行を選ぶと 2xx で残り、確かめた日時だけが進む）
-  - 消えたと確かめた行も、消す候補の上限（下の項）に数える。上限を超えた回は 1 件も消さない
+  - 消えたと確かめた行（続けて 2 回 404）も、消す候補の上限（下の項）に数える。上限を超えた回は 1 件も消さない
 - 上限: 1 回の取得で 1 つの取得元から消す件数に上限を設ける。消す候補が上限を超えた回は 1 件も消さず、`fetch_result.reason` に止めた旨を書く。次の回も同じなら同じく止め、オーナーが確かめる（FR-019。2026-11-09、PM が原則 2 から導いた）。理由: 一度に多く消えるのは取得元の誤り（空の一覧が返るなど）の兆しで、消したものは取り消せない。値は R8。計算は `src/features/activity/application/plan-removals.ts`
 - 取得の結果をオーナーに見せる画面は持たない（plan.md の「spec が決めないものの扱い」）。止めた旨は `fetch_result.reason` に書くだけ
 - 個別の URL を取り直したときの応答の実測（2026-11-09、`curl` で `-A 'synsk.me (+https://synsk.me)' -L` を付けた）: Zenn はある記事が 200、無い記事（作り物の URL）が 404。Speaker Deck もある資料が 200、無い資料が 404。Medium は、ある記事（`/p/<ID>`）も無い記事も 403 を返す。Medium は個別の URL で判定できないので、自動では消さない（FR-020）。Zenn と Speaker Deck で、オーナーが消した記事・資料が 404 を返すかは、消したものが無いので確かめていない（無い URL での 404 から推測している）
@@ -194,6 +195,12 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   - 退けた形: Asia/Tokyo の 00:00 を UTC にして入れる（`2020-03-31T15:00:00.000Z`）。前の日の値になり、同じ日の life event より前に並び、UTC で日付を出す画面では 1 日ずれる
   - 案 (b) 暦の日付の列を足す migration を共有担当に頼む
 - URL は `src/shared/domain/web-url.ts` の `isWebUrl` で http か https だけを通す。URL を指名する取得元では、さらにその取得元のホストの URL だけを通す（任意のホストへ要求を出さない。原則 2）
+- URL を指名する取得元では、オーナーが貼る URL の表記がゆれる。取得元ごとの処理が、同じ項目を指す表記を 1 つに揃えてから題を取り、揃えた URL を返す（2026-11-09 実測。どれも oEmbed が同じ項目を返した）
+  - YouTube: `youtu.be/<ID>`・`m.youtube.com/watch?v=<ID>`・`www.youtube.com/shorts/<ID>`・`/live/<ID>`・`/embed/<ID>`・共有の印 `si` などの付いた形を `https://www.youtube.com/watch?v=<ID>` にする（`canonicalYouTubeUrl`）。`sources.ts` の YouTube のホストの URL だけを揃える。`list` の付いたプレイリストの中の再生は揃えない（動画 1 本の URL にすると、先頭の動画が同じ別のプレイリストが 1 つにまとまる）
+  - Spotify: アプリの「共有」が付ける `si` を除く。ほかのクエリは残す（`canonicalSpotifyUrl`）
+  - CodeSandbox: `/s/<id>`・`/embed/<id>`・`/p/sandbox/<id>` が同じ sandbox を指すかを確かめていないので、揃えない
+  - X: 題の扱い（U11）が決まってから決める
+- 登録していないサイトの URL は `normalizeWebUrl` だけで揃える。フラグメントを消すので、1 つのページの中の位置（`#` から後）で項目を分けるサイトでは、別の項目が同じ URL になり、後から登録する方が「同じ URL が既にある」で拒まれる（FR-005）。オーナーの登録していないサイトの候補として PR #47 の検証記録が挙げるのは TECHPLAY と eventdots の URL（記事の本文に 14 件）で、イベントごとに別のページだと推測する（URL の一覧は確かめていない）。登録していないサイトの登録は U11 で止まっているので、U11 を決めるときに合わせて決める
 - 削除（FR-033）は、URL を指名した・手で入力した activity だけに出す。一覧を取る取得元の activity には削除の操作を持たない（FR-022）
 
 ## R11 life event の識別子と管理画面の URL

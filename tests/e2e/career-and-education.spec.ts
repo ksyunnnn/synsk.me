@@ -68,8 +68,14 @@ test('同じ職歴を 2 つのタブで開くと、後から保存した側は�
   const other = await context.newPage();
   await other.goto(editUrl);
 
+  // 先の保存が D1 に書き終わるまで待つ。入力の値は保存の前から同じなので、保存のたびに変わる
+  // 更新日時（楽観ロックの隠れた入力）で見分ける。待たずに後の保存を送ると、先の保存より前に
+  // 書き終わることがあり、後の保存が止まらない（2026-11-09 に、20 回のうち 3 回で起きた）
+  const openedUpdatedAt = page.locator('input[name="openedUpdatedAt"]');
+  const updatedAtBeforeSave = await openedUpdatedAt.inputValue();
   await page.getByRole('textbox', { name: '肩書' }).fill('先に保存した肩書');
   await page.getByRole('button', { name: '保存する' }).click();
+  await expect(openedUpdatedAt).not.toHaveValue(updatedAtBeforeSave);
   await expect(page.getByRole('textbox', { name: '肩書' })).toHaveValue('先に保存した肩書');
 
   await other.getByRole('textbox', { name: '肩書' }).fill('後から保存した肩書');

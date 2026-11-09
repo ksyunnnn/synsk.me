@@ -1,9 +1,16 @@
 import 'server-only';
 
-import { FEED_ITEM_TYPES, isFeedItemType, type FeedItem } from '@/features/activity/domain/feed';
+import {
+  FEED_ITEM_TYPES,
+  FEED_PAGE_SIZE,
+  isExternalActivitySourceKind,
+  isFeedItemType,
+  type FeedItem,
+} from '@/features/activity/domain/feed';
 import type { FeedRepository } from '@/features/activity/domain/feed-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
 import { isProjectKind } from '@/shared/domain/project-kind';
+import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
  * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018）だけを読み、表を
@@ -14,7 +21,8 @@ import { isProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * ビューから読む列。`item_number` は並べる SQL の中だけで使い、読まない（research.md の R6）。
- * `sort_at` は note の作成日として読む（contracts/visitor-feed.md）
+ * `sort_at` は note の作成日・外部の activity の公開日・life event の起きた日として読む
+ * （contracts/visitor-feed.md）
  */
 type FeedRow = {
   item_type: string;
@@ -29,10 +37,14 @@ type FeedRow = {
   ended_on: string | null;
   sort_at: string;
   description: string | null;
+  source: string | null;
+  source_kind: string | null;
+  url: string | null;
 };
 
 const COLUMNS = `item_type, is_masked, title, title_masked, organization_name,
-  organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description`;
+  organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description, source,
+  source_kind, url`;
 
 const periodOf = (row: FeedRow): Period | null =>
   row.started_on === null
@@ -79,6 +91,31 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
         description: row.description,
         createdAt: row.sort_at,
       };
+    case 'external_activity':
+      // 画面は URL を `<a href>` にする。取得元の応答の URL を http か https に限る
+      // （constitution の Allowlist Visibility）。ほかの scheme の行は詰めない
+      if (row.url === null || !isWebUrl(row.url) || row.source === null) return null;
+      return {
+        type: 'external_activity',
+        title: row.title,
+        url: row.url,
+        publishedAt: row.sort_at,
+        source: row.source,
+        // 分類は CHECK が絞る。読めない値は `other` と同じ扱いにする
+        sourceKind:
+          row.source_kind !== null && isExternalActivitySourceKind(row.source_kind)
+            ? row.source_kind
+            : 'other',
+      };
+    case 'life_event':
+      return {
+        type: 'life_event',
+        title: row.title,
+        description: row.description,
+        happenedOn: row.sort_at as CalendarDate,
+        source: 'life_event',
+        sourceKind: 'life_event',
+      };
   }
 };
 
@@ -96,11 +133,22 @@ const LIST_SQL = `SELECT ${COLUMNS} FROM activity_feed
   WHERE item_type IN (${typeLiterals.join(', ')})
   ORDER BY sort_at DESC,
     CASE item_type ${typeLiterals.map((literal, index) => `WHEN ${literal} THEN ${index}`).join(' ')} END,
-    item_number DESC`;
+    item_number DESC
+  LIMIT ? OFFSET ?`;
 
 export const createD1FeedRepository = (db: D1Database): FeedRepository => ({
-  list: async () => {
-    const { results } = await db.prepare(LIST_SQL).all<FeedRow>();
-    return results.flatMap((row) => toFeedItem(row) ?? []);
+  list: async (page) => {
+    // ページは 1 から数える整数。それ以外は OFFSET が負や小数になり、1 ページ目と同じ項目を返すか
+    // D1 が投げる。どのページでもないとして項目を返さない
+    if (!Number.isSafeInteger(page) || page < 1) return { items: [], hasNextPage: false };
+    // 次のページがあるかを知るため、1 件多く読む
+    const { results } = await db
+      .prepare(LIST_SQL)
+      .bind(FEED_PAGE_SIZE + 1, (page - 1) * FEED_PAGE_SIZE)
+      .all<FeedRow>();
+    return {
+      items: results.slice(0, FEED_PAGE_SIZE).flatMap((row) => toFeedItem(row) ?? []),
+      hasNextPage: results.length > FEED_PAGE_SIZE,
+    };
   },
 });

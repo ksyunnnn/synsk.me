@@ -1,5 +1,12 @@
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
+import { urlKey } from '@/features/activity/application/plan-refresh';
 import type { FetchedItem, SourceListing } from '@/features/activity/domain/fetched-item';
+
+/**
+ * 個別の URL を取り直して、続けてこの回数 404 が返った行を消えたと確かめる（research.md の R6、
+ * 2026-11-09 の PM の決定、原則 2）。1 回の 404 は取得元の一時の誤りでも返りうるため
+ */
+export const GONE_STREAK_TO_REMOVE = 2;
 
 /**
  * 1 つの取得元の取り直しで、取得元で消えたと確かめた行を求める（docs/SOFTWARE_DESIGN.md の
@@ -29,7 +36,7 @@ export const planRemovals = (
 
 /**
  * すべて取らない取得元で、個別の URL を取り直して確かめる行を選ぶ（R6）。一覧に無い行のうち、
- * 確かめたことの無い行を先に、次に確かめた日時（`gone_checked_at`）の古い順に、同じなら公開日の古い順に、上限の数まで。
+ * 404 が続いている行を先に、次に確かめたことの無い行、確かめた日時（`gone_checked_at`）の古い順、同じなら公開日の古い順に、上限の数まで。
  * 確かめた日時は確かめる順を決めるためだけの値で、消えた印ではない
  */
 export const pickGoneChecks = (
@@ -39,6 +46,10 @@ export const pickGoneChecks = (
 ): StoredItem[] =>
   missingFrom(stored, listed)
     .sort((a, b) => {
+      // 404 が続いている行を先にする。後に回すと、2 回目を確かめるまでほかの行をすべて回る
+      const as = (a.goneStreak ?? 0) > 0 ? 0 : 1;
+      const bs = (b.goneStreak ?? 0) > 0 ? 0 : 1;
+      if (as !== bs) return as - bs;
       const at = a.goneCheckedAt ?? '';
       const bt = b.goneCheckedAt ?? '';
       if (at !== bt) return at < bt ? -1 : 1;
@@ -54,10 +65,10 @@ const missingFrom = (stored: StoredItem[], listed: FetchedItem[]): StoredItem[] 
   const externalIds = new Set<string>();
   const urls = new Set<string>();
   for (const item of listed) {
-    if (item.externalId === undefined) urls.add(item.url);
+    if (item.externalId === undefined) urls.add(urlKey(item.url));
     else externalIds.add(item.externalId);
   }
   return stored.filter((row) =>
-    row.externalId === null ? !urls.has(row.url) : !externalIds.has(row.externalId),
+    row.externalId === null ? !urls.has(urlKey(row.url)) : !externalIds.has(row.externalId),
   );
 };

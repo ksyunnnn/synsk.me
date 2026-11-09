@@ -1,5 +1,6 @@
 import { env, applyD1Migrations } from 'cloudflare:test';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { FEED_PAGE_SIZE } from '@/features/activity/domain/feed';
 import { createD1FeedRepository } from '@/features/activity/server/d1-feed-repository';
 import {
   deleteCareerAndProjectRows,
@@ -13,17 +14,23 @@ import {
   deleteNoteRows,
   insertNote,
   insertNoteRevision,
+  insertSyndication,
   publishNoteRow,
 } from '../support/note-rows';
+import { deleteActivityRows, insertActivity } from '../support/activity-rows';
 
 /**
  * 一覧の Repository が、本物の migration を当てた D1 のビュー activity_feed から、サイトに載せる
  * 職歴と実績を並びの順で返し、秘匿化した行を出してよい値だけで返すこと
  * （specs/005-feed/spec.md の FR-001・FR-004・FR-007・FR-009・FR-010・FR-012、tasks.md の T011）。
+ * 転載先と一致する外部の activity を除くこと（FR-016・FR-017、tasks.md の T050）。
  * 値はすべて作り物
  */
 
 const feed = createD1FeedRepository(env.DB);
+
+/** 1 ページ目の項目。ページ送りのほかの検査は、1 ページに収まる件数の行で確かめる */
+const firstPage = async () => (await feed.list(1)).items;
 
 beforeAll(async () => {
   await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
@@ -32,6 +39,7 @@ beforeAll(async () => {
 beforeEach(async () => {
   await deleteCareerAndProjectRows(env.DB);
   await deleteNoteRows(env.DB);
+  await deleteActivityRows(env.DB);
 });
 
 const REAL = {
@@ -69,7 +77,7 @@ describe('並びの順', () => {
       status: 'published',
     });
 
-    expect((await feed.list()).map((item) => 'period' in item && item.period.startedOn)).toEqual([
+    expect((await firstPage()).map((item) => 'period' in item && item.period.startedOn)).toEqual([
       '2022-04-01',
       '2018-04-01',
       '2015-04-01',
@@ -108,11 +116,11 @@ describe('並びの順', () => {
       status: 'published',
     });
 
-    const names = (items: Awaited<ReturnType<typeof feed.list>>) =>
+    const names = (items: Awaited<ReturnType<typeof firstPage>>) =>
       items.map((item) => (item.type === 'career' ? item.role : item.title));
-    const first = names(await feed.list());
+    const first = names(await firstPage());
     expect(first).toEqual(['後に入れた実績', '先に入れた実績', '後に入れた職歴', '先に入れた職歴']);
-    expect(names(await feed.list())).toEqual(first);
+    expect(names(await firstPage())).toEqual(first);
   });
 });
 
@@ -127,13 +135,13 @@ describe('並べる行', () => {
       await insertProject(env.DB, { organizationId, isMasked, status: 'draft' });
     }
 
-    expect(await feed.list()).toEqual([]);
+    expect(await firstPage()).toEqual([]);
   });
 
   it('学歴は並ばない（FR-001）', async () => {
     await insertEducation(env.DB, { school: '作り物大学' });
 
-    expect(await feed.list()).toEqual([]);
+    expect(await firstPage()).toEqual([]);
   });
 
   it('秘匿化した組織名の無い組織を指す秘匿化した行は並ばない（research.md の R4）', async () => {
@@ -150,7 +158,7 @@ describe('並べる行', () => {
       status: 'published',
     });
 
-    expect(await feed.list()).toEqual([
+    expect(await firstPage()).toEqual([
       expect.objectContaining({ type: 'project', isMasked: false, title: '秘匿化しない実績' }),
     ]);
   });
@@ -184,7 +192,7 @@ describe('秘匿化', () => {
       status: 'published',
     });
 
-    const items = await feed.list();
+    const items = await firstPage();
     expect(items).toStrictEqual([
       {
         type: 'project',
@@ -226,7 +234,7 @@ describe('秘匿化', () => {
       status: 'published',
     });
 
-    expect(await feed.list()).toMatchObject([
+    expect(await firstPage()).toMatchObject([
       {
         type: 'project',
         isMasked: false,
@@ -281,7 +289,7 @@ describe('詰められない種類', () => {
       ),
     ]);
     try {
-      expect(await feed.list()).toEqual([
+      expect(await firstPage()).toEqual([
         expect.objectContaining({ type: 'project', title: '作り物の受託開発' }),
       ]);
     } finally {
@@ -317,7 +325,7 @@ describe('note（tasks.md の T021）', () => {
     const published = await insertNoteCreatedAt('2024-01-04T00:00:00.000Z', '公開の note');
     await publishNoteRow(env.DB, published.id);
 
-    expect(await feed.list()).toStrictEqual([
+    expect(await firstPage()).toStrictEqual([
       {
         type: 'note',
         title: '公開の note',
@@ -335,7 +343,7 @@ describe('note（tasks.md の T021）', () => {
       description: '保存しただけの版の説明文',
     });
 
-    const items = await feed.list();
+    const items = await firstPage();
     expect(items).toMatchObject([
       { type: 'note', title: '公開した版の題', description: '公開した版の題の説明文' },
     ]);
@@ -362,7 +370,7 @@ describe('note（tasks.md の T021）', () => {
     await publishNoteRow(env.DB, note.id, '2025-03-01T00:00:00.000Z');
 
     const order = async () =>
-      (await feed.list()).map((item) => (item.type === 'career' ? item.role : item.title));
+      (await firstPage()).map((item) => (item.type === 'career' ? item.role : item.title));
     const expected = ['2022 年の実績', '2020 年に作った note', '2019 年の職歴'];
     expect(await order()).toEqual(expected);
 
@@ -373,5 +381,267 @@ describe('note（tasks.md の T021）', () => {
     await unpublish(note.id);
     await publishNoteRow(env.DB, note.id, '2025-09-01T00:00:00.000Z');
     expect(await order()).toEqual(expected);
+  });
+});
+
+describe('ページ送り（tasks.md の T031）', () => {
+  /** 始まりの日を 1 日ずつずらした実績を入れる。i が大きいほど新しい */
+  const insertProjects = async (count: number) => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    for (let i = 0; i < count; i++) {
+      const day = new Date(Date.UTC(2020, 0, 1 + i)).toISOString().slice(0, 10);
+      await insertProject(env.DB, {
+        organizationId,
+        title: `実績 ${i}`,
+        startedOn: day,
+        isMasked: false,
+        status: 'published',
+      });
+    }
+  };
+  const titles = (items: Awaited<ReturnType<typeof firstPage>>) =>
+    items.map((item) => ('title' in item ? item.title : ''));
+
+  it('番号のページで区切り、ページをつなぐと 1 つの並びになる（research.md の R8）', async () => {
+    await insertProjects(FEED_PAGE_SIZE + 3);
+
+    const first = await feed.list(1);
+    const second = await feed.list(2);
+    expect(first.items).toHaveLength(FEED_PAGE_SIZE);
+    expect(first.hasNextPage).toBe(true);
+    expect(second.items).toHaveLength(3);
+    expect(second.hasNextPage).toBe(false);
+
+    const expected = Array.from(
+      { length: FEED_PAGE_SIZE + 3 },
+      (_, i) => `実績 ${FEED_PAGE_SIZE + 2 - i}`,
+    );
+    expect([...titles(first.items), ...titles(second.items)]).toEqual(expected);
+  });
+
+  it('件数がちょうど 1 ページのとき、次のページは無い', async () => {
+    await insertProjects(FEED_PAGE_SIZE);
+
+    expect(await feed.list(1)).toMatchObject({ hasNextPage: false });
+  });
+
+  it('最後のページの先では項目を返さない', async () => {
+    await insertProjects(3);
+
+    expect(await feed.list(2)).toEqual({ items: [], hasNextPage: false });
+    expect(await feed.list(100)).toEqual({ items: [], hasNextPage: false });
+  });
+
+  it('1 以上の整数でないページは項目を返さない', async () => {
+    await insertProjects(3);
+
+    for (const page of [0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(await feed.list(page)).toEqual({ items: [], hasNextPage: false });
+    }
+  });
+});
+
+describe('外部の activity と life event（tasks.md の T041）', () => {
+  const insertLifeEvent = async (
+    title: string,
+    happenedOn: string,
+    description: string | null = null,
+  ) => {
+    const id = await insertActivity(env.DB, {
+      source: 'life_event',
+      title,
+      happenedOn,
+      slug: `life-${crypto.randomUUID()}`,
+    });
+    await env.DB.prepare('UPDATE activity SET description = ? WHERE id = ?')
+      .bind(description, id)
+      .run();
+    return id;
+  };
+
+  it('5 つの種類が並びの日付の新しい順に並ぶ（US1 の Acceptance 1）', async () => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '職歴',
+      startedOn: '2020-01-01',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '実績',
+      startedOn: '2021-01-01',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertLifeEvent('life event', '2022-01-01');
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-1',
+      url: 'https://example.com/fake-1',
+      title: '外部の activity',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+    const note = await insertNote(env.DB, { title: 'note' });
+    await env.DB.prepare("UPDATE note SET created_at = '2024-01-01T00:00:00.000Z' WHERE id = ?")
+      .bind(note.id)
+      .run();
+    await publishNoteRow(env.DB, note.id);
+
+    expect((await firstPage()).map((item) => item.type)).toEqual([
+      'note',
+      'external_activity',
+      'life_event',
+      'project',
+      'career',
+    ]);
+  });
+
+  it('分類が埋め込みの取得元の外部の activity は、種類・分類・取得元・URL を持って並ぶ（US1 の Acceptance 4・5）', async () => {
+    await insertActivity(env.DB, {
+      source: 'speakerdeck',
+      externalId: 'fake-slide',
+      url: 'https://example.com/fake-slide',
+      title: '作り物のスライド',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+      imageUrl: 'https://example.com/fake-slide.png',
+    });
+
+    const items = await firstPage();
+    expect(items).toStrictEqual([
+      {
+        type: 'external_activity',
+        title: '作り物のスライド',
+        url: 'https://example.com/fake-slide',
+        publishedAt: '2023-01-01T00:00:00.000Z',
+        source: 'speakerdeck',
+        sourceKind: 'embed',
+      },
+    ]);
+    expect(JSON.stringify(items)).not.toContain('fake-slide.png');
+  });
+
+  it('保存した life event はすべて、起きた日と説明を持って並ぶ（FR-003）', async () => {
+    await insertLifeEvent('1 つ目の出来事', '2019-04-01', '作り物の説明');
+    await insertLifeEvent('2 つ目の出来事', '2020-04-01');
+    await insertLifeEvent('3 つ目の出来事', '2021-04-01');
+
+    expect(await firstPage()).toStrictEqual([
+      {
+        type: 'life_event',
+        title: '3 つ目の出来事',
+        description: null,
+        happenedOn: '2021-04-01',
+        source: 'life_event',
+        sourceKind: 'life_event',
+      },
+      expect.objectContaining({ title: '2 つ目の出来事', happenedOn: '2020-04-01' }),
+      expect.objectContaining({
+        title: '1 つ目の出来事',
+        description: '作り物の説明',
+        happenedOn: '2019-04-01',
+      }),
+    ]);
+  });
+
+  it('行を消した外部の activity は並ばない（FR-002）', async () => {
+    const id = await insertActivity(env.DB, {
+      source: 'qiita',
+      externalId: 'fake-gone',
+      url: 'https://example.com/fake-gone',
+      title: '消える記事',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+    await insertActivity(env.DB, {
+      source: 'qiita',
+      externalId: 'fake-stay',
+      url: 'https://example.com/fake-stay',
+      title: '残る記事',
+      publishedAt: '2023-02-01T00:00:00.000Z',
+    });
+    await env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(id).run();
+
+    expect(await firstPage()).toMatchObject([{ type: 'external_activity', title: '残る記事' }]);
+  });
+});
+
+describe('重なりの除外（tasks.md の T050）', () => {
+  const SYNDICATED_URL = 'https://example.com/fake-syndicated';
+
+  /** 転載先を記録した公開の note と、転載先と同じ URL の外部の activity を入れる */
+  const seed = async () => {
+    const note = await insertNote(env.DB, { title: '転載した note' });
+    await publishNoteRow(env.DB, note.id);
+    await insertSyndication(env.DB, note.id, SYNDICATED_URL);
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-syndicated',
+      url: SYNDICATED_URL,
+      title: '転載先の記事',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+    return note;
+  };
+  const titles = async () =>
+    (await firstPage()).map((item) => ('title' in item ? item.title : null));
+
+  it('公開の note の転載先と同じ URL の外部の activity は並ばず、note は並ぶ（FR-016、SC-003、US4 の Acceptance 1）', async () => {
+    await seed();
+
+    expect(await titles()).toEqual(['転載した note']);
+  });
+
+  it('転載先と一致しない外部の activity は並ぶ（FR-017、US4 の Acceptance 2）', async () => {
+    await seed();
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-other',
+      url: 'https://example.com/fake-other',
+      title: '別の記事',
+      publishedAt: '2023-02-01T00:00:00.000Z',
+    });
+
+    expect(await titles()).toEqual(['転載した note', '別の記事']);
+  });
+
+  it('転載先を記録した note を下書きに戻すと、同じ URL の外部の activity が並ぶ（FR-016、US4 の Acceptance 3）', async () => {
+    const note = await seed();
+    await env.DB.prepare("UPDATE note SET status = 'draft' WHERE id = ?").bind(note.id).run();
+
+    expect(await titles()).toEqual(['転載先の記事']);
+  });
+
+  it('転載先を記録した note を削除すると、同じ URL の外部の activity が並ぶ（FR-016、US4 の Acceptance 3）', async () => {
+    const note = await seed();
+    await deleteNoteRow(env.DB, note.id);
+
+    expect(await titles()).toEqual(['転載先の記事']);
+  });
+
+  it('一致は文字列の完全一致で比べる（plan.md の U6）', async () => {
+    const note = await insertNote(env.DB, { title: '転載した note' });
+    await publishNoteRow(env.DB, note.id);
+    await insertSyndication(env.DB, note.id, SYNDICATED_URL);
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-slash',
+      url: `${SYNDICATED_URL}/`,
+      title: '末尾にスラッシュの付いた記事',
+      publishedAt: '2023-01-02T00:00:00.000Z',
+    });
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-case',
+      url: SYNDICATED_URL.replace('fake', 'Fake'),
+      title: '大文字と小文字の違う記事',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+
+    expect(await titles()).toEqual([
+      '転載した note',
+      '末尾にスラッシュの付いた記事',
+      '大文字と小文字の違う記事',
+    ]);
   });
 });
