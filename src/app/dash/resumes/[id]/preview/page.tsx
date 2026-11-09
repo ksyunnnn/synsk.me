@@ -24,10 +24,10 @@ const Page = async ({ params }: Props) => {
 
   return (
     <main>
-      <p className="mx-auto max-w-5xl px-6 py-4 print:hidden">
-        <TextLink href={`/dash/resumes/${id}`}>設定の画面へ戻る</TextLink>
-      </p>
-      <VisitorResumeView resume={resume} />
+      <VisitorResumeView
+        resume={resume}
+        toolbarStart={<TextLink href={`/dash/resumes/${id}`}>設定の画面へ戻る</TextLink>}
+      />
     </main>
   );
 };
