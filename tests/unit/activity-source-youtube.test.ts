@@ -35,4 +35,32 @@ describe('YouTube', () => {
 
     expect(await fetchByUrl(fetcher, URL_, LIMITS)).toBeNull();
   });
+
+  it.each([
+    'https://youtu.be/fakefake000?si=fake-share',
+    'https://m.youtube.com/watch?v=fakefake000',
+    'https://www.youtube.com/shorts/fakefake000',
+    'https://www.youtube.com/watch?v=fakefake000&si=fake-share',
+    'https://www.youtube.com/live/fakefake000',
+    'https://www.youtube.com/embed/fakefake000',
+  ])('%s は www.youtube.com/watch?v=<ID> に揃えて取る（research.md の R10）', async (url) => {
+    const { fetcher, requested } = createFakeFetcher({
+      [OEMBED]: jsonResponse({ title: '作り物の動画' }),
+    });
+
+    expect((await fetchByUrl(fetcher, url, LIMITS))?.url).toBe(URL_);
+    expect(requested.map((request) => request.url)).toEqual([OEMBED]);
+  });
+
+  it.each([
+    'https://example.com/watch?v=fakefake000',
+    'https://www.youtube.com/watch?v=fakefake000&list=PLfake',
+  ])('%s は揃えない。ほかのホストと、プレイリストの中の再生', async (url) => {
+    const { fetcher, requested } = createFakeFetcher({});
+
+    await fetchByUrl(fetcher, url, LIMITS);
+    expect(requested.map((request) => request.url)).toEqual([
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+    ]);
+  });
 });

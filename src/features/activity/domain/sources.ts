@@ -21,7 +21,10 @@ export const SOURCES = {
   spotify: { intake: 'url', hosts: ['open.spotify.com'] },
   x: { intake: 'url', hosts: ['x.com', 'twitter.com'] },
   codesandbox: { intake: 'url', hosts: ['codesandbox.io'] },
-  youtube: { intake: 'url', hosts: ['www.youtube.com', 'youtube.com', 'youtu.be'] },
+  youtube: {
+    intake: 'url',
+    hosts: ['www.youtube.com', 'youtube.com', 'm.youtube.com', 'youtu.be'],
+  },
   codepen: { intake: 'manual' },
 } as const satisfies Record<string, { intake: IntakeMode; hosts?: readonly string[] }>;
 

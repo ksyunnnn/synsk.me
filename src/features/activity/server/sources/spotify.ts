@@ -14,11 +14,34 @@ export const fetchByUrl = (
   fetcher: Fetcher,
   url: string,
   limits: FetchLimits,
-): Promise<FetchedItem | null> =>
-  fetchOEmbed(
+): Promise<FetchedItem | null> => {
+  const canonical = canonicalSpotifyUrl(url);
+  return fetchOEmbed(
     'Spotify',
     fetcher,
-    `https://open.spotify.com/oembed?url=${encodeURIComponent(url)}`,
-    url,
+    `https://open.spotify.com/oembed?url=${encodeURIComponent(canonical)}`,
+    canonical,
     limits,
   );
+};
+
+/**
+ * 共有の印 `si` を除く（research.md の R10）。アプリの「共有」が付ける値で、付けても付けなくても
+ * oEmbed は同じプレイリストを返した（2026-11-09 実測）。ほかのクエリは残す
+ */
+export const canonicalSpotifyUrl = (url: string): string => {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  if (!parsed.searchParams.has('si')) return url;
+  // `si` の組だけを文字列から除く。searchParams で書き直すと、ほかのクエリの表記（%20 と +）も変わる
+  const rest = parsed.search
+    .slice(1)
+    .split('&')
+    .filter((pair) => !/^si(=|$)/.test(pair));
+  parsed.search = rest.length > 0 ? `?${rest.join('&')}` : '';
+  return parsed.href;
+};

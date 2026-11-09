@@ -1,4 +1,5 @@
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
+import { urlKey } from '@/features/activity/application/plan-refresh';
 import type { FetchedItem, SourceListing } from '@/features/activity/domain/fetched-item';
 
 /**
@@ -64,10 +65,10 @@ const missingFrom = (stored: StoredItem[], listed: FetchedItem[]): StoredItem[] 
   const externalIds = new Set<string>();
   const urls = new Set<string>();
   for (const item of listed) {
-    if (item.externalId === undefined) urls.add(item.url);
+    if (item.externalId === undefined) urls.add(urlKey(item.url));
     else externalIds.add(item.externalId);
   }
   return stored.filter((row) =>
-    row.externalId === null ? !urls.has(row.url) : !externalIds.has(row.externalId),
+    row.externalId === null ? !urls.has(urlKey(row.url)) : !externalIds.has(row.externalId),
   );
 };
