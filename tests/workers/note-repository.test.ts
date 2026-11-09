@@ -6,6 +6,8 @@ import {
   deleteNoteRow,
   deleteNoteRows,
   insertNote,
+  insertLinkPreview,
+  insertNoteMedia,
   insertNoteRevision,
   publishNoteRow,
 } from '../support/note-rows';
@@ -284,9 +286,12 @@ describe('findVisitorBySlug（FR-012・FR-015、research.md の R7）', () => {
       slug: 'visible',
       title: '公開した題',
       description: '公開した説明',
+      summary: '公開した説明',
       body: '公開した本文',
       publishedAt: '2026-11-01T00:00:00.000Z',
       cardImage: { kind: 'generated' },
+      media: [],
+      linkPreviews: [],
     });
     expect(await notes.hasVisitorSlug('visible')).toBe(true);
   });
@@ -303,5 +308,63 @@ describe('findVisitorBySlug（FR-012・FR-015、research.md の R7）', () => {
     await deleteNoteRow(env.DB, note.id);
     expect(await notes.findVisitorBySlug('deleted-note')).toBeNull();
     expect(await notes.hasVisitorSlug('deleted-note')).toBe(false);
+  });
+});
+
+describe('findVisitorBySlug の本文の読み出し（T006、research.md の R11）', () => {
+  it('その note の media の行に無い storageKey を DTO に入れない', async () => {
+    const note = await insertNote(env.DB, { slug: 'with-media' });
+    const other = await insertNote(env.DB, { slug: 'other-media' });
+    const own = await insertNoteMedia(env.DB, note.id);
+    const foreign = await insertNoteMedia(env.DB, other.id);
+    const missing = crypto.randomUUID();
+    await insertNoteRevision(env.DB, note.id, {
+      body: [
+        `![自分の画像](media:${own.storageKey} "キャプション")`,
+        `![別の note の画像](media:${foreign.storageKey})`,
+        `![無い画像](media:${missing})`,
+      ].join('\n\n'),
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect((await notes.findVisitorBySlug('with-media'))?.media).toEqual([own.storageKey]);
+  });
+
+  it('説明文が空なら、本文の最初の段落が説明になる', async () => {
+    const note = await insertNote(env.DB, {
+      slug: 'no-description',
+      description: null,
+      body: '# 見出し\n\n最初の\n段落\n\n次の段落',
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect(await notes.findVisitorBySlug('no-description')).toMatchObject({
+      description: null,
+      summary: '最初の 段落',
+    });
+  });
+
+  it('説明文があれば、説明文のまま', async () => {
+    const note = await insertNote(env.DB, { slug: 'has-description', description: '説明文' });
+    await publishNoteRow(env.DB, note.id);
+    expect((await notes.findVisitorBySlug('has-description'))?.summary).toBe('説明文');
+  });
+
+  it('URL だけの段落が指す参照先の情報を、取ったことのある URL だけ入れる', async () => {
+    await insertLinkPreview(env.DB, {
+      url: 'https://example.com/known',
+      title: '参照先の題',
+      imageUrl: 'https://example.com/known.png',
+    });
+    const note = await insertNote(env.DB, {
+      slug: 'with-links',
+      body: 'https://example.com/known\n\nhttps://example.com/unknown\n\n文の中の https://example.com/inline',
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect((await notes.findVisitorBySlug('with-links'))?.linkPreviews).toEqual([
+      {
+        url: 'https://example.com/known',
+        title: '参照先の題',
+        imageUrl: 'https://example.com/known.png',
+      },
+    ]);
   });
 });
