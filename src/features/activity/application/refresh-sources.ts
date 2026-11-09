@@ -16,8 +16,14 @@ export const refreshSources = async (
   now: string,
   limits: FetchLimits,
 ): Promise<RefreshOutcome[]> => {
+  // 読む・書くの外で投げた（計算を含む）ときも、取得の結果に失敗を書く。書かないと
+  // `fetch_result.fetched_at` が進まず、古い順に取得元を選ぶ実行の分け方（research.md の R9）で毎回先に選ばれる
   const settled = await Promise.allSettled(
-    sources.map((source) => refreshSource(deps, source, now, limits)),
+    sources.map((source) =>
+      refreshSource(deps, source, now, limits).catch((error: unknown) =>
+        fail(deps, source, now, `取り直しに失敗した: ${messageOf(error)}`),
+      ),
+    ),
   );
   return settled.map((result, index): RefreshOutcome =>
     result.status === 'fulfilled'
