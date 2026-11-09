@@ -1,7 +1,6 @@
 import 'server-only';
 
 import {
-  isResumeProjectKind,
   type EditTimes,
   type NewResumeContent,
   type Resume,
@@ -9,12 +8,12 @@ import {
   type ResumeContent,
   type ResumeEducation,
   type ResumeProject,
-  type ResumeProjectKind,
   type ResumeRowKind,
   type ResumeSourceProject,
 } from '@/features/resume/domain/resume';
 import type { EditResult, ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
+import { isProjectKind, type ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * `ResumeRepository` の D1 の実装。行の型はこのファイルの中だけに置く（001 の research.md の R3）。
@@ -109,7 +108,7 @@ const periodOf = (row: PeriodColumns): Period => ({
 });
 
 /** 種類は CHECK が 4 値に絞る。読めない値は 001 の `other` と同じ扱いにする */
-const kindOf = (value: string): ResumeProjectKind => (isResumeProjectKind(value) ? value : 'other');
+const kindOf = (value: string): ProjectKind => (isProjectKind(value) ? value : 'other');
 
 const toResume = (row: ResumeRow): Resume => ({
   id: row.id,

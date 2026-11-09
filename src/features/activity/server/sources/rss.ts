@@ -52,7 +52,7 @@ const readText = (raw: string): string => {
 
 const NAMED: Record<string, string> = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
 
-const decodeEntities = (text: string): string =>
+export const decodeEntities = (text: string): string =>
   text.replace(/&(#x[0-9a-fA-F]+|#[0-9]+|amp|lt|gt|quot|apos);/g, (whole, entity: string) => {
     if (entity.startsWith('#x')) return codePoint(Number.parseInt(entity.slice(2), 16), whole);
     if (entity.startsWith('#')) return codePoint(Number.parseInt(entity.slice(1), 10), whole);

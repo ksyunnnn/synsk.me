@@ -2,6 +2,7 @@ import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import type { Uid } from '@/shared/domain/uid';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 
 /**
  * 学歴の型と決まり（specs/001-career-and-project/spec.md の FR-036・FR-037・FR-039）。
@@ -58,7 +59,7 @@ export const parseEducationContent = (
       school: values.school.trim(),
       department: emptyToNull(values.department)?.trim() ?? null,
       period: period.period,
-      remarks: emptyToNull(values.remarks.replace(/\r\n?/g, '\n')),
+      remarks: emptyToNull(normalizeNewlines(values.remarks)),
     },
   };
 };

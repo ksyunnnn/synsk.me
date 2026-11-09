@@ -305,3 +305,56 @@ test('スキルと学歴を登録してから編集しても、書きかけが�
   await expect(page.getByRole('link', { name: `${school}・E2E 続けて保存する学部` })).toBeVisible();
   await expectNoDraftLeft(page);
 });
+
+/*
+ * JavaScript が動く前（hydration の前）に打った本文が、hydration の後も残ること。react-dom の
+ * hydration は、初めの値を持つ `<textarea>` の値を初めの値に戻す（`initTextarea`）
+ */
+
+/**
+ * 画面のスクリプトの読み込みを止める。返した関数を呼ぶと、止めていた読み込みを流し、それ以降は
+ * 止めない。止めている要求が残るうちに経路の登録を外すと、Playwright が二重の処理として止まる
+ */
+const holdScripts = async (page: Page) => {
+  let release = () => {};
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/*', async (route) => {
+    if (route.request().resourceType() === 'script') await released;
+    await route.fallback();
+  });
+  return release;
+};
+
+/** フォームが hydration を終えるまで待つ。React は hydration した要素にフィバーの印を付ける */
+const waitForHydration = (page: Page) =>
+  page.waitForFunction(() => {
+    const form = document.querySelector('main form');
+    return form !== null && Object.keys(form).some((key) => key.startsWith('__reactFiber'));
+  });
+
+test('JavaScript が動く前に本文を打っても、動いた後に本文が残り、保存で送られる', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 動く前に打った本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 動く前に打つ組織',
+    organizationNameMasked: 'E2E 動く前に打つ秘匿化した組織名',
+    role: 'E2E 動く前に打つ肩書',
+    description: 'E2E 保存した本文',
+  });
+
+  const release = await holdScripts(page);
+  await page.goto(editUrl, { waitUntil: 'commit' });
+  await textbox(page, '本文').fill(typed);
+  await release();
+  await waitForHydration(page);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+
+  await saveEdit(page);
+  await page.goto(editUrl);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
