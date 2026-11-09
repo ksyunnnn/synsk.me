@@ -82,3 +82,50 @@ test('オーナーはキーボードだけで life event を作り・書き換�
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toHaveText('life event を削除しました');
 });
+
+/** 作り物の 1×1 の PNG */
+const PNG_1X1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+test('代表画像を登録して訪問者のページに出し、形式の違うファイルを拒み、外せる（FR-028・FR-029）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  await page.goto('/dash/life-events/new');
+  await page.getByRole('textbox', { name: '題', exact: true }).fill('E2E 画像の出来事');
+  await page.getByRole('textbox', { name: '起きた日', exact: true }).fill('2018-01-01');
+  await page.getByRole('textbox', { name: '識別子', exact: true }).fill('e2e-life-event-image');
+  await page.getByRole('button', { name: '作る' }).click();
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+
+  const file = page.getByLabel('画像のファイル');
+  await file.setInputFiles({
+    name: 'fake.txt',
+    mimeType: 'image/png',
+    buffer: Buffer.from('作り物'),
+  });
+  await page.getByRole('button', { name: '画像を登録する' }).click();
+  await expect(page.getByRole('alert')).toHaveText(
+    '画像は JPEG・PNG・WebP・GIF のどれかにしてください',
+  );
+
+  await file.setInputFiles({ name: 'fake.png', mimeType: 'image/png', buffer: PNG_1X1 });
+  await page.getByRole('button', { name: '画像を登録する' }).click();
+  await expect(page.getByRole('status')).toHaveText('代表画像を登録しました');
+  const src = await page.getByRole('img', { name: '今の代表画像' }).getAttribute('src');
+  expect(src).toMatch(/^\/life-events\/e2e-life-event-image\/media\/[0-9a-f-]{36}$/);
+  const image = await page.request.get(src!);
+  expect(image.status()).toBe(200);
+  expect(image.headers()['content-type']).toBe('image/png');
+
+  await page.goto('/life-events/e2e-life-event-image');
+  await expect(page.locator(`img[src="${src}"]`)).toBeVisible();
+
+  await page.goBack();
+  await page.getByRole('button', { name: '代表画像を外す' }).click();
+  await expect(page.getByRole('status')).toHaveText('代表画像を外しました');
+  expect((await page.request.get(src!)).status()).toBe(404);
+});
