@@ -87,6 +87,8 @@ const fakeNotes = (current: Note | null = note(), overrides: Partial<NoteReposit
     addMedia: vi.fn(async () => ({ ok: true })),
     findPreview: vi.fn(async () => null),
     purge: vi.fn(async () => ({ ok: true as const, storageKeys: [] as string[] })),
+    findLinkPreviews: vi.fn(async () => []),
+    saveLinkPreview: vi.fn(async () => {}),
     ...overrides,
   }) satisfies NoteRepository;
 

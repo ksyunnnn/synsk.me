@@ -8,6 +8,7 @@ import type {
   NoteRevisionSummary,
   NoteSummary,
   VisitorNote,
+  VisitorLinkPreview as LinkPreview,
   VisitorNoteCardImage,
 } from '@/features/note/domain/note';
 import type { MediaStorageKey } from '@/shared/domain/media';
@@ -133,4 +134,14 @@ export type NoteRepository = {
    * 呼び手が消す。無い id なら `ok: false`
    */
   purge: (id: NoteId) => Promise<{ ok: true; storageKeys: MediaStorageKey[] } | { ok: false }>;
+  /**
+   * 参照先の情報を URL の並びで読む（FR-028・FR-029）。取ったことのない URL は返さない。並びは
+   * 渡した順
+   */
+  findLinkPreviews: (urls: string[]) => Promise<LinkPreview[]>;
+  /**
+   * 参照先の情報を URL ごとに書く（FR-029・FR-030）。同じ URL の行があれば、その行を取り直した
+   * 中身に書き換える。画像は URL だけを持つ。参照先への取得は plan.md の U9 が決まってから作る
+   */
+  saveLinkPreview: (preview: LinkPreview & { fetchedAt: string }) => Promise<void>;
 };
