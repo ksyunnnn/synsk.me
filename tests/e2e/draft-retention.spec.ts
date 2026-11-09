@@ -4,8 +4,10 @@ import {
   fillCareer,
   fillProject,
   registerCareer,
+  registerProject,
   registerSkill,
   saveEdit,
+  submitAndWait,
   textbox,
 } from './support/dash';
 
@@ -197,4 +199,109 @@ test('組織の編集の画面で、保存せずに再読み込みしても入�
   );
   await page.reload();
   await expect(textbox(page, '秘匿化した組織名')).toHaveValue('E2E 保存していない秘匿化した組織名');
+});
+
+/*
+ * 続けて保存しても、保存できた書きかけが残らないこと。2 回目の保存は 1 回目と同じ `?saved=1` の
+ * 画面へ移る（003 の note の画面で見つかった誤り。PR #231 のレビュー）
+ */
+
+/** 送った書きかけの名前を持つ場所（src/shared/components/draft-retention.tsx の `SENT_KEY`） */
+const sentKey = (page: Page) =>
+  page.evaluate(() => window.localStorage.getItem('synsk:draft-sent'));
+
+/** `fill` で入れて保存する。応答を待つ */
+const fillAndSave = async (page: Page, scope: string, fill: () => Promise<void>) => {
+  await fillUntilDrafted(page, scope, fill);
+  // 編集の画面のフォームは、保存した行の更新日時ごとに置き直される。置き直される前に次の入力を
+  // 入れると、置き直しで消える。送る前のフォームに印を付け、印の無いフォームに替わるまで待つ。
+  // 前の画面が隠れて DOM に残ることがあるため、見えているフォームだけを調べる
+  await page
+    .locator('main form')
+    .filter({ visible: true })
+    .evaluate((form) => form.setAttribute('data-e2e-stale', ''));
+  await submitAndWait(page, '保存する');
+  await expect(page.locator('main form[data-e2e-stale]').filter({ visible: true })).toHaveCount(0);
+};
+
+const expectNoDraftLeft = async (page: Page) => {
+  await expect.poll(() => draftKeys(page)).toEqual([]);
+  expect(await sentKey(page)).toBeNull();
+};
+
+test('職歴の編集の画面で続けて 2 回保存しても、書きかけが残らない', async ({ page, context }) => {
+  await actAsAuthor(context);
+  await registerCareer(page, {
+    organizationName: 'E2E 続けて保存する職歴の組織',
+    organizationNameMasked: 'E2E 続けて保存する職歴の秘匿化した組織名',
+    role: 'E2E 続けて保存する肩書 0',
+  });
+  for (const n of [1, 2]) {
+    await fillAndSave(page, 'career', () =>
+      textbox(page, '肩書').fill(`E2E 続けて保存する肩書 ${n}`),
+    );
+    await expect(textbox(page, '肩書')).toHaveValue(`E2E 続けて保存する肩書 ${n}`);
+  }
+  await expectNoDraftLeft(page);
+});
+
+test('実績の編集の画面で続けて 2 回保存しても、書きかけが残らない', async ({ page, context }) => {
+  await actAsAuthor(context);
+  await registerProject(page, {
+    organizationName: 'E2E 続けて保存する実績の組織',
+    organizationNameMasked: 'E2E 続けて保存する実績の秘匿化した組織名',
+    title: 'E2E 続けて保存する題 0',
+  });
+  for (const n of [1, 2]) {
+    await fillAndSave(page, 'project', () => textbox(page, '題').fill(`E2E 続けて保存する題 ${n}`));
+    await expect(textbox(page, '題')).toHaveValue(`E2E 続けて保存する題 ${n}`);
+  }
+  await expectNoDraftLeft(page);
+});
+
+test('組織の編集の画面で続けて 2 回保存しても、書きかけが残らない', async ({ page, context }) => {
+  const name = `E2E 続けて保存する組織 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  await registerCareer(page, {
+    organizationName: name,
+    organizationNameMasked: 'E2E 続けて保存する組織の秘匿化した組織名',
+    role: 'E2E 続けて保存する組織の肩書',
+  });
+  await page.goto('/dash/organizations');
+  await page.getByRole('link', { name, exact: true }).click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('組織を編集する');
+  for (const n of [1, 2]) {
+    await fillAndSave(page, 'organization', () =>
+      textbox(page, '秘匿化した組織名').fill(`E2E 続けて保存する秘匿化した組織名 ${n}`),
+    );
+    await expect(textbox(page, '秘匿化した組織名')).toHaveValue(
+      `E2E 続けて保存する秘匿化した組織名 ${n}`,
+    );
+  }
+  await expectNoDraftLeft(page);
+});
+
+test('スキルと学歴を登録してから編集しても、書きかけが残らない', async ({ page, context }) => {
+  const skill = `E2E-Draft-Skill-${crypto.randomUUID()}`;
+  const school = `E2E 続けて保存する学校 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+
+  await page.goto('/dash/skills/new');
+  await fillUntilDrafted(page, 'skill', () => textbox(page, '名前').fill(skill));
+  await submitAndWait(page, '登録する');
+  await page.getByRole('link', { name: skill, exact: true }).click();
+  await fillAndSave(page, 'skill', () => textbox(page, '名前').fill(`${skill}-2`));
+  await expect(page.getByRole('link', { name: `${skill}-2`, exact: true })).toBeVisible();
+  await expectNoDraftLeft(page);
+
+  await page.goto('/dash/educations/new');
+  await fillUntilDrafted(page, 'education', async () => {
+    await textbox(page, '学校').fill(school);
+    await textbox(page, '始まりの日').fill('2014-04-01');
+  });
+  await submitAndWait(page, '登録する');
+  await page.getByRole('link', { name: school }).click();
+  await fillAndSave(page, 'education', () => textbox(page, '学部').fill('E2E 続けて保存する学部'));
+  await expect(page.getByRole('link', { name: `${school}・E2E 続けて保存する学部` })).toBeVisible();
+  await expectNoDraftLeft(page);
 });
