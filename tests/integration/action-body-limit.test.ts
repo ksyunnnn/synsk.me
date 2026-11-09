@@ -22,8 +22,11 @@ afterAll(async () => {
   await ctx?.close();
 });
 
-/** JavaScript なしのブラウザと同じ multipart で、スキルの登録のフォームに `fileBytes` のファイルを足して送る */
-const submitWithFile = async (name: string, fileBytes: number) => {
+/**
+ * JavaScript なしのブラウザと同じ multipart で、スキルの登録のフォームに `fileBytes` のファイルを足して
+ * `to` へ送る。Server Action はどの経路へ送っても動く
+ */
+const submitWithFile = async (name: string, fileBytes: number, to = '/dash/skills/new') => {
   const jwt = await ctx.signAuthorJwt();
   const page = await ctx.server.fetch('/dash/skills/new', {
     headers: { 'cf-access-jwt-assertion': jwt },
@@ -37,7 +40,7 @@ const submitWithFile = async (name: string, fileBytes: number) => {
   form.append('overrideMonths', '');
   form.append('image', new Blob([new Uint8Array(fileBytes)], { type: 'image/png' }), 'a.png');
   const encoded = new Response(form);
-  return ctx.server.fetch('/dash/skills/new', {
+  return ctx.server.fetch(to, {
     method: 'POST',
     body: await encoded.arrayBuffer(),
     headers: {
@@ -67,5 +70,51 @@ describe('Server Action の本文の上限', () => {
       .bind('結合の検査の上限の外側')
       .first();
     expect(row).toBeNull();
+  }, 30_000);
+});
+
+/**
+ * `/dash` の外への大きい POST（worker/index.ts と src/shared/server/post-limit.ts）。上の 10.5 MB の
+ * 上限は経路で分けられないため、`/dash` の外では Worker の入口が既定の 1 MB で止める（原則 1・2）
+ */
+describe('/dash の外への POST の本文の上限', () => {
+  const skillExists = async (name: string) =>
+    (await ctx.db.prepare('SELECT 1 FROM skill WHERE name = ?').bind(name).first()) !== null;
+
+  it('1 MB を超える本文は、Server Action を動かさずに 413 で拒む', async () => {
+    const response = await submitWithFile(
+      '結合の検査の dash の外の大きい本文',
+      2 * 1024 * 1024,
+      '/',
+    );
+    expect(response.status).toBe(413);
+    expect(await skillExists('結合の検査の dash の外の大きい本文')).toBe(false);
+  }, 30_000);
+
+  it('1 MB までの本文は、入口で止めない', async () => {
+    const response = await submitWithFile('結合の検査の dash の外の小さい本文', 512 * 1024, '/');
+    expect(response.status).not.toBe(413);
+    expect(response.status).not.toBe(411);
+  }, 30_000);
+
+  it('本文の長さを示さない POST は 411 で拒む', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('a=1'));
+        controller.close();
+      },
+    });
+    const response = await ctx.server.fetch('/', {
+      method: 'POST',
+      body,
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      duplex: 'half',
+    } as unknown as Parameters<typeof ctx.server.fetch>[1]);
+    expect(response.status).toBe(411);
+  });
+
+  it('/dash への 1 MB を超える本文は、入口で止めない', async () => {
+    const response = await submitWithFile('結合の検査の dash の大きい本文', 2 * 1024 * 1024);
+    expect(response.status).toBe(303);
   }, 30_000);
 });
