@@ -210,14 +210,18 @@ export const DraftRetainingForm = ({
 
 /**
  * 保存の成功を知らせる。Server Action が保存に成功して移した `?saved=1` の画面に置き、送った
- * 書きかけを消す
+ * 書きかけを消す。
+ *
+ * 編集の画面で続けて保存すると、同じ `?saved=1` の画面へ移り、この部品は置き直されない。
+ * `version` に保存した行の更新日時を渡すと、保存のたびに値が変わり、送った書きかけを消し直す。
+ * 一覧の画面へ移す入力（学歴・スキル）は、登録・編集の画面を挟むたびに置き直されるので渡さない
  */
-export const DraftSavedNotice = () => {
+export const DraftSavedNotice = ({ version }: { version?: string }) => {
   useEffect(() => {
     const sent = read(SENT_KEY);
     if (sent === null) return;
     remove(sent);
     remove(SENT_KEY);
-  }, []);
+  }, [version]);
   return <p role="status">保存しました</p>;
 };

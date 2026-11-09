@@ -56,7 +56,7 @@
 | V. Accessible Controls | 通る | 入力はネイティブの要素と `<form>`。削除の確認は別のページ（001 と同じ）。E2E でキーボードだけの操作を確かめる |
 | VI. Measure Before Optimizing | 通る | キャッシュ・索引の追加・非正規化を含めない。値が変わった行だけを書くのは D1 の書き込みの上限という費用の上限のためで、速さのためではない（R5） |
 | VII. Boundary Translation | 通る | 取得元の応答は `server/sources/<取得元>.ts` の中で `FetchedItem` に詰め替え、外部の型をファイルの外に出さない（R3、[contracts/fetch.md](./contracts/fetch.md)） |
-| VIII. Portable Core | 通る | D1 は `src/features/activity/server/d1-activity-repository.ts`、R2 は `src/shared/server/media-storage.ts`、env は `src/shared/server/env.ts` だけで使う。Cron の `scheduled` は `worker/index.ts` だけに置く |
+| VIII. Portable Core | 通る | D1 は `src/features/activity/server/d1-activity-repository.ts` と `d1-life-event-repository.ts`、R2 は `src/shared/server/media-storage.ts`、env は `src/shared/server/env.ts` だけで使う。Cron の `scheduled` は `worker/index.ts` だけに置く |
 | IX. Simplicity | 通る | `shared/` に新しく置くものは無い。Repository のインタフェースは、単体の検査で渡す作り物の実装が 2 つ目の使い手（ADR-0026 のルール 2）。`fetcher` の引数は、単体の検査で渡す作り物の応答が 2 つ目の使い手 |
 | Test Layering | 通る | 同じことを 2 つの段階で確かめない（下の表の「段階」） |
 | Display Speed | 通る | life event のページは NFR-03〜NFR-07 の対象。判定はフィールドの計測 |
@@ -123,7 +123,7 @@
 |---|---|---|---|---|
 | U11 | 登録していないサイトの題の取り方と、取得元が題を返さない URL を指名したときの扱い（spec の未決） | オーナー | (a) 手で入力する (b) OG メタから取る。推奨 (a)（R10） | 登録していないサイトの登録（T053）と、題を取れないときの扱い（T050 の分岐） |
 | U12 | オーナーが登録する日付の持ち方 | オーナー | (a) その日の UTC の 00:00 を `published_at` に入れる (b) 暦の日付の列を足す。推奨 (a)（R10） | URL を指名する・手で入力する登録の保存（T050〜T053）と、共有担当への migration の依頼 |
-| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の分け方（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
+| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の数（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
 
 依存（未決ではない）: `activity.uid` と取得元の行を足す共有担当の migration（data-model.md の「要る migration の変更」）。D1 を使う検査（workerd・結合・E2E）のうち、uid と取得元の行を使うものは、その migration が epic に入ってから回す。tasks.md は「止める依存: 共有担当の migration」と書く。
 
@@ -198,7 +198,7 @@ src/
 │       ├── application/   refresh-sources.ts・plan-refresh.ts・register-external-activity.ts・edit-external-activity.ts・delete-external-activity.ts・register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts・deps.ts
 │       ├── components/    life-event-form.tsx・external-activity-form.tsx・visitor-life-event.tsx
 │       └── server/
-│           ├── d1-activity-repository.ts
+│           ├── d1-activity-repository.ts  d1-life-event-repository.ts
 │           ├── queries.ts  actions.ts
 │           └── sources/   fetch-with-limits.ts・zenn.ts・qiita.ts・devto.ts・medium.ts・github.ts・speakerdeck.ts・connpass.ts・spotify.ts・x.ts・codesandbox.ts・youtube.ts
 └── shared/                            既存を使う。新しく足さない（共有担当の部品を除く）

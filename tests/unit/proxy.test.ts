@@ -52,6 +52,11 @@ const resumes = vi.hoisted(() => ({
 }));
 vi.mock('@/features/resume/server/queries', () => resumes);
 
+const lifeEvents = vi.hoisted(() => ({
+  hasLifeEventSlug: vi.fn<(slug: string) => Promise<boolean>>(),
+  hasLifeEventUid: vi.fn<(uid: string) => Promise<boolean>>(),
+}));
+vi.mock('@/features/activity/server/queries', () => lifeEvents);
 const notes = vi.hoisted(() => ({
   hasNoteSlug: vi.fn<(slug: string) => Promise<boolean>>(),
   hasNoteUid: vi.fn<(uid: string) => Promise<boolean>>(),
@@ -86,6 +91,8 @@ beforeEach(() => {
   resumes.hasVisitorResume.mockResolvedValue(true);
   resumes.hasResumeUid.mockResolvedValue(true);
   resumes.findMissingResumeRow.mockResolvedValue(null);
+  lifeEvents.hasLifeEventSlug.mockResolvedValue(true);
+  lifeEvents.hasLifeEventUid.mockResolvedValue(true);
   notes.hasNoteSlug.mockResolvedValue(true);
   notes.hasNoteUid.mockResolvedValue(true);
   notes.findMissingNoteRevision.mockResolvedValue(null);
@@ -94,6 +101,7 @@ beforeEach(() => {
 describe('対象の経路', () => {
   it.each([
     '/projects/a-slug',
+    '/life-events/a-slug',
     '/resume/a-slug',
     '/notes/a-slug',
     '/dash',
@@ -109,6 +117,7 @@ describe('対象の経路', () => {
     '/opengraph-image',
     '/dashboard',
     '/projects/a-slug/missing',
+    '/life-events/a-slug/missing',
     '/notes/a-slug/missing',
   ])('%s では動かない', (url) => {
     expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false);
@@ -345,6 +354,38 @@ describe('/dash/resumes/{uid}/<種類>/{rowUid}（specs/002-resume/contracts/das
   });
 });
 
+describe('/life-events/{slug}（specs/004-external-activity/contracts/visitor-life-event.md）', () => {
+  it('ある識別子は rewrite しない', async () => {
+    expect(await rewrittenPath('/life-events/a-slug')).toBeNull();
+    expect(lifeEvents.hasLifeEventSlug).toHaveBeenCalledWith('a-slug');
+  });
+
+  it('無い識別子と、書き換える前の識別子は 404 の画面へ rewrite する（FR-034・SC-007）', async () => {
+    lifeEvents.hasLifeEventSlug.mockResolvedValue(false);
+    expect(await rewrittenPath('/life-events/no-such')).toBe('/life-events/no-such/missing');
+  });
+
+  it('オーナーを確かめずに通す。訪問者のページなので', async () => {
+    author.getAuthorFromHeaders.mockResolvedValue(null);
+    expect(await rewrittenPath('/life-events/a-slug')).toBeNull();
+  });
+});
+
+describe('/dash/life-events/{uid}', () => {
+  it.each([`/dash/life-events/${UID}`, `/dash/life-events/${UID}/delete`])(
+    '無い uid の %s は 404 の画面へ rewrite する',
+    async (path) => {
+      lifeEvents.hasLifeEventUid.mockResolvedValue(false);
+      expect(await rewrittenPath(path)).toBe(`/dash/life-events/${UID}/missing`);
+    },
+  );
+
+  it.each(['/dash/life-events', '/dash/life-events/new'])('%s は行の有無を見ない', async (path) => {
+    expect(await rewrittenPath(path)).toBeNull();
+    expect(lifeEvents.hasLifeEventUid).not.toHaveBeenCalled();
+  });
+});
+
 /** note のページ（specs/003-note/contracts/visitor-note.md、research.md の R9） */
 describe('/notes/{slug}', () => {
   it('訪問者に見せる note がある識別子は rewrite しない', async () => {
@@ -409,4 +450,16 @@ describe('/dash/notes/{uid}/revisions/{revisionUid}', () => {
       expect(notes.findMissingNoteRevision).not.toHaveBeenCalled();
     },
   );
+});
+
+/** note の画像の経路（specs/003-note/research.md の R9） */
+describe('/notes/{slug}/media/{key}', () => {
+  const PATH = '/notes/a-slug/media/11111111-1111-4111-8111-111111111111';
+
+  it('proxy の対象にし、D1 を読まずに通す', async () => {
+    expect(unstable_doesMiddlewareMatch({ config, url: PATH })).toBe(true);
+    notes.hasNoteSlug.mockResolvedValue(false);
+    expect(await rewrittenPath(PATH)).toBeNull();
+    expect(notes.hasNoteSlug).not.toHaveBeenCalled();
+  });
 });

@@ -15,7 +15,8 @@ export const planRemovals = (
   listing: SourceListing,
   maxRemovals: number,
 ): { deletes: number[]; keptOverLimit: number } => {
-  if (!listing.isComplete) return { deletes: [], keptOverLimit: 0 };
+  // 取った一覧が空なのは取得元の誤りの兆し。件数が上限より少ない取得元では、すべてを消してしまう
+  if (!listing.isComplete || listing.items.length === 0) return { deletes: [], keptOverLimit: 0 };
 
   const externalIds = new Set<string>();
   const urls = new Set<string>();

@@ -1,6 +1,10 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
-import type { MediaStorageKey } from '@/shared/domain/media';
+import {
+  parseMediaStorageKey,
+  type MediaRejection,
+  type MediaStorageKey,
+} from '@/shared/domain/media';
 import { isSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
 
@@ -126,6 +130,53 @@ export type NoteFormResult = ActionResult<NoteField, NoteFieldError>;
 /** 過去の版に戻すフォームの結果。戻せたときは Server Action が編集の画面へ移す */
 export type RevertNoteResult = { status: 'forbidden' } | { status: 'conflict' };
 
+/**
+ * 代表画像の入力の名前（FR-024・FR-025）。値は `generated`・`site`、その note の画像なら
+ * `media:<storageKey>`。1 つのラジオボタンの並びで送る
+ */
+export const CARD_IMAGE_FIELD = 'cardImage';
+
+const CARD_MEDIA_PREFIX = 'media:';
+
+/** 代表画像の入力の値 */
+export const toCardImageValue = (cardImage: VisitorNoteCardImage): string =>
+  cardImage.kind === 'media' ? `${CARD_MEDIA_PREFIX}${cardImage.storageKey}` : cardImage.kind;
+
+/** 代表画像の入力を読む。読めなければ null */
+export const parseCardImageChoice = (value: string): VisitorNoteCardImage | null => {
+  if (value.startsWith(CARD_MEDIA_PREFIX)) {
+    const storageKey = parseMediaStorageKey(value.slice(CARD_MEDIA_PREFIX.length));
+    return storageKey === null ? null : { kind: 'media', storageKey };
+  }
+  return value === 'generated' || value === 'site' ? { kind: value } : null;
+};
+
+/** 代表画像の誤り。`media-not-owned` は、その note の画像でない（FR-025） */
+export type CardImageFormResult = ActionResult<
+  typeof CARD_IMAGE_FIELD,
+  'invalid' | 'media-not-owned'
+>;
+
+/** 画像のファイルの入力の名前（FR-023）。1 回の操作で 1 枚（research.md の R12） */
+export const MEDIA_FILE_FIELD = 'mediaFile';
+
+export type MediaFormResult = ActionResult<typeof MEDIA_FILE_FIELD, MediaRejection>;
+
+/** 本文に貼る画像の印（research.md の R11）。代替テキストとキャプションはオーナーが書き換える */
+export const mediaMarkOf = (storageKey: MediaStorageKey) =>
+  `![代替テキスト](media:${storageKey} "キャプション")`;
+
+/** 転載先の URL の入力の名前（FR-031）。外すフォームも同じ名前で URL を送る（research.md の R14） */
+export const SYNDICATION_URL_FIELD = 'syndicationUrl';
+
+/** 転載先の URL の誤り。`taken` は同じ URL がどれかの note に記録済み（FR-032） */
+export type SyndicationFieldError = 'missing' | 'invalid' | 'taken';
+
+export type SyndicationFormResult = ActionResult<
+  typeof SYNDICATION_URL_FIELD,
+  SyndicationFieldError
+>;
+
 /** 保存する内容 */
 export type NoteInput = NoteRevisionContent & { slug: string };
 
@@ -229,3 +280,9 @@ export type VisitorNote = {
   /** 公開した版の URL だけの段落が指す参照先の情報。取ったことのある URL だけ */
   linkPreviews: VisitorLinkPreview[];
 };
+
+/**
+ * 見た目の確認（`/dash/notes/{uid}/preview`、research.md の R15）で描く形。訪問者向けと同じ形を、
+ * 最も新しい版から詰める。一度も公開していない note は初めて公開した日時を持たない
+ */
+export type NotePreview = Omit<VisitorNote, 'publishedAt'> & { publishedAt: string | null };

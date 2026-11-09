@@ -82,6 +82,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T023 [US1] 取得のユースケース `refreshSources` を src/features/activity/application/refresh-sources.ts に作る。取得元ごとに読む → `planRefresh` → 1 回の `batch()` で書く。`batch()` が失敗したら、その取得元の `fetch_result` に失敗と理由を別に書く（FR-016、research.md の R4）。上限は引数 `limits` で受け取る（contracts/fetch.md）
 - [x] T024 [US1] 取得元の書き込み（足す・直す・`fetch_result` の上書き）を 1 回の `batch()` で行う関数を src/features/activity/server/d1-activity-repository.ts に足す
 - [x] T025 [US1] `fetcher` に User-Agent・待ち時間・応答の大きさの上限をかける関数を src/features/activity/server/sources/fetch-with-limits.ts に作る（research.md の R8、contracts/fetch.md）。待ち時間と大きさを超えたら失敗になることを tests/unit/activity-fetch-with-limits.test.ts で確かめる
+- [x] T026 [US1] 1 回の実行で取り直す取得元を、取り直したことの無いものを先に、次に `fetch_result.fetched_at` の古い順に、上限の数まで選ぶ `pickSourcesForRun` を src/features/activity/application/pick-sources.ts に、取得元ごとの `fetched_at` を読む `listFetchedAt` を src/features/activity/server/d1-activity-repository.ts に作り、tests/unit/activity-pick-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる（research.md の R9）
 
 ### 取得元ごとの処理（各取得元は T022〜T025 の後に並べられる）
 
@@ -97,7 +98,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### 取得の入口
 
-- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
+- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `pickSourcesForRun` で選んだ取得元の順番を取り（`recordFetchFailure` で「取り直しを始めて終わらなかった」と書く、research.md の R9）、`refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
 - [x] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を、activity を書く `batch()` の中で `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。2 頁目以降を取った・失敗した・上限で消さずに残した・公開日の欠けた項目を取り込まなかったときは値を NULL にする。**止める依存: 共有担当の migration**（`fetch_result` の列）
 
 ---
@@ -160,25 +161,25 @@ description: "外部 activity の取得の実装タスク"
 
 ### Tests for User Story 5
 
-- [ ] T060 [P] [US5] 登録・編集のユースケースが、起きた日の無い保存を拒み、識別子が空なら推測できない値を入れ、形の違う識別子を拒むことを tests/unit/activity-life-event.test.ts で確かめる（FR-023〜FR-025・FR-035、US5 の Acceptance 1〜3・8）
-- [ ] T061 [P] [US5] life event の保存・識別子の重複の拒否・削除で行が残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027 の画像の無い部分・FR-035、US5 の Acceptance 10）。**止める依存: 共有担当の migration**
-- [ ] T062 [P] [US5] `/life-events/{slug}` が 200 で DTO の値だけを返し、無い slug と書き換える前の slug で 404 になることを tests/integration/life-events.test.ts で確かめる（FR-026・FR-034・SC-007）
-- [ ] T063 [P] [US5] `src/proxy.ts` が `/life-events/{slug}` の有無で rewrite することを tests/unit/proxy.test.ts に足す
+- [x] T060 [P] [US5] 登録・編集のユースケースが、起きた日の無い保存を拒み、識別子が空なら推測できない値を入れ、形の違う識別子を拒むことを tests/unit/activity-life-event.test.ts で確かめる（FR-023〜FR-025・FR-035、US5 の Acceptance 1〜3・8）
+- [x] T061 [P] [US5] life event の保存・識別子の重複の拒否・削除で行が残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027 の画像の無い部分・FR-035、US5 の Acceptance 10）。**止める依存: 共有担当の migration**
+- [x] T062 [P] [US5] `/life-events/{slug}` が 200 で DTO の値だけを返し、無い slug と書き換える前の slug で 404 になることを tests/integration/life-events.test.ts で確かめる（FR-026・FR-034・SC-007）
+- [x] T063 [P] [US5] `src/proxy.ts` が `/life-events/{slug}` の有無で rewrite することを tests/unit/proxy.test.ts に足す
 
 ### Implementation for User Story 5
 
-- [ ] T064 [US5] 登録・編集・削除・訪問者向けの取り出しのユースケースを src/features/activity/application/register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts に作る。識別子の形と既定値は共有担当の src/shared/domain/slug.ts の `isSlug`・`newSlug` を使う（research.md の R11）
-- [ ] T065 [US5] 訪問者向けの DTO `VisitorLifeEvent` と、出してよい列だけを読む取り出しを src/features/activity/domain/life-event.ts と src/features/activity/server/d1-activity-repository.ts に足す（contracts/visitor-life-event.md、constitution の Allowlist Visibility）
-- [ ] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
-- [ ] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
-- [ ] T068 [US5] 訪問者のページを src/app/life-events/[slug]/page.tsx・src/app/life-events/[slug]/missing/page.tsx と src/features/activity/components/visitor-life-event.tsx に作り、src/proxy.ts の matcher に `/life-events/:slug` を足す
-- [ ] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/activity-dash.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
+- [x] T064 [US5] 登録・編集・削除・訪問者向けの取り出しのユースケースを src/features/activity/application/register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts に作る。識別子の形と既定値は共有担当の src/shared/domain/slug.ts の `isSlug`・`newSlug` を使う（research.md の R11）
+- [x] T065 [US5] 訪問者向けの DTO `VisitorLifeEvent` と、出してよい列だけを読む取り出しを src/features/activity/domain/life-event.ts と src/features/activity/server/d1-life-event-repository.ts に足す（contracts/visitor-life-event.md、constitution の Allowlist Visibility）
+- [x] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
+- [x] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
+- [x] T068 [US5] 訪問者のページを src/app/life-events/[slug]/page.tsx・src/app/life-events/[slug]/missing/page.tsx と src/features/activity/components/visitor-life-event.tsx に作り、src/proxy.ts の matcher に `/life-events/:slug` を足す
+- [x] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/life-events.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
 
 ### 画像（共有担当の src/shared/server/media-storage.ts が入ってから）
 
-- [ ] T070 [US5] 共有担当の src/shared/server/media-storage.ts を使い、life event の代表画像の登録と、その life event の画像だけを選べることを作り、tests/workers/activity-life-event.test.ts で確かめる。1 つの life event の画像は 1 枚までで、新しく登録すると前の画像を消す。形式（JPEG・PNG・WebP・GIF）と 10 MB の上限は共有担当の部品で確かめる（FR-028・FR-029、US5 の Acceptance 4・5、research.md の R12）。**止める依存: 共有担当の media-storage**
-- [ ] T071 [US5] life event の代表画像を配る経路を src/app/life-events/[slug]/media/[id]/route.ts に作り、DTO に `cardImageUrl` を足す。その life event の代表画像だけが 200 で、ほかの持ち主の画像が 404 になることを tests/integration/life-events.test.ts で確かめる（FR-029・FR-030、contracts/visitor-life-event.md）。**止める依存: 共有担当の media-storage**
-- [ ] T072 [US5] life event を消すときに、その life event の `media` の行と R2 のものを一緒に消し、残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027・SC-006、US5 の Acceptance 6、research.md の R12）。**止める依存: 共有担当の media-storage**
+- [x] T070 [US5] 共有担当の src/shared/server/media-storage.ts を使い、life event の代表画像の登録と、その life event の画像だけを選べることを作り、tests/workers/activity-life-event.test.ts で確かめる。1 つの life event の画像は 1 枚までで、新しく登録すると前の画像を消す。形式（JPEG・PNG・WebP・GIF）と 10 MB の上限は共有担当の部品で確かめる（FR-028・FR-029、US5 の Acceptance 4・5、research.md の R12）。**止める依存: 共有担当の media-storage**
+- [x] T071 [US5] life event の代表画像を配る経路を src/app/life-events/[slug]/media/[id]/route.ts に作り、DTO に `cardImageUrl` を足す。その life event の代表画像だけが 200 で、ほかの持ち主の画像が 404 になることを tests/integration/life-events.test.ts で確かめる（FR-029・FR-030、contracts/visitor-life-event.md）。**止める依存: 共有担当の media-storage**
+- [x] T072 [US5] life event を消すときに、その life event の `media` の行と R2 のものを一緒に消し、残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027・SC-006、US5 の Acceptance 6、research.md の R12）。**止める依存: 共有担当の media-storage**
 
 ---
 

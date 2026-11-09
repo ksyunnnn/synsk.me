@@ -53,7 +53,7 @@ describe('planRemovals', () => {
   });
 
   it('消す候補が上限ちょうどなら、すべて消す', () => {
-    const plan = planRemovals([stored(1), stored(2)], { items: [], isComplete: true }, 2);
+    const plan = planRemovals([stored(1), stored(2)], { items: [fetched(9)], isComplete: true }, 2);
 
     expect(plan).toEqual({ deletes: [1, 2], keptOverLimit: 0 });
   });
@@ -61,10 +61,16 @@ describe('planRemovals', () => {
   it('消す候補が上限を超えたら、1 件も消さず、残した数を返す（FR-019、2026-11-09 の決定）', () => {
     const plan = planRemovals(
       [stored(1), stored(2), stored(3)],
-      { items: [], isComplete: true },
+      { items: [fetched(9)], isComplete: true },
       2,
     );
 
     expect(plan).toEqual({ deletes: [], keptOverLimit: 3 });
+  });
+
+  it('すべて取ったと言う一覧が空なら、取得元の誤りの兆しとして 1 件も消さない（FR-020）', () => {
+    const plan = planRemovals([stored(1), stored(2)], { items: [], isComplete: true }, 5);
+
+    expect(plan).toEqual({ deletes: [], keptOverLimit: 0 });
   });
 });

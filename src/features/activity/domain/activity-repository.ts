@@ -68,4 +68,6 @@ export type ActivityRepository = {
    * 書き換えない（research.md の R9）
    */
   recordNotModified: (source: SourceName, fetchedAt: string) => Promise<void>;
+  /** 取得元ごとの、最後に取り直した日時（成否を問わない）。取り直したことの無い取得元は持たない */
+  listFetchedAt: () => Promise<Partial<Record<SourceName, string>>>;
 };

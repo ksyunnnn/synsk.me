@@ -117,6 +117,7 @@ description: "note の実装タスク"
 
 - [X] T023 [P] [US2] 下書きに戻す・削除・元に戻すのユースケース（オーナーでない呼び出しを拒む、削除した note への保存・公開を `not-found` にする）を tests/unit/note-usecases.test.ts に、D1 の実装（下書きに戻しても公開した版と初めて公開した日時が残る、削除しても状態と版が残る、元に戻すと削除前の状態と版と識別子、削除した note の識別子で別の note を作れない）を tests/workers/note-repository.test.ts に足す（FR-014・FR-016・SC-007、User Story 2 の 2・4〜6）
 - [X] T024 [P] [US2] tests/integration/notes.test.ts に足す: 下書きに戻した note と削除した note の `/notes/{slug}` が 404 で中身が無い、公開した note を削除して元に戻すと同じ版が 200 で出る、JWT のない `unpublishNote`・`deleteNote`・`restoreNote` が D1 を変えない（SC-001・FR-033、User Story 2 の 1・3・5）
+- [X] T054 [P] [US2] オーナーとして、キーボードだけで公開した note を下書きに戻し、削除し、元に戻せることを tests/e2e/note.spec.ts で確かめる（contracts/dash.md の検査の E2E、constitution V）
 
 ### Implementation for User Story 2
 
@@ -170,15 +171,15 @@ description: "note の実装タスク"
 
 ### Tests for User Story 5
 
-- [ ] T034 [P] [US5] D1 の実装（代表画像の既定が `generated`、`site` に変えられる、別の note の画像を代表画像に選べない）を tests/workers/note-repository.test.ts に足す。画像の行は tests/support/note-rows.ts で入れる（FR-024・FR-025、User Story 5 の 3）
-- [ ] T035 [P] [US5] 代表画像を `site` にした note の OGP にサイト共通の画像が出ること、JWT のない `changeNoteCardImage` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-024・FR-033）
+- [X] T034 [P] [US5] D1 の実装（代表画像の既定が `generated`、`site` に変えられる、別の note の画像を代表画像に選べない）を tests/workers/note-repository.test.ts に足す。画像の行は tests/support/note-rows.ts で入れる（FR-024・FR-025、User Story 5 の 3）
+- [X] T035 [P] [US5] 代表画像を `site` にした note の OGP にサイト共通の画像が出ること、JWT のない `changeNoteCardImage` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-024・FR-033）
 
 ### Implementation for User Story 5
 
-- [ ] T036 [US5] 代表画像の出どころの変更（`generated` と `site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` に `site` のときのサイト共通の画像を足す（research.md の R12）
+- [X] T036 [US5] 代表画像の出どころの変更（`generated` と `site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` に `site` のときのサイト共通の画像を足す（research.md の R12）
 - [ ] T037 [US5] 題を入れて自動で作る代表画像を作り、一度作ったものを使い回す（`docs/CRAWLING.md` の「取得の負荷」）。**止める未決: U8**
-- [ ] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚。JPEG・PNG・WebP・GIF・10 MB までの検査は media-storage.ts が持ち、その検査で確かめる）と、代表画像に note の画像を選ぶ入力を作る。media-storage.ts が拒んだ画像を項目の誤りで返すことを tests/unit/note-usecases.test.ts で、別の note の画像を代表画像に選べないことを tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12、constitution の Test Layering）
-- [ ] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.tsを作り、src/proxy.ts の matcher に `/notes/:slug/media/:key` を足す（proxy は D1 を読まない。research.md の R9）。公開で削除していない note の、公開した版の本文が指す画像（T006 が DTO に詰めた `storageKey` の並び）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）
+- [X] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚。JPEG・PNG・WebP・GIF・10 MB までの検査は media-storage.ts が持ち、その検査で確かめる）と、代表画像に note の画像を選ぶ入力を作る。media-storage.ts が拒んだ画像を項目の誤りで返すことを tests/unit/note-usecases.test.ts で、別の note の画像を代表画像に選べないことを tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12、constitution の Test Layering）
+- [X] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.tsを作り、src/proxy.ts の matcher に `/notes/:slug/media/:key` を足す（proxy は D1 を読まない。research.md の R9）。公開で削除していない note の、公開した版の本文が指す画像（T006 が DTO に詰めた `storageKey` の並び）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）
 - [X] T040 [US5] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に、画像の `src` を `/notes/{slug}/media/{storageKey}` にする関数を渡す。DTO の `media` に無い `storageKey` の画像を出さないことと、`<figure>`・`<img alt>`・`<figcaption>` で出ることを tests/integration/notes.test.ts で確かめる（research.md の R11）
 
 ---
@@ -209,22 +210,22 @@ description: "note の実装タスク"
 
 ### Tests for User Story 7
 
-- [ ] T045 [P] [US7] D1 の実装（2 つ記録できる、同じ URL を同じ note と別の note に記録できない、URL で指して外せる、別の note の URL を外さない）を tests/workers/note-repository.test.ts に、ユースケース（http・https でない URL を拒む、オーナーでない呼び出しを拒む）を tests/unit/note-usecases.test.ts に足す（FR-031・FR-032・FR-033、User Story 7）
-- [ ] T046 [P] [US7] オーナーとして転載先を 2 つ記録し、同じ URL を別の note に記録すると拒まれることを tests/e2e/note.spec.ts に足し、JWT のない `addNoteSyndication`・`removeNoteSyndication` が D1 を変えないことを tests/integration/notes.test.ts に足す
+- [X] T045 [P] [US7] D1 の実装（2 つ記録できる、同じ URL を同じ note と別の note に記録できない、URL で指して外せる、別の note の URL を外さない）を tests/workers/note-repository.test.ts に、ユースケース（http・https でない URL を拒む、オーナーでない呼び出しを拒む）を tests/unit/note-usecases.test.ts に足す（FR-031・FR-032・FR-033、User Story 7）
+- [X] T046 [P] [US7] オーナーとして転載先を 2 つ記録し、同じ URL を別の note に記録すると拒まれることを tests/e2e/note.spec.ts に足し、JWT のない `addNoteSyndication`・`removeNoteSyndication` が D1 を変えないことを tests/integration/notes.test.ts に足す
 
 ### Implementation for User Story 7
 
-- [ ] T047 [US7] 転載先の追加と削除を Repository・ユースケース add-note-syndication.ts・remove-note-syndication.ts・Server Action `addNoteSyndication`・`removeNoteSyndication`・src/features/note/components/note-syndication-form.tsx に作る。外すフォームは URL を送る（research.md の R14）。訪問者の DTO に入れない（U11）
+- [X] T047 [US7] 転載先の追加と削除を Repository・ユースケース add-note-syndication.ts・remove-note-syndication.ts・Server Action `addNoteSyndication`・`removeNoteSyndication`・src/features/note/components/note-syndication-form.tsx に作る。外すフォームは URL を送る（research.md の R14）。訪問者の DTO に入れない（U11）
 
 ---
 
 ## Phase 10: Polish
 
-- [ ] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
-- [ ] T049 [P] 見た目の確認のページ src/app/dash/notes/[id]/preview/page.tsx を、最も新しい版を訪問者向けの部品で描く形で作り、下書きの note でも最も新しい版が出ることを tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13、research.md の R15）
-- [ ] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
-- [ ] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
-- [ ] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
+- [X] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
+- [X] T049 [P] 見た目の確認のページ src/app/dash/notes/[id]/preview/page.tsx を、最も新しい版を訪問者向けの部品で描く形で作り、下書きの note でも最も新しい版が出ることを tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13、research.md の R15）
+- [X] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
+- [X] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
+- [X] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
 - [ ] T053 quickstart.md の「手で確かめる」をブランチの Preview で行う
 
 ---
