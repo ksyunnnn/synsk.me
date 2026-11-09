@@ -217,6 +217,7 @@ description: "note の実装タスク"
 ### Implementation for User Story 7
 
 - [X] T047 [US7] 転載先の追加と削除を Repository・ユースケース add-note-syndication.ts・remove-note-syndication.ts・Server Action `addNoteSyndication`・`removeNoteSyndication`・src/features/note/components/note-syndication-form.tsx に作る。外すフォームは URL を送る（research.md の R14）。訪問者の DTO に入れない（U11）
+- [X] T058 [US7] 転載先の URL を、記録する前に共有担当の src/shared/domain/web-url.ts の `normalizeWebUrl` で揃え、揃えた値で重複を判定する。一覧（005）が `syndication.url` と外部の activity の URL を文字列のまま比べるため（ADR-0006、migrations/0018）。揃えた値を記録することを tests/unit/note-usecases.test.ts で、揃えると同じになる URL を別の note に記録できないことを tests/e2e/note.spec.ts で確かめる（FR-032）
 
 ---
 

@@ -107,7 +107,9 @@ test('転載先を 2 つ記録でき、同じ URL を別の note に記録する
   const second = `https://example.com/e2e-syndication-${suffix}-2`;
 
   await createNote(page, { slug: uniqueSlug('syndication-a'), title: 'E2E 転載先 A' });
-  for (const url of [first, second]) {
+  // 2 つ目はスキームとホスト名の大文字とフラグメントを付けて入れる。normalizeWebUrl で揃えた値で
+  // 記録する（ADR-0006、T058）
+  for (const url of [first, `HTTPS://EXAMPLE.com/e2e-syndication-${suffix}-2#top`]) {
     await textbox(page, '転載先の URL').fill(url);
     await submitAndWait(page, '転載先を記録する');
     await expect(page.getByRole('status')).toHaveText('転載先を記録しました');
@@ -115,11 +117,13 @@ test('転載先を 2 つ記録でき、同じ URL を別の note に記録する
   await expect(page.getByText(first, { exact: true })).toBeVisible();
   await expect(page.getByText(second, { exact: true })).toBeVisible();
 
+  // 揃えると 1 つ目と同じになる URL は、別の note に記録できない（FR-032）
+  const sameAsFirst = `https://Example.COM/e2e-syndication-${suffix}-1#section`;
   await createNote(page, { slug: uniqueSlug('syndication-b'), title: 'E2E 転載先 B' });
-  await textbox(page, '転載先の URL').fill(first);
+  await textbox(page, '転載先の URL').fill(sameAsFirst);
   await submitAndWait(page, '転載先を記録する');
   await expect(page.getByText('この URL は、この note かほかの note に記録済みです')).toBeVisible();
-  await expect(textbox(page, '転載先の URL')).toHaveValue(first);
+  await expect(textbox(page, '転載先の URL')).toHaveValue(sameAsFirst);
 
   // 拒まれた後に別の URL を記録すると、前の知らせと入力が残らない
   const third = `https://example.com/e2e-syndication-${suffix}-3`;
