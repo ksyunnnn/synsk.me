@@ -55,6 +55,8 @@ vi.mock('@/features/resume/server/queries', () => resumes);
 const notes = vi.hoisted(() => ({
   hasNoteSlug: vi.fn<(slug: string) => Promise<boolean>>(),
   hasNoteUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  findMissingNoteRevision:
+    vi.fn<(uid: string, revisionUid: string) => Promise<'note' | 'revision' | null>>(),
 }));
 vi.mock('@/features/note/server/queries', () => notes);
 
@@ -86,6 +88,7 @@ beforeEach(() => {
   resumes.findMissingResumeRow.mockResolvedValue(null);
   notes.hasNoteSlug.mockResolvedValue(true);
   notes.hasNoteUid.mockResolvedValue(true);
+  notes.findMissingNoteRevision.mockResolvedValue(null);
 });
 
 describe('対象の経路', () => {
@@ -370,4 +373,40 @@ describe('/notes/{slug}', () => {
     notes.hasNoteSlug.mockRejectedValue(new Error('D1_ERROR'));
     expect(await rewrittenPath('/notes/a-slug')).toBeNull();
   });
+});
+
+/** note の過去の版の画面（specs/003-note/contracts/dash.md、research.md の R9） */
+describe('/dash/notes/{uid}/revisions/{revisionUid}', () => {
+  it('ある版は rewrite しない', async () => {
+    expect(await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`)).toBeNull();
+    expect(notes.findMissingNoteRevision).toHaveBeenCalledWith(UID, ROW_UID);
+  });
+
+  it('その note に無い版は、版の 404 の画面へ rewrite する', async () => {
+    notes.findMissingNoteRevision.mockResolvedValue('revision');
+    expect(await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`)).toBe(
+      `/dash/notes/${UID}/revisions/${ROW_UID}/missing`,
+    );
+  });
+
+  it('無い note は、note の 404 の画面へ rewrite する', async () => {
+    notes.findMissingNoteRevision.mockResolvedValue('note');
+    expect(await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`)).toBe(
+      `/dash/notes/${UID}/missing`,
+    );
+  });
+
+  it('note の有無を、版の有無と別に問い合わせない', async () => {
+    await rewrittenPath(`/dash/notes/${UID}/revisions/${ROW_UID}`);
+    expect(notes.hasNoteUid).not.toHaveBeenCalled();
+  });
+
+  it.each([`/dash/notes/${UID}/revisions`, `/dash/notes/${UID}/revisions/${ROW_UID}/missing`])(
+    '%s は版の有無を見ない',
+    async (path) => {
+      notes.findMissingNoteRevision.mockResolvedValue('revision');
+      expect(await rewrittenPath(path)).toBeNull();
+      expect(notes.findMissingNoteRevision).not.toHaveBeenCalled();
+    },
+  );
 });

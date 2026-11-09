@@ -3,6 +3,7 @@ import 'server-only';
 import type {
   Note,
   NoteCardImage,
+  NoteRevisionSummary,
   NoteStatus,
   NoteSummary,
   VisitorNote,
@@ -333,6 +334,74 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         .bind(id)
         .run();
       return { ok: result.meta.changes > 0 };
+    },
+
+    listRevisions: async (id) => {
+      const { results } = await db
+        .prepare(
+          `SELECT r.uid, r.title, r.created_at,
+             r.id = (SELECT max(id) FROM note_revision WHERE note_id = r.note_id) AS is_latest,
+             r.id IS (SELECT published_revision_id FROM note WHERE id = r.note_id) AS is_published
+           FROM note_revision r WHERE r.note_id = ? ORDER BY r.id DESC`,
+        )
+        .bind(id)
+        .all<{
+          uid: string;
+          title: string;
+          created_at: string;
+          is_latest: 0 | 1;
+          is_published: 0 | 1;
+        }>();
+      return results.map((row): NoteRevisionSummary => ({
+        uid: row.uid,
+        title: row.title,
+        createdAt: row.created_at,
+        isLatest: row.is_latest === 1,
+        isPublished: row.is_published === 1,
+      }));
+    },
+
+    findRevision: async (id, revisionUid) => {
+      const row = await db
+        .prepare(
+          `SELECT uid, title, description, body, created_at FROM note_revision
+           WHERE note_id = ? AND uid = ?`,
+        )
+        .bind(id, revisionUid)
+        .first<RevisionRow>();
+      return row ? toRevision(row) : null;
+    },
+
+    revert: async (id, revisionUid, openedRevisionUid) => {
+      // 戻す版の中身を、保存と同じ条件で新しい版として写す。版は書き換えない（FR-006・FR-009）
+      const result = await db
+        .prepare(
+          `INSERT INTO note_revision (note_id, title, description, body)
+           SELECT note_id, title, description, body FROM note_revision
+           WHERE note_id = ? AND uid = ? AND ${WRITABLE}`,
+        )
+        .bind(id, revisionUid, id, openedRevisionUid, id)
+        .run();
+      if (result.meta.changes > 0) return { ok: true };
+      if (await isMissing(id)) return { ok: false, reason: 'not-found' };
+      const revision = await db
+        .prepare('SELECT 1 AS found FROM note_revision WHERE note_id = ? AND uid = ?')
+        .bind(id, revisionUid)
+        .first();
+      return { ok: false, reason: revision === null ? 'revision-not-found' : 'conflict' };
+    },
+
+    findMissingRevision: async (uid, revisionUid) => {
+      const row = await db
+        .prepare(
+          `SELECT EXISTS (SELECT 1 FROM note_revision r WHERE r.note_id = n.id AND r.uid = ?)
+             AS has_revision
+           FROM note n WHERE n.uid = ?`,
+        )
+        .bind(revisionUid, uid)
+        .first<{ has_revision: 0 | 1 }>();
+      if (!row) return 'note';
+      return row.has_revision === 1 ? null : 'revision';
     },
   };
 };

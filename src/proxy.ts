@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { hasCareerUid } from '@/features/career/server/queries';
 import { hasEducationUid } from '@/features/education/server/queries';
-import { hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
+import { findMissingNoteRevision, hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
 import { hasOrganizationUid } from '@/features/organization/server/queries';
 import { hasProjectSlug, hasProjectUid } from '@/features/project/server/queries';
 import {
@@ -108,6 +108,12 @@ const decide = async (request: NextRequest): Promise<string | null> => {
     const missing = await findMissingResumeRow(uid, action, rowUid);
     if (missing === 'resume') return `/dash/resumes/${uid}/missing`;
     return missing === 'row' ? `/dash/resumes/${uid}/${action}/${rowUid}/missing` : null;
+  }
+  if (collection === 'notes' && action === 'revisions' && rowUid && rowAction !== 'missing') {
+    // note の過去の版の画面（specs/003-note/contracts/dash.md）。note と版の有無を 1 回で確かめる
+    const missing = await findMissingNoteRevision(uid, rowUid);
+    if (missing === 'note') return `/dash/notes/${uid}/missing`;
+    return missing === 'revision' ? `/dash/notes/${uid}/revisions/${rowUid}/missing` : null;
   }
   return (await exists(uid)) ? null : `/dash/${collection}/${uid}/missing`;
 };

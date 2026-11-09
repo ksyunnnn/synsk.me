@@ -29,6 +29,7 @@ let republishedId: number;
 let publishedUid: string;
 let deletedUid: string;
 let lifecycleUid: string;
+let revert: { uid: string; firstRevisionUid: string; latestRevisionUid: string };
 let ownMediaKey: string;
 const MISSING_MEDIA_KEY = '00000000-0000-4000-8000-000000000000';
 
@@ -136,6 +137,22 @@ beforeAll(async () => {
       });
       lifecycleUid = lifecycle.uid;
       await publishNoteRow(db, lifecycle.id);
+
+      const reverting = await insertNote(db, {
+        slug: 'integration-revert',
+        title: '戻す前の版の題',
+        body: '戻す先の版の本文',
+      });
+      const latest = await insertNoteRevision(db, reverting.id, {
+        title: '公開した版の題',
+        body: '戻す前に公開していた本文',
+      });
+      await publishNoteRow(db, reverting.id);
+      revert = {
+        uid: reverting.uid,
+        firstRevisionUid: reverting.revision.uid,
+        latestRevisionUid: latest.uid,
+      };
 
       const noDescription = await insertNote(db, {
         slug: 'integration-no-description',
@@ -297,6 +314,16 @@ describe('オーナーの JWT がない書き込み（FR-033）', () => {
       ['unpublishNote', `/dash/notes/${publishedUid}`, 1, { noteUid: publishedUid }],
       ['deleteNote', `/dash/notes/${publishedUid}/delete`, 0, { noteUid: publishedUid }],
       ['restoreNote', `/dash/notes/${deletedUid}`, 0, { noteUid: deletedUid }],
+      [
+        'revertNote',
+        `/dash/notes/${revert.uid}/revisions/${revert.firstRevisionUid}`,
+        0,
+        {
+          noteUid: revert.uid,
+          revisionUid: revert.firstRevisionUid,
+          openedRevisionUid: revert.latestRevisionUid,
+        },
+      ],
     ] as const;
 
   describe.each(['submit', 'call'] as const)('%s', (how) => {
@@ -372,5 +399,38 @@ describe('下書きに戻す・削除する・元に戻す（FR-014・FR-016・S
     const restored = await visitorStatus();
     expect(restored.status).toBe(200);
     expect(restored.text).toContain(BODY);
+  });
+});
+
+describe('過去の版（FR-008・FR-009、User Story 3 の 3）', () => {
+  it('別の note の版の画面は 404', async () => {
+    const res = await ctx.server.fetch(
+      `/dash/notes/${draft.uid}/revisions/${revert.firstRevisionUid}`,
+      {
+        headers: await authorHeaders(),
+      },
+    );
+    expect(res.status).toBe(404);
+    expect(await res.text()).not.toContain('戻す先の版の本文');
+  });
+
+  it('公開した note を過去の版に戻し、公開し直さなければ、戻す前に公開していた版が出る', async () => {
+    const before = (await readRows(ctx, 'note_revision')).length;
+    const res = await sendNoteForm({
+      how: 'submit',
+      formPath: `/dash/notes/${revert.uid}/revisions/${revert.firstRevisionUid}`,
+      values: {
+        noteUid: revert.uid,
+        revisionUid: revert.firstRevisionUid,
+        openedRevisionUid: revert.latestRevisionUid,
+      },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+    expect((await readRows(ctx, 'note_revision')).length).toBe(before + 1);
+
+    const html = await (await ctx.server.fetch('/notes/integration-revert')).text();
+    expect(html).toContain('戻す前に公開していた本文');
+    expect(html).not.toContain('戻す先の版の本文');
   });
 });

@@ -418,23 +418,23 @@ describe('migration 0012', () => {
  * 一覧のビュー activity_feed の職歴と実績の腕（ADR-0046、specs/005-feed/data-model.md の
  * 「一覧のビュー」の M1、005 の FR-012〜FR-014）
  */
-describe('migration 0013 の activity_feed', () => {
-  /** 0013 が作った列。後の migration が足した列は、この describe では読まない */
-  const M1_COLUMNS = [
-    'item_type',
-    'item_number',
-    'sort_at',
-    'is_masked',
-    'title',
-    'title_masked',
-    'organization_name',
-    'organization_name_masked',
-    'role',
-    'project_kind',
-    'started_on',
-    'ended_on',
-  ];
+/** activity_feed の、0013 が作った列。後の migration は列を最後に足す */
+const M1_COLUMNS = [
+  'item_type',
+  'item_number',
+  'sort_at',
+  'is_masked',
+  'title',
+  'title_masked',
+  'organization_name',
+  'organization_name_masked',
+  'role',
+  'project_kind',
+  'started_on',
+  'ended_on',
+];
 
+describe('migration 0013 の activity_feed', () => {
   const SECRETS = [
     '0013 の実名の組織',
     '0013 の実際の題',
@@ -504,13 +504,27 @@ describe('migration 0013 の activity_feed', () => {
     );
 
   /** 検査が入れた行だけを、並べるキーの順で読む。ほかの検査の行を拾わない */
+  const ownRows = <T extends { item_type: string; item_number: number }>(rows: T[]) =>
+    rows.filter(
+      (row) =>
+        (row.item_type === 'career' && ids.careers.includes(row.item_number)) ||
+        (row.item_type === 'project' && ids.projects.includes(row.item_number)),
+    );
+
+  /** 0013 の列だけを読む。後の migration が列を足しても、行の比べ方が変わらない */
   const feedRows = async () => {
     const { results } = await env.DB.prepare(
       `SELECT ${M1_COLUMNS.join(', ')} FROM activity_feed ORDER BY sort_at, item_type, item_number`,
     ).all<FeedRow>();
-    return results.filter((row) =>
-      (row.item_type === 'career' ? ids.careers : ids.projects).includes(row.item_number),
-    );
+    return ownRows(results);
+  };
+
+  /** 後の migration が足した列も含め、ビューのすべての列を読む */
+  const allColumnRows = async () => {
+    const { results } = await env.DB.prepare(
+      'SELECT * FROM activity_feed ORDER BY sort_at, item_type, item_number',
+    ).all<FeedRow & Record<string, unknown>>();
+    return ownRows(results);
   };
 
   beforeAll(async () => {
@@ -654,8 +668,8 @@ describe('migration 0013 の activity_feed', () => {
     ]);
   });
 
-  it('秘匿化した行の実際の値（題・組織名・説明・URL・画像）をどの列にも持たない', async () => {
-    const masked = (await feedRows()).filter((row) => row.is_masked === 1);
+  it('秘匿化した行の実際の値（題・組織名・説明・URL・画像）を、後の migration が足した列を含むどの列にも持たない', async () => {
+    const masked = (await allColumnRows()).filter((row) => row.is_masked === 1);
     expect(masked).toHaveLength(2);
     const values = masked.flatMap((row) => Object.values(row));
     for (const secret of SECRETS) expect(values).not.toContain(secret);
@@ -672,6 +686,16 @@ describe('migration 0013 の activity_feed', () => {
       .map((row) => row.item_number);
     expect(projectIds).not.toContain(ids.projects[2]);
     expect(projectIds).not.toContain(ids.projects[3]);
+  });
+
+  it('職歴と実績の腕は、0013 の後に足した列（説明・取得元・URL など）をどれも NULL にする', async () => {
+    const rows = await allColumnRows();
+    expect(rows).toHaveLength(4);
+    for (const row of rows) {
+      const added = Object.entries(row).filter(([name]) => !M1_COLUMNS.includes(name));
+      expect(added.length).toBeGreaterThan(0);
+      for (const [name, value] of added) expect([name, value]).toEqual([name, null]);
+    }
   });
 
   it('秘匿化した行は実際の値の列が NULL で、秘匿化しない行は _masked の列が NULL', async () => {
@@ -711,7 +735,7 @@ describe('migration 0013 の activity_feed', () => {
  * 「一覧のビュー」の M2、005 の FR-005・FR-006）
  */
 describe('migration 0016 の activity_feed の note の腕', () => {
-  const ids = { notes: [] as number[], organization: 0, project: 0 };
+  const ids = { notes: [] as number[] };
 
   /** 版を足し、その版で公開した note を作る。下書きの版を後に足し、公開した版と分ける */
   const insertPublishedNote = async (slug: string, createdAt: string) => {
@@ -721,6 +745,7 @@ describe('migration 0016 の activity_feed の note の腕', () => {
       createdAt,
       createdAt,
     );
+    ids.notes.push(noteId);
     const revisionId = await insertId(
       'INSERT INTO note_revision (note_id, title, description, body) VALUES (?, ?, ?, ?)',
       noteId,
@@ -738,7 +763,6 @@ describe('migration 0016 の activity_feed の note の腕', () => {
     )
       .bind(noteId, `${slug} の下書きの題`, `${slug} の下書きの説明`, '本文')
       .run();
-    ids.notes.push(noteId);
     return noteId;
   };
 
@@ -769,18 +793,12 @@ describe('migration 0016 の activity_feed の note の腕', () => {
       .bind(deleted)
       .run();
     draftOnly = await insertId("INSERT INTO note (slug) VALUES ('migration-0016-draft-only')");
+    ids.notes.push(draftOnly);
     await env.DB.prepare(
       "INSERT INTO note_revision (note_id, title, description, body) VALUES (?, '下書きだけの題', '下書きだけの説明', '本文')",
     )
       .bind(draftOnly)
       .run();
-    ids.notes.push(draftOnly);
-
-    ids.organization = await insertId("INSERT INTO organization (name) VALUES ('0016 の組織')");
-    ids.project = await insertId(
-      "INSERT INTO project (organization_id, kind, slug, title, title_masked, is_masked, status, started_on, description) VALUES (?, 'talk', 'migration-0016', '0016 の題', '0016 の伏せた題', 0, 'published', '2016-01-01', '0016 の実績の説明')",
-      ids.organization,
-    );
   });
 
   // note.published_revision_id の外部キーは検査をトランザクションの終わりに送るので、1 回の
@@ -791,20 +809,18 @@ describe('migration 0016 の activity_feed の note の腕', () => {
         env.DB.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
       ),
       ...ids.notes.map((id) => env.DB.prepare('DELETE FROM note WHERE id = ?').bind(id)),
-      env.DB.prepare('DELETE FROM project WHERE id = ?').bind(ids.project),
-      env.DB.prepare('DELETE FROM organization WHERE id = ?').bind(ids.organization),
     ]);
   });
 
   it('description の列を、0013 の列の後に持つ', async () => {
     const names = (await columnsOf('activity_feed')).map((c) => c.name);
-    expect(names.indexOf('description')).toBe(12);
+    expect(names.indexOf('description')).toBe(M1_COLUMNS.length);
   });
 
   it('公開中で削除していない note を、公開した版の題と説明文で出す', async () => {
     const rows = await noteRows();
     expect(rows).toHaveLength(1);
-    expect(rows[0]).toMatchObject({
+    expect(rows[0]).toEqual({
       item_type: 'note',
       item_number: published,
       sort_at: '2026-01-02T03:04:05.000Z',
@@ -832,15 +848,6 @@ describe('migration 0016 の activity_feed の note の腕', () => {
     const values = (await noteRows()).flatMap((row) => Object.values(row));
     expect(values).not.toContain('migration-0016-published の下書きの題');
     expect(values).not.toContain('migration-0016-published の下書きの説明');
-  });
-
-  it('職歴と実績の腕の description は NULL（005 の FR-012・FR-013）', async () => {
-    const row = await env.DB.prepare(
-      "SELECT description FROM activity_feed WHERE item_type = 'project' AND item_number = ?",
-    )
-      .bind(ids.project)
-      .first();
-    expect(row).toEqual({ description: null });
   });
 
   it('note の腕でも、種類と主キーの条件が腕の中へ下りて主キーで引く（005 の research.md の R3）', async () => {

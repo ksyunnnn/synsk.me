@@ -5079,7 +5079,8 @@
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
             created_at・updated_at は DB が既定値で入れ、updated_at
-            は行を書き換えたときにトリガが入れ直す
+            は行を書き換えたときにトリガが入れ直す（activity.gone_checked_at
+            だけを書いたときは入れ直さない）
           </text>
           <text
             x="416"
@@ -5221,6 +5222,15 @@
           <text
             x="416"
             y="1514"
+            fill="#2d3142"
+            font-size="9"
+            font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
+          >
+            activity.gone_checked_at は外部の activity の行だけが持つ（CHECK）
+          </text>
+          <text
+            x="416"
+            y="1532"
             fill="#2d3142"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
