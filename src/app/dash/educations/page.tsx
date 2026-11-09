@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { listEducations } from '@/features/education/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { formatPeriod } from '@/shared/domain/period';
 import { DraftSavedNotice } from '@/shared/components/draft-retention';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -46,7 +47,7 @@ const Page = async ({ searchParams }: Props) => {
                 {education.department && `・${education.department}`}
               </TextLink>
               <span className="text-sm text-muted-foreground">
-                {education.period.startedOn} 〜 {education.period.endedOn ?? ''}
+                {formatPeriod(education.period)}
               </span>
             </li>
           ))}

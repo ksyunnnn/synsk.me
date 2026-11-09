@@ -42,14 +42,32 @@ const refreshSource = async (
 ): Promise<RefreshOutcome> => {
   let read;
   try {
+    const previous = await deps.activities.readValidators(source);
     read = await Promise.all([
-      deps.fetchListing(source, limits),
+      deps.fetchListing(source, limits, previous),
       deps.activities.listStoredForRefresh(source),
     ]);
   } catch (error) {
     return fail(deps, source, now, `取得に失敗した: ${messageOf(error)}`);
   }
   const [listing, stored] = read;
+  // 取得元が変わっていないと答えた。activity を書かず、取得の結果を成功として書く（research.md の R9）
+  if ('notModified' in listing) {
+    try {
+      await deps.activities.recordNotModified(source, now);
+    } catch (error) {
+      return fail(deps, source, now, `書き込みに失敗した: ${messageOf(error)}`);
+    }
+    return {
+      source,
+      ok: true,
+      added: 0,
+      updated: 0,
+      removed: 0,
+      keptOverLimit: 0,
+      skippedWithoutDate: 0,
+    };
+  }
   const upserts = planRefresh(stored, listing.items);
   const removals = planRemovals(stored, listing, limits.maxRemovals);
   const plan = { ...upserts, deletes: removals.deletes };
@@ -64,7 +82,10 @@ const refreshSource = async (
   const reason = reasons.length > 0 ? reasons.join('。') : null;
 
   try {
-    await deps.activities.applyRefresh(source, plan, { fetchedAt: now, reason });
+    // 取り込みを書き終えた取得元だけが値を持つ。取り込まなかった項目や残した行がある回は値を消し、
+    // 次も中身を取る（research.md の R9）
+    const validators = reason === null ? (listing.validators ?? null) : null;
+    await deps.activities.applyRefresh(source, plan, { fetchedAt: now, reason, validators });
   } catch (error) {
     return fail(deps, source, now, `書き込みに失敗した: ${messageOf(error)}`);
   }

@@ -627,3 +627,32 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
     expect({ ...(await readNoteTables()), media: await readRows(ctx, 'media') }).toEqual(before);
   });
 });
+
+describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
+  it('下書きの note でも、最も新しい版を訪問者向けの部品で出す', async () => {
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-preview',
+      title: '見た目の確認の古い題',
+    });
+    await insertNoteRevision(ctx.db, note.id, {
+      title: '見た目の確認の新しい題',
+      body: '見た目の確認の **新しい** 本文',
+    });
+    const res = await ctx.server.fetch(`/dash/notes/${note.uid}/preview`, {
+      headers: await authorHeaders(),
+    });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('<h1 class="text-3xl font-bold">見た目の確認の新しい題</h1>');
+    expect(html).toContain('<strong>新しい</strong>');
+    expect(html).toContain('公開していません');
+    expect(html).not.toContain('見た目の確認の古い題');
+  });
+
+  it('オーナーの JWT がなければ 403 で、中身を返さない', async () => {
+    const note = await insertNote(ctx.db, { title: '見た目の確認の隠す題' });
+    const res = await ctx.server.fetch(`/dash/notes/${note.uid}/preview`);
+    expect(res.status).toBe(403);
+    expect(await res.text()).not.toContain('見た目の確認の隠す題');
+  });
+});
