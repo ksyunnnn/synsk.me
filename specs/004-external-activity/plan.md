@@ -98,7 +98,7 @@
 | FR-009・FR-010・FR-011 | URL を指名して日付つきで登録すると題を取って保存する。日付が無ければ保存しない。手で入力した値で保存する | 単（ユースケース）・W（保存）・E（入力） |
 | FR-012・SC-005 | 公開日の無い項目で `published_at` を書かない。URL を指名した activity は取得で取り直さず、日付はオーナーの入力の値だけで書く（research.md の R5） | 単（`planRefresh`）・W |
 | FR-013 | 取り直しても `created_at` が変わらない | W |
-| FR-036 | `wrangler.jsonc` に `triggers` があり、`scheduled` が `refreshSources` を呼ぶ（research.md の R9） | 単 |
+| FR-036 | `wrangler.jsonc` に `triggers` があり、`scheduled` が `refreshSources` を呼ぶ（research.md の R9）。ビルドした `dist/server/wrangler.json` に `triggers` があることは quickstart.md の手順 1 で確かめる | 単 |
 | FR-014・FR-015・SC-002 | 2 つのうち 1 つの取得元が失敗しても、失敗した側の行が残り、もう一方が取り込まれる | 単（`refreshSources`）・W（`batch()` の分け方） |
 | FR-016 | 失敗の結果に日時・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が残る | 単・W |
 | FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRefresh`）・W |
@@ -123,7 +123,7 @@
 |---|---|---|---|---|
 | U11 | 登録していないサイトの題の取り方と、取得元が題を返さない URL を指名したときの扱い（spec の未決） | オーナー | (a) 手で入力する (b) OG メタから取る。推奨 (a)（R10） | 登録していないサイトの登録（T053）と、題を取れないときの扱い（T050 の分岐） |
 | U12 | オーナーが登録する日付の持ち方 | オーナー | (a) その日の UTC の 00:00 を `published_at` に入れる (b) 暦の日付の列を足す。推奨 (a)（R10） | URL を指名する・手で入力する登録の保存（T050〜T053）と、共有担当への migration の依頼 |
-| U13 | 外への要求の上限の値と、Cron の実行の間隔（constitution II） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
+| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の分け方（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
 
 依存（未決ではない）: `activity.uid` と取得元の行を足す共有担当の migration（data-model.md の「要る migration の変更」）。D1 を使う検査（workerd・結合・E2E）のうち、uid と取得元の行を使うものは、その migration が epic に入ってから回す。tasks.md は「止める依存: 共有担当の migration」と書く。
 
