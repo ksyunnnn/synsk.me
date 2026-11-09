@@ -7,15 +7,15 @@ const CANONICAL_ORIGIN = 'https://synsk.me';
 /**
  * ページの絶対 URL の origin。Workers Builds のビルド（本番と Preview）は正規の origin にする。
  * Preview の URL は、ビルドに渡る値から公式の規則で作れないため、Preview も本番の origin を指す。
- * 手元のビルドは SITE_ORIGIN を渡すとその値にし、渡さなければ正規の origin にする。要求の Host は
+ * 手元のビルドは SITE_ORIGIN を渡すとその値にし、渡さないか空なら正規の origin にする。要求の Host は
  * 使わない。layout で要求を読むと、すべての経路がキャッシュに載らなくなる（ADR-0040）
  */
 const siteOrigin = () => {
   const origin = process.env.WORKERS_CI
     ? CANONICAL_ORIGIN
-    : (process.env.SITE_ORIGIN ?? CANONICAL_ORIGIN);
-  const url = new URL(origin);
-  if (url.origin !== origin)
+    : process.env.SITE_ORIGIN || CANONICAL_ORIGIN;
+  const url = URL.canParse(origin) ? new URL(origin) : null;
+  if (url?.origin !== origin)
     throw new Error(`SITE_ORIGIN は origin だけを書く（例: ${CANONICAL_ORIGIN}）: ${origin}`);
   return origin;
 };
