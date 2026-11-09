@@ -159,6 +159,73 @@ describe('migration 0009 の activity.slug（specs/004-external-activity/spec.md
 });
 
 /**
+ * 0005 の note のトリガが、表を作り直す後の migration を当てた後も働く（specs/003-note/tasks.md の
+ * T003、data-model.md の「スキーマが守る決まり」）。行は作り物で、各検査の終わりに消す
+ */
+describe('0005 の note のトリガ', () => {
+  const insertNoteWithRevision = async (slug: string, title = '作り物の題') => {
+    const note = await env.DB.prepare('INSERT INTO note (slug) VALUES (?) RETURNING id')
+      .bind(slug)
+      .first<{ id: number }>();
+    const revision = await env.DB.prepare(
+      "INSERT INTO note_revision (note_id, title, body) VALUES (?, ?, '作り物の本文') RETURNING id",
+    )
+      .bind(note?.id, title)
+      .first<{ id: number }>();
+    return { noteId: note?.id as number, revisionId: revision?.id as number };
+  };
+
+  const publish = (noteId: number, revisionId: number) =>
+    env.DB.prepare(
+      "UPDATE note SET status = 'published', published_revision_id = ?, published_at = '2026-11-01T00:00:00.000Z' WHERE id = ?",
+    )
+      .bind(revisionId, noteId)
+      .run();
+
+  const cleanUp = (noteId: number) =>
+    env.DB.batch([
+      env.DB.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(noteId),
+      env.DB.prepare('DELETE FROM note WHERE id = ?').bind(noteId),
+    ]);
+
+  it('note_revision_immutable が版の書き換えを拒む（FR-006）', async () => {
+    const { noteId, revisionId } = await insertNoteWithRevision('trigger-immutable');
+    await expect(
+      env.DB.prepare("UPDATE note_revision SET title = '書き換え' WHERE id = ?")
+        .bind(revisionId)
+        .run(),
+    ).rejects.toThrow(/note_revision_immutable/);
+    await cleanUp(noteId);
+  });
+
+  it('note_slug_fixed_after_publication が公開した note の識別子の書き換えを拒む（FR-003）', async () => {
+    const { noteId, revisionId } = await insertNoteWithRevision('trigger-slug');
+    await publish(noteId, revisionId);
+    await expect(
+      env.DB.prepare("UPDATE note SET slug = 'trigger-slug-moved' WHERE id = ?").bind(noteId).run(),
+    ).rejects.toThrow(/note_slug_fixed_after_publication/);
+    await cleanUp(noteId);
+  });
+
+  it('note_published_at_fixed が初めて公開した日時の書き換えを拒む（FR-013）', async () => {
+    const { noteId, revisionId } = await insertNoteWithRevision('trigger-published-at');
+    await publish(noteId, revisionId);
+    await expect(
+      env.DB.prepare("UPDATE note SET published_at = '2026-12-01T00:00:00.000Z' WHERE id = ?")
+        .bind(noteId)
+        .run(),
+    ).rejects.toThrow(/note_published_at_fixed/);
+    await cleanUp(noteId);
+  });
+
+  it('note_published_revision_valid が題の空の版の公開を拒む（FR-011）', async () => {
+    const { noteId, revisionId } = await insertNoteWithRevision('trigger-untitled', '');
+    await expect(publish(noteId, revisionId)).rejects.toThrow(/note_published_revision_invalid/);
+    await cleanUp(noteId);
+  });
+});
+
+/**
  * 管理画面の URL に出す uid（ADR-0048 の「主キーは URL に出さない」、
  * specs/001-career-and-project/research.md の R17）
  */
