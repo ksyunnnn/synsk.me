@@ -1,5 +1,6 @@
 import type { ActivityRepository } from '@/features/activity/domain/activity-repository';
 import type {
+  GoneCheck,
   NotModified,
   SourceListing,
   SourceName,
@@ -20,4 +21,9 @@ export type ActivityDeps = {
     limits: FetchLimits,
     previous?: Validators | null,
   ) => Promise<SourceListing | NotModified>;
+  /**
+   * すべて取らない取得元で、1 つの URL が取得元で消えたかを確かめる（research.md の R6）。確かめる
+   * 手段を持つ取得元（Zenn・Speaker Deck）だけで渡す。無ければ確かめない
+   */
+  checkGone?: (source: SourceName, url: string, limits: FetchLimits) => Promise<GoneCheck>;
 };

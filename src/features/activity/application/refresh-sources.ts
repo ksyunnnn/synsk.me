@@ -1,7 +1,13 @@
 import type { ActivityDeps } from '@/features/activity/application/deps';
 import { planRefresh } from '@/features/activity/application/plan-refresh';
-import { planRemovals } from '@/features/activity/application/plan-removals';
-import type { RefreshOutcome, SourceName } from '@/features/activity/domain/fetched-item';
+import { pickGoneChecks, planRemovals } from '@/features/activity/application/plan-removals';
+import type { StoredItem } from '@/features/activity/domain/activity-repository';
+import type {
+  GoneCheck,
+  RefreshOutcome,
+  SourceListing,
+  SourceName,
+} from '@/features/activity/domain/fetched-item';
 import type { RefreshLimits } from '@/features/activity/domain/limits';
 
 /**
@@ -69,8 +75,15 @@ const refreshSource = async (
     };
   }
   const upserts = planRefresh(stored, listing.items);
-  const removals = planRemovals(stored, listing, limits.maxRemovals);
-  const plan = { ...upserts, deletes: removals.deletes };
+  const checks = await checkGoneOf(deps, source, stored, listing, limits);
+  const removals = planRemovals(stored, listing, limits.maxRemovals, checks.gone);
+  const deleted = new Set(removals.deletes);
+  const goneChecked = checks.checked.filter((id) => !deleted.has(id));
+  const plan = {
+    ...upserts,
+    deletes: removals.deletes,
+    ...(goneChecked.length > 0 && { goneChecked }),
+  };
   const reasons = [
     upserts.skippedWithoutDate > 0
       ? `公開日の無い項目を ${upserts.skippedWithoutDate} 件、取り込まなかった`
@@ -97,6 +110,30 @@ const refreshSource = async (
     removed: plan.deletes.length,
     keptOverLimit: removals.keptOverLimit,
     skippedWithoutDate: plan.skippedWithoutDate,
+  };
+};
+
+/**
+ * すべて取らない取得元で、一覧に無い行の URL を上限の本数まで取り直す（research.md の R6）。
+ * 404 の行を消えたと確かめた行に、確かめた行のすべてを確かめた日時を書く行にする。確かめるのに
+ * 失敗した行は消さない（FR-020）
+ */
+const checkGoneOf = async (
+  deps: ActivityDeps,
+  source: SourceName,
+  stored: StoredItem[],
+  listing: SourceListing,
+  limits: RefreshLimits,
+): Promise<{ gone: number[]; checked: number[] }> => {
+  const { checkGone } = deps;
+  if (listing.isComplete || !checkGone) return { gone: [], checked: [] };
+  const rows = pickGoneChecks(stored, listing.items, limits.maxGoneChecks ?? 0);
+  const results = await Promise.all(
+    rows.map((row) => checkGone(source, row.url, limits).catch((): GoneCheck => 'unknown')),
+  );
+  return {
+    gone: rows.filter((_, index) => results[index] === 'gone').map((row) => row.id),
+    checked: rows.map((row) => row.id),
   };
 };
 

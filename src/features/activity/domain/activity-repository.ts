@@ -15,6 +15,11 @@ export type StoredItem = {
   title: string | null;
   publishedAt: string | null;
   imageUrl: string | null;
+  /**
+   * 取得元で消えたかを最後に確かめた日時（migrations/0015）。確かめる順を決めるためだけの値で、
+   * 消えた印ではない（research.md の R6）
+   */
+  goneCheckedAt?: string | null;
 };
 
 /** 保存した行で直す列。値の変わった列だけを持つ（research.md の R5） */
@@ -38,6 +43,8 @@ export type UpsertPlan = {
 export type RefreshPlan = UpsertPlan & {
   /** 取得元で消えたと確かめた行の id（FR-017） */
   deletes: number[];
+  /** 個別の URL を取り直して、消えていないか判定できなかった行の id。確かめた日時を書く（R6） */
+  goneChecked?: number[];
 };
 
 /** 成功した取り直しの取得の結果。`last_succeeded_at` は `fetchedAt` になる */

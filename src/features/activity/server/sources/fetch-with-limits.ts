@@ -13,6 +13,21 @@ export type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 /** 検証記録の再現の手順と同じ値。dev.to は空の User-Agent に 403 を返す */
 export const USER_AGENT = 'synsk.me (+https://synsk.me)';
 
+/** 取得元が 2xx でない応答を返した。状態の値で、取れない（4xx）と取得元の不調を分けられる */
+export class SourceHttpError extends Error {
+  constructor(
+    readonly status: number,
+    url: string,
+  ) {
+    super(`取得元が HTTP ${status} を返した: ${url}`);
+    this.name = 'SourceHttpError';
+  }
+}
+
+/** 4xx の応答。URL を指名する取得元では、その URL の項目を取れないことを表す */
+export const isClientError = (error: unknown): boolean =>
+  error instanceof SourceHttpError && error.status >= 400 && error.status < 500;
+
 export type SourceResponse = { status: number; headers: Headers; text: string };
 
 export type SourceHttp = {
@@ -45,7 +60,7 @@ export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceH
         }
         if (!response.ok) {
           await response.body?.cancel();
-          throw new Error(`取得元が HTTP ${response.status} を返した: ${url}`);
+          throw new SourceHttpError(response.status, url);
         }
         const text = await readText(response, limits.maxBytes);
         return { status: response.status, headers: response.headers, text };
