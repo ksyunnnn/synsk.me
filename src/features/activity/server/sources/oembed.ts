@@ -33,7 +33,7 @@ export const fetchOEmbed = async (
   if (!isRecord(body) || !isText(body.title)) return null;
   return {
     url,
-    title: body.title,
+    title: body.title.trim(),
     ...(isText(body.thumbnail_url) && { imageUrl: body.thumbnail_url }),
   };
 };

@@ -50,4 +50,13 @@ describe('Spotify', () => {
 
     await expect(fetchByUrl(fetcher, URL_, LIMITS)).rejects.toThrow(/503/);
   });
+
+  it.each([403, 429])(
+    '項目が無いことを表さない 4xx（%i）も、取れないと区別して失敗にする',
+    async (status) => {
+      const { fetcher } = createFakeFetcher({ [OEMBED]: () => new Response('', { status }) });
+
+      await expect(fetchByUrl(fetcher, URL_, LIMITS)).rejects.toThrow(String(status));
+    },
+  );
 });

@@ -43,10 +43,28 @@ describe('CodeSandbox', () => {
     ).toBeNull();
   });
 
-  it('sandbox の ID を読めない URL には要求を出さず、取れない（null）', async () => {
+  it.each([
+    'https://codesandbox.io/dashboard',
+    'https://evil.example/s/fake-sandbox-000',
+    'URL でない',
+  ])('%s には要求を出さず、取れない（null）', async (url) => {
     const { fetcher, requested } = createFakeFetcher({});
 
-    expect(await fetchByUrl(fetcher, 'https://codesandbox.io/dashboard', LIMITS)).toBeNull();
+    expect(await fetchByUrl(fetcher, url, LIMITS)).toBeNull();
     expect(requested).toEqual([]);
+  });
+
+  it('og:title の属性の順と引用符に依らず読み、実体参照を解く', async () => {
+    const { fetcher } = createFakeFetcher({
+      [EMBED]: () =>
+        new Response(
+          `<meta data-content="違う" content='Tom&apos;s demo &#x2014; v2' property='og:title'>`,
+        ),
+    });
+
+    expect(await fetchByUrl(fetcher, 'https://codesandbox.io/s/fake-sandbox-000', LIMITS)).toEqual({
+      url: 'https://codesandbox.io/s/fake-sandbox-000',
+      title: "Tom's demo \u2014 v2",
+    });
   });
 });

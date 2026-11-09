@@ -7,7 +7,9 @@ import {
   isClientError,
   type Fetcher,
 } from '@/features/activity/server/sources/fetch-with-limits';
+import { decodeEntities } from '@/features/activity/server/sources/rss';
 import { isText } from '@/features/activity/server/sources/shape';
+import { SOURCES } from '@/features/activity/domain/sources';
 
 /**
  * CodeSandbox（#177「CodePen と CodeSandbox を手で登録できるようにする」。spec に従い URL を指名する
@@ -22,7 +24,15 @@ const DEFAULT_TITLE = 'CodeSandbox';
 
 /** sandbox の URL の形（`/s/<id>`・`/embed/<id>`・`/p/sandbox/<id>`）から ID を読む */
 const sandboxIdOf = (url: string): string | null => {
-  const path = new URL(url).pathname.split('/').filter(Boolean);
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return null;
+  }
+  // 取得元のホストの URL だけを読む（research.md の R10）
+  if (!(SOURCES.codesandbox.hosts as readonly string[]).includes(parsed.hostname)) return null;
+  const path = parsed.pathname.split('/').filter(Boolean);
   const [first, second, third] = path;
   const id =
     first === 's' || first === 'embed'
@@ -33,19 +43,14 @@ const sandboxIdOf = (url: string): string | null => {
   return id !== undefined && /^[\w-]+$/.test(id) ? id : null;
 };
 
-const decodeEntities = (text: string) =>
-  text
-    .replaceAll('&quot;', '"')
-    .replaceAll('&#x27;', "'")
-    .replaceAll('&#39;', "'")
-    .replaceAll('&lt;', '<')
-    .replaceAll('&gt;', '>')
-    .replaceAll('&amp;', '&');
-
 const ogTitleOf = (html: string): string | null => {
-  const tag = /<meta\b[^>]*\bproperty="og:title"[^>]*>/i.exec(html)?.[0];
-  const content = tag && /\bcontent="([^"]*)"/i.exec(tag)?.[1];
-  return content ? decodeEntities(content).trim() : null;
+  const tag =
+    /<meta\b(?:[^>"']|"[^"]*"|'[^']*')*?\sproperty=["']og:title["'](?:[^>"']|"[^"]*"|'[^']*')*>/i.exec(
+      html,
+    )?.[0];
+  const content = tag && /\scontent=(?:"([^"]*)"|'([^']*)')/i.exec(tag);
+  const value = content ? (content[1] ?? content[2]) : undefined;
+  return value === undefined ? null : decodeEntities(value).trim();
 };
 
 export const fetchByUrl = async (
