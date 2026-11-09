@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { PrintButton } from '@/features/resume/components/print-button';
 import { RESUME_PROJECT_KIND_LABELS } from '@/features/resume/domain/resume';
 import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
+import { fontFamily, sourceSans } from '@/lib/fonts';
 import { toYearsAndMonths, type Period } from '@/shared/domain/period';
 
 /**
@@ -60,7 +61,7 @@ const META = 'text-sm text-muted-foreground print:text-[10.5pt]';
 /** 右の列の節 */
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="flex flex-col gap-4 break-inside-avoid-page">
-    <h2 className="text-xl font-bold border-b pb-2 print:text-[13pt]">{title}</h2>
+    <h2 className="text-xl font-semibold border-b pb-2 print:text-[13pt]">{title}</h2>
     {children}
   </section>
 );
@@ -68,7 +69,7 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
 /** 左の列の節 */
 const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="flex flex-col gap-4 break-inside-avoid">
-    <h2 className="text-base font-bold border-b pb-2 print:text-[11pt]">{title}</h2>
+    <h2 className="text-base font-semibold border-b pb-2 print:text-[11pt]">{title}</h2>
     {children}
   </section>
 );
@@ -76,7 +77,8 @@ const SideSection = ({ title, children }: { title: string; children: ReactNode }
 export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
   const { profile } = resume;
   return (
-    <>
+    // 書体は design/foundations.pen の font-en と font-ja
+    <div className={sourceSans.className} style={{ fontFamily }}>
       <div className="border-b print:hidden">
         <div className="mx-auto flex max-w-5xl justify-end gap-2 px-6 py-2">
           <PrintButton />
@@ -96,7 +98,7 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
             />
             <div className="flex flex-col gap-2">
               <p className="text-sm text-muted-foreground print:text-[10.5pt]">職務経歴書</p>
-              <h1 className="text-3xl font-bold print:text-[18pt]">{profile.name}</h1>
+              <h1 className="text-3xl font-semibold print:text-[18pt]">{profile.name}</h1>
             </div>
             {profile.email && (
               <p className="text-sm print:text-[10.5pt]">
@@ -128,7 +130,7 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
               <ol className="flex flex-col gap-4 text-sm print:text-[10.5pt]">
                 {resume.educations.map((education, index) => (
                   <li key={index} className="flex flex-col gap-2 break-inside-avoid">
-                    <h3 className="font-bold">
+                    <h3 className="font-semibold">
                       {education.school}
                       {education.department && ` ${education.department}`}
                     </h3>
@@ -151,7 +153,7 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
               <ol className="flex flex-col gap-6">
                 {resume.careers.map((career, index) => (
                   <li key={index} className="flex flex-col gap-2 break-inside-avoid">
-                    <h3 className="text-lg font-bold print:text-[11pt]">
+                    <h3 className="text-lg font-semibold print:text-[11pt]">
                       {career.organizationName}
                     </h3>
                     <p className={META}>
@@ -170,7 +172,7 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
               <ol className="flex flex-col gap-6">
                 {resume.projects.map((project, index) => (
                   <li key={index} className="flex flex-col gap-2 break-inside-avoid">
-                    <h3 className="text-lg font-bold print:text-[11pt]">{project.title}</h3>
+                    <h3 className="text-lg font-semibold print:text-[11pt]">{project.title}</h3>
                     <p className={META}>
                       {RESUME_PROJECT_KIND_LABELS[project.kind]}・{project.organizationName}・
                       <PeriodText period={project.period} />
@@ -187,6 +189,6 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
           )}
         </div>
       </article>
-    </>
+    </div>
   );
 };
