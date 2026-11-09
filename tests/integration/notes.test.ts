@@ -656,3 +656,78 @@ describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
     expect(await res.text()).not.toContain('見た目の確認の隠す題');
   });
 });
+
+describe('見た目の確認の画像（REQUIREMENTS.md の FR-13、NFR-09）', () => {
+  /** オーナーとして画像を足し、足した画像の置き場のキーを返す */
+  const uploadAsOwner = async (noteUid: string) => {
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${noteUid}`,
+      marker: 'name="mediaFile"',
+      values: { noteUid, mediaFile: new Blob([PNG], { type: 'image/png' }) },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+    const row = await ctx.db
+      .prepare(
+        'SELECT m.storage_key FROM media m JOIN note n ON n.id = m.note_id WHERE n.uid = ? ORDER BY m.id DESC',
+      )
+      .bind(noteUid)
+      .first<{ storage_key: string }>();
+    if (!row) throw new Error('画像が記録されていない');
+    return row.storage_key;
+  };
+
+  const fetchPreviewMedia = async (noteUid: string, key: string, asAuthor = true) =>
+    ctx.server.fetch(`/dash/notes/${noteUid}/preview/media/${key}`, {
+      headers: asAuthor ? await authorHeaders() : {},
+    });
+
+  it('下書きの最も新しい版の本文が指す画像を、オーナーに no-store で返し、画面の src もこの経路', async () => {
+    const note = await insertNote(ctx.db, { slug: 'integration-preview-media' });
+    const key = await uploadAsOwner(note.uid);
+    await insertNoteRevision(ctx.db, note.id, {
+      title: '見た目の確認の画像の題',
+      body: `![確認する画像](media:${key})`,
+    });
+
+    const res = await fetchPreviewMedia(note.uid, key);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('cache-control')).toContain('no-store');
+    expect(res.headers.get('etag')).toBeNull();
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
+
+    const html = await (
+      await ctx.server.fetch(`/dash/notes/${note.uid}/preview`, { headers: await authorHeaders() })
+    ).text();
+    expect(html).toContain(`src="/dash/notes/${note.uid}/preview/media/${key}"`);
+
+    // 訪問者の経路は、公開した版の画像だけを返す（spec の FR-026）
+    expect((await ctx.server.fetch(`/notes/integration-preview-media/media/${key}`)).status).toBe(
+      404,
+    );
+  });
+
+  it('オーナーの JWT がなければ 403 で、中身を返さない', async () => {
+    const note = await insertNote(ctx.db);
+    const key = await uploadAsOwner(note.uid);
+    await insertNoteRevision(ctx.db, note.id, { body: `![画像](media:${key})` });
+    const res = await fetchPreviewMedia(note.uid, key, false);
+    expect(res.status).toBe(403);
+    expect(res.headers.get('cache-control')).toContain('no-store');
+    expect(new Uint8Array(await res.arrayBuffer())).not.toEqual(PNG);
+  });
+
+  it('確認している版の本文に無い画像と、別の note の画像は 404 で no-store', async () => {
+    const note = await insertNote(ctx.db);
+    const unused = await uploadAsOwner(note.uid);
+    const other = await insertNote(ctx.db);
+    const foreign = await uploadAsOwner(other.uid);
+    await insertNoteRevision(ctx.db, note.id, { body: `![別の画像](media:${foreign})` });
+    for (const key of [unused, foreign]) {
+      const res = await fetchPreviewMedia(note.uid, key);
+      expect(res.status).toBe(404);
+      expect(res.headers.get('cache-control')).toContain('no-store');
+      await res.arrayBuffer();
+    }
+  });
+});
