@@ -28,6 +28,17 @@ export type ResumeEnv = {
   RESUME_EMAIL?: string;
 };
 
-export type Env = Cloudflare.Env & AccessEnv & ResumeEnv;
+/**
+ * 外部の取得元の認証情報（specs/004-external-activity/research.md の R15）。Worker の secret に置き、
+ * 保管するデータに持たない。GitHub と Qiita は欠ければ未認証で取る。connpass は欠ければ要求を
+ * 出さない。値の雛形は `.dev.vars.example` にある
+ */
+export type SourceCredentialEnv = {
+  GITHUB_TOKEN?: string;
+  QIITA_ACCESS_TOKEN?: string;
+  CONNPASS_API_KEY?: string;
+};
+
+export type Env = Cloudflare.Env & AccessEnv & ResumeEnv & SourceCredentialEnv;
 
 export const readEnv = async (): Promise<Env> => (await import('cloudflare:workers')).env as Env;
