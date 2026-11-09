@@ -6,8 +6,9 @@ import type { FetchLimits } from '@/features/activity/domain/limits';
 /**
  * 一覧を取る取得元から取り直す（specs/004-external-activity/contracts/fetch.md、research.md の R4）。
  * 取得元ごとに「読む → 計算 → 書く」を行い、1 つの取得元の書き込みと取得の結果を 1 回の
- * `batch()` で書く。書き込みが失敗したら、その取得元の取得の結果に失敗と理由を別に書く
- * （FR-016）。取得元ごとの成否を返す
+ * `batch()` で書く。取得元どうしは `Promise.allSettled` で並べ、1 つの失敗でほかを止めない
+ * （FR-015、docs/SOFTWARE_DESIGN.md の「失敗の表し方」）。取得か書き込みが失敗した取得元は、
+ * activity を書き換えず、取得の結果に失敗と理由を書く（FR-014・FR-016）。取得元ごとの成否を返し、投げない
  */
 export const refreshSources = async (
   deps: ActivityDeps,
@@ -15,11 +16,14 @@ export const refreshSources = async (
   now: string,
   limits: FetchLimits,
 ): Promise<RefreshOutcome[]> => {
-  const outcomes: RefreshOutcome[] = [];
-  for (const source of sources) {
-    outcomes.push(await refreshSource(deps, source, now, limits));
-  }
-  return outcomes;
+  const settled = await Promise.allSettled(
+    sources.map((source) => refreshSource(deps, source, now, limits)),
+  );
+  return settled.map((result, index): RefreshOutcome =>
+    result.status === 'fulfilled'
+      ? result.value
+      : { source: sources[index] ?? '', ok: false, reason: messageOf(result.reason) },
+  );
 };
 
 const refreshSource = async (
@@ -28,10 +32,16 @@ const refreshSource = async (
   now: string,
   limits: FetchLimits,
 ): Promise<RefreshOutcome> => {
-  const [listing, stored] = await Promise.all([
-    deps.fetchListing(source, limits),
-    deps.activities.listStoredForRefresh(source),
-  ]);
+  let read;
+  try {
+    read = await Promise.all([
+      deps.fetchListing(source, limits),
+      deps.activities.listStoredForRefresh(source),
+    ]);
+  } catch (error) {
+    return fail(deps, source, now, `取得に失敗した: ${messageOf(error)}`);
+  }
+  const [listing, stored] = read;
   const plan = planRefresh(stored, listing.items);
   const reason =
     plan.skippedWithoutDate > 0
@@ -41,9 +51,7 @@ const refreshSource = async (
   try {
     await deps.activities.applyRefresh(source, plan, { fetchedAt: now, reason });
   } catch (error) {
-    const failure = `書き込みに失敗した: ${messageOf(error)}`;
-    await deps.activities.recordFetchFailure(source, now, failure);
-    return { source, ok: false, reason: failure };
+    return fail(deps, source, now, `書き込みに失敗した: ${messageOf(error)}`);
   }
   return {
     source,
@@ -52,6 +60,25 @@ const refreshSource = async (
     updated: plan.updates.length,
     skippedWithoutDate: plan.skippedWithoutDate,
   };
+};
+
+/** 取得の結果に失敗を書く。それも失敗したら、両方の理由を返す */
+const fail = async (
+  deps: ActivityDeps,
+  source: SourceName,
+  now: string,
+  reason: string,
+): Promise<RefreshOutcome> => {
+  try {
+    await deps.activities.recordFetchFailure(source, now, reason);
+    return { source, ok: false, reason };
+  } catch (error) {
+    return {
+      source,
+      ok: false,
+      reason: `${reason}。取得の結果も書けなかった: ${messageOf(error)}`,
+    };
+  }
 };
 
 const messageOf = (error: unknown): string =>

@@ -88,3 +88,84 @@ describe('refreshSources', () => {
     ]);
   });
 });
+
+/**
+ * 1 つの取得元の失敗で、ほかの取得元を止めない（User Story 2、FR-014・FR-015・FR-016・FR-020・SC-002）
+ */
+describe('refreshSources の失敗の扱い', () => {
+  const itemB = { url: 'https://example.com/b', title: '作り物 B', publishedAt: NOW };
+
+  const failingDeps = (
+    repository: ActivityDeps['activities'],
+    fetchA: () => Promise<SourceListing>,
+  ): ActivityDeps => ({
+    activities: repository,
+    fetchListing: async (source) => (source === 'fake_a' ? fetchA() : listing([itemB])),
+  });
+
+  it.each([
+    ['投げる', () => Promise.reject(new Error('作り物の通信の失敗'))],
+    ['形の違う応答を返す', () => Promise.reject(new Error('作り物 の応答の形が想定と違う'))],
+    ['上限を超える', () => Promise.reject(new Error('応答の大きさが上限（16 バイト）を超えた'))],
+  ])('取得元 A が%sとき、A を書き換えず、B を取り込み、A の失敗と理由を返す', async (_, fetchA) => {
+    const { repository, applied, failures } = createFakeActivityRepository();
+
+    const outcomes = await refreshSources(
+      failingDeps(repository, fetchA),
+      ['fake_a', 'fake_b'],
+      NOW,
+      LIMITS,
+    );
+
+    const reason = (await fetchA().catch((error: Error) => error)).message;
+    expect(outcomes).toEqual([
+      { source: 'fake_a', ok: false, reason: expect.stringContaining(String(reason)) },
+      { source: 'fake_b', ok: true, added: 1, updated: 0, skippedWithoutDate: 0 },
+    ]);
+    expect(applied.map((write) => write.source)).toEqual(['fake_b']);
+    expect(failures).toEqual([
+      { source: 'fake_a', fetchedAt: NOW, reason: expect.stringContaining(String(reason)) },
+    ]);
+  });
+
+  it('取得元 A の書き込みが失敗しても、B の書き込みは止まらない', async () => {
+    const { repository, applied, failures } = createFakeActivityRepository(
+      {},
+      { failApplyFor: ['fake_a'] },
+    );
+
+    const outcomes = await refreshSources(
+      failingDeps(repository, async () => listing([itemB])),
+      ['fake_a', 'fake_b'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(outcomes.map((outcome) => [outcome.source, outcome.ok])).toEqual([
+      ['fake_a', false],
+      ['fake_b', true],
+    ]);
+    expect(applied.map((write) => write.source)).toEqual(['fake_b']);
+    expect(failures.map((failure) => failure.source)).toEqual(['fake_a']);
+  });
+
+  it('失敗を書くことも失敗したら、投げずに理由を返す', async () => {
+    const { repository } = createFakeActivityRepository();
+    const broken = {
+      ...repository,
+      recordFetchFailure: () => Promise.reject(new Error('作り物の D1 の失敗')),
+    };
+
+    const outcomes = await refreshSources(
+      failingDeps(broken, () => Promise.reject(new Error('作り物の通信の失敗'))),
+      ['fake_a', 'fake_b'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(outcomes).toEqual([
+      { source: 'fake_a', ok: false, reason: expect.stringMatching(/作り物の D1 の失敗/) },
+      { source: 'fake_b', ok: true, added: 1, updated: 0, skippedWithoutDate: 0 },
+    ]);
+  });
+});
