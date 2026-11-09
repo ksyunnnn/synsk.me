@@ -65,7 +65,7 @@
 - `RefreshOutcome`: 取得元ごとの `{ source; ok: true; added; updated; removed; keptOverLimit } | { source; ok: false; reason }`。「失敗の表し方」の形で、投げない
 - `ExternalActivity`（管理画面）: uid・取得元・URL・題・公開日・取り込み方
 - `LifeEvent`（管理画面）: uid・slug・題・説明・起きた日・代表画像の id
-- 表の行の型は `server/d1-activity-repository.ts` の中だけで書く（001 の research.md の R3）
+- 表の行の型は `server/d1-activity-repository.ts` と `server/d1-life-event-repository.ts` の中だけで書く（001 の research.md の R3、research.md の R2）
 
 ## 訪問者向けの DTO
 
