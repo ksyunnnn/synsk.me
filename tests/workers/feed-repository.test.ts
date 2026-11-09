@@ -245,11 +245,32 @@ describe('詰められない種類', () => {
       "SELECT sql FROM sqlite_master WHERE type = 'view' AND name = 'activity_feed'",
     ).first<{ sql: string }>();
     if (!original) throw new Error('ビュー activity_feed が無い');
-    const unknownArm = `UNION ALL SELECT 'unknown_type', 1, '2099-01-01', 0, '詰められない種類の題',
-      NULL, '作り物株式会社', NULL, '作り物の肩書', 'application', '2099-01-01', NULL`;
+    // 0013 の列に値を置き、後の migration が足した列は NULL で埋める。D1 は 1 つの compound
+    // SELECT の腕の数に上限を持ち、腕を 1 つ足すと超えるので、元のビューを副問い合わせにして足す
+    const { results: columns } = await env.DB.prepare('SELECT name FROM pragma_table_info(?)')
+      .bind('activity_feed')
+      .all<{ name: string }>();
+    const m1Values = [
+      "'unknown_type'",
+      '1',
+      "'2099-01-01'",
+      '0',
+      "'詰められない種類の題'",
+      'NULL',
+      "'作り物株式会社'",
+      'NULL',
+      "'作り物の肩書'",
+      "'application'",
+      "'2099-01-01'",
+      'NULL',
+    ];
+    const values = columns.map((_, i) => m1Values[i] ?? 'NULL');
+    const unknownArm = `UNION ALL SELECT ${values.join(', ')}`;
     await env.DB.batch([
       env.DB.prepare('DROP VIEW activity_feed'),
-      env.DB.prepare(`${original.sql} ${unknownArm}`),
+      env.DB.prepare(
+        `CREATE VIEW activity_feed AS SELECT * FROM (${original.sql.replace(/^CREATE VIEW activity_feed AS/, '')}) ${unknownArm}`,
+      ),
     ]);
     try {
       expect(await feed.list()).toEqual([

@@ -22,6 +22,8 @@ export type LifeEvent = {
   title: string | null;
   description: string | null;
   happenedOn: CalendarDate;
+  /** 代表画像を配る経路の URL。無ければ null（FR-028） */
+  cardImageUrl: string | null;
 };
 
 export type LifeEventSummary = Pick<LifeEvent, 'id' | 'uid' | 'slug' | 'title' | 'happenedOn'>;
@@ -42,7 +44,15 @@ export type VisitorLifeEvent = {
   title: string | null;
   description: string | null;
   happenedOn: CalendarDate;
+  /** 代表画像を配る経路の URL。無ければ null */
+  cardImageUrl: string | null;
 };
+
+/** 代表画像を配る経路（contracts/visitor-life-event.md の「画像の経路」）。値は `media.storage_key` */
+export const lifeEventImagePath = (slug: string, storageKey: string) =>
+  `/life-events/${slug}/media/${storageKey}`;
+
+export const LIFE_EVENT_IMAGE_FIELD = 'image';
 
 export const LIFE_EVENT_FIELDS = ['title', 'description', 'happenedOn', 'slug'] as const;
 export type LifeEventField = (typeof LIFE_EVENT_FIELDS)[number];
