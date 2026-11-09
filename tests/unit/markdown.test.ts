@@ -56,6 +56,12 @@ describe('readMarkdown', () => {
     expect(readMarkdown(body).urlLines).toEqual(['https://example.com/a', 'https://example.com/e']);
   });
 
+  it('URL だけの段落の URL を URL の形に揃え、表記の違う同じ URL を重ねない', () => {
+    expect(readMarkdown('https://EXAMPLE.com/a\n\nhttps://example.com/a').urlLines).toEqual([
+      'https://example.com/a',
+    ]);
+  });
+
   it('最初の文字列を持つ段落を、改行を空白にし、画像の代替テキストを除いて読む', () => {
     const body = ['# 見出し', '', `![代替](media:${KEY_A})`, '', '一行目\n二行目 **強調**'].join(
       '\n',
@@ -114,5 +120,42 @@ describe('MarkdownBody', () => {
     );
     expect(render('https://example.com/a')).toBe('<p>https://example.com/a</p>');
     expect(render('文と https://example.com/a', card)).toBe('<p>文と https://example.com/a</p>');
+  });
+
+  it('リストと引用の中の URL だけの段落と画像だけの段落も、読む側と同じに描く。詰めたリストを含む', () => {
+    const card = (url: string) => createElement('aside', null, `カード ${url}`);
+    expect(render('- https://example.com/a', card)).toBe(
+      '<ul>\n<li>\n<aside>カード https://example.com/a</aside>\n</li>\n</ul>',
+    );
+    expect(render('> https://example.com/a', card)).toBe(
+      '<blockquote>\n<aside>カード https://example.com/a</aside>\n</blockquote>',
+    );
+    expect(render(`- ![代替](media:${KEY_A} "キャプション")`)).toBe(
+      `<ul>\n<li>\n<figure><img src="/notes/n/media/${KEY_A}" alt="代替"/><figcaption>キャプション</figcaption></figure>\n</li>\n</ul>`,
+    );
+    expect(render('- 文と https://example.com/a', card)).toBe(
+      '<ul>\n<li>文と https://example.com/a</li>\n</ul>',
+    );
+    expect(render('- https://example.com/a\n  - 下の項目', card)).toBe(
+      '<ul>\n<li>\n<aside>カード https://example.com/a</aside>\n<ul>\n<li>下の項目</li>\n</ul>\n</li>\n</ul>',
+    );
+    expect(render(`- ![代替](media:${KEY_A} "キャプション")\n  - 下の項目`)).toContain(
+      '<figcaption>キャプション</figcaption>',
+    );
+    expect(readMarkdown('- https://example.com/a\n  - 下の項目').urlLines).toEqual([
+      'https://example.com/a',
+    ]);
+  });
+
+  it('出さない画像だけの項目は、項目ごと描かない', () => {
+    expect(render(`- ![代替](media:${KEY_B})\n- 残る`)).toBe('<ul>\n\n<li>残る</li>\n</ul>');
+  });
+
+  it('autolink だけの段落はカードにせず、リンクで出す。形の違う印は代替テキストで出す', () => {
+    const card = (url: string) => createElement('aside', null, `カード ${url}`);
+    expect(render('<https://example.com/a>', card)).toBe(
+      '<p><a href="https://example.com/a">https://example.com/a</a></p>',
+    );
+    expect(render('![形が違う](media:1)')).toBe('<p>形が違う</p>');
   });
 });
