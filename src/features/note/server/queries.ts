@@ -3,6 +3,7 @@ import 'server-only';
 import { cache } from 'react';
 import type { NoteDeps } from '@/features/note/application/deps';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
+import { getNotePreview as getNotePreviewUseCase } from '@/features/note/application/get-note-preview';
 import { getVisitorNote as getVisitorNoteUseCase } from '@/features/note/application/get-visitor-note';
 import { getVisitorNoteMedia as getVisitorNoteMediaUseCase } from '@/features/note/application/get-visitor-note-media';
 import {
@@ -12,6 +13,7 @@ import {
 import { listNotes as listNotesUseCase } from '@/features/note/application/list-notes';
 import type {
   Note,
+  NotePreview,
   NoteRevision,
   NoteRevisionSummary,
   NoteSummary,
@@ -67,6 +69,14 @@ export const getNoteForEdit = async (uid: string): Promise<Note | null> => {
   const { notes } = await createNoteDeps();
   const id = await findIdByUid(notes, uid);
   return id === null ? null : getNoteForEditUseCase(notes, id);
+};
+
+/** 見た目の確認で描く形（REQUIREMENTS.md の FR-13）。オーナーでなければ 403。無い uid なら null */
+export const getNotePreview = async (uid: string): Promise<NotePreview | null> => {
+  await requireAuthor();
+  const { notes } = await createNoteDeps();
+  const id = await findIdByUid(notes, uid);
+  return id === null ? null : getNotePreviewUseCase(notes, id);
 };
 
 /**

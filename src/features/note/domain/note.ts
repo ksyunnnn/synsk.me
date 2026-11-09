@@ -280,3 +280,9 @@ export type VisitorNote = {
   /** 公開した版の URL だけの段落が指す参照先の情報。取ったことのある URL だけ */
   linkPreviews: VisitorLinkPreview[];
 };
+
+/**
+ * 見た目の確認（`/dash/notes/{uid}/preview`、research.md の R15）で描く形。訪問者向けと同じ形を、
+ * 最も新しい版から詰める。一度も公開していない note は初めて公開した日時を持たない
+ */
+export type NotePreview = Omit<VisitorNote, 'publishedAt'> & { publishedAt: string | null };

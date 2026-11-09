@@ -3,6 +3,7 @@ import 'server-only';
 import type {
   Note,
   NoteCardImage,
+  NotePreview,
   NoteRevisionSummary,
   NoteStatus,
   NoteSummary,
@@ -49,6 +50,9 @@ type VisitorRow = {
   card_image: NoteCardImage;
   card_media_storage_key: string | null;
 };
+
+/** 見た目の確認で読む行。一度も公開していない note は初めて公開した日時を持たない */
+type PreviewRow = Omit<VisitorRow, 'published_at'> & { published_at: string | null };
 
 const toRevision = (row: RevisionRow) => ({
   uid: row.uid,
@@ -133,6 +137,22 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
     };
   };
 
+  /** 版の行を訪問者向けの形に詰める。公開した版（訪問者）と最も新しい版（見た目の確認）が使う */
+  const toNotePreview = async (row: PreviewRow): Promise<NotePreview> => {
+    const { media, linkPreviews, firstParagraph } = await readBodyReferences(row.id, row.body);
+    return {
+      slug: row.slug,
+      title: row.title,
+      description: row.description,
+      summary: row.description ?? firstParagraph,
+      body: row.body,
+      publishedAt: row.published_at,
+      cardImage: toCardImage(row.card_image, row.card_media_storage_key),
+      media,
+      linkPreviews,
+    };
+  };
+
   return {
     findVisitorBySlug: async (slug) => {
       const row = await db
@@ -143,19 +163,25 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         .bind(slug)
         .first<VisitorRow>();
       if (!row) return null;
-      const { media, linkPreviews, firstParagraph } = await readBodyReferences(row.id, row.body);
-      const dto: VisitorNote = {
-        slug: row.slug,
-        title: row.title,
-        description: row.description,
-        summary: row.description ?? firstParagraph,
-        body: row.body,
-        publishedAt: row.published_at,
-        cardImage: toCardImage(row.card_image, row.card_media_storage_key),
-        media,
-        linkPreviews,
-      };
+      const dto: VisitorNote = { ...(await toNotePreview(row)), publishedAt: row.published_at };
       return dto;
+    },
+
+    findPreview: async (id) => {
+      // 最も新しい版を、状態と削除に関わらず読む（research.md の R15）。オーナーだけが呼ぶ
+      const row = await db
+        .prepare(
+          `SELECT n.id, n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
+             m.storage_key AS card_media_storage_key
+           FROM note n
+           JOIN note_revision r
+             ON r.id = (SELECT max(id) FROM note_revision WHERE note_id = n.id)
+           LEFT JOIN media m ON m.id = n.card_media_id AND m.note_id = n.id
+           WHERE n.id = ?`,
+        )
+        .bind(id)
+        .first<PreviewRow>();
+      return row ? toNotePreview(row) : null;
     },
 
     hasVisitorSlug: async (slug) =>

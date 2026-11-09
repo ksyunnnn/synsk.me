@@ -3,6 +3,7 @@ import type {
   Note,
   NoteId,
   NoteInput,
+  NotePreview,
   NoteRevision,
   NoteRevisionSummary,
   NoteSummary,
@@ -36,6 +37,11 @@ export type NoteRepository = {
   findVisitorBySlug: (slug: string) => Promise<VisitorNote | null>;
   /** 訪問者に見せる note がある識別子か。`findVisitorBySlug` が null を返さない識別子と一致する */
   hasVisitorSlug: (slug: string) => Promise<boolean>;
+  /**
+   * 見た目の確認で描く形（research.md の R15）。最も新しい版を、状態と削除に関わらず詰める。
+   * オーナーだけが使う。無い id なら null
+   */
+  findPreview: (id: NoteId) => Promise<NotePreview | null>;
   /** オーナーが編集する note。削除した note も返す。無い id なら null */
   findForEdit: (id: NoteId) => Promise<Note | null>;
   /** 管理画面の URL とフォームの uid が指す note の id。削除した note も返す。無ければ null */
