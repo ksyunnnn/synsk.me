@@ -202,7 +202,7 @@ description: "職歴と実績の実装タスク"
 - [X] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
 - [ ] T075 R2 の読み書きを src/shared/server/media-storage.ts に閉じ込め、実績・職歴の画像の追加と、実績の代表画像の選択と登録（その実績の画像だけ）を作る。画像の上限を plan.md に書いてから作る（constitution II）。**止める未決: U5**
 - [ ] T076 秘匿化しない実績の画像を配る経路を作り、秘匿化した実績の画像が返らないことを結合で確かめる（FR-030）。**止める未決: U5**
-- [ ] T077 本文の表示と、本文の中に画像とキャプションを置く入力を作る（FR-027）。**止める未決: U4**
+- [ ] T077 本文の表示と、本文の中に画像とキャプションを置く入力を作る（FR-027）。**止める未決: U5**（本文の中の画像）
 - [X] T078 訪問者向けの実績の取り出しと識別子の有無（src/features/project/server/d1-project-repository.ts）を、秘匿化した組織名の無い組織を指す秘匿化した実績を出さない形にし、tests/workers/project-masking.test.ts と tests/integration/project-masking.test.ts で 404 と応答の中身を確かめる（U2 の決定、research.md の R5）。トリガの migration は足さない
 - [X] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース・失敗の表し方・見た目と操作を分ける）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
 - [ ] T080 PR の CI が 10 分以内に収まることを GitHub Actions のステップの所要時間で確かめる（ADR-0019）
@@ -241,8 +241,8 @@ description: "職歴と実績の実装タスク"
 | 未決 | 止めるタスク |
 |---|---|
 | U3 | T053 |
-| U4 | T077。T035 の本文の表示 |
-| U5 | T075・T076 |
+| U4 | 無し（決定済み）。本文の表示は T077 が作る |
+| U5 | T075・T076・T077 |
 | U6 の残り（端の扱い） | T055・T061 の、職歴の実績とスキルの部分 |
 | U1・U8・U9 | 無し（U9 が覆れば構成のタスクを直す） |
 
