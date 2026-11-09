@@ -979,3 +979,158 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
     },
   );
 });
+
+/**
+ * 一覧のビュー activity_feed が、転載先と一致する外部の activity を除くこと
+ * （specs/005-feed/data-model.md の「一覧のビュー」の M4、ADR-0006）
+ */
+describe('migration 0018 の activity_feed の転載先の除外', () => {
+  const noteIds: number[] = [];
+  const activityIds: number[] = [];
+  const syndicationIds: number[] = [];
+
+  /**
+   * 転載先の URL を 1 つ持つ note を作る。状態は公開・公開したことの無い下書き・公開してから
+   * 下書きに戻したもの・削除のどれか
+   */
+  const insertSyndicatedNote = async (
+    slug: string,
+    state: 'published' | 'draft' | 'reverted' | 'deleted',
+    url: string,
+  ) => {
+    const noteId = await insertId('INSERT INTO note (slug) VALUES (?)', slug);
+    noteIds.push(noteId);
+    const revisionId = await insertId(
+      "INSERT INTO note_revision (note_id, title, body) VALUES (?, ?, '本文')",
+      noteId,
+      `${slug} の題`,
+    );
+    if (state !== 'draft') {
+      await env.DB.prepare(
+        "UPDATE note SET status = 'published', published_revision_id = ?, published_at = '2026-01-07T00:00:00.000Z' WHERE id = ?",
+      )
+        .bind(revisionId, noteId)
+        .run();
+    }
+    if (state === 'reverted') {
+      await env.DB.prepare("UPDATE note SET status = 'draft' WHERE id = ?").bind(noteId).run();
+    }
+    if (state === 'deleted') {
+      await env.DB.prepare("UPDATE note SET deleted_at = '2026-02-01T00:00:00.000Z' WHERE id = ?")
+        .bind(noteId)
+        .run();
+    }
+    syndicationIds.push(
+      await insertId('INSERT INTO syndication (note_id, url) VALUES (?, ?)', noteId, url),
+    );
+    return noteId;
+  };
+
+  const insertExternal = async (url: string) => {
+    const id = await insertId(
+      "INSERT INTO activity (source, url, title, published_at) VALUES ('unlisted', ?, '0018 の記事', '2026-01-08T00:00:00.000Z')",
+      url,
+    );
+    activityIds.push(id);
+    return id;
+  };
+
+  const shownExternals = async () => {
+    const { results } = await env.DB.prepare(
+      "SELECT item_number FROM activity_feed WHERE item_type = 'external_activity'",
+    ).all<{ item_number: number }>();
+    return results.map((row) => row.item_number).filter((n) => activityIds.includes(n));
+  };
+
+  let publishedNote = 0;
+  let toPublished = 0;
+  let toReverted = 0;
+  let toDraft = 0;
+  let toDeleted = 0;
+  let unrelated = 0;
+
+  beforeAll(async () => {
+    publishedNote = await insertSyndicatedNote(
+      'migration-0018-published',
+      'published',
+      'https://example.com/0018/published',
+    );
+    await insertSyndicatedNote('migration-0018-draft', 'draft', 'https://example.com/0018/draft');
+    await insertSyndicatedNote(
+      'migration-0018-deleted',
+      'deleted',
+      'https://example.com/0018/deleted',
+    );
+    toPublished = await insertExternal('https://example.com/0018/published');
+    await insertSyndicatedNote(
+      'migration-0018-reverted',
+      'reverted',
+      'https://example.com/0018/reverted',
+    );
+    toDraft = await insertExternal('https://example.com/0018/draft');
+    toReverted = await insertExternal('https://example.com/0018/reverted');
+    toDeleted = await insertExternal('https://example.com/0018/deleted');
+    unrelated = await insertExternal('https://example.com/0018/unrelated');
+  });
+
+  // note.published_revision_id の外部キーは検査をトランザクションの終わりに送るので、1 回の
+  // batch で転載先、版、note の順に消せる
+  afterAll(async () => {
+    await env.DB.batch([
+      ...activityIds.map((id) => env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(id)),
+      ...syndicationIds.map((id) =>
+        env.DB.prepare('DELETE FROM syndication WHERE id = ?').bind(id),
+      ),
+      ...noteIds.map((id) =>
+        env.DB.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
+      ),
+      ...noteIds.map((id) => env.DB.prepare('DELETE FROM note WHERE id = ?').bind(id)),
+    ]);
+  });
+
+  it('公開中の note の転載先と URL が一致する外部の activity を出さない', async () => {
+    expect(await shownExternals()).not.toContain(toPublished);
+  });
+
+  it('転載した note が下書きか削除済みなら、外部の activity を出す', async () => {
+    const shown = await shownExternals();
+    expect(shown).toContain(toDraft);
+    expect(shown).toContain(toReverted);
+    expect(shown).toContain(toDeleted);
+  });
+
+  it('note を下書きに戻す・削除すると出し直し、公開し直す・元に戻すと再び除く', async () => {
+    const setNote = (sql: string) => env.DB.prepare(sql).bind(publishedNote).run();
+    try {
+      await setNote("UPDATE note SET status = 'draft' WHERE id = ?");
+      expect(await shownExternals()).toContain(toPublished);
+      await setNote("UPDATE note SET status = 'published' WHERE id = ?");
+      expect(await shownExternals()).not.toContain(toPublished);
+      await setNote("UPDATE note SET deleted_at = '2026-02-01T00:00:00.000Z' WHERE id = ?");
+      expect(await shownExternals()).toContain(toPublished);
+      await setNote('UPDATE note SET deleted_at = NULL WHERE id = ?');
+      expect(await shownExternals()).not.toContain(toPublished);
+    } finally {
+      await setNote("UPDATE note SET status = 'published', deleted_at = NULL WHERE id = ?");
+    }
+  });
+
+  it('転載先と一致しない外部の activity は出す', async () => {
+    expect(await shownExternals()).toContain(unrelated);
+  });
+
+  it('除外の条件も、転載先を URL の索引で引く', async () => {
+    const { results } = await env.DB.prepare(
+      "EXPLAIN QUERY PLAN SELECT * FROM activity_feed WHERE item_type = 'external_activity' AND item_number = ?",
+    )
+      .bind(unrelated)
+      .all<{ detail: string }>();
+    const details = results.map((row) => row.detail);
+    expect(details).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/^SEARCH y USING (COVERING )?INDEX \S+ \(url=\?\)$/),
+      ]),
+    );
+    expect(details.filter((detail) => detail.startsWith('SCAN'))).toEqual([]);
+  });
+});
