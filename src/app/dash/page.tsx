@@ -8,7 +8,11 @@ export const instant = false;
 
 export const metadata: Metadata = { title: '管理画面 | synsk.me' };
 
-/** 各一覧への入口。経路は specs/001-career-and-project/contracts/dash.md と specs/002-resume/contracts/dash.md */
+/**
+ * 各一覧への入口。経路は specs/001-career-and-project/contracts/dash.md・
+ * specs/002-resume/contracts/dash.md・specs/003-note/contracts/dash.md・
+ * specs/004-external-activity/contracts/dash.md
+ */
 const SECTIONS = [
   { href: '/dash/careers', label: '職歴' },
   { href: '/dash/projects', label: '実績' },
@@ -16,6 +20,8 @@ const SECTIONS = [
   { href: '/dash/skills', label: 'スキル' },
   { href: '/dash/organizations', label: '組織' },
   { href: '/dash/resumes', label: '職務経歴書' },
+  { href: '/dash/notes', label: 'note' },
+  { href: '/dash/life-events', label: 'life event' },
 ] as const;
 
 const Page = async () => {

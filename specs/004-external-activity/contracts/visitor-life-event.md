@@ -20,7 +20,7 @@ Repository の実装は `source = 'life_event'` の行から、次の列だけ�
 | `title` | `activity.title`（空あり。題を必ず入れるかは spec の未決） |
 | `description` | `activity.description`（空あり）。書式は plan.md の「spec が決めないもの」 |
 | `happenedOn` | `activity.happened_on`（暦の日付） |
-| `cardImageUrl` | `activity.card_media_id` の画像の `/life-events/{slug}/media/{media の uid か id}` の URL（空あり。経路の形は共有担当の部品に合わせる） |
+| `cardImageUrl` | `activity.card_media_id` の画像の `/life-events/{slug}/media/{media.storage_key}` の URL（空あり。`storage_key` は共有担当の `src/shared/domain/media.ts` の `MediaStorageKey`） |
 
 `activity.id`・`activity.uid`・`created_at`・`updated_at` を含めない。
 

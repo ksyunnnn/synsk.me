@@ -33,7 +33,7 @@
 | `activity.uid`（DB が入れる 32 文字の 16 進。UNIQUE、書き換えを拒むトリガ） | ADR-0051。`/dash/life-events/{uid}`・`/dash/activities/{uid}` が使う。0011 の形に合わせる |
 | `activity_source` の行: `article` に Zenn・Qiita・dev.to・Medium、`embed` に Speaker Deck・Spotify・X・CodeSandbox・YouTube・CodePen、`other` に GitHub・connpass | spec の Assumptions の分類。`source` の値は `migrations/0012` が入れる。plan.md の取得元ごとのファイル名と同じ（例: `devto`・`speakerdeck`） |
 | U12 で案 (b) を選んだときだけ: オーナーが登録した暦の日付の列 | research.md の R10 |
-| `fetch_result` に、取得元が前回返した `ETag` と `Last-Modified` の列（どちらも NULL 可） | 条件付きの要求で、変わっていない取得元の中身を取り直さない（research.md の R9） |
+| `fetch_result` に、取得元が前回返した `ETag` と `Last-Modified` の列（どちらも NULL 可） | 条件付きの要求で、変わっていない取得元の中身を取り直さない（research.md の R9）。`migrations/0014` が `etag`・`last_modified` として足す。値はヘッダの文字列のままで、日時として読まない |
 
 取得元で消えた activity の印の列は足さない（行を消す。research.md の R6）。
 
@@ -43,8 +43,8 @@
 |---|---|---|
 | 取得のユースケースは life event の行を書かない | FR-032 | `src/features/activity/server/d1-activity-repository.ts` の取得の書き込みの文が `source <> 'life_event'` を条件にする |
 | 公開日を返さない取得元から取り直すときは `published_at` を書かない | FR-012 | `src/features/activity/application/plan-refresh.ts`（計算の関数）。取得元の `FetchedItem.publishedAt` が無いときは列を直す対象にしない |
-| 一覧を取り切れない取得元では、一覧に無いことで消さない | FR-018 | 同上。`isComplete` が偽なら消す候補を作らない |
-| 1 回の取得で消す件数は上限まで | FR-019 | 同上。上限は引数 `limits`（research.md の R8） |
+| 一覧を取り切れない取得元では、一覧に無いことで消さない | FR-018 | `src/features/activity/application/plan-removals.ts`。`isComplete` が偽なら消す候補を作らない |
+| 1 回の取得で消す件数は上限まで。候補が上限を超えた回は 1 件も消さない | FR-019 | `src/features/activity/application/plan-removals.ts`。上限は引数 `limits`（research.md の R8） |
 | 取得に失敗した取得元では activity を書き換えない。`last_succeeded_at` は前の値を残す | FR-014・FR-016 | `src/features/activity/application/refresh-sources.ts` |
 | URL を指名する取得元の URL は、その取得元のホストに限る | FR-009、原則 2 | `src/features/activity/domain/sources.ts` |
 | 日付の無い外部の activity は保存しない | FR-011 | 登録のユースケース。取得では、公開日を返す取得元で公開日が欠けた項目を取り込まず、`fetch_result.reason` に書く |
@@ -62,10 +62,10 @@
 - `IntakeMode`: `'list' | 'url' | 'manual'`（取り込み方。ADR-0052 の 3 通り）。取得元の名前から引く表を `sources.ts` に置く。保管するデータに持たない（FR-004）
 - `FetchedItem`: `{ url; title; publishedAt?; externalId?; imageUrl? }`。取得元ごとの処理が外部の応答から詰め替えた形（research.md の R3）
 - `SourceListing`: `{ items: FetchedItem[]; isComplete: boolean }`
-- `RefreshOutcome`: 取得元ごとの `{ source; ok: true; added; updated; removed; keptOverLimit } | { source; ok: false; reason }`。「失敗の表し方」の形で、投げない
+- `RefreshOutcome`: 取得元ごとの `{ source; ok: true; added; updated; removed; keptOverLimit; skippedWithoutDate } | { source; ok: false; reason }`。「失敗の表し方」の形で、投げない
 - `ExternalActivity`（管理画面）: uid・取得元・URL・題・公開日・取り込み方
 - `LifeEvent`（管理画面）: uid・slug・題・説明・起きた日・代表画像の id
-- 表の行の型は `server/d1-activity-repository.ts` の中だけで書く（001 の research.md の R3）
+- 表の行の型は `server/d1-activity-repository.ts` と `server/d1-life-event-repository.ts` の中だけで書く（001 の research.md の R3、research.md の R2）
 
 ## 訪問者向けの DTO
 
