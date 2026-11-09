@@ -70,24 +70,25 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
   }
 };
 
-const placeholders = FEED_ITEM_TYPES.map(() => '?').join(', ');
+/**
+ * 種類の値を SQL の文字列にする。`FEED_ITEM_TYPES` はコードの中の定数で、英小文字と `_` だけを
+ * 持つ。bind で渡すと、後で `?` を足したときに並びがずれて種類の順が黙って崩れるため、埋め込む
+ */
+const typeLiterals = FEED_ITEM_TYPES.map((type) => `'${type}'`);
 
 /**
  * 並びの日付の新しい順、同じ日付なら `FEED_ITEM_TYPES` の順、同じ種類なら主キーの大きい順
  * （FR-010、research.md の R5）。種類の順の `CASE` は配列から作る
  */
 const LIST_SQL = `SELECT ${COLUMNS} FROM activity_feed
-  WHERE item_type IN (${placeholders})
+  WHERE item_type IN (${typeLiterals.join(', ')})
   ORDER BY sort_at DESC,
-    CASE item_type ${FEED_ITEM_TYPES.map((_, index) => `WHEN ? THEN ${index}`).join(' ')} END,
+    CASE item_type ${typeLiterals.map((literal, index) => `WHEN ${literal} THEN ${index}`).join(' ')} END,
     item_number DESC`;
 
 export const createD1FeedRepository = (db: D1Database): FeedRepository => ({
   list: async () => {
-    const { results } = await db
-      .prepare(LIST_SQL)
-      .bind(...FEED_ITEM_TYPES, ...FEED_ITEM_TYPES)
-      .all<FeedRow>();
+    const { results } = await db.prepare(LIST_SQL).all<FeedRow>();
     return results.flatMap((row) => toFeedItem(row) ?? []);
   },
 });
