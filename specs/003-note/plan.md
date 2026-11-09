@@ -77,8 +77,8 @@
 | 入力の部品 | `src/shared/components/field.tsx`、`src/shared/components/text-link.tsx` | 識別子・題・説明文・本文・転載先の入力、リンク |
 | 削除の確認 | `src/shared/components/delete-form.tsx` | `/dash/notes/{uid}/delete` |
 | プレビュー配信の no-store | `src/shared/server/preview-no-store.ts` | 変えずに効く |
-| 書きかけの保持 | `src/shared/components/draft-retention.tsx`（共有担当、001 の T072） | 編集の画面（R10） |
-| slug の形の検査 | `src/shared/domain/` の slug の部品（共有担当） | 識別子の検査（R8） |
+| 書きかけの保持 | `src/shared/components/draft-retention.tsx`（`DraftRetainingForm`。共有担当、001 の T072、PR #222） | 編集の画面。`version` に開いた版の uid を渡す（R10） |
+| slug の形の検査 | `src/shared/domain/slug.ts`（`isSlug`。共有担当、PR #222） | 識別子の検査（R8）。`newSlug` は使わない |
 | 画像の保存と配信の共通部分 | `src/shared/server/media-storage.ts`（共有担当） | note の画像の追加と配信（R12） |
 
 形の手本（同じ形で書く。import はしない）:
@@ -155,7 +155,7 @@
 
 決定済み: 同時編集で比べる値は最も新しい版（2026-11-09、オーナー。spec の FR-020・FR-021・Assumptions、research.md の R4）。本文の書式（U4）と画像（U5）は上の表。
 
-依存（未決ではない）: 共有担当の migration（`note.uid`・`note_revision.uid`）、書きかけの保持の部品（001 の T072）、slug の形の検査。`src/proxy.ts` は 001・002 の作業者も直すため、003 の変更は既にある分岐を変えずに足す。
+依存（未決ではない）: 共有担当の migration（`note.uid`・`note_revision.uid`）、書きかけの保持の部品（001 の T072）、slug の形の検査、画像を配る経路の `{key}` に使う値（共有担当の `media-storage.ts` が決める。research.md の R12）。`src/proxy.ts` は 001・002 の作業者も直すため、003 の変更は既にある分岐を変えずに足す。
 
 ## Project Structure
 

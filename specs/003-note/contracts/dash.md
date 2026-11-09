@@ -10,7 +10,7 @@
 - 公開・下書きに戻す・削除・元に戻す・代表画像の出どころ・転載先の操作は、開いたときの版を送らない（research.md の R5。公開でも比べるかは plan.md の U6）
 - 削除した note の画面も `/dash/notes/{uid}` で開ける。削除した note の画面は、中身を読み取りだけで出し、「元に戻す」だけを置く
 - 過去の版の画面（`/dash/notes/{uid}/revisions/{revisionUid}`）は、版が無いか、その note に属さなければ `src/proxy.ts` が `/dash/notes/{uid}/revisions/{revisionUid}/missing` へ rewrite する（404）
-- 編集の画面は、共有担当の書きかけの保持の部品で、書きかけの内容をその端末に持つ。保存に成功したら消し、`conflict` のときは消さない（research.md の R10）
+- 編集の画面は、共有担当の `DraftRetainingForm`（`src/shared/components/draft-retention.tsx`）で、書きかけの内容をその端末に持つ。`version` に開いた版の uid を渡す。保存に成功したら消し、`conflict` のときは消さない（research.md の R10）
 
 ## 画面
 

@@ -44,8 +44,8 @@ description: "note の実装タスク"
 | 使うもの | 作る担当 | 003 で待つタスク |
 |---|---|---|
 | `note.uid`・`note_revision.uid` の migration | 共有担当 | T003 以降の D1 を使うタスク |
-| `src/shared/domain/` の slug の形の検査 | 共有担当 | T004 |
-| `src/shared/components/draft-retention.tsx` | 共有担当（001 の T072） | T033 |
+| `src/shared/domain/slug.ts`（`isSlug`） | 共有担当（PR #222） | T004 |
+| `src/shared/components/draft-retention.tsx`（`DraftRetainingForm`） | 共有担当（001 の T072、PR #222） | T033 |
 | `src/shared/server/media-storage.ts`（R2 の読み書き、形式と大きさの検査） | 共有担当 | T038・T039・T050 |
 | `src/shared/server/author.ts`・`env.ts`・`form-data.ts`、`src/shared/domain/action-result.ts`・`uid.ts`・`web-url.ts`・`empty-to-null.ts`、`src/shared/components/field.tsx`・`delete-form.tsx` | 001（済み） | すべて |
 | `src/proxy.ts` | 001・002（済み） | T012。既にある分岐を変えずに足す |
@@ -66,7 +66,7 @@ description: "note の実装タスク"
 
 **Purpose**: どの User Story も使う note の型・本文の読み方・Repository のインタフェース・管理画面の入口
 
-- [ ] T004 [P] note の型、`NoteStatus`・`NoteCardImage` の `as const` の配列、入力の読み方（題 200 文字・本文 100,000 文字、説明文の空を null、識別子は共有担当の slug の検査）、一度でも公開した note の識別子の書き換えを拒む判定、題が空の版を公開しない判定を src/features/note/domain/note.ts に作る（FR-002・FR-003・FR-005・FR-010・FR-011、data-model.md の「domain の型」）
+- [ ] T004 [P] note の型、`NoteStatus`・`NoteCardImage` の `as const` の配列、入力の読み方（題 200 文字・本文 100,000 文字、説明文の空を null、識別子は `src/shared/domain/slug.ts` の `isSlug`）、一度でも公開した note の識別子の書き換えを拒む判定、題が空の版を公開しない判定を src/features/note/domain/note.ts に作る（FR-002・FR-003・FR-005・FR-010・FR-011、data-model.md の「domain の型」）
 - [ ] T005 [P] T004 を tests/unit/note-domain.test.ts で確かめる（201 文字の題・100,001 文字の本文・101 文字や大文字の識別子を拒む、公開したことのある note の識別子の書き換えを拒む、題が空の公開を拒む）
 - [ ] T006 [P] 本文の読み方（`mdast-util-from-markdown` で構文木にし、画像の印 `media:<id>` の id の並び、行に URL だけを書いた行の URL の並び、最初の段落の文字列を返す）を src/features/note/domain/note-body.ts に作る（research.md の R11）
 - [ ] T007 [P] T006 を tests/unit/note-body.test.ts で確かめる（コードの中の画像の印と URL を拾わない、文の中の URL を拾わない、`http`・`https` でない URL を拾わない、最初の段落の改行が空白になる）
@@ -157,7 +157,7 @@ description: "note の実装タスク"
 
 ### Implementation for User Story 4
 
-- [ ] T033 [US4] src/features/note/components/note-form.tsx に共有担当の src/shared/components/draft-retention.tsx を使い、キーを note の uid ごとに分け、保存に成功したら消し、`conflict` のときは消さない（research.md の R10）
+- [ ] T033 [US4] src/features/note/components/note-form.tsx の `<form>` を共有担当の src/shared/components/draft-retention.tsx の `DraftRetainingForm` に置き換え、`storageKey` に `note:<note の uid>`、`version` に開いた版の uid、`result` に Server Action の結果を渡す（research.md の R10）
 
 ---
 
@@ -176,7 +176,7 @@ description: "note の実装タスク"
 
 - [ ] T036 [US5] 代表画像の出どころの変更（`generated` と `site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` に `site` のときのサイト共通の画像を足す（research.md の R12）
 - [ ] T037 [US5] 題を入れて自動で作る代表画像を作り、一度作ったものを使い回す（`docs/CRAWLING.md` の「取得の負荷」）。**止める未決: U8**
-- [ ] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚、JPEG・PNG・WebP・GIF、10 MB まで）と、代表画像に note の画像を選ぶ入力を作る。形式・大きさの違う画像と別の note の画像を拒むことを tests/unit/note-usecases.test.ts と tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12）
+- [ ] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚。JPEG・PNG・WebP・GIF・10 MB までの検査は media-storage.ts が持ち、その検査で確かめる）と、代表画像に note の画像を選ぶ入力を作る。media-storage.ts が拒んだ画像を項目の誤りで返すことを tests/unit/note-usecases.test.ts で、別の note の画像を代表画像に選べないことを tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12、constitution の Test Layering）
 - [ ] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.ts、src/proxy.ts の `/notes/{slug}/media/{key}` の判定を作る。公開で削除していない note の、公開した版の本文が指す画像（src/features/note/domain/note-body.ts で読む）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）
 - [ ] T040 [US5] src/features/note/components/note-body.tsx で画像の印を `<figure>`・`<img alt>`・`<figcaption>` で出し、`src` を T039 の経路にする。本文の元の文字列（`media:<id>`）が RSC の応答に含まれないことを tests/integration/notes.test.ts で確かめる（research.md の R11）
 

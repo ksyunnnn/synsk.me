@@ -54,7 +54,7 @@
 
 | 決まり | 要件 | 置き場 |
 |---|---|---|
-| 識別子の形 | FR-002 | 共有担当の `src/shared/domain/` の slug の検査 |
+| 識別子の形 | FR-002 | 共有担当の `src/shared/domain/slug.ts`（`isSlug`） |
 | 一度でも公開した note の識別子の書き換えを、保存の前に拒む | FR-003 | `src/features/note/domain/note.ts` |
 | 題が空の版の公開を、書く前に拒み、項目で知らせる | FR-011 | `src/features/note/application/publish-note.ts` |
 | 説明文は空にでき、空の値は NULL で持つ | FR-005 | `src/features/note/domain/note.ts`（`src/shared/domain/empty-to-null.ts`） |

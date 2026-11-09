@@ -29,7 +29,7 @@ Repository の実装は `note.status = 'published' AND note.deleted_at IS NULL` 
 | `media` | 公開した版の本文が指す画像の、本文の印の id と配る経路の key の対応。id は画面の部品の中だけで使い、応答に出さない（research.md の R11） |
 | `linkPreviews` | 公開した版の本文の URL が指す `link_preview` の `url`・`title`・`image_url`。カードにするのは行に URL だけを書いた行（research.md の R11）。出し方は U9 が解けてから |
 
-DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開した後に保存した版・`deleted_at`・`syndication.url`（訪問者に見せるかは plan.md の U11）・`media.storage_key`。
+DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開した後に保存した版・`deleted_at`・`syndication.url`（訪問者に見せるかは plan.md の U11）・`media.storage_key`（`{key}` に使うかは research.md の R12）。
 
 ## OGP
 

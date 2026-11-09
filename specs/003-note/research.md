@@ -36,7 +36,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 ## R2 001・002 の部品を使う
 
 - 決めたこと: オーナーの判定・env・Server Action の結果の型・フォームの値の読み方・入力の部品・uid の引き方・proxy の形を、001・002 のものをそのまま使う。一覧は plan.md の「再利用する既存の部品」が持つ
-- 共有担当が作るものを使う: 書きかけの保持の部品（001 の T072、`src/shared/components/draft-retention.tsx`）、slug の形の検査（`src/shared/domain/` に置く。ファイル名は共有担当の PR で確かめる）、画像の保存と配信の共通部分（`src/shared/server/media-storage.ts`）。003 はこれらを作らない
+- 共有担当が作るものを使う: 書きかけの保持の部品（001 の T072、`src/shared/components/draft-retention.tsx`）、slug の形の検査（`src/shared/domain/slug.ts` の `isSlug`、PR #222）、画像の保存と配信の共通部分（`src/shared/server/media-storage.ts`）。003 はこれらを作らない
 - 理由: 001・002 と同じ形にすると、同じ検査の道具（`tests/support/access.ts`・`tests/integration/support/`）と同じ読み方で確かめられる。issue #219 の調査の報告（spec どうしの重複）が、書きかけの保持と slug の形を 2 つ以上の spec が使うと挙げた
 - 退けた案: note の中に同じ部品をもう 1 つ作る。issue #219 の調査が挙げた重複を増やす
 
@@ -90,9 +90,9 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R8 識別子
 
-- 決めたこと: 識別子の形（1〜100 文字の英小文字・数字・ハイフン、FR-002）は、共有担当が `src/shared/domain/` に置く slug の検査を使う。重複（削除した note を含む）は `note.slug` の UNIQUE が拒み、アプリケーションは項目の誤りとして知らせる。一度でも公開した note（`published_at` を持つ）の識別子の書き換えは、アプリケーションが先に拒み、トリガ `note_slug_fixed_after_publication` を最後の守りに残す（FR-003）
+- 決めたこと: 識別子の形（1〜100 文字の英小文字・数字・ハイフン、FR-002）は、共有担当の `src/shared/domain/slug.ts` の `isSlug` を使う。重複（削除した note を含む）は `note.slug` の UNIQUE が拒み、アプリケーションは項目の誤りとして知らせる。一度でも公開した note（`published_at` を持つ）の識別子の書き換えは、アプリケーションが先に拒み、トリガ `note_slug_fixed_after_publication` を最後の守りに残す（FR-003）
 - 識別子はオーナーが入れる。題から候補を示すかは未決（U3）で、決まるまで候補を示さない
-- 001 の R6 と 002 の uid（`crypto.randomUUID()` の 36 文字）は使わない。note の識別子の既定を uid にする要件は無い
+- 001 の R6 と 002 の uid（`crypto.randomUUID()` の 36 文字、`slug.ts` の `newSlug`）は使わない。note の識別子の既定を uid にする要件は無い
 - 理由: issue #219 の調査が、001・002・003・004 が同じ slug の形を定めるとし、共有担当がまとめる（R2）
 
 ## R9 キャッシュと 404・403
@@ -105,7 +105,8 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R10 書きかけの保持
 
-- 決めたこと: 編集の画面は、共有担当の `src/shared/components/draft-retention.tsx` を使い、書きかけの内容をその端末の `localStorage` に持つ。キーは note の uid ごとに分ける。保存に成功したら消す。保存を止めたとき（R4）は消さない（FR-018・FR-019、User Story 4、spec の Edge Cases）
+- 決めたこと: 編集の画面は、共有担当の `src/shared/components/draft-retention.tsx` の `DraftRetainingForm` を使い、書きかけの内容をその端末の `localStorage` に持つ。`storageKey` は `note:<note の uid>`、`version` は開いたときの最も新しい版の uid、`result` は Server Action の結果を渡す。部品は送信で消し、`saved` 以外の結果（`conflict` を含む）で送った値を持ち直す（FR-018・FR-019、User Story 4、spec の Edge Cases）
+- `version` に版の uid を渡す理由: 渡さないと、別の画面で先に保存された後に開き直したとき、古い版から書いた書きかけが最も新しい版の中身の上に戻り、触っていない項目まで古い値で保存する（FR-020 が防ぐ上書き）。渡すと、前の版の書きかけは消さずに残し、自動では戻さない。残した書きかけをオーナーにどう見せるかは U7 に含める
 - D1 には書かない。別の端末は D1 の最も新しい版を読むため、書きかけの内容は出ない（FR-019）
 - 理由: `docs/REQUIREMENTS.md` の FR-14、001 の research.md の R16
 - 退けた案: 書きかけの内容を D1 に自動で保存する（FR-018 が保管するデータに書かないとする）
@@ -130,7 +131,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 決定（2026-11-09。オーナーから任されて Claude が決めた。plan.md の U5、[issue #219 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6732716576)）: R2 に原本を置き、Worker が持ち主ごとに見せてよいかを確かめてから、変換せずに返す。公開していない画像の応答には `Cache-Control: no-store` を付ける。形式は JPEG・PNG・WebP・GIF で、SVG は受けない。1 枚 10 MB まで
 - 決めたこと:
   - 画像の記録は `media` に持ち、持ち主の列は `note_id`。R2 への読み書き・形式と大きさの検査は共有担当の `src/shared/server/media-storage.ts` が持つ。003 は、note の画像を足す操作と、note の画像を訪問者に出してよいかの確かめを持つ（FR-023・FR-026）
-  - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は主キーでない、推測できない値で、共有担当の `media-storage.ts` の決まりに従う（ADR-0048 の「主キーは URL に出さない」）。`src/proxy.ts` が描画の前に確かめ、見せてよくなければ 404 にする
+  - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は主キーでない、推測できない値で、共有担当の `media-storage.ts` の決まりに従う（ADR-0048 の「主キーは URL に出さない」）。`media` の列は主キーと `storage_key` だけのため、`{key}` は `storage_key` か、共有担当の migration で足す列になる。どちらかは共有担当の PR で確かめ、`storage_key` なら contracts/visitor-note.md の「DTO が持たないもの」から外す`src/proxy.ts` が描画の前に確かめ、見せてよくなければ 404 にする
   - 量の上限（constitution II）: 1 枚 10 MB、1 回の操作で 1 枚
   - 代表画像の出どころは `note.card_image`（`generated`・`media`・`site`）。既定は `generated`（FR-024）。`media` を選べるのは、その note の画像だけ（複合の外部キー、FR-025）
   - 訪問者に出してよい画像は、note が公開で削除していないときの、公開した版の本文が指す画像と、代表画像だけ（FR-026）。この確かめは画像を配る経路の中で、Repository が取り出すときに行う。公開した版の本文が指す画像の id は、R11 の構文木から読む
@@ -188,4 +189,6 @@ issue #219 の報告「spec どうしの重複・干渉・矛盾・依存を調�
 | ER 図の note_revision の説明「保存と公開のたびに 1 行」 | FR-006・FR-011 と 0005 は保存のたびに 1 行。ER 図の修正を共有担当に渡した |
 | 0005 の注釈が旧名 `specs/005-note-write-and-read` を指す | 注釈の修正の扱いを共有担当に渡した。003 の要件番号との対応は data-model.md が持つ |
 | 「uid」の意味の食い違い（36 文字と 32 文字） | 003 の uid は管理画面の URL の 32 文字だけ。識別子（slug）に uid を使わない（R8） |
+| 本文の書式（U4）を 001 の職歴・実績の本文（001 の T077）と 003 が使う | 本文の読み方（`note-body.ts`）と表示（`note-body.tsx`）の使い手が 2 つになる（constitution IX）。置き場を `src/shared/` にして共有担当が作るかは PM に渡した。決まるまで tasks.md の T001・T006・T007・T021・T040 は `src/features/note/` に置く |
+| 004 の research.md が、題の取り方の案 (b) で 003 の URL カードの取得を使うとする | 004 が (b) を選べば、参照先への取得（U9、T043）の使い手が 2 つになり、共有担当の部品にする。004 の推奨は (a) で、003 は U9 が解けるまで取得を作らない |
 | 依存 003 → 001、004 → 003（画像）、005 → 003 | 001・002 の部品を使う（R2）。005 が読む列の意味を変えない（R3）。004 とは画像の部品を共有担当経由で共有する |
