@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { NoteCardImageForm } from '@/features/note/components/note-card-image-form';
 import { NoteForm } from '@/features/note/components/note-form';
+import { NoteMediaForm } from '@/features/note/components/note-media-form';
 import { NoteRestoreForm } from '@/features/note/components/note-restore-form';
 import { NoteStatusForm } from '@/features/note/components/note-status-form';
 import { NoteSyndicationForm } from '@/features/note/components/note-syndication-form';
@@ -10,7 +12,9 @@ import {
   toNoteFormValues,
 } from '@/features/note/domain/note';
 import {
+  addNoteMedia,
   addNoteSyndication,
+  changeNoteCardImage,
   publishNote,
   removeNoteSyndication,
   restoreNote,
@@ -42,6 +46,8 @@ const NOTICES = {
   reverted: '過去の版の中身を、新しい版として保存しました',
   syndicated: '転載先を記録しました',
   unsyndicated: '転載先を外しました',
+  mediaAdded: '画像を足しました',
+  cardImageChanged: '代表画像を変えました',
 } as const;
 
 const Page = async ({ params, searchParams }: Props) => {
@@ -116,6 +122,21 @@ const Page = async ({ params, searchParams }: Props) => {
         urls={note.syndicationUrls}
         addAction={addNoteSyndication}
         removeAction={removeNoteSyndication}
+      />
+      <NoteMediaForm
+        action={addNoteMedia}
+        noteUid={note.uid}
+        mediaStorageKeys={note.mediaStorageKeys}
+      />
+      <NoteCardImageForm
+        action={changeNoteCardImage}
+        noteUid={note.uid}
+        current={
+          note.cardImage === 'media' && note.cardMediaStorageKey !== null
+            ? { kind: 'media', storageKey: note.cardMediaStorageKey }
+            : { kind: note.cardImage === 'site' ? 'site' : 'generated' }
+        }
+        mediaStorageKeys={note.mediaStorageKeys}
       />
       <ul className="flex flex-col gap-2">
         <li>

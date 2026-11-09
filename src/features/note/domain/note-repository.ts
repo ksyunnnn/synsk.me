@@ -7,7 +7,9 @@ import type {
   NoteRevisionSummary,
   NoteSummary,
   VisitorNote,
+  VisitorNoteCardImage,
 } from '@/features/note/domain/note';
+import type { MediaStorageKey } from '@/shared/domain/media';
 
 /**
  * note の取り出し方と保存の仕方（docs/SOFTWARE_DESIGN.md の Repository）。
@@ -104,4 +106,17 @@ export type NoteRepository = {
   ) => Promise<{ ok: true } | { ok: false; reason: 'url-taken' | 'not-found' }>;
   /** その note の転載先の URL を外す（research.md の R14）。その note に無い URL なら `ok: false` */
   removeSyndication: (id: NoteId, url: string) => Promise<{ ok: boolean }>;
+  /**
+   * 代表画像の出どころを変える（FR-024・FR-025）。`media` は、その note の画像の置き場のキーだけを
+   * 選べる（`note` の複合の外部キー）。別の note の画像なら `media-not-owned`
+   */
+  changeCardImage: (
+    id: NoteId,
+    cardImage: VisitorNoteCardImage,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
+  /**
+   * 置き場に置いた画像を、その note の画像として記録する（FR-023、research.md の R12）。無いか
+   * 削除した note なら `ok: false`
+   */
+  addMedia: (id: NoteId, storageKey: MediaStorageKey) => Promise<{ ok: boolean }>;
 };

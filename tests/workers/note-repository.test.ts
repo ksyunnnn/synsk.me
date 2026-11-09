@@ -584,3 +584,61 @@ describe('転載先（FR-031・FR-032、User Story 7、research.md の R14）', 
     expect((await notes.findForEdit(b.id))?.syndicationUrls).toEqual(['https://example.com/b']);
   });
 });
+
+describe('代表画像と画像（FR-023〜FR-025、User Story 5 の 3）', () => {
+  it('代表画像の既定は generated で、site に変えられる', async () => {
+    const note = await insertNote(env.DB);
+    expect((await notes.findForEdit(note.id))?.cardImage).toBe('generated');
+    expect(await notes.changeCardImage(note.id, { kind: 'site' })).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.cardImage).toBe('site');
+    expect(await notes.changeCardImage(note.id, { kind: 'generated' })).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.cardImage).toBe('generated');
+  });
+
+  it('その note の画像を代表画像にできる', async () => {
+    const note = await insertNote(env.DB, { slug: 'card-media' });
+    const media = await insertNoteMedia(env.DB, note.id);
+    expect(await notes.changeCardImage(note.id, { kind: 'media', ...media })).toEqual({
+      ok: true,
+    });
+    expect(await notes.findForEdit(note.id)).toMatchObject({
+      cardImage: 'media',
+      cardMediaStorageKey: media.storageKey,
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect((await notes.findVisitorBySlug('card-media'))?.cardImage).toEqual({
+      kind: 'media',
+      storageKey: media.storageKey,
+    });
+  });
+
+  it('別の note の画像を代表画像に選べない（FR-025）', async () => {
+    const a = await insertNote(env.DB);
+    const b = await insertNote(env.DB);
+    const foreign = await insertNoteMedia(env.DB, b.id);
+    expect(
+      await notes.changeCardImage(a.id, { kind: 'media', storageKey: foreign.storageKey }),
+    ).toEqual({ ok: false, reason: 'media-not-owned' });
+    expect((await notes.findForEdit(a.id))?.cardImage).toBe('generated');
+  });
+
+  it('削除した note の代表画像は変えない', async () => {
+    const note = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.changeCardImage(note.id, { kind: 'site' })).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('画像をその note の画像として記録し、削除した note には記録しない', async () => {
+    const note = await insertNote(env.DB);
+    const key = crypto.randomUUID();
+    expect(await notes.addMedia(note.id, key)).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.mediaStorageKeys).toEqual([key]);
+
+    const deleted = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, deleted.id);
+    expect(await notes.addMedia(deleted.id, crypto.randomUUID())).toEqual({ ok: false });
+  });
+});

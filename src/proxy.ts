@@ -28,7 +28,16 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  */
 
 export const config = {
-  matcher: ['/projects/:slug', '/resume/:path*', '/notes/:slug', '/dash', '/dash/:path*'],
+  // `/notes/:slug/media/:key` は経路を dynamic に固定するために入れる（ADR-0040 の Consequences）。
+  // 見せてよいかは route.ts が確かめ、proxy は D1 を読まない（specs/003-note/research.md の R9）
+  matcher: [
+    '/projects/:slug',
+    '/resume/:path*',
+    '/notes/:slug',
+    '/notes/:slug/media/:key',
+    '/dash',
+    '/dash/:path*',
+  ],
 };
 
 /** 404 と 403 の画面。`notFound()` か `forbidden()` を呼ぶだけのページ */
@@ -88,7 +97,7 @@ const decide = async (request: NextRequest): Promise<string | null> => {
   if (segments[0] === 'notes') {
     // 下書き・下書きに戻した・削除した note は、無い識別子と同じ 404（specs/003-note/plan.md の U10）
     const slug = segments[1];
-    if (!isRead || !slug) return null;
+    if (!isRead || !slug || segments.length !== 2) return null;
     return (await hasNoteSlug(slug)) ? null : notePageMissing(slug);
   }
 

@@ -4,6 +4,7 @@ import { cache } from 'react';
 import type { NoteDeps } from '@/features/note/application/deps';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getVisitorNote as getVisitorNoteUseCase } from '@/features/note/application/get-visitor-note';
+import { getVisitorNoteMedia as getVisitorNoteMediaUseCase } from '@/features/note/application/get-visitor-note-media';
 import {
   getNoteRevision as getNoteRevisionUseCase,
   listNoteRevisions as listNoteRevisionsUseCase,
@@ -20,6 +21,7 @@ import { createD1NoteRepository } from '@/features/note/server/d1-note-repositor
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
+import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
 
 /**
  * note の画面・Server Action・`src/proxy.ts` が呼ぶ組み立て用の関数（ADR-0030）。
@@ -28,7 +30,21 @@ import { readEnv } from '@/shared/server/env';
 
 export const createNoteDeps = async (): Promise<NoteDeps> => {
   const { DB } = await readEnv();
-  return { notes: createD1NoteRepository(DB) };
+  return { notes: createD1NoteRepository(DB), media: await createMediaStorage() };
+};
+
+/**
+ * note の画像を訪問者に見せてよいか（FR-026）。`/notes/{slug}/media/{key}` の `route.ts` が呼び、
+ * 結果を共有担当の `respondWithMedia` に渡す（research.md の R9・R12）
+ */
+export const respondWithNoteMedia = async (
+  slug: string,
+  key: string,
+  ifNoneMatch: string | null,
+): Promise<Response> => {
+  const { notes, media } = await createNoteDeps();
+  const access = await getVisitorNoteMediaUseCase(notes, slug, key);
+  return respondWithMedia(media, key, access, ifNoneMatch);
 };
 
 /**
