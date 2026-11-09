@@ -343,6 +343,18 @@ function checkAnalytics(html) {
   check(html.includes('googletagmanager'), 'HTML に GTM のタグが入る');
 }
 
+/** リンクが貼られたときのカードの画像は、正規の origin の絶対 URL を指す（next.config.js の
+ *  SITE_ORIGIN、docs/CRAWLING.md）。本番もプレビューも、Workers Builds のビルドは synsk.me を指す。 */
+function checkCardImage(html) {
+  console.log('カードの画像');
+  const image = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1] ?? '';
+  check(
+    image.startsWith('https://synsk.me/'),
+    '/ の og:image が https://synsk.me の絶対 URL を指す',
+    image,
+  );
+}
+
 /** チャンクを 1 本取る。例外も「取れなかった」として扱い、検査を止めない。 */
 async function fetchChunk(path) {
   try {
@@ -478,6 +490,7 @@ if (ACCESS.ok) {
   await checkAbsentNoteCache();
   await checkPreviewNoStore();
   checkAnalytics(pages['/']);
+  checkCardImage(pages['/']);
   await checkBudget();
 } else {
   // service token がなければ、プレビュー URL のほかの検査はすべて Access に止められる
