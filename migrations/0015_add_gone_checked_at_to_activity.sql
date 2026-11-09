@@ -24,9 +24,10 @@ ALTER TABLE activity ADD COLUMN gone_checked_at TEXT CHECK (
 -- gone_checked_at だけを書いた UPDATE では updated_at を進めない。updated_at は管理画面の
 -- 同時編集で比べる値で（001 の FR-042 と同じ形）、定期実行の確かめで進むと、オーナーの編集が
 -- 競合で止まるため。トリガは SET に挙げた列で動く（AFTER UPDATE OF、
--- https://www.sqlite.org/lang_createtrigger.html）。挙げるのは、updated_at・gone_checked_at と
--- 生成列の sort_at を除く activity のすべての列。activity に列を足す migration は、このトリガを
--- 作り直して足した列を挙げる
+-- https://www.sqlite.org/lang_createtrigger.html）。挙げるのは、updated_at と生成列の sort_at と、
+-- 定期実行の確かめが書く列（gone_checked_at、0019 の consecutive_gone_count）を除く activity の
+-- すべての列。activity に列を足す migration は、確かめが書く列でなければ、このトリガを作り直して
+-- 足した列を挙げる
 DROP TRIGGER activity_updated_at;
 
 CREATE TRIGGER activity_updated_at

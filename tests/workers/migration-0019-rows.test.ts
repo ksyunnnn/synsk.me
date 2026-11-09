@@ -87,6 +87,16 @@ describe('migration 0019 を行のある D1 に当てる', () => {
     expect(await updatedAtOf(2)).toBe('2026-01-01T00:00:00.000Z');
   });
 
+  it('ほかの列と一緒に書くと updated_at が変わる', async () => {
+    await env.DB.prepare(
+      "UPDATE activity SET updated_at = '2026-01-01T00:00:00.000Z' WHERE id = 2",
+    ).run();
+    await env.DB.prepare(
+      "UPDATE activity SET consecutive_gone_count = 0, title = '直した作り物の記事' WHERE id = 2",
+    ).run();
+    expect(await updatedAtOf(2)).not.toBe('2026-01-01T00:00:00.000Z');
+  });
+
   it('外部キーの違反が無い', async () => {
     const { results } = await env.DB.prepare('PRAGMA foreign_key_check').all();
     expect(results).toEqual([]);
