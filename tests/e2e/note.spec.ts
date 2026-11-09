@@ -1,11 +1,10 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { saveEdit, submitAndWait, tabTo, textbox } from './support/dash';
+import { openVisitor, saveEdit, submitAndWait, tabTo, textbox, visit } from './support/dash';
 
 /**
  * オーナーとしての note の作成・保存・公開（specs/003-note/spec.md の User Story 1、FR-001・
  * FR-003・FR-011、constitution V）。HTTP の状態コードと D1 の行は結合と workerd の検査が持つ。
- * 訪問者のページは、本文を描く共有担当の Markdown の部品を待つ（tasks.md の T021）。
  *
  * テストは同じ手元の D1 を並行して使う。識別子は、ほかのテストと重ならない値にする
  */
@@ -23,7 +22,11 @@ const createNote = async (page: Page, { slug, title }: { slug: string; title: st
   return page.url().replace(/\?.*$/, '');
 };
 
-test('note を作って保存し、公開すると識別子が読み取りだけになる', async ({ page, context }) => {
+test('note を作って保存し、公開すると訪問者が読め、識別子が読み取りだけになる', async ({
+  page,
+  context,
+  browser,
+}) => {
   await actAsAuthor(context);
   const slug = uniqueSlug('publish');
   await createNote(page, { slug, title: 'E2E の note の題' });
@@ -42,6 +45,12 @@ test('note を作って保存し、公開すると識別子が読み取りだけ
     'href',
     `/notes/${slug}`,
   );
+
+  const visitor = await openVisitor(browser);
+  expect(await visit(visitor, `/notes/${slug}`)).toBe(200);
+  await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('E2E の note の題');
+  await expect(visitor.getByText('E2E の直した本文')).toBeVisible();
+  await visitor.close();
 
   await page.goto('/dash/notes');
   await expect(page.getByRole('link', { name: 'E2E の note の題' })).toBeVisible();

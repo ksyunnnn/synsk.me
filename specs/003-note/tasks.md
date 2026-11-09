@@ -69,8 +69,8 @@ description: "note の実装タスク"
 
 - [X] T004 [P] note の型、`NoteStatus`・`NoteCardImage` の `as const` の配列、入力の読み方（題 200 文字・本文 100,000 文字、説明文の空を null、識別子は `src/shared/domain/slug.ts` の `isSlug`、題は前後の空白を除く。001 の `src/features/project/domain/project.ts` と同じ）、一度でも公開した note の識別子の書き換えを拒む判定、題が空の版を公開しない判定を src/features/note/domain/note.ts に作る（FR-002・FR-003・FR-005・FR-010・FR-011、data-model.md の「domain の型」）
 - [X] T005 [P] T004 を tests/unit/note-domain.test.ts で確かめる（201 文字の題・100,001 文字の本文・101 文字や大文字の識別子を拒む、公開したことのある note の識別子の書き換えを拒む、題が空か空白だけの公開を拒む）
-- [ ] T006 [P] 共有担当の Markdown を読む部品で、公開した版の本文から画像の印の `storageKey` の並び・行に URL だけを書いた行の URL の並び・最初の段落の文字列を読み、note の DTO に詰める処理を src/features/note/server/d1-note-repository.ts の訪問者向けの取り出しに足す（research.md の R11、contracts/visitor-note.md の DTO）
-- [ ] T007 [P] T006 を tests/workers/note-repository.test.ts で確かめる（その note の `media` の行に無い `storageKey` を DTO に入れない、説明文が空なら最初の段落が説明になる）。本文の読み方そのもの（コードの中の印を拾わないなど）は共有担当の部品の検査が持つ（constitution の Test Layering）
+- [X] T006 [P] 共有担当の Markdown を読む部品で、公開した版の本文から画像の印の `storageKey` の並び・行に URL だけを書いた行の URL の並び・最初の段落の文字列を読み、note の DTO に詰める処理を src/features/note/server/d1-note-repository.ts の訪問者向けの取り出しに足す（research.md の R11、contracts/visitor-note.md の DTO）
+- [X] T007 [P] T006 を tests/workers/note-repository.test.ts で確かめる（その note の `media` の行に無い `storageKey` を DTO に入れない、説明文が空なら最初の段落が説明になる）。本文の読み方そのもの（コードの中の印を拾わないなど）は共有担当の部品の検査が持つ（constitution の Test Layering）
 - [ ] T008 note の Repository のインタフェース（作成・編集用に読む・一覧・版の一覧と 1 つの版・開いた版と比べた保存・公開・下書きに戻す・削除・元に戻す・代表画像の出どころ・転載先の追加と削除・参照先の情報・完全に消す・訪問者向けに読む・uid と版の uid と識別子の有無）を src/features/note/domain/note-repository.ts に作る。手本は src/features/project/domain/project-repository.ts
 - [ ] T009 D1 の実装の骨組み（行の型と domain の型への詰め替え、`findIdByUid`、版の uid から版の id を引く、識別子の有無）を src/features/note/server/d1-note-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
 - [ ] T010 組み立て用の関数の骨組み（`createNoteDeps`・`hasNoteSlug`・`hasNoteUid`・`findMissingNoteRevision`）を src/features/note/server/queries.ts に作る。`hasNoteUid` は削除した note でも真を返す（contracts/dash.md の共通）
@@ -91,7 +91,7 @@ description: "note の実装タスク"
 
 - [X] T013 [P] [US1] 作成・保存・公開のユースケース（オーナーでない呼び出しを拒む、項目の不備を返す、題が空の公開を拒み項目で知らせる、公開したことのある note の識別子の書き換えを拒む、`conflict` を送られた値つきで返す）を、Repository の作り物の実装を渡して tests/unit/note-usecases.test.ts で確かめる（FR-003・FR-011・FR-020・FR-033）
 - [X] T014 [P] [US1] D1 の実装を tests/workers/note-repository.test.ts で確かめる: 作った note が下書きで版を 1 つ持つ、保存のたびに版が 1 つ増え前の版が保存したときのまま読める、開いた版が最も新しい版でなければ書かず `conflict`、削除した note には書かず `not-found`、続けて 2 回の保存が通る、識別子の書き換えと版の追加が同じ `batch()` で、識別子が重なれば（削除した note を含む）どちらも書かない、公開で最も新しい版が公開した版になり `published_at` は 2 回目の公開で変わらない、訪問者向けの取り出しが公開した版だけを返す（FR-001・FR-002・FR-006〜FR-008・FR-011〜FR-013・FR-020・FR-021・SC-003、research.md の R4）
-- [ ] T015 [P] [US1] tests/integration/notes.test.ts で確かめる: 下書きの `/notes/{slug}` が 404 で HTML と RSC の応答に題・説明文・本文が無い、公開すると 200 で題・説明文・本文が出る、公開した後に保存した版が応答に無い、公開し直すと直した本文が出て初めて公開した日時が変わらない、本文に書いた HTML が要素にならない、説明文が空なら本文の最初の段落が説明に出る、JWT のない `/dash/notes` が 403 で `no-store`、JWT のない `createNote`・`saveNote`・`publishNote` が D1 を変えない（SC-001・SC-004・FR-004・FR-012・FR-015・FR-033、User Story 1 の 1〜5、U4 の決定）
+- [X] T015 [P] [US1] tests/integration/notes.test.ts で確かめる: 下書きの `/notes/{slug}` が 404 で HTML と RSC の応答に題・説明文・本文が無い、公開すると 200 で題・説明文・本文が出る、公開した後に保存した版が応答に無い、公開し直すと直した本文が出て初めて公開した日時が変わらない、本文に書いた HTML が要素にならない、説明文が空なら本文の最初の段落が説明に出る、JWT のない `/dash/notes` が 403 で `no-store`、JWT のない `createNote`・`saveNote`・`publishNote` が D1 を変えない（SC-001・SC-004・FR-004・FR-012・FR-015・FR-033、User Story 1 の 1〜5、U4 の決定）
 - [X] T016 [P] [US1] オーナーとして note を作り、保存し、公開し、識別子の入力が読み取りだけになることを tests/e2e/note.spec.ts で確かめる。キーボードだけで同じ操作ができる（User Story 1 の 6、constitution V）
 
 ### Implementation for User Story 1
@@ -100,8 +100,8 @@ description: "note の実装タスク"
 - [X] T018 [US1] ユースケース deps.ts・create-note.ts・save-note.ts・publish-note.ts・get-note-for-edit.ts・list-notes.ts・get-visitor-note.ts を src/features/note/application/ に作る。読む→計算→書くの順（docs/SOFTWARE_DESIGN.md）
 - [X] T019 [US1] Server Action `createNote`・`saveNote`・`publishNote` を src/features/note/server/actions.ts に作る。先頭でオーナーを確かめ、uid と開いた版の uid を隠しフィールドから読む（contracts/dash.md）。組み立て用の関数 `getVisitorNote`・`getNoteForEdit`・`listNotes` を src/features/note/server/queries.ts に足す
 - [X] T020 [P] [US1] 入力（識別子・題・説明文・本文・開いた版の uid の隠しフィールド。一度でも公開したら識別子を読み取りだけで出す。保存を止めたときの知らせ）を src/features/note/components/note-form.tsx に、公開の操作を src/features/note/components/note-status-form.tsx に作る
-- [ ] T021 [P] [US1] 訪問者向けの note の表示を src/features/note/components/visitor-note.tsx に作り、本文は共有担当の Markdown を描く部品で出す。画像の印は T040 で足すまで出さない（research.md の R11）
-- [ ] T022 [US1] ページを作る: src/app/notes/[slug]/page.tsx（`generateMetadata` は DTO の題と、説明文か本文の最初の段落だけを使う）・src/app/notes/[slug]/missing/page.tsx（`notFound()` だけ）・src/app/dash/notes/page.tsx・new/page.tsx・[id]/page.tsx・[id]/missing/page.tsx。管理画面のページは描画の前にオーナーを確かめる
+- [X] T021 [P] [US1] 訪問者向けの note の表示を src/features/note/components/visitor-note.tsx に作り、本文は共有担当の Markdown を描く部品で出す。画像の印は T040 で足すまで出さない（research.md の R11）
+- [X] T022 [US1] ページを作る: src/app/notes/[slug]/page.tsx（`generateMetadata` は DTO の題と、説明文か本文の最初の段落だけを使う）・src/app/notes/[slug]/missing/page.tsx（`notFound()` だけ）・src/app/dash/notes/page.tsx・new/page.tsx・[id]/page.tsx・[id]/missing/page.tsx。管理画面のページは描画の前にオーナーを確かめる
 
 **Checkpoint**: User Story 1 が単独で動く
 
@@ -179,7 +179,7 @@ description: "note の実装タスク"
 - [ ] T037 [US5] 題を入れて自動で作る代表画像を作り、一度作ったものを使い回す（`docs/CRAWLING.md` の「取得の負荷」）。**止める未決: U8**
 - [ ] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚。JPEG・PNG・WebP・GIF・10 MB までの検査は media-storage.ts が持ち、その検査で確かめる）と、代表画像に note の画像を選ぶ入力を作る。media-storage.ts が拒んだ画像を項目の誤りで返すことを tests/unit/note-usecases.test.ts で、別の note の画像を代表画像に選べないことを tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12、constitution の Test Layering）
 - [ ] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.tsを作り、src/proxy.ts の matcher に `/notes/:slug/media/:key` を足す（proxy は D1 を読まない。research.md の R9）。公開で削除していない note の、公開した版の本文が指す画像（T006 が DTO に詰めた `storageKey` の並び）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）
-- [ ] T040 [US5] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に、画像の `src` を `/notes/{slug}/media/{storageKey}` にする関数を渡す。DTO の `media` に無い `storageKey` の画像を出さないことと、`<figure>`・`<img alt>`・`<figcaption>` で出ることを tests/integration/notes.test.ts で確かめる（research.md の R11）
+- [X] T040 [US5] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に、画像の `src` を `/notes/{slug}/media/{storageKey}` にする関数を渡す。DTO の `media` に無い `storageKey` の画像を出さないことと、`<figure>`・`<img alt>`・`<figcaption>` で出ることを tests/integration/notes.test.ts で確かめる（research.md の R11）
 
 ---
 

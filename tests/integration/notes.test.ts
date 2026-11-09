@@ -2,12 +2,17 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestServer, type TestServer } from './support/d1';
 import { encodeActionCall, encodeForm, readActionFields } from './support/form';
 import { readRows } from './support/send';
-import { insertNote } from '../support/note-rows';
+import {
+  deleteNoteRow,
+  insertNote,
+  insertNoteMedia,
+  insertNoteRevision,
+  publishNoteRow,
+} from '../support/note-rows';
 
 /**
- * note の管理画面と、note の書き込みの操作（specs/003-note/spec.md の FR-033、contracts/dash.md）。
- * 訪問者の `/notes/{slug}` の応答は、本文を描く共有担当の Markdown の部品を待つ
- * （tasks.md の T015 の残り）
+ * 訪問者の note のページと、note の管理画面と書き込みの操作（specs/003-note/spec.md の FR-004・
+ * FR-012・FR-015・FR-033、contracts/visitor-note.md・contracts/dash.md）
  */
 
 /** オーナーが入力する値。D1 に残ったかを確かめるため、ほかの値と重ならないものにする */
@@ -20,6 +25,33 @@ const INPUT = {
 
 let ctx: TestServer;
 let draft: { uid: string; revision: { uid: string } };
+let republishedId: number;
+let ownMediaKey: string;
+const MISSING_MEDIA_KEY = '00000000-0000-4000-8000-000000000000';
+
+/** 訪問者に見せない note の中身。応答に含まれないことを確かめる */
+const HIDDEN = {
+  draft: {
+    slug: 'integration-draft',
+    title: '作り物の下書きの題',
+    description: '下書きの説明文',
+    body: '下書きの本文',
+  },
+  later: {
+    title: '公開した後に保存した題',
+    description: '公開した後の説明文',
+    body: '公開した後に保存した本文',
+  },
+  deleted: {
+    slug: 'integration-deleted',
+    title: '削除した note の題',
+    description: '削除した説明文',
+    body: '削除した本文',
+  },
+};
+
+const AS_HTML = { headers: {}, query: '' };
+const AS_RSC = { headers: { rsc: '1' }, query: '?_rsc' };
 
 const ABSENT_UID = '0'.repeat(32);
 const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
@@ -77,13 +109,123 @@ const readNoteTables = async () => ({
 beforeAll(async () => {
   ctx = await startTestServer({
     seed: async (db) => {
-      draft = await insertNote(db, { slug: 'integration-draft', title: '作り物の下書きの題' });
+      draft = await insertNote(db, HIDDEN.draft);
+
+      const published = await insertNote(db, {
+        slug: 'integration-published',
+        title: '公開した題',
+        description: '公開した説明文',
+        body: '公開した本文\n\n<script>alert(1)</script>',
+      });
+      await publishNoteRow(db, published.id);
+      await insertNoteRevision(db, published.id, HIDDEN.later);
+
+      const deleted = await insertNote(db, HIDDEN.deleted);
+      await publishNoteRow(db, deleted.id);
+      await deleteNoteRow(db, deleted.id);
+
+      const noDescription = await insertNote(db, {
+        slug: 'integration-no-description',
+        title: '説明文の無い題',
+        body: '本文の最初の段落\n\n二つ目の段落',
+      });
+      await publishNoteRow(db, noDescription.id);
+
+      const republished = await insertNote(db, {
+        slug: 'integration-republished',
+        title: '直す前の題',
+        body: '直す前の本文',
+      });
+      republishedId = republished.id;
+      await publishNoteRow(db, republished.id, '2026-11-01T00:00:00.000Z');
+
+      const withMedia = await insertNote(db, { slug: 'integration-media' });
+      ownMediaKey = (
+        await insertNoteMedia(db, withMedia.id, '11111111-1111-4111-8111-111111111111')
+      ).storageKey;
+      await insertNoteRevision(db, withMedia.id, {
+        title: '画像のある題',
+        body: [
+          `![自分の画像の代替テキスト](media:${ownMediaKey} "自分の画像のキャプション")`,
+          `![無い画像の代替テキスト](media:${MISSING_MEDIA_KEY} "無い画像のキャプション")`,
+        ].join('\n\n'),
+      });
+      await publishNoteRow(db, withMedia.id);
     },
   });
 }, 60_000);
 
 afterAll(async () => {
   await ctx?.close();
+});
+
+describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
+  it('公開した note は 200 で、公開した版の題・説明文・本文を出す', async () => {
+    const res = await ctx.server.fetch('/notes/integration-published');
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('公開した題');
+    expect(html).toContain('公開した説明文');
+    expect(html).toContain('公開した本文');
+  });
+
+  it.each([AS_HTML, AS_RSC])(
+    '公開した後に保存した版は応答に無い（%o）',
+    async ({ headers, query }) => {
+      const text = await (
+        await ctx.server.fetch(`/notes/integration-published${query}`, { headers })
+      ).text();
+      for (const value of Object.values(HIDDEN.later)) expect(text).not.toContain(value);
+    },
+  );
+
+  it('本文に書いた HTML は要素にならない（U4 の決定）', async () => {
+    const html = await (await ctx.server.fetch('/notes/integration-published')).text();
+    expect(html).not.toContain('<script>alert(1)</script>');
+    expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+  });
+
+  it.each([
+    ['下書き', HIDDEN.draft],
+    ['削除した', HIDDEN.deleted],
+  ])('%sの note は 404 で、HTML と RSC の応答に題・説明文・本文が無い', async (_, note) => {
+    for (const { headers, query } of [AS_HTML, AS_RSC]) {
+      const res = await ctx.server.fetch(`/notes/${note.slug}${query}`, { headers });
+      const text = await res.text();
+      // RSC の要求は、404 の画面（`/missing`）の中身を 200 で返す（vinext。/projects/{slug} も同じ）
+      if (query === '') expect(res.status).toBe(404);
+      else expect(text).toContain(`route:/notes/${note.slug}/missing`);
+      for (const value of [note.title, note.description, note.body]) {
+        expect(text).not.toContain(value);
+      }
+    }
+  });
+
+  it('説明文が空なら、本文の最初の段落が説明に出る', async () => {
+    const html = await (await ctx.server.fetch('/notes/integration-no-description')).text();
+    expect(html).toMatch(/<meta name="description" content="本文の最初の段落"/);
+    expect(html).toMatch(/<meta property="og:description" content="本文の最初の段落"/);
+  });
+
+  it('公開し直すと直した本文が出て、初めて公開した日時が変わらない（SC-004）', async () => {
+    await insertNoteRevision(ctx.db, republishedId, { title: '直した題', body: '直した本文' });
+    await publishNoteRow(ctx.db, republishedId, '2026-11-05T00:00:00.000Z');
+    const html = await (await ctx.server.fetch('/notes/integration-republished')).text();
+    expect(html).toContain('直した本文');
+    expect(html).not.toContain('直す前の本文');
+    expect(html).toContain('dateTime="2026-11-01T00:00:00.000Z"');
+  });
+
+  it('画像の印は figure・img alt・figcaption で出し、その note の画像に無い印は出さない（T040）', async () => {
+    const html = await (await ctx.server.fetch('/notes/integration-media')).text();
+    expect(html).toMatch(
+      new RegExp(
+        `<figure><img src="/notes/integration-media/media/${ownMediaKey}" alt="自分の画像の代替テキスト"/><figcaption>自分の画像のキャプション</figcaption></figure>`,
+      ),
+    );
+    expect(html).not.toContain(MISSING_MEDIA_KEY);
+    expect(html).not.toContain('無い画像のキャプション');
+  });
 });
 
 describe('オーナーの画面', () => {

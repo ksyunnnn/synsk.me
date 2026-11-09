@@ -9,6 +9,7 @@ import type {
   VisitorNoteCardImage,
 } from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
+import { readMarkdown } from '@/shared/domain/markdown';
 
 /**
  * `NoteRepository` の D1 の実装。行の型はこのファイルの中だけに置き、domain の型に詰め替える
@@ -37,6 +38,8 @@ type RevisionRow = {
 };
 
 type VisitorRow = {
+  /** 画像と参照先の情報を引くためだけに読む。DTO に入れない */
+  id: number;
   slug: string;
   title: string;
   description: string | null;
@@ -92,23 +95,64 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       .bind(id)
       .first()) === null;
 
+  /**
+   * 本文が指す画像と参照先の情報を読む（research.md の R11）。本文は共有担当の Markdown の部品で
+   * 構文木にして読む。画像はその note の `media` の行にあるキーだけを、本文に現れた順で返す
+   */
+  const readBodyReferences = async (noteId: number, body: string) => {
+    const { mediaKeys, urlLines, firstParagraph } = readMarkdown(body);
+    const [mediaResult, previewResult] = await db.batch<
+      { storage_key: string } | { url: string; title: string | null; image_url: string | null }
+    >([
+      db
+        .prepare(
+          `SELECT storage_key FROM media
+           WHERE note_id = ? AND storage_key IN (SELECT value FROM json_each(?))`,
+        )
+        .bind(noteId, JSON.stringify(mediaKeys)),
+      db
+        .prepare(
+          `SELECT url, title, image_url FROM link_preview
+           WHERE url IN (SELECT value FROM json_each(?))`,
+        )
+        .bind(JSON.stringify(urlLines)),
+    ]);
+    const owned = new Set(
+      (mediaResult.results as { storage_key: string }[]).map((r) => r.storage_key),
+    );
+    const previews = new Map(
+      (
+        previewResult.results as { url: string; title: string | null; image_url: string | null }[]
+      ).map((r) => [r.url, { url: r.url, title: r.title, imageUrl: r.image_url }]),
+    );
+    return {
+      media: mediaKeys.filter((key) => owned.has(key)),
+      linkPreviews: urlLines.flatMap((url) => previews.get(url) ?? []),
+      firstParagraph,
+    };
+  };
+
   return {
     findVisitorBySlug: async (slug) => {
       const row = await db
         .prepare(
-          `SELECT n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
+          `SELECT n.id, n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
              m.storage_key AS card_media_storage_key ${VISITOR_FROM}`,
         )
         .bind(slug)
         .first<VisitorRow>();
       if (!row) return null;
+      const { media, linkPreviews, firstParagraph } = await readBodyReferences(row.id, row.body);
       const dto: VisitorNote = {
         slug: row.slug,
         title: row.title,
         description: row.description,
+        summary: row.description ?? firstParagraph,
         body: row.body,
         publishedAt: row.published_at,
         cardImage: toCardImage(row.card_image, row.card_media_storage_key),
+        media,
+        linkPreviews,
       };
       return dto;
     },

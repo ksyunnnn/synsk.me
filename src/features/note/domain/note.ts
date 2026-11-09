@@ -196,12 +196,33 @@ export const toNoteFormValues = (note?: Pick<Note, 'slug' | 'latestRevision'>): 
 export type VisitorNoteCardImage =
   { kind: 'generated' } | { kind: 'site' } | { kind: 'media'; storageKey: MediaStorageKey };
 
+/** URL だけの段落が指す参照先の情報（FR-029・FR-030）。カードの出し方は plan.md の U9 */
+export type VisitorLinkPreview = {
+  url: string;
+  title: string | null;
+  imageUrl: string | null;
+};
+
 export type VisitorNote = {
   slug: string;
   title: string;
+  /** 公開した版の説明文。空なら null */
   description: string | null;
+  /**
+   * `<meta name="description">` と OGP の説明。説明文が空なら本文の最初の段落の文字列で、どちらも
+   * 無ければ null（research.md の R11）。最初の段落に書いた生の HTML の文字は除かずに文字のまま
+   * 残す（2026-11-09、PM。本文の表示と揃える）
+   */
+  summary: string | null;
   body: string;
   /** 初めて公開した日時（FR-013） */
   publishedAt: string;
   cardImage: VisitorNoteCardImage;
+  /**
+   * 公開した版の本文が指す画像のうち、その note の画像の置き場のキー。現れた順。画像の `src` は
+   * この並びにある値だけから作る（research.md の R11・R12）
+   */
+  media: MediaStorageKey[];
+  /** 公開した版の URL だけの段落が指す参照先の情報。取ったことのある URL だけ */
+  linkPreviews: VisitorLinkPreview[];
 };
