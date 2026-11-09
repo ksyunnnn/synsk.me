@@ -82,6 +82,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T023 [US1] 取得のユースケース `refreshSources` を src/features/activity/application/refresh-sources.ts に作る。取得元ごとに読む → `planRefresh` → 1 回の `batch()` で書く。`batch()` が失敗したら、その取得元の `fetch_result` に失敗と理由を別に書く（FR-016、research.md の R4）。上限は引数 `limits` で受け取る（contracts/fetch.md）
 - [x] T024 [US1] 取得元の書き込み（足す・直す・`fetch_result` の上書き）を 1 回の `batch()` で行う関数を src/features/activity/server/d1-activity-repository.ts に足す
 - [x] T025 [US1] `fetcher` に User-Agent・待ち時間・応答の大きさの上限をかける関数を src/features/activity/server/sources/fetch-with-limits.ts に作る（research.md の R8、contracts/fetch.md）。待ち時間と大きさを超えたら失敗になることを tests/unit/activity-fetch-with-limits.test.ts で確かめる
+- [x] T026 [US1] 1 回の実行で取り直す取得元を、取り直したことの無いものを先に、次に `fetch_result.fetched_at` の古い順に、上限の数まで選ぶ `pickSourcesForRun` を src/features/activity/application/pick-sources.ts に、取得元ごとの `fetched_at` を読む `listFetchedAt` を src/features/activity/server/d1-activity-repository.ts に作り、tests/unit/activity-pick-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる（research.md の R9）
 
 ### 取得元ごとの処理（各取得元は T022〜T025 の後に並べられる）
 
@@ -97,7 +98,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### 取得の入口
 
-- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
+- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `pickSourcesForRun` で選んだ取得元で `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
 - [ ] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を、activity を書く `batch()` の中で `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。2 頁目以降を取った・失敗した・上限で消さずに残した・公開日の欠けた項目を取り込まなかったときは値を NULL にする。**止める依存: 共有担当の migration**（`fetch_result` の列）
 
 ---
