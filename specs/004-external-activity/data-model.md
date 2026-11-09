@@ -62,7 +62,7 @@
 - `IntakeMode`: `'list' | 'url' | 'manual'`（取り込み方。ADR-0052 の 3 通り）。取得元の名前から引く表を `sources.ts` に置く。保管するデータに持たない（FR-004）
 - `FetchedItem`: `{ url; title; publishedAt?; externalId?; imageUrl? }`。取得元ごとの処理が外部の応答から詰め替えた形（research.md の R3）
 - `SourceListing`: `{ items: FetchedItem[]; isComplete: boolean }`
-- `RefreshOutcome`: 取得元ごとの `{ source; ok: true; added; updated; removed; keptOverLimit } | { source; ok: false; reason }`。「失敗の表し方」の形で、投げない
+- `RefreshOutcome`: 取得元ごとの `{ source; ok: true; added; updated; removed; keptOverLimit; skippedWithoutDate } | { source; ok: false; reason }`。「失敗の表し方」の形で、投げない
 - `ExternalActivity`（管理画面）: uid・取得元・URL・題・公開日・取り込み方
 - `LifeEvent`（管理画面）: uid・slug・題・説明・起きた日・代表画像の id
 - 表の行の型は `server/d1-activity-repository.ts` の中だけで書く（001 の research.md の R3）

@@ -333,12 +333,25 @@ describe('消す行', () => {
     });
 
     await refreshSources(
-      { activities, fetchListing: async () => ({ items: [], isComplete: true }) },
+      {
+        activities,
+        fetchListing: async () => ({
+          items: [
+            {
+              url: 'https://qiita.com/ksyunnnn/items/fake-kept',
+              title: '残る作り物',
+              publishedAt: PUBLISHED,
+              externalId: 'fake-kept',
+            },
+          ],
+          isComplete: true,
+        }),
+      },
       ['qiita'],
       T1,
       LIMITS,
     );
 
-    expect(await readActivityRows(env.DB, 'qiita')).toEqual([]);
+    expect(await readActivityRows(env.DB, 'qiita')).toMatchObject([{ external_id: 'fake-kept' }]);
   });
 });

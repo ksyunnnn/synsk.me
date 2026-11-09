@@ -265,7 +265,11 @@ describe('refreshSources の消す行', () => {
     });
 
     const outcomes = await refreshSources(
-      deps(repository, { fake_feed: complete([]) }),
+      deps(repository, {
+        fake_feed: complete([
+          { url: 'https://example.com/9', title: '作り物 9', publishedAt: NOW },
+        ]),
+      }),
       ['fake_feed'],
       NOW,
       LIMITS,
@@ -275,7 +279,7 @@ describe('refreshSources の消す行', () => {
       {
         source: 'fake_feed',
         ok: true,
-        added: 0,
+        added: 1,
         updated: 0,
         removed: 0,
         keptOverLimit: 3,
