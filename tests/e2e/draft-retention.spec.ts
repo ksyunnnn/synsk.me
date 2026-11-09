@@ -16,8 +16,8 @@ import {
  * specs/001-career-and-project/research.md の R16）。書きかけはブラウザの `localStorage` に持ち、
  * テストごとの context は別の保存先を持つ。
  *
- * 書きかけは、画面の JavaScript が動き始めた後の入力だけを持つ（src/shared/components/draft-retention.tsx）。
- * 入力は、書きかけが書き込まれるまで入れ直す。
+ * 書きかけは、画面の JavaScript が動き始めた時点の入力と、その後の入力を持つ
+ * （src/shared/components/draft-retention.tsx）。入力は、書きかけが書き込まれるまで入れ直す。
  *
  * テストは同じ手元の D1 を並行して使う。名前は、ほかのテストと重ならない値にする。
  */
@@ -30,7 +30,7 @@ const draftKeys = (page: Page) =>
 
 /**
  * `fill` で入力し、`scope`（`career`・`project` など）の画面の書きかけが書き込まれるまで入れ直す。
- * JavaScript が動く前の入力は、書きかけに書き込まれない
+ * 動き始める前の入力は、動き始めるまで書きかけに書き込まれない
  */
 const fillUntilDrafted = (page: Page, scope: string, fill: () => Promise<void>) =>
   expect
@@ -396,6 +396,84 @@ test('JavaScript が動く前に本文を打っても、動いた後に本文が
   await expect(textbox(page, '本文')).toHaveValue(typed);
 
   await saveEdit(page);
+  await page.goto(editUrl);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
+
+test('JavaScript が動く前に本文を打ち、保存せずに再読み込みしても、本文が残る', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 動く前に打って再読み込みした本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 動く前に打って再読み込みする組織',
+    organizationNameMasked: 'E2E 動く前に打って再読み込みする秘匿化した組織名',
+    role: 'E2E 動く前に打って再読み込みする肩書',
+    description: 'E2E 保存した本文',
+  });
+
+  const release = await holdScripts(page);
+  await page.goto(editUrl, { waitUntil: 'commit' });
+  await textbox(page, '本文').fill(typed);
+  await release();
+  await waitForHydration(page);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+
+  await page.reload();
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
+
+test('保存の知らせの画面で JavaScript が動く前に本文を打ち、保存せずに再読み込みしても、本文が残る', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 知らせの画面で動く前に打った本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 知らせの画面で動く前に打つ組織',
+    organizationNameMasked: 'E2E 知らせの画面で動く前に打つ秘匿化した組織名',
+    role: 'E2E 知らせの画面で動く前に打つ肩書',
+    description: 'E2E 保存した本文',
+  });
+
+  const release = await holdScripts(page);
+  await page.goto(`${editUrl}?saved=1`, { waitUntil: 'commit' });
+  await textbox(page, '本文').fill(typed);
+  await release();
+  await waitForHydration(page);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+
+  await page.reload();
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
+
+test('JavaScript が動く前に打って送らずに離れ、60 秒を過ぎてから保存の知らせの画面を開いても、書きかけが残る', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 送らずに離れた本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 送らずに離れる組織',
+    organizationNameMasked: 'E2E 送らずに離れる秘匿化した組織名',
+    role: 'E2E 送らずに離れる肩書',
+    description: 'E2E 保存した本文',
+  });
+
+  const release = await holdScripts(page);
+  await page.goto(editUrl, { waitUntil: 'commit' });
+  await textbox(page, '本文').fill(typed);
+  await release();
+  await waitForHydration(page);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+
+  // 動き始めた時点で付けた印を、60 秒より前に付けたことにする
+  await page.evaluate(() =>
+    window.localStorage.setItem('synsk:draft-sent-before-hydration', String(Date.now() - 61_000)),
+  );
+  await page.goto(`${editUrl}?saved=1`);
+  await waitForHydration(page);
   await page.goto(editUrl);
   await expect(textbox(page, '本文')).toHaveValue(typed);
 });
