@@ -4,6 +4,7 @@ import { addNoteSyndication } from '@/features/note/application/add-note-syndica
 import { changeNoteCardImage } from '@/features/note/application/change-note-card-image';
 import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
+import { getPreviewNoteMedia } from '@/features/note/application/get-preview-note-media';
 import { getVisitorNoteMedia } from '@/features/note/application/get-visitor-note-media';
 import { publishNote } from '@/features/note/application/publish-note';
 import { purgeNote } from '@/features/note/application/purge-note';
@@ -16,6 +17,7 @@ import {
   toNoteFormValues,
   type Note,
   type NoteFormValues,
+  type NotePreview,
   type VisitorNote,
 } from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
@@ -528,10 +530,53 @@ describe('purgeNote（FR-017・FR-033、research.md の R6）', () => {
     expect(order).toEqual(['d1', 'r2']);
   });
 
+  it('置き場の画像を消せなくても、D1 を消した後なら成功を返す（T057）', async () => {
+    const notes = fakeNotes(note(), {
+      purge: vi.fn(async () => ({ ok: true as const, storageKeys: [KEY] })),
+    });
+    const media = storage();
+    media.remove.mockRejectedValue(new Error('R2 の作り物の失敗'));
+    expect(await purgeNote({ notes, media }, OWNER, 1)).toEqual({ status: 'purged' });
+    expect(media.remove).toHaveBeenCalledWith([KEY]);
+  });
+
   it('無い note は置き場を触らない', async () => {
     const notes = fakeNotes(note(), { purge: vi.fn(async () => ({ ok: false as const })) });
     const media = storage();
     expect(await purgeNote({ notes, media }, OWNER, 1)).toEqual({ status: 'not-found' });
     expect(media.remove).not.toHaveBeenCalled();
+  });
+});
+
+describe('getPreviewNoteMedia（REQUIREMENTS.md の FR-13）', () => {
+  const BODY_KEY = '66666666-6666-4666-8666-666666666666';
+  const CARD_KEY = '77777777-7777-4777-8777-777777777777';
+  const preview: NotePreview = {
+    slug: 'sample-note',
+    title: '作り物の題',
+    description: null,
+    summary: null,
+    body: '',
+    publishedAt: null,
+    cardImage: { kind: 'media', storageKey: CARD_KEY },
+    media: [BODY_KEY],
+    linkPreviews: [],
+  };
+
+  it('オーナーには、確認している版の本文が指す画像と代表画像を restricted にする', async () => {
+    const notes = fakeNotes(note(), { findPreview: vi.fn(async () => preview) });
+    expect(await getPreviewNoteMedia(notes, OWNER, 1, BODY_KEY)).toBe('restricted');
+    expect(await getPreviewNoteMedia(notes, OWNER, 1, CARD_KEY)).toBe('restricted');
+    expect(await getPreviewNoteMedia(notes, OWNER, 1, crypto.randomUUID())).toBe('hidden');
+  });
+
+  it('オーナーでなければ、note を読まずに hidden', async () => {
+    const notes = fakeNotes(note(), { findPreview: vi.fn(async () => preview) });
+    expect(await getPreviewNoteMedia(notes, null, 1, BODY_KEY)).toBe('hidden');
+    expect(notes.findPreview).not.toHaveBeenCalled();
+  });
+
+  it('無い note は hidden', async () => {
+    expect(await getPreviewNoteMedia(fakeNotes(), OWNER, 1, BODY_KEY)).toBe('hidden');
   });
 });
