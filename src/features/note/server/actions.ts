@@ -7,16 +7,19 @@ import { createNote as createNoteUseCase } from '@/features/note/application/cre
 import { deleteNote as deleteNoteUseCase } from '@/features/note/application/delete-note';
 import { publishNote as publishNoteUseCase } from '@/features/note/application/publish-note';
 import { restoreNote as restoreNoteUseCase } from '@/features/note/application/restore-note';
+import { revertNote as revertNoteUseCase } from '@/features/note/application/revert-note';
 import { saveNote as saveNoteUseCase } from '@/features/note/application/save-note';
 import { unpublishNote as unpublishNoteUseCase } from '@/features/note/application/unpublish-note';
 import {
   NOTE_FIELDS,
   NOTE_UID_FIELD,
   OPENED_REVISION_UID_FIELD,
+  REVISION_UID_FIELD,
   type NoteFormResult,
+  type RevertNoteResult,
 } from '@/features/note/domain/note';
 import { createNoteDeps } from '@/features/note/server/queries';
-import { findIdByUid } from '@/shared/domain/uid';
+import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
 
@@ -139,4 +142,26 @@ export const restoreNote = async (
   if (outcome.status === 'forbidden') return outcome;
   if (outcome.status === 'not-found') redirect(LIST);
   redirect(`${editPath(uid)}?restored=1`);
+};
+
+/**
+ * 過去の版の中身を新しい版として足し、編集の画面へ移る（FR-009）。開いた後に別の画面で保存されて
+ * いたら書かずに知らせる（FR-020）。戻す版がその note に無ければ一覧へ移す
+ */
+export const revertNote = async (
+  _state: RevertNoteResult | null,
+  formData: FormData,
+): Promise<RevertNoteResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  const revisionUid = parseUid(readString(formData, REVISION_UID_FIELD));
+  const openedRevisionUid = parseUid(readString(formData, OPENED_REVISION_UID_FIELD));
+  if (id === null || revisionUid === null) redirect(LIST);
+  if (openedRevisionUid === null) return { status: 'conflict' };
+
+  const outcome = await revertNoteUseCase(deps.notes, author, id, revisionUid, openedRevisionUid);
+  if (outcome.status === 'reverted') redirect(`${editPath(uid)}?reverted=1`);
+  if (outcome.status === 'not-found') redirect(LIST);
+  return outcome;
 };

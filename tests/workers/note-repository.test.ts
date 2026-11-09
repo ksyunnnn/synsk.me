@@ -449,3 +449,92 @@ describe('unpublish・delete・restore（FR-014・FR-016・SC-007、research.md 
     expect(await notes.restore(999_999)).toEqual({ ok: false });
   });
 });
+
+describe('版の一覧と過去の版に戻す（FR-008・FR-009、User Story 3 の 1・2）', () => {
+  const saveThree = async () => {
+    const note = await insertNote(env.DB, { title: '1 つ目', body: '一' });
+    await insertNoteRevision(env.DB, note.id, { title: '2 つ目', body: '二' });
+    const third = await insertNoteRevision(env.DB, note.id, { title: '3 つ目', body: '三' });
+    return { note, third };
+  };
+
+  it('版の一覧が新しい順で、最も新しい版と公開した版に印がある', async () => {
+    const { note, third } = await saveThree();
+    await env.DB.prepare(
+      "UPDATE note SET status = 'published', published_revision_id = ?, published_at = ? WHERE id = ?",
+    )
+      .bind(note.revision.id, NOW, note.id)
+      .run();
+    const list = await notes.listRevisions(note.id);
+    expect(list.map((r) => [r.title, r.isLatest, r.isPublished])).toEqual([
+      ['3 つ目', true, false],
+      ['2 つ目', false, false],
+      ['1 つ目', false, true],
+    ]);
+    expect(list[0]?.uid).toBe(third.uid);
+  });
+
+  it('1 つの版を保存したときのまま読み、別の note の版を返さない', async () => {
+    const { note } = await saveThree();
+    const other = await insertNote(env.DB);
+    expect(await notes.findRevision(note.id, note.revision.uid)).toMatchObject({
+      title: '1 つ目',
+      body: '一',
+    });
+    expect(await notes.findRevision(other.id, note.revision.uid)).toBeNull();
+  });
+
+  it('戻すと、戻した版の中身が 4 つ目の版として足され、3 つの版が残る', async () => {
+    const { note, third } = await saveThree();
+    expect(await notes.revert(note.id, note.revision.uid, third.uid)).toEqual({ ok: true });
+    expect((await revisionsOf(note.id)).map((r) => [r.title, r.body])).toEqual([
+      ['1 つ目', '一'],
+      ['2 つ目', '二'],
+      ['3 つ目', '三'],
+      ['1 つ目', '一'],
+    ]);
+  });
+
+  it('開いた版が最も新しい版でなければ戻さない（FR-020）', async () => {
+    const { note } = await saveThree();
+    expect(await notes.revert(note.id, note.revision.uid, note.revision.uid)).toEqual({
+      ok: false,
+      reason: 'conflict',
+    });
+    expect(await revisionsOf(note.id)).toHaveLength(3);
+  });
+
+  it('戻しても公開した版は変わらない（FR-009）', async () => {
+    const note = await insertNote(env.DB, { title: '公開した題' });
+    await notes.publish(note.id, NOW);
+    const latest = await insertNoteRevision(env.DB, note.id, { title: '後の題' });
+    await notes.revert(note.id, note.revision.uid, latest.uid);
+    expect((await notes.findForEdit(note.id))?.publishedRevisionUid).toBe(note.revision.uid);
+  });
+
+  it('別の note の版には戻さない', async () => {
+    const note = await insertNote(env.DB);
+    const other = await insertNote(env.DB);
+    expect(await notes.revert(note.id, other.revision.uid, note.revision.uid)).toEqual({
+      ok: false,
+      reason: 'revision-not-found',
+    });
+  });
+
+  it('削除した note は戻さず not-found', async () => {
+    const note = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.revert(note.id, note.revision.uid, note.revision.uid)).toEqual({
+      ok: false,
+      reason: 'not-found',
+    });
+  });
+
+  it('過去の版の画面の有無を、note と版の両方で見分ける', async () => {
+    const note = await insertNote(env.DB);
+    const other = await insertNote(env.DB);
+    expect(await notes.findMissingRevision(note.uid, note.revision.uid)).toBeNull();
+    expect(await notes.findMissingRevision(note.uid, other.revision.uid)).toBe('revision');
+    expect(await notes.findMissingRevision('0'.repeat(32), note.revision.uid)).toBe('note');
+  });
+});

@@ -23,7 +23,7 @@ type Flag = string | string[] | undefined;
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: Flag; published?: Flag; unpublished?: Flag; restored?: Flag }>;
+  searchParams: Promise<Partial<Record<'saved' | keyof typeof NOTICES, Flag>>>;
 };
 
 /** 操作の後に移った画面で出す知らせ。保存の知らせは書きかけを消す `DraftSavedNotice` が出す */
@@ -31,6 +31,7 @@ const NOTICES = {
   published: '公開しました',
   unpublished: '下書きに戻しました',
   restored: '元に戻しました',
+  reverted: '過去の版の中身を、新しい版として保存しました',
 } as const;
 
 const Page = async ({ params, searchParams }: Props) => {
@@ -100,9 +101,14 @@ const Page = async ({ params, searchParams }: Props) => {
           hasBeenPublished: hasBeenPublished(note),
         }}
       />
-      <p>
-        <TextLink href={`/dash/notes/${note.uid}/delete`}>この note を削除する</TextLink>
-      </p>
+      <ul className="flex flex-col gap-2">
+        <li>
+          <TextLink href={`/dash/notes/${note.uid}/revisions`}>版の一覧</TextLink>
+        </li>
+        <li>
+          <TextLink href={`/dash/notes/${note.uid}/delete`}>この note を削除する</TextLink>
+        </li>
+      </ul>
     </main>
   );
 };

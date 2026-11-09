@@ -123,6 +123,9 @@ export type NoteFormValues = Record<NoteField, string>;
 export type NoteFieldErrors = Partial<Record<NoteField, NoteFieldError>>;
 export type NoteFormResult = ActionResult<NoteField, NoteFieldError>;
 
+/** 過去の版に戻すフォームの結果。戻せたときは Server Action が編集の画面へ移す */
+export type RevertNoteResult = { status: 'forbidden' } | { status: 'conflict' };
+
 /** 保存する内容 */
 export type NoteInput = NoteRevisionContent & { slug: string };
 
