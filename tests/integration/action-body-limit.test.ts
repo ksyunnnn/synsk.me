@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MEDIA_MAX_BYTES } from '../../src/shared/domain/media';
 import { startTestServer, type TestServer } from './support/d1';
 import { readActionFields } from './support/form';
+import { expectRejected } from './support/rejected';
 
 /**
  * Server Action が受ける本文の大きさの上限（next.config.js の
@@ -24,9 +25,10 @@ afterAll(async () => {
 
 /**
  * JavaScript なしのブラウザと同じ multipart で、スキルの登録のフォームに `fileBytes` のファイルを
- * 足して送る準備をする。フォームの画面を取る GET はここで済ませ、返した関数が POST だけを送る
+ * 足して `to` へ送る準備をする。フォームの画面を取る GET はここで済ませ、返した関数が POST だけを
+ * 送る。Server Action はどの経路へ送っても動く
  */
-const prepareSubmitWithFile = async (name: string, fileBytes: number) => {
+const prepareSubmitWithFile = async (name: string, fileBytes: number, to = '/dash/skills/new') => {
   const jwt = await ctx.signAuthorJwt();
   const page = await ctx.server.fetch('/dash/skills/new', {
     headers: { 'cf-access-jwt-assertion': jwt },
@@ -42,7 +44,7 @@ const prepareSubmitWithFile = async (name: string, fileBytes: number) => {
   const encoded = new Response(form);
   const body = await encoded.arrayBuffer();
   return () =>
-    ctx.server.fetch('/dash/skills/new', {
+    ctx.server.fetch(to, {
       method: 'POST',
       body,
       headers: {
@@ -51,40 +53,6 @@ const prepareSubmitWithFile = async (name: string, fileBytes: number) => {
       },
       redirect: 'manual',
     });
-};
-
-/**
- * 送った本文が拒まれたか。vinext は `Content-Length` だけを見て 413 を返し、本文を読まない
- * （`app-server-action-execution.js`）。読まれない本文を検査がまだ書いている間に、workerd か
- * 検査の道具の側が接続を閉じると、次のどれかになる（2026-11-09 に、12 MB を 30 回送って、413 の
- * ほかに 2 と 3 が起きることを確かめた）。`send` は POST だけを送る関数にする。前段の GET の失敗を
- * 拒みと取り違えないため
- * 1. 413 の応答
- * 2. `fetch` が投げる（undici の `TypeError` で、文言は `terminated` か `fetch failed`。2026-11-09 に
- *    両方を見た）
- * 3. 検査の道具（wrangler の `createTestHarness`）が、送り先の接続が切れたことを 500 と
- *    `Network connection lost.` で返す
- * どれも、Worker が本文を受け取らずに拒んだことを表す。製品の 500 と見分けるため、3 は本文の
- * 文言で確かめる
- */
-type Sent = Awaited<ReturnType<TestServer['server']['fetch']>>;
-
-const expectRejected = async (send: () => Promise<Sent>) => {
-  let response: Sent;
-  try {
-    response = await send();
-  } catch (error) {
-    // 検査の書き誤りの TypeError（undefined の読み出しなど）を拒みと取り違えないよう、文言で絞る
-    expect(error).toBeInstanceOf(TypeError);
-    expect(['terminated', 'fetch failed']).toContain((error as TypeError).message);
-    return;
-  }
-  if (response.status === 500) {
-    expect(await response.text()).toContain('Network connection lost.');
-    return;
-  }
-  expect(response.status).toBe(413);
-  await response.body?.cancel();
 };
 
 describe('Server Action の本文の上限', () => {
@@ -106,5 +74,51 @@ describe('Server Action の本文の上限', () => {
       .bind('結合の検査の上限の外側')
       .first();
     expect(row).toBeNull();
+  }, 30_000);
+});
+
+/**
+ * `/dash` の外への大きい POST（worker/index.ts と src/shared/server/post-limit.ts）。上の 10.5 MB の
+ * 上限は経路で分けられないため、`/dash` の外では Worker の入口が既定の 1 MB で止める（原則 1・2）
+ */
+describe('/dash の外への POST の本文の上限', () => {
+  const skillExists = async (name: string) =>
+    (await ctx.db.prepare('SELECT 1 FROM skill WHERE name = ?').bind(name).first()) !== null;
+
+  it('1 MB を超える本文は、Server Action を動かさずに拒む', async () => {
+    await expectRejected(
+      await prepareSubmitWithFile('結合の検査の dash の外の大きい本文', 2 * 1024 * 1024, '/'),
+    );
+    expect(await skillExists('結合の検査の dash の外の大きい本文')).toBe(false);
+  }, 30_000);
+
+  it('1 MB までの本文は、入口で止めない', async () => {
+    const send = await prepareSubmitWithFile('結合の検査の dash の外の小さい本文', 512 * 1024, '/');
+    const response = await send();
+    // 入口が通し、Server Action が動いて行を作る。/ のページは送った後の画面を 200 で返す
+    expect(response.status).toBe(200);
+    expect(await skillExists('結合の検査の dash の外の小さい本文')).toBe(true);
+  }, 30_000);
+
+  it('本文の長さを示さない POST は 411 で拒む', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('a=1'));
+        controller.close();
+      },
+    });
+    const response = await ctx.server.fetch('/', {
+      method: 'POST',
+      body,
+      headers: { 'content-type': 'application/x-www-form-urlencoded' },
+      duplex: 'half',
+    } as unknown as Parameters<typeof ctx.server.fetch>[1]);
+    expect(response.status).toBe(411);
+  });
+
+  it('/dash への 1 MB を超える本文は、入口で止めない', async () => {
+    const send = await prepareSubmitWithFile('結合の検査の dash の大きい本文', 2 * 1024 * 1024);
+    const response = await send();
+    expect(response.status).toBe(303);
   }, 30_000);
 });
