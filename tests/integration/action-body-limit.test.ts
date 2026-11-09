@@ -48,6 +48,34 @@ const submitWithFile = async (name: string, fileBytes: number) => {
   });
 };
 
+/**
+ * 送った本文が拒まれたか。Worker は `Content-Length` だけを見て 413 を返し、本文を読み切らずに
+ * 接続を閉じる（vinext の `app-server-action-execution.js`）。検査がまだ本文を書いている間に閉じられると、次のどれかになる（2026-11-09 に、
+ * 12 MB を 30 回送って、413 のほかに 2 と 3 が起きることを確かめた）
+ * 1. 413 の応答
+ * 2. `fetch` が投げる（undici の `TypeError: terminated`）
+ * 3. 検査の道具（wrangler の `createTestHarness`）が、送り先の接続が切れたことを 500 と
+ *    `Network connection lost.` で返す
+ * どれも、Worker が本文を受け取らずに拒んだことを表す。製品の 500 と見分けるため、3 は本文の
+ * 文言で確かめる
+ */
+type Sent = { status: number; text: () => Promise<string> };
+
+const expectRejected = async (send: () => Promise<Sent>) => {
+  let response: Sent;
+  try {
+    response = await send();
+  } catch (error) {
+    expect(error).toBeInstanceOf(TypeError);
+    return;
+  }
+  if (response.status === 500) {
+    expect(await response.text()).toContain('Network connection lost.');
+    return;
+  }
+  expect(response.status).toBe(413);
+};
+
 describe('Server Action の本文の上限', () => {
   it('10 MB の画像とフォームのほかの値を受ける', async () => {
     const response = await submitWithFile('結合の検査の上限の内側', MEDIA_MAX_BYTES);
@@ -59,9 +87,8 @@ describe('Server Action の本文の上限', () => {
     expect(row).not.toBeNull();
   }, 30_000);
 
-  it('上限を超える本文は、Server Action を動かさずに 413 で拒む', async () => {
-    const response = await submitWithFile('結合の検査の上限の外側', 12 * 1024 * 1024);
-    expect(response.status).toBe(413);
+  it('上限を超える本文は、Server Action を動かさずに拒む', async () => {
+    await expectRejected(() => submitWithFile('結合の検査の上限の外側', 12 * 1024 * 1024));
     const row = await ctx.db
       .prepare('SELECT 1 FROM skill WHERE name = ?')
       .bind('結合の検査の上限の外側')
