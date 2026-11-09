@@ -173,11 +173,11 @@ const checkGoneOf = async (
   listing: SourceListing,
   limits: RefreshLimits,
 ): Promise<{ gone: number[]; checked: { id: number; goneStreak: number }[] }> => {
-  const { checkGone } = deps;
+  const checkGone = deps.goneCheckOf?.(source);
   if (listing.isComplete || !checkGone) return { gone: [], checked: [] };
   const rows = pickGoneChecks(stored, listing.items, limits.maxGoneChecks ?? 0);
   const results = await Promise.all(
-    rows.map((row) => checkGone(source, row.url, limits).catch((): GoneCheck => 'unknown')),
+    rows.map((row) => checkGone(row.url, limits).catch((): GoneCheck => 'unknown')),
   );
   // 404 が続いた回数を数え、続けて GONE_STREAK_TO_REMOVE 回になった行だけを消えたと確かめる。
   // 2xx と判定できない応答は回数を 0 に戻す（R6、原則 2）

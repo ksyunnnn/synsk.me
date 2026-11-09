@@ -29,8 +29,15 @@ const ITEMS: FeedItem[] = [
 ];
 
 describe('listFeed', () => {
-  it('Repository が返した並びを、順を変えずに返す', async () => {
-    const feed: FeedRepository = { list: async () => ITEMS };
-    expect(await listFeed(feed)).toEqual(ITEMS);
+  it('指定したページを Repository から読み、並びを順を変えずに返す', async () => {
+    const pages: number[] = [];
+    const feed: FeedRepository = {
+      list: async (page) => {
+        pages.push(page);
+        return { items: ITEMS, hasNextPage: true };
+      },
+    };
+    expect(await listFeed(feed, 2)).toEqual({ items: ITEMS, hasNextPage: true });
+    expect(pages).toEqual([2]);
   });
 });
