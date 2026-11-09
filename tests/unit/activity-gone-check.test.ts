@@ -46,6 +46,12 @@ describe('pickGoneChecks', () => {
 
     expect(pickGoneChecks(rows, listed, 2).map((row) => row.id)).toEqual([3, 2]);
   });
+
+  it('404 が続いている行を、確かめたことの無い行より先に選ぶ。2 回目を待たせない', () => {
+    const rows = [stored(1), stored(2, '2026-11-09T00:00:00.000Z', 1)];
+
+    expect(pickGoneChecks(rows, [], 1).map((row) => row.id)).toEqual([2]);
+  });
 });
 
 describe('取得元ごとの確かめ方', () => {
