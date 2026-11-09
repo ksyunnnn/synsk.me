@@ -16,6 +16,6 @@ export const createActivityDeps = async (): Promise<ActivityDeps> => {
   return {
     activities: createD1ActivityRepository(env.DB),
     fetchListing: registry.fetchListing,
-    checkGone: registry.checkGone,
+    goneCheckOf: registry.goneCheckOf,
   };
 };

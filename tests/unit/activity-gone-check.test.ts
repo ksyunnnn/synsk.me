@@ -75,7 +75,7 @@ describe('refreshSources で確かめる', () => {
   ): ActivityDeps => ({
     activities: repository,
     fetchListing: async () => ({ items: [], isComplete: false }),
-    checkGone: async (_source, url) => {
+    goneCheckOf: () => async (url) => {
       checked.push(url);
       return results[url] ?? 'unknown';
     },
@@ -164,7 +164,7 @@ describe('refreshSources で確かめる', () => {
       {
         activities: repository,
         fetchListing: async () => ({ items: [], isComplete: false }),
-        checkGone: async () => {
+        goneCheckOf: () => async () => {
           throw new Error('作り物の通信の失敗');
         },
       },

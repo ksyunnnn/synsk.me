@@ -36,10 +36,12 @@ describe('createSourceRegistry', () => {
     const { fetcher } = createFakeFetcher({});
     const registry = createSourceRegistry(fetcher, {});
 
-    expect(await registry.checkGone('zenn', 'https://zenn.dev/fake', LIMITS)).toBe('gone');
-    expect(await registry.checkGone('speakerdeck', 'https://speakerdeck.com/fake', LIMITS)).toBe(
-      'gone',
-    );
-    expect(await registry.checkGone('medium', 'https://medium.com/fake', LIMITS)).toBe('unknown');
+    expect(await registry.goneCheckOf('zenn')?.('https://zenn.dev/fake', LIMITS)).toBe('gone');
+    expect(
+      await registry.goneCheckOf('speakerdeck')?.('https://speakerdeck.com/fake', LIMITS),
+    ).toBe('gone');
+    // 手段を持たない取得元には関数が無く、取得のユースケースは確かめない
+    expect(registry.goneCheckOf('medium')).toBeUndefined();
+    expect(registry.goneCheckOf('qiita')).toBeUndefined();
   });
 });

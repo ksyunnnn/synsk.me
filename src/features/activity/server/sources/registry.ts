@@ -1,7 +1,6 @@
 import 'server-only';
 
-import type { ActivityDeps } from '@/features/activity/application/deps';
-import type { GoneCheck } from '@/features/activity/domain/fetched-item';
+import type { ActivityDeps, GoneChecker } from '@/features/activity/application/deps';
 import { isListSourceName, type ListSourceName } from '@/features/activity/domain/sources';
 import { fetchListing as fetchConnpass } from '@/features/activity/server/sources/connpass';
 import { fetchListing as fetchDevto } from '@/features/activity/server/sources/devto';
@@ -21,7 +20,7 @@ import type { SourceCredentialEnv } from '@/shared/server/env';
 /**
  * 取得元の名前（`src/features/activity/domain/sources.ts`）から、取得元ごとの処理を引く
  * （specs/004-external-activity/research.md の R3）。認証情報は secret から渡す（R15）。
- * 取得のユースケースが受け取る `fetchListing` と `checkGone` の形にする
+ * 取得のユースケースが受け取る `fetchListing` と `goneCheckOf` の形にする
  */
 
 type Listing = ActivityDeps['fetchListing'];
@@ -39,16 +38,16 @@ export const createSourceRegistry = (fetcher: Fetcher, env: SourceCredentialEnv)
     speakerdeck: (limits, previous) => fetchSpeakerDeck(fetcher, limits, previous),
     connpass: (limits) => fetchConnpass(fetcher, limits, env.CONNPASS_API_KEY),
   };
-  const goneChecks: Partial<Record<ListSourceName, NonNullable<ActivityDeps['checkGone']>>> = {
-    zenn: (_source, url, limits) => checkZennGone(fetcher, url, limits),
-    speakerdeck: (_source, url, limits) => checkSpeakerDeckGone(fetcher, url, limits),
+  const goneChecks: Partial<Record<ListSourceName, GoneChecker>> = {
+    zenn: (url, limits) => checkZennGone(fetcher, url, limits),
+    speakerdeck: (url, limits) => checkSpeakerDeckGone(fetcher, url, limits),
   };
 
   const listingOf = (source: string) => (isListSourceName(source) ? listings[source] : undefined);
 
   return {
     hasListing: (source: string) => listingOf(source) !== undefined,
-    fetchListing: ((source, limits, previous) => {
+    fetchListing: ((source, limits, previous = null) => {
       const listing = listingOf(source);
       if (!listing) {
         return Promise.reject(
@@ -61,9 +60,8 @@ export const createSourceRegistry = (fetcher: Fetcher, env: SourceCredentialEnv)
       }
       return listing(limits, previous);
     }) satisfies Listing,
-    checkGone: (async (source, url, limits): Promise<GoneCheck> => {
-      const check = isListSourceName(source) ? goneChecks[source] : undefined;
-      return check ? check(source, url, limits) : 'unknown';
-    }) satisfies NonNullable<ActivityDeps['checkGone']>,
+    /** 確かめる手段を持たない取得元は undefined。取得のユースケースは確かめない */
+    goneCheckOf: (source: string): GoneChecker | undefined =>
+      isListSourceName(source) ? goneChecks[source] : undefined,
   };
 };
