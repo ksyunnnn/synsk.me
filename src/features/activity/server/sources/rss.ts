@@ -10,7 +10,7 @@ import 'server-only';
 export type RssItem = Record<string, string>;
 
 export const readRssItems = (xml: string): RssItem[] => {
-  if (!/<rss\b[^>]*>[\s\S]*<channel\b/.test(xml)) {
+  if (!/<rss\b[^>]*>[\s\S]*?<channel\b/.test(xml)) {
     throw new Error('応答が RSS の形でない');
   }
   return Array.from(xml.matchAll(ITEM), (match) => readChildren(match[1] ?? ''));
