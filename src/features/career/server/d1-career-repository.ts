@@ -178,7 +178,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
 
     delete: async (id) => {
       // 写した職務経歴書の行は残し、指す id を空にする（research.md の R8）。
-      // R2 の画像は、画像を扱うまで無い（plan.md の U5）
+      // R2 の画像は、画像を扱うまで無い（tasks.md の T075）
       const results = await db.batch([
         db.prepare('UPDATE resume_career SET career_id = NULL WHERE career_id = ?').bind(id),
         db.prepare('DELETE FROM media WHERE career_id = ?').bind(id),

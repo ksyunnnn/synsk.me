@@ -7,6 +7,7 @@ import {
   type OrganizationFieldError,
   type OrganizationFormValues,
 } from '@/features/organization/application/edit-organization';
+import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { InputField } from '@/shared/components/field';
 
@@ -23,6 +24,8 @@ type Props = {
     formData: FormData,
   ) => Promise<OrganizationFormResult>;
   organizationUid: string;
+  /** 開いたときの行の更新日時。職歴・実績の保存が秘匿化した組織名を足すと変わる */
+  updatedAt: string;
   initialValues: OrganizationFormValues;
   /** 秘匿化した職歴・実績が指している。秘匿化した組織名を空にできないことを示す */
   isReferencedByMasked: boolean;
@@ -38,6 +41,7 @@ const ERROR_MESSAGES: Record<OrganizationFieldError, string> = {
 export const OrganizationForm = ({
   action,
   organizationUid,
+  updatedAt,
   initialValues,
   isReferencedByMasked,
 }: Props) => {
@@ -51,7 +55,13 @@ export const OrganizationForm = ({
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <DraftRetainingForm
+      action={formAction}
+      storageKey={`organization:${organizationUid}`}
+      version={updatedAt}
+      result={result}
+      className="flex flex-col gap-6"
+    >
       <input type="hidden" name={ORGANIZATION_UID_FIELD} value={organizationUid} />
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
@@ -91,6 +101,6 @@ export const OrganizationForm = ({
           保存する
         </button>
       </div>
-    </form>
+    </DraftRetainingForm>
   );
 };
