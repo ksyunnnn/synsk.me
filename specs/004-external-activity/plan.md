@@ -101,9 +101,9 @@
 | FR-036 | `wrangler.jsonc` に `triggers` があり、`scheduled` が `refreshSources` を呼ぶ（research.md の R9）。ビルドした `dist/server/wrangler.json` に `triggers` があることは quickstart.md の手順 1 で確かめる | 単 |
 | FR-014・FR-015・SC-002 | 2 つのうち 1 つの取得元が失敗しても、失敗した側の行が残り、もう一方が取り込まれる | 単（`refreshSources`）・W（`batch()` の分け方） |
 | FR-016 | 失敗の結果に日時・理由が書かれ、2 回続けて失敗しても `last_succeeded_at` が残る | 単・W |
-| FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRefresh`）・W |
-| FR-018・SC-004 | `isComplete` が偽の取得元で、一覧に無い activity を消さない | 単（`planRefresh`） |
-| FR-019 | 消す候補が上限を超えたら、超えた分を残し、理由を書く | 単（`planRefresh`） |
+| FR-017・SC-003 | 消えたと確かめた activity の行が消え、一覧の対象に残らない | 単（`planRemovals`）・W |
+| FR-018・SC-004 | `isComplete` が偽の取得元で、一覧に無い activity を消さない | 単（`planRemovals`） |
+| FR-019 | 消す候補が上限を超えた回は 1 件も消さず、理由を書く | 単（`planRemovals`・`refreshSources`） |
 | FR-020 | 応答の形の誤り・取得の失敗で消さない | 単 |
 | FR-021 | 手で付ける値の列が無い | スキーマが持つ（ADR-0052 の Confirmation） |
 | FR-022・FR-033 | URL を指名した・手で入力した activity を削除できる。一覧を取る取得元の activity は削除の操作が無く、Server Action も拒む | 単（ユースケース）・W・E |

@@ -1,20 +1,22 @@
 import type { ActivityDeps } from '@/features/activity/application/deps';
 import { planRefresh } from '@/features/activity/application/plan-refresh';
+import { planRemovals } from '@/features/activity/application/plan-removals';
 import type { RefreshOutcome, SourceName } from '@/features/activity/domain/fetched-item';
-import type { FetchLimits } from '@/features/activity/domain/limits';
+import type { RefreshLimits } from '@/features/activity/domain/limits';
 
 /**
  * 一覧を取る取得元から取り直す（specs/004-external-activity/contracts/fetch.md、research.md の R4）。
  * 取得元ごとに「読む → 計算 → 書く」を行い、1 つの取得元の書き込みと取得の結果を 1 回の
  * `batch()` で書く。取得元どうしは `Promise.allSettled` で並べ、1 つの失敗でほかを止めない
  * （FR-015、docs/SOFTWARE_DESIGN.md の「失敗の表し方」）。取得か書き込みが失敗した取得元は、
- * activity を書き換えず、取得の結果に失敗と理由を書く（FR-014・FR-016）。取得元ごとの成否を返し、投げない
+ * activity を書き換えず、取得の結果に失敗と理由を書く（FR-014・FR-016）。取得元で消えたと
+ * 確かめた行は、足す行・直す行と同じ書き込みで消す（FR-017〜FR-019）。取得元ごとの成否を返し、投げない
  */
 export const refreshSources = async (
   deps: ActivityDeps,
   sources: SourceName[],
   now: string,
-  limits: FetchLimits,
+  limits: RefreshLimits,
 ): Promise<RefreshOutcome[]> => {
   // 読む・書くの外で投げた（計算を含む）ときも、取得の結果に失敗を書く。書かないと
   // `fetch_result.fetched_at` が進まず、古い順に取得元を選ぶ実行の分け方（research.md の R9）で毎回先に選ばれる
@@ -36,7 +38,7 @@ const refreshSource = async (
   deps: ActivityDeps,
   source: SourceName,
   now: string,
-  limits: FetchLimits,
+  limits: RefreshLimits,
 ): Promise<RefreshOutcome> => {
   let read;
   try {
@@ -48,11 +50,18 @@ const refreshSource = async (
     return fail(deps, source, now, `取得に失敗した: ${messageOf(error)}`);
   }
   const [listing, stored] = read;
-  const plan = planRefresh(stored, listing.items);
-  const reason =
-    plan.skippedWithoutDate > 0
-      ? `公開日の無い項目を ${plan.skippedWithoutDate} 件、取り込まなかった`
-      : null;
+  const upserts = planRefresh(stored, listing.items);
+  const removals = planRemovals(stored, listing, limits.maxRemovals);
+  const plan = { ...upserts, deletes: removals.deletes };
+  const reasons = [
+    upserts.skippedWithoutDate > 0
+      ? `公開日の無い項目を ${upserts.skippedWithoutDate} 件、取り込まなかった`
+      : null,
+    removals.keptOverLimit > 0
+      ? `消す候補が ${removals.keptOverLimit} 件で、上限（${limits.maxRemovals} 件）を超えたので、1 件も消さなかった`
+      : null,
+  ].filter((text) => text !== null);
+  const reason = reasons.length > 0 ? reasons.join('。') : null;
 
   try {
     await deps.activities.applyRefresh(source, plan, { fetchedAt: now, reason });
@@ -64,6 +73,8 @@ const refreshSource = async (
     ok: true,
     added: plan.inserts.length,
     updated: plan.updates.length,
+    removed: plan.deletes.length,
+    keptOverLimit: removals.keptOverLimit,
     skippedWithoutDate: plan.skippedWithoutDate,
   };
 };
