@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
+import { addNoteSyndication } from '@/features/note/application/add-note-syndication';
 import { createNote } from '@/features/note/application/create-note';
+import { removeNoteSyndication } from '@/features/note/application/remove-note-syndication';
 import { deleteNote } from '@/features/note/application/delete-note';
 import { publishNote } from '@/features/note/application/publish-note';
 import { restoreNote } from '@/features/note/application/restore-note';
@@ -69,6 +71,8 @@ const fakeNotes = (current: Note | null = note(), overrides: Partial<NoteReposit
     findRevision: vi.fn(async () => null),
     revert: vi.fn(async () => ({ ok: true as const })),
     findMissingRevision: vi.fn(async () => null),
+    addSyndication: vi.fn(async () => ({ ok: true as const })),
+    removeSyndication: vi.fn(async () => ({ ok: true })),
     ...overrides,
   }) satisfies NoteRepository;
 
@@ -269,5 +273,54 @@ describe('revertNote（FR-009・FR-020・FR-033）', () => {
       revert: vi.fn(async () => ({ ok: false as const, reason })),
     });
     expect(await revertNote(notes, OWNER, 1, REVISION, OPENED)).toEqual({ status });
+  });
+});
+
+describe('転載先（FR-031・FR-032・FR-033）', () => {
+  it('オーナーでなければ書かない', async () => {
+    const notes = fakeNotes();
+    expect(await addNoteSyndication(notes, null, 1, 'https://example.com/a')).toEqual({
+      status: 'forbidden',
+    });
+    expect(await removeNoteSyndication(notes, null, 1, 'https://example.com/a')).toEqual({
+      status: 'forbidden',
+    });
+    expect(notes.addSyndication).not.toHaveBeenCalled();
+    expect(notes.removeSyndication).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['空', '', 'missing'],
+    ['http・https でない', 'ftp://example.com/a', 'invalid'],
+    ['URL でない', 'example.com/a', 'invalid'],
+  ])('URL が%sなら書かない', async (_, url, error) => {
+    const notes = fakeNotes();
+    expect(await addNoteSyndication(notes, OWNER, 1, url)).toEqual({ status: 'invalid', error });
+    expect(notes.addSyndication).not.toHaveBeenCalled();
+  });
+
+  it('前後の空白を除いて記録する', async () => {
+    const notes = fakeNotes();
+    expect(await addNoteSyndication(notes, OWNER, 1, ' https://example.com/a ')).toEqual({
+      status: 'added',
+    });
+    expect(notes.addSyndication).toHaveBeenCalledWith(1, 'https://example.com/a');
+  });
+
+  it('記録済みの URL は項目の誤りで返す（FR-032）', async () => {
+    const notes = fakeNotes(note(), {
+      addSyndication: vi.fn(async () => ({ ok: false as const, reason: 'url-taken' as const })),
+    });
+    expect(await addNoteSyndication(notes, OWNER, 1, 'https://example.com/a')).toEqual({
+      status: 'invalid',
+      error: 'taken',
+    });
+  });
+
+  it('その note に無い URL は外さず not-found', async () => {
+    const notes = fakeNotes(note(), { removeSyndication: vi.fn(async () => ({ ok: false })) });
+    expect(await removeNoteSyndication(notes, OWNER, 1, 'https://example.com/a')).toEqual({
+      status: 'not-found',
+    });
   });
 });
