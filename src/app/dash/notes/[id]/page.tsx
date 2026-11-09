@@ -1,11 +1,11 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NoteForm } from '@/features/note/components/note-form';
+import { NoteSavedNotice } from '@/features/note/components/note-saved-notice';
 import { NoteStatusForm } from '@/features/note/components/note-status-form';
 import { hasBeenPublished, toNoteFormValues } from '@/features/note/domain/note';
 import { publishNote, saveNote } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
-import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { TextLink } from '@/shared/components/text-link';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -31,7 +31,7 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/notes">note の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">note を編集する</h1>
-      {saved === '1' && <DraftSavedNotice />}
+      {saved === '1' && <NoteSavedNotice revisionUid={note.latestRevision.uid} />}
       {published === '1' && <p role="status">公開しました</p>}
       {note.status === 'published' && (
         <p>
