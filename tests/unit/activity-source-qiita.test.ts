@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { fetchListing } from '@/features/activity/server/sources/qiita';
 import type { FetchLimits } from '@/features/activity/domain/limits';
-import { createFakeFetcher, jsonResponse } from '../support/activity-fakes';
+import { asListing, createFakeFetcher, jsonResponse } from '../support/activity-fakes';
 
 /**
  * Qiita の REST の応答を `FetchedItem` に詰め替える（FR-006・FR-007、research.md の R7）。
@@ -29,7 +29,7 @@ describe('Qiita', () => {
       [page(1)]: jsonResponse(items(1, 1), { 'Total-Count': '1' }),
     });
 
-    const listing = await fetchListing(fetcher, LIMITS);
+    const listing = asListing(await fetchListing(fetcher, LIMITS));
 
     expect(listing).toEqual({
       items: [
@@ -50,11 +50,22 @@ describe('Qiita', () => {
       [page(2)]: jsonResponse(items(21, 21), { 'Total-Count': '21' }),
     });
 
-    const listing = await fetchListing(fetcher, LIMITS);
+    const listing = asListing(await fetchListing(fetcher, LIMITS));
 
     expect(listing.items).toHaveLength(21);
     expect(listing.isComplete).toBe(true);
     expect(requested.map((r) => r.url)).toEqual([page(1), page(2)]);
+  });
+
+  it('頁を辿るあいだに total-count が変わったら、すべて取ったことにしない（R6・FR-020）', async () => {
+    const { fetcher } = createFakeFetcher({
+      [page(1)]: jsonResponse(items(1, 20), { 'Total-Count': '22' }),
+      [page(2)]: jsonResponse(items(22, 22), { 'Total-Count': '21' }),
+    });
+
+    const listing = asListing(await fetchListing(fetcher, LIMITS));
+
+    expect(listing.isComplete).toBe(false);
   });
 
   it('要求の数の上限で辿るのを止めたら、すべて取ったことにしない（R7・FR-018）', async () => {
@@ -62,7 +73,7 @@ describe('Qiita', () => {
       [page(1)]: jsonResponse(items(1, 20), { 'Total-Count': '21' }),
     });
 
-    const listing = await fetchListing(fetcher, { ...LIMITS, maxRequests: 1 });
+    const listing = asListing(await fetchListing(fetcher, { ...LIMITS, maxRequests: 1 }));
 
     expect(listing.items).toHaveLength(20);
     expect(listing.isComplete).toBe(false);

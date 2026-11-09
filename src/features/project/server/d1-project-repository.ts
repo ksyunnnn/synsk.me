@@ -4,7 +4,6 @@ import type {
   MaskedVisitorProject,
   Project,
   ProjectContent,
-  ProjectKind,
   ProjectSummary,
   UnmaskedVisitorProject,
 } from '@/features/project/domain/project';
@@ -18,6 +17,7 @@ import {
   findOrCreateOrganizationStatements,
   registerGuard,
 } from '@/shared/server/organization-repository';
+import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * `ProjectRepository` の D1 の実装。行の型はこのファイルの中だけに置き、domain の型に

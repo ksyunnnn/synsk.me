@@ -1,4 +1,4 @@
-import type { FetchedItem, SourceName } from '@/features/activity/domain/fetched-item';
+import type { FetchedItem, SourceName, Validators } from '@/features/activity/domain/fetched-item';
 
 /**
  * activity の取り出し方と保存の仕方（docs/SOFTWARE_DESIGN.md の Repository）。
@@ -25,8 +25,8 @@ export type ItemChanges = Partial<{
   imageUrl: string | null;
 }>;
 
-/** 1 つの取得元の取り直しで書くもの。`planRefresh` が求める */
-export type RefreshPlan = {
+/** 1 つの取得元の取り直しで足す行と直す行。`planRefresh` が求める */
+export type UpsertPlan = {
   /** 足す行。どれも公開日を持つ（FR-011） */
   inserts: (FetchedItem & { publishedAt: string })[];
   updates: { id: number; changes: ItemChanges }[];
@@ -34,8 +34,19 @@ export type RefreshPlan = {
   skippedWithoutDate: number;
 };
 
+/** 1 つの取得元の取り直しで書くもの。消す行は `planRemovals` が求める */
+export type RefreshPlan = UpsertPlan & {
+  /** 取得元で消えたと確かめた行の id（FR-017） */
+  deletes: number[];
+};
+
 /** 成功した取り直しの取得の結果。`last_succeeded_at` は `fetchedAt` になる */
-export type FetchResultWrite = { fetchedAt: string; reason: string | null };
+export type FetchResultWrite = {
+  fetchedAt: string;
+  reason: string | null;
+  /** 次の取得で条件に使う値。null なら持っていた値を消し、次も中身を取る（research.md の R9） */
+  validators: Validators | null;
+};
 
 export type ActivityRepository = {
   /** 取得元の外部の activity。取り直しで比べる列だけを読む */
@@ -45,8 +56,18 @@ export type ActivityRepository = {
    * 1 文でも失敗すれば全体を戻して投げる
    */
   applyRefresh: (source: SourceName, plan: RefreshPlan, result: FetchResultWrite) => Promise<void>;
-  /** 取得の結果に失敗と理由を書く。`last_succeeded_at` は前の値を残す（FR-016） */
+  /**
+   * 取得の結果に失敗と理由を書く。`last_succeeded_at` は前の値を残す（FR-016）。条件に使う値は消す
+   * （research.md の R9）
+   */
   recordFetchFailure: (source: SourceName, fetchedAt: string, reason: string) => Promise<void>;
+  /** 前の取得で持った、条件に使う値。無ければ null */
+  readValidators: (source: SourceName) => Promise<Validators | null>;
+  /**
+   * 取得元が変わっていないと答えた（304）回の取得の結果を、成功として書く。activity と条件に使う値は
+   * 書き換えない（research.md の R9）
+   */
+  recordNotModified: (source: SourceName, fetchedAt: string) => Promise<void>;
   /** 取得元ごとの、最後に取り直した日時（成否を問わない）。取り直したことの無い取得元は持たない */
   listFetchedAt: () => Promise<Partial<Record<SourceName, string>>>;
 };

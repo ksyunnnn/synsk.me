@@ -28,11 +28,25 @@ export type FetchedItem = {
 };
 
 /** 一覧を取る取得元の 1 回分の結果 */
+/**
+ * 取得元が返した、変わったかを確かめる値（research.md の R9、migrations/0014）。ヘッダの文字列の
+ * まま持ち、次の要求に同じ文字列を送る。取得元が返さなければ null
+ */
+export type Validators = { etag: string | null; lastModified: string | null };
+
 export type SourceListing = {
   items: FetchedItem[];
   /** 取得元の項目をすべて取ったか。偽なら、一覧に無いことを消す根拠にしない（FR-018） */
   isComplete: boolean;
+  /**
+   * 次の要求で条件に使う値。1 本の要求で取得を終え、取得元がどちらかを返したときだけ持つ。
+   * 頁を辿った取得元では、1 頁目が変わらなくても後の頁が変わりうるため持たない（R9）
+   */
+  validators?: Validators;
 };
+
+/** 条件付きの要求に、取得元が変わっていないと答えた（304） */
+export type NotModified = { notModified: true };
 
 /** 取得元ごとの取り直しの成否（docs/SOFTWARE_DESIGN.md の「失敗の表し方」）。投げずに返す */
 export type RefreshOutcome =
@@ -41,6 +55,10 @@ export type RefreshOutcome =
       ok: true;
       added: number;
       updated: number;
+      /** 取得元で消えたと確かめて消した行の数（FR-017） */
+      removed: number;
+      /** 消す候補が上限を超えたので、消さずに残した行の数（FR-019） */
+      keptOverLimit: number;
       /** 公開日が無いので取り込まなかった項目の数（FR-011） */
       skippedWithoutDate: number;
     }

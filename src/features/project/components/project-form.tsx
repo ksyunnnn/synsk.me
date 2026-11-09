@@ -4,8 +4,6 @@ import { useActionState } from 'react';
 import {
   OPENED_UPDATED_AT_FIELD,
   PROJECT_UID_FIELD,
-  PROJECT_KINDS,
-  PROJECT_KIND_LABELS,
   type ProjectField,
   type ProjectFieldError,
   type ProjectFormResult,
@@ -15,6 +13,7 @@ import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。

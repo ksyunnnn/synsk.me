@@ -1,16 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
+import { addNoteMedia } from '@/features/note/application/add-note-media';
 import { addNoteSyndication } from '@/features/note/application/add-note-syndication';
+import { changeNoteCardImage } from '@/features/note/application/change-note-card-image';
 import { createNote } from '@/features/note/application/create-note';
-import { removeNoteSyndication } from '@/features/note/application/remove-note-syndication';
 import { deleteNote } from '@/features/note/application/delete-note';
+import { getVisitorNoteMedia } from '@/features/note/application/get-visitor-note-media';
 import { publishNote } from '@/features/note/application/publish-note';
+import { purgeNote } from '@/features/note/application/purge-note';
+import { removeNoteSyndication } from '@/features/note/application/remove-note-syndication';
 import { restoreNote } from '@/features/note/application/restore-note';
 import { revertNote } from '@/features/note/application/revert-note';
 import { saveNote } from '@/features/note/application/save-note';
 import { unpublishNote } from '@/features/note/application/unpublish-note';
-import { toNoteFormValues, type Note, type NoteFormValues } from '@/features/note/domain/note';
+import {
+  toNoteFormValues,
+  type Note,
+  type NoteFormValues,
+  type VisitorNote,
+} from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
 import type { Author } from '@/shared/domain/author';
+import type { MediaStorage } from '@/shared/domain/media';
 
 /**
  * note のユースケース（specs/003-note/spec.md の FR-003・FR-011・FR-020・FR-033）。Repository は
@@ -73,6 +83,12 @@ const fakeNotes = (current: Note | null = note(), overrides: Partial<NoteReposit
     findMissingRevision: vi.fn(async () => null),
     addSyndication: vi.fn(async () => ({ ok: true as const })),
     removeSyndication: vi.fn(async () => ({ ok: true })),
+    changeCardImage: vi.fn(async () => ({ ok: true as const })),
+    addMedia: vi.fn(async () => ({ ok: true })),
+    findPreview: vi.fn(async () => null),
+    purge: vi.fn(async () => ({ ok: true as const, storageKeys: [] as string[] })),
+    findLinkPreviews: vi.fn(async () => []),
+    saveLinkPreview: vi.fn(async () => {}),
     ...overrides,
   }) satisfies NoteRepository;
 
@@ -322,5 +338,200 @@ describe('転載先（FR-031・FR-032・FR-033）', () => {
     expect(await removeNoteSyndication(notes, OWNER, 1, 'https://example.com/a')).toEqual({
       status: 'not-found',
     });
+  });
+});
+
+describe('changeNoteCardImage（FR-024・FR-025・FR-033）', () => {
+  const KEY = '11111111-1111-4111-8111-111111111111';
+
+  it('オーナーでなければ書かない', async () => {
+    const notes = fakeNotes();
+    expect(await changeNoteCardImage(notes, null, 1, 'site')).toEqual({ status: 'forbidden' });
+    expect(notes.changeCardImage).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['ほかの値', 'other'],
+    ['キーの無い media', 'media'],
+    ['形の違うキーの media', 'media:1'],
+  ])('%sは書かない', async (_, input) => {
+    const notes = fakeNotes();
+    expect(await changeNoteCardImage(notes, OWNER, 1, input)).toEqual({
+      status: 'invalid',
+      error: 'invalid',
+    });
+    expect(notes.changeCardImage).not.toHaveBeenCalled();
+  });
+
+  it('media はキーを渡して書く', async () => {
+    const notes = fakeNotes();
+    expect(await changeNoteCardImage(notes, OWNER, 1, `media:${KEY}`)).toEqual({
+      status: 'changed',
+    });
+    expect(notes.changeCardImage).toHaveBeenCalledWith(1, { kind: 'media', storageKey: KEY });
+  });
+
+  it('その note の画像でなければ項目の誤りで返す', async () => {
+    const notes = fakeNotes(note(), {
+      changeCardImage: vi.fn(async () => ({
+        ok: false as const,
+        reason: 'media-not-owned' as const,
+      })),
+    });
+    expect(await changeNoteCardImage(notes, OWNER, 1, `media:${KEY}`)).toEqual({
+      status: 'invalid',
+      error: 'media-not-owned',
+    });
+  });
+});
+
+describe('addNoteMedia（FR-023・FR-033、research.md の R12）', () => {
+  const KEY = '22222222-2222-4222-8222-222222222222';
+  const file = new Blob(['作り物']);
+
+  const fakeStorage = (overrides: Partial<MediaStorage> = {}) =>
+    ({
+      save: vi.fn(async () => ({
+        ok: true as const,
+        media: { storageKey: KEY, type: 'image/png' as const, size: 3 },
+      })),
+      read: vi.fn(async () => null),
+      remove: vi.fn(async () => {}),
+      ...overrides,
+    }) satisfies MediaStorage;
+
+  it('オーナーでなければ置かず、記録しない', async () => {
+    const notes = fakeNotes();
+    const media = fakeStorage();
+    expect(await addNoteMedia({ notes, media }, null, 1, file)).toEqual({ status: 'forbidden' });
+    expect(media.save).not.toHaveBeenCalled();
+    expect(notes.addMedia).not.toHaveBeenCalled();
+  });
+
+  it.each(['empty', 'too-large', 'unsupported-type'] as const)(
+    'media-storage.ts が %s で拒んだ画像を項目の誤りで返し、記録しない',
+    async (reason) => {
+      const notes = fakeNotes();
+      const media = fakeStorage({ save: vi.fn(async () => ({ ok: false as const, reason })) });
+      expect(await addNoteMedia({ notes, media }, OWNER, 1, file)).toEqual({
+        status: 'invalid',
+        error: reason,
+      });
+      expect(notes.addMedia).not.toHaveBeenCalled();
+    },
+  );
+
+  it('ファイルが無ければ empty', async () => {
+    const media = fakeStorage();
+    expect(await addNoteMedia({ notes: fakeNotes(), media }, OWNER, 1, null)).toEqual({
+      status: 'invalid',
+      error: 'empty',
+    });
+    expect(media.save).not.toHaveBeenCalled();
+  });
+
+  it('削除した note には置かない', async () => {
+    const media = fakeStorage();
+    const notes = fakeNotes(note({ deletedAt: NOW }));
+    expect(await addNoteMedia({ notes, media }, OWNER, 1, file)).toEqual({ status: 'not-found' });
+    expect(media.save).not.toHaveBeenCalled();
+  });
+
+  it('置いた画像を記録する', async () => {
+    const notes = fakeNotes();
+    const media = fakeStorage();
+    expect(await addNoteMedia({ notes, media }, OWNER, 1, file)).toEqual({
+      status: 'added',
+      storageKey: KEY,
+    });
+    expect(notes.addMedia).toHaveBeenCalledWith(1, KEY);
+  });
+
+  it('記録の前に note が消えていたら、置いた画像を消す', async () => {
+    const notes = fakeNotes(note(), { addMedia: vi.fn(async () => ({ ok: false })) });
+    const media = fakeStorage();
+    expect(await addNoteMedia({ notes, media }, OWNER, 1, file)).toEqual({ status: 'not-found' });
+    expect(media.remove).toHaveBeenCalledWith([KEY]);
+  });
+
+  it('記録が例外で失敗したら、置いた画像を消してから投げ直す', async () => {
+    const failure = new Error('D1 の失敗');
+    const notes = fakeNotes(note(), {
+      addMedia: vi.fn(async () => {
+        throw failure;
+      }),
+    });
+    const media = fakeStorage();
+    await expect(addNoteMedia({ notes, media }, OWNER, 1, file)).rejects.toBe(failure);
+    expect(media.remove).toHaveBeenCalledWith([KEY]);
+  });
+});
+
+describe('getVisitorNoteMedia（FR-026）', () => {
+  const BODY_KEY = '33333333-3333-4333-8333-333333333333';
+  const CARD_KEY = '44444444-4444-4444-8444-444444444444';
+  const visitorNote: VisitorNote = {
+    slug: 'sample-note',
+    title: '作り物の題',
+    description: null,
+    summary: null,
+    body: '',
+    publishedAt: NOW,
+    cardImage: { kind: 'media', storageKey: CARD_KEY },
+    media: [BODY_KEY],
+    linkPreviews: [],
+  };
+
+  it('公開した版の本文が指す画像と代表画像だけを public にする', async () => {
+    const notes = fakeNotes(note(), { findVisitorBySlug: vi.fn(async () => visitorNote) });
+    expect(await getVisitorNoteMedia(notes, 'sample-note', BODY_KEY)).toBe('public');
+    expect(await getVisitorNoteMedia(notes, 'sample-note', CARD_KEY)).toBe('public');
+    expect(await getVisitorNoteMedia(notes, 'sample-note', crypto.randomUUID())).toBe('hidden');
+  });
+
+  it('訪問者に見せない note の画像は hidden', async () => {
+    expect(await getVisitorNoteMedia(fakeNotes(), 'sample-note', BODY_KEY)).toBe('hidden');
+  });
+});
+
+describe('purgeNote（FR-017・FR-033、research.md の R6）', () => {
+  const KEY = '55555555-5555-4555-8555-555555555555';
+  const storage = () =>
+    ({
+      save: vi.fn(),
+      read: vi.fn(async () => null),
+      remove: vi.fn(async () => {}),
+    }) satisfies MediaStorage;
+
+  it('オーナーでなければ何も消さない', async () => {
+    const notes = fakeNotes();
+    const media = storage();
+    expect(await purgeNote({ notes, media }, null, 1)).toEqual({ status: 'forbidden' });
+    expect(notes.purge).not.toHaveBeenCalled();
+    expect(media.remove).not.toHaveBeenCalled();
+  });
+
+  it('D1 の行を消してから、置き場の画像を消す', async () => {
+    const order: string[] = [];
+    const notes = fakeNotes(note(), {
+      purge: vi.fn(async () => {
+        order.push('d1');
+        return { ok: true as const, storageKeys: [KEY] };
+      }),
+    });
+    const media = storage();
+    media.remove.mockImplementation(async () => {
+      order.push('r2');
+    });
+    expect(await purgeNote({ notes, media }, OWNER, 1)).toEqual({ status: 'purged' });
+    expect(media.remove).toHaveBeenCalledWith([KEY]);
+    expect(order).toEqual(['d1', 'r2']);
+  });
+
+  it('無い note は置き場を触らない', async () => {
+    const notes = fakeNotes(note(), { purge: vi.fn(async () => ({ ok: false as const })) });
+    const media = storage();
+    expect(await purgeNote({ notes, media }, OWNER, 1)).toEqual({ status: 'not-found' });
+    expect(media.remove).not.toHaveBeenCalled();
   });
 });
