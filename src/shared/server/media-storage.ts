@@ -82,13 +82,14 @@ export const createR2MediaStorage = (bucket: R2Bucket): MediaStorage => ({
 export const createR2MediaSweepStorage = (bucket: R2Bucket): MediaSweepStorage => ({
   remove: createR2MediaStorage(bucket).remove,
   list: async ({ cursor, limit }) => {
-    const listed = await bucket.list({ limit, ...(cursor === null ? {} : { cursor }) });
+    // 続きは最後に読んだキーの後から読む（R2ListOptions の startAfter）
+    const listed = await bucket.list({ limit, ...(cursor === null ? {} : { startAfter: cursor }) });
     return {
       items: listed.objects.flatMap((object) => {
         const storageKey = parseMediaStorageKey(object.key);
         return storageKey === null ? [] : [{ storageKey, uploadedAt: object.uploaded }];
       }),
-      cursor: listed.truncated ? listed.cursor : null,
+      cursor: listed.truncated ? (listed.objects.at(-1)?.key ?? cursor) : null,
     };
   },
 
@@ -106,6 +107,10 @@ export const createR2MediaSweepStorage = (bucket: R2Bucket): MediaSweepStorage =
 /** 組み立て用の関数。binding の名前は `wrangler.jsonc` の `r2_buckets` */
 export const createMediaStorage = async (): Promise<MediaStorage> =>
   createR2MediaStorage((await readEnv()).NOTE_IMAGES);
+
+/** 突き合わせの組み立て用の関数。binding は `createMediaStorage` と同じ */
+export const createMediaSweepStorage = async (): Promise<MediaSweepStorage> =>
+  createR2MediaSweepStorage((await readEnv()).NOTE_IMAGES);
 
 /**
  * 公開している画像のキャッシュの決まり。キャッシュしてよいが、使う前に毎回 Worker に確かめさせる。

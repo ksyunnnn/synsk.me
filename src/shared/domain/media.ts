@@ -111,8 +111,9 @@ export const isPastOrphanGrace = (uploadedAt: Date, now: Date): boolean =>
  */
 export type MediaSweepStorage = Pick<MediaStorage, 'remove'> & {
   /**
-   * 置いてあるものを、キーの順に `limit` 件ずつ並べる。`cursor` は前の頁が返した続きの位置。
-   * 画像でないもの（キーが UUID の形でないもの）は除く
+   * 置いてあるものを、キーの順に `limit` 件ずつ並べる。`cursor` は前の頁が返した続きの位置で、
+   * その頁で最後に読んだキー。置き場が返す不透明な続きの印は、後の回で使えなくなっても公式の
+   * 説明が無いため持たない。画像でないもの（キーが UUID の形でないもの）は除く
    */
   list: (options: { cursor: string | null; limit: number }) => Promise<{
     items: { storageKey: MediaStorageKey; uploadedAt: Date }[];

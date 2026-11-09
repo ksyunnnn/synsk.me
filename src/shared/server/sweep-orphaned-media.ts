@@ -7,7 +7,7 @@ import {
   type MediaStorageKey,
 } from '@/shared/domain/media';
 import { readEnv } from '@/shared/server/env';
-import { createR2MediaSweepStorage } from '@/shared/server/media-storage';
+import { createMediaSweepStorage } from '@/shared/server/media-storage';
 
 /**
  * 消し損ねた画像を見つけて消し直す（src/shared/domain/media.ts の「消し損ねた画像」）。置き場の
@@ -20,37 +20,30 @@ import { createR2MediaSweepStorage } from '@/shared/server/media-storage';
  * 置き場の削除 1 本以下を使う
  */
 
-/** D1 の 1 つの文に渡せる値の数の上限（https://developers.cloudflare.com/d1/platform/limits/） */
-const D1_MAX_BOUND_PARAMETERS = 100;
-
+/** 値の並びは JSON 1 つで渡す（src/features/note/server/d1-note-repository.ts と同じ形） */
 export const createD1MediaReferences = (db: D1Database): MediaReferences => ({
   findReferenced: async (storageKeys) => {
-    const referenced = new Set<MediaStorageKey>();
-    for (let start = 0; start < storageKeys.length; start += D1_MAX_BOUND_PARAMETERS) {
-      const chunk = storageKeys.slice(start, start + D1_MAX_BOUND_PARAMETERS);
-      const { results } = await db
-        .prepare(
-          `SELECT storage_key FROM media WHERE storage_key IN (${chunk.map(() => '?').join(', ')})`,
-        )
-        .bind(...chunk)
-        .all<{ storage_key: string }>();
-      for (const row of results) referenced.add(row.storage_key);
-    }
-    return referenced;
+    const { results } = await db
+      .prepare(
+        'SELECT storage_key FROM media WHERE storage_key IN (SELECT value FROM json_each(?))',
+      )
+      .bind(JSON.stringify(storageKeys))
+      .all<{ storage_key: string }>();
+    return new Set(results.map((row) => row.storage_key));
   },
 });
 
 export type SweepLimits = {
   /** 1 回で読む頁の数 */
   maxPages: number;
-  /** 1 頁の件数。D1 の 1 つの文で調べられる数を超えない */
+  /** 1 頁の件数。1 回に消す数の上限を兼ねる */
   pageSize: number;
 };
 
-/** 既定の上限。subrequest は 1 回あたり、続きの位置の読み書き 2 本と、頁ごとの 3 本以下 */
+/** 既定の上限。subrequest は 1 回あたり、続きの位置の読み書き 2 本以下と、頁ごとの 3 本以下 */
 export const DEFAULT_SWEEP_LIMITS: SweepLimits = {
   maxPages: 2,
-  pageSize: D1_MAX_BOUND_PARAMETERS,
+  pageSize: 100,
 };
 
 export type SweepOutcome = {
@@ -62,49 +55,52 @@ export type SweepOutcome = {
 
 /**
  * 1 回分の突き合わせ。前の回が残した位置から読み、読んだところまでの位置を残す。終わりまで
- * 読んだら、次の回は始めから読む
+ * 読んだら、次の回は始めから読む。途中の頁で置き場か D1 が失敗したら、その前の頁までの位置を
+ * 残してから投げる。次の回が、終えた頁を読み直さない
  */
 export const sweepOrphanedMedia = async (
   { storage, references }: { storage: MediaSweepStorage; references: MediaReferences },
   now: Date,
   limits: SweepLimits = DEFAULT_SWEEP_LIMITS,
 ): Promise<SweepOutcome> => {
-  const pageSize = Math.min(limits.pageSize, D1_MAX_BOUND_PARAMETERS);
-  let cursor = await storage.readSweepCursor();
+  const started = await storage.readSweepCursor();
+  let cursor = started;
   const removed: MediaStorageKey[] = [];
   let reachedEnd = false;
 
-  for (let page = 0; page < limits.maxPages; page += 1) {
-    const listed = await storage.list({ cursor, limit: pageSize });
-    const candidates = listed.items
-      .filter((item) => isPastOrphanGrace(item.uploadedAt, now))
-      .map((item) => item.storageKey);
-    if (candidates.length > 0) {
-      const referenced = await references.findReferenced(candidates);
-      const orphans = candidates.filter((key) => !referenced.has(key));
-      if (orphans.length > 0) {
-        await storage.remove(orphans);
-        removed.push(...orphans);
+  try {
+    for (let page = 0; page < limits.maxPages; page += 1) {
+      const listed = await storage.list({ cursor, limit: limits.pageSize });
+      const candidates = listed.items
+        .filter((item) => isPastOrphanGrace(item.uploadedAt, now))
+        .map((item) => item.storageKey);
+      if (candidates.length > 0) {
+        const referenced = await references.findReferenced(candidates);
+        const orphans = candidates.filter((key) => !referenced.has(key));
+        if (orphans.length > 0) {
+          await storage.remove(orphans);
+          removed.push(...orphans);
+        }
+      }
+      cursor = listed.cursor;
+      if (cursor === null) {
+        reachedEnd = true;
+        break;
       }
     }
-    cursor = listed.cursor;
-    if (cursor === null) {
-      reachedEnd = true;
-      break;
-    }
+  } finally {
+    // 位置が変わらなければ書かない。subrequest を 004 の取得と分け合うため
+    if (cursor !== started) await storage.writeSweepCursor(cursor);
   }
-
-  await storage.writeSweepCursor(cursor);
   return { removed, reachedEnd };
 };
 
 /** 組み立て用の関数。定期実行の入口（004 の T040）が呼ぶ */
 export const sweepOrphanedMediaNow = async (now: Date): Promise<SweepOutcome> => {
-  const env = await readEnv();
   return sweepOrphanedMedia(
     {
-      storage: createR2MediaSweepStorage(env.NOTE_IMAGES),
-      references: createD1MediaReferences(env.DB),
+      storage: await createMediaSweepStorage(),
+      references: createD1MediaReferences((await readEnv()).DB),
     },
     now,
   );

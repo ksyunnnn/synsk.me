@@ -65,4 +65,35 @@ describe('sweepOrphanedMedia', () => {
     // 続きの位置は画像でないため、突き合わせの対象にならない。終わりまで読んだら消える
     expect(await keysInBucket()).toEqual([]);
   });
+
+  it('途中の頁で失敗したら、その前の頁までの位置を残して投げ、次の回は続きから読む', async () => {
+    const orphans = [await putImage(), await putImage(), await putImage()].sort();
+    let lists = 0;
+    const failing = {
+      ...storage,
+      list: async (options: Parameters<typeof storage.list>[0]) => {
+        lists += 1;
+        if (lists === 2) throw new Error('作り物の失敗');
+        return storage.list(options);
+      },
+    };
+    const limits = { maxPages: 2, pageSize: 2 };
+
+    await expect(
+      sweepOrphanedMedia({ ...deps, storage: failing }, afterGrace(), limits),
+    ).rejects.toThrow('作り物の失敗');
+    expect(await keysInBucket()).toContain(orphans[2]);
+    expect(await storage.readSweepCursor()).toBe(orphans[1]);
+
+    const second = await sweepOrphanedMedia(deps, afterGrace(), limits);
+    expect(second).toEqual({ removed: [orphans[2]], reachedEnd: true });
+  });
+
+  it('D1 の 1 つの文の値の数の上限（100）を超えるキーを、1 本の問い合わせで調べる', async () => {
+    const note = await insertNote(env.DB);
+    const keys = Array.from({ length: 150 }, () => crypto.randomUUID());
+    await insertNoteMedia(env.DB, note.id, keys[149]);
+    const referenced = await deps.references.findReferenced(keys);
+    expect([...referenced]).toEqual([keys[149]]);
+  });
 });
