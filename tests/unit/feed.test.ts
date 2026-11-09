@@ -231,6 +231,11 @@ describe('toFeedItem の外部の activity（FR-018・FR-019）', () => {
     expect(toFeedItem(activityRow({ url: null }))).toBeNull();
     expect(toFeedItem(activityRow({ source: null }))).toBeNull();
   });
+
+  it('http か https でない URL の行は詰めない', () => {
+    expect(toFeedItem(activityRow({ url: 'javascript:alert(1)' }))).toBeNull();
+    expect(toFeedItem(activityRow({ url: 'data:text/html,x' }))).toBeNull();
+  });
 });
 
 describe('toFeedItem の life event（FR-018・FR-019）', () => {

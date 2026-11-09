@@ -10,6 +10,7 @@ import {
 import type { FeedRepository } from '@/features/activity/domain/feed-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
 import { isProjectKind } from '@/shared/domain/project-kind';
+import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
  * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018）だけを読み、表を
@@ -91,7 +92,9 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
         createdAt: row.sort_at,
       };
     case 'external_activity':
-      if (row.url === null || row.source === null) return null;
+      // 画面は URL を `<a href>` にする。取得元の応答の URL を http か https に限る
+      // （constitution の Allowlist Visibility）。ほかの scheme の行は詰めない
+      if (row.url === null || !isWebUrl(row.url) || row.source === null) return null;
       return {
         type: 'external_activity',
         title: row.title,
