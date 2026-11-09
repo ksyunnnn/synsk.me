@@ -2,6 +2,7 @@ import 'server-only';
 
 import {
   FEED_ITEM_TYPES,
+  FEED_PAGE_SIZE,
   isFeedItemType,
   isFeedProjectKind,
   type FeedItem,
@@ -100,11 +101,19 @@ const LIST_SQL = `SELECT ${COLUMNS} FROM activity_feed
   WHERE item_type IN (${typeLiterals.join(', ')})
   ORDER BY sort_at DESC,
     CASE item_type ${typeLiterals.map((literal, index) => `WHEN ${literal} THEN ${index}`).join(' ')} END,
-    item_number DESC`;
+    item_number DESC
+  LIMIT ? OFFSET ?`;
 
 export const createD1FeedRepository = (db: D1Database): FeedRepository => ({
-  list: async () => {
-    const { results } = await db.prepare(LIST_SQL).all<FeedRow>();
-    return results.flatMap((row) => toFeedItem(row) ?? []);
+  list: async (page) => {
+    // 次のページがあるかを知るため、1 件多く読む
+    const { results } = await db
+      .prepare(LIST_SQL)
+      .bind(FEED_PAGE_SIZE + 1, (page - 1) * FEED_PAGE_SIZE)
+      .all<FeedRow>();
+    return {
+      items: results.slice(0, FEED_PAGE_SIZE).flatMap((row) => toFeedItem(row) ?? []),
+      hasNextPage: results.length > FEED_PAGE_SIZE,
+    };
   },
 });

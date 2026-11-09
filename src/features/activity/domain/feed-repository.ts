@@ -1,4 +1,4 @@
-import type { FeedItem } from '@/features/activity/domain/feed';
+import type { FeedPage } from '@/features/activity/domain/feed';
 
 /**
  * 一覧の取り出し方（docs/SOFTWARE_DESIGN.md の Repository）。D1 の実装は
@@ -7,8 +7,9 @@ import type { FeedItem } from '@/features/activity/domain/feed';
  */
 export type FeedRepository = {
   /**
-   * 一覧に並べる項目。並びの日付の新しい順、同じ日付なら `FEED_ITEM_TYPES` の順、同じ種類なら
-   * 元の行の主キーの大きい順（FR-010）。ページの引数は tasks.md の T032 で足す
+   * 一覧の `page` ページ目（1 から数える）。並びの日付の新しい順、同じ日付なら `FEED_ITEM_TYPES`
+   * の順、同じ種類なら元の行の主キーの大きい順（FR-010）で、`FEED_PAGE_SIZE` 件ずつに区切る。
+   * 最後のページの先は項目を持たない（research.md の R8）
    */
-  list: () => Promise<FeedItem[]>;
+  list: (page: number) => Promise<FeedPage>;
 };
