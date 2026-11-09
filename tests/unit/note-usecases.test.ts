@@ -323,6 +323,14 @@ describe('転載先（FR-031・FR-032・FR-033）', () => {
     expect(notes.addSyndication).toHaveBeenCalledWith(1, 'https://example.com/a');
   });
 
+  it('normalizeWebUrl で揃えた値を記録する。パスの大文字と小文字は揃えない（ADR-0006、T058）', async () => {
+    const notes = fakeNotes();
+    expect(
+      await addNoteSyndication(notes, OWNER, 1, 'HTTPS://Example.COM:443/Path/%7euser#section'),
+    ).toEqual({ status: 'added' });
+    expect(notes.addSyndication).toHaveBeenCalledWith(1, 'https://example.com/Path/~user');
+  });
+
   it('記録済みの URL は項目の誤りで返す（FR-032）', async () => {
     const notes = fakeNotes(note(), {
       addSyndication: vi.fn(async () => ({ ok: false as const, reason: 'url-taken' as const })),
