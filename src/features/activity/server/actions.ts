@@ -5,9 +5,15 @@ import 'server-only';
 import { redirect } from 'next/navigation';
 import { deleteLifeEvent as deleteLifeEventUseCase } from '@/features/activity/application/delete-life-event';
 import { editLifeEvent as editLifeEventUseCase } from '@/features/activity/application/edit-life-event';
+import {
+  registerLifeEventImage as registerLifeEventImageUseCase,
+  removeLifeEventImage as removeLifeEventImageUseCase,
+  type LifeEventImageOutcome,
+} from '@/features/activity/application/life-event-image';
 import { registerLifeEvent as registerLifeEventUseCase } from '@/features/activity/application/register-life-event';
 import {
   LIFE_EVENT_FIELDS,
+  LIFE_EVENT_IMAGE_FIELD,
   LIFE_EVENT_UID_FIELD,
   type LifeEventFormResult,
   type LifeEventFormValues,
@@ -15,6 +21,7 @@ import {
 import { createLifeEventRepository } from '@/features/activity/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
+import { createMediaStorage } from '@/shared/server/media-storage';
 import { readString, readValues } from '@/shared/server/form-data';
 
 /**
@@ -72,7 +79,64 @@ export const deleteLifeEvent = async (
   const id = await findIdByUid(lifeEvents, readString(formData, LIFE_EVENT_UID_FIELD));
   if (id === null) redirect('/dash/life-events');
 
-  const outcome = await deleteLifeEventUseCase(lifeEvents, author, id);
+  const outcome = await deleteLifeEventUseCase(lifeEvents, await createMediaStorage(), author, id);
   if (outcome.status === 'forbidden') return outcome;
   redirect('/dash/life-events?deleted=1');
+};
+
+/** 画像の操作の結果。保存したら同じ画面へ移すので、画面に返すのは保存しなかったときだけ */
+export type LifeEventImageResult = Exclude<
+  LifeEventImageOutcome,
+  { status: 'saved' | 'not-found' }
+>;
+
+/**
+ * life event の代表画像を登録し、同じ画面へ移る（FR-028）。前の画像は消える。形式と大きさは
+ * 共有担当の置き場が確かめる（U5 の決定）
+ */
+export const registerLifeEventImage = async (
+  _state: LifeEventImageResult | null,
+  formData: FormData,
+): Promise<LifeEventImageResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const lifeEvents = await createLifeEventRepository();
+  const uid = readString(formData, LIFE_EVENT_UID_FIELD);
+  const id = await findIdByUid(lifeEvents, uid);
+  if (id === null) redirect('/dash/life-events');
+
+  const file = formData.get(LIFE_EVENT_IMAGE_FIELD);
+  const outcome = await registerLifeEventImageUseCase(
+    lifeEvents,
+    await createMediaStorage(),
+    author,
+    id,
+    file instanceof Blob ? file : new Blob([]),
+  );
+  if (outcome.status === 'saved') redirect(`/dash/life-events/${uid}?imageSaved=1`);
+  if (outcome.status === 'not-found') redirect('/dash/life-events');
+  return outcome;
+};
+
+/** life event の代表画像を外し、同じ画面へ移る */
+export const removeLifeEventImage = async (
+  _state: LifeEventImageResult | null,
+  formData: FormData,
+): Promise<LifeEventImageResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const lifeEvents = await createLifeEventRepository();
+  const uid = readString(formData, LIFE_EVENT_UID_FIELD);
+  const id = await findIdByUid(lifeEvents, uid);
+  if (id === null) redirect('/dash/life-events');
+
+  const outcome = await removeLifeEventImageUseCase(
+    lifeEvents,
+    await createMediaStorage(),
+    author,
+    id,
+  );
+  if (outcome.status === 'saved') redirect(`/dash/life-events/${uid}?imageRemoved=1`);
+  if (outcome.status === 'not-found') redirect('/dash/life-events');
+  return outcome;
 };

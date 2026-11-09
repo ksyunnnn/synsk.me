@@ -9,9 +9,11 @@ import type {
 } from '@/features/activity/domain/life-event';
 import type { LifeEventRepository } from '@/features/activity/domain/life-event-repository';
 import { createD1LifeEventRepository } from '@/features/activity/server/d1-life-event-repository';
+import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
+import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
 
 /**
  * activity の画面・Server Action・`src/proxy.ts` が呼ぶ組み立て用の関数（ADR-0030）。
@@ -54,3 +56,26 @@ export const hasLifeEventSlug = async (slug: string): Promise<boolean> =>
 /** オーナーが編集できる life event がある uid か。`getLifeEventForEdit` が null を返さない uid と一致する */
 export const hasLifeEventUid = async (uid: string): Promise<boolean> =>
   (await findIdByUid(await createLifeEventRepository(), uid)) !== null;
+
+/**
+ * life event の代表画像の応答（contracts/visitor-life-event.md の「画像の経路」）。その識別子の
+ * life event の代表画像のときだけ、公開の画像として返す。ほかの持ち主の画像・代表画像でない画像・
+ * 形の違うキーは、置き場を読まずに 404（FR-029・FR-030）。life event は訪問者に見せない状態を
+ * 持たない（FR-026）
+ */
+export const respondWithLifeEventImage = async (
+  slug: string,
+  key: string,
+  ifNoneMatch: string | null,
+): Promise<Response> => {
+  const storageKey = parseMediaStorageKey(key);
+  const isCard =
+    storageKey !== null &&
+    (await (await createLifeEventRepository()).isCardImage(slug, storageKey));
+  return respondWithMedia(
+    await createMediaStorage(),
+    key,
+    isCard ? 'public' : 'hidden',
+    ifNoneMatch,
+  );
+};

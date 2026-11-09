@@ -46,11 +46,12 @@ export const readActionFields = (html: string): Record<string, string> => {
  */
 export const encodeForm = async (
   actionFields: Record<string, string>,
-  values: Record<string, string | number>,
+  values: Record<string, string | number | Blob>,
 ) => {
   const form = new FormData();
   for (const [name, value] of Object.entries(actionFields)) form.append(name, value);
-  for (const [name, value] of Object.entries(values)) form.append(name, String(value));
+  for (const [name, value] of Object.entries(values))
+    form.append(name, value instanceof Blob ? value : String(value));
   const encoded = new Response(form);
   return {
     body: await encoded.arrayBuffer(),
@@ -76,11 +77,12 @@ const readBoundAction = (actionFields: Record<string, string>) => {
  */
 export const encodeActionCall = async (
   actionFields: Record<string, string>,
-  values: Record<string, string | number>,
+  values: Record<string, string | number | Blob>,
 ) => {
   const { id, previousState } = readBoundAction(actionFields);
   const form = new FormData();
-  for (const [name, value] of Object.entries(values)) form.append(name, String(value));
+  for (const [name, value] of Object.entries(values))
+    form.append(name, value instanceof Blob ? value : String(value));
   const encoded = new Response(await encodeReply([previousState, form]));
   return {
     body: await encoded.arrayBuffer(),
