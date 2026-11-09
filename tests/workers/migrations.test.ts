@@ -423,11 +423,13 @@ describe('migration 0013 の activity_feed', () => {
 
   type FeedRow = {
     item_type: string;
-    item_id: number;
-    sort_key: string;
+    item_number: number;
+    sort_at: string;
     is_masked: number;
     title: string | null;
+    title_masked: string | null;
     organization_name: string | null;
+    organization_name_masked: string | null;
     role: string | null;
     project_kind: string | null;
     started_on: string;
@@ -488,10 +490,10 @@ describe('migration 0013 の activity_feed', () => {
   /** 検査が入れた行だけを、並べるキーの順で読む。ほかの検査の行を拾わない */
   const feedRows = async () => {
     const { results } = await env.DB.prepare(
-      'SELECT * FROM activity_feed ORDER BY sort_key, item_type, item_id',
+      'SELECT * FROM activity_feed ORDER BY sort_at, item_type, item_number',
     ).all<FeedRow>();
     return results.filter((row) =>
-      (row.item_type === 'career' ? ids.careers : ids.projects).includes(row.item_id),
+      (row.item_type === 'career' ? ids.careers : ids.projects).includes(row.item_number),
     );
   };
 
@@ -539,6 +541,14 @@ describe('migration 0013 の activity_feed', () => {
         null,
         null,
       ),
+      await insertId(
+        "INSERT INTO project (organization_id, kind, slug, title, title_masked, is_masked, status, started_on) VALUES (?, 'talk', 'migration-0013-unnamed', '0013 の出せない題', '0013 の伏せた題', 1, 'published', '2012-05-01')",
+        unnamed,
+      ),
+      await insertId(
+        "INSERT INTO project (organization_id, kind, slug, title, title_masked, is_masked, status, started_on) VALUES (?, 'talk', 'migration-0013-draft', '0013 の下書きの題', '0013 の伏せた題', 0, 'draft', '2013-05-01')",
+        named,
+      ),
     );
     mediaId = await insertId(
       'INSERT INTO media (project_id, storage_key) VALUES (?, ?)',
@@ -566,11 +576,13 @@ describe('migration 0013 の activity_feed', () => {
     const names = (await columnsOf('activity_feed')).map((c) => c.name);
     expect(names).toEqual([
       'item_type',
-      'item_id',
-      'sort_key',
+      'item_number',
+      'sort_at',
       'is_masked',
       'title',
+      'title_masked',
       'organization_name',
+      'organization_name_masked',
       'role',
       'project_kind',
       'started_on',
@@ -582,11 +594,13 @@ describe('migration 0013 の activity_feed', () => {
     expect(await feedRows()).toEqual([
       {
         item_type: 'career',
-        item_id: ids.careers[0],
-        sort_key: '2010-04-01',
+        item_number: ids.careers[0],
+        sort_at: '2010-04-01',
         is_masked: 1,
         title: null,
-        organization_name: '0013 の伏せた組織',
+        title_masked: null,
+        organization_name: null,
+        organization_name_masked: '0013 の伏せた組織',
         role: '伏せた職歴',
         project_kind: null,
         started_on: '2010-04-01',
@@ -594,11 +608,13 @@ describe('migration 0013 の activity_feed', () => {
       },
       {
         item_type: 'project',
-        item_id: ids.projects[0],
-        sort_key: '2010-05-01',
+        item_number: ids.projects[0],
+        sort_at: '2010-05-01',
         is_masked: 1,
-        title: '0013 の伏せた題',
-        organization_name: '0013 の伏せた組織',
+        title: null,
+        title_masked: '0013 の伏せた題',
+        organization_name: null,
+        organization_name_masked: '0013 の伏せた組織',
         role: null,
         project_kind: 'talk',
         started_on: '2010-05-01',
@@ -606,11 +622,13 @@ describe('migration 0013 の activity_feed', () => {
       },
       {
         item_type: 'career',
-        item_id: ids.careers[1],
-        sort_key: '2011-04-01',
+        item_number: ids.careers[1],
+        sort_at: '2011-04-01',
         is_masked: 0,
         title: null,
+        title_masked: null,
         organization_name: '0013 の実名の組織',
+        organization_name_masked: null,
         role: '出す職歴',
         project_kind: null,
         started_on: '2011-04-01',
@@ -618,11 +636,13 @@ describe('migration 0013 の activity_feed', () => {
       },
       {
         item_type: 'project',
-        item_id: ids.projects[1],
-        sort_key: '2011-05-01',
+        item_number: ids.projects[1],
+        sort_at: '2011-05-01',
         is_masked: 0,
         title: '0013 の出す題',
+        title_masked: null,
         organization_name: '0013 の実名の組織',
+        organization_name_masked: null,
         role: null,
         project_kind: 'talk',
         started_on: '2011-05-01',
@@ -641,14 +661,29 @@ describe('migration 0013 の activity_feed', () => {
   it('下書きの行と、秘匿化した組織名の無い組織を指す秘匿化した行を出さない', async () => {
     const careerIds = (await feedRows())
       .filter((row) => row.item_type === 'career')
-      .map((row) => row.item_id);
+      .map((row) => row.item_number);
     expect(careerIds).not.toContain(ids.careers[2]);
     expect(careerIds).not.toContain(ids.careers[3]);
+    const projectIds = (await feedRows())
+      .filter((row) => row.item_type === 'project')
+      .map((row) => row.item_number);
+    expect(projectIds).not.toContain(ids.projects[2]);
+    expect(projectIds).not.toContain(ids.projects[3]);
+  });
+
+  it('秘匿化した行は実際の値の列が NULL で、秘匿化しない行は _masked の列が NULL', async () => {
+    for (const row of await feedRows()) {
+      if (row.is_masked === 1) {
+        expect([row.title, row.organization_name]).toEqual([null, null]);
+      } else {
+        expect([row.title_masked, row.organization_name_masked]).toEqual([null, null]);
+      }
+    }
   });
 
   it('腕の列の型が揃い、ビューの外の条件が腕の中へ下りて主キーで引く（005 の research.md の R3）', async () => {
     const { results } = await env.DB.prepare(
-      "EXPLAIN QUERY PLAN SELECT * FROM activity_feed WHERE item_type = 'project' AND item_id = ?",
+      "EXPLAIN QUERY PLAN SELECT * FROM activity_feed WHERE item_type = 'project' AND item_number = ?",
     )
       .bind(ids.projects[0])
       .all<{ detail: string }>();
