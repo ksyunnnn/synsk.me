@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NoteRevertForm } from '@/features/note/components/note-revert-form';
+import { formatSavedAt } from '@/features/note/components/note-revision-list';
 import { revertNote } from '@/features/note/server/actions';
 import { getNoteRevision } from '@/features/note/server/queries';
 import { TextLink } from '@/shared/components/text-link';
@@ -30,7 +31,7 @@ const Page = async ({ params }: Props) => {
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
         <dt className="font-bold">保存した日時</dt>
         <dd>
-          <time dateTime={revision.createdAt}>{revision.createdAt}</time>
+          <time dateTime={revision.createdAt}>{formatSavedAt(revision.createdAt)}</time>
         </dd>
         <dt className="font-bold">題</dt>
         <dd>{revision.title || '（題なし）'}</dd>
