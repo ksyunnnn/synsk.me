@@ -11,7 +11,7 @@ export type Profile = {
   name: string;
   /** 段落は空行で区切る */
   introduction: string;
-  /** `public/` の下の画像の経路。縦 4 : 横 3 に切り抜いて出す */
+  /** `public/` の下の画像の経路。丸く切り抜いて出す */
   photoSrc: string;
   /** 欠ければ職務経歴書に出さない（constitution IV） */
   email: string | null;

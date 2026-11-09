@@ -13,8 +13,8 @@ import { toYearsAndMonths, type Period } from '@/shared/domain/period';
  * 写真・氏名・連絡先・スキル・学歴、右に自己紹介・職歴・実績を置く。狭い画面では 1 列に積む。
  *
  * 印刷は A4 縦（用紙と余白は globals.css）。本文は 10.5pt にする（厚生労働省・ハローワーク
- * 『職務経歴書の作り方』の「本文部分で 10.5〜12 ポイント程度」）。写真は縦 40mm・横 30mm
- * （ハローワーク『応募書類の作り方』の履歴書の写真の寸法）。
+ * 『職務経歴書の作り方』の「本文部分で 10.5〜12 ポイント程度」）。写真は証明写真ではなく、
+ * プロフィールの画像として丸く切り抜いて出す。
  *
  * 本文の書式は plan.md の U4 で決まっていない。決まるまでの仮の形として、本文は書式を持たない
  * 文字列として改行だけを残して出す。本文の画像は出さない。
@@ -90,9 +90,9 @@ export const VisitorResumeView = ({ resume }: { resume: VisitorResume }) => {
             <img
               src={profile.photoSrc}
               alt={`${profile.name}の写真`}
-              width={144}
-              height={192}
-              className="h-48 w-36 border object-cover print:h-[40mm] print:w-[30mm]"
+              width={96}
+              height={96}
+              className="size-24 rounded-full border object-cover print:size-[24mm]"
             />
             <div className="flex flex-col gap-2">
               <p className="text-sm text-muted-foreground print:text-[10.5pt]">職務経歴書</p>
