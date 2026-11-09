@@ -6,8 +6,8 @@ import { TextLink } from '@/shared/components/text-link';
  * 最も新しい版と公開した版に印を付ける。各版は過去の版の画面へのリンク
  */
 
-/** 保存した日時を、日本の時刻で出す */
-const formatSavedAt = (createdAt: string) =>
+/** 保存した日時を、日本の時刻で出す。版の一覧と過去の版の画面で同じ形にする */
+export const formatSavedAt = (createdAt: string) =>
   new Intl.DateTimeFormat('ja-JP', {
     timeZone: 'Asia/Tokyo',
     dateStyle: 'medium',

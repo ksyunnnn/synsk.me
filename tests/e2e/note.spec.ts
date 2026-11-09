@@ -26,7 +26,8 @@ test('note を作って保存し、公開すると訪問者が読め、識別子
   await submitAndWait(page, '最も新しい版を公開する');
   await expect(page.getByRole('status')).toHaveText('公開しました');
   await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
-  await expect(textbox(page, '識別子')).not.toBeEditable();
+  await expect(textbox(page, '識別子')).toHaveCount(0);
+  await expect(page.getByText(slug, { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: '訪問者に見せるページを開く' })).toHaveAttribute(
     'href',
     `/notes/${slug}`,
@@ -109,4 +110,61 @@ test('転載先を 2 つ記録でき、同じ URL を別の note に記録する
   await submitAndWait(page, '転載先を記録する');
   await expect(page.getByText('この URL は、この note かほかの note に記録済みです')).toBeVisible();
   await expect(textbox(page, '転載先の URL')).toHaveValue(first);
+
+  // 拒まれた後に別の URL を記録すると、前の知らせと入力が残らない
+  const third = `https://example.com/e2e-syndication-${suffix}-3`;
+  await textbox(page, '転載先の URL').fill(third);
+  await submitAndWait(page, '転載先を記録する');
+  await expect(page.getByRole('status')).toHaveText('転載先を記録しました');
+  await expect(page.getByText(third, { exact: true })).toBeVisible();
+  await expect(page.getByText('この URL は、この note かほかの note に記録済みです')).toHaveCount(
+    0,
+  );
+  await expect(textbox(page, '転載先の URL')).toHaveValue('');
+});
+
+test('続けて保存しても、保存できた書きかけがその端末に残らない（FR-019）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueSlug('drafts'),
+    title: 'E2E の書きかけの題',
+  });
+  // 1 回目の保存で `?saved=1` へ移り、2 回目の保存で同じ URL へ移る形にするため、開き直す
+  await page.goto(editUrl);
+  await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
+  for (const body of ['E2E の 1 回目', 'E2E の 2 回目']) {
+    await textbox(page, '本文').fill(body);
+    await saveEdit(page);
+    await expect(textbox(page, '本文')).toHaveValue(body);
+  }
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        Object.keys(window.localStorage).filter((key) => key.startsWith('synsk:draft')),
+      ),
+    )
+    .toEqual([]);
+});
+
+test('識別子を書きかけたまま公開すると、識別子は公開した値に戻り、続けて保存できる（FR-003）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('lock');
+  await createNote(page, { slug, title: 'E2E の識別子の題' });
+  await textbox(page, '識別子').fill(`${slug}-changed`);
+  await submitAndWait(page, '最も新しい版を公開する');
+  await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
+  await expect(page.getByText(slug, { exact: true })).toBeVisible();
+
+  await textbox(page, '本文').fill('E2E の公開した後の本文');
+  await saveEdit(page);
+  await expect(page.getByRole('alert')).toHaveCount(0);
+  await page.reload();
+  await expect(page.getByText(slug, { exact: true })).toBeVisible();
+  await expect(textbox(page, '本文')).toHaveValue('E2E の公開した後の本文');
 });
