@@ -160,7 +160,7 @@ description: "一覧の実装タスク"
 
 **Independent Test**: 公開の note に転載先の URL を記録し、同じ URL の外部の activity を入れる。一覧に note が並び、その外部の activity が並ばないことを確かめる
 
-- [ ] T050 [US4] tests/workers/feed-repository.test.ts に次を足す。**止める依存: M4**
+- [x] T050 [US4] tests/workers/feed-repository.test.ts に次を足す。**止める依存: M4**
   - 公開の note の転載先と同じ URL の外部の activity が並ばず、note は並ぶ（FR-016、SC-003、US4 の Acceptance 1）
   - 転載先と一致しない外部の activity は並ぶ（FR-017、US4 の Acceptance 2）
   - 転載先を記録した note を下書きに戻すか削除すると、同じ URL の外部の activity が並ぶ（FR-016、US4 の Acceptance 3）

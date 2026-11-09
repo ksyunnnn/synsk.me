@@ -14,6 +14,7 @@ import {
   deleteNoteRows,
   insertNote,
   insertNoteRevision,
+  insertSyndication,
   publishNoteRow,
 } from '../support/note-rows';
 import { deleteActivityRows, insertActivity } from '../support/activity-rows';
@@ -22,6 +23,7 @@ import { deleteActivityRows, insertActivity } from '../support/activity-rows';
  * 一覧の Repository が、本物の migration を当てた D1 のビュー activity_feed から、サイトに載せる
  * 職歴と実績を並びの順で返し、秘匿化した行を出してよい値だけで返すこと
  * （specs/005-feed/spec.md の FR-001・FR-004・FR-007・FR-009・FR-010・FR-012、tasks.md の T011）。
+ * 転載先と一致する外部の activity を除くこと（FR-016・FR-017、tasks.md の T050）。
  * 値はすべて作り物
  */
 
@@ -561,5 +563,85 @@ describe('外部の activity と life event（tasks.md の T041）', () => {
     await env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(id).run();
 
     expect(await firstPage()).toMatchObject([{ type: 'external_activity', title: '残る記事' }]);
+  });
+});
+
+describe('重なりの除外（tasks.md の T050）', () => {
+  const SYNDICATED_URL = 'https://example.com/fake-syndicated';
+
+  /** 転載先を記録した公開の note と、転載先と同じ URL の外部の activity を入れる */
+  const seed = async () => {
+    const note = await insertNote(env.DB, { title: '転載した note' });
+    await publishNoteRow(env.DB, note.id);
+    await insertSyndication(env.DB, note.id, SYNDICATED_URL);
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-syndicated',
+      url: SYNDICATED_URL,
+      title: '転載先の記事',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+    return note;
+  };
+  const titles = async () =>
+    (await firstPage()).map((item) => ('title' in item ? item.title : null));
+
+  it('公開の note の転載先と同じ URL の外部の activity は並ばず、note は並ぶ（FR-016、SC-003、US4 の Acceptance 1）', async () => {
+    await seed();
+
+    expect(await titles()).toEqual(['転載した note']);
+  });
+
+  it('転載先と一致しない外部の activity は並ぶ（FR-017、US4 の Acceptance 2）', async () => {
+    await seed();
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-other',
+      url: 'https://example.com/fake-other',
+      title: '別の記事',
+      publishedAt: '2023-02-01T00:00:00.000Z',
+    });
+
+    expect(await titles()).toEqual(['転載した note', '別の記事']);
+  });
+
+  it('転載先を記録した note を下書きに戻すと、同じ URL の外部の activity が並ぶ（FR-016、US4 の Acceptance 3）', async () => {
+    const note = await seed();
+    await env.DB.prepare("UPDATE note SET status = 'draft' WHERE id = ?").bind(note.id).run();
+
+    expect(await titles()).toEqual(['転載先の記事']);
+  });
+
+  it('転載先を記録した note を削除すると、同じ URL の外部の activity が並ぶ（FR-016、US4 の Acceptance 3）', async () => {
+    const note = await seed();
+    await deleteNoteRow(env.DB, note.id);
+
+    expect(await titles()).toEqual(['転載先の記事']);
+  });
+
+  it('一致は文字列の完全一致で比べる（plan.md の U6）', async () => {
+    const note = await insertNote(env.DB, { title: '転載した note' });
+    await publishNoteRow(env.DB, note.id);
+    await insertSyndication(env.DB, note.id, SYNDICATED_URL);
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-slash',
+      url: `${SYNDICATED_URL}/`,
+      title: '末尾にスラッシュの付いた記事',
+      publishedAt: '2023-01-02T00:00:00.000Z',
+    });
+    await insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: 'fake-case',
+      url: SYNDICATED_URL.replace('fake', 'Fake'),
+      title: '大文字と小文字の違う記事',
+      publishedAt: '2023-01-01T00:00:00.000Z',
+    });
+
+    expect(await titles()).toEqual([
+      '転載した note',
+      '末尾にスラッシュの付いた記事',
+      '大文字と小文字の違う記事',
+    ]);
   });
 });
