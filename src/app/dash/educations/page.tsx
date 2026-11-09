@@ -22,7 +22,14 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href="/dash">管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">学歴</h1>
-      {saved === '1' && <DraftSavedNotice />}
+      {saved === '1' && (
+        <DraftSavedNotice
+          storageKeys={[
+            'education:new',
+            ...educations.map((education) => `education:${education.uid}`),
+          ]}
+        />
+      )}
       {deleted === '1' && <p role="status">学歴を削除しました</p>}
       <p>学歴は、職務経歴書を通してだけ訪問者に出ます。</p>
       <p>

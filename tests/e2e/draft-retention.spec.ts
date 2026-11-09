@@ -305,3 +305,44 @@ test('スキルと学歴を登録してから編集しても、書きかけが�
   await expect(page.getByRole('link', { name: `${school}・E2E 続けて保存する学部` })).toBeVisible();
   await expectNoDraftLeft(page);
 });
+
+test('送信が応答を返さずに失敗した後、別の画面の保存の知らせへ戻っても、書きかけが残る', async ({
+  page,
+  context,
+}) => {
+  const skill = `E2E-Back-Skill-${crypto.randomUUID()}`;
+  const role = `E2E 戻った後の肩書 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  // スキルを登録し、保存の知らせのある一覧の画面を履歴に残す
+  await page.goto('/dash/skills/new');
+  await fillUntilDrafted(page, 'skill', () => textbox(page, '名前').fill(skill));
+  await page.getByRole('button', { name: '登録する' }).click();
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+
+  await page.goto('/dash/careers/new');
+  await fillUntilDrafted(page, 'career', () =>
+    fillCareer(page, {
+      organizationName: 'E2E 戻った後の組織',
+      organizationNameMasked: 'E2E 戻った後の秘匿化した組織名',
+      role,
+      startedOn: '2020-04-01',
+    }),
+  );
+  // Server Action の送信を切る。失敗の結果は来ない
+  await page.route('**/dash/careers/new', (route) =>
+    route.request().method() === 'POST' ? route.abort() : route.continue(),
+  );
+  const aborted = page.waitForEvent('requestfailed', (req) => req.method() === 'POST');
+  await page.getByRole('button', { name: '登録する' }).click();
+  await aborted;
+  await page.unroute('**/dash/careers/new');
+
+  // ブラウザの「戻る」で、スキルの保存の知らせのある画面へ戻る
+  await page.goBack();
+  await expect(page).toHaveURL(/\/dash\/skills\?saved=1$/);
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect.poll(() => draftKeys(page)).toContain('synsk:draft:career:new');
+
+  await page.goto('/dash/careers/new');
+  await expect(textbox(page, '肩書')).toHaveValue(role);
+});

@@ -77,7 +77,9 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/notes">note の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">note を編集する</h1>
-      {flags.saved === '1' && <NoteSavedNotice revisionUid={note.latestRevision.uid} />}
+      {flags.saved === '1' && (
+        <NoteSavedNotice noteUid={note.uid} revisionUid={note.latestRevision.uid} />
+      )}
       {notice && <p role="status">{NOTICES[notice]}</p>}
       {note.status === 'published' && (
         <p>
