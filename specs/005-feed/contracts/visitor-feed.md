@@ -7,7 +7,7 @@
 | 要求 | 応答 |
 |---|---|
 | `GET {一覧}` | 200。1 ページ目を、下の DTO の値だけで描画する |
-| `GET {一覧}?page={n}` | 200。n ページ目。最後のページの先は 0 件の一覧（research.md の R8）。ページ送りは tasks.md の Phase 5 で足す |
+| `GET {一覧}?page={n}` | 200。n ページ目。最後のページの先は項目を並べず、1 ページ目へのリンクを出す（research.md の R8）。ページ送りは tasks.md の Phase 5 で足す |
 | `GET {一覧}`、並ぶ activity が 0 件 | 200。0 件の表示（NFR-02） |
 | `GET {一覧}`、D1 から読めない | 500 の画面 |
 
@@ -15,7 +15,7 @@
 
 ## DTO `FeedItem`
 
-Repository の実装はビュー `activity_feed`（data-model.md）から読み、種類ごとに次の項目だけを詰める。画面・`<title>`・OGP・RSC の応答は、この形の値だけを使う。どの種類にも `item_id`・`uid`・`created_at`・`updated_at` を入れない（research.md の R6）。
+Repository の実装はビュー `activity_feed`（data-model.md）から読み、種類ごとに次の項目だけを詰める。画面・`<title>`・OGP・RSC の応答は、この形の値だけを使う。どの種類にも `item_number`・`uid`・`updated_at` を入れない。`created_at` は note の作成日（並びの日付）としてだけ入れる（research.md の R6）。並びの日付の項目（`createdAt`・`publishedAt`・`happenedOn`）は、ビューの `sort_at` から詰める。下の表の「元の列」は、ビューの列がどの表の列から来るかを示す
 
 ### 職歴（`type: 'career'`）
 
@@ -49,7 +49,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `type` | `'note'` |
 | `title` | 公開した版の `note_revision.title` |
 | `description` | 公開した版の `note_revision.description`（空あり） |
-| `createdAt` | `note.created_at` |
+| `createdAt` | `sort_at`（元は `note.created_at`） |
 
 最も新しい版・転載先・代表画像を持たない（FR-006）。
 
@@ -60,7 +60,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `type` | `'external_activity'` |
 | `title` | `activity.title` |
 | `url` | `activity.url`。画面は取得元の URL へ直接リンクする（FR-020） |
-| `publishedAt` | `activity.published_at` |
+| `publishedAt` | `sort_at`（元は `activity.published_at`） |
 | `source` | `activity.source` |
 | `sourceKind` | `activity_source.kind`（`article`・`embed`・`other`） |
 
@@ -73,7 +73,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `type` | `'life_event'` |
 | `title` | `activity.title`（空あり） |
 | `description` | `activity.description`（空あり） |
-| `happenedOn` | `activity.happened_on` |
+| `happenedOn` | `sort_at`（元は `activity.happened_on`） |
 | `source` | `'life_event'` |
 | `sourceKind` | `'life_event'` |
 

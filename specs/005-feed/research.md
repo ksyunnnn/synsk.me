@@ -18,8 +18,8 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R1 スキーマの前提
 
-- 決めたこと: `migrations/0001`〜`0011` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たず、migration を書かない
-- 既にあるもの: 職歴と実績と組織（0011）、note・note_revision・syndication（0005）、activity・activity_source（0004・0007・0009）。activity は並びの値 `sort_at`（`coalesce(published_at, happened_on)` の生成列）と索引 `activity_sort_at` を持つ（0004）
+- 決めたこと: `migrations/0001`〜`0012` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たず、migration を書かない
+- 既にあるもの: 職歴と実績と組織（0011）、syndication（0005）、note・note_revision・activity（0012 が作り直した）、activity_source（0007。004 の取得元の行は 0012 が入れる）。activity は並びの値 `sort_at`（`coalesce(published_at, happened_on)` の生成列）と索引 `activity_sort_at` を持つ（0004・0012）
 - 理由: migration は共有担当だけが変える（issue #219 の 2026-11-09 の宣言）。一覧は元のデータを読み、写して持たない（spec の Assumptions、ADR-0046）
 - 退けた案: 一覧のために値を写す表を持つ（ADR-0046 が退けた）
 
@@ -58,17 +58,17 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R5 並びの順
 
 - 決めたこと:
-  - ビューは並びの値 `sort_key` を文字列で持つ。職歴と実績は `started_on`（暦の日付）、note は `note.created_at`（日時）、外部の activity と life event は `activity.sort_at`（0004 の生成列）を使う（FR-007・FR-009）
-  - Repository の実装は `ORDER BY sort_key DESC, <種類の順>, item_id DESC` で読む。種類の順は `src/features/activity/domain/feed.ts` の 1 つの `as const` の配列に置き、SQL の `CASE` をその配列から作る。同じデータを読むたびに同じ順になる（FR-010）
+  - ビューは並びの値 `sort_at` を文字列で持つ。職歴と実績は `started_on`（暦の日付）、note は `note.created_at`（日時）、外部の activity と life event は `activity.sort_at`（0004 の生成列）を使う（FR-007・FR-009）
+  - Repository の実装は `ORDER BY sort_at DESC, <種類の順>, item_number DESC` で読む。種類の順は `src/features/activity/domain/feed.ts` の 1 つの `as const` の配列に置き、SQL の `CASE` をその配列から作る。同じデータを読むたびに同じ順になる（FR-010）
   - 種類の順は仮の順（note・外部の activity・life event・実績・職歴）で作る。spec は「並びの日付が同じとき、どの種類を先に並べるか」を決めないため（plan.md の U2、2026-11-09 の PM の回答）。決まったら配列だけを直す
-  - note は作成日で並べ、公開の操作で並びを変えない（FR-008）。`note.created_at` は公開で変わらない列（0005）
+  - note は作成日で並べ、公開の操作で並びを変えない（FR-008）。`note.created_at` は公開で変わらない列（0005・0012）
 - 未決: 暦の日付と日時が同じ日のときの順と、日の境目の時刻帯（spec の「決定が無く」）。0004 の `sort_at` は、暦の日付を同じ日の日時より前に並べる（文字列の比べ方で、日の境目は UTC になる）。オーナーが入れる日付を `published_at` にどう入れるか（004 の plan.md の U12）に左右されるため、その答えを待つ（plan.md の U3）。止める範囲は、種類をまたいで同じ日の順を確かめる検査（FR-011、SC-004 の同じ日の組）
 - 退けた案: 種類の順をビューの列に持たせる。順を直すたびに migration が要る
 
 ## R6 訪問者向けの DTO
 
 - 決めたこと: 一覧の 1 件の形 `FeedItem` は、種類で分けた型にし、[contracts/visitor-feed.md](./contracts/visitor-feed.md) が項目を列挙する。並べる値は、spec が UI を考えるときに決めるとするため、spec の受け入れの場面が求める最小の値にする（種類・題・組織名・肩書・実績の種類・期間・note の説明文・取得元と分類・取得元の URL・並びの日付）。使ったスキル・代表画像・個別のページへのリンク・秘匿化しない行の本文は、決まるまで入れない（plan.md の U4・U5・U7）
-- 主キー（`item_id`）は DTO に入れない。並べる SQL の中だけで使う。React の key は並びの位置で付ける。ADR-0048 が主キーを外に出さないとし、RSC の応答には key も含まれるため
+- 主キー（`item_number`）は DTO に入れない。並べる SQL の中だけで使う。React の key は並びの位置で付ける。ADR-0048 が主キーを外に出さないとし、RSC の応答には key も含まれるため
 - 理由: constitution の Allowlist Visibility、設計原則 9（見せ方が決まっていない値を先に持たない）
 - 退けた案: ビューの全列を DTO に通す。見せ方が決まる前に、出す値が増える
 
@@ -81,14 +81,14 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R8 ページ送りと読み取り行数
 
 - 決めたこと:
-  - ページ送りは、件数を決めた番号のページ（`?page=2`）で行う。並びの位置で区切り（`LIMIT`・`OFFSET`）、主キーを URL に出さない（ADR-0050「主キーは URL に出さない」）。最後のページの先の番号は、0 件の一覧として 200 で返す
+  - ページ送りは、件数を決めた番号のページ（`?page=2`）で行う。並びの位置で区切り（`LIMIT`・`OFFSET`）、主キーを URL に出さない（ADR-0048「主キーは URL に出さない」）。最後のページの先の番号は 200 で返し、項目を並べない。2 ページ目より先で 0 件のときは「まだ何もない」を出さず、1 ページ目へのリンクを出す
   - 1 ページの件数は、D1 で読み取り行数（`meta.rows_read`）と表示の速さを測ってから決める。職歴と実績だけの段階（tasks.md の Phase 3）は件数が少ないため区切らず、外部の activity を一覧の画面に出す前（tasks.md の Phase 5）に区切る。計測には外部の activity の腕（M3）が要る
   - 読み取り行数を測るのは ADR-0046 の Confirmation。遅ければ写して持つ形に移すことになり、ADR-0046 を覆すので PM に伝える
 - 理由: spec の Assumptions「ページ送りの仕方」は実装のときに詰める。設計原則 6（測って直す）、設計原則 9。並びの値と主キーで区切る形（keyset）は読む行が少ないが、主キーか並びの値を URL に出すことになる
-- 退けた案: 主キーを含む続きの印（cursor）を URL に出す。ADR-0050 に反する
+- 退けた案: 主キーを含む続きの印（cursor）を URL に出す。ADR-0048 に反する
 
 ## R9 キャッシュと画面の状態
 
 - 決めたこと: 一覧のページは `'use cache'` を使わず、要求ごとに D1 を読む。`export const revalidate` と `export const dynamic` は書かない。データを読んでから決まる 404 は無いので、`src/proxy.ts` を変えない
-- 画面の状態（NFR-02）: 0 件は「まだ何もない」の表示、読み込み中は `loading.tsx`、D1 から読めないときは 500 の画面。取得元はビュー 1 つで、一部欠損に当たる分かれは無い。外部の取得に失敗した取得元の activity は前回の値で行に残る（004 の FR-014）ので、一覧には失敗が表れない
+- 画面の状態（NFR-02）: 0 件は「まだ何もない」の表示、D1 から読めないときは 500 の画面。読み込み中は、実績のページ（`src/app/projects/[slug]/page.tsx`）と同じく `export const instant = false` で D1 を `<Suspense>` の外で読み、描画を終えてから応答を返す。`loading.tsx` を置かない。流し始めた後は状態の番号が 200 のまま変わらず、500 を返せないため（ADR-0040）。取得元はビュー 1 つで、一部欠損に当たる分かれは無い。外部の取得に失敗した取得元の activity は前回の値で行に残る（004 の FR-014）ので、一覧には失敗が表れない
 - 理由: constitution の Cacheability（ADR-0040）。キャッシュの扱いは spec が後に回す（2026-10-22 にオーナーが承認した）。キャッシュを持たないため、公開の操作や秘匿化の切り替えの直後の要求から新しい状態で出る

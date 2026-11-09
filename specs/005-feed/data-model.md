@@ -33,8 +33,8 @@
 | 列 | 意味 | 足す migration |
 |---|---|---|
 | `item_type` | 種類。`career`・`project`・`note`・`external_activity`・`life_event` | M1 |
-| `item_id` | 種類ごとの元の行の主キー。並べる SQL の中だけで使い、DTO に入れない | M1 |
-| `sort_key` | 並びの日付。暦の日付（`YYYY-MM-DD`）か日時（`YYYY-MM-DDTHH:MM:SS.sssZ`）の文字列 | M1 |
+| `item_number` | 種類ごとの元の行の主キー。並べる SQL の中だけで使い、DTO に入れない。外部キーではないので `_id` を付けない | M1 |
+| `sort_at` | 並びの日付。暦の日付（`YYYY-MM-DD`）か日時（`YYYY-MM-DDTHH:MM:SS.sssZ`）の文字列。`activity.sort_at` と同じ意味なので同じ名前にする | M1 |
 | `is_masked` | 秘匿化した職歴・実績なら 1。ほかは 0 | M1 |
 | `title` | 実績・note・外部の activity・life event の題。秘匿化した実績は `title_masked` | M1 |
 | `organization_name` | 職歴・実績の組織名。秘匿化した行は `organization.name_masked` | M1 |
@@ -51,7 +51,7 @@
 
 ### 腕
 
-| 腕 | 読む行 | `sort_key` | 秘匿化 | migration |
+| 腕 | 読む行 | `sort_at` | 秘匿化 | migration |
 |---|---|---|---|---|
 | 職歴 | `career.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `career.started_on` | `is_masked = 1` なら `organization_name` は `name_masked`。`description`・`url` は出さない | M1 |
 | 実績 | `project.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `project.started_on` | `is_masked = 1` なら `title` は `title_masked`、`organization_name` は `name_masked`。`description`・`url`・`card_media_id` は出さない | M1 |
@@ -80,8 +80,9 @@ ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有
 
 | 決まり | 要件 | 置き場 |
 |---|---|---|
-| 並べる順は `sort_key` の新しい順、種類の順、`item_id` の大きい順 | FR-010 | `src/features/activity/server/d1-feed-repository.ts` の `ORDER BY`。種類の順は `src/features/activity/domain/feed.ts` の配列（research.md の R5） |
-| 種類ごとに出す項目を列挙して DTO に詰める。`item_id` を詰めない | FR-012・FR-013・FR-015 | `src/features/activity/server/d1-feed-repository.ts`（contracts/visitor-feed.md） |
+| `item_type` が `FEED_ITEM_TYPES` にある行だけを読む。腕を足す migration が、その種類を詰める実装より先に入っても、一覧は詰められる種類だけで成り立つ | NFR-02 | `src/features/activity/server/d1-feed-repository.ts` の `WHERE` |
+| 並べる順は `sort_at` の新しい順、種類の順、`item_number` の大きい順 | FR-010 | `src/features/activity/server/d1-feed-repository.ts` の `ORDER BY`。種類の順は `src/features/activity/domain/feed.ts` の配列（research.md の R5） |
+| 種類ごとに出す項目を列挙して DTO に詰める。`item_number` を詰めない | FR-012・FR-013・FR-015 | `src/features/activity/server/d1-feed-repository.ts`（contracts/visitor-feed.md） |
 | 秘匿化した職歴・実績の本文は、伏せた見た目で出す | FR-013 | `src/features/activity/components/feed.tsx` が `isMasked` を見て決まった文字を出す |
 | ページ送りは番号のページで区切る | spec の Assumptions | `src/features/activity/server/d1-feed-repository.ts`。件数は測ってから決める（research.md の R8） |
 
@@ -89,9 +90,10 @@ ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有
 
 `src/features/activity/domain/feed.ts` に置く。
 
-- `FEED_ITEM_TYPES`: `career`・`project`・`note`・`external_activity`・`life_event` の `as const` の配列。並びの日付が同じときの種類の順を兼ねる（仮の順。plan.md の U2）
+- `FEED_ITEM_TYPES`: Repository の実装が詰められる種類の `as const` の配列。並びの日付が同じときの種類の順を兼ね、仮の順は `note`・`external_activity`・`life_event`・`project`・`career`（plan.md の U2）。Phase 3 は `project`・`career`、Phase 4 で `note`、Phase 6 で `external_activity`・`life_event` を、仮の順の位置に足す
 - `FeedItemType`: `FEED_ITEM_TYPES` から作る型
 - `FeedItem`: 種類で分けた型。項目は [contracts/visitor-feed.md](./contracts/visitor-feed.md) が持つ
 - `FeedRepository`（`src/features/activity/domain/feed-repository.ts`）: `list` が `FeedItem` の並びを返す。ページの引数は tasks.md の Phase 5 で足す
+- note の作成日・外部の activity の公開日・life event の起きた日は、ビューの `sort_at` から詰める。ビューに別の列を足さない
 - 職歴と実績の期間は `src/shared/domain/period.ts` の `Period` を使う
 - 表の行の型は `server/d1-feed-repository.ts` の中だけで書く（001 の research.md の R3）

@@ -29,7 +29,7 @@
 
 **Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components）、React 19.3、Tailwind CSS 4。新しい package を足さない
 
-**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0011` と、共有担当のビュー `activity_feed` の migration（M1〜M4、[data-model.md](./data-model.md)）。005 は書き込まない
+**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0012` と、共有担当のビュー `activity_feed` の migration（M1〜M4、[data-model.md](./data-model.md)）。005 は書き込まない
 
 **Testing**: Vitest 4.1.11（単体）、`@cloudflare/vitest-plugin`（workerd と D1）、`createTestHarness()`（本番ビルドに対する結合）。ADR-0019 の 4 段階。一覧はオーナーの操作を持たないため E2E を足さない
 
@@ -53,7 +53,7 @@
 | II. Stop on Missing Input | 通る | 公開・外への発信・費用のかかる処理を持たない。読み取り行数は測って 1 ページの件数を決める（R8） |
 | III. Verified Scope | 通る | 要件と検査の対応は下の表。未決が止める検査は、解けるまで範囲に入れない |
 | IV. Partial Availability | 通る | 取得元は D1 のビュー 1 つ。画面は NFR-02 の状態（0 件、読み込み中、エラー＝500 の画面）で成立する。外部の取得に失敗した取得元の activity は前回の値で残る（004 の FR-014、R9） |
-| V. Accessible Controls | 通る | 操作できる部品はリンク（外部の activity、ページ送り）だけで、ネイティブの `<a>` で作る |
+| V. Accessible Controls | 通る | 操作できる部品はリンク（外部の activity、ページ送り）だけで、ネイティブの `<a>` で作る。`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない |
 | VI. Measure Before Optimizing | 通る | キャッシュ・索引の追加・非正規化を含めない。写して持つ形への移行は、測った読み取り行数が閾値を割ったときだけ（ADR-0046 の Confirmation） |
 | VII. Boundary Translation | 通る | 外部のサービスとやりとりしない。D1 の行は Repository の実装の中で `FeedItem` に詰め替える |
 | VIII. Portable Core | 通る | D1 は `src/features/activity/server/d1-feed-repository.ts`、env は `src/shared/server/env.ts` だけで使う |
@@ -69,7 +69,6 @@
 |---|---|---|
 | env の読み出し | `src/shared/server/env.ts`（`readEnv`） | `DB` を読む |
 | 期間 | `src/shared/domain/period.ts`（`Period`） | 職歴と実績の期間の型 |
-| リンク | `src/shared/components/text-link.tsx` | 外部の activity の取得元へのリンク、ページ送り |
 | 手本の形 | `src/features/project/` の `domain/project-repository.ts`・`server/d1-project-repository.ts`（`VISITOR_VISIBLE`）・`server/queries.ts`・`components/visitor-project.tsx`、`src/app/projects/[slug]/page.tsx` | 同じ構成で一覧の Repository・組み立て用の関数・画面を作る |
 | 検査の土台 | `tests/support/career-and-project-rows.ts`（`insertOrganization`・`insertCareer`・`insertProject`・`insertEducation`）、`tests/integration/support/d1.ts`（`startTestServer`）、`tests/workers/migrations.test.ts` | 作り物の行と、本番ビルドに対する結合 |
 
@@ -165,7 +164,7 @@ ADR-0026 のディレクトリの形と依存の向きに従う。機能どう�
 ```text
 src/
 ├── app/
-│   └── {U1 の URL}/page.tsx・loading.tsx    一覧の画面（訪問者）
+│   └── {U1 の URL}/page.tsx                一覧の画面（訪問者）
 └── features/
     └── activity/                            004 と同じ機能。一覧のファイルは名前で分ける
         ├── domain/        feed.ts（FEED_ITEM_TYPES・FeedItem）・feed-repository.ts
@@ -179,7 +178,7 @@ tests/
 └── integration/   feed.test.ts（一覧の応答）
 ```
 
-**Structure Decision**: 1 つの Next.js のプロジェクトに置く（ADR-0026）。`src/features/activity/server/feed-queries.ts` が組み立て用の関数を持ち、`page.tsx` はそれを呼ぶ（ADR-0030）。U1 の URL が `/` のときは `src/app/page.tsx` を一覧の画面に置き換え、`tests/e2e/home.spec.ts` を直す。
+**Structure Decision**: 1 つの Next.js のプロジェクトに置く（ADR-0026）。`src/features/activity/server/feed-queries.ts` が組み立て用の関数を持ち、`page.tsx` はそれを呼ぶ（ADR-0030）。U1 の URL が `/` のときは `src/app/page.tsx` を一覧の画面に置き換え、`/` を開く検査（`tests/e2e/home.spec.ts`・`tests/e2e/no-js.spec.ts`・`tests/integration/routes.test.ts`）を直す。
 
 ## Complexity Tracking
 

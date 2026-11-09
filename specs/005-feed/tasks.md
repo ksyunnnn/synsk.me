@@ -47,7 +47,7 @@ description: "一覧の実装タスク"
 
 **Purpose**: 一覧の型と Repository のインタフェース。Phase 3 以降のすべてが使う
 
-- [ ] T002 [P] 種類の `as const` の配列 `FEED_ITEM_TYPES`（仮の順: note・外部の activity・life event・実績・職歴。plan.md の U2）と、種類で分けた型 `FeedItem` の職歴と実績の分を src/features/activity/domain/feed.ts に作る（contracts/visitor-feed.md、research.md の R5・R6）
+- [ ] T002 [P] 種類の `as const` の配列 `FEED_ITEM_TYPES`（Phase 3 では実績・職歴の 2 つ。仮の順は note・外部の activity・life event・実績・職歴。plan.md の U2、data-model.md の「domain の型」）と、種類で分けた型 `FeedItem` の職歴と実績の分を src/features/activity/domain/feed.ts に作る（contracts/visitor-feed.md、research.md の R5・R6）
 - [ ] T003 [P] `FeedRepository`（`list()` が `FeedItem` の並びを返す。ページの引数は Phase 5 の T032 で足す）を src/features/activity/domain/feed-repository.ts に作る
 - [ ] T004 ユースケース `listFeed` を src/features/activity/application/list-feed.ts に作り、作り物の `FeedRepository` を渡して並びをそのまま返すことを tests/unit/list-feed.test.ts で確かめる
 
@@ -61,7 +61,7 @@ description: "一覧の実装タスク"
 
 ### Tests
 
-- [ ] T010 [P] [US2] ビューの行から `FeedItem` への詰め替えが、職歴は種類・秘匿化するか・組織名・肩書・期間だけを、実績は種類・秘匿化するか・題・組織名・実績の種類・期間だけを持ち、`item_id` を持たないことを tests/unit/feed.test.ts で確かめる（FR-012・FR-013、contracts/visitor-feed.md）
+- [ ] T010 [P] [US2] ビューの行から `FeedItem` への詰め替えが、職歴は種類・秘匿化するか・組織名・肩書・期間だけを、実績は種類・秘匿化するか・題・組織名・実績の種類・期間だけを持ち、`item_number` を持たないことを tests/unit/feed.test.ts で確かめる（FR-012・FR-013、contracts/visitor-feed.md）
 - [ ] T011 [P] [US1] 本物の migration を当てた D1 で、`list` が次を満たすことを tests/workers/feed-repository.test.ts で確かめる。**止める依存: M1**
   - サイトに載せる職歴と実績が始まりの日の新しい順に並び、終わりの日を使わない（FR-007・FR-009、US1 の Acceptance 3）
   - 終わりの日が空の職歴・実績も始まりの日で並ぶ（Edge Cases）
@@ -69,6 +69,7 @@ description: "一覧の実装タスク"
   - サイトに載せない職歴・実績が、秘匿化するかに関わらず並ばない（FR-004、US1 の Acceptance 7）
   - 秘匿化した行は秘匿化した題と秘匿化した組織名で並び、秘匿化した組織名の無い組織を指す秘匿化した行は並ばない（FR-012、US2 の Acceptance 1、research.md の R4）
   - 学歴が並ばない（FR-001）
+  - `FEED_ITEM_TYPES` に無い種類の行がビューにあっても、`list` はその行を返さない（data-model.md の「アプリケーションが守る決まり」）
 - [ ] T012 [P] [US2] 本番ビルドに対して、一覧の HTML と RSC の応答を tests/integration/feed.test.ts で確かめる。**止める依存: M1**。**止める未決: U1**
   - 秘匿化した実績と職歴（本文・関連 URL・代表画像を入れる）の実際の題・実際の組織名・本文の中身・関連 URL・画像の URL が含まれない（SC-001、US2 の Acceptance 2・3）
   - 秘匿化した行の本文の場所に「非公開」が出る（FR-013）
@@ -79,10 +80,10 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T013 [US1] `createD1FeedRepository` を src/features/activity/server/d1-feed-repository.ts に作る。ビュー `activity_feed` から職歴と実績の列を列挙して SELECT し、`ORDER BY sort_key DESC, <FEED_ITEM_TYPES から作る CASE>, item_id DESC` で読み、種類ごとに `FeedItem` に詰める（research.md の R4・R5）。表の行の型はこのファイルの中だけに書く
+- [ ] T013 [US1] `createD1FeedRepository` を src/features/activity/server/d1-feed-repository.ts に作る。ビュー `activity_feed` から職歴と実績の列を列挙して SELECT し、`WHERE item_type IN (<FEED_ITEM_TYPES>)` と `ORDER BY sort_at DESC, <FEED_ITEM_TYPES から作る CASE>, item_number DESC` で読み、種類ごとに `FeedItem` に詰める（research.md の R4・R5）。表の行の型はこのファイルの中だけに書く
 - [ ] T014 [US1] 組み立て用の関数 `listFeedItems` を src/features/activity/server/feed-queries.ts に作る（ADR-0030）。先頭で `import 'server-only'`
 - [ ] T015 [US2] 一覧の部品を src/features/activity/components/feed.tsx に作る。職歴と実績の行を種類ごとに見せ、秘匿化した行の本文の場所に「非公開」を出す（001 の spec の FR-021）。React の key は並びの位置で付ける（research.md の R6）。0 件の表示を持つ
-- [ ] T016 [US1] 一覧の画面の `page.tsx` と `loading.tsx` を、U1 の URL の下の src/app/ に作る。`'use cache'`・`revalidate`・`dynamic` を書かない（research.md の R9）。U1 が `/` なら src/app/page.tsx を置き換え、tests/e2e/home.spec.ts を直す。**止める未決: U1**
+- [ ] T016 [US1] 一覧の画面の `page.tsx` を、U1 の URL の下の src/app/ に作る。`export const instant = false` で D1 を `<Suspense>` の外で読み、`loading.tsx` を置かない。`'use cache'`・`revalidate`・`dynamic` を書かない（research.md の R9）。U1 が `/` なら src/app/page.tsx を置き換え、`/` を開く tests/e2e/home.spec.ts・tests/e2e/no-js.spec.ts・tests/integration/routes.test.ts を直す。**止める未決: U1**
 - [ ] T017 `npm test`・`npm run test:workers`・`npm run test:integration`・`npx tsc --noEmit`・`npm run lint`・`npm run format:check` が通ることを確かめる
 
 **Checkpoint**: 職歴と実績だけの一覧が Preview で見られる（quickstart.md の 1〜5）
@@ -107,8 +108,8 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T023 [US3] `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
-- [ ] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_key`）を足す
+- [ ] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
+- [ ] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す
 - [ ] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
 
 **Checkpoint**: 職歴・実績・note の一覧
@@ -120,9 +121,9 @@ description: "一覧の実装タスク"
 **Purpose**: ADR-0046 の Confirmation として D1 で一覧の読み取り行数を測り、外部の activity で行が増える前に 1 ページの件数を決めて区切る（research.md の R8）
 
 - [ ] T030 職歴・実績・note・外部の activity・life event を作り物の行（外部の activity 500 件、ほかの種類は各 50 件）入れた D1 で、1 ページ目を読む文の `meta.rows_read` と所要時間を測る。値と件数を research.md の R8 に書く。測った値が遅いことを示し、写して持つ形に移す必要があれば、ADR-0046 を覆すことになるので PM に伝えて止める。**止める依存: M3**（外部の activity と life event の腕が無いと、その行を読む量を測れない）
-- [ ] T031 [P] 番号のページ（`?page=n`）で区切り、最後のページの先が 0 件の一覧になることを tests/workers/feed-repository.test.ts に足す（research.md の R8）
-- [ ] T032 src/features/activity/server/d1-feed-repository.ts の `list` にページの引数と `LIMIT`・`OFFSET` を足し（src/features/activity/domain/feed-repository.ts のインタフェースも直す）、件数を src/features/activity/domain/feed.ts の定数に置く
-- [ ] T033 src/features/activity/components/feed.tsx に次のページへのリンクを足し、一覧の画面が `page` の問い合わせの値を読む。数でない値と 1 より小さい値は 1 ページ目として読む。リンクに主キーを含めないことを tests/integration/feed.test.ts で確かめる（ADR-0050）。**止める未決: U1**
+- [ ] T031 [P] 番号のページ（`?page=n`）で区切り、最後のページの先で項目を返さないことを tests/workers/feed-repository.test.ts に足す（research.md の R8）。**止める依存: M3**（件数は T030 で決まる）
+- [ ] T032 src/features/activity/server/d1-feed-repository.ts の `list` にページの引数と `LIMIT`・`OFFSET` を足し（src/features/activity/domain/feed-repository.ts のインタフェースも直す）、件数を src/features/activity/domain/feed.ts の定数に置く。**止める依存: M3**（件数は T030 で決まる）
+- [ ] T033 src/features/activity/components/feed.tsx に次のページへのリンクを足し、一覧の画面が `page` の問い合わせの値を読む。数でない値と 1 より小さい値は 1 ページ目として読む。最後のページの先では「まだ何もない」を出さず、1 ページ目へのリンクを出す。ページ送りは `<a>` で作る。リンクに主キーを含めないことを tests/integration/feed.test.ts で確かめる（ADR-0048）。**止める依存: M3**。**止める未決: U1**
 
 ---
 
@@ -137,7 +138,7 @@ description: "一覧の実装タスク"
 - [ ] T040 [P] [US1] 外部の activity の詰め替えが題・URL・公開日・取得元・分類だけを、life event の詰め替えが題・説明・起きた日・取得元・分類だけを持つことを tests/unit/feed.test.ts に足す（FR-018・FR-019、contracts/visitor-feed.md）
 - [ ] T041 [P] [US1] 本物の migration を当てた D1 に activity の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M3**
   - US1 の Acceptance 1 の 5 件が、note・外部の activity・life event・実績・職歴の順に並ぶ
-  - 分類が埋め込みの取得元の外部の activity が、種類・分類・取得元を持って並ぶ（US1 の Acceptance 4）。分類が埋め込みの取得元の行は検査の中で `activity_source` に入れる
+  - 分類が埋め込みの取得元の外部の activity が、種類・分類・取得元を持って並ぶ（US1 の Acceptance 4）。分類が埋め込みの取得元は 0012 が入れた行（例: `speakerdeck`）を使い、検査の中で `activity_source` に行を足さない
   - 保存した life event がすべて並ぶ（FR-003）
   - 行を消した外部の activity は並ばない（FR-002。消すのは 004）
 - [ ] T042 [US1] 種類をまたいで同じ日の組を含む検査用のデータで、順が手で並べた順と一致し、2 回続けて読んだ順が同じこと（SC-004）と、同じ日の life event が外部の activity より古い位置に並ぶこと（FR-011）を tests/workers/feed-repository.test.ts に足す。**止める依存: M3**。**止める未決: U3**
@@ -145,9 +146,9 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T044 [US1] `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
-- [ ] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_key`）を足す
-- [ ] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `src/shared/components/text-link.tsx` で取得元の URL へリンクする。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
+- [ ] T044 [US1] `FEED_ITEM_TYPES` と `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
+- [ ] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す
+- [ ] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `<a>` で取得元の URL へリンクする（`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない）。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
 
 **Checkpoint**: 5 つの種類の一覧（quickstart.md の 6 の前半）
 
@@ -202,7 +203,7 @@ description: "一覧の実装タスク"
 | U3 | T042 |
 | M1 | T001・T011・T012 |
 | M2 | T021・T022 |
-| M3 | T030・T041・T042・T043 |
+| M3 | T030〜T033・T041・T042・T043 |
 | M4 | T050 |
 
 ### Within Each Phase
