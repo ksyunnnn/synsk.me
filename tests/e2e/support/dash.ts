@@ -65,6 +65,39 @@ export const tabTo = async (page: Page, target: Locator, maxTabs = 200) => {
   throw new Error(`Tab を ${maxTabs} 回押しても ${target} にフォーカスが移らない`);
 };
 
+const isFocused = (target: Locator) => target.evaluate((el) => el === document.activeElement);
+
+/** 日付の入力の年・月・日の欄の並び。並びはブラウザが OS の言語の設定で決め、`locale` に従わない */
+const DATE_FIELD_ORDERS = [
+  ['year', 'month', 'day'],
+  ['month', 'day', 'year'],
+  ['day', 'month', 'year'],
+] as const;
+
+/**
+ * フォーカスのある日付の入力 `field` に、キーボードだけで `iso`（`YYYY-MM-DD`）を打つ。
+ * 欄の並びは手元の macOS（年・月・日）と CI の Linux（月・日・年）で違うため、並びを順に試し、
+ * 値が `iso` になった並びで止める。月と日は 2 桁で次の欄へ進む。年は 6 桁まで打てて進まないので、
+ * 右の矢印のキーで次の欄へ移る
+ */
+export const typeDate = async (page: Page, field: Locator, iso: string) => {
+  const [year, month, day] = iso.split('-');
+  const parts = { year, month, day };
+  for (const order of DATE_FIELD_ORDERS) {
+    // Shift+Tab で入力の外へ出てから Tab で戻り、先頭の欄に入る
+    for (let i = 0; i < 4 && (await isFocused(field)); i += 1) {
+      await page.keyboard.press('Shift+Tab');
+    }
+    await tabTo(page, field, 1);
+    for (const [i, part] of order.entries()) {
+      await page.keyboard.type(parts[part]);
+      if (part === 'year' && i < order.length - 1) await page.keyboard.press('ArrowRight');
+    }
+    if ((await field.inputValue()) === iso) return;
+  }
+  throw new Error(`${field} に ${iso} を打てなかった。値は ${await field.inputValue()}`);
+};
+
 /** 秘匿化するか・サイトに載せるかのラジオボタンを選ぶ。省いたものは触らない */
 export const chooseSiteOptions = async (page: Page, { isMasked, onSite }: SiteOptions) => {
   if (isMasked !== undefined) {

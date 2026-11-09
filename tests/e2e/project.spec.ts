@@ -8,6 +8,7 @@ import {
   registerSkill,
   saveEdit,
   tabTo,
+  typeDate,
   visit,
 } from './support/dash';
 
@@ -199,69 +200,59 @@ test('同じ実績を 2 つのタブで開くと、後から保存した側は�
   );
 });
 
-test.describe('キーボードだけの操作', () => {
-  // 日付の入力は、キーボードで打つ順が言語の設定で変わる。ja-JP の年・月・日に固定する
-  test.use({ locale: 'ja-JP' });
+test('オーナーはキーボードだけで実績を登録・編集・削除できる（constitution V）', async ({
+  page,
+  context,
+  browser,
+}) => {
+  await actAsAuthor(context);
+  await page.goto('/dash/projects');
 
-  test('オーナーはキーボードだけで実績を登録・編集・削除できる（constitution V）', async ({
-    page,
-    context,
-    browser,
-  }) => {
-    await actAsAuthor(context);
-    await page.goto('/dash/projects');
+  await tabTo(page, page.getByRole('link', { name: '実績を登録する' }));
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/dash\/projects\/new$/);
 
-    await tabTo(page, page.getByRole('link', { name: '実績を登録する' }));
-    await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/\/dash\/projects\/new$/);
+  await tabTo(page, page.getByRole('textbox', { name: '組織名', exact: true }));
+  await page.keyboard.type('E2E 実績の組織 キーボード');
+  // 秘匿化する実績の新しい組織は、秘匿化した組織名が要る
+  await tabTo(page, page.getByRole('textbox', { name: '秘匿化した組織名', exact: true }));
+  await page.keyboard.type('E2E 実績の秘匿化した組織 キーボード');
+  await tabTo(page, page.getByRole('textbox', { name: '題', exact: true }));
+  await page.keyboard.type('E2E 実績の題 キーボード');
+  await tabTo(page, page.getByRole('textbox', { name: '秘匿化した題', exact: true }));
+  await page.keyboard.type('E2E 実績の秘匿化した題 キーボード');
+  const startedOn = page.getByRole('textbox', { name: '始まりの日', exact: true });
+  await tabTo(page, startedOn);
+  await typeDate(page, startedOn, '2021-04-01');
+  await tabTo(page, page.getByRole('button', { name: '登録する' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('保存しました');
 
-    await tabTo(page, page.getByRole('textbox', { name: '組織名', exact: true }));
-    await page.keyboard.type('E2E 実績の組織 キーボード');
-    // 秘匿化する実績の新しい組織は、秘匿化した組織名が要る
-    await tabTo(page, page.getByRole('textbox', { name: '秘匿化した組織名', exact: true }));
-    await page.keyboard.type('E2E 実績の秘匿化した組織 キーボード');
-    await tabTo(page, page.getByRole('textbox', { name: '題', exact: true }));
-    await page.keyboard.type('E2E 実績の題 キーボード');
-    await tabTo(page, page.getByRole('textbox', { name: '秘匿化した題', exact: true }));
-    await page.keyboard.type('E2E 実績の秘匿化した題 キーボード');
-    await tabTo(page, page.getByRole('textbox', { name: '始まりの日', exact: true }));
-    // 年は 6 桁まで打てるので、4 桁で次の欄へ進まない。右の矢印のキーで月へ移る
-    await page.keyboard.type('2021');
-    await page.keyboard.press('ArrowRight');
-    await page.keyboard.type('0401');
-    await expect(page.getByRole('textbox', { name: '始まりの日', exact: true })).toHaveValue(
-      '2021-04-01',
-    );
-    await tabTo(page, page.getByRole('button', { name: '登録する' }));
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('status')).toHaveText('保存しました');
+  // ラジオボタンは、組の中で選ばれたものに Tab で入り、矢印のキーで選び直す
+  await tabTo(page, page.getByRole('radio', { name: 'サイトに載せない', exact: true }));
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
+  await tabTo(page, page.getByRole('textbox', { name: '題', exact: true }));
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.type('E2E 実績の直した題 キーボード');
+  await tabTo(page, page.getByRole('button', { name: '保存する' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect(page.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
+    'E2E 実績の直した題 キーボード',
+  );
+  const path = await readProjectPath(page);
 
-    // ラジオボタンは、組の中で選ばれたものに Tab で入り、矢印のキーで選び直す
-    await tabTo(page, page.getByRole('radio', { name: 'サイトに載せない', exact: true }));
-    await page.keyboard.press('ArrowDown');
-    await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
-    await tabTo(page, page.getByRole('textbox', { name: '題', exact: true }));
-    await page.keyboard.press('ControlOrMeta+A');
-    await page.keyboard.type('E2E 実績の直した題 キーボード');
-    await tabTo(page, page.getByRole('button', { name: '保存する' }));
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('status')).toHaveText('保存しました');
-    await expect(page.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
-      'E2E 実績の直した題 キーボード',
-    );
-    const path = await readProjectPath(page);
+  const visitor = await openVisitor(browser);
+  expect(await visit(visitor, path)).toBe(200);
 
-    const visitor = await openVisitor(browser);
-    expect(await visit(visitor, path)).toBe(200);
-
-    await tabTo(page, page.getByRole('link', { name: 'この実績を削除する' }));
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('実績を削除する');
-    await tabTo(page, page.getByRole('button', { name: '削除する' }));
-    await page.keyboard.press('Enter');
-    await expect(page.getByRole('status')).toHaveText('実績を削除しました');
-    await expect(page.getByRole('link', { name: 'E2E 実績の直した題 キーボード' })).toHaveCount(0);
-    expect(await visit(visitor, path)).toBe(404);
-    await visitor.close();
-  });
+  await tabTo(page, page.getByRole('link', { name: 'この実績を削除する' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('実績を削除する');
+  await tabTo(page, page.getByRole('button', { name: '削除する' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('実績を削除しました');
+  await expect(page.getByRole('link', { name: 'E2E 実績の直した題 キーボード' })).toHaveCount(0);
+  expect(await visit(visitor, path)).toBe(404);
+  await visitor.close();
 });
