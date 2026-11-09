@@ -227,7 +227,11 @@ describe('recordFetchFailure', () => {
 
 describe('listFetchedAt', () => {
   it('取得元ごとの最後に取り直した日時を返す。成否を問わない（research.md の R9）', async () => {
-    await activities.applyRefresh('zenn', insertsOnly([]), { fetchedAt: T1, reason: null });
+    await activities.applyRefresh('zenn', insertsOnly([]), {
+      fetchedAt: T1,
+      reason: null,
+      validators: null,
+    });
     await activities.recordFetchFailure('medium', T2, '作り物の失敗');
 
     expect(await activities.listFetchedAt()).toEqual({ zenn: T1, medium: T2 });

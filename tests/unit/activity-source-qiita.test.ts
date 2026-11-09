@@ -63,7 +63,7 @@ describe('Qiita', () => {
       [page(2)]: jsonResponse(items(22, 22), { 'Total-Count': '21' }),
     });
 
-    const listing = await fetchListing(fetcher, LIMITS);
+    const listing = asListing(await fetchListing(fetcher, LIMITS));
 
     expect(listing.isComplete).toBe(false);
   });
