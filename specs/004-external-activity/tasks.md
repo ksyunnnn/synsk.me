@@ -97,8 +97,8 @@ description: "外部 activity の取得の実装タスク"
 
 ### 取得の入口
 
-- [ ] T040 [US1] U10 で (a)・(c) を選んだとき: `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。頻度は research.md の R8 の D1 の書き込みの上限に照らして R9 に書いてから決める。**止める未決: U10・U13**
-- [ ] T041 [US1] U10 で (b)・(c) を選んだとき: 管理画面の `refreshNow` の Server Action を src/features/activity/server/actions.ts に作り、先頭でオーナーを確かめる。JWT のない呼び出しが何も書かないことを tests/integration/activity-dash.test.ts で確かめる（FR-031）。**止める未決: U10・U13**
+- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
+- [ ] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を、activity を書く `batch()` の中で `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。2 頁目以降を取った・失敗した・上限で消さずに残した・公開日の欠けた項目を取り込まなかったときは値を NULL にする。**止める依存: 共有担当の migration**（`fetch_result` の列）
 
 ---
 
@@ -214,11 +214,10 @@ description: "外部 activity の取得の実装タスク"
 
 | 未決・依存 | 止めるタスク |
 |---|---|
-| U10 | T040・T041 |
 | U11 | T050 の題を取れないときの分岐、T053 |
 | U12 | T050・T052・T053 |
-| U13 | T018・T040・T041 |
-| 共有担当の migration | T001・T011・T021・T043・T046・T055・T057・T061・T067 |
+| U13 | T018・T040 |
+| 共有担当の migration | T001・T011・T021・T041・T043・T046・T055・T057・T061・T067 |
 | 共有担当の slug の部品（PR #222） | T064 |
 | 共有担当の書きかけの保持（001 の T072） | T056・T066 |
 | 共有担当の media-storage（001 の T075） | T070・T071・T072 |
@@ -271,11 +270,11 @@ T030・T031・T032・T033・T034・T035・T036 は並べる
 
 1. Phase 1・Phase 2
 2. Phase 3（US1）の T020〜T025 と T030（Zenn）で、作り物の応答から Zenn の記事を保存する
-3. Phase 4（US2）と Phase 5（US3）を足す。失敗の扱いと消し方が無いまま取得の入口（T040・T041）を開くと、FR-014・FR-017 を満たさない状態で本番の activity を書き換えるため、入口は US2・US3 の後に作る
+3. Phase 4（US2）と Phase 5（US3）を足す。失敗の扱いと消し方が無いまま取得の入口（T040）を開くと、FR-014・FR-017 を満たさない状態で本番の activity を書き換えるため、入口は US2・US3 の後に作る
 
 ### Incremental Delivery
 
-US1+US2+US3 → 入口（U10・U13 が解けてから）→ US4 → US5 → US5 の画像（共有担当の media-storage が入ってから）→ Polish。各段階を Preview で確かめてから epic に入れる
+US1+US2+US3 → 入口（U13 が解けてから）→ US4 → US5 → US5 の画像（共有担当の media-storage が入ってから）→ Polish。各段階を Preview で確かめてから epic に入れる
 
 ## Notes
 
