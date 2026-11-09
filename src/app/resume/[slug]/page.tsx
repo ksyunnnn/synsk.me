@@ -31,7 +31,7 @@ const Page = async ({ params }: Props) => {
   if (!resume) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12 print:max-w-none print:p-0">
+    <main>
       <VisitorResumeView resume={resume} />
     </main>
   );
