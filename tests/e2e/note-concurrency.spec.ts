@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import { saveEdit, textbox } from './support/dash';
-import { createNote, uniqueNoteSlug } from './support/note';
+import { createNote, openNoteEditor, uniqueNoteSlug } from './support/note';
 
 /**
  * 同じ note を 2 つの画面で開いたときの保存（specs/003-note/spec.md の FR-020・FR-021・SC-002、
@@ -18,7 +18,7 @@ test('2 つのタブで同じ note を開くと、後から保存した側は止
     title: 'E2E 同時の題',
   });
   const other = await context.newPage();
-  await other.goto(editUrl);
+  await openNoteEditor(other, editUrl);
 
   await textbox(page, '本文').fill('画面 A で先に保存した本文');
   await saveEdit(page);
@@ -28,7 +28,7 @@ test('2 つのタブで同じ note を開くと、後から保存した側は止
   await expect(other.getByRole('alert')).toContainText('別の画面で保存されていました');
   await expect(textbox(other, '本文')).toHaveValue('画面 B で後から書いた本文');
 
-  await other.goto(editUrl);
+  await openNoteEditor(other, editUrl);
   await expect(textbox(other, '本文')).toHaveValue('画面 A で先に保存した本文');
 });
 

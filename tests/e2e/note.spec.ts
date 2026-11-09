@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import { openVisitor, saveEdit, submitAndWait, tabTo, textbox, visit } from './support/dash';
-import { createNote, uniqueNoteSlug as uniqueSlug } from './support/note';
+import {
+  createNote,
+  openNoteEditor,
+  uniqueNoteSlug as uniqueSlug,
+  waitForHydration,
+} from './support/note';
 
 /**
  * オーナーとしての note の作成・保存・公開（specs/003-note/spec.md の User Story 1、FR-001・
@@ -15,7 +20,10 @@ test('note を作って保存し、公開すると訪問者が読め、識別子
 }) => {
   await actAsAuthor(context);
   const slug = uniqueSlug('publish');
-  await createNote(page, { slug, title: 'E2E の note の題' });
+  // 題は一覧のリンクの名前になる。手元で繰り返し回すと D1 に残った前の回の note と重なるため、
+  // 識別子を含めて重ならない値にする
+  const title = `E2E の note の題 ${slug}`;
+  await createNote(page, { slug, title });
   await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
   await expect(textbox(page, '識別子')).toBeEditable();
 
@@ -35,12 +43,12 @@ test('note を作って保存し、公開すると訪問者が読め、識別子
 
   const visitor = await openVisitor(browser);
   expect(await visit(visitor, `/notes/${slug}`)).toBe(200);
-  await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('E2E の note の題');
+  await expect(visitor.getByRole('heading', { level: 1 })).toHaveText(title);
   await expect(visitor.getByText('E2E の直した本文')).toBeVisible();
   await visitor.close();
 
   await page.goto('/dash/notes');
-  await expect(page.getByRole('link', { name: 'E2E の note の題' })).toBeVisible();
+  await expect(page.getByRole('link', { name: title })).toBeVisible();
 });
 
 test('題が空の note は公開できず、題を入れるよう示される（FR-011）', async ({ page, context }) => {
@@ -58,6 +66,7 @@ test('キーボードだけで note を作り、保存し、公開できる（co
   await actAsAuthor(context);
   const slug = uniqueSlug('keyboard');
   await page.goto('/dash/notes/new');
+  await waitForHydration(textbox(page, '本文'));
 
   await tabTo(page, textbox(page, '識別子'));
   await page.keyboard.type(slug);
@@ -68,6 +77,7 @@ test('キーボードだけで note を作り、保存し、公開できる（co
   await tabTo(page, page.getByRole('button', { name: '作る' }), 5);
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toHaveText('保存しました');
+  await waitForHydration(textbox(page, '本文'));
 
   await tabTo(page, textbox(page, '本文'));
   await page.keyboard.press('ControlOrMeta+a');
@@ -122,7 +132,7 @@ test('続けて保存しても、保存できた書きかけがその端末に�
     title: 'E2E の書きかけの題',
   });
   // 1 回目の保存で `?saved=1` へ移り、2 回目の保存で同じ URL へ移る形にするため、開き直す
-  await page.goto(editUrl);
+  await openNoteEditor(page, editUrl);
   await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
   for (const body of ['E2E の 1 回目', 'E2E の 2 回目']) {
     await textbox(page, '本文').fill(body);
