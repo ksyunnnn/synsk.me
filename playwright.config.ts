@@ -1,5 +1,11 @@
 import { defineConfig, devices } from '@playwright/test';
-import { ACCESS_CERTS_URL, D1_PERSIST_DIR } from './tests/e2e/support/author';
+import {
+  ACCESS_CERTS_URL,
+  D1_PERSIST_DIR,
+  INSPECTOR_PORT_ARGS,
+  WORKER_ORIGIN,
+  WORKER_PORT,
+} from './tests/e2e/support/author';
 
 /**
  * 実ブラウザで確かめるものの設定。
@@ -26,7 +32,7 @@ export default defineConfig({
   reportSlowTests: { max: 5, threshold: 10_000 },
 
   use: {
-    baseURL: 'http://127.0.0.1:8788',
+    baseURL: WORKER_ORIGIN,
     // 既定で headless。`--headed` を常用しない。手元でブラウザ画面が出ると
     // 操作を奪う
     trace: 'on-first-retry',
@@ -68,8 +74,8 @@ export default defineConfig({
     // 踏む。起動の前に、ローカルの D1 へマイグレーションを当て、JWT の検証の
     // 設定値を `dist/server/.dev.vars` に書く。CI も同じコマンドで同じ準備をする
     {
-      command: `node tests/e2e/support/prepare-worker.ts && npx wrangler dev --config dist/server/wrangler.json --port 8788 --persist-to ${D1_PERSIST_DIR}`,
-      url: 'http://127.0.0.1:8788/',
+      command: `node tests/e2e/support/prepare-worker.ts && npx wrangler dev --config dist/server/wrangler.json --port ${WORKER_PORT}${INSPECTOR_PORT_ARGS} --persist-to ${D1_PERSIST_DIR}`,
+      url: `${WORKER_ORIGIN}/`,
       // 再利用しない。手元に古い `wrangler dev` が残っていると、これから
       // commit するのとは別のビルドに対して緑が出る
       reuseExistingServer: false,
