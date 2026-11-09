@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { PrintButton } from '@/features/resume/components/print-button';
 import { RESUME_PROJECT_KIND_LABELS } from '@/features/resume/domain/resume';
 import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
-import { notoSansJp, sourceSans } from '@/lib/fonts';
+import { fontFamily, sourceSans } from '@/lib/fonts';
 import { toYearsAndMonths, type Period } from '@/shared/domain/period';
 
 /**
@@ -74,12 +74,6 @@ const SideSection = ({ title, children }: { title: string; children: ReactNode }
   </section>
 );
 
-/**
- * 書体は design/foundations.pen の font-ja と font-en。このページだけ font-ja を先に置き、英字も
- * Noto Sans JP で描く
- */
-const resumeFontFamily = `${notoSansJp.style.fontFamily}, ${sourceSans.style.fontFamily}, sans-serif`;
-
 type Props = {
   resume: VisitorResume;
   /** 上の帯の左端に置く操作（管理画面の「設定の画面へ戻る」など） */
@@ -89,7 +83,8 @@ type Props = {
 export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
   const { profile } = resume;
   return (
-    <div className={notoSansJp.className} style={{ fontFamily: resumeFontFamily }}>
+    // 書体は design/foundations.pen の font-en と font-ja
+    <div className={sourceSans.className} style={{ fontFamily }}>
       <div className="border-b print:hidden">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-6 py-2">
           <div>{toolbarStart}</div>
