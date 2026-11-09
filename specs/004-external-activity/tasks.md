@@ -176,9 +176,9 @@ description: "外部 activity の取得の実装タスク"
 
 ### 画像（共有担当の src/shared/server/media-storage.ts が入ってから）
 
-- [ ] T070 [US5] 共有担当の src/shared/server/media-storage.ts を使い、life event の代表画像の登録と、その life event の画像だけを選べることを作り、tests/workers/activity-life-event.test.ts で確かめる。1 つの life event の画像は 1 枚までで、新しく登録すると前の画像を消す。形式（JPEG・PNG・WebP・GIF）と 10 MB の上限は共有担当の部品で確かめる（FR-028・FR-029、US5 の Acceptance 4・5、research.md の R12）。**止める依存: 共有担当の media-storage**
-- [ ] T071 [US5] life event の代表画像を配る経路を src/app/life-events/[slug]/media/[id]/route.ts に作り、DTO に `cardImageUrl` を足す。その life event の代表画像だけが 200 で、ほかの持ち主の画像が 404 になることを tests/integration/life-events.test.ts で確かめる（FR-029・FR-030、contracts/visitor-life-event.md）。**止める依存: 共有担当の media-storage**
-- [ ] T072 [US5] life event を消すときに、その life event の `media` の行と R2 のものを一緒に消し、残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027・SC-006、US5 の Acceptance 6、research.md の R12）。**止める依存: 共有担当の media-storage**
+- [x] T070 [US5] 共有担当の src/shared/server/media-storage.ts を使い、life event の代表画像の登録と、その life event の画像だけを選べることを作り、tests/workers/activity-life-event.test.ts で確かめる。1 つの life event の画像は 1 枚までで、新しく登録すると前の画像を消す。形式（JPEG・PNG・WebP・GIF）と 10 MB の上限は共有担当の部品で確かめる（FR-028・FR-029、US5 の Acceptance 4・5、research.md の R12）。**止める依存: 共有担当の media-storage**
+- [x] T071 [US5] life event の代表画像を配る経路を src/app/life-events/[slug]/media/[id]/route.ts に作り、DTO に `cardImageUrl` を足す。その life event の代表画像だけが 200 で、ほかの持ち主の画像が 404 になることを tests/integration/life-events.test.ts で確かめる（FR-029・FR-030、contracts/visitor-life-event.md）。**止める依存: 共有担当の media-storage**
+- [x] T072 [US5] life event を消すときに、その life event の `media` の行と R2 のものを一緒に消し、残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027・SC-006、US5 の Acceptance 6、research.md の R12）。**止める依存: 共有担当の media-storage**
 
 ---
 

@@ -172,6 +172,42 @@ describe('オーナーの JWT がない書き込み（FR-031、constitution I）
       expect(await readActivityRows()).toEqual(before);
     });
 
+    it('画像の登録は D1 と置き場を変えない', async () => {
+      const page = await ctx.server.fetch(`/dash/life-events/${editUid}`, {
+        headers: await authorHeaders(),
+      });
+      const html = await page.text();
+      // 編集の画面の 2 つ目のフォームが、画像の登録
+      const imageForm = [...html.matchAll(/<form\b[\s\S]*?<\/form>/g)][1]?.[0] ?? '';
+      const fields = readActionFields(imageForm);
+      const { NOTE_IMAGES } = await ctx.server.getWorker<{ NOTE_IMAGES: R2Bucket }>().getEnv();
+      const readMedia = async () =>
+        (await ctx.db.prepare('SELECT * FROM media ORDER BY id').all()).results;
+      const before = {
+        media: await readMedia(),
+        objects: (await NOTE_IMAGES.list()).objects.length,
+      };
+
+      const values = { lifeEventUid: editUid };
+      const request =
+        how === 'submit'
+          ? await encodeForm(fields, values).then(({ body, contentType }) => ({
+              body,
+              headers: { 'content-type': contentType },
+            }))
+          : await encodeActionCall(fields, values);
+      const res = await ctx.server.fetch(OUTSIDE_DASH, {
+        method: 'POST',
+        body: request.body,
+        headers: request.headers,
+        redirect: 'manual',
+      });
+      await res.arrayBuffer();
+
+      expect(await readMedia()).toEqual(before.media);
+      expect((await NOTE_IMAGES.list()).objects.length).toBe(before.objects);
+    });
+
     it('対照: オーナーの JWT があれば、同じ形の作成が書く', async () => {
       const before = (await readActivityRows()).length;
       const res = await send(
@@ -183,5 +219,67 @@ describe('オーナーの JWT がない書き込み（FR-031、constitution I）
       await res.arrayBuffer();
       expect((await readActivityRows()).length).toBe(before + 1);
     });
+  });
+});
+
+/**
+ * 代表画像を配る経路（contracts/visitor-life-event.md の「画像の経路」、FR-029・FR-030）。
+ * 画像は作り物の PNG の先頭のバイトだけを R2 に置く
+ */
+describe('/life-events/{slug}/media/{storage_key}', () => {
+  const CARD_KEY = '44444444-4444-4444-8444-444444444444';
+  const OTHER_KEY = '55555555-5555-4555-8555-555555555555';
+  const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+
+  beforeAll(async () => {
+    const { NOTE_IMAGES } = await ctx.server.getWorker<{ NOTE_IMAGES: R2Bucket }>().getEnv();
+    for (const key of [CARD_KEY, OTHER_KEY]) {
+      await NOTE_IMAGES.put(key, PNG, { httpMetadata: { contentType: 'image/png' } });
+    }
+    const other = await ctx.db
+      .prepare(
+        "INSERT INTO activity (source, slug, title, happened_on) VALUES ('life_event', 'fake-other', '作り物のほかの出来事', '2019-01-01') RETURNING id",
+      )
+      .first<{ id: number }>();
+    for (const [slug, key] of [
+      [SEEDED.slug, CARD_KEY],
+      ['fake-other', OTHER_KEY],
+    ] as const) {
+      await ctx.db.batch([
+        ctx.db
+          .prepare(
+            "INSERT INTO media (activity_id, storage_key) SELECT id, ? FROM activity WHERE source = 'life_event' AND slug = ?",
+          )
+          .bind(key, slug),
+        ctx.db
+          .prepare(
+            "UPDATE activity SET card_media_id = (SELECT id FROM media WHERE storage_key = ?) WHERE source = 'life_event' AND slug = ?",
+          )
+          .bind(key, slug),
+      ]);
+    }
+    expect(other).not.toBeNull();
+  });
+
+  it('その life event の代表画像は 200 で、原本を返す', async () => {
+    const res = await ctx.server.fetch(`/life-events/${SEEDED.slug}/media/${CARD_KEY}`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toBe('image/png');
+    expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
+  });
+
+  it('個別のページの DTO に、代表画像の URL が入る', async () => {
+    const res = await ctx.server.fetch(`/life-events/${SEEDED.slug}`);
+    expect(await res.text()).toContain(`/life-events/${SEEDED.slug}/media/${CARD_KEY}`);
+  });
+
+  it.each([
+    ['ほかの life event の画像', () => `/life-events/${SEEDED.slug}/media/${OTHER_KEY}`],
+    ['無い life event', () => `/life-events/no-such/media/${CARD_KEY}`],
+    ['形の違うキー', () => `/life-events/${SEEDED.slug}/media/not-a-key`],
+  ])('%s は 404', async (_, path) => {
+    const res = await ctx.server.fetch(path());
+    expect(res.status).toBe(404);
+    await res.arrayBuffer();
   });
 });
