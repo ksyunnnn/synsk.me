@@ -528,6 +528,16 @@ describe('purgeNote（FR-017・FR-033、research.md の R6）', () => {
     expect(order).toEqual(['d1', 'r2']);
   });
 
+  it('置き場の画像を消せなくても、D1 を消した後なら成功を返す（T057）', async () => {
+    const notes = fakeNotes(note(), {
+      purge: vi.fn(async () => ({ ok: true as const, storageKeys: [KEY] })),
+    });
+    const media = storage();
+    media.remove.mockRejectedValue(new Error('R2 の作り物の失敗'));
+    expect(await purgeNote({ notes, media }, OWNER, 1)).toEqual({ status: 'purged' });
+    expect(media.remove).toHaveBeenCalledWith([KEY]);
+  });
+
   it('無い note は置き場を触らない', async () => {
     const notes = fakeNotes(note(), { purge: vi.fn(async () => ({ ok: false as const })) });
     const media = storage();
