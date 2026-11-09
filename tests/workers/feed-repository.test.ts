@@ -8,6 +8,13 @@ import {
   insertOrganization,
   insertProject,
 } from '../support/career-and-project-rows';
+import {
+  deleteNoteRow,
+  deleteNoteRows,
+  insertNote,
+  insertNoteRevision,
+  publishNoteRow,
+} from '../support/note-rows';
 
 /**
  * 一覧の Repository が、本物の migration を当てた D1 のビュー activity_feed から、サイトに載せる
@@ -24,6 +31,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await deleteCareerAndProjectRows(env.DB);
+  await deleteNoteRows(env.DB);
 });
 
 const REAL = {
@@ -61,7 +69,7 @@ describe('並びの順', () => {
       status: 'published',
     });
 
-    expect((await feed.list()).map((item) => item.period.startedOn)).toEqual([
+    expect((await feed.list()).map((item) => 'period' in item && item.period.startedOn)).toEqual([
       '2022-04-01',
       '2018-04-01',
       '2015-04-01',
@@ -279,5 +287,91 @@ describe('詰められない種類', () => {
     } finally {
       await env.DB.batch([env.DB.prepare('DROP VIEW activity_feed'), env.DB.prepare(original.sql)]);
     }
+  });
+});
+
+describe('note（tasks.md の T021）', () => {
+  /** note を作り、作成日を決まった日時にする。作成日は公開の操作で変わらない列（0012） */
+  const insertNoteCreatedAt = async (createdAt: string, title = '作り物の note の題') => {
+    const note = await insertNote(env.DB, { title, description: `${title}の説明文` });
+    await env.DB.prepare('UPDATE note SET created_at = ? WHERE id = ?')
+      .bind(createdAt, note.id)
+      .run();
+    return note;
+  };
+
+  const unpublish = (noteId: number) =>
+    env.DB.prepare("UPDATE note SET status = 'draft' WHERE id = ?").bind(noteId).run();
+
+  it('下書き・削除・下書きに戻した note は並ばない（FR-005、US3 の Acceptance 1〜3）', async () => {
+    await insertNoteCreatedAt('2024-01-01T00:00:00.000Z', '下書きの note');
+    const deleted = await insertNoteCreatedAt('2024-01-02T00:00:00.000Z', '削除した note');
+    await publishNoteRow(env.DB, deleted.id);
+    await deleteNoteRow(env.DB, deleted.id);
+    const unpublished = await insertNoteCreatedAt(
+      '2024-01-03T00:00:00.000Z',
+      '下書きに戻した note',
+    );
+    await publishNoteRow(env.DB, unpublished.id);
+    await unpublish(unpublished.id);
+    const published = await insertNoteCreatedAt('2024-01-04T00:00:00.000Z', '公開の note');
+    await publishNoteRow(env.DB, published.id);
+
+    expect(await feed.list()).toStrictEqual([
+      {
+        type: 'note',
+        title: '公開の note',
+        description: '公開の noteの説明文',
+        createdAt: '2024-01-04T00:00:00.000Z',
+      },
+    ]);
+  });
+
+  it('公開した後に題を直して保存した note は、公開した版の題と説明文で並ぶ（FR-006、US3 の Acceptance 4）', async () => {
+    const note = await insertNoteCreatedAt('2024-01-01T00:00:00.000Z', '公開した版の題');
+    await publishNoteRow(env.DB, note.id);
+    await insertNoteRevision(env.DB, note.id, {
+      title: '保存しただけの版の題',
+      description: '保存しただけの版の説明文',
+    });
+
+    const items = await feed.list();
+    expect(items).toMatchObject([
+      { type: 'note', title: '公開した版の題', description: '公開した版の題の説明文' },
+    ]);
+    expect(JSON.stringify(items)).not.toContain('保存しただけの版');
+  });
+
+  it('作成日の位置に並び、公開し直しても下書きから公開に戻しても位置が変わらない（FR-007・FR-008、US1 の Acceptance 2）', async () => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '2019 年の職歴',
+      startedOn: '2019-04-01',
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '2022 年の実績',
+      startedOn: '2022-04-01',
+      isMasked: false,
+      status: 'published',
+    });
+    const note = await insertNoteCreatedAt('2020-01-15T00:00:00.000Z', '2020 年に作った note');
+    await publishNoteRow(env.DB, note.id, '2025-03-01T00:00:00.000Z');
+
+    const order = async () =>
+      (await feed.list()).map((item) => (item.type === 'career' ? item.role : item.title));
+    const expected = ['2022 年の実績', '2020 年に作った note', '2019 年の職歴'];
+    expect(await order()).toEqual(expected);
+
+    await insertNoteRevision(env.DB, note.id, { title: '2020 年に作った note' });
+    await publishNoteRow(env.DB, note.id, '2025-06-01T00:00:00.000Z');
+    expect(await order()).toEqual(expected);
+
+    await unpublish(note.id);
+    await publishNoteRow(env.DB, note.id, '2025-09-01T00:00:00.000Z');
+    expect(await order()).toEqual(expected);
   });
 });

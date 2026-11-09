@@ -98,8 +98,8 @@ description: "一覧の実装タスク"
 
 ### Tests
 
-- [ ] T020 [P] [US3] note の詰め替えが題・説明文・作成日だけを持つことを tests/unit/feed.test.ts に足す（FR-006、contracts/visitor-feed.md）
-- [ ] T021 [P] [US3] 本物の migration を当てた D1 に note と版の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M2**
+- [x] T020 [P] [US3] note の詰め替えが題・説明文・作成日だけを持つことを tests/unit/feed.test.ts に足す（FR-006、contracts/visitor-feed.md）
+- [x] T021 [P] [US3] 本物の migration を当てた D1 に note と版の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M2**
   - 下書き・削除・下書きに戻した note が並ばない（FR-005、US3 の Acceptance 1〜3）
   - 公開した後に題を直して保存した note が、公開した版の題と説明文で並ぶ（FR-006、US3 の Acceptance 4）
   - 2020-01-15 に作り 2025-03-01 に初めて公開した note が 2020-01-15 の位置に並び、公開し直しても・下書きに戻してから公開に戻しても位置が変わらない（FR-007・FR-008、US1 の Acceptance 2）
@@ -108,9 +108,9 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
-- [ ] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す
-- [ ] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
+- [x] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
+- [x] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す
+- [x] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
 
 **Checkpoint**: 職歴・実績・note の一覧
 
