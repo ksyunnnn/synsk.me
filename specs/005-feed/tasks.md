@@ -98,8 +98,8 @@ description: "一覧の実装タスク"
 
 ### Tests
 
-- [ ] T020 [P] [US3] note の詰め替えが題・説明文・作成日だけを持つことを tests/unit/feed.test.ts に足す（FR-006、contracts/visitor-feed.md）
-- [ ] T021 [P] [US3] 本物の migration を当てた D1 に note と版の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M2**
+- [x] T020 [P] [US3] note の詰め替えが題・説明文・作成日だけを持つことを tests/unit/feed.test.ts に足す（FR-006、contracts/visitor-feed.md）
+- [x] T021 [P] [US3] 本物の migration を当てた D1 に note と版の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M2**
   - 下書き・削除・下書きに戻した note が並ばない（FR-005、US3 の Acceptance 1〜3）
   - 公開した後に題を直して保存した note が、公開した版の題と説明文で並ぶ（FR-006、US3 の Acceptance 4）
   - 2020-01-15 に作り 2025-03-01 に初めて公開した note が 2020-01-15 の位置に並び、公開し直しても・下書きに戻してから公開に戻しても位置が変わらない（FR-007・FR-008、US1 の Acceptance 2）
@@ -108,9 +108,9 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
-- [ ] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す
-- [ ] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
+- [x] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
+- [x] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す
+- [x] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
 
 **Checkpoint**: 職歴・実績・note の一覧
 
@@ -120,9 +120,9 @@ description: "一覧の実装タスク"
 
 **Purpose**: ADR-0046 の Confirmation として D1 で一覧の読み取り行数を測り、外部の activity で行が増える前に 1 ページの件数を決めて区切る（research.md の R8）
 
-- [ ] T030 職歴・実績・note・外部の activity・life event を作り物の行（外部の activity 500 件、ほかの種類は各 50 件）入れた D1 で、1 ページ目を読む文の `meta.rows_read` と所要時間を測る。値と件数を research.md の R8 に書く。測った値が遅いことを示し、写して持つ形に移す必要があれば、ADR-0046 を覆すことになるので PM に伝えて止める。**止める依存: M3**（外部の activity と life event の腕が無いと、その行を読む量を測れない）
-- [ ] T031 [P] 番号のページ（`?page=n`）で区切り、最後のページの先で項目を返さないことを tests/workers/feed-repository.test.ts に足す（research.md の R8）。**止める依存: M3**（件数は T030 で決まる）
-- [ ] T032 src/features/activity/server/d1-feed-repository.ts の `list` にページの引数と `LIMIT`・`OFFSET` を足し（src/features/activity/domain/feed-repository.ts のインタフェースも直す）、件数を src/features/activity/domain/feed.ts の定数に置く。**止める依存: M3**（件数は T030 で決まる）
+- [x] T030 職歴・実績・note・外部の activity・life event を作り物の行（外部の activity 500 件、ほかの種類は各 50 件）入れた D1 で、1 ページ目を読む文の `meta.rows_read` と所要時間を測る。値と件数を research.md の R8 に書く。測った値が遅いことを示し、写して持つ形に移す必要があれば、ADR-0046 を覆すことになるので PM に伝えて止める。**止める依存: M3**（外部の activity と life event の腕が無いと、その行を読む量を測れない）
+- [x] T031 [P] 番号のページ（`?page=n`）で区切り、最後のページの先で項目を返さないことを tests/workers/feed-repository.test.ts に足す（research.md の R8）。**止める依存: M3**（件数は T030 で決まる）
+- [x] T032 src/features/activity/server/d1-feed-repository.ts の `list` にページの引数と `LIMIT`・`OFFSET` を足し（src/features/activity/domain/feed-repository.ts のインタフェースも直す）、件数を src/features/activity/domain/feed.ts の定数に置く。**止める依存: M3**（件数は T030 で決まる）
 - [ ] T033 src/features/activity/components/feed.tsx に次のページへのリンクを足し、一覧の画面が `page` の問い合わせの値を読む。数でない値と 1 より小さい値は 1 ページ目として読む。最後のページの先では「まだ何もない」を出さず、1 ページ目へのリンクを出す。ページ送りは `<a>` で作る。リンクに主キーを含めないことを tests/integration/feed.test.ts で確かめる（ADR-0048）。**止める依存: M3**。**止める未決: U1**
 
 ---

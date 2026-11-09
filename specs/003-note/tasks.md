@@ -138,6 +138,7 @@ description: "note の実装タスク"
 
 - [X] T027 [P] [US3] D1 の実装（版の一覧が新しい順、1 つの版の読み出しが別の note の版を返さない、戻すと戻した版の中身が新しい版として足され 3 つの版が残る、開いた版が最も新しい版でなければ戻さない、公開した版が変わらない）を tests/workers/note-repository.test.ts に足す（FR-008・FR-009、User Story 3 の 1・2）
 - [X] T028 [P] [US3] 公開した note を過去の版に戻し公開し直さないと、`/notes/{slug}` に戻す前に公開していた版が出ること、JWT のない `revertNote` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-009・FR-033、User Story 3 の 3）
+- [X] T055 [P] [US3] オーナーとして、キーボードだけで版の一覧から過去の版を開き、その版に戻せることを tests/e2e/note.spec.ts で確かめる（contracts/dash.md の検査の E2E、constitution V）
 
 ### Implementation for User Story 3
 
@@ -227,6 +228,8 @@ description: "note の実装タスク"
 - [X] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
 - [X] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
 - [ ] T053 quickstart.md の「手で確かめる」をブランチの Preview で行う
+- [X] T056 見た目の確認の画面の画像を、オーナーだけが通る経路 src/app/dash/notes/[id]/preview/media/[key]/route.ts で返す。確認している版（最も新しい版）の本文が指すその note の画像と代表画像だけを、共有担当の `respondWithMedia` に `restricted`（`no-store`）で渡す。訪問者の経路は公開した版の画像だけを返すまま。下書きの note の見た目の確認で画像が出ることを tests/e2e/note-preview.spec.ts で、200・403・404 と `no-store` を tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13・NFR-09、spec の FR-026）
+- [X] T057 完全に消すときに R2 の画像の実体を消せなくても、D1 の削除が済んでいれば成功を返す。残った画像は共有担当の置き場の突き合わせが消す（FR-017、research.md の R6）。tests/unit/note-usecases.test.ts で確かめる
 
 ---
 

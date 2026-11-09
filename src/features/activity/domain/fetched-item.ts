@@ -45,6 +45,9 @@ export type SourceListing = {
   validators?: Validators;
 };
 
+/** 個別の URL を取り直した結果。`gone` は 404、`present` は 2xx、`unknown` はそのほか（R6） */
+export type GoneCheck = 'gone' | 'present' | 'unknown';
+
 /** 条件付きの要求に、取得元が変わっていないと答えた（304） */
 export type NotModified = { notModified: true };
 

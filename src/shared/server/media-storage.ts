@@ -8,6 +8,7 @@ import {
   parseMediaStorageKey,
   type MediaAccess,
   type MediaStorage,
+  type MediaSweepStorage,
 } from '@/shared/domain/media';
 import { readEnv } from '@/shared/server/env';
 import { NO_STORE } from '@/shared/server/preview-no-store';
@@ -22,6 +23,12 @@ import { NO_STORE } from '@/shared/server/preview-no-store';
 
 /** 条件つきで読んだときは、条件に合わず中身を返さなければ `body` を持たない */
 const hasBody = (object: R2Object | R2ObjectBody): object is R2ObjectBody => 'body' in object;
+
+/**
+ * 消し損ねの突き合わせの続きの位置を置くキー。画像と同じバケットに置き、表を足さない。
+ * UUID の形でないため、画像として配らず、突き合わせの対象にもならない
+ */
+const SWEEP_CURSOR_KEY = 'sweep-orphaned-media/cursor';
 
 /** R2 の `delete` が 1 回で受けるキーの数の上限 */
 const R2_DELETE_MAX_KEYS = 1000;
@@ -71,9 +78,39 @@ export const createR2MediaStorage = (bucket: R2Bucket): MediaStorage => ({
   },
 });
 
+/** 突き合わせが使う置き場の操作の R2 の実装（src/shared/server/sweep-orphaned-media.ts） */
+export const createR2MediaSweepStorage = (bucket: R2Bucket): MediaSweepStorage => ({
+  remove: createR2MediaStorage(bucket).remove,
+  list: async ({ cursor, limit }) => {
+    // 続きは最後に読んだキーの後から読む（R2ListOptions の startAfter）
+    const listed = await bucket.list({ limit, ...(cursor === null ? {} : { startAfter: cursor }) });
+    return {
+      items: listed.objects.flatMap((object) => {
+        const storageKey = parseMediaStorageKey(object.key);
+        return storageKey === null ? [] : [{ storageKey, uploadedAt: object.uploaded }];
+      }),
+      cursor: listed.truncated ? (listed.objects.at(-1)?.key ?? cursor) : null,
+    };
+  },
+
+  readSweepCursor: async () => {
+    const object = await bucket.get(SWEEP_CURSOR_KEY);
+    return object === null ? null : await object.text();
+  },
+
+  writeSweepCursor: async (cursor) => {
+    if (cursor === null) await bucket.delete(SWEEP_CURSOR_KEY);
+    else await bucket.put(SWEEP_CURSOR_KEY, cursor);
+  },
+});
+
 /** 組み立て用の関数。binding の名前は `wrangler.jsonc` の `r2_buckets` */
 export const createMediaStorage = async (): Promise<MediaStorage> =>
   createR2MediaStorage((await readEnv()).NOTE_IMAGES);
+
+/** 突き合わせの組み立て用の関数。binding は `createMediaStorage` と同じ */
+export const createMediaSweepStorage = async (): Promise<MediaSweepStorage> =>
+  createR2MediaSweepStorage((await readEnv()).NOTE_IMAGES);
 
 /**
  * 公開している画像のキャッシュの決まり。キャッシュしてよいが、使う前に毎回 Worker に確かめさせる。

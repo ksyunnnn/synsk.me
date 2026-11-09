@@ -124,6 +124,7 @@
 | U5 | 一覧に代表画像を出すか、外部の activity の代表の画像の出し方（spec の「決定が無く」、issue #186「URL カードの画像の出し方を決める」） | オーナー | 無し。決まるまで画像を DTO に入れない |
 | U6 | 転載先の URL と外部の activity の URL が一致するとみなす条件（spec の「決定が無く」） | オーナー | 無し。決まるまで文字列の完全一致（research.md の R7） |
 | U7 | 一覧の activity に並べる値（使ったスキル、秘匿化しない行の本文、実績の期間の見せ方、職歴の終わりの日を出すか。spec の Assumptions は UI を考えるときに決めるとする） | オーナー（デザイン） | 無し。決まるまで contracts/visitor-feed.md の最小の値 |
+| U8 | 1 ページの件数。仮の値の 20 で作る（2026-11-09、PM の回答）。読み取り行数は件数で変わらない（research.md の R8） | オーナー（デザイン） | 無し。決まれば `src/features/activity/domain/feed.ts` の定数を直す |
 
 依存（未決ではない）: 共有担当のビューの migration M1〜M4（data-model.md）。tasks.md は「止める依存: M<n>」と書く。
 

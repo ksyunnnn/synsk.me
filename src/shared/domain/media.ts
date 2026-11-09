@@ -89,3 +89,44 @@ export type MediaStorage = {
   /** 消す。無いキーは無視する */
   remove: (storageKeys: MediaStorageKey[]) => Promise<void>;
 };
+
+/*
+ * 消し損ねた画像（src/shared/server/sweep-orphaned-media.ts）。`media` の行を消した後に置き場の
+ * 削除が失敗するか、その間に Worker が止まると、どの行も指さない画像が置き場に残る。記録せず、
+ * 置き場の一覧と `media.storage_key` を突き合わせて見つけ、消し直す
+ */
+
+/**
+ * 置いてからこの時間を過ぎるまでは、どの行も指さなくても消さない。保存は置き場に置いてから
+ * `media` の行を入れるため、その間の画像を消さない
+ */
+export const ORPHAN_GRACE_MS = 24 * 60 * 60 * 1000;
+
+/** 突き合わせの対象にしてよいか。置いてから `ORPHAN_GRACE_MS` を過ぎたもの */
+export const isPastOrphanGrace = (uploadedAt: Date, now: Date): boolean =>
+  now.getTime() - uploadedAt.getTime() > ORPHAN_GRACE_MS;
+
+/**
+ * 突き合わせが使う置き場の操作。画像を保存して配る機能は使わないため、`MediaStorage` と分ける
+ */
+export type MediaSweepStorage = Pick<MediaStorage, 'remove'> & {
+  /**
+   * 置いてあるものを、キーの順に `limit` 件ずつ並べる。`cursor` は前の頁が返した続きの位置で、
+   * その頁で最後に読んだキー。置き場が返す不透明な続きの印は、後の回で使えなくなっても公式の
+   * 説明が無いため持たない。画像でないもの（キーが UUID の形でないもの）は除く
+   */
+  list: (options: { cursor: string | null; limit: number }) => Promise<{
+    items: { storageKey: MediaStorageKey; uploadedAt: Date }[];
+    /** 続きの頁の位置。終わりまで並べたら null */
+    cursor: string | null;
+  }>;
+  /** 次の回がどこから続けるか。始めからなら null */
+  readSweepCursor: () => Promise<string | null>;
+  writeSweepCursor: (cursor: string | null) => Promise<void>;
+};
+
+/** `media` の行が指しているキーを調べる。使い手は消し損ねの突き合わせ */
+export type MediaReferences = {
+  /** 渡したキーのうち、`media` のどれかの行が指すもの */
+  findReferenced: (storageKeys: MediaStorageKey[]) => Promise<Set<MediaStorageKey>>;
+};

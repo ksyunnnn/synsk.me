@@ -9,10 +9,10 @@ import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * Repository の実装が詰められる種類。並びの日付が同じときの種類の順を兼ねる。仮の順は
- * note・external_activity・life_event・project・career（plan.md の U2）で、note・外部の
- * activity・life event は詰める実装を足すときに、仮の順の位置に足す
+ * note・external_activity・life_event・project・career（plan.md の U2）。詰める実装の無い種類
+ * （外部の activity・life event）は入れず、入れるときは仮の順の位置に足す
  */
-export const FEED_ITEM_TYPES = ['project', 'career'] as const;
+export const FEED_ITEM_TYPES = ['note', 'project', 'career'] as const;
 export type FeedItemType = (typeof FEED_ITEM_TYPES)[number];
 
 export const isFeedItemType = (value: string): value is FeedItemType =>
@@ -43,4 +43,29 @@ export type ProjectFeedItem = {
   period: Period;
 };
 
-export type FeedItem = CareerFeedItem | ProjectFeedItem;
+/**
+ * note。題と説明文は公開した版のもの。最も新しい版・転載先・代表画像を持たない（FR-006）
+ */
+export type NoteFeedItem = {
+  type: 'note';
+  title: string;
+  /** 空なら null */
+  description: string | null;
+  /** 作成日時。`YYYY-MM-DDTHH:MM:SS.sssZ`。並びの日付で、公開の操作で変わらない（FR-008） */
+  createdAt: string;
+};
+
+export type FeedItem = CareerFeedItem | ProjectFeedItem | NoteFeedItem;
+
+/**
+ * 1 ページに並べる件数。仮の値（plan.md の U8）。読み取り行数は件数で変わらない
+ * （research.md の R8）
+ */
+export const FEED_PAGE_SIZE = 20;
+
+/** 番号のページの 1 つ（research.md の R8）。ページは 1 から数える */
+export type FeedPage = {
+  items: FeedItem[];
+  /** 次のページに項目があるか */
+  hasNextPage: boolean;
+};
