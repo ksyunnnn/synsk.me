@@ -3,9 +3,11 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
+import { addNoteSyndication as addNoteSyndicationUseCase } from '@/features/note/application/add-note-syndication';
 import { createNote as createNoteUseCase } from '@/features/note/application/create-note';
 import { deleteNote as deleteNoteUseCase } from '@/features/note/application/delete-note';
 import { publishNote as publishNoteUseCase } from '@/features/note/application/publish-note';
+import { removeNoteSyndication as removeNoteSyndicationUseCase } from '@/features/note/application/remove-note-syndication';
 import { restoreNote as restoreNoteUseCase } from '@/features/note/application/restore-note';
 import { revertNote as revertNoteUseCase } from '@/features/note/application/revert-note';
 import { saveNote as saveNoteUseCase } from '@/features/note/application/save-note';
@@ -15,8 +17,10 @@ import {
   NOTE_UID_FIELD,
   OPENED_REVISION_UID_FIELD,
   REVISION_UID_FIELD,
+  SYNDICATION_URL_FIELD,
   type NoteFormResult,
   type RevertNoteResult,
+  type SyndicationFormResult,
 } from '@/features/note/domain/note';
 import { createNoteDeps } from '@/features/note/server/queries';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
@@ -164,4 +168,47 @@ export const revertNote = async (
   if (outcome.status === 'reverted') redirect(`${editPath(uid)}?reverted=1`);
   if (outcome.status === 'not-found') redirect(LIST);
   return outcome;
+};
+
+/** 転載先の URL を記録し、同じ画面へ移る（FR-031）。記録済みの URL は入力を残して知らせる */
+export const addNoteSyndication = async (
+  _state: SyndicationFormResult | null,
+  formData: FormData,
+): Promise<SyndicationFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const url = readString(formData, SYNDICATION_URL_FIELD);
+  const outcome = await addNoteSyndicationUseCase(deps.notes, author, id, url);
+  if (outcome.status === 'added') redirect(`${editPath(uid)}?syndicated=1`);
+  if (outcome.status === 'not-found') redirect(LIST);
+  if (outcome.status === 'forbidden') return outcome;
+  return {
+    status: 'invalid',
+    errors: { [SYNDICATION_URL_FIELD]: outcome.error },
+    values: { [SYNDICATION_URL_FIELD]: url },
+  };
+};
+
+/** 転載先の URL を外し、同じ画面へ移る（FR-031、research.md の R14）。フォームは URL を送る */
+export const removeNoteSyndication = async (
+  _state: { status: 'forbidden' } | null,
+  formData: FormData,
+): Promise<{ status: 'forbidden' }> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const outcome = await removeNoteSyndicationUseCase(
+    deps.notes,
+    author,
+    id,
+    readString(formData, SYNDICATION_URL_FIELD),
+  );
+  if (outcome.status === 'forbidden') return outcome;
+  if (outcome.status === 'not-found') redirect(LIST);
+  redirect(`${editPath(uid)}?unsyndicated=1`);
 };

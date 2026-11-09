@@ -30,6 +30,7 @@ export const createFakeActivityRepository = (
     recordFetchFailure: async (source, fetchedAt, reason) => {
       failures.push({ source, fetchedAt, reason });
     },
+    listFetchedAt: async () => ({}),
   };
   return { repository, applied, failures };
 };

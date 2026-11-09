@@ -127,6 +127,17 @@ export type NoteFormResult = ActionResult<NoteField, NoteFieldError>;
 /** 過去の版に戻すフォームの結果。戻せたときは Server Action が編集の画面へ移す */
 export type RevertNoteResult = { status: 'forbidden' } | { status: 'conflict' };
 
+/** 転載先の URL の入力の名前（FR-031）。外すフォームも同じ名前で URL を送る（research.md の R14） */
+export const SYNDICATION_URL_FIELD = 'syndicationUrl';
+
+/** 転載先の URL の誤り。`taken` は同じ URL がどれかの note に記録済み（FR-032） */
+export type SyndicationFieldError = 'missing' | 'invalid' | 'taken';
+
+export type SyndicationFormResult = ActionResult<
+  typeof SYNDICATION_URL_FIELD,
+  SyndicationFieldError
+>;
+
 /** 保存する内容 */
 export type NoteInput = NoteRevisionContent & { slug: string };
 

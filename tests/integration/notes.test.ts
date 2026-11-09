@@ -7,6 +7,7 @@ import {
   insertNote,
   insertNoteMedia,
   insertNoteRevision,
+  insertSyndication,
   publishNoteRow,
 } from '../support/note-rows';
 
@@ -24,7 +25,8 @@ const INPUT = {
 };
 
 let ctx: TestServer;
-let draft: { uid: string; revision: { uid: string } };
+let draft: { id: number; uid: string; revision: { uid: string } };
+const DRAFT_SYNDICATION = 'https://example.com/integration-syndicated';
 let republishedId: number;
 let publishedUid: string;
 let deletedUid: string;
@@ -108,12 +110,14 @@ const sendNoteForm = async ({
 const readNoteTables = async () => ({
   note: await readRows(ctx, 'note'),
   note_revision: await readRows(ctx, 'note_revision'),
+  syndication: await readRows(ctx, 'syndication'),
 });
 
 beforeAll(async () => {
   ctx = await startTestServer({
     seed: async (db) => {
       draft = await insertNote(db, HIDDEN.draft);
+      await insertSyndication(db, draft.id, DRAFT_SYNDICATION);
 
       const published = await insertNote(db, {
         slug: 'integration-published',
@@ -323,6 +327,18 @@ describe('オーナーの JWT がない書き込み（FR-033）', () => {
           revisionUid: revert.firstRevisionUid,
           openedRevisionUid: revert.latestRevisionUid,
         },
+      ],
+      [
+        'removeNoteSyndication',
+        `/dash/notes/${draft.uid}`,
+        2,
+        { noteUid: draft.uid, syndicationUrl: DRAFT_SYNDICATION },
+      ],
+      [
+        'addNoteSyndication',
+        `/dash/notes/${draft.uid}`,
+        3,
+        { noteUid: draft.uid, syndicationUrl: 'https://example.com/integration-added' },
       ],
     ] as const;
 

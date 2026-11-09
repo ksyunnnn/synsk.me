@@ -209,12 +209,12 @@ description: "note の実装タスク"
 
 ### Tests for User Story 7
 
-- [ ] T045 [P] [US7] D1 の実装（2 つ記録できる、同じ URL を同じ note と別の note に記録できない、URL で指して外せる、別の note の URL を外さない）を tests/workers/note-repository.test.ts に、ユースケース（http・https でない URL を拒む、オーナーでない呼び出しを拒む）を tests/unit/note-usecases.test.ts に足す（FR-031・FR-032・FR-033、User Story 7）
-- [ ] T046 [P] [US7] オーナーとして転載先を 2 つ記録し、同じ URL を別の note に記録すると拒まれることを tests/e2e/note.spec.ts に足し、JWT のない `addNoteSyndication`・`removeNoteSyndication` が D1 を変えないことを tests/integration/notes.test.ts に足す
+- [X] T045 [P] [US7] D1 の実装（2 つ記録できる、同じ URL を同じ note と別の note に記録できない、URL で指して外せる、別の note の URL を外さない）を tests/workers/note-repository.test.ts に、ユースケース（http・https でない URL を拒む、オーナーでない呼び出しを拒む）を tests/unit/note-usecases.test.ts に足す（FR-031・FR-032・FR-033、User Story 7）
+- [X] T046 [P] [US7] オーナーとして転載先を 2 つ記録し、同じ URL を別の note に記録すると拒まれることを tests/e2e/note.spec.ts に足し、JWT のない `addNoteSyndication`・`removeNoteSyndication` が D1 を変えないことを tests/integration/notes.test.ts に足す
 
 ### Implementation for User Story 7
 
-- [ ] T047 [US7] 転載先の追加と削除を Repository・ユースケース add-note-syndication.ts・remove-note-syndication.ts・Server Action `addNoteSyndication`・`removeNoteSyndication`・src/features/note/components/note-syndication-form.tsx に作る。外すフォームは URL を送る（research.md の R14）。訪問者の DTO に入れない（U11）
+- [X] T047 [US7] 転載先の追加と削除を Repository・ユースケース add-note-syndication.ts・remove-note-syndication.ts・Server Action `addNoteSyndication`・`removeNoteSyndication`・src/features/note/components/note-syndication-form.tsx に作る。外すフォームは URL を送る（research.md の R14）。訪問者の DTO に入れない（U11）
 
 ---
 

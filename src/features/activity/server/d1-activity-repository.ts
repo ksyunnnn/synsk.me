@@ -82,9 +82,15 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
           )
           .bind(...entries.map(([, value]) => value), id, source);
       });
+    const deletes = plan.deletes.map((id) =>
+      db
+        .prepare("DELETE FROM activity WHERE id = ? AND source = ? AND source <> 'life_event'")
+        .bind(id, source),
+    );
     await db.batch([
       ...inserts,
       ...updates,
+      ...deletes,
       db
         .prepare(UPSERT_FETCH_RESULT)
         .bind(source, result.fetchedAt, 1, result.reason, result.fetchedAt),
@@ -93,5 +99,12 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
 
   recordFetchFailure: async (source, fetchedAt, reason) => {
     await db.prepare(UPSERT_FETCH_RESULT).bind(source, fetchedAt, 0, reason, null).run();
+  },
+
+  listFetchedAt: async () => {
+    const { results } = await db
+      .prepare('SELECT source, fetched_at FROM fetch_result')
+      .all<{ source: string; fetched_at: string }>();
+    return Object.fromEntries(results.map((row) => [row.source, row.fetched_at]));
   },
 });

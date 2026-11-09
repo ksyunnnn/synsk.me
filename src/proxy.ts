@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { hasLifeEventSlug, hasLifeEventUid } from '@/features/activity/server/queries';
 import { hasCareerUid } from '@/features/career/server/queries';
 import { hasEducationUid } from '@/features/education/server/queries';
 import { findMissingNoteRevision, hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
@@ -28,11 +29,19 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  */
 
 export const config = {
-  matcher: ['/projects/:slug', '/resume/:path*', '/notes/:slug', '/dash', '/dash/:path*'],
+  matcher: [
+    '/projects/:slug',
+    '/life-events/:slug',
+    '/resume/:path*',
+    '/notes/:slug',
+    '/dash',
+    '/dash/:path*',
+  ],
 };
 
 /** 404 と 403 の画面。`notFound()` か `forbidden()` を呼ぶだけのページ */
 const projectPageMissing = (slug: string) => `/projects/${slug}/missing`;
+const lifeEventPageMissing = (slug: string) => `/life-events/${slug}/missing`;
 const resumePageMissing = (slug: string) => `/resume/${slug}/missing`;
 const notePageMissing = (slug: string) => `/notes/${slug}/missing`;
 const DASH_FORBIDDEN = '/dash/forbidden';
@@ -49,6 +58,7 @@ const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
   careers: hasCareerUid,
   educations: hasEducationUid,
   resumes: hasResumeUid,
+  'life-events': hasLifeEventUid,
   notes: hasNoteUid,
 };
 
@@ -76,6 +86,12 @@ const decide = async (request: NextRequest): Promise<string | null> => {
     const slug = segments[1];
     if (!isRead || !slug) return null;
     return (await hasProjectSlug(slug)) ? null : projectPageMissing(slug);
+  }
+
+  if (segments[0] === 'life-events') {
+    const slug = segments[1];
+    if (!isRead || !slug) return null;
+    return (await hasLifeEventSlug(slug)) ? null : lifeEventPageMissing(slug);
   }
 
   if (segments[0] === 'resume') {

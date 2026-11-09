@@ -1,7 +1,7 @@
 import type {
   ItemChanges,
-  RefreshPlan,
   StoredItem,
+  UpsertPlan,
 } from '@/features/activity/domain/activity-repository';
 import type { FetchedItem } from '@/features/activity/domain/fetched-item';
 
@@ -17,7 +17,7 @@ import type { FetchedItem } from '@/features/activity/domain/fetched-item';
  *   出て頁の境目がずれると、同じ項目が 2 つの頁に出る。両方を足す行にすると、UNIQUE が
  *   `batch()` を拒み、その取得元の書き込みがすべて戻る
  */
-export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): RefreshPlan => {
+export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): UpsertPlan => {
   const byExternalId = new Map<string, StoredItem>();
   const byUrl = new Map<string, StoredItem>();
   for (const row of stored) {
@@ -25,7 +25,7 @@ export const planRefresh = (stored: StoredItem[], fetched: FetchedItem[]): Refre
     else byExternalId.set(row.externalId, row);
   }
 
-  const plan: RefreshPlan = { inserts: [], updates: [], skippedWithoutDate: 0 };
+  const plan: UpsertPlan = { inserts: [], updates: [], skippedWithoutDate: 0 };
   const seen = new Set<string>();
   for (const item of fetched) {
     const key = item.externalId === undefined ? `url:${item.url}` : `id:${item.externalId}`;
