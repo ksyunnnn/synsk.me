@@ -5079,7 +5079,8 @@
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
             created_at・updated_at は DB が既定値で入れ、updated_at
-            は行を書き換えたときにトリガが入れ直す
+            は行を書き換えたときにトリガが入れ直す（activity.gone_checked_at
+            だけを書いたときは入れ直さない）
           </text>
           <text
             x="416"
@@ -5088,7 +5089,7 @@
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
           >
-            activity_feed: published の行だけを出す。秘匿化した行は *_masked
+            activity_feed: 職歴・実績・note は published の行だけを出す。秘匿化した行は *_masked
             の列だけに値を持ち、title・organization_name・description・url・画像を持たない
           </text>
           <text
@@ -5231,6 +5232,15 @@
           <text
             x="416"
             y="1532"
+            fill="#2d3142"
+            font-size="9"
+            font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"
+          >
+            activity.gone_checked_at は外部の activity の行だけが持つ（CHECK）
+          </text>
+          <text
+            x="416"
+            y="1550"
             fill="#2d3142"
             font-size="9"
             font-family="'Geist', 'Hiragino Kaku Gothic ProN', sans-serif"

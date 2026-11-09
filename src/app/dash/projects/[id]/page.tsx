@@ -30,7 +30,7 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/projects">実績の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">実績を編集する</h1>
-      {saved === '1' && <DraftSavedNotice />}
+      {saved === '1' && <DraftSavedNotice version={project.updatedAt} />}
       <p>
         <TextLink href={`/projects/${project.slug}`}>訪問者に見せるページを開く</TextLink>
       </p>

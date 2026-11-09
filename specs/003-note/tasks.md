@@ -73,9 +73,9 @@ description: "note の実装タスク"
 - [X] T007 [P] T006 を tests/workers/note-repository.test.ts で確かめる（その note の `media` の行に無い `storageKey` を DTO に入れない、説明文が空なら最初の段落が説明になる）。本文の読み方そのもの（コードの中の印を拾わないなど）は共有担当の部品の検査が持つ（constitution の Test Layering）
 - [ ] T008 note の Repository のインタフェース（作成・編集用に読む・一覧・版の一覧と 1 つの版・開いた版と比べた保存・公開・下書きに戻す・削除・元に戻す・代表画像の出どころ・転載先の追加と削除・参照先の情報・完全に消す・訪問者向けに読む・uid と版の uid と識別子の有無）を src/features/note/domain/note-repository.ts に作る。手本は src/features/project/domain/project-repository.ts
 - [ ] T009 D1 の実装の骨組み（行の型と domain の型への詰め替え、`findIdByUid`、版の uid から版の id を引く、識別子の有無）を src/features/note/server/d1-note-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
-- [ ] T010 組み立て用の関数の骨組み（`createNoteDeps`・`hasNoteSlug`・`hasNoteUid`・`findMissingNoteRevision`）を src/features/note/server/queries.ts に作る。`hasNoteUid` は削除した note でも真を返す（contracts/dash.md の共通）
+- [X] T010 組み立て用の関数の骨組み（`createNoteDeps`・`hasNoteSlug`・`hasNoteUid`・`findMissingNoteRevision`）を src/features/note/server/queries.ts に作る。`hasNoteUid` は削除した note でも真を返す（contracts/dash.md の共通）
 - [X] T011 src/app/dash/page.tsx に note の一覧（`/dash/notes`）へのリンクを足す
-- [ ] T012 src/proxy.ts の matcher に `/notes/:slug` を足し、`hasNoteSlug` で `/notes/{slug}/missing` への rewrite を、`DASH_ROW_EXISTS` に `notes` を、`/dash/notes/{uid}/revisions/{revisionUid}` の有無で `.../missing` への rewrite を足す。tests/unit/proxy.test.ts に確かめを足す（research.md の R9）
+- [X] T012 src/proxy.ts の matcher に `/notes/:slug` を足し、`hasNoteSlug` で `/notes/{slug}/missing` への rewrite を、`DASH_ROW_EXISTS` に `notes` を、`/dash/notes/{uid}/revisions/{revisionUid}` の有無で `.../missing` への rewrite を足す。tests/unit/proxy.test.ts に確かめを足す（research.md の R9）
 
 **Checkpoint**: Phase 1 と 2 が終われば、User Story を始められる
 
@@ -135,13 +135,13 @@ description: "note の実装タスク"
 
 ### Tests for User Story 3
 
-- [ ] T027 [P] [US3] D1 の実装（版の一覧が新しい順、1 つの版の読み出しが別の note の版を返さない、戻すと戻した版の中身が新しい版として足され 3 つの版が残る、開いた版が最も新しい版でなければ戻さない、公開した版が変わらない）を tests/workers/note-repository.test.ts に足す（FR-008・FR-009、User Story 3 の 1・2）
-- [ ] T028 [P] [US3] 公開した note を過去の版に戻し公開し直さないと、`/notes/{slug}` に戻す前に公開していた版が出ること、JWT のない `revertNote` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-009・FR-033、User Story 3 の 3）
+- [X] T027 [P] [US3] D1 の実装（版の一覧が新しい順、1 つの版の読み出しが別の note の版を返さない、戻すと戻した版の中身が新しい版として足され 3 つの版が残る、開いた版が最も新しい版でなければ戻さない、公開した版が変わらない）を tests/workers/note-repository.test.ts に足す（FR-008・FR-009、User Story 3 の 1・2）
+- [X] T028 [P] [US3] 公開した note を過去の版に戻し公開し直さないと、`/notes/{slug}` に戻す前に公開していた版が出ること、JWT のない `revertNote` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-009・FR-033、User Story 3 の 3）
 
 ### Implementation for User Story 3
 
-- [ ] T029 [US3] 版の一覧・1 つの版・戻すを src/features/note/server/d1-note-repository.ts に、ユースケース list-note-revisions.ts・revert-note.ts を src/features/note/application/ に、Server Action `revertNote` を src/features/note/server/actions.ts に足す
-- [ ] T030 [US3] 版の一覧の部品を src/features/note/components/note-revision-list.tsx に作り、ページ src/app/dash/notes/[id]/revisions/page.tsx・[id]/revisions/[revisionId]/page.tsx（「この版に戻す」）・[id]/revisions/[revisionId]/missing/page.tsx を作る
+- [X] T029 [US3] 版の一覧・1 つの版・戻すを src/features/note/server/d1-note-repository.ts に、ユースケース list-note-revisions.ts・revert-note.ts を src/features/note/application/ に、Server Action `revertNote` を src/features/note/server/actions.ts に足す
+- [X] T030 [US3] 版の一覧の部品を src/features/note/components/note-revision-list.tsx に作り、ページ src/app/dash/notes/[id]/revisions/page.tsx・[id]/revisions/[revisionId]/page.tsx（「この版に戻す」）・[id]/revisions/[revisionId]/missing/page.tsx を作る
 
 ---
 
@@ -153,8 +153,8 @@ description: "note の実装タスク"
 
 ### Tests for User Story 4
 
-- [ ] T031 [P] [US4] 2 つのタブで同じ note を開き、後から保存した側が止まり、知らせが出て、入力が残ること、1 つのタブで続けて 2 回保存すると 2 回とも保存されることを tests/e2e/note-concurrency.spec.ts で確かめる（FR-020・FR-021・SC-002、User Story 4 の 3・4）
-- [ ] T032 [P] [US4] 本文を書きかけて保存せずに再読み込みすると書きかけが残ること、別のブラウザの文脈（別の端末にあたる）で開くと最後に保存した版が出ること、保存を止められたときに書きかけが消えないことを tests/e2e/note-draft.spec.ts で確かめる（FR-018・FR-019、User Story 4 の 1・2、spec の Edge Cases）
+- [X] T031 [P] [US4] 2 つのタブで同じ note を開き、後から保存した側が止まり、知らせが出て、入力が残ること、1 つのタブで続けて 2 回保存すると 2 回とも保存されることを tests/e2e/note-concurrency.spec.ts で確かめる（FR-020・FR-021・SC-002、User Story 4 の 3・4）
+- [X] T032 [P] [US4] 本文を書きかけて保存せずに再読み込みすると書きかけが残ること、別のブラウザの文脈（別の端末にあたる）で開くと最後に保存した版が出ること、保存を止められたときに書きかけが消えないことを tests/e2e/note-draft.spec.ts で確かめる（FR-018・FR-019、User Story 4 の 1・2、spec の Edge Cases）
 
 ### Implementation for User Story 4
 

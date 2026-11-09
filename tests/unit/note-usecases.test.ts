@@ -3,6 +3,7 @@ import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
 import { publishNote } from '@/features/note/application/publish-note';
 import { restoreNote } from '@/features/note/application/restore-note';
+import { revertNote } from '@/features/note/application/revert-note';
 import { saveNote } from '@/features/note/application/save-note';
 import { unpublishNote } from '@/features/note/application/unpublish-note';
 import { toNoteFormValues, type Note, type NoteFormValues } from '@/features/note/domain/note';
@@ -64,6 +65,10 @@ const fakeNotes = (current: Note | null = note(), overrides: Partial<NoteReposit
     unpublish: vi.fn(async () => ({ ok: true })),
     delete: vi.fn(async () => ({ ok: true })),
     restore: vi.fn(async () => ({ ok: true })),
+    listRevisions: vi.fn(async () => []),
+    findRevision: vi.fn(async () => null),
+    revert: vi.fn(async () => ({ ok: true as const })),
+    findMissingRevision: vi.fn(async () => null),
     ...overrides,
   }) satisfies NoteRepository;
 
@@ -237,5 +242,32 @@ describe('unpublishNote・deleteNote・restoreNote（FR-014・FR-016・FR-033）
     const notes = fakeNotes(note({ deletedAt: NOW }));
     expect(await saveNote(notes, OWNER, 1, values(), OPENED)).toEqual({ status: 'not-found' });
     expect(await publishNote(notes, OWNER, 1, NOW)).toEqual({ status: 'not-found' });
+  });
+});
+
+describe('revertNote（FR-009・FR-020・FR-033）', () => {
+  const REVISION = '22222222222222222222222222222222';
+
+  it('オーナーでなければ書かない', async () => {
+    const notes = fakeNotes();
+    expect(await revertNote(notes, null, 1, REVISION, OPENED)).toEqual({ status: 'forbidden' });
+    expect(notes.revert).not.toHaveBeenCalled();
+  });
+
+  it('戻す版と開いた版を渡して書く', async () => {
+    const notes = fakeNotes();
+    expect(await revertNote(notes, OWNER, 1, REVISION, OPENED)).toEqual({ status: 'reverted' });
+    expect(notes.revert).toHaveBeenCalledWith(1, REVISION, OPENED);
+  });
+
+  it.each([
+    ['conflict', 'conflict'],
+    ['not-found', 'not-found'],
+    ['revision-not-found', 'not-found'],
+  ] as const)('Repository の %s を %s にする', async (reason, status) => {
+    const notes = fakeNotes(note(), {
+      revert: vi.fn(async () => ({ ok: false as const, reason })),
+    });
+    expect(await revertNote(notes, OWNER, 1, REVISION, OPENED)).toEqual({ status });
   });
 });
