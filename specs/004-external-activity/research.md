@@ -42,7 +42,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 - 型（domain に置く）: 一覧を取る取得元は `{ items: FetchedItem[]; isComplete: boolean }` を返す。`isComplete` は、取得元の項目をすべて取ったか（FR-018 の判定に使う）。URL を指名する取得元は、1 つの URL から `FetchedItem` か「取れない」を返す
 - 取得元の一覧（取得元の名前・分類・取り込み方・担当のファイル）は `src/features/activity/domain/sources.ts` に `as const` で 1 か所に置く。分類は `activity_source.kind` に持ち、コードは D1 の値を正とする（FR-001・FR-002）
 - 理由: `docs/SOFTWARE_DESIGN.md` の Anti-Corruption Layer、constitution VII。取得元の仕様が変わったときに直すファイルを 1 つに限る
-- RSS の XML の読み方: Workers には `DOMParser` が無い（推測。実装の前に確かめ、結果をこの項に書く）。package を足すときは constitution IX に従い、Zenn・Medium・Speaker Deck の 3 つの使い手を名前で書く
+- RSS の XML の読み方: workerd に `DOMParser` は無い（2026-11-09、`npm run test:workers` の中で `typeof DOMParser` が `undefined`）。`HTMLRewriter` はあるが HTML として読むため、RSS の `<link>`（HTML では空の要素）と CDATA を読めない。そこで package を足さず、RSS 2.0 の項目の子の要素だけを読む最小の読み手 `src/features/activity/server/sources/rss.ts` を持つ。使い手は Zenn・Medium・Speaker Deck の 3 つ（constitution IX）
 - 退けた案: 取得元の取り方を `activity_source` の列に持つ。FR-004 が退ける
 
 ## R4 取得の流れと失敗の表し方
@@ -99,6 +99,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | CodePen | すべて手で入力する | 埋め込み | なし（全経路 403） | URL | — | 手で入力 |
 | 登録していないサイト | 未決（U11） | その他 | — | URL（FR-005） | — | 手で入力 |
 
+- Qiita の 1 頁は 20 件にする。項目が本文の全文を持ち、`per_page=100` の頁は 941 KB だった（2026-11-09、77 件を実測）。R8 の 1 本の応答の大きさの上限（1 MB）の内側に収めるため
 - 頁を辿る取得元（Qiita・dev.to・GitHub・connpass）で、R8 の要求の数の上限に当たって辿るのを止めたときは、`isComplete` を偽にする。上限で止めた一覧に無い activity を消す候補にしないため（FR-018・FR-020）
 - 注意（検証記録から）: dev.to は User-Agent が空だと 403 を返し、Workers の `fetch` は既定の User-Agent を付けない。CodeSandbox は無い ID でもサイト既定の OG を 200 で返すので、`og:title` が既定値なら「取れない」とする。GitHub の `pushed_at` は null がありうる。Medium の `link` は問い合わせの部分を除いて使う。connpass は API キーが必須で、要求は 5 秒に 1 回まで
 - issue #177「CodePen と CodeSandbox を手で登録できるようにする」は CodeSandbox を手で入力するとするが、spec の Assumptions と ADR-0052 は URL を指名するとする。spec に従う（2026-11-09、PM の回答）

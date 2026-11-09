@@ -27,7 +27,7 @@
 
 **Language/Version**: TypeScript 6.0（`typescript` ~6.0.3）、Node.js 22 以上
 
-**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。RSS の XML の読み方は実装の前に確かめる（[research.md](./research.md) の R3）
+**Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。RSS は package を足さずに読む（[research.md](./research.md) の R3）
 
 **Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0011` と共有担当の migration（`activity.uid`・取得元の行。research.md の R1）。画像は R2（binding `NOTE_IMAGES`）を共有担当の `src/shared/server/media-storage.ts` 越しに使う。形式は JPEG・PNG・WebP・GIF、1 枚 10 MB まで（U5 の決定）
 
