@@ -7,6 +7,7 @@ import {
 } from '@/shared/domain/media';
 import { isSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 
 /**
  * note の型と決まり（specs/003-note/spec.md の FR-002・FR-003・FR-005・FR-010・FR-011、
@@ -179,9 +180,6 @@ export type SyndicationFormResult = ActionResult<
 
 /** 保存する内容 */
 export type NoteInput = NoteRevisionContent & { slug: string };
-
-/** 複数行の入力の改行を `\n` に揃える。`<textarea>` は `\r\n` で送る */
-const normalizeNewlines = (value: string) => value.replace(/\r\n?/g, '\n');
 
 /**
  * フォームの値を保存する内容に読み替える。題は前後の空白を除き、空でもよい（下書きは題が空でも
