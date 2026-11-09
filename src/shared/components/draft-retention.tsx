@@ -230,8 +230,10 @@ export const DraftSavedNotice = ({
   const keys = storageKeys.join('\n');
   useEffect(() => {
     const sent = read(SENT_KEY);
-    if (sent === null || !isSentFrom(sent, keys.split('\n'))) return;
-    remove(sent);
+    if (sent === null) return;
+    // 別の画面の書きかけは消さない。送った印だけを外し、後で同じ種類の `?saved=1` の画面を
+    // 開いたときに、保存していない書きかけを消さないようにする。書きかけは、その画面を開き直すと戻る
+    if (isSentFrom(sent, keys.split('\n'))) remove(sent);
     remove(SENT_KEY);
   }, [keys, version]);
   return <p role="status">保存しました</p>;

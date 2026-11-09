@@ -33,6 +33,7 @@ const Page = async ({ params, searchParams }: Props) => {
   if (!lifeEvent) notFound();
   const { saved, imageSaved, imageRemoved } = await searchParams;
   const values = toLifeEventFormValues(lifeEvent);
+  const valuesVersion = JSON.stringify(values);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
@@ -45,7 +46,7 @@ const Page = async ({ params, searchParams }: Props) => {
       {saved === '1' && (
         <DraftSavedNotice
           storageKeys={['life-event:new', `life-event:${lifeEvent.uid}`]}
-          version={JSON.stringify(values)}
+          version={valuesVersion}
         />
       )}
       <p>
@@ -53,7 +54,7 @@ const Page = async ({ params, searchParams }: Props) => {
       </p>
       {/* 保存した値が変わったら、入力の初めの値を描き直す */}
       <LifeEventForm
-        key={JSON.stringify(values)}
+        key={valuesVersion}
         action={editLifeEvent}
         initialValues={values}
         uid={lifeEvent.uid}
