@@ -277,14 +277,16 @@ BEGIN
 END;
 
 -- 004 の取得元（specs/004-external-activity/spec.md の Assumptions の分類）。source の値は
--- サービスの名前を英小文字にし、語の区切りを _ にする（life_event と同じ形）。kind の意味は
--- 0007 の注釈のとおり
+-- サービスの名前から空白と記号を除いた英小文字の 1 語にし（例: dev.to は devto）、
+-- 004 の取得元ごとのファイル名（specs/004-external-activity/plan.md）と揃える。_ は 0004 の
+-- 注釈の、1 つのサービスから複数の種類を取り込むときの区切り（例: zenn_article）に残す。
+-- 004 の取得元は、どれも 1 つのサービスから 1 種類だけを取り込む。kind の意味は 0007 の注釈のとおり
 INSERT INTO activity_source (source, kind) VALUES
   ('zenn', 'article'),
   ('qiita', 'article'),
-  ('dev_to', 'article'),
+  ('devto', 'article'),
   ('medium', 'article'),
-  ('speaker_deck', 'embed'),
+  ('speakerdeck', 'embed'),
   ('spotify', 'embed'),
   ('x', 'embed'),
   ('codesandbox', 'embed'),

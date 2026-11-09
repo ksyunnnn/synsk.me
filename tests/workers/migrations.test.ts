@@ -268,13 +268,13 @@ describe('migration 0012', () => {
       'SELECT source, kind FROM activity_source ORDER BY kind, source',
     ).all<{ source: string; kind: string }>();
     expect(results).toEqual([
-      { source: 'dev_to', kind: 'article' },
+      { source: 'devto', kind: 'article' },
       { source: 'medium', kind: 'article' },
       { source: 'qiita', kind: 'article' },
       { source: 'zenn', kind: 'article' },
       { source: 'codepen', kind: 'embed' },
       { source: 'codesandbox', kind: 'embed' },
-      { source: 'speaker_deck', kind: 'embed' },
+      { source: 'speakerdeck', kind: 'embed' },
       { source: 'spotify', kind: 'embed' },
       { source: 'x', kind: 'embed' },
       { source: 'youtube', kind: 'embed' },
