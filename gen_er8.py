@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 2030
-H = 1740
+H = 1760
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -91,6 +91,7 @@ def rules_note(x, y):
         "activity.gone_checked_at は外部の activity の行だけが持つ。consecutive_gone_count は 0 以上で、life event の行は 0（CHECK）",
         "activity.gone_checked_at・consecutive_gone_count だけを書いたときは、トリガが updated_at を入れ直さない",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
+        "life event の行は published_at・url・external_id・image_url を持たない（CHECK）",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
         "id はすべて AUTOINCREMENT（削除した id を使い回さない）",
         "管理画面の URL とフォームは uid で行を指し、id を出さない。uid は DB が乱数で入れ、書き換えをトリガで拒む",
@@ -147,8 +148,8 @@ skill = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name"
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ source", "text"), ("slug", "text · unique · life event だけ"),
-    ("external_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
-    ("description", "text · 空可"), ("image_url", "text · 空可"), ("published_at", "text · 空可"),
+    ("external_id", "text · 空可（外部だけ）"), ("url", "text · 外部だけ"), ("title", "text · 空可"),
+    ("description", "text · 空可"), ("image_url", "text · 空可（外部だけ）"), ("published_at", "text · 空可（外部だけ）"),
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
     ("happened_on", "text（年月日）· 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"), ("gone_checked_at", "text · 空可（外部だけ）"), ("consecutive_gone_count", "integer · 既定 0"),
 ] + TS
