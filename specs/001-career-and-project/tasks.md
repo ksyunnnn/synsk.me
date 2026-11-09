@@ -95,7 +95,7 @@ description: "職歴と実績の実装タスク"
 - [X] T032 [US1] D1 の実装を src/features/project/server/d1-project-repository.ts に作る。編集は research.md の R7、削除は R8 の順で 1 つの `batch()`。組織は src/shared/server/organization-repository.ts で探すか作る
 - [X] T033 [US1] 組み立て用の関数（訪問者向けの取り出し、識別子と id の有無）を src/features/project/server/queries.ts に、Server Action（`registerProject`・`editProject`・`deleteProject`）を src/features/project/server/actions.ts に作る。Server Action は先頭でオーナーを確かめる
 - [X] T034 [US1] src/proxy.ts の matcher に `/projects/:slug` を足し、T033 の有無の関数で 404 の rewrite を足す。`/dash/projects/{uid}` の有無も見る
-- [X] T035 [P] [US1] 訪問者向けの実績の表示（秘匿化しない側）を src/features/project/components/visitor-project.tsx に作る。本文は U4 が解けるまで出さない
+- [X] T035 [P] [US1] 訪問者向けの実績の表示（秘匿化しない側）を src/features/project/components/visitor-project.tsx に作る。本文の表示は T077 が作る
 - [X] T036 [P] [US1] 実績の入力（組織名・種類・題・秘匿化した題・秘匿化するか・期間・本文・関連 URL）を src/features/project/components/project-form.tsx に作る。組織名は U3 が解けるまでネイティブの `input type="text"`。失敗の結果では送られた値を残す
 - [X] T037 [US1] 訪問者のページを src/app/projects/[slug]/page.tsx（`generateMetadata` も DTO の値だけを使う）と src/app/projects/[slug]/missing/page.tsx（`notFound()` だけ）に作る
 - [X] T038 [US1] 管理画面のページを src/app/dash/projects/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作る。各ページは描画の前にオーナーを確かめる
@@ -200,11 +200,11 @@ description: "職歴と実績の実装タスク"
 - [ ] T072 入力中の内容を `localStorage` に持ち、保存に成功したら消す部品を src/shared/components/draft-retention.tsx に作り、実績・職歴・学歴・組織・スキルの入力に使う。E2E で、保存せずに再読み込みしても入力が残ることを tests/e2e/draft-retention.spec.ts で確かめる（REQUIREMENTS.md の FR-14、research.md の R16）
 - [ ] T073 本番の D1 にオーナーが個人の組織を登録した後、その行の id を src/shared/domain/organization.ts の定数に書き、個人の組織を消せないことを tests/workers/organization-edit.test.ts に足す（FR-041、research.md の R9）
 - [X] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
-- [ ] T075 R2 の読み書きを src/shared/server/media-storage.ts に閉じ込め、実績・職歴の画像の追加と、実績の代表画像の選択と登録（その実績の画像だけ）を作る。画像の上限を plan.md に書いてから作る（constitution II）。**止める依存: src/shared/server/media-storage.ts（共有担当が作る）**
+- [ ] T075 共有担当が作る src/shared/server/media-storage.ts（R2 の読み書き）を使い、実績・職歴の画像の追加と、実績の代表画像の選択と登録（その実績の画像だけ）を作る。回数の上限の値を plan.md に書いてから作る（constitution II。大きさの上限は U5 が決めた）。**止める依存: src/shared/server/media-storage.ts（共有担当が作る）**
 - [ ] T076 秘匿化しない実績の画像を配る経路を作り、秘匿化した実績の画像が返らないことを結合で確かめる（FR-030）。**止める依存: src/shared/server/media-storage.ts（共有担当が作る）**
-- [ ] T077 本文の表示と、本文の中に画像とキャプションを置く入力を作る（FR-027）。**止める依存: src/shared/server/media-storage.ts（共有担当が作る）**
+- [ ] T077 本文を Markdown として表示し（生の HTML を通さない。plan.md の U4）、本文の中に画像とキャプションを置く入力を作る（FR-027）。本文の表示は待たずに作る。**止める依存（本文の中の画像だけ）: src/shared/server/media-storage.ts（共有担当が作る）**
 - [X] T078 訪問者向けの実績の取り出しと識別子の有無（src/features/project/server/d1-project-repository.ts）を、秘匿化した組織名の無い組織を指す秘匿化した実績を出さない形にし、tests/workers/project-masking.test.ts と tests/integration/project-masking.test.ts で 404 と応答の中身を確かめる（U2 の決定、research.md の R5）。トリガの migration は足さない
-- [X] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース・失敗の表し方・見た目と操作を分ける）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
+- [X] T079 docs/SOFTWARE_DESIGN.md の各デザインパターンの「手本のファイル」に、001 で最初に書いたファイル（Repository・DTO・組み立て用の関数・Dependency Injection・読む→計算→書く・ユースケース）を書き、`bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する
 - [ ] T080 PR の CI が 10 分以内に収まることを GitHub Actions のステップの所要時間で確かめる（ADR-0019）
 - [ ] T081 quickstart.md の手順をブランチの Preview で行う
 - [ ] T082 問い合わせの場所のページ（別の spec）ができたら、秘匿化した実績の「非公開」の近くに、そのページへのリンクを src/features/project/components/visitor-project.tsx に足す（FR-021、plan.md の U7）。**止める依存: 問い合わせの場所のページ**
@@ -241,7 +241,7 @@ description: "職歴と実績の実装タスク"
 | 未決 | 止めるタスク |
 |---|---|
 | U3 | T053 |
-| U4・U5 | 無し（決定済み）。T075〜T077 は共有担当の src/shared/server/media-storage.ts を待つ |
+| U4・U5 | U5 の残り（回数の上限）が T075 を止める。T075・T076 と T077 の本文の中の画像は、共有担当の src/shared/server/media-storage.ts を待つ |
 | U6 の残り（端の扱い） | T055・T061 の、職歴の実績とスキルの部分 |
 | U1・U8・U9 | 無し（U9 が覆れば構成のタスクを直す） |
 

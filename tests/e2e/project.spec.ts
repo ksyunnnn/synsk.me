@@ -236,7 +236,11 @@ test('オーナーはキーボードだけで実績を登録・編集・削除�
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('E2E 実績の直した題 キーボード');
   await tabTo(page, page.getByRole('button', { name: '保存する' }));
-  await page.keyboard.press('Enter');
+  // 登録の後の「保存しました」が画面に残っているため、送った Server Action の応答を待つ
+  await Promise.all([
+    page.waitForResponse((res) => res.request().method() === 'POST'),
+    page.keyboard.press('Enter'),
+  ]);
   await expect(page.getByRole('status')).toHaveText('保存しました');
   await expect(page.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
     'E2E 実績の直した題 キーボード',

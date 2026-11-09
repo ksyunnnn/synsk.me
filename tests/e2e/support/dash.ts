@@ -53,6 +53,8 @@ const fillIfGiven = async (page: Page, name: string, value: string | undefined) 
   if (value !== undefined) await textbox(page, name).fill(value);
 };
 
+const isFocused = (target: Locator) => target.evaluate((el) => el === document.activeElement);
+
 /**
  * Tab のキーだけで `target` にフォーカスを移す。`focus()` で直接移さないのは、キーボードで
  * たどり着けることを確かめるため。`maxTabs` 回押しても届かなければ失敗にする
@@ -60,12 +62,10 @@ const fillIfGiven = async (page: Page, name: string, value: string | undefined) 
 export const tabTo = async (page: Page, target: Locator, maxTabs = 200) => {
   for (let i = 0; i < maxTabs; i += 1) {
     await page.keyboard.press('Tab');
-    if (await target.evaluate((el) => el === document.activeElement)) return;
+    if (await isFocused(target)) return;
   }
   throw new Error(`Tab を ${maxTabs} 回押しても ${target} にフォーカスが移らない`);
 };
-
-const isFocused = (target: Locator) => target.evaluate((el) => el === document.activeElement);
 
 /** 日付の入力の年・月・日の欄の並び。並びはブラウザが OS の言語の設定で決め、`locale` に従わない */
 const DATE_FIELD_ORDERS = [
