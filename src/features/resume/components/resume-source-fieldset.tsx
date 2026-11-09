@@ -1,7 +1,7 @@
 import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import type { ResumeRowKind, ResumeSources } from '@/features/resume/domain/resume';
 import { CheckboxField } from '@/shared/components/field';
-import type { Period } from '@/shared/domain/period';
+import { formatPeriod } from '@/shared/domain/period';
 
 /**
  * 写し元の職歴・実績・学歴を選ぶチェックボックス。作成の画面（`/dash/resumes/new`）と、作ったあとに
@@ -9,8 +9,6 @@ import type { Period } from '@/shared/domain/period';
  */
 
 export type SourceOption = { id: number; label: string; detail: string };
-
-const periodText = (period: Period) => `${period.startedOn} 〜 ${period.endedOn ?? ''}`;
 
 /**
  * 写し元を選択肢にする。名前と期間だけを持ち、本文や関連 URL をクライアントの部品に渡さない。
@@ -20,17 +18,17 @@ export const toSourceOptions = (sources: ResumeSources): Record<ResumeRowKind, S
   careers: sources.careers.map((c) => ({
     id: c.id,
     label: `${c.organizationName}・${c.role}`,
-    detail: periodText(c.period),
+    detail: formatPeriod(c.period),
   })),
   projects: sources.projects.map((p) => ({
     id: p.id,
     label: p.title,
-    detail: `${p.organizationName}・${periodText(p.period)}`,
+    detail: `${p.organizationName}・${formatPeriod(p.period)}`,
   })),
   educations: sources.educations.map((e) => ({
     id: e.id,
     label: e.school,
-    detail: periodText(e.period),
+    detail: formatPeriod(e.period),
   })),
 });
 
