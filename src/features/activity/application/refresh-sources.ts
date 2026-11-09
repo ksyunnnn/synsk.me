@@ -1,6 +1,10 @@
 import type { ActivityDeps } from '@/features/activity/application/deps';
 import { planRefresh } from '@/features/activity/application/plan-refresh';
-import { pickGoneChecks, planRemovals } from '@/features/activity/application/plan-removals';
+import {
+  GONE_STREAK_TO_REMOVE,
+  pickGoneChecks,
+  planRemovals,
+} from '@/features/activity/application/plan-removals';
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
 import type {
   GoneCheck,
@@ -89,7 +93,7 @@ const refreshSource = async (
         checks.gone,
       );
       const deleted = new Set(removals.deletes);
-      const goneChecked = checks.checked.filter((id) => !deleted.has(id));
+      const goneChecked = checks.checked.filter(({ id }) => !deleted.has(id));
       const reason =
         removals.keptOverLimit > 0
           ? `消す候補が ${removals.keptOverLimit} 件で、上限（${limits.maxRemovals} 件）を超えたので、1 件も消さなかった`
@@ -122,7 +126,7 @@ const refreshSource = async (
   const checks = await checkGoneOf(deps, source, stored, listing, limits);
   const removals = planRemovals(stored, listing, limits.maxRemovals, checks.gone);
   const deleted = new Set(removals.deletes);
-  const goneChecked = checks.checked.filter((id) => !deleted.has(id));
+  const goneChecked = checks.checked.filter(({ id }) => !deleted.has(id));
   const plan = {
     ...upserts,
     deletes: removals.deletes,
@@ -168,16 +172,22 @@ const checkGoneOf = async (
   stored: StoredItem[],
   listing: SourceListing,
   limits: RefreshLimits,
-): Promise<{ gone: number[]; checked: number[] }> => {
+): Promise<{ gone: number[]; checked: { id: number; goneStreak: number }[] }> => {
   const { checkGone } = deps;
   if (listing.isComplete || !checkGone) return { gone: [], checked: [] };
   const rows = pickGoneChecks(stored, listing.items, limits.maxGoneChecks ?? 0);
   const results = await Promise.all(
     rows.map((row) => checkGone(source, row.url, limits).catch((): GoneCheck => 'unknown')),
   );
+  // 404 が続いた回数を数え、続けて GONE_STREAK_TO_REMOVE 回になった行だけを消えたと確かめる。
+  // 2xx と判定できない応答は回数を 0 に戻す（R6、原則 2）
+  const checked = rows.map((row, index) => ({
+    id: row.id,
+    goneStreak: results[index] === 'gone' ? (row.goneStreak ?? 0) + 1 : 0,
+  }));
   return {
-    gone: rows.filter((_, index) => results[index] === 'gone').map((row) => row.id),
-    checked: rows.map((row) => row.id),
+    gone: checked.filter((row) => row.goneStreak >= GONE_STREAK_TO_REMOVE).map((row) => row.id),
+    checked,
   };
 };
 

@@ -20,6 +20,11 @@ export type StoredItem = {
    * 消えた印ではない（research.md の R6）
    */
   goneCheckedAt?: string | null;
+  /**
+   * 個別の URL を取り直して 404 が続いた回数。続けて 2 回 404 の行を消す（research.md の R6）。
+   * 回数を持つ列は共有担当の migration 0019 が足す。列が入るまでは読まず、無いもの（0）として扱う
+   */
+  goneStreak?: number;
 };
 
 /** 保存した行で直す列。値の変わった列だけを持つ（research.md の R5） */
@@ -44,7 +49,7 @@ export type RefreshPlan = UpsertPlan & {
   /** 取得元で消えたと確かめた行の id（FR-017） */
   deletes: number[];
   /** 個別の URL を取り直して消さなかった行（残っていた行と、判定できなかった行）の id。確かめた日時を書く（R6） */
-  goneChecked?: number[];
+  goneChecked?: { id: number; goneStreak: number }[];
 };
 
 /** 成功した取り直しの取得の結果。`last_succeeded_at` は `fetchedAt` になる */

@@ -11,6 +11,12 @@ import type { FetchedItem, SourceListing } from '@/features/activity/domain/fetc
  *   （空の一覧が返るなど）の兆しで、消したものは取り消せないため（原則 2）
  * - 同じ項目の判定は `planRefresh` と同じ。ID を返す取得元は ID で、返さない取得元は URL で
  */
+/**
+ * 個別の URL を取り直して、続けてこの回数 404 が返った行を消えたと確かめる（research.md の R6、
+ * 2026-11-09 の PM の決定、原則 2）。1 回の 404 は取得元の一時の誤りでも返りうるため
+ */
+export const GONE_STREAK_TO_REMOVE = 2;
+
 export const planRemovals = (
   stored: StoredItem[],
   listing: SourceListing,

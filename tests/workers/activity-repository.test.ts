@@ -469,7 +469,16 @@ describe('確かめた日時', () => {
 
     await activities.applyRefresh(
       'zenn',
-      { inserts: [], updates: [], deletes: [], goneChecked: [id, otherId], skippedWithoutDate: 0 },
+      {
+        inserts: [],
+        updates: [],
+        deletes: [],
+        goneChecked: [
+          { id, goneStreak: 1 },
+          { id: otherId, goneStreak: 1 },
+        ],
+        skippedWithoutDate: 0,
+      },
       { fetchedAt: T1, reason: null, validators: null },
     );
 
