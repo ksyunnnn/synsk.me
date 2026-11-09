@@ -161,19 +161,19 @@ description: "外部 activity の取得の実装タスク"
 
 ### Tests for User Story 5
 
-- [ ] T060 [P] [US5] 登録・編集のユースケースが、起きた日の無い保存を拒み、識別子が空なら推測できない値を入れ、形の違う識別子を拒むことを tests/unit/activity-life-event.test.ts で確かめる（FR-023〜FR-025・FR-035、US5 の Acceptance 1〜3・8）
-- [ ] T061 [P] [US5] life event の保存・識別子の重複の拒否・削除で行が残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027 の画像の無い部分・FR-035、US5 の Acceptance 10）。**止める依存: 共有担当の migration**
-- [ ] T062 [P] [US5] `/life-events/{slug}` が 200 で DTO の値だけを返し、無い slug と書き換える前の slug で 404 になることを tests/integration/life-events.test.ts で確かめる（FR-026・FR-034・SC-007）
-- [ ] T063 [P] [US5] `src/proxy.ts` が `/life-events/{slug}` の有無で rewrite することを tests/unit/proxy.test.ts に足す
+- [x] T060 [P] [US5] 登録・編集のユースケースが、起きた日の無い保存を拒み、識別子が空なら推測できない値を入れ、形の違う識別子を拒むことを tests/unit/activity-life-event.test.ts で確かめる（FR-023〜FR-025・FR-035、US5 の Acceptance 1〜3・8）
+- [x] T061 [P] [US5] life event の保存・識別子の重複の拒否・削除で行が残らないことを tests/workers/activity-life-event.test.ts で確かめる（FR-027 の画像の無い部分・FR-035、US5 の Acceptance 10）。**止める依存: 共有担当の migration**
+- [x] T062 [P] [US5] `/life-events/{slug}` が 200 で DTO の値だけを返し、無い slug と書き換える前の slug で 404 になることを tests/integration/life-events.test.ts で確かめる（FR-026・FR-034・SC-007）
+- [x] T063 [P] [US5] `src/proxy.ts` が `/life-events/{slug}` の有無で rewrite することを tests/unit/proxy.test.ts に足す
 
 ### Implementation for User Story 5
 
-- [ ] T064 [US5] 登録・編集・削除・訪問者向けの取り出しのユースケースを src/features/activity/application/register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts に作る。識別子の形と既定値は共有担当の src/shared/domain/slug.ts の `isSlug`・`newSlug` を使う（research.md の R11）
-- [ ] T065 [US5] 訪問者向けの DTO `VisitorLifeEvent` と、出してよい列だけを読む取り出しを src/features/activity/domain/life-event.ts と src/features/activity/server/d1-activity-repository.ts に足す（contracts/visitor-life-event.md、constitution の Allowlist Visibility）
-- [ ] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
-- [ ] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
-- [ ] T068 [US5] 訪問者のページを src/app/life-events/[slug]/page.tsx・src/app/life-events/[slug]/missing/page.tsx と src/features/activity/components/visitor-life-event.tsx に作り、src/proxy.ts の matcher に `/life-events/:slug` を足す
-- [ ] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/activity-dash.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
+- [x] T064 [US5] 登録・編集・削除・訪問者向けの取り出しのユースケースを src/features/activity/application/register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts に作る。識別子の形と既定値は共有担当の src/shared/domain/slug.ts の `isSlug`・`newSlug` を使う（research.md の R11）
+- [x] T065 [US5] 訪問者向けの DTO `VisitorLifeEvent` と、出してよい列だけを読む取り出しを src/features/activity/domain/life-event.ts と src/features/activity/server/d1-life-event-repository.ts に足す（contracts/visitor-life-event.md、constitution の Allowlist Visibility）
+- [x] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
+- [x] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
+- [x] T068 [US5] 訪問者のページを src/app/life-events/[slug]/page.tsx・src/app/life-events/[slug]/missing/page.tsx と src/features/activity/components/visitor-life-event.tsx に作り、src/proxy.ts の matcher に `/life-events/:slug` を足す
+- [x] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/life-events.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
 
 ### 画像（共有担当の src/shared/server/media-storage.ts が入ってから）
 

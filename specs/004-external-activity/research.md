@@ -32,6 +32,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R2 機能の切り方
 
 - 決めたこと: 機能を `src/features/activity/` の 1 つにする。外部の activity と life event はどちらも `activity` の表の行で、表ごとに 1 つの Repository の実装のファイルを置く（001 の research.md の R3）。ユースケースと画面は外部の activity と life event で分ける
+- Repository はインタフェースを外部の activity（`ActivityRepository`）と life event（`LifeEventRepository`）に分け、D1 の実装を `server/d1-activity-repository.ts` と `server/d1-life-event-repository.ts` に置く。どちらも `activity` の表を読み書きする。理由: 管理画面の uid から id を引く `findIdByUid` が、それぞれの行だけを指す。life event の文はどれも `source = 'life_event'` を条件にする
 - 理由: ADR-0026 のディレクトリの形（`domain/`・`application/`・`components/`・`server/`）。一覧（005）は `activity` を読むが、別の機能の中で読み、004 の機能を import しない（ADR-0026 の「機能どうしは import しない」）
 - 退けた案: `external-activity` と `life-event` の 2 つの機能に分ける。同じ表の行の型と書き方が 2 か所に分かれ、`source = 'life_event'` の判定が両方に要る
 
