@@ -3,12 +3,14 @@ import 'server-only';
 import {
   FEED_ITEM_TYPES,
   FEED_PAGE_SIZE,
+  isExternalActivitySourceKind,
   isFeedItemType,
   type FeedItem,
 } from '@/features/activity/domain/feed';
 import type { FeedRepository } from '@/features/activity/domain/feed-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
 import { isProjectKind } from '@/shared/domain/project-kind';
+import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
  * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018）だけを読み、表を
@@ -19,7 +21,8 @@ import { isProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * ビューから読む列。`item_number` は並べる SQL の中だけで使い、読まない（research.md の R6）。
- * `sort_at` は note の作成日として読む（contracts/visitor-feed.md）
+ * `sort_at` は note の作成日・外部の activity の公開日・life event の起きた日として読む
+ * （contracts/visitor-feed.md）
  */
 type FeedRow = {
   item_type: string;
@@ -34,10 +37,14 @@ type FeedRow = {
   ended_on: string | null;
   sort_at: string;
   description: string | null;
+  source: string | null;
+  source_kind: string | null;
+  url: string | null;
 };
 
 const COLUMNS = `item_type, is_masked, title, title_masked, organization_name,
-  organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description`;
+  organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description, source,
+  source_kind, url`;
 
 const periodOf = (row: FeedRow): Period | null =>
   row.started_on === null
@@ -83,6 +90,31 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
         title: row.title,
         description: row.description,
         createdAt: row.sort_at,
+      };
+    case 'external_activity':
+      // 画面は URL を `<a href>` にする。取得元の応答の URL を http か https に限る
+      // （constitution の Allowlist Visibility）。ほかの scheme の行は詰めない
+      if (row.url === null || !isWebUrl(row.url) || row.source === null) return null;
+      return {
+        type: 'external_activity',
+        title: row.title,
+        url: row.url,
+        publishedAt: row.sort_at,
+        source: row.source,
+        // 分類は CHECK が絞る。読めない値は `other` と同じ扱いにする
+        sourceKind:
+          row.source_kind !== null && isExternalActivitySourceKind(row.source_kind)
+            ? row.source_kind
+            : 'other',
+      };
+    case 'life_event':
+      return {
+        type: 'life_event',
+        title: row.title,
+        description: row.description,
+        happenedOn: row.sort_at as CalendarDate,
+        source: 'life_event',
+        sourceKind: 'life_event',
       };
   }
 };

@@ -135,8 +135,8 @@ description: "一覧の実装タスク"
 
 ### Tests
 
-- [ ] T040 [P] [US1] 外部の activity の詰め替えが題・URL・公開日・取得元・分類だけを、life event の詰め替えが題・説明・起きた日・取得元・分類だけを持つことを tests/unit/feed.test.ts に足す（FR-018・FR-019、contracts/visitor-feed.md）
-- [ ] T041 [P] [US1] 本物の migration を当てた D1 に activity の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M3**
+- [x] T040 [P] [US1] 外部の activity の詰め替えが題・URL・公開日・取得元・分類だけを、life event の詰め替えが題・説明・起きた日・取得元・分類だけを持つことを tests/unit/feed.test.ts に足す（FR-018・FR-019、contracts/visitor-feed.md）
+- [x] T041 [P] [US1] 本物の migration を当てた D1 に activity の行を直接入れ、tests/workers/feed-repository.test.ts に次を足す。**止める依存: M3**
   - US1 の Acceptance 1 の 5 件が、note・外部の activity・life event・実績・職歴の順に並ぶ
   - 分類が埋め込みの取得元の外部の activity が、種類・分類・取得元を持って並ぶ（US1 の Acceptance 4）。分類が埋め込みの取得元は 0012 が入れた行（例: `speakerdeck`）を使い、検査の中で `activity_source` に行を足さない
   - 保存した life event がすべて並ぶ（FR-003）
@@ -146,9 +146,9 @@ description: "一覧の実装タスク"
 
 ### Implementation
 
-- [ ] T044 [US1] `FEED_ITEM_TYPES` と `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
-- [ ] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す
-- [ ] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `<a>` で取得元の URL へリンクする（`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない）。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
+- [x] T044 [US1] `FEED_ITEM_TYPES` と `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
+- [x] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す
+- [x] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `<a>` で取得元の URL へリンクする（`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない）。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
 
 **Checkpoint**: 5 つの種類の一覧（quickstart.md の 6 の前半）
 
