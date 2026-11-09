@@ -63,7 +63,11 @@ beforeAll(async () => {
   for (const table of TABLES) before[table] = await rowsOf(table);
   sequencesBefore = await sequences();
 
-  await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+  // 0012 までを当てる。後の migration が列を足すと、行の比べ方が変わるため
+  await applyD1Migrations(
+    env.DB,
+    env.TEST_MIGRATIONS.filter((m) => m.name < '0013'),
+  );
 });
 
 describe('migration 0012 を行のある D1 に当てる', () => {
