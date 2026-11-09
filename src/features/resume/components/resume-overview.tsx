@@ -1,4 +1,4 @@
-import { type ResumeForEdit } from '@/features/resume/domain/resume';
+import type { ResumeForEdit } from '@/features/resume/domain/resume';
 import { listResumeSkills } from '@/features/resume/domain/resume-skills';
 import { TextLink } from '@/shared/components/text-link';
 import { formatPeriod, toYearsAndMonths } from '@/shared/domain/period';

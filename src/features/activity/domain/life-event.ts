@@ -1,5 +1,6 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 import { parseCalendarDate, type CalendarDate } from '@/shared/domain/period';
 import { isSlug, newSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
@@ -69,7 +70,7 @@ export const parseLifeEventContent = (
     ok: true,
     content: {
       title: emptyToNull(values.title)?.trim() ?? null,
-      description: emptyToNull(values.description.replace(/\r\n?/g, '\n')),
+      description: emptyToNull(normalizeNewlines(values.description)),
       happenedOn,
     },
   };

@@ -1,4 +1,4 @@
-import { type VisitorProject } from '@/features/project/domain/project';
+import type { VisitorProject } from '@/features/project/domain/project';
 import { PeriodText } from '@/shared/components/period-text';
 import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
