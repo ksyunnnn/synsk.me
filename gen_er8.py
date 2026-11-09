@@ -75,6 +75,7 @@ def rules_note(x, y):
         "activity_feed: published の行だけを出す。秘匿化した行は *_masked の列だけに値を持ち、title・organization_name・description・url・画像を持たない",
         "activity_feed: name_masked の無い組織を指す秘匿化した行は出さない。並べるキーは (sort_at, 種類, item_number)",
         "activity_feed: note は公開中で削除していないものを、公開した版の題と説明文で出す。sort_at は note.created_at",
+        "activity_feed: 外部の activity と life event は activity の行をすべて出す。sort_at は activity.sort_at。url は外部の activity だけ",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public（既定は limited）。project.kind は application・talk・event・other",
         "CHECK の値: activity_source.kind は article・embed・life_event・other。note.card_image は generated・media・site",
         "年月日の列は、形と「終わり ≥ 始まり」を CHECK で守る",
@@ -158,10 +159,10 @@ media = [("# id", "integer"), ("→ note_id", "integer · 空可"), ("→ projec
 synd = [("# id", "integer"), ("→ note_id", "integer"), ("url", "text · unique")] + C
 link_preview = [("# id", "integer"), ("url", "text · unique"), ("title", "text · 空可"), ("image_url", "text · 空可"), ("fetched_at", "text")]
 feed = [
-    ("item_type", "career・project・note"), ("item_number", "integer"), ("sort_at", "text"),
+    ("item_type", "text · 種類"), ("item_number", "integer"), ("sort_at", "text"),
     ("is_masked", "integer"), ("title", "text · 空可"), ("title_masked", "text · 空可"), ("organization_name", "text · 空可"), ("organization_name_masked", "text · 空可"), ("role", "text · 空可"),
     ("project_kind", "text · 空可"), ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"),
-    ("description", "text · 空可（note）"),
+    ("description", "text · 空可"), ("source", "text · 空可"), ("source_kind", "text · 空可"), ("url", "text · 空可"),
 ]
 resume = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),
@@ -240,7 +241,7 @@ el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", proj
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
 el += entity(1500, 300, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
-el += entity(1740, 60, 270, "activity_feed", "一覧。career・project・note の腕を UNION ALL", feed, kind="VIEW")
+el += entity(1740, 60, 270, "activity_feed", "一覧。種類ごとの 5 つの腕を UNION ALL", feed, kind="VIEW")
 el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
 el += entity(1480, 656, 220, "note_revision", "note の版。保存のたびに 1 行", revision)
 el += entity(1160, 1032, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)
