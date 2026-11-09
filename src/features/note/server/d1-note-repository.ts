@@ -424,7 +424,10 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
 
     removeSyndication: async (id, url) => {
       const result = await db
-        .prepare('DELETE FROM syndication WHERE note_id = ? AND url = ?')
+        .prepare(
+          `DELETE FROM syndication WHERE note_id = ? AND url = ?
+             AND EXISTS (SELECT 1 FROM note WHERE note.id = syndication.note_id AND deleted_at IS NULL)`,
+        )
         .bind(id, url)
         .run();
       return { ok: result.meta.changes > 0 };

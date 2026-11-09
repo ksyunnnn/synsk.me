@@ -104,6 +104,9 @@ export type NoteRepository = {
     id: NoteId,
     url: string,
   ) => Promise<{ ok: true } | { ok: false; reason: 'url-taken' | 'not-found' }>;
-  /** その note の転載先の URL を外す（research.md の R14）。その note に無い URL なら `ok: false` */
+  /**
+   * その note の転載先の URL を外す（research.md の R14）。その note に無い URL か、削除した note
+   * なら何も書かず `ok: false`
+   */
   removeSyndication: (id: NoteId, url: string) => Promise<{ ok: boolean }>;
 };
