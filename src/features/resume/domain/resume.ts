@@ -1,5 +1,6 @@
 import type { Period } from '@/shared/domain/period';
 import type { Uid } from '@/shared/domain/uid';
+import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * 職務経歴書の型と決まり（specs/002-resume/spec.md の FR-001〜FR-004・FR-037・FR-039、
@@ -35,20 +36,6 @@ export const parseResumeId = (value: string): ResumeId | null => {
  * 形（`src/shared/domain/slug.ts` の `isSlug`）と重複は書き換えるときに別に確かめる
  */
 export const canChangeSlug = (audience: ResumeAudience): boolean => audience === 'public';
-
-/** 写した実績の種類。値の意味は 001 の `project.kind` と同じ（migration 0006 の CHECK） */
-export const RESUME_PROJECT_KINDS = ['application', 'talk', 'event', 'other'] as const;
-export type ResumeProjectKind = (typeof RESUME_PROJECT_KINDS)[number];
-
-export const RESUME_PROJECT_KIND_LABELS: Record<ResumeProjectKind, string> = {
-  application: 'アプリ',
-  talk: '登壇',
-  event: 'イベント',
-  other: 'その他',
-};
-
-export const isResumeProjectKind = (value: string): value is ResumeProjectKind =>
-  (RESUME_PROJECT_KINDS as readonly string[]).includes(value);
 
 export type Resume = {
   id: ResumeId;
@@ -87,7 +74,7 @@ export type ResumeProject = {
   uid: Uid;
   projectId: number | null;
   organizationName: string;
-  kind: ResumeProjectKind;
+  kind: ProjectKind;
   title: string;
   period: Period;
   description: string | null;
@@ -149,7 +136,7 @@ export type ResumeSourceProject = {
   id: number;
   organizationName: string;
   organizationNameMasked: string | null;
-  kind: ResumeProjectKind;
+  kind: ProjectKind;
   title: string;
   titleMasked: string;
   isMasked: boolean;

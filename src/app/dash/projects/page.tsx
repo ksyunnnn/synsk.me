@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import { PROJECT_KIND_LABELS } from '@/features/project/domain/project';
 import { listProjects } from '@/features/project/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { formatPeriod } from '@/shared/domain/period';
 import { SITE_STATUS_LABELS } from '@/shared/domain/site-status';
+import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -36,8 +37,7 @@ const Page = async ({ searchParams }: Props) => {
               <TextLink href={`/dash/projects/${project.uid}`}>{project.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 {PROJECT_KIND_LABELS[project.kind]}・{project.organizationName}・
-                {project.period.startedOn} 〜 {project.period.endedOn ?? ''}・
-                {SITE_STATUS_LABELS[project.status]}・
+                {formatPeriod(project.period)}・{SITE_STATUS_LABELS[project.status]}・
                 {project.isMasked ? '秘匿化する' : '秘匿化しない'}
               </span>
             </li>
