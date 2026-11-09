@@ -238,7 +238,8 @@ describe('取得元の失敗', () => {
         fetchListing: async (source) => ({
           items:
             source === 'zenn'
-              ? [item(1), item(1)]
+              ? // 2 件目の公開日が activity の CHECK に反し、A の batch() が 1 件目ごと戻る
+                [item(1), item(2, { publishedAt: '形の違う日時' })]
               : [item(2, { url: 'https://medium.com/fake2', externalId: 'm2' })],
           isComplete: false,
         }),

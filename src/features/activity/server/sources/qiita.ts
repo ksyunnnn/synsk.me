@@ -46,7 +46,8 @@ export const fetchListing = async (
   for (let page = 1; page <= MAX_PAGE; page += 1) {
     if (http.remaining === 0) return { items, isComplete: false };
     const response = await http.get(pageUrl(page), headers);
-    const total = Number(response.headers.get('Total-Count') ?? Number.NaN);
+    const totalHeader = response.headers.get('Total-Count')?.trim() ?? '';
+    const total = totalHeader === '' ? Number.NaN : Number(totalHeader);
     if (!Number.isInteger(total)) throw shapeError(NAME, 'Total-Count が無い');
     const body = parseJson(NAME, response.text);
     if (!Array.isArray(body)) throw shapeError(NAME, '項目の並びでない');

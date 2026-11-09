@@ -51,7 +51,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   2. 計算: 足す行・直す行・消す行を、外への要求も D1 も触らない関数 `planRefresh` で求める（R5・R6）
   3. 書く: 1 つの取得元の書き込みと `fetch_result` の 1 行を、1 回の `batch()` で書く
 - 取得に失敗した取得元では、activity を 1 行も書き換えず、`fetch_result` だけを書く（FR-014）。`last_succeeded_at` は前の値を残す（FR-016）
-- 3 の `batch()` が失敗したとき（例: 同じ URL が応答に 2 回あり、`activity_source_url` の UNIQUE に当たる）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
+- 3 の `batch()` が失敗したとき（例: 取得元の値が activity の CHECK に反する。同じ項目が応答に 2 回あるときは、`planRefresh` が 1 つにする）は、`batch()` が `fetch_result` の行も戻す。そこで、その取得元の `fetch_result` に失敗と理由を別の 1 文で書き直す。成否に関わらず取り直した取得元ごとに `fetch_result` を書くため（FR-016）
 - 理由: `docs/SOFTWARE_DESIGN.md` の「失敗の表し方」と「読む → 計算 → 書く」、constitution IV。`batch()` は 1 文が失敗すると全体を戻す（[D1 Database API](https://developers.cloudflare.com/d1/worker-api/d1-database/)、001 の research.md の R2）ので、1 つの取得元の書き込みが途中で止まらない
 - 退けた案: すべての取得元を 1 回の `batch()` で書く。1 つの取得元の書き込みの失敗で、ほかの取得元の結果も戻る（FR-015 に反する）
 
