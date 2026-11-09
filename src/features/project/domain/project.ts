@@ -246,7 +246,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
  * 出してよい列だけを読んで詰める。画面・`<title>`・OGP はこの値だけを使う
  */
 
-/** 秘匿化しない実績。代表画像は配る経路が決まるまで持たない（plan.md の U5） */
+/** 秘匿化しない実績。代表画像は、配る経路を作るまで持たない（tasks.md の T076） */
 export type UnmaskedVisitorProject = {
   isMasked: false;
   slug: string;
@@ -255,7 +255,7 @@ export type UnmaskedVisitorProject = {
   organizationName: string;
   period: Period;
   skills: string[];
-  /** 表示は本文の書式が決まってから（plan.md の U4） */
+  /** 表示は tasks.md の T077 が作る */
   body: string | null;
   url: string | null;
 };
