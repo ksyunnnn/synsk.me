@@ -1,5 +1,4 @@
 import {
-  newProjectSlug,
   parseProjectContent,
   type ProjectFieldError,
   type ProjectFormValues,
@@ -9,6 +8,7 @@ import {
 import type { Author } from '@/shared/domain/author';
 import type { Uid } from '@/shared/domain/uid';
 import { canSaveWithOrganization } from '@/shared/domain/organization';
+import { newSlug } from '@/shared/domain/slug';
 import type { ProjectDeps } from './deps';
 
 export type RegisterProjectOutcome =
@@ -44,7 +44,7 @@ export const registerProject = async (
     };
   }
 
-  const result = await projects.register({ ...content, slug: newProjectSlug() });
+  const result = await projects.register({ ...content, slug: newSlug() });
   if (result.ok) return { status: 'registered', id: result.id, uid: result.uid };
   return {
     status: 'invalid',

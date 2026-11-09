@@ -5,6 +5,7 @@ import { toCareerFormValues } from '@/features/career/domain/career';
 import { editCareer } from '@/features/career/server/actions';
 import { getCareerForEdit } from '@/features/career/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { DraftSavedNotice } from '@/shared/components/draft-retention';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -29,7 +30,7 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/careers">職歴の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">職歴を編集する</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
+      {saved === '1' && <DraftSavedNotice />}
       {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
       <CareerForm
         key={career.updatedAt}

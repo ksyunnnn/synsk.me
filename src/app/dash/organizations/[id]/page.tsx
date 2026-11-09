@@ -4,6 +4,7 @@ import { OrganizationForm } from '@/features/organization/components/organizatio
 import { editOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { DraftSavedNotice } from '@/shared/components/draft-retention';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -29,11 +30,12 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/organizations">組織の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">組織を編集する</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
+      {saved === '1' && <DraftSavedNotice />}
       <OrganizationForm
         key={organization.updatedAt}
         action={editOrganization}
         organizationUid={organization.uid}
+        updatedAt={organization.updatedAt}
         initialValues={{ name: organization.name, nameMasked: organization.nameMasked ?? '' }}
         isReferencedByMasked={references.isReferencedByMasked}
       />

@@ -197,7 +197,7 @@ description: "職歴と実績の実装タスク"
 
 ## Phase 8: Polish & Cross-Cutting Concerns
 
-- [ ] T072 入力中の内容を `localStorage` に持ち、保存に成功したら消す部品を src/shared/components/draft-retention.tsx に作り、実績・職歴・学歴・組織・スキルの入力に使う。E2E で、保存せずに再読み込みしても入力が残ることを tests/e2e/draft-retention.spec.ts で確かめる（REQUIREMENTS.md の FR-14、research.md の R16）
+- [X] T072 入力中の内容を `localStorage` に持ち、保存に成功したら消す部品を src/shared/components/draft-retention.tsx に作り、実績・職歴・学歴・組織・スキルの入力に使う。E2E で、保存せずに再読み込みしても入力が残ることを tests/e2e/draft-retention.spec.ts で確かめる（REQUIREMENTS.md の FR-14、research.md の R16）
 - [ ] T073 本番の D1 にオーナーが個人の組織を登録した後、その行の id を src/shared/domain/organization.ts の定数に書き、個人の組織を消せないことを tests/workers/organization-edit.test.ts に足す（FR-041、research.md の R9）
 - [X] T074 オーナーとして実績を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/project.spec.ts で確かめる（constitution V）
 - [ ] T075 共有担当が作る src/shared/server/media-storage.ts（R2 の読み書き）を使い、実績・職歴の画像の追加と、実績の代表画像の選択と登録（その実績の画像だけ）を作る。回数の上限の値を plan.md に書いてから作る（constitution II。大きさの上限は U5 が決めた）。**止める依存: src/shared/server/media-storage.ts（共有担当が作る）**

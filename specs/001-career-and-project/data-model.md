@@ -38,8 +38,8 @@
 | `is_masked = 1` の職歴・実績は、`name_masked` が NULL の組織を指せない。指している組織の `name_masked` を空にできない | FR-001 | `src/shared/domain/organization.ts` の判定と、職歴・実績・組織の保存のユースケース。DB のトリガは足さない（plan.md の U2）。訪問者向けの取り出しは、秘匿化した組織名の無い組織を指す秘匿化した行を出さない |
 | 訪問者向けの実績の取り出しは、`status = 'published'` の行だけを読む。載せない実績の識別子は、無い識別子と同じに扱う | FR-014・FR-045 | `src/features/project/server/d1-project-repository.ts` の `VISITOR_VISIBLE` と `findVisitorBySlug`。職歴の訪問者向けの取り出しは 005 が持つ |
 | フォームの `status` は、`published` のときだけサイトに載せる | FR-044 | `src/shared/domain/site-status.ts` |
-| 秘匿化した実績の識別子は書き換えを拒む。秘匿化に切り替えたら新しい uid にする | FR-013 | `src/features/project/domain/` |
-| 登録のときの識別子は uid（research.md の R6） | FR-013 | 同上 |
+| 秘匿化した実績の識別子は書き換えを拒む。秘匿化に切り替えたら新しい uid にする | FR-013 | `src/features/project/domain/project.ts` の `decideProjectSlug`。uid は `src/shared/domain/slug.ts` の `newSlug` |
+| 登録のときの識別子は uid（research.md の R6）。書き換えは識別子の形を確かめる | FR-013 | `src/shared/domain/slug.ts` の `newSlug` と `isSlug` |
 | 職歴・実績の保存は、開いたときの `updated_at` と一致するときだけ書く | FR-042 | Repository の実装（research.md の R7） |
 | 組織名は入力した文字列で既存の組織を探し、無ければ作る | FR-002・FR-003 | `src/shared/server/organization-repository.ts` |
 | 個人の組織は削除できない | FR-041 | `src/shared/domain/organization.ts` の定数 |

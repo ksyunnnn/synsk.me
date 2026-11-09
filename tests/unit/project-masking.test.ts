@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { decideProjectSlug, isProjectSlug } from '@/features/project/domain/project';
+import { decideProjectSlug } from '@/features/project/domain/project';
 import { canSaveWithOrganization } from '@/shared/domain/organization';
+import { isSlug } from '@/shared/domain/slug';
 
 /**
  * 実績の秘匿化の決まり（specs/001-career-and-project/spec.md の FR-001・FR-013）。
@@ -43,7 +44,7 @@ describe('decideProjectSlug（FR-013）', () => {
     if (!decided.ok) return;
     expect(decided.slug).not.toBe('my-app');
     expect(decided.slug).toMatch(/^[0-9a-f-]{36}$/);
-    expect(isProjectSlug(decided.slug)).toBe(true);
+    expect(isSlug(decided.slug)).toBe(true);
   });
 
   it('秘匿化しない実績は、識別子を書き換えられる', () => {

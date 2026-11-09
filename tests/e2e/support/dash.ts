@@ -46,7 +46,9 @@ export type ProjectInput = SiteOptions & {
 /** 訪問者に開かせる、職務経歴書の外の画面。実績の個別のページは別に確かめる */
 export const VISITOR_PAGES = ['/', '/about', '/contact', '/resume'] as const;
 
-const textbox = (page: Page, name: string) => page.getByRole('textbox', { name, exact: true });
+/** ラベルの名前と同じ名前の文字の入力 */
+export const textbox = (page: Page, name: string) =>
+  page.getByRole('textbox', { name, exact: true });
 
 /** 入力を省いた項目は、いまの値のまま触らない */
 const fillIfGiven = async (page: Page, name: string, value: string | undefined) => {

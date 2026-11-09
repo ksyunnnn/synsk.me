@@ -8,6 +8,7 @@ import {
   type SkillFormResult,
   type SkillFormValues,
 } from '@/features/skill/domain/skill';
+import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import { InputField } from '@/shared/components/field';
 
 /**
@@ -42,7 +43,12 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <DraftRetainingForm
+      action={formAction}
+      storageKey={`skill:${skillUid ?? 'new'}`}
+      result={result}
+      className="flex flex-col gap-6"
+    >
       {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
@@ -93,6 +99,6 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
           {skillUid === undefined ? '登録する' : '保存する'}
         </button>
       </div>
-    </form>
+    </DraftRetainingForm>
   );
 };

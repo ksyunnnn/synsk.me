@@ -1,6 +1,7 @@
-import { newResumeSlug, type EditTimes, type ResumeId } from '@/features/resume/domain/resume';
+import type { EditTimes, ResumeId } from '@/features/resume/domain/resume';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
+import { newSlug } from '@/shared/domain/slug';
 import { toEditOutcome, type EditOutcome } from './edit-outcome';
 
 /**
@@ -14,5 +15,5 @@ export const regenerateResumeUrl = async (
   times: EditTimes,
 ): Promise<EditOutcome<Record<string, never>, Record<string, never>>> => {
   if (!author) return { status: 'forbidden' };
-  return toEditOutcome(await resumes.regenerateLimitedSlug(id, newResumeSlug(), times), {});
+  return toEditOutcome(await resumes.regenerateLimitedSlug(id, newSlug(), times), {});
 };

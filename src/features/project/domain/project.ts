@@ -3,6 +3,7 @@ import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
+import { isSlug, newSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
 
@@ -33,15 +34,6 @@ export type ProjectId = number;
 /** 文字列の id を読む。正の整数でなければ null。使い手はスキルの id の読み取り */
 export const parseProjectId = (value: string): ProjectId | null =>
   /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
-
-/** 実績の識別子の形（FR-013、`project.slug` の CHECK）。1〜100 文字の英小文字・数字・ハイフン */
-export const isProjectSlug = (value: string): boolean => /^[a-z0-9-]{1,100}$/.test(value);
-
-/**
- * 新しい識別子（FR-013、research.md の R6）。題や組織名から推測できない uid で、
- * 36 文字の英小文字（16 進）・数字・ハイフンのため `isProjectSlug` を満たす
- */
-export const newProjectSlug = (): string => crypto.randomUUID();
 
 /** オーナーが編集する実績 */
 export type Project = {
@@ -186,7 +178,7 @@ export const parseProjectContent = (
 
 /**
  * 編集で保存する識別子を決める（FR-013）。
- * - 秘匿化しない実績を秘匿化に切り替えたら、新しい uid
+ * - 秘匿化しない実績を秘匿化に切り替えたら、新しい uid（research.md の R6）
  * - 秘匿化した実績は、送られた識別子が今の識別子と違えば拒む。秘匿化を外すときも、
  *   その保存では識別子を変えない（data-model.md の「状態の切り替え」）
  * - 秘匿化しない実績は、送られた識別子の形を確かめて使う
@@ -200,9 +192,9 @@ export const decideProjectSlug = (
       ? { ok: true, slug: current.slug }
       : { ok: false, error: 'masked-slug-locked' };
   }
-  if (next.isMasked) return { ok: true, slug: newProjectSlug() };
+  if (next.isMasked) return { ok: true, slug: newSlug() };
   if (next.requestedSlug === '') return { ok: false, error: 'missing' };
-  return isProjectSlug(next.requestedSlug)
+  return isSlug(next.requestedSlug)
     ? { ok: true, slug: next.requestedSlug }
     : { ok: false, error: 'invalid' };
 };
