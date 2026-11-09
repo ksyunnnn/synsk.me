@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { refreshSources } from '@/features/activity/application/refresh-sources';
 import type { ActivityDeps } from '@/features/activity/application/deps';
 import type { SourceListing } from '@/features/activity/domain/fetched-item';
-import type { FetchLimits } from '@/features/activity/domain/limits';
+import type { RefreshLimits } from '@/features/activity/domain/limits';
 import { createFakeActivityRepository } from '../support/activity-fakes';
 
 /**
@@ -11,7 +11,7 @@ import { createFakeActivityRepository } from '../support/activity-fakes';
  */
 
 const NOW = '2026-11-09T00:00:00.000Z';
-const LIMITS: FetchLimits = { maxRequests: 3, timeoutMs: 1000, maxBytes: 1024 };
+const LIMITS: RefreshLimits = { maxRequests: 3, timeoutMs: 1000, maxBytes: 1024, maxRemovals: 2 };
 
 const listing = (items: SourceListing['items']): SourceListing => ({ items, isComplete: false });
 
@@ -40,12 +40,20 @@ describe('refreshSources', () => {
     );
 
     expect(outcomes).toEqual([
-      { source: 'fake_feed', ok: true, added: 1, updated: 0, skippedWithoutDate: 0 },
+      {
+        source: 'fake_feed',
+        ok: true,
+        added: 1,
+        updated: 0,
+        removed: 0,
+        keptOverLimit: 0,
+        skippedWithoutDate: 0,
+      },
     ]);
     expect(applied).toEqual([
       {
         source: 'fake_feed',
-        plan: { inserts: [item], updates: [], skippedWithoutDate: 0 },
+        plan: { inserts: [item], updates: [], deletes: [], skippedWithoutDate: 0 },
         result: { fetchedAt: NOW, reason: null },
       },
     ]);
@@ -120,7 +128,15 @@ describe('refreshSources の失敗の扱い', () => {
     const reason = (await fetchA().catch((error: Error) => error)).message;
     expect(outcomes).toEqual([
       { source: 'fake_a', ok: false, reason: expect.stringContaining(String(reason)) },
-      { source: 'fake_b', ok: true, added: 1, updated: 0, skippedWithoutDate: 0 },
+      {
+        source: 'fake_b',
+        ok: true,
+        added: 1,
+        updated: 0,
+        removed: 0,
+        keptOverLimit: 0,
+        skippedWithoutDate: 0,
+      },
     ]);
     expect(applied.map((write) => write.source)).toEqual(['fake_b']);
     expect(failures).toEqual([
@@ -185,7 +201,94 @@ describe('refreshSources の失敗の扱い', () => {
 
     expect(outcomes).toEqual([
       { source: 'fake_a', ok: false, reason: expect.stringMatching(/作り物の D1 の失敗/) },
-      { source: 'fake_b', ok: true, added: 1, updated: 0, skippedWithoutDate: 0 },
+      {
+        source: 'fake_b',
+        ok: true,
+        added: 1,
+        updated: 0,
+        removed: 0,
+        keptOverLimit: 0,
+        skippedWithoutDate: 0,
+      },
     ]);
+  });
+});
+
+/**
+ * 取得元で消えた activity を消す（User Story 3、FR-017〜FR-019）
+ */
+describe('refreshSources の消す行', () => {
+  const storedItem = (id: number) => ({
+    id,
+    externalId: null,
+    url: `https://example.com/${id}`,
+    title: `作り物 ${id}`,
+    publishedAt: NOW,
+    imageUrl: null,
+  });
+  const complete = (items: SourceListing['items']): SourceListing => ({ items, isComplete: true });
+
+  it('すべて取った取得元で一覧に無い activity を、足す行と同じ書き込みで消す', async () => {
+    const { repository, applied } = createFakeActivityRepository({
+      fake_feed: [storedItem(1), storedItem(2)],
+    });
+
+    const outcomes = await refreshSources(
+      deps(repository, {
+        fake_feed: complete([
+          { url: 'https://example.com/1', title: '作り物 1', publishedAt: NOW },
+        ]),
+      }),
+      ['fake_feed'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(outcomes).toEqual([
+      {
+        source: 'fake_feed',
+        ok: true,
+        added: 0,
+        updated: 0,
+        removed: 1,
+        keptOverLimit: 0,
+        skippedWithoutDate: 0,
+      },
+    ]);
+    expect(applied[0]?.plan.deletes).toEqual([2]);
+    expect(applied[0]?.result.reason).toBeNull();
+  });
+
+  it('消す候補が上限を超えたら 1 件も消さず、止めた旨を取得の結果の理由に書く', async () => {
+    const { repository, applied } = createFakeActivityRepository({
+      fake_feed: [storedItem(1), storedItem(2), storedItem(3)],
+    });
+
+    const outcomes = await refreshSources(
+      deps(repository, {
+        fake_feed: complete([
+          { url: 'https://example.com/9', title: '作り物 9', publishedAt: NOW },
+        ]),
+      }),
+      ['fake_feed'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(outcomes).toEqual([
+      {
+        source: 'fake_feed',
+        ok: true,
+        added: 1,
+        updated: 0,
+        removed: 0,
+        keptOverLimit: 3,
+        skippedWithoutDate: 0,
+      },
+    ]);
+    expect(applied[0]?.plan.deletes).toEqual([]);
+    expect(applied[0]?.result.reason).toMatch(
+      /消す候補が 3 件で、上限（2 件）を超えたので、1 件も消さなかった/,
+    );
   });
 });
