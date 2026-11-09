@@ -172,7 +172,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
 - [x] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
 - [x] T068 [US5] 訪問者のページを src/app/life-events/[slug]/page.tsx・src/app/life-events/[slug]/missing/page.tsx と src/features/activity/components/visitor-life-event.tsx に作り、src/proxy.ts の matcher に `/life-events/:slug` を足す
-- [x] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/activity-dash.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
+- [x] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/life-events.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
 
 ### 画像（共有担当の src/shared/server/media-storage.ts が入ってから）
 

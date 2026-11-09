@@ -3,7 +3,7 @@ import type { VisitorLifeEvent } from '@/features/activity/domain/life-event';
 /**
  * 訪問者に見せる life event（specs/004-external-activity/contracts/visitor-life-event.md）。
  * 受け取った DTO の値だけを描画する。説明は改行を保つ文字だけで見せる（plan.md の「spec が
- * 決めないものの扱い」）。代表画像は、配る経路を作るまで出さない（tasks.md の T071）
+ * 決めないものの扱い」）。代表画像は DTO に無く、出さない（代表画像を配る経路は tasks.md の T071 が持つ）
  */
 export const VisitorLifeEventView = ({ lifeEvent }: { lifeEvent: VisitorLifeEvent }) => (
   <article className="flex flex-col gap-6">
