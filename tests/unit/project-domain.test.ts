@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PROJECT_KINDS,
   parseProjectContent,
   parseProjectId,
   toProjectFormValues,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
+import { PROJECT_KINDS } from '@/shared/domain/project-kind';
 
 /**
  * 実績の domain の決まり（specs/001-career-and-project/spec.md の FR-011〜FR-013・FR-015・

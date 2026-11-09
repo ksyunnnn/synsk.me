@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { listCareers } from '@/features/career/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { formatPeriod } from '@/shared/domain/period';
 import { SITE_STATUS_LABELS } from '@/shared/domain/site-status';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -36,8 +37,7 @@ const Page = async ({ searchParams }: Props) => {
                 {career.organizationName}・{career.role}
               </TextLink>
               <span className="text-sm text-muted-foreground">
-                {career.period.startedOn} 〜 {career.period.endedOn ?? ''}・
-                {SITE_STATUS_LABELS[career.status]}・
+                {formatPeriod(career.period)}・{SITE_STATUS_LABELS[career.status]}・
                 {career.isMasked ? '秘匿化する' : '秘匿化しない'}
               </span>
             </li>

@@ -429,6 +429,14 @@ describe('ページ送り（tasks.md の T031）', () => {
     expect(await feed.list(2)).toEqual({ items: [], hasNextPage: false });
     expect(await feed.list(100)).toEqual({ items: [], hasNextPage: false });
   });
+
+  it('1 以上の整数でないページは項目を返さない', async () => {
+    await insertProjects(3);
+
+    for (const page of [0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(await feed.list(page)).toEqual({ items: [], hasNextPage: false });
+    }
+  });
 });
 
 describe('外部の activity と life event（tasks.md の T041）', () => {

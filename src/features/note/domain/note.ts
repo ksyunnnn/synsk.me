@@ -7,6 +7,7 @@ import {
 } from '@/shared/domain/media';
 import { isSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 
 /**
  * note の型と決まり（specs/003-note/spec.md の FR-002・FR-003・FR-005・FR-010・FR-011、
@@ -180,9 +181,6 @@ export type SyndicationFormResult = ActionResult<
 /** 保存する内容 */
 export type NoteInput = NoteRevisionContent & { slug: string };
 
-/** 複数行の入力の改行を `\n` に揃える。`<textarea>` は `\r\n` で送る */
-const normalizeNewlines = (value: string) => value.replace(/\r\n?/g, '\n');
-
 /**
  * フォームの値を保存する内容に読み替える。題は前後の空白を除き、空でもよい（下書きは題が空でも
  * 保存できる。公開は `checkPublishable` が止める）。説明文が空なら null（FR-005）
@@ -280,3 +278,9 @@ export type VisitorNote = {
   /** 公開した版の URL だけの段落が指す参照先の情報。取ったことのある URL だけ */
   linkPreviews: VisitorLinkPreview[];
 };
+
+/**
+ * 見た目の確認（`/dash/notes/{uid}/preview`、research.md の R15）で描く形。訪問者向けと同じ形を、
+ * 最も新しい版から詰める。一度も公開していない note は初めて公開した日時を持たない
+ */
+export type NotePreview = Omit<VisitorNote, 'publishedAt'> & { publishedAt: string | null };

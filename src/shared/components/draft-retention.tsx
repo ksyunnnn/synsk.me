@@ -11,15 +11,16 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
  * - 送信しても消さない。保存に成功した Server Action は `?saved=1` を付けた画面へ移し、その画面の
  *   `DraftSavedNotice` が、送った書きかけを消す。Server Action が失敗の結果を返したら、送った値を
  *   持ち直す。結果を返さずに投げた（通信の切断、D1 の失敗）ときは、書きかけが残る
- * - 画面を開いたとき、JavaScript が動く前にオーナーが入力を変えていたら、書きかけを戻さない
+ * - 画面を開いたとき、JavaScript が動く前にオーナーが入力を変えていたら、書きかけを戻さない。
+ *   動く前に打った値は、動き始めた後もそのまま残す（下の `typedBeforeHydration`）
  * - `version` は、編集の画面が開いたときの行の更新日時で、持つ名前に含める。別の画面で先に
  *   保存された後に開き直すと名前が変わり、前の更新日時の書きかけは消さずに残し、自動では戻さない。
  *   戻すと、触っていない項目まで古い値で先の保存を上書きする（specs/001-career-and-project/spec.md
  *   の FR-042）。残した書きかけをオーナーにどう見せるかは決まっていない
  *
  * 使い手は 001 の実績・職歴・学歴・組織・スキルの入力。003 の note の入力も使う（R16）。
- * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前の入力も持たない。
- * 動く前の入力を開いたときに持つと、動く前にふつうのフォームとして送って保存した値が、消されずに
+ * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前の入力は、書きかけ
+ * （localStorage）に書かない。動く前の入力を開いたときに書くと、動く前にふつうのフォームとして送って保存した値が、消されずに
  * 残る
  */
 
@@ -156,6 +157,47 @@ const remove = (key: string) => {
   }
 };
 
+/** 書きかけを持つフォームに付ける属性。値は書きかけの名前 */
+const DRAFT_KEY_ATTRIBUTE = 'data-draft-key';
+
+/**
+ * JavaScript が動く前（hydration の前）にオーナーが打った値。書きかけの名前ごとに持つ。
+ *
+ * react-dom 19.3.1 の hydration は、初めの値を持つ `<textarea>` の値を初めの値に戻す
+ * （`react-dom-client` の `initTextarea` が `element.value = textContent` を入れる）。そのままでは、
+ * 動く前に打った本文が消え、保存は初めの本文を送る（FR-14）。このモジュールは、フォームを
+ * hydration する前に読み込まれる。読み込んだ時点の値と、それから hydration までの入力を持ち、
+ * フォームが動き始めたら戻す。書きかけには書き込まない（JavaScript が動く前の入力を持たない
+ * 理由は、このファイルの冒頭のとおり）。動き始めた後の入力で、ふつうに書き込まれる
+ */
+const typedBeforeHydration = new Map<string, DraftValues>();
+/** 動き始めたフォームの書きかけの名前。これより後の入力は、フォームが自分で持つ */
+const hydratedKeys = new Set<string>();
+
+const captureTyped = (form: HTMLFormElement) => {
+  const key = form.getAttribute(DRAFT_KEY_ATTRIBUTE);
+  if (key === null || hydratedKeys.has(key)) return;
+  // 打った後に初めの値へ戻したら、持った値を捨てる。捨てないと、戻した入力が動き始めた後に戻る
+  if (isTouched(form)) typedBeforeHydration.set(key, toValues(form));
+  else typedBeforeHydration.delete(key);
+};
+
+if (typeof document !== 'undefined') {
+  for (const form of Array.from(
+    document.querySelectorAll<HTMLFormElement>(`form[${DRAFT_KEY_ATTRIBUTE}]`),
+  ))
+    captureTyped(form);
+  const onInput = (event: Event) => {
+    const form =
+      event.target instanceof Element
+        ? event.target.closest<HTMLFormElement>(`form[${DRAFT_KEY_ATTRIBUTE}]`)
+        : null;
+    if (form) captureTyped(form);
+  };
+  document.addEventListener('input', onInput, true);
+  document.addEventListener('change', onInput, true);
+}
+
 export const DraftRetainingForm = ({
   action,
   storageKey,
@@ -176,7 +218,13 @@ export const DraftRetainingForm = ({
     if (read(SENT_KEY) === key) remove(SENT_KEY);
     const draft = parseDraft(read(key));
     const save = () => write(key, toValues(form));
-    if (draft && !isTouched(form)) applyValues(form, draft);
+    hydratedKeys.add(key);
+    const typed = typedBeforeHydration.get(key);
+    typedBeforeHydration.delete(key);
+    // 動く前に打った値を戻す。hydration が `<textarea>` を初めの値に戻した後なので、
+    // `isTouched` だけでは打ったことが分からない
+    if (typed) applyValues(form, typed);
+    else if (draft && !isTouched(form)) applyValues(form, draft);
 
     const send = () => {
       submittedRef.current = toValues(form);
@@ -202,7 +250,7 @@ export const DraftRetainingForm = ({
   }, [result, key]);
 
   return (
-    <form ref={formRef} action={action} {...props}>
+    <form ref={formRef} action={action} {...props} {...{ [DRAFT_KEY_ATTRIBUTE]: key }}>
       {children}
     </form>
   );
@@ -214,14 +262,34 @@ export const DraftRetainingForm = ({
  *
  * 編集の画面で続けて保存すると、同じ `?saved=1` の画面へ移り、この部品は置き直されない。
  * `version` に保存した行の更新日時を渡すと、保存のたびに値が変わり、送った書きかけを消し直す。
- * 一覧の画面へ移す入力（学歴・スキル）は、登録・編集の画面を挟むたびに置き直されるので渡さない
+ * 一覧の画面へ移す入力（学歴・スキル）は、登録・編集の画面を挟むたびに置き直されるので渡さない。
+ *
+ * `storageKeys` には、保存に成功するとこの画面へ移るフォームの `storageKey` を挙げる。送った
+ * 書きかけの名前がどれにも合わなければ消さない。ほかの画面の送信が応答を返さずに失敗した後、
+ * ブラウザの「戻る」でこの画面へ戻ったときに、その画面の書きかけを消さないため（FR-14）
  */
-export const DraftSavedNotice = ({ version }: { version?: string }) => {
+export const DraftSavedNotice = ({
+  storageKeys,
+  version,
+}: {
+  storageKeys: string[];
+  version?: string;
+}) => {
+  const keys = storageKeys.join('\n');
   useEffect(() => {
     const sent = read(SENT_KEY);
     if (sent === null) return;
-    remove(sent);
+    // 別の画面の書きかけは消さない。送った印だけを外し、後で同じ種類の `?saved=1` の画面を
+    // 開いたときに、保存していない書きかけを消さないようにする。書きかけは、その画面を開き直すと戻る
+    if (isSentFrom(sent, keys.split('\n'))) remove(sent);
     remove(SENT_KEY);
-  }, [version]);
+  }, [keys, version]);
   return <p role="status">保存しました</p>;
 };
+
+/** 送った書きかけの名前が、挙げた `storageKey` のどれかの書きかけか。名前は更新日時を含みうる */
+const isSentFrom = (sent: string, storageKeys: string[]) =>
+  storageKeys.some((storageKey) => {
+    const name = toStorageKey(storageKey, undefined);
+    return sent === name || sent.startsWith(`${name}@`);
+  });

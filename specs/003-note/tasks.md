@@ -71,8 +71,8 @@ description: "note の実装タスク"
 - [X] T005 [P] T004 を tests/unit/note-domain.test.ts で確かめる（201 文字の題・100,001 文字の本文・101 文字や大文字の識別子を拒む、公開したことのある note の識別子の書き換えを拒む、題が空か空白だけの公開を拒む）
 - [X] T006 [P] 共有担当の Markdown を読む部品で、公開した版の本文から画像の印の `storageKey` の並び・行に URL だけを書いた行の URL の並び・最初の段落の文字列を読み、note の DTO に詰める処理を src/features/note/server/d1-note-repository.ts の訪問者向けの取り出しに足す（research.md の R11、contracts/visitor-note.md の DTO）
 - [X] T007 [P] T006 を tests/workers/note-repository.test.ts で確かめる（その note の `media` の行に無い `storageKey` を DTO に入れない、説明文が空なら最初の段落が説明になる）。本文の読み方そのもの（コードの中の印を拾わないなど）は共有担当の部品の検査が持つ（constitution の Test Layering）
-- [ ] T008 note の Repository のインタフェース（作成・編集用に読む・一覧・版の一覧と 1 つの版・開いた版と比べた保存・公開・下書きに戻す・削除・元に戻す・代表画像の出どころ・転載先の追加と削除・参照先の情報・完全に消す・訪問者向けに読む・uid と版の uid と識別子の有無）を src/features/note/domain/note-repository.ts に作る。手本は src/features/project/domain/project-repository.ts
-- [ ] T009 D1 の実装の骨組み（行の型と domain の型への詰め替え、`findIdByUid`、版の uid から版の id を引く、識別子の有無）を src/features/note/server/d1-note-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
+- [X] T008 note の Repository のインタフェース（作成・編集用に読む・一覧・版の一覧と 1 つの版・開いた版と比べた保存・公開・下書きに戻す・削除・元に戻す・代表画像の出どころ・転載先の追加と削除・参照先の情報・完全に消す・訪問者向けに読む・uid と版の uid と識別子の有無）を src/features/note/domain/note-repository.ts に作る。手本は src/features/project/domain/project-repository.ts
+- [X] T009 D1 の実装の骨組み（行の型と domain の型への詰め替え、`findIdByUid`、版の uid から版の id を引く、識別子の有無）を src/features/note/server/d1-note-repository.ts に作る。行の型はこのファイルの中だけに置く（001 の research.md の R3）
 - [X] T010 組み立て用の関数の骨組み（`createNoteDeps`・`hasNoteSlug`・`hasNoteUid`・`findMissingNoteRevision`）を src/features/note/server/queries.ts に作る。`hasNoteUid` は削除した note でも真を返す（contracts/dash.md の共通）
 - [X] T011 src/app/dash/page.tsx に note の一覧（`/dash/notes`）へのリンクを足す
 - [X] T012 src/proxy.ts の matcher に `/notes/:slug` を足し、`hasNoteSlug` で `/notes/{slug}/missing` への rewrite を、`DASH_ROW_EXISTS` に `notes` を、`/dash/notes/{uid}/revisions/{revisionUid}` の有無で `.../missing` への rewrite を足す。tests/unit/proxy.test.ts に確かめを足す（research.md の R9）
@@ -117,6 +117,7 @@ description: "note の実装タスク"
 
 - [X] T023 [P] [US2] 下書きに戻す・削除・元に戻すのユースケース（オーナーでない呼び出しを拒む、削除した note への保存・公開を `not-found` にする）を tests/unit/note-usecases.test.ts に、D1 の実装（下書きに戻しても公開した版と初めて公開した日時が残る、削除しても状態と版が残る、元に戻すと削除前の状態と版と識別子、削除した note の識別子で別の note を作れない）を tests/workers/note-repository.test.ts に足す（FR-014・FR-016・SC-007、User Story 2 の 2・4〜6）
 - [X] T024 [P] [US2] tests/integration/notes.test.ts に足す: 下書きに戻した note と削除した note の `/notes/{slug}` が 404 で中身が無い、公開した note を削除して元に戻すと同じ版が 200 で出る、JWT のない `unpublishNote`・`deleteNote`・`restoreNote` が D1 を変えない（SC-001・FR-033、User Story 2 の 1・3・5）
+- [X] T054 [P] [US2] オーナーとして、キーボードだけで公開した note を下書きに戻し、削除し、元に戻せることを tests/e2e/note.spec.ts で確かめる（contracts/dash.md の検査の E2E、constitution V）
 
 ### Implementation for User Story 2
 
@@ -191,11 +192,11 @@ description: "note の実装タスク"
 
 ### Tests for User Story 6
 
-- [ ] T041 [P] [US6] 参照先の情報の読み書き（URL ごとに 1 行、取り直すと同じ行が変わり 2 つの note のどちらからも取り直した中身が読める、画像は URL だけ）を tests/workers/note-repository.test.ts に足す（FR-028〜FR-030、User Story 6 の 3）
+- [X] T041 [P] [US6] 参照先の情報の読み書き（URL ごとに 1 行、取り直すと同じ行が変わり 2 つの note のどちらからも取り直した中身が読める、画像は URL だけ）を tests/workers/note-repository.test.ts に足す（FR-028〜FR-030、User Story 6 の 3）
 
 ### Implementation for User Story 6
 
-- [ ] T042 [US6] 参照先の情報を URL の並びで読む処理と、URL ごとに書く処理を src/features/note/server/d1-note-repository.ts に足す
+- [X] T042 [US6] 参照先の情報を URL の並びで読む処理と、URL ごとに書く処理を src/features/note/server/d1-note-repository.ts に足す
 - [ ] T043 [US6] 参照先への取得を作る。取得した HTML を取得のモジュールの中で題と画像の URL に詰め替える（Anti-Corruption Layer）。1 回の保存で取りに行く URL の数・1 回の取得の時間と大きさの上限を plan.md に書いてから作る（FR-027、constitution II・VII、research.md の R13）。**止める未決: U9**
 - [ ] T044 [US6] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に渡す部品として、行に URL だけを書いた行を `link_preview` の題と画像を添えたカードで出し、URL カードを含む note の表示で参照先への `fetch` が 0 回であることを tests/integration/notes.test.ts で確かめる（FR-027・FR-028・SC-005、User Story 6 の 1・2）。**止める未決: U9**
 
@@ -220,11 +221,11 @@ description: "note の実装タスク"
 
 ## Phase 10: Polish
 
-- [ ] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
-- [ ] T049 [P] 見た目の確認のページ src/app/dash/notes/[id]/preview/page.tsx を、最も新しい版を訪問者向けの部品で描く形で作り、下書きの note でも最も新しい版が出ることを tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13、research.md の R15）
-- [ ] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
-- [ ] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
-- [ ] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
+- [X] T048 [P] 完全に消す処理（1 回の `batch()` で `media`・`syndication`・`note_revision`・`note` の順。`link_preview` は残す）を src/features/note/server/d1-note-repository.ts に足し、公開した note と代表画像を持つ note を消せること、途中の文が失敗すると何も消えないことを tests/workers/note-repository.test.ts で確かめる。画面は作らない（FR-017、REQUIREMENTS.md の FR-11、research.md の R6）
+- [X] T049 [P] 見た目の確認のページ src/app/dash/notes/[id]/preview/page.tsx を、最も新しい版を訪問者向けの部品で描く形で作り、下書きの note でも最も新しい版が出ることを tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13、research.md の R15）
+- [X] T050 完全に消すときに、D1 の削除の後で R2 の画像の実体を共有担当の src/shared/server/media-storage.ts で消す（FR-017、research.md の R6）
+- [X] T051 [P] スマートフォンの端末の設定で、note を作り、保存し、公開するまでを tests/e2e/note-mobile.spec.ts で確かめる（FR-022・SC-006、research.md の R16）
+- [X] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
 - [ ] T053 quickstart.md の「手で確かめる」をブランチの Preview で行う
 
 ---

@@ -1,4 +1,5 @@
 import type { CalendarDate, Period } from '@/shared/domain/period';
+import type { ProjectKind } from '@/shared/domain/project-kind';
 
 /**
  * 一覧の 1 件の形（specs/005-feed/contracts/visitor-feed.md、research.md の R5・R6）。
@@ -23,23 +24,6 @@ export const isFeedItemType = (value: string): value is FeedItemType =>
   (FEED_ITEM_TYPES as readonly string[]).includes(value);
 
 /**
- * 実績の種類。値の意味は 001 の `project.kind` と同じ（migration 0011 の CHECK）。機能どうしは
- * import しないため、`src/features/project` の定義を使わずに持つ（ADR-0026）
- */
-export const FEED_PROJECT_KINDS = ['application', 'talk', 'event', 'other'] as const;
-export type FeedProjectKind = (typeof FEED_PROJECT_KINDS)[number];
-
-export const FEED_PROJECT_KIND_LABELS: Record<FeedProjectKind, string> = {
-  application: 'アプリ',
-  talk: '登壇',
-  event: 'イベント',
-  other: 'その他',
-};
-
-export const isFeedProjectKind = (value: string): value is FeedProjectKind =>
-  (FEED_PROJECT_KINDS as readonly string[]).includes(value);
-
-/**
  * 職歴。秘匿化した職歴の組織名は秘匿化した組織名。本文・関連 URL・画像を持たない
  * （FR-012・FR-013）。秘匿化した行の本文は、画面が `isMasked` を見て伏せた見た目で出す
  */
@@ -60,7 +44,7 @@ export type ProjectFeedItem = {
   isMasked: boolean;
   title: string;
   organizationName: string;
-  projectKind: FeedProjectKind;
+  projectKind: ProjectKind;
   period: Period;
 };
 

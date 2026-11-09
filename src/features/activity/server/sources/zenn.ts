@@ -1,6 +1,13 @@
 import 'server-only';
 
-import type { FetchedItem, SourceListing } from '@/features/activity/domain/fetched-item';
+import type {
+  FetchedItem,
+  NotModified,
+  SourceListing,
+  Validators,
+} from '@/features/activity/domain/fetched-item';
+import { conditionalHeaders, validatorsOf } from '@/features/activity/server/sources/conditional';
+import { checkGoneByStatus } from '@/features/activity/server/sources/gone';
 import type { FetchLimits } from '@/features/activity/domain/limits';
 import {
   createSourceHttp,
@@ -21,8 +28,11 @@ const NAME = 'Zenn';
 export const fetchListing = async (
   fetcher: Fetcher,
   limits: FetchLimits,
-): Promise<SourceListing> => {
-  const { text } = await createSourceHttp(fetcher, limits).get(FEED);
+  previous?: Validators | null,
+): Promise<SourceListing | NotModified> => {
+  const response = await createSourceHttp(fetcher, limits).get(FEED, conditionalHeaders(previous));
+  if (response.status === 304) return { notModified: true };
+  const { text } = response;
   const items = readRssItems(text).map((item): FetchedItem => {
     const { title, link, pubDate } = item;
     if (!isText(title) || !isText(link)) throw shapeError(NAME, '題か URL の無い項目がある');
@@ -34,5 +44,9 @@ export const fetchListing = async (
       ...(isText(imageUrl) && { imageUrl }),
     };
   });
-  return { items, isComplete: false };
+  const validators = validatorsOf(response.headers);
+  return { items, isComplete: false, ...(validators && { validators }) };
 };
+
+/** 一覧に無い記事の URL が消えたかを確かめる。404 で消えた（research.md の R6） */
+export const checkGone = checkGoneByStatus;
