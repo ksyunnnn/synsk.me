@@ -90,7 +90,7 @@ def rules_note(x, y):
         "activity.slug は life event の行だけが持つ（CHECK）。空でない行で UNIQUE（部分 UNIQUE 索引）",
         "activity.gone_checked_at は外部の activity の行だけが持つ。consecutive_gone_count は 0 以上で、life event の行は 0（CHECK）",
         "activity.gone_checked_at・consecutive_gone_count だけを書いたときは、トリガが updated_at を入れ直さない",
-        "activity.sort_at は published_at か happened_on から求め、NOT NULL。life event の行は published_at を持たない（CHECK）",
+        "activity.sort_at は published_at か happened_on から求め、NOT NULL。life event の行は published_at・url・external_id・image_url を持たない（CHECK）",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
         "id はすべて AUTOINCREMENT（削除した id を使い回さない）",
         "管理画面の URL とフォームは uid で行を指し、id を出さない。uid は DB が乱数で入れ、書き換えをトリガで拒む",

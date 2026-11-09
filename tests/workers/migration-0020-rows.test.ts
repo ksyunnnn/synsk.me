@@ -2,8 +2,9 @@ import { env, applyD1Migrations } from 'cloudflare:test';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 /**
- * migration 0020 は activity を作り直し、life event の行が published_at を持てないようにする。
- * 0019 までを当てた D1 に行を入れてから 0020 を当て、行・uid・外部キー・sqlite_sequence・索引・
+ * migration 0020 は activity を作り直し、life event の行が published_at・url・external_id・
+ * image_url を持てないようにする。0019 までを当てた D1 に行を入れてから 0020 を当て、行・uid・
+ * 外部キー・sqlite_sequence・索引・
  * トリガ・ビューが保たれることと、足した CHECK と、0015・0019 の列の CHECK とトリガの扱いが
  * 残ることを確かめる。行の値はすべて作り物である。
  */
@@ -105,17 +106,22 @@ describe('migration 0020 を行のある D1 に当てる', () => {
     await env.DB.prepare('DELETE FROM activity WHERE id = 6').run();
   });
 
-  it('life event の行は published_at を持てない', async () => {
+  it.each([
+    ['published_at', '2026-01-02T00:00:00.000Z'],
+    ['url', 'https://example.com/fake-life-event'],
+    ['external_id', 'fake-life-event'],
+    ['image_url', 'https://example.com/fake-life-event.png'],
+  ])('life event の行は %s を持てない', async (column, value) => {
+    await expect(
+      env.DB.prepare(`UPDATE activity SET ${column} = ? WHERE id = 1`).bind(value).run(),
+    ).rejects.toThrow(/CHECK constraint failed: life_event_without_link_and_published_at/);
     await expect(
       env.DB.prepare(
-        "UPDATE activity SET published_at = '2026-01-02T00:00:00.000Z' WHERE id = 1",
-      ).run(),
-    ).rejects.toThrow(/CHECK constraint failed/);
-    await expect(
-      env.DB.prepare(
-        "INSERT INTO activity (source, happened_on, title, slug, published_at) VALUES ('life_event', '2026-02-01', '作り物の出来事 2', 'fake-life-event-2', '2026-02-01T09:00:00.000Z')",
-      ).run(),
-    ).rejects.toThrow(/CHECK constraint failed/);
+        `INSERT INTO activity (source, happened_on, title, slug, ${column}) VALUES ('life_event', '2026-02-01', '作り物の出来事 2', 'fake-life-event-2', ?)`,
+      )
+        .bind(value)
+        .run(),
+    ).rejects.toThrow(/CHECK constraint failed: life_event_without_link_and_published_at/);
   });
 
   it('一覧のビューで、life event の並びの値は起きた日', async () => {

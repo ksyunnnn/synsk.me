@@ -1,16 +1,20 @@
--- activity を作り直し、life event の行が公開日 published_at を持てないようにする。書き方の決まりは
--- 0003 の冒頭にある。
+-- activity を作り直し、life event の行が公開日 published_at と、リンク先の値（url・external_id・
+-- image_url）を持てないようにする。書き方の決まりは 0003 の冒頭にある。
 --
--- 004 の spec は、外部の activity が公開日を持ち、life event は題・説明・起きた日・識別子を持つと
--- する（Key Entities の activity、FR-024）。life event に published_at が入ると、sort_at
--- （coalesce(published_at, happened_on)）が起きた日でなくその日時になり、一覧のビュー
--- activity_feed で life event が起きた日の位置に並ばない（005 の FR-007）。CHECK で守ると、
--- activity.sort_at を読むすべての箇所で、life event の並びの値が起きた日になる。ビューの腕だけで
--- happened_on を使う形は、activity.sort_at に日時が残るので採らない
+-- 004 の spec は、外部の activity が URL・題・公開日を持ち、取得元での ID と代表の画像の URL を
+-- 持てるとし、life event は題・説明・起きた日・識別子を持ち、リンク先を持たないとする（Key
+-- Entities の activity、FR-007・FR-024）。
+-- - published_at: life event に入ると、sort_at（coalesce(published_at, happened_on)）が起きた日で
+--   なくその日時になり、一覧のビュー activity_feed で起きた日の位置に並ばない（005 の FR-007）。
+--   CHECK で守ると、activity.sort_at を読むすべての箇所で、life event の並びの値が起きた日になる。
+--   ビューの腕だけで happened_on を使う形は、activity.sort_at に日時が残るので採らない
+-- - url・external_id・image_url: 取得元の項目を指す値で、life event は取得元を持たない
+--   （2026-11-09、PM の決定。FR-024 から導いた）
 --
--- 既にある life event の行が published_at を持っていたら、行を入れ直すところで CHECK が止める。
--- 値を黙って消さない（docs/SOFTWARE_DESIGN.md の原則 2）。004 のコードは life event の行に
--- published_at を書かない
+-- 既にある life event の行がこれらの値を持っていたら、行を入れ直すところで CHECK が止め、
+-- migration は当たらない。値を黙って消さない（docs/SOFTWARE_DESIGN.md の原則 2）。004 のコードは
+-- life event の行にこれらを書かない（src/features/activity/server/d1-life-event-repository.ts が
+-- 書くのは slug・title・description・happened_on・card_media_id だけ）
 --
 -- SQLite は ALTER TABLE で CHECK を足せないため、表を作り直す。作り直し方は 0012 と同じで、
 -- 行・uid・sqlite_sequence を保ち、指している表（media）は作り直さず、外部キーの検査を
@@ -27,7 +31,8 @@ CREATE TABLE activity_copy AS SELECT * FROM activity;
 
 DROP TABLE activity;
 
--- 列と CHECK の意味は 0004・0009・0012・0015・0019 の注釈のとおり。足したのは published_at の CHECK
+-- 列と CHECK の意味は 0004・0009・0012・0015・0019 の注釈のとおり。足したのは
+-- life_event_without_link_and_published_at の CHECK
 CREATE TABLE activity (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   uid TEXT NOT NULL UNIQUE DEFAULT (lower(hex(randomblob(16)))) CHECK (
@@ -91,8 +96,12 @@ CREATE TABLE activity (
   CHECK ((source = 'life_event') = (happened_on IS NOT NULL)),
   CHECK (source = 'life_event' OR url IS NOT NULL),
   CHECK (source = 'life_event' OR card_media_id IS NULL),
-  -- life event は公開日を持たず、起きた日で並ぶ（004 の spec の FR-024、005 の FR-007）
-  CHECK (source <> 'life_event' OR published_at IS NULL),
+  -- life event は公開日とリンク先を持たず、起きた日で並ぶ（004 の spec の FR-024、005 の
+  -- FR-007）。名前を付け、拒んだときの文言で、この決まりに当たったと分かるようにする
+  CONSTRAINT life_event_without_link_and_published_at CHECK (
+    source <> 'life_event'
+    OR (published_at IS NULL AND url IS NULL AND external_id IS NULL AND image_url IS NULL)
+  ),
   -- 取得し直したときに同じ項目を 2 行にしない
   UNIQUE (source, external_id),
   FOREIGN KEY (id, card_media_id) REFERENCES media (activity_id, id)

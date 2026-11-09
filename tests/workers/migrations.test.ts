@@ -894,7 +894,7 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
       "INSERT INTO activity (source, external_id, url, title, description, image_url, published_at) VALUES ('zenn', 'migration-0017', 'https://zenn.dev/fake/articles/migration-0017', '0017 の記事', '0017 の記事の説明', 'https://example.com/0017.png', '2026-01-05T00:00:00.000Z')",
     );
     lifeEvent = await insertId(
-      "INSERT INTO activity (source, url, title, description, happened_on, slug) VALUES ('life_event', 'https://example.com/0017-life-event', '0017 の出来事', '0017 の出来事の説明', '2026-01-06', 'migration-0017')",
+      "INSERT INTO activity (source, title, description, happened_on, slug) VALUES ('life_event', '0017 の出来事', '0017 の出来事の説明', '2026-01-06', 'migration-0017')",
     );
     ids.push(external, lifeEvent);
   });
