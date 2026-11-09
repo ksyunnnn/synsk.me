@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 2030
-H = 1720
+H = 1740
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -71,8 +71,9 @@ def rules_note(x, y):
     lines = [
         "外部キーはすべて NO ACTION。物理削除のときは子の行を先に消す。外部キーの子の列には索引を張る",
         "互いを指す外部キー（note.published_revision_id・*.card_media_id）は、検査をトランザクションの終わりに送る（DEFERRABLE）",
-        "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガが入れ直す（activity.gone_checked_at だけを書いたときは入れ直さない）",
-        "activity_feed: 職歴・実績・note は published の行だけを出す。秘匿化した行は *_masked の列だけに値を持ち、title・organization_name・description・url・画像を持たない",
+        "created_at・updated_at は DB が既定値で入れ、updated_at は行を書き換えたときにトリガが入れ直す",
+        "activity_feed: 職歴・実績・note は published の行だけを出す",
+        "activity_feed: 秘匿化した行は *_masked の列だけに値を持ち、title・organization_name・description・url・画像を持たない",
         "activity_feed: name_masked の無い組織を指す秘匿化した行は出さない。並べるキーは (sort_at, 種類, item_number)",
         "activity_feed: note は公開中で削除していないものを、公開した版の題と説明文で出す。sort_at は note.created_at",
         "activity_feed: 外部の activity と life event は activity の行を出す。sort_at は activity.sort_at。url は外部の activity だけ",
@@ -87,7 +88,8 @@ def rules_note(x, y):
         "resume: 公開用は 1 つだけ（部分 UNIQUE 索引）。公開用は期限を持たない（CHECK）。audience の更新はトリガで拒む",
         "activity: UNIQUE(source, external_id)。external_id が空の行は UNIQUE(source, url)",
         "activity.slug は life event の行だけが持つ（CHECK）。空でない行で UNIQUE（部分 UNIQUE 索引）",
-        "activity.gone_checked_at は外部の activity の行だけが持つ（CHECK）",
+        "activity.gone_checked_at は外部の activity の行だけが持つ。consecutive_gone_count は 0 以上で、life event の行は 0（CHECK）",
+        "activity.gone_checked_at・consecutive_gone_count だけを書いたときは、トリガが updated_at を入れ直さない",
         "activity.sort_at は published_at か happened_on から求め、NOT NULL",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
         "id はすべて AUTOINCREMENT（削除した id を使い回さない）",
@@ -148,7 +150,7 @@ activity = [
     ("external_id", "text · 空可"), ("url", "text · 空可"), ("title", "text · 空可"),
     ("description", "text · 空可"), ("image_url", "text · 空可"), ("published_at", "text · 空可"),
     ("sort_at", "生成列（VIRTUAL）· NOT NULL"),
-    ("happened_on", "text（年月日）· 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"), ("gone_checked_at", "text · 空可（外部だけ）"),
+    ("happened_on", "text（年月日）· 空可（life event）"), ("→ card_media_id", "integer · 空可（life event）"), ("gone_checked_at", "text · 空可（外部だけ）"), ("consecutive_gone_count", "integer · 既定 0"),
 ] + TS
 fetch = [("# → source", "text"), ("fetched_at", "text"), ("is_ok", "integer"), ("reason", "text · 空可"), ("last_succeeded_at", "text · 空可"), ("etag", "text · 空可"), ("last_modified", "text · 空可")]
 note = [
