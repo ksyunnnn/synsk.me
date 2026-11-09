@@ -182,6 +182,7 @@ describe('applyRefresh', () => {
       title: '作り物の記事 1',
       publishedAt: PUBLISHED,
       imageUrl: null,
+      goneCheckedAt: null,
     });
   });
 });
@@ -446,5 +447,42 @@ describe('条件に使う値', () => {
     });
     expect(await activities.readValidators('zenn')).toEqual(VALIDATORS);
     expect(await readActivityRows(env.DB, 'zenn')).toHaveLength(1);
+  });
+});
+
+/**
+ * 取得元で消えたかを確かめた日時（T048、research.md の R6、migrations/0015）
+ */
+describe('確かめた日時', () => {
+  it('確かめた行に取得の日時を書き、読み戻せる。ほかの取得元の行には書かない', async () => {
+    const id = await insertActivity(env.DB, {
+      source: 'zenn',
+      url: 'https://zenn.dev/ksyunnnn/articles/fake-old',
+      publishedAt: PUBLISHED,
+    });
+    const otherId = await insertActivity(env.DB, {
+      source: 'medium',
+      externalId: 'https://medium.com/p/fake',
+      url: 'https://medium.com/fake',
+      publishedAt: PUBLISHED,
+    });
+
+    await activities.applyRefresh(
+      'zenn',
+      {
+        inserts: [],
+        updates: [],
+        deletes: [],
+        goneChecked: [
+          { id, goneStreak: 1 },
+          { id: otherId, goneStreak: 1 },
+        ],
+        skippedWithoutDate: 0,
+      },
+      { fetchedAt: T1, reason: null, validators: null },
+    );
+
+    expect((await activities.listStoredForRefresh('zenn'))[0]?.goneCheckedAt).toBe(T1);
+    expect((await activities.listStoredForRefresh('medium'))[0]?.goneCheckedAt).toBeNull();
   });
 });

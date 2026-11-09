@@ -73,4 +73,14 @@ describe('planRemovals', () => {
 
     expect(plan).toEqual({ deletes: [], keptOverLimit: 0 });
   });
+
+  it('一覧にあるかも、揃えた URL で判定する（FR-005）', () => {
+    const plan = planRemovals(
+      [stored(1)],
+      { items: [fetched(1, { url: 'HTTPS://example.com/1#x' })], isComplete: true },
+      5,
+    );
+
+    expect(plan).toEqual({ deletes: [], keptOverLimit: 0 });
+  });
 });

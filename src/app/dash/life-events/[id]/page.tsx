@@ -33,6 +33,7 @@ const Page = async ({ params, searchParams }: Props) => {
   if (!lifeEvent) notFound();
   const { saved, imageSaved, imageRemoved } = await searchParams;
   const values = toLifeEventFormValues(lifeEvent);
+  const valuesVersion = JSON.stringify(values);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
@@ -40,13 +41,20 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href="/dash/life-events">life event の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">life event を編集する</h1>
-      {saved === '1' && <DraftSavedNotice />}
+      {/* 続けて保存すると同じ `?saved=1` の画面へ移る。life event は更新日時を持たないので、保存した値が
+          変わるたびに送った書きかけを消し直す */}
+      {saved === '1' && (
+        <DraftSavedNotice
+          storageKeys={['life-event:new', `life-event:${lifeEvent.uid}`]}
+          version={valuesVersion}
+        />
+      )}
       <p>
         <TextLink href={`/life-events/${lifeEvent.slug}`}>訪問者のページを開く</TextLink>
       </p>
       {/* 保存した値が変わったら、入力の初めの値を描き直す */}
       <LifeEventForm
-        key={JSON.stringify(values)}
+        key={valuesVersion}
         action={editLifeEvent}
         initialValues={values}
         uid={lifeEvent.uid}

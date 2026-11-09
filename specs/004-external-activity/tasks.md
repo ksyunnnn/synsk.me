@@ -59,7 +59,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T014 [P] 単体の検査で渡す作り物の Repository と、作り物の応答を返す `fetcher` を tests/support/activity-fakes.ts に作る
 - [ ] T015 D1 の実装を src/features/activity/server/d1-activity-repository.ts に作る。行の型はこのファイルの中だけで書く。取得の書き込みの文は `source <> 'life_event'` を条件にする（FR-032、research.md の R13）
 - [x] T016 [P] 作り物の activity の行を D1 に入れる道具を tests/support/activity-rows.ts に作る
-- [ ] T017 ユースケースが受け取るもの（`ActivityDeps`）を src/features/activity/application/deps.ts に、組み立て用の関数を src/features/activity/server/queries.ts に作る。手本は src/features/project/application/deps.ts と src/features/project/server/queries.ts
+- [x] T017 ユースケースが受け取るもの（`ActivityDeps`）を src/features/activity/application/deps.ts に、組み立て用の関数を src/features/activity/server/refresh-queries.ts（取得）と src/features/activity/server/queries.ts（life event）に、取得元の名前から処理を引く表を src/features/activity/server/sources/registry.ts に作る。手本は src/features/project/application/deps.ts と src/features/project/server/queries.ts
 - [ ] T018 本番の上限の値を src/features/activity/domain/limits.ts に置く（research.md の R8）。**止める未決: U13**
 - [ ] T019 src/app/dash/page.tsx の入口に「life event」と「外部の activity」を足す
 
@@ -124,7 +124,9 @@ description: "外部 activity の取得の実装タスク"
 - [x] T045 [P] [US3] `planRemovals` が、`isComplete` が真のときだけ一覧に無い activity を消す候補にし、偽のときは候補にせず、候補が上限を超えた回は 1 件も消さずに残した数を返すことを tests/unit/activity-plan-removals.test.ts で、`refreshSources` が止めた旨を取得の結果の理由に書くことを tests/unit/activity-refresh-sources.test.ts で確かめる（FR-017〜FR-020・SC-003・SC-004）
 - [x] T046 [P] [US3] 消す行が `batch()` で消え、life event の行と、ほかの取得元の行を消さないことを tests/workers/activity-repository.test.ts で確かめる（FR-017・FR-032）
 - [x] T047 [US3] 消す候補と上限を src/features/activity/application/plan-removals.ts に、消す文を src/features/activity/server/d1-activity-repository.ts に足す（research.md の R6）
-- [ ] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
+- [x] T048 [US3] `isComplete` が偽の取得元（Zenn・Medium・Speaker Deck）で、個別の URL を取り直して消えたと確かめる条件（404 の扱いを含む）を取得元ごとに決め、条件と実測の日付を specs/004-external-activity/research.md の R6 に書いてから、src/features/activity/server/sources/ の該当ファイルに足す。条件を決められない取得元は自動では消さない（FR-020）
+- [x] T048a [US3] 続けて 2 回 404 が返った行だけを消えたと確かめ、1 回目の 404 では 404 が続いた回数を 1 にし、2xx と判定できない応答で 0 に戻すことを tests/unit/activity-gone-check.test.ts で確かめる（research.md の R6、2026-11-09 の決定）
+- [ ] T048b [US3] 404 が続いた回数を D1 に読み書きし、取得元の一覧に載った行の回数を 0 に戻すことを tests/workers/activity-repository.test.ts で確かめる。2 回の取り直しを続けて回して、回数が持ち越されて消えることを単体の検査でも確かめる。**止める依存: 共有担当の migration 0019**
 
 ---
 
@@ -218,7 +220,7 @@ description: "外部 activity の取得の実装タスク"
 | U11 | T050 の題を取れないときの分岐、T053 |
 | U12 | T050・T052・T053 |
 | U13 | T018・T040 |
-| 共有担当の migration | T001・T011・T021・T041・T043・T046・T055・T057・T061・T067 |
+| 共有担当の migration | T001・T011・T021・T041・T043・T046・T048b（0019）・T055・T057・T061・T067 |
 | 共有担当の slug の部品（PR #222） | T064 |
 | 共有担当の書きかけの保持（001 の T072） | T056・T066 |
 | 共有担当の media-storage（001 の T075） | T070・T071・T072 |

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { MEDIA_MAX_BYTES } from '../../src/shared/domain/media';
 import { startTestServer, type TestServer } from './support/d1';
 import { readActionFields } from './support/form';
+import { expectRejected } from './support/rejected';
 
 /**
  * Server Action が受ける本文の大きさの上限（next.config.js の
@@ -23,10 +24,11 @@ afterAll(async () => {
 });
 
 /**
- * JavaScript なしのブラウザと同じ multipart で、スキルの登録のフォームに `fileBytes` のファイルを足して
- * `to` へ送る。Server Action はどの経路へ送っても動く
+ * JavaScript なしのブラウザと同じ multipart で、スキルの登録のフォームに `fileBytes` のファイルを
+ * 足して `to` へ送る準備をする。フォームの画面を取る GET はここで済ませ、返した関数が POST だけを
+ * 送る。Server Action はどの経路へ送っても動く
  */
-const submitWithFile = async (name: string, fileBytes: number, to = '/dash/skills/new') => {
+const prepareSubmitWithFile = async (name: string, fileBytes: number, to = '/dash/skills/new') => {
   const jwt = await ctx.signAuthorJwt();
   const page = await ctx.server.fetch('/dash/skills/new', {
     headers: { 'cf-access-jwt-assertion': jwt },
@@ -40,20 +42,23 @@ const submitWithFile = async (name: string, fileBytes: number, to = '/dash/skill
   form.append('overrideMonths', '');
   form.append('image', new Blob([new Uint8Array(fileBytes)], { type: 'image/png' }), 'a.png');
   const encoded = new Response(form);
-  return ctx.server.fetch(to, {
-    method: 'POST',
-    body: await encoded.arrayBuffer(),
-    headers: {
-      'cf-access-jwt-assertion': jwt,
-      'content-type': encoded.headers.get('content-type') ?? '',
-    },
-    redirect: 'manual',
-  });
+  const body = await encoded.arrayBuffer();
+  return () =>
+    ctx.server.fetch(to, {
+      method: 'POST',
+      body,
+      headers: {
+        'cf-access-jwt-assertion': jwt,
+        'content-type': encoded.headers.get('content-type') ?? '',
+      },
+      redirect: 'manual',
+    });
 };
 
 describe('Server Action の本文の上限', () => {
   it('10 MB の画像とフォームのほかの値を受ける', async () => {
-    const response = await submitWithFile('結合の検査の上限の内側', MEDIA_MAX_BYTES);
+    const send = await prepareSubmitWithFile('結合の検査の上限の内側', MEDIA_MAX_BYTES);
+    const response = await send();
     expect(response.status).toBe(303);
     const row = await ctx.db
       .prepare('SELECT 1 FROM skill WHERE name = ?')
@@ -62,9 +67,8 @@ describe('Server Action の本文の上限', () => {
     expect(row).not.toBeNull();
   }, 30_000);
 
-  it('上限を超える本文は、Server Action を動かさずに 413 で拒む', async () => {
-    const response = await submitWithFile('結合の検査の上限の外側', 12 * 1024 * 1024);
-    expect(response.status).toBe(413);
+  it('上限を超える本文は、Server Action を動かさずに拒む', async () => {
+    await expectRejected(await prepareSubmitWithFile('結合の検査の上限の外側', 12 * 1024 * 1024));
     const row = await ctx.db
       .prepare('SELECT 1 FROM skill WHERE name = ?')
       .bind('結合の検査の上限の外側')
@@ -81,18 +85,16 @@ describe('/dash の外への POST の本文の上限', () => {
   const skillExists = async (name: string) =>
     (await ctx.db.prepare('SELECT 1 FROM skill WHERE name = ?').bind(name).first()) !== null;
 
-  it('1 MB を超える本文は、Server Action を動かさずに 413 で拒む', async () => {
-    const response = await submitWithFile(
-      '結合の検査の dash の外の大きい本文',
-      2 * 1024 * 1024,
-      '/',
+  it('1 MB を超える本文は、Server Action を動かさずに拒む', async () => {
+    await expectRejected(
+      await prepareSubmitWithFile('結合の検査の dash の外の大きい本文', 2 * 1024 * 1024, '/'),
     );
-    expect(response.status).toBe(413);
     expect(await skillExists('結合の検査の dash の外の大きい本文')).toBe(false);
   }, 30_000);
 
   it('1 MB までの本文は、入口で止めない', async () => {
-    const response = await submitWithFile('結合の検査の dash の外の小さい本文', 512 * 1024, '/');
+    const send = await prepareSubmitWithFile('結合の検査の dash の外の小さい本文', 512 * 1024, '/');
+    const response = await send();
     // 入口が通し、Server Action が動いて行を作る。/ のページは送った後の画面を 200 で返す
     expect(response.status).toBe(200);
     expect(await skillExists('結合の検査の dash の外の小さい本文')).toBe(true);
@@ -115,7 +117,8 @@ describe('/dash の外への POST の本文の上限', () => {
   });
 
   it('/dash への 1 MB を超える本文は、入口で止めない', async () => {
-    const response = await submitWithFile('結合の検査の dash の大きい本文', 2 * 1024 * 1024);
+    const send = await prepareSubmitWithFile('結合の検査の dash の大きい本文', 2 * 1024 * 1024);
+    const response = await send();
     expect(response.status).toBe(303);
   }, 30_000);
 });

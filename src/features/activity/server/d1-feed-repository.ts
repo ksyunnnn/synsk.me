@@ -1,20 +1,28 @@
 import 'server-only';
 
-import { FEED_ITEM_TYPES, isFeedItemType, type FeedItem } from '@/features/activity/domain/feed';
+import {
+  FEED_ITEM_TYPES,
+  FEED_PAGE_SIZE,
+  isExternalActivitySourceKind,
+  isFeedItemType,
+  type FeedItem,
+} from '@/features/activity/domain/feed';
 import type { FeedRepository } from '@/features/activity/domain/feed-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
 import { isProjectKind } from '@/shared/domain/project-kind';
+import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
- * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013）だけを読み、表を
+ * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018）だけを読み、表を
  * 読まない（ADR-0046）。サイトに載せる行だけを出す決まりと秘匿化の決まりはビューが持つ。
  * この実装は、種類ごとに出す項目を列挙して `FeedItem` に詰める（constitution の Allowlist
  * Visibility、specs/005-feed/research.md の R4）。行の型はこのファイルの中だけに置く
  */
 
 /**
- * ビューから読む列。`item_number` と `sort_at` は並べる SQL の中だけで使い、読まない
- * （research.md の R6）
+ * ビューから読む列。`item_number` は並べる SQL の中だけで使い、読まない（research.md の R6）。
+ * `sort_at` は note の作成日・外部の activity の公開日・life event の起きた日として読む
+ * （contracts/visitor-feed.md）
  */
 type FeedRow = {
   item_type: string;
@@ -27,10 +35,16 @@ type FeedRow = {
   project_kind: string | null;
   started_on: string | null;
   ended_on: string | null;
+  sort_at: string;
+  description: string | null;
+  source: string | null;
+  source_kind: string | null;
+  url: string | null;
 };
 
 const COLUMNS = `item_type, is_masked, title, title_masked, organization_name,
-  organization_name_masked, role, project_kind, started_on, ended_on`;
+  organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description, source,
+  source_kind, url`;
 
 const periodOf = (row: FeedRow): Period | null =>
   row.started_on === null
@@ -38,29 +52,70 @@ const periodOf = (row: FeedRow): Period | null =>
     : { startedOn: row.started_on as CalendarDate, endedOn: row.ended_on as CalendarDate | null };
 
 /**
- * ビューの 1 行を `FeedItem` に詰める。職歴・実績の題と組織名は、`is_masked` が 1 なら `_masked`
- * の列から、0 なら実際の値の列から詰める（data-model.md の「アプリケーションが守る決まり」）。
- * 詰められない種類の行と、詰める値が欠けた行は null
+ * 職歴・実績の題と組織名は、`is_masked` が 1 なら `_masked` の列から、0 なら実際の値の列から
+ * 詰める（data-model.md の「アプリケーションが守る決まり」）
  */
-export const toFeedItem = (row: FeedRow): FeedItem | null => {
-  if (!isFeedItemType(row.item_type)) return null;
+const toCareerOrProjectItem = (row: FeedRow, type: 'career' | 'project'): FeedItem | null => {
   const isMasked = row.is_masked === 1;
   const organizationName = isMasked ? row.organization_name_masked : row.organization_name;
   const period = periodOf(row);
   if (organizationName === null || period === null) return null;
 
+  if (type === 'career') {
+    if (row.role === null) return null;
+    return { type: 'career', isMasked, organizationName, role: row.role, period };
+  }
+  const title = isMasked ? row.title_masked : row.title;
+  if (title === null) return null;
+  // 種類は CHECK が 4 値に絞る。読めない値は `other` と同じ扱いにする
+  const projectKind =
+    row.project_kind !== null && isProjectKind(row.project_kind) ? row.project_kind : 'other';
+  return { type: 'project', isMasked, title, organizationName, projectKind, period };
+};
+
+/**
+ * ビューの 1 行を `FeedItem` に詰める。種類ごとに契約の項目だけを詰める。詰められない種類の行と、
+ * 詰める値が欠けた行は null
+ */
+export const toFeedItem = (row: FeedRow): FeedItem | null => {
+  if (!isFeedItemType(row.item_type)) return null;
   switch (row.item_type) {
     case 'career':
-      if (row.role === null) return null;
-      return { type: 'career', isMasked, organizationName, role: row.role, period };
-    case 'project': {
-      const title = isMasked ? row.title_masked : row.title;
-      if (title === null) return null;
-      // 種類は CHECK が 4 値に絞る。読めない値は `other` と同じ扱いにする
-      const projectKind =
-        row.project_kind !== null && isProjectKind(row.project_kind) ? row.project_kind : 'other';
-      return { type: 'project', isMasked, title, organizationName, projectKind, period };
-    }
+    case 'project':
+      return toCareerOrProjectItem(row, row.item_type);
+    case 'note':
+      if (row.title === null) return null;
+      return {
+        type: 'note',
+        title: row.title,
+        description: row.description,
+        createdAt: row.sort_at,
+      };
+    case 'external_activity':
+      // 画面は URL を `<a href>` にする。取得元の応答の URL を http か https に限る
+      // （constitution の Allowlist Visibility）。ほかの scheme の行は詰めない
+      if (row.url === null || !isWebUrl(row.url) || row.source === null) return null;
+      return {
+        type: 'external_activity',
+        title: row.title,
+        url: row.url,
+        publishedAt: row.sort_at,
+        source: row.source,
+        // 分類は CHECK が絞る。読めない値は `other` と同じ扱いにする
+        sourceKind:
+          row.source_kind !== null && isExternalActivitySourceKind(row.source_kind)
+            ? row.source_kind
+            : 'other',
+      };
+    case 'life_event':
+      return {
+        type: 'life_event',
+        title: row.title,
+        description: row.description,
+        happenedOn: row.sort_at as CalendarDate,
+        source: 'life_event',
+        sourceKind: 'life_event',
+      };
   }
 };
 
@@ -78,11 +133,22 @@ const LIST_SQL = `SELECT ${COLUMNS} FROM activity_feed
   WHERE item_type IN (${typeLiterals.join(', ')})
   ORDER BY sort_at DESC,
     CASE item_type ${typeLiterals.map((literal, index) => `WHEN ${literal} THEN ${index}`).join(' ')} END,
-    item_number DESC`;
+    item_number DESC
+  LIMIT ? OFFSET ?`;
 
 export const createD1FeedRepository = (db: D1Database): FeedRepository => ({
-  list: async () => {
-    const { results } = await db.prepare(LIST_SQL).all<FeedRow>();
-    return results.flatMap((row) => toFeedItem(row) ?? []);
+  list: async (page) => {
+    // ページは 1 から数える整数。それ以外は OFFSET が負や小数になり、1 ページ目と同じ項目を返すか
+    // D1 が投げる。どのページでもないとして項目を返さない
+    if (!Number.isSafeInteger(page) || page < 1) return { items: [], hasNextPage: false };
+    // 次のページがあるかを知るため、1 件多く読む
+    const { results } = await db
+      .prepare(LIST_SQL)
+      .bind(FEED_PAGE_SIZE + 1, (page - 1) * FEED_PAGE_SIZE)
+      .all<FeedRow>();
+    return {
+      items: results.slice(0, FEED_PAGE_SIZE).flatMap((row) => toFeedItem(row) ?? []),
+      hasNextPage: results.length > FEED_PAGE_SIZE,
+    };
   },
 });
