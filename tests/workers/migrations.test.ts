@@ -210,3 +210,131 @@ describe('migration 0011 の uid', () => {
     ).rejects.toThrow(/CHECK constraint failed/);
   });
 });
+
+/**
+ * note・note_revision・activity の uid（ADR-0051）と、004 の取得元の行
+ * （specs/004-external-activity/spec.md の Assumptions の分類）
+ */
+describe('migration 0012', () => {
+  const TABLES = ['note', 'note_revision', 'activity'];
+
+  it.each(TABLES)('%s.uid は NOT NULL', async (table) => {
+    const column = (await columnsOf(table)).find((c) => c.name === 'uid');
+    expect(column).toMatchObject({ notnull: 1 });
+  });
+
+  it('uid を挙げずに入れると、DB が 32 文字の 16 進を入れる。書き換えは拒む', async () => {
+    const note = await env.DB.prepare(
+      "INSERT INTO note (slug) VALUES ('migration-0012') RETURNING id, uid",
+    ).first<{ id: number; uid: string }>();
+    const revision = await env.DB.prepare(
+      "INSERT INTO note_revision (note_id, title, body) VALUES (?, '作り物の 0012 の題', '') RETURNING id, uid",
+    )
+      .bind(note?.id)
+      .first<{ id: number; uid: string }>();
+    const activity = await env.DB.prepare(
+      "INSERT INTO activity (source, happened_on, title, slug) VALUES ('life_event', '2026-01-01', '作り物の 0012 の出来事', 'migration-0012') RETURNING id, uid",
+    ).first<{ id: number; uid: string }>();
+
+    const cases = [
+      { table: 'note', row: note, trigger: /note_uid_fixed/ },
+      { table: 'note_revision', row: revision, trigger: /note_revision_immutable/ },
+      { table: 'activity', row: activity, trigger: /activity_uid_fixed/ },
+    ];
+    for (const { table, row, trigger } of cases) {
+      expect(row?.uid).toMatch(/^[0-9a-f]{32}$/);
+      await expect(
+        env.DB.prepare(`UPDATE ${table} SET uid = ? WHERE id = ?`)
+          .bind('0'.repeat(32), row?.id)
+          .run(),
+      ).rejects.toThrow(trigger);
+    }
+
+    await env.DB.batch([
+      env.DB.prepare('DELETE FROM note_revision WHERE id = ?').bind(revision?.id),
+      env.DB.prepare('DELETE FROM note WHERE id = ?').bind(note?.id),
+      env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(activity?.id),
+    ]);
+  });
+
+  it('形の違う uid を拒む', async () => {
+    await expect(
+      env.DB.prepare("INSERT INTO note (slug, uid) VALUES ('migration-0012-bad', '12345')").run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
+    await expect(
+      env.DB.prepare(
+        "INSERT INTO activity (source, happened_on, title, slug, uid) VALUES ('life_event', '2026-01-01', '作り物', 'migration-0012-bad', ?)",
+      )
+        .bind('G'.repeat(32))
+        .run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
+  });
+
+  it('作り直した表は、UNIQUE の列を持ち直す', async () => {
+    const uniques: string[] = [];
+    for (const table of TABLES) {
+      const { results: indexes } = await env.DB.prepare(
+        'SELECT name FROM pragma_index_list(?) WHERE "unique" = 1 AND origin = \'u\'',
+      )
+        .bind(table)
+        .all<{ name: string }>();
+      for (const { name } of indexes) {
+        const { results: columns } = await env.DB.prepare(
+          'SELECT name FROM pragma_index_info(?) ORDER BY seqno',
+        )
+          .bind(name)
+          .all<{ name: string }>();
+        uniques.push(`${table}(${columns.map((c) => c.name).join(', ')})`);
+      }
+    }
+    expect(uniques.sort()).toEqual([
+      'activity(source, external_id)',
+      'activity(uid)',
+      'note(slug)',
+      'note(uid)',
+      'note_revision(uid)',
+    ]);
+  });
+
+  it('作り直した表は、0004・0005・0009 の索引とトリガを持ち直す', async () => {
+    const { results } = await env.DB.prepare(
+      "SELECT name FROM sqlite_master WHERE tbl_name IN ('note', 'note_revision', 'activity') AND type IN ('index', 'trigger') AND name NOT LIKE 'sqlite_autoindex_%' ORDER BY name",
+    ).all<{ name: string }>();
+    expect(results.map((r) => r.name)).toEqual([
+      'activity_slug',
+      'activity_sort_at',
+      'activity_source_url',
+      'activity_uid_fixed',
+      'activity_updated_at',
+      'note_published_at_fixed',
+      'note_published_revision_valid',
+      'note_revision_immutable',
+      'note_revision_note_id',
+      'note_slug_fixed_after_publication',
+      'note_uid_fixed',
+      'note_updated_at',
+    ]);
+  });
+
+  it('取得元の行を分類ごとに持つ', async () => {
+    const { results } = await env.DB.prepare(
+      'SELECT source, kind FROM activity_source ORDER BY kind, source',
+    ).all<{ source: string; kind: string }>();
+    expect(results).toEqual([
+      { source: 'devto', kind: 'article' },
+      { source: 'medium', kind: 'article' },
+      { source: 'qiita', kind: 'article' },
+      { source: 'zenn', kind: 'article' },
+      { source: 'codepen', kind: 'embed' },
+      { source: 'codesandbox', kind: 'embed' },
+      { source: 'speakerdeck', kind: 'embed' },
+      { source: 'spotify', kind: 'embed' },
+      { source: 'x', kind: 'embed' },
+      { source: 'youtube', kind: 'embed' },
+      { source: 'life_event', kind: 'life_event' },
+      { source: 'connpass', kind: 'other' },
+      { source: 'github', kind: 'other' },
+      { source: 'unlisted', kind: 'other' },
+    ]);
+  });
+});

@@ -31,7 +31,7 @@
 | 変更 | 理由 |
 |---|---|
 | `activity.uid`（DB が入れる 32 文字の 16 進。UNIQUE、書き換えを拒むトリガ） | ADR-0051。`/dash/life-events/{uid}`・`/dash/activities/{uid}` が使う。0011 の形に合わせる |
-| `activity_source` の行: `article` に Zenn・Qiita・dev.to・Medium、`embed` に Speaker Deck・Spotify・X・CodeSandbox・YouTube・CodePen、`other` に GitHub・connpass | spec の Assumptions の分類。`source` の値（例: `zenn`）は migration を書くときに決める |
+| `activity_source` の行: `article` に Zenn・Qiita・dev.to・Medium、`embed` に Speaker Deck・Spotify・X・CodeSandbox・YouTube・CodePen、`other` に GitHub・connpass | spec の Assumptions の分類。`source` の値は `migrations/0012` が入れる。plan.md の取得元ごとのファイル名と同じ（例: `devto`・`speakerdeck`） |
 | U12 で案 (b) を選んだときだけ: オーナーが登録した暦の日付の列 | research.md の R10 |
 
 取得元で消えた activity の印の列は足さない（行を消す。research.md の R6）。
