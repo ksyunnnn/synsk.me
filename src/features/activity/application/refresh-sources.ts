@@ -1,6 +1,10 @@
 import type { ActivityDeps } from '@/features/activity/application/deps';
 import { planRefresh } from '@/features/activity/application/plan-refresh';
-import { pickGoneChecks, planRemovals } from '@/features/activity/application/plan-removals';
+import {
+  GONE_STREAK_TO_REMOVE,
+  pickGoneChecks,
+  planRemovals,
+} from '@/features/activity/application/plan-removals';
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
 import type {
   GoneCheck,
@@ -89,7 +93,7 @@ const refreshSource = async (
         checks.gone,
       );
       const deleted = new Set(removals.deletes);
-      const goneChecked = checks.checked.filter((id) => !deleted.has(id));
+      const goneChecked = checks.checked.filter(({ id }) => !deleted.has(id));
       const reason =
         removals.keptOverLimit > 0
           ? `消す候補が ${removals.keptOverLimit} 件で、上限（${limits.maxRemovals} 件）を超えたので、1 件も消さなかった`
@@ -122,7 +126,7 @@ const refreshSource = async (
   const checks = await checkGoneOf(deps, source, stored, listing, limits);
   const removals = planRemovals(stored, listing, limits.maxRemovals, checks.gone);
   const deleted = new Set(removals.deletes);
-  const goneChecked = checks.checked.filter((id) => !deleted.has(id));
+  const goneChecked = checks.checked.filter(({ id }) => !deleted.has(id));
   const plan = {
     ...upserts,
     deletes: removals.deletes,
@@ -159,8 +163,8 @@ const refreshSource = async (
 
 /**
  * すべて取らない取得元で、一覧に無い行の URL を上限の本数まで取り直す（research.md の R6）。
- * 404 の行を消えたと確かめた行に、確かめた行のすべてを確かめた日時を書く行にする。確かめるのに
- * 失敗した行は消さない（FR-020）
+ * 404 が続いた回数を数え、続けて `GONE_STREAK_TO_REMOVE` 回になった行を消えたと確かめた行にする。
+ * 確かめた行のすべてに、確かめた日時と回数を書く。確かめるのに失敗した行は消さない（FR-020）
  */
 const checkGoneOf = async (
   deps: ActivityDeps,
@@ -168,16 +172,22 @@ const checkGoneOf = async (
   stored: StoredItem[],
   listing: SourceListing,
   limits: RefreshLimits,
-): Promise<{ gone: number[]; checked: number[] }> => {
+): Promise<{ gone: number[]; checked: { id: number; goneStreak: number }[] }> => {
   const checkGone = deps.goneCheckOf?.(source);
   if (listing.isComplete || !checkGone) return { gone: [], checked: [] };
   const rows = pickGoneChecks(stored, listing.items, limits.maxGoneChecks ?? 0);
   const results = await Promise.all(
     rows.map((row) => checkGone(row.url, limits).catch((): GoneCheck => 'unknown')),
   );
+  // 404 が続いた回数を数え、続けて GONE_STREAK_TO_REMOVE 回になった行だけを消えたと確かめる。
+  // 2xx と判定できない応答は回数を 0 に戻す（R6、原則 2）
+  const checked = rows.map((row, index) => ({
+    id: row.id,
+    goneStreak: results[index] === 'gone' ? (row.goneStreak ?? 0) + 1 : 0,
+  }));
   return {
-    gone: rows.filter((_, index) => results[index] === 'gone').map((row) => row.id),
-    checked: rows.map((row) => row.id),
+    gone: checked.filter((row) => row.goneStreak >= GONE_STREAK_TO_REMOVE).map((row) => row.id),
+    checked,
   };
 };
 

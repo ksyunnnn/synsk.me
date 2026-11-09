@@ -90,8 +90,10 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
         .prepare("DELETE FROM activity WHERE id = ? AND source = ? AND source <> 'life_event'")
         .bind(id, source),
     );
-    // 確かめた日時は確かめる順を決めるためだけの値で、消えた印ではない（research.md の R6）
-    const goneChecked = (plan.goneChecked ?? []).map((id) =>
+    // 確かめた日時は確かめる順を決めるためだけの値で、消えた印ではない（research.md の R6）。
+    // 404 が続いた回数（goneStreak）は書かない。回数の列の読み書きは T048b（migration 0019 の
+    // `consecutive_gone_count`）が足す。書かない間は回数が毎回 0 から始まり、自動では消さない
+    const goneChecked = (plan.goneChecked ?? []).map(({ id }) =>
       db
         .prepare(
           "UPDATE activity SET gone_checked_at = ? WHERE id = ? AND source = ? AND source <> 'life_event'",

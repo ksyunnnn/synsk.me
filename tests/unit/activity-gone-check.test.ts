@@ -23,7 +23,7 @@ const LIMITS: RefreshLimits = {
   maxGoneChecks: 2,
 };
 
-const stored = (id: number, goneCheckedAt: string | null = null): StoredItem => ({
+const stored = (id: number, goneCheckedAt: string | null = null, goneStreak = 0): StoredItem => ({
   id,
   externalId: null,
   url: `https://example.com/${id}`,
@@ -31,6 +31,7 @@ const stored = (id: number, goneCheckedAt: string | null = null): StoredItem => 
   publishedAt: NOW,
   imageUrl: null,
   goneCheckedAt,
+  goneStreak,
 });
 
 describe('pickGoneChecks', () => {
@@ -44,6 +45,12 @@ describe('pickGoneChecks', () => {
     const listed = [{ url: 'https://example.com/4', title: '作り物 4', publishedAt: NOW }];
 
     expect(pickGoneChecks(rows, listed, 2).map((row) => row.id)).toEqual([3, 2]);
+  });
+
+  it('404 が続いている行を、確かめたことの無い行より先に選ぶ。2 回目を待たせない', () => {
+    const rows = [stored(1), stored(2, '2026-11-09T00:00:00.000Z', 1)];
+
+    expect(pickGoneChecks(rows, [], 1).map((row) => row.id)).toEqual([2]);
   });
 });
 
@@ -81,9 +88,9 @@ describe('refreshSources で確かめる', () => {
     },
   });
 
-  it('404 の行を消し、確かめて残った行に確かめた日時を書く', async () => {
+  it('1 回目の 404 では消さず、404 が続いた回数を 1 にする。2xx の行は回数を 0 にする', async () => {
     const { repository, applied } = createFakeActivityRepository({
-      fake_feed: [stored(1), stored(2), stored(3, NOW)],
+      fake_feed: [stored(1), stored(2, null, 1), stored(3, NOW)],
     });
     const checked: string[] = [];
 
@@ -98,15 +105,52 @@ describe('refreshSources で確かめる', () => {
       LIMITS,
     );
 
-    expect(checked).toEqual(['https://example.com/1', 'https://example.com/2']);
+    // 404 が続いている行（2）を先に確かめる
+    expect(checked).toEqual(['https://example.com/2', 'https://example.com/1']);
+    expect(applied[0]?.plan.deletes).toEqual([]);
+    expect(applied[0]?.plan.goneChecked).toEqual([
+      { id: 2, goneStreak: 0 },
+      { id: 1, goneStreak: 1 },
+    ]);
+    expect(outcomes).toMatchObject([{ source: 'fake_feed', ok: true, removed: 0 }]);
+  });
+
+  it('続けて 2 回 404 の行を消す（2026-11-09 の決定、原則 2）', async () => {
+    const { repository, applied } = createFakeActivityRepository({
+      fake_feed: [stored(1, null, 1)],
+    });
+
+    const outcomes = await refreshSources(
+      deps(repository, { 'https://example.com/1': 'gone' }, []),
+      ['fake_feed'],
+      NOW,
+      LIMITS,
+    );
+
     expect(applied[0]?.plan.deletes).toEqual([1]);
-    expect(applied[0]?.plan.goneChecked).toEqual([2]);
+    expect(applied[0]?.plan.goneChecked).toBeUndefined();
     expect(outcomes).toMatchObject([{ source: 'fake_feed', ok: true, removed: 1 }]);
   });
 
-  it('取得元が変わっていないと答えた（304）回も、保存した行を確かめ、404 の行を消す（R6）', async () => {
+  it('404 の間に判定できない応答が挟まったら、回数を 0 に戻す', async () => {
     const { repository, applied } = createFakeActivityRepository({
-      fake_feed: [stored(1), stored(2, NOW)],
+      fake_feed: [stored(1, null, 1)],
+    });
+
+    await refreshSources(
+      deps(repository, { 'https://example.com/1': 'unknown' }, []),
+      ['fake_feed'],
+      NOW,
+      LIMITS,
+    );
+
+    expect(applied[0]?.plan.deletes).toEqual([]);
+    expect(applied[0]?.plan.goneChecked).toEqual([{ id: 1, goneStreak: 0 }]);
+  });
+
+  it('取得元が変わっていないと答えた（304）回も、保存した行を確かめ、続けて 2 回 404 の行を消す（R6）', async () => {
+    const { repository, applied } = createFakeActivityRepository({
+      fake_feed: [stored(1, null, 1), stored(2, NOW)],
     });
     const checked: string[] = [];
 
@@ -143,7 +187,7 @@ describe('refreshSources で確かめる', () => {
 
   it('消えたと確かめた行が上限を超えた回は 1 件も消さない（FR-019）', async () => {
     const { repository, applied } = createFakeActivityRepository({
-      fake_feed: [stored(1), stored(2)],
+      fake_feed: [stored(1, null, 1), stored(2, null, 1)],
     });
 
     await refreshSources(
@@ -174,6 +218,6 @@ describe('refreshSources で確かめる', () => {
     );
 
     expect(applied[0]?.plan.deletes).toEqual([]);
-    expect(applied[0]?.plan.goneChecked).toEqual([1]);
+    expect(applied[0]?.plan.goneChecked).toEqual([{ id: 1, goneStreak: 0 }]);
   });
 });
