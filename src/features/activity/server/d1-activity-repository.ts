@@ -91,7 +91,8 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
         .bind(id, source),
     );
     // 確かめた日時は確かめる順を決めるためだけの値で、消えた印ではない（research.md の R6）。
-    // 404 が続いた回数（goneStreak）を持つ列は共有担当の migration 0019 を待つ。列が入るまでは
+    // 404 が続いた回数（goneStreak）を持つ列 `consecutive_gone_count` は共有担当の migration 0019
+    // を待つ。列が入るまでは
     // 書かないので、回数は毎回 0 から数え、続けて 2 回にならず、自動では消さない
     const goneChecked = (plan.goneChecked ?? []).map(({ id }) =>
       db
