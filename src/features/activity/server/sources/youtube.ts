@@ -14,11 +14,42 @@ export const fetchByUrl = (
   fetcher: Fetcher,
   url: string,
   limits: FetchLimits,
-): Promise<FetchedItem | null> =>
-  fetchOEmbed(
+): Promise<FetchedItem | null> => {
+  const canonical = canonicalYouTubeUrl(url);
+  return fetchOEmbed(
     'YouTube',
     fetcher,
-    `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
-    url,
+    `https://www.youtube.com/oembed?url=${encodeURIComponent(canonical)}&format=json`,
+    canonical,
     limits,
   );
+};
+
+/** 動画の ID の形。YouTube の ID は英数字と `-`・`_` */
+const VIDEO_ID = /^[\w-]+$/;
+
+/**
+ * 同じ動画を指す URL の表記を `https://www.youtube.com/watch?v=<ID>` に揃える（research.md の R10）。
+ * `youtu.be/<ID>`・`m.youtube.com/watch?v=<ID>`・`www.youtube.com/shorts/<ID>` と、共有の印
+ * `si` などのクエリが付いた形は、oEmbed がどれも同じ動画を返した（2026-11-09 実測）。動画の ID を
+ * 読めない URL はそのまま返す
+ */
+export const canonicalYouTubeUrl = (url: string): string => {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return url;
+  }
+  const host = parsed.hostname.toLowerCase();
+  const [first, second] = parsed.pathname.split('/').filter(Boolean);
+  const id =
+    host === 'youtu.be'
+      ? first
+      : first === 'shorts'
+        ? second
+        : first === 'watch'
+          ? (parsed.searchParams.get('v') ?? undefined)
+          : undefined;
+  return id !== undefined && VIDEO_ID.test(id) ? `https://www.youtube.com/watch?v=${id}` : url;
+};

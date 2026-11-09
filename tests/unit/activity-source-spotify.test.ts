@@ -59,4 +59,13 @@ describe('Spotify', () => {
       await expect(fetchByUrl(fetcher, URL_, LIMITS)).rejects.toThrow(String(status));
     },
   );
+
+  it('共有の印 si を除いた URL に揃えて取る（research.md の R10）', async () => {
+    const { fetcher, requested } = createFakeFetcher({
+      [OEMBED]: jsonResponse({ title: '作り物のプレイリスト' }),
+    });
+
+    expect((await fetchByUrl(fetcher, `${URL_}?si=fake-share`, LIMITS))?.url).toBe(URL_);
+    expect(requested.map((request) => request.url)).toEqual([OEMBED]);
+  });
 });

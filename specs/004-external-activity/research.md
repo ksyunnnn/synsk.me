@@ -59,6 +59,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R5 同じ項目の判定と書き方
 
 - 決めたこと: 取得元が ID を返すときは `(source, external_id)` で、返さないときは `(source, url)` で同じ項目を判定する（FR-008）。スキーマの `UNIQUE (source, external_id)` と部分 UNIQUE 索引 `activity_source_url` が最後の守り
+- URL で判定するときは、取った URL と保存した URL の両方を共有の `normalizeWebUrl`（`src/shared/domain/web-url.ts`）で揃えてから比べ、揃えた値で書く（`src/features/activity/application/plan-refresh.ts` の `urlKey`）。揃えるのはスキームとホスト名の大小・既定のポート・パーセントエンコード・フラグメントだけで、末尾のスラッシュとクエリは揃えない（理由はその関数の注釈）。一覧を取る取得元の URL は取得元の一覧がいつも同じ形で返すので、取得元ごとに揃え足すものは無い（Zenn は末尾にスラッシュを付けた URL を 308 で付けない URL へ移す。2026-11-09 実測）
 - 書き方: 足す行は INSERT、直す行は値が変わった列だけを UPDATE する。値が変わらない行は書かない
 - 公開日を返さない取得元（URL を指名する取得元）を取り直すときは、`published_at` を書かない（FR-012）
 - `created_at` は初めて取り込んだ日時（FR-013、0004 の注釈）。UPDATE で書き換えない
@@ -194,6 +195,12 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   - 退けた形: Asia/Tokyo の 00:00 を UTC にして入れる（`2020-03-31T15:00:00.000Z`）。前の日の値になり、同じ日の life event より前に並び、UTC で日付を出す画面では 1 日ずれる
   - 案 (b) 暦の日付の列を足す migration を共有担当に頼む
 - URL は `src/shared/domain/web-url.ts` の `isWebUrl` で http か https だけを通す。URL を指名する取得元では、さらにその取得元のホストの URL だけを通す（任意のホストへ要求を出さない。原則 2）
+- URL を指名する取得元では、オーナーが貼る URL の表記がゆれる。取得元ごとの処理が、同じ項目を指す表記を 1 つに揃えてから題を取り、揃えた URL を返す（2026-11-09 実測。どれも oEmbed が同じ項目を返した）
+  - YouTube: `youtu.be/<ID>`・`m.youtube.com/watch?v=<ID>`・`www.youtube.com/shorts/<ID>`・共有の印 `si` などの付いた形を `https://www.youtube.com/watch?v=<ID>` にする（`canonicalYouTubeUrl`）
+  - Spotify: アプリの「共有」が付ける `si` を除く。ほかのクエリは残す（`canonicalSpotifyUrl`）
+  - CodeSandbox: `/s/<id>`・`/embed/<id>`・`/p/sandbox/<id>` が同じ sandbox を指すかを確かめていないので、揃えない
+  - X: 題の扱い（U11）が決まってから決める
+- 登録していないサイトの URL は `normalizeWebUrl` だけで揃える。フラグメントを消すので、1 つのページの中の位置（`#` から後）で項目を分けるサイトでは、別の項目が同じ URL になり、後から登録する方が「同じ URL が既にある」で拒まれる（FR-005）。オーナーの登録していないサイトの候補として PR #47 の検証記録が挙げるのは TECHPLAY と eventdots の URL（記事の本文に 14 件）で、イベントごとに別のページだと推測する（URL の一覧は確かめていない）。登録していないサイトの登録は U11 で止まっているので、U11 を決めるときに合わせて決める
 - 削除（FR-033）は、URL を指名した・手で入力した activity だけに出す。一覧を取る取得元の activity には削除の操作を持たない（FR-022）
 
 ## R11 life event の識別子と管理画面の URL

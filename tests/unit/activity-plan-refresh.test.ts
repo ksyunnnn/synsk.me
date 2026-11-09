@@ -126,4 +126,30 @@ describe('planRefresh', () => {
 
     expect(plan.updates).toEqual([{ id: 8, changes: { imageUrl: null } }]);
   });
+
+  it('URL は normalizeWebUrl で揃えてから同じ項目かを判定する（FR-005）', () => {
+    const plan = planRefresh(
+      [stored({ id: 9, url: 'https://example.com/a' })],
+      [fetched({ url: 'HTTPS://EXAMPLE.COM:443/a#section' })],
+    );
+
+    expect(plan).toEqual({ inserts: [], updates: [], skippedWithoutDate: 0 });
+  });
+
+  it('足す行の URL は揃えた値で書く。揃えていない保存した URL は揃えた値に直す', () => {
+    const inserted = planRefresh([], [fetched({ url: 'https://Example.com/b#top' })]);
+    expect(inserted.inserts[0]?.url).toBe('https://example.com/b');
+
+    const updated = planRefresh(
+      [stored({ id: 10, externalId: 'x', url: 'https://Example.com/c#top' })],
+      [fetched({ externalId: 'x', url: 'https://example.com/c' })],
+    );
+    expect(updated.updates).toEqual([{ id: 10, changes: { url: 'https://example.com/c' } }]);
+  });
+
+  it('末尾のスラッシュとクエリは揃えない。別の資源を指しうる（src/shared/domain/web-url.ts）', () => {
+    const plan = planRefresh([stored({ id: 11 })], [fetched({ url: 'https://example.com/a/' })]);
+
+    expect(plan.inserts.map((item) => item.url)).toEqual(['https://example.com/a/']);
+  });
 });

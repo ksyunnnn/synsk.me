@@ -35,4 +35,18 @@ describe('YouTube', () => {
 
     expect(await fetchByUrl(fetcher, URL_, LIMITS)).toBeNull();
   });
+
+  it.each([
+    'https://youtu.be/fakefake000?si=fake-share',
+    'https://m.youtube.com/watch?v=fakefake000',
+    'https://www.youtube.com/shorts/fakefake000',
+    'https://www.youtube.com/watch?v=fakefake000&si=fake-share',
+  ])('%s は www.youtube.com/watch?v=<ID> に揃えて取る（research.md の R10）', async (url) => {
+    const { fetcher, requested } = createFakeFetcher({
+      [OEMBED]: jsonResponse({ title: '作り物の動画' }),
+    });
+
+    expect((await fetchByUrl(fetcher, url, LIMITS))?.url).toBe(URL_);
+    expect(requested.map((request) => request.url)).toEqual([OEMBED]);
+  });
 });
