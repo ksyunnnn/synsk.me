@@ -235,7 +235,11 @@ describe('実績の本文と画像（FR-021・FR-023・FR-027・FR-028・FR-030�
   const fetchMedia = (slug: string, key: string) =>
     ctx.server.fetch(`/projects/${slug}/media/${key}`);
 
-  const expectHidden = async (res: Response) => {
+  const expectHidden = async (res: {
+    status: number;
+    headers: { get(name: string): string | null };
+    arrayBuffer(): Promise<ArrayBuffer>;
+  }) => {
     expect(res.status).toBe(404);
     expect(res.headers.get('cache-control')).toContain('no-store');
     expect((await res.arrayBuffer()).byteLength).toBe(0);

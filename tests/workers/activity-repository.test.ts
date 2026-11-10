@@ -625,7 +625,8 @@ describe('ExternalActivityRepository', () => {
       expect(await owned.edit(id, { publishedAt: T1 })).toEqual({ ok: false, reason: 'not-found' });
       expect(await owned.delete(id)).toBe(false);
     }
-    expect(await env.DB.prepare('SELECT * FROM activity ORDER BY id').all()).toEqual(before);
+    const after = await env.DB.prepare('SELECT * FROM activity ORDER BY id').all();
+    expect(after.results).toEqual(before.results);
   });
 
   it('一覧を取る取得元への登録は投げ、行を書かない', async () => {
