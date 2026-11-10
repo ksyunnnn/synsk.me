@@ -10,6 +10,7 @@ import {
   MEDIA_TYPES,
   type MediaRejection,
 } from '@/shared/domain/media';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * life event の代表画像を登録する・外すフォーム（specs/004-external-activity/contracts/dash.md）。
@@ -79,17 +80,17 @@ export const LifeEventImageForm = ({ uid, cardImageUrl, register, remove }: Prop
           JPEG・PNG・WebP・GIF の 1 枚 10 MB まで。登録すると前の画像を消します
         </p>
         <div>
-          <button type="submit" className={`${buttonClass} bg-primary text-primary-foreground`}>
+          <SubmitButton className={`${buttonClass} bg-primary text-primary-foreground`}>
             画像を登録する
-          </button>
+          </SubmitButton>
         </div>
       </form>
       {cardImageUrl && (
         <form action={removeAction}>
           <input type="hidden" name={LIFE_EVENT_UID_FIELD} value={uid} />
-          <button type="submit" className={`${buttonClass} border border-input`}>
+          <SubmitButton className={`${buttonClass} border border-input`}>
             代表画像を外す
-          </button>
+          </SubmitButton>
         </form>
       )}
     </section>

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { OrganizationForm } from '@/features/organization/components/organization-form';
 import { editOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -30,7 +31,11 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.organizations.list}>組織の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">組織を編集する</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
+      {saved === '1' && (
+        <SavedNotice key={organization.updatedAt} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
       <OrganizationForm
         key={organization.updatedAt}
         action={editOrganization}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listSkills } from '@/features/skill/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { toYearsAndMonths } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
@@ -29,8 +30,8 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">スキル</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
-      {deleted === '1' && <p role="status">スキルを削除しました</p>}
+      {saved === '1' && <SavedNotice flags={['saved']}>保存しました</SavedNotice>}
+      {deleted === '1' && <SavedNotice flags={['deleted']}>スキルを削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.skills.new}>スキルを登録する</TextLink>
       </p>

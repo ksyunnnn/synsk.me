@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import { saveEdit, textbox } from './support/dash';
+import { typeBeforeHydration } from './support/hydration';
 import { createNote, openNoteEditor, uniqueNoteSlug, waitForHydration } from './support/note';
 
 /**
@@ -389,32 +390,6 @@ test('送信が応答を返さずに失敗した後、別の note の保存の�
  * JavaScript が動く前（hydration の前）に打った本文が、hydration の後も残ること。react-dom の
  * hydration は、初めの値を持つ `<textarea>` の値を初めの値に戻す（`initTextarea`）
  */
-
-/**
- * 画面のスクリプトの読み込みを止める。返した関数を呼ぶと、止めていた読み込みを流し、それ以降は
- * 止めない。止めている要求が残るうちに経路の登録を外すと、Playwright が二重の処理として止まる
- */
-const holdScripts = async (page: Page) => {
-  let release = () => {};
-  const released = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await page.route('**/*', async (route) => {
-    if (route.request().resourceType() === 'script') await released;
-    await route.fallback();
-  });
-  return release;
-};
-
-/** スクリプトを止めて `url` を開き、動く前に本文を打ってから動かす */
-const typeBeforeHydration = async (page: Page, url: string, typed: string) => {
-  const release = await holdScripts(page);
-  await page.goto(url, { waitUntil: 'commit' });
-  await textbox(page, '本文').fill(typed);
-  release();
-  await waitForHydration(textbox(page, '本文'));
-  await expect(textbox(page, '本文')).toHaveValue(typed);
-};
 
 test('JavaScript が動く前に本文を打っても、動いた後に本文が残り、保存で送られる', async ({
   page,

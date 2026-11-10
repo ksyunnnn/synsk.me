@@ -11,6 +11,8 @@ import {
   regenerateResumeUrl,
 } from '@/features/resume/server/actions';
 import { getResumeForEdit, limitedResumeUrl } from '@/features/resume/server/queries';
+import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -40,8 +42,16 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.resumes.list}>職務経歴書の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">{resume.title}</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
-      {regenerated === '1' && <p role="status">URL を出し直しました</p>}
+      {saved === '1' && (
+        <SavedNotice key={resume.updatedAt} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
+      {regenerated === '1' && (
+        <SavedNotice key={resume.updatedAt} flags={['regenerated']}>
+          URL を出し直しました
+        </SavedNotice>
+      )}
       <p className="text-sm text-muted-foreground">
         {isLimited ? '限定公開用' : '公開用'}
         {isLimited &&
@@ -52,37 +62,49 @@ const Page = async ({ params, searchParams }: Props) => {
           }`}
       </p>
       {isLimited && (
-        <ResumeUrlForm
-          key={`url-${resume.updatedAt}`}
-          action={regenerateResumeUrl}
-          url={await limitedResumeUrl(resume.slug)}
-          {...common}
-        />
+        <FormSection>
+          <ResumeUrlForm
+            key={`url-${resume.updatedAt}`}
+            action={regenerateResumeUrl}
+            url={await limitedResumeUrl(resume.slug)}
+            {...common}
+          />
+        </FormSection>
       )}
       {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
-      <ResumeStatusForm
-        key={`status-${resume.updatedAt}`}
-        action={changeResumeStatus}
-        status={resume.status}
-        {...common}
-      />
-      <ResumeSettingsForm
-        key={`settings-${resume.updatedAt}`}
-        action={editResumeSettings}
-        initialValues={{ title: resume.title, expires: toExpiresInput(resume.limitedExpiresAt) }}
-        slug={resume.slug}
-        isLimited={isLimited}
-        {...common}
-      />
-      <p>
-        <TextLink href={routes.dash.resumes.preview(resume.uid)}>
-          訪問者に見せたときの見た目を見る
-        </TextLink>
-      </p>
-      <ResumeOverview resume={resume} now={now} />
-      <p>
-        <TextLink href={routes.dash.resumes.delete(resume.uid)}>この職務経歴書を削除する</TextLink>
-      </p>
+      <FormSection>
+        <ResumeStatusForm
+          key={`status-${resume.updatedAt}`}
+          action={changeResumeStatus}
+          status={resume.status}
+          {...common}
+        />
+      </FormSection>
+      <FormSection>
+        <ResumeSettingsForm
+          key={`settings-${resume.updatedAt}`}
+          action={editResumeSettings}
+          initialValues={{ title: resume.title, expires: toExpiresInput(resume.limitedExpiresAt) }}
+          slug={resume.slug}
+          isLimited={isLimited}
+          {...common}
+        />
+      </FormSection>
+      <FormSection>
+        <p>
+          <TextLink href={routes.dash.resumes.preview(resume.uid)}>
+            訪問者に見せたときの見た目を見る
+          </TextLink>
+        </p>
+        <ResumeOverview resume={resume} now={now} />
+      </FormSection>
+      <FormSection>
+        <p>
+          <TextLink href={routes.dash.resumes.delete(resume.uid)}>
+            この職務経歴書を削除する
+          </TextLink>
+        </p>
+      </FormSection>
     </main>
   );
 };

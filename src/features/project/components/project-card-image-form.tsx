@@ -7,6 +7,7 @@ import {
   PROJECT_UID_FIELD,
   type CardImageFormResult,
 } from '@/features/project/domain/project';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 実績の代表画像を選ぶフォーム（FR-028、specs/001-career-and-project/contracts/dash.md）。
@@ -73,12 +74,9 @@ export const ProjectCardImageForm = ({ action, projectUid, current, mediaStorage
         </p>
       )}
       <div>
-        <button
-          type="submit"
-          className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           代表画像を選び直す
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );

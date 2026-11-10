@@ -89,9 +89,16 @@ const fetchFeed = async (as: typeof AS_HTML, page?: string) => {
   return { status: res.status, text: await res.text() };
 };
 
-/** 応答の中の、一覧の画面へのリンクの行き先。HTML の属性と RSC の props の両方から読む */
+/**
+ * 応答の中の、一覧のページ送りのリンクの行き先。HTML の `<a>` の属性と、RSC の `"a"` の要素の
+ * props の両方から読む。ページ送りは `<a>` で作る（feed.tsx）。RSC の応答は、404 と 403 の画面
+ * （src/app/not-found.tsx・src/app/forbidden.tsx）を境界の代わりの中身として毎回含み、その
+ * 「トップへ戻る」も同じ経路を指す。こちらは `next/link` の部品なので、`"a"` の要素に限って除く
+ */
 const feedHrefs = (text: string) =>
-  [...text.matchAll(/"?href"?[=:]"(\/top-draft[^"]*)"/g)].map((match) => match[1]);
+  [...text.matchAll(/(?:<a href=|\["\$","a",null,\{"href":)"(\/top-draft[^"]*)"/g)].map(
+    (match) => match[1],
+  );
 
 beforeAll(async () => {
   ctx = await startTestServer({

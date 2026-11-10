@@ -10,6 +10,7 @@ import {
   ResumeFormHidden,
   type ResumeFormCommon,
 } from '@/features/resume/components/resume-form-parts';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 公開するか、非公開にするかを切り替えるフォーム（specs/002-resume/contracts/dash.md の
@@ -75,9 +76,9 @@ export const ResumeStatusFields = ({
       </p>
       <input type="hidden" name={STATUS_FIELD} value={next} />
       <div>
-        <button type="submit" className={BUTTON}>
+        <SubmitButton className={BUTTON}>
           {next === 'published' ? '公開する' : '非公開にする'}
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );

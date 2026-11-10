@@ -7,6 +7,7 @@ import {
 } from '@/features/activity/domain/external-activity';
 import { editExternalActivity } from '@/features/activity/server/actions';
 import { getExternalActivityForEdit } from '@/features/activity/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -35,7 +36,11 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.activities.list}>外部の activity の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">外部の activity を編集する</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
+      {saved === '1' && (
+        <SavedNotice key={valuesVersion} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
       <p>
         <TextLink href={activity.url}>取得元のページを開く</TextLink>
       </p>

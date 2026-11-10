@@ -8,6 +8,7 @@ import {
   type ResumeFormCommon,
 } from '@/features/resume/components/resume-form-parts';
 import { InputField } from '@/shared/components/field';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 限定公開用の URL と、URL を出し直すフォーム（specs/002-resume/contracts/dash.md の
@@ -45,9 +46,7 @@ export const ResumeUrlForm = ({
       <div className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">出し直すと、今の URL は開けなくなります</p>
         <div>
-          <button type="submit" className={BUTTON}>
-            URL を出し直す
-          </button>
+          <SubmitButton className={BUTTON}>URL を出し直す</SubmitButton>
         </div>
       </div>
     </form>

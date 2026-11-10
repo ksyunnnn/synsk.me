@@ -26,6 +26,8 @@ import {
   unpublishNote,
 } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
+import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -63,6 +65,17 @@ const Page = async ({ params, searchParams }: Props) => {
   const notice = (Object.keys(NOTICES) as (keyof typeof NOTICES)[]).find(
     (key) => flags[key] === '1',
   );
+  // 知らせを置き直す値。知らせを出す操作は、どれもこのどれかを変える
+  const noticeVersion = JSON.stringify([
+    note.status,
+    note.deletedAt,
+    note.latestRevision.uid,
+    note.syndicationUrls,
+    note.mediaStorageKeys,
+    note.cardImage,
+    note.cardMediaStorageKey,
+    note.isFirstParagraphAsDescription,
+  ]);
 
   if (note.deletedAt !== null) {
     // 削除した note は、中身を読み取りだけで出し、「元に戻す」だけを置く（contracts/dash.md）
@@ -101,68 +114,82 @@ const Page = async ({ params, searchParams }: Props) => {
       {flags.saved === '1' && (
         <NoteSavedNotice noteUid={note.uid} revisionUid={note.latestRevision.uid} />
       )}
-      {notice && <p role="status">{NOTICES[notice]}</p>}
+      {notice && <SavedNotice key={noticeVersion}>{NOTICES[notice]}</SavedNotice>}
       {isVisibleToVisitors(note) && (
         <p>
           <TextLink href={routes.note(note.slug)}>訪問者に見せるページを開く</TextLink>
         </p>
       )}
-      <NoteStatusForm
-        noteUid={note.uid}
-        status={note.status}
-        publishAction={publishNote}
-        unpublishAction={unpublishNote}
-      />
-      {/* 保存のたびに最も新しい版が変わる。入力の初めの値と比べる版を、保存した版で描き直す（FR-021） */}
-      <NoteForm
-        key={note.latestRevision.uid}
-        action={saveNote}
-        initialValues={toNoteFormValues(note)}
-        note={{
-          uid: note.uid,
-          openedRevisionUid: note.latestRevision.uid,
-          hasBeenPublished: hasBeenPublished(note),
-        }}
-      />
-      <NoteFirstParagraphAsDescriptionForm
-        action={changeNoteFirstParagraphAsDescription}
-        noteUid={note.uid}
-        current={note.isFirstParagraphAsDescription}
-      />
-      <NoteSyndicationForm
-        noteUid={note.uid}
-        urls={note.syndicationUrls}
-        addAction={addNoteSyndication}
-        removeAction={removeNoteSyndication}
-      />
-      <NoteMediaForm
-        action={addNoteMedia}
-        noteUid={note.uid}
-        mediaStorageKeys={note.mediaStorageKeys}
-      />
-      <NoteCardImageForm
-        action={changeNoteCardImage}
-        noteUid={note.uid}
-        current={
-          note.cardImage === 'media' && note.cardMediaStorageKey !== null
-            ? { kind: 'media', storageKey: note.cardMediaStorageKey }
-            : { kind: 'site' }
-        }
-        mediaStorageKeys={note.mediaStorageKeys}
-      />
-      <ul className="flex flex-col gap-2">
-        <li>
-          <TextLink href={routes.dash.notes.revisions(note.uid)}>版の一覧</TextLink>
-        </li>
-        <li>
-          <TextLink href={routes.dash.notes.preview(note.uid)}>
-            最も新しい版を、訪問者に見せたときの見た目で確かめる
-          </TextLink>
-        </li>
-        <li>
-          <TextLink href={routes.dash.notes.delete(note.uid)}>この note を削除する</TextLink>
-        </li>
-      </ul>
+      <FormSection>
+        <NoteStatusForm
+          noteUid={note.uid}
+          status={note.status}
+          publishAction={publishNote}
+          unpublishAction={unpublishNote}
+        />
+      </FormSection>
+      <FormSection title="内容" id="note-content">
+        {/* 保存のたびに最も新しい版が変わる。入力の初めの値と比べる版を、保存した版で描き直す（FR-021） */}
+        <NoteForm
+          key={note.latestRevision.uid}
+          action={saveNote}
+          initialValues={toNoteFormValues(note)}
+          note={{
+            uid: note.uid,
+            openedRevisionUid: note.latestRevision.uid,
+            hasBeenPublished: hasBeenPublished(note),
+          }}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteFirstParagraphAsDescriptionForm
+          action={changeNoteFirstParagraphAsDescription}
+          noteUid={note.uid}
+          current={note.isFirstParagraphAsDescription}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteSyndicationForm
+          noteUid={note.uid}
+          urls={note.syndicationUrls}
+          addAction={addNoteSyndication}
+          removeAction={removeNoteSyndication}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteMediaForm
+          action={addNoteMedia}
+          noteUid={note.uid}
+          mediaStorageKeys={note.mediaStorageKeys}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteCardImageForm
+          action={changeNoteCardImage}
+          noteUid={note.uid}
+          current={
+            note.cardImage === 'media' && note.cardMediaStorageKey !== null
+              ? { kind: 'media', storageKey: note.cardMediaStorageKey }
+              : { kind: 'site' }
+          }
+          mediaStorageKeys={note.mediaStorageKeys}
+        />
+      </FormSection>
+      <FormSection>
+        <ul className="flex flex-col gap-2">
+          <li>
+            <TextLink href={routes.dash.notes.revisions(note.uid)}>版の一覧</TextLink>
+          </li>
+          <li>
+            <TextLink href={routes.dash.notes.preview(note.uid)}>
+              最も新しい版を、訪問者に見せたときの見た目で確かめる
+            </TextLink>
+          </li>
+          <li>
+            <TextLink href={routes.dash.notes.delete(note.uid)}>この note を削除する</TextLink>
+          </li>
+        </ul>
+      </FormSection>
     </main>
   );
 };

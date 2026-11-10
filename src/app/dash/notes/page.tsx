@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { NOTE_STATUS_LABELS } from '@/features/note/domain/note';
 import { listNotes } from '@/features/note/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -23,7 +24,7 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">note</h1>
-      {deleted === '1' && <p role="status">note を削除しました</p>}
+      {deleted === '1' && <SavedNotice flags={['deleted']}>note を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.notes.new}>note を作る</TextLink>
       </p>

@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { NOTE_UID_FIELD } from '@/features/note/domain/note';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 削除した note を元に戻すフォーム（specs/003-note/contracts/dash.md）。削除した note の画面に
@@ -30,12 +31,9 @@ export const NoteRestoreForm = ({
         </p>
       )}
       <div>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           元に戻す
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );

@@ -6,6 +6,7 @@ import {
   NOTE_UID_FIELD,
   type FirstParagraphAsDescriptionFormResult,
 } from '@/features/note/domain/note';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 説明文が空のときに、本文の最初の段落を説明に使うかを選ぶフォーム（FR-034、
@@ -76,12 +77,9 @@ export const NoteFirstParagraphAsDescriptionForm = ({ action, noteUid, current }
         </p>
       )}
       <div>
-        <button
-          type="submit"
-          className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           説明文が空のときの説明を変える
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );

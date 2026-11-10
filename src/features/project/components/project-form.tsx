@@ -18,6 +18,8 @@ import {
 import { MaskingField } from '@/shared/components/masking-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -234,14 +236,11 @@ export const ProjectForm = ({
         {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
       </fieldset>
 
-      <div>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+      <FormActions>
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {project ? '保存する' : '登録する'}
-        </button>
-      </div>
+        </SubmitButton>
+      </FormActions>
     </form>
   );
 };

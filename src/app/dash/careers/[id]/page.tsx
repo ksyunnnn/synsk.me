@@ -5,6 +5,7 @@ import { CareerForm } from '@/features/career/components/career-form';
 import { CAREER_UID_FIELD, toCareerFormValues } from '@/features/career/domain/career';
 import { addCareerMedia, editCareer } from '@/features/career/server/actions';
 import { getCareerForEdit } from '@/features/career/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { routes } from '@/shared/routes';
@@ -36,11 +37,15 @@ const Page = async ({ params, searchParams }: Props) => {
       </p>
       <h1 className="text-2xl font-bold">職歴を編集する</h1>
       {mediaAdded === '1' && (
-        <p role="status" className="text-sm">
+        <SavedNotice key={career.updatedAt} flags={['mediaAdded']} className="text-sm">
           画像を足しました
-        </p>
+        </SavedNotice>
       )}
-      {saved === '1' && <p role="status">保存しました</p>}
+      {saved === '1' && (
+        <SavedNotice key={career.updatedAt} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
       {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
       <CareerForm
         key={career.updatedAt}

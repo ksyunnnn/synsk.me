@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 行を削除する確認のフォーム。確認はダイアログにせず、このフォームを置いた画面で行う
@@ -30,12 +31,9 @@ export const DeleteForm = <R extends Result>({ action, uidField, uid, messages }
         </p>
       )}
       <div>
-        <button
-          type="submit"
-          className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           削除する
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );

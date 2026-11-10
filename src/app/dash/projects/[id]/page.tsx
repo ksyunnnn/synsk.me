@@ -14,6 +14,8 @@ import {
   editProject,
 } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
+import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { routes } from '@/shared/routes';
@@ -55,48 +57,60 @@ const Page = async ({ params, searchParams }: Props) => {
       </p>
       <h1 className="text-2xl font-bold">実績を編集する</h1>
       {notice && (
-        <p role="status" className="text-sm">
+        <SavedNotice key={project.updatedAt} flags={[notice]} className="text-sm">
           {NOTICES[notice]}
-        </p>
+        </SavedNotice>
       )}
-      {flags.saved === '1' && <p role="status">保存しました</p>}
+      {flags.saved === '1' && (
+        <SavedNotice key={project.updatedAt} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
       <p>
         <TextLink href={routes.project(project.slug)}>訪問者に見せるページを開く</TextLink>
       </p>
       {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
-      <ProjectForm
-        key={project.updatedAt}
-        action={editProject}
-        initialValues={toProjectFormValues(project)}
-        organizationNames={organizationNames}
-        skillOptions={skillOptions}
-        project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
-      />
-      <MediaUploadForm
-        action={addProjectMedia}
-        owner={{ field: PROJECT_UID_FIELD, uid: project.uid }}
-        mediaStorageKeys={project.mediaStorageKeys}
-      >
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            name={AS_CARD_IMAGE_FIELD}
-            value="1"
-            className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          />
-          代表画像にする
-        </label>
-      </MediaUploadForm>
-      <ProjectCardImageForm
-        key={`card-${project.updatedAt}`}
-        action={changeProjectCardImage}
-        projectUid={project.uid}
-        current={project.cardMediaKey}
-        mediaStorageKeys={project.mediaStorageKeys}
-      />
-      <p>
-        <TextLink href={routes.dash.projects.delete(project.uid)}>この実績を削除する</TextLink>
-      </p>
+      <FormSection title="内容" id="project-content">
+        <ProjectForm
+          key={project.updatedAt}
+          action={editProject}
+          initialValues={toProjectFormValues(project)}
+          organizationNames={organizationNames}
+          skillOptions={skillOptions}
+          project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
+        />
+      </FormSection>
+      <FormSection>
+        <MediaUploadForm
+          action={addProjectMedia}
+          owner={{ field: PROJECT_UID_FIELD, uid: project.uid }}
+          mediaStorageKeys={project.mediaStorageKeys}
+        >
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name={AS_CARD_IMAGE_FIELD}
+              value="1"
+              className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            />
+            代表画像にする
+          </label>
+        </MediaUploadForm>
+      </FormSection>
+      <FormSection>
+        <ProjectCardImageForm
+          key={`card-${project.updatedAt}`}
+          action={changeProjectCardImage}
+          projectUid={project.uid}
+          current={project.cardMediaKey}
+          mediaStorageKeys={project.mediaStorageKeys}
+        />
+      </FormSection>
+      <FormSection>
+        <p>
+          <TextLink href={routes.dash.projects.delete(project.uid)}>この実績を削除する</TextLink>
+        </p>
+      </FormSection>
     </main>
   );
 };

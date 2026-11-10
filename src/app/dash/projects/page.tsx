@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listProjects } from '@/features/project/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { formatPeriod } from '@/shared/domain/period';
 import { SITE_STATUS_LABELS } from '@/shared/domain/site-status';
@@ -25,7 +26,7 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">実績</h1>
-      {deleted === '1' && <p role="status">実績を削除しました</p>}
+      {deleted === '1' && <SavedNotice flags={['deleted']}>実績を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.projects.new}>実績を登録する</TextLink>
       </p>

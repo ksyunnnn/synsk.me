@@ -8,6 +8,7 @@ import {
   type SyndicationFormResult,
 } from '@/features/note/domain/note';
 import { InputField } from '@/shared/components/field';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * note の転載先の URL の一覧と、足す・外すフォーム（FR-031・FR-032、specs/003-note/contracts/dash.md）。
@@ -57,9 +58,9 @@ const RemoveForm = ({
       <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />
       <input type="hidden" name={SYNDICATION_URL_FIELD} value={url} />
       <span className="break-all">{url}</span>
-      <button type="submit" className={BUTTON} aria-label={`${url} を外す`}>
+      <SubmitButton className={BUTTON} aria-label={`${url} を外す`}>
         外す
-      </button>
+      </SubmitButton>
       {result?.status === 'forbidden' && (
         <p role="alert" className="text-destructive">
           {FORBIDDEN}
@@ -107,9 +108,7 @@ export const NoteSyndicationForm = ({ noteUid, urls, addAction, removeAction }: 
           error={error ? ERROR_MESSAGES[error] : undefined}
         />
         <div>
-          <button type="submit" className={BUTTON}>
-            転載先を記録する
-          </button>
+          <SubmitButton className={BUTTON}>転載先を記録する</SubmitButton>
         </div>
       </form>
     </section>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listOrganizations } from '@/features/organization/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -22,7 +23,7 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">組織</h1>
-      {deleted === '1' && <p role="status">組織を削除しました</p>}
+      {deleted === '1' && <SavedNotice flags={['deleted']}>組織を削除しました</SavedNotice>}
       <p>組織は、職歴と実績の入力の中で組織名を入れると作られます。</p>
       {organizations.length === 0 ? (
         <p>登録した組織はありません</p>

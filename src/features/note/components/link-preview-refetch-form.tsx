@@ -7,6 +7,7 @@ import {
   type LinkPreviewRefetchError,
   type LinkPreviewRefetchFormResult,
 } from '@/features/note/domain/note';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * URL カードの「取り直す」（User Story 6 の 3、FR-029、specs/003-note/contracts/dash.md）。見た目の
@@ -45,12 +46,9 @@ export const LinkPreviewRefetchForm = ({ action, noteUid, url }: Props) => {
     <form action={formAction} className="flex flex-col items-start gap-2">
       <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />
       <input type="hidden" name={LINK_PREVIEW_URL_FIELD} value={url} />
-      <button
-        type="submit"
-        className="rounded-md border border-input px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      >
+      <SubmitButton className="rounded-md border border-input px-3 py-1 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
         取り直す
-      </button>
+      </SubmitButton>
       {message && (
         <p role="alert" className="text-sm text-destructive">
           {message}

@@ -13,6 +13,8 @@ import {
 } from '@/features/note/domain/note';
 import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import { InputField, TextareaField } from '@/shared/components/field';
+import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * note を作る・保存するフォーム（specs/003-note/contracts/dash.md）。
@@ -142,14 +144,11 @@ export const NoteForm = ({ action, initialValues, note }: Props) => {
         error={errorOf('body')}
       />
 
-      <div>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+      <FormActions>
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {note ? '保存する' : '作る'}
-        </button>
-      </div>
+        </SubmitButton>
+      </FormActions>
     </DraftRetainingForm>
   );
 };
