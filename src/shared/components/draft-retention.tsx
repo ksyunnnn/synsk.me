@@ -142,6 +142,8 @@ const findStaleDrafts = (storageKey: string, currentKey: string): StaleDraft[] =
       const stored = read(key);
       const draft = parseDraft(stored);
       if (stored === null || draft === null) continue;
+      // 書いた画面が開いたときの値から何も変えていない書きかけは、戻しても何も変わらない
+      if (draft.base !== undefined && changedNames(draft.values, draft.base).length === 0) continue;
       found.push({ key, stored, ...draft });
     }
   } catch {
@@ -175,59 +177,63 @@ const toValues = (form: HTMLFormElement): DraftValues => {
 };
 
 /**
- * 画面が開いたときの入力の値（`defaultValue`・`defaultChecked`・`defaultSelected`）。`toValues` と
- * 同じく、隠れた入力と、送られない入力（無効にした入力・ボタン）は持たない
+ * 画面が開いたときの入力の値（`defaultValue`・`defaultChecked`・`defaultSelected`）。フォームの
+ * 写しを初めの値に戻し（`reset`）、`toValues` で読む。送る値の決まり（無効にした入力、隠れた入力、
+ * 改行）を `toValues` と揃えるため。動き始めた時点で 1 回だけ読む。失敗の結果を受けたフォームは
+ * 送った値を初めの値に描き直すので、その後に読むと書きかけで変えた項目が見えなくなる
  */
 const toDefaultValues = (form: HTMLFormElement): DraftValues => {
-  const values: DraftValues = {};
-  const push = (name: string, value: string) => (values[name] ??= []).push(value);
-  for (const element of Array.from(form.elements)) {
-    if (!(
-      element instanceof HTMLInputElement ||
-      element instanceof HTMLTextAreaElement ||
-      element instanceof HTMLSelectElement
-    ))
-      continue;
-    const { name } = element;
-    if (name === '' || element.disabled || name.startsWith('$ACTION')) continue;
-    if (element instanceof HTMLSelectElement) {
-      const options = Array.from(element.options).filter((option) => !option.disabled);
-      const selected = options.filter((option) => option.defaultSelected);
-      // 1 つを選ぶセレクトで、初めに選んだ選択肢が無ければ、最初の選択肢が選ばれる
-      const chosen = element.multiple || selected.length > 0 ? selected : options.slice(0, 1);
-      for (const option of chosen) push(name, option.value);
-      continue;
-    }
-    if (element instanceof HTMLTextAreaElement) {
-      push(name, element.defaultValue);
-      continue;
-    }
-    if (['hidden', 'file', 'submit', 'button', 'reset', 'image'].includes(element.type)) continue;
-    if (element.type === 'checkbox' || element.type === 'radio') {
-      if (element.defaultChecked) push(name, element.value);
-      continue;
-    }
-    push(name, element.defaultValue);
-  }
-  return values;
+  const copy = form.cloneNode(true) as HTMLFormElement;
+  copy.reset();
+  return toValues(copy);
 };
 
 /** 同じ名前の値の並びが同じか */
 const sameValues = (a: string[] | undefined, b: string[] | undefined) =>
   (a ?? []).length === (b ?? []).length && (a ?? []).every((value, i) => value === b?.[i]);
 
+/** 書きかけが、書いた画面が開いたときの値（`base`）から変えた項目の名前 */
+const changedNames = (values: DraftValues, base: DraftValues) =>
+  [...new Set([...Object.keys(values), ...Object.keys(base)])].filter(
+    (name) => !sameValues(values[name], base[name]),
+  );
+
+/** チェックボックスとマルチセレクトの名前。同じ名前で、値をいくつでも選べる */
+const toMultipleNames = (form: HTMLFormElement) =>
+  new Set(
+    Array.from(form.elements).flatMap((element) =>
+      (element instanceof HTMLInputElement && element.type === 'checkbox') ||
+      (element instanceof HTMLSelectElement && element.multiple)
+        ? [element.name]
+        : [],
+    ),
+  );
+
 /**
  * 前の版の書きかけを戻した後の値。書きかけが `base` を持てば、`base` と違う項目（オーナーが
- * 書きかけで変えた項目）だけを書きかけの値にし、ほかの項目は今の入力のまま残す。`base` を
- * 持たない書きかけは、変えた項目が分からないので、すべての項目を書きかけの値にする
+ * 書きかけで変えた項目）だけを書きかけの値にし、ほかの項目は今の入力のまま残す。いくつでも選べる
+ * 項目（`multiple`）は、書きかけで足した値と外した値だけを今の入力に当てる。先に保存した画面が
+ * 同じ項目で足した値を外さないため。`base` を持たない書きかけは、変えた項目が分からないので、
+ * すべての項目を書きかけの値にする
  */
-const mergeStale = (current: DraftValues, stale: StaleDraft): DraftValues => {
+const mergeStale = (
+  current: DraftValues,
+  stale: StaleDraft,
+  multiple: ReadonlySet<string>,
+): DraftValues => {
   const { base } = stale;
   if (base === undefined) return stale.values;
   const merged: DraftValues = { ...current };
-  for (const name of new Set([...Object.keys(stale.values), ...Object.keys(base)])) {
-    if (sameValues(stale.values[name], base[name])) continue;
-    const value = stale.values[name];
+  for (const name of changedNames(stale.values, base)) {
+    let value: string[] | undefined = stale.values[name];
+    if (multiple.has(name)) {
+      const before = base[name] ?? [];
+      const after = value ?? [];
+      const kept = (current[name] ?? []).filter((v) => after.includes(v) || !before.includes(v));
+      const added = after.filter((v) => !before.includes(v) && !kept.includes(v));
+      value = [...kept, ...added];
+      if (value.length === 0) value = undefined;
+    }
     if (value === undefined) delete merged[name];
     else merged[name] = value;
   }
@@ -300,10 +306,10 @@ const read = (key: string): string | null => {
 };
 
 /**
- * 文字列はそのまま書く。書きかけは、`form` の値（`values` を渡せばそれ）を、書いた日時と、画面が
- * 開いたときの値と一緒に書く（`StoredDraft`）
+ * 文字列はそのまま書く。書きかけは、値を、書いた日時と、画面が開いたときの値（`base`）と一緒に
+ * 書く（`StoredDraft`）
  */
-const write = (key: string, value: string | { form: HTMLFormElement; values?: DraftValues }) => {
+const write = (key: string, value: string | { values: DraftValues; base: DraftValues }) => {
   try {
     window.localStorage.setItem(
       key,
@@ -311,8 +317,8 @@ const write = (key: string, value: string | { form: HTMLFormElement; values?: Dr
         ? value
         : JSON.stringify({
             writtenAt: new Date().toISOString(),
-            values: value.values ?? toValues(value.form),
-            base: toDefaultValues(value.form),
+            values: value.values,
+            base: value.base,
           }),
     );
   } catch {
@@ -380,6 +386,8 @@ export const DraftRetainingForm = ({
   const formRef = useRef<HTMLFormElement>(null);
   /** 送信した値。失敗の結果が来たら持ち直す */
   const submittedRef = useRef<DraftValues | null>(null);
+  /** この版の画面が開いたときの入力の値。動き始めた時点で読む（`toDefaultValues`） */
+  const baseRef = useRef<DraftValues>({});
   const key = toStorageKey(storageKey, version);
   /** 知らせている前の版の書きかけ。`undefined` は、まだ探していないこと */
   const [stale, setStale] = useState<StaleDraft | null | undefined>(undefined);
@@ -395,6 +403,7 @@ export const DraftRetainingForm = ({
   useEffect(() => {
     const form = formRef.current;
     if (!form) return;
+    baseRef.current = toDefaultValues(form);
     // 版を持つ画面だけが、前の版の書きかけを持ちうる
     setStale(version === undefined ? null : (findStaleDrafts(storageKey, key)[0] ?? null));
     outcomeRef.current = null;
@@ -406,7 +415,7 @@ export const DraftRetainingForm = ({
     }
     const draft = parseDraft(read(key))?.values;
     const save = () => {
-      write(key, { form });
+      write(key, { values: toValues(form), base: baseRef.current });
       // 戻す・捨てるの後に入力したら、その操作を確かめたものとし、知らせを閉じる。取り消すと、
       // 操作の後に打った入力まで消えるため
       if (outcomeRef.current) {
@@ -452,8 +461,7 @@ export const DraftRetainingForm = ({
     if (result.status === 'saved') return;
     if (read(SENT_KEY) === key) remove(SENT_KEY);
     remove(SENT_BEFORE_HYDRATION_KEY);
-    const form = formRef.current;
-    if (form) write(key, { form, values: submitted });
+    write(key, { values: submitted, base: baseRef.current });
   }, [result, key]);
 
   /**
@@ -464,10 +472,10 @@ export const DraftRetainingForm = ({
     const form = formRef.current;
     if (!form || !stale) return;
     const previous = { stored: read(key), values: toValues(form) };
-    applyValues(form, mergeStale(previous.values, stale));
-    write(key, { form });
+    applyValues(form, mergeStale(previous.values, stale, toMultipleNames(form)));
+    write(key, { values: toValues(form), base: baseRef.current });
     remove(stale.key);
-    settle({ kind: 'restored', partial: stale.base !== undefined, previous });
+    settle({ kind: stale.base === undefined ? 'restored' : 'restoredChanges', previous });
   };
 
   /** 前の版の書きかけを消す */
@@ -481,7 +489,7 @@ export const DraftRetainingForm = ({
   const undo = () => {
     const form = formRef.current;
     if (!form || !stale || !outcome) return;
-    if (outcome.kind === 'restored') {
+    if (outcome.kind !== 'discarded') {
       applyValues(form, outcome.previous.values);
       if (outcome.previous.stored === null) remove(key);
       else write(key, outcome.previous.stored);
@@ -501,13 +509,7 @@ export const DraftRetainingForm = ({
     >
       {stale && (
         <StaleDraftNotice
-          outcome={
-            outcome === null
-              ? null
-              : outcome.kind === 'restored' && outcome.partial
-                ? 'restoredChanges'
-                : outcome.kind
-          }
+          outcome={outcome?.kind ?? null}
           onRestore={restore}
           onDiscard={discard}
           onUndo={undo}
@@ -518,12 +520,14 @@ export const DraftRetainingForm = ({
   );
 };
 
-/** 前の版の書きかけに行った操作。戻したときは、戻す前の入力と、この版の書きかけを持つ */
+/**
+ * 前の版の書きかけに行った操作。戻したときは、戻す前の入力と、この版の書きかけを持つ。
+ * `restoredChanges` は書きかけで変えた項目だけを戻したこと、`restored` はすべての項目を戻した
+ * こと（`base` を持たない書きかけ）
+ */
 type StaleOutcome =
   | {
-      kind: 'restored';
-      /** 書きかけで変えた項目だけを戻したか。`base` を持たない書きかけは、すべての項目を戻す */
-      partial: boolean;
+      kind: 'restored' | 'restoredChanges';
       previous: { stored: string | null; values: DraftValues };
     }
   | { kind: 'discarded' };
@@ -542,8 +546,7 @@ const StaleDraftNotice = ({
   onDiscard,
   onUndo,
 }: {
-  /** `restoredChanges` は、書きかけで変えた項目だけを戻したこと */
-  outcome: StaleOutcome['kind'] | 'restoredChanges' | null;
+  outcome: StaleOutcome['kind'] | null;
   onRestore: () => void;
   onDiscard: () => void;
   onUndo: () => void;

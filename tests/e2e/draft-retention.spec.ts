@@ -212,6 +212,138 @@ test('前の更新日時の書きかけを戻すと、書きかけで変えた�
   );
 });
 
+test('保存が先の保存とぶつかって拒まれた後に開き直して戻すと、送った書きかけで変えた項目だけが入る', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E ぶつかる書きかけの組織',
+    organizationNameMasked: 'E2E ぶつかる書きかけの秘匿化した組織名',
+    role: 'E2E ぶつかる書きかけの保存した肩書',
+  });
+  await page.goto(editUrl);
+  const other = await context.newPage();
+  await other.goto(editUrl);
+  await textbox(other, '組織名').fill('E2E ぶつかる前に先に保存した組織名');
+  await saveEdit(other);
+  await other.close();
+  await fillUntilDrafted(page, 'career', () =>
+    textbox(page, '肩書').fill('E2E ぶつかって拒まれた肩書'),
+  );
+  // 拒まれた結果は送った値を持ち、入力の初めの値（`defaultValue`）が送った値に変わる
+  await submitAndWait(page, '保存する');
+  await expect(page.getByText('開いた後に別の画面で書き換えられていました')).toBeVisible();
+  await page.reload();
+
+  const notice = page.getByRole('region', { name: '前の版の書きかけ' });
+  await notice.getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(notice).toContainText('書きかけで変えた項目を戻しました');
+  await expect(textbox(page, '肩書')).toHaveValue('E2E ぶつかって拒まれた肩書');
+  await expect(textbox(page, '組織名')).toHaveValue('E2E ぶつかる前に先に保存した組織名');
+});
+
+test('書いた画面が開いたときの値を持たない形式の前の版の書きかけは、戻すとすべての項目が入る', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 古い形式の書きかけの組織',
+    organizationNameMasked: 'E2E 古い形式の書きかけの秘匿化した組織名',
+    role: 'E2E 古い形式の書きかけの保存した肩書',
+  });
+  await page.goto(editUrl);
+  const other = await context.newPage();
+  await other.goto(editUrl);
+  await textbox(other, '組織名').fill('E2E 古い形式の後に先に保存した組織名');
+  await saveEdit(other);
+  await other.close();
+  await fillUntilDrafted(page, 'career', () =>
+    textbox(page, '肩書').fill('E2E 古い形式の書きかけの肩書'),
+  );
+  // `base` を持たない形式（{ writtenAt, values }）に書き換える
+  await page.evaluate(() => {
+    for (const key of Object.keys(window.localStorage)) {
+      if (!key.startsWith('synsk:draft:career:')) continue;
+      const { writtenAt, values } = JSON.parse(window.localStorage.getItem(key) ?? '{}');
+      window.localStorage.setItem(key, JSON.stringify({ writtenAt, values }));
+    }
+  });
+  await page.reload();
+
+  const notice = page.getByRole('region', { name: '前の版の書きかけ' });
+  await notice.getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(notice).toContainText('書きかけを戻しました');
+  await expect(notice).not.toContainText('書きかけで変えた項目');
+  await expect(textbox(page, '肩書')).toHaveValue('E2E 古い形式の書きかけの肩書');
+  // 変えた項目が分からないので、書きかけを書いた版の組織名も入る
+  await expect(textbox(page, '組織名')).toHaveValue('E2E 古い形式の書きかけの組織');
+});
+
+test('前の更新日時の書きかけが、書いた画面が開いたときの値から何も変えていなければ、知らせない', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 変えない書きかけの組織',
+    organizationNameMasked: 'E2E 変えない書きかけの秘匿化した組織名',
+    role: 'E2E 変えない書きかけの保存した肩書',
+  });
+  await page.goto(editUrl);
+  const other = await context.newPage();
+  await other.goto(editUrl);
+  await textbox(other, '組織名').fill('E2E 変えない書きかけの後に先に保存した組織名');
+  await saveEdit(other);
+  await other.close();
+  // 打ってから元に戻す。書きかけは、開いたときと同じ値を持つ
+  await fillUntilDrafted(page, 'career', async () => {
+    await textbox(page, '肩書').fill('E2E 一度だけ打った肩書');
+    await textbox(page, '肩書').fill('E2E 変えない書きかけの保存した肩書');
+  });
+  await page.reload();
+
+  await expect(textbox(page, '組織名')).toHaveValue('E2E 変えない書きかけの後に先に保存した組織名');
+  await expect(page.getByRole('region', { name: '前の版の書きかけ' })).toHaveCount(0);
+});
+
+test('前の更新日時の書きかけでチェックを足した項目を戻すと、先に保存した画面が足したチェックも残る', async ({
+  page,
+  context,
+}) => {
+  const id = crypto.randomUUID();
+  const kept = `E2E 初めから選んだスキル ${id}`;
+  const drafted = `E2E 書きかけで足すスキル ${id}`;
+  const saved = `E2E 先に保存して足すスキル ${id}`;
+  await actAsAuthor(context);
+  for (const skill of [kept, drafted, saved]) await registerSkill(page, skill);
+  const { editUrl } = await registerProject(page, {
+    organizationName: 'E2E 足す書きかけの実績の組織',
+    organizationNameMasked: 'E2E 足す書きかけの実績の秘匿化した組織名',
+    title: 'E2E 足す書きかけの題',
+    skills: [kept],
+  });
+  await page.goto(editUrl);
+  const other = await context.newPage();
+  await other.goto(editUrl);
+  await other.getByRole('checkbox', { name: saved, exact: true }).check();
+  await saveEdit(other);
+  await other.close();
+  await fillUntilDrafted(page, 'project', () =>
+    page.getByRole('checkbox', { name: drafted, exact: true }).check(),
+  );
+  await page.reload();
+
+  const notice = page.getByRole('region', { name: '前の版の書きかけ' });
+  await notice.getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(notice).toContainText('書きかけで変えた項目を戻しました');
+  // 同じ名前のチェックボックスは、値ごとに、書きかけで変えたものだけを戻す（FR-042）
+  await expect(page.getByRole('checkbox', { name: drafted, exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: saved, exact: true })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: kept, exact: true })).toBeChecked();
+});
+
 test('前の更新日時の書きかけでチェックを外した項目を戻すと、外したまま入り、先に保存した項目は残る', async ({
   page,
   context,
