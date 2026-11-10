@@ -146,6 +146,36 @@ test('職歴の編集の画面で、保存せずに再読み込みしても入�
   await expect(textbox(page, '肩書')).toHaveValue('E2E 保存していない肩書');
 });
 
+test('職歴を別の画面で先に保存された後に開き直すと、前の更新日時の書きかけを知らせ、戻せる', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 前の書きかけの組織',
+    organizationNameMasked: 'E2E 前の書きかけの秘匿化した組織名',
+    role: 'E2E 前の書きかけの保存した肩書',
+  });
+  await page.goto(editUrl);
+  const other = await context.newPage();
+  await other.goto(editUrl);
+  await textbox(other, '肩書').fill('E2E 先に保存した肩書');
+  await saveEdit(other);
+  await other.close();
+  await fillUntilDrafted(page, 'career', () =>
+    textbox(page, '肩書').fill('E2E 前の更新日時の書きかけ'),
+  );
+  await page.reload();
+
+  // 自動では戻さない（specs/001-career-and-project/spec.md の FR-042）
+  const notice = page.getByRole('region', { name: '前の版の書きかけ' });
+  await expect(notice).toContainText('この画面を開く前の版から書いた書きかけ');
+  await expect(textbox(page, '肩書')).toHaveValue('E2E 先に保存した肩書');
+  await notice.getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(textbox(page, '肩書')).toHaveValue('E2E 前の更新日時の書きかけ');
+  await expect(notice).toContainText('書きかけを戻しました');
+});
+
 test('実績の登録の画面で、選んだスキルと種類が再読み込みしても残る', async ({ page, context }) => {
   const skill = `E2E 書きかけのスキル ${crypto.randomUUID()}`;
   await actAsAuthor(context);
@@ -227,6 +257,8 @@ const fillAndSave = async (page: Page, scope: string, fill: () => Promise<void>)
 const expectNoDraftLeft = async (page: Page) => {
   await expect.poll(() => draftKeys(page)).toEqual([]);
   expect(await sentKey(page)).toBeNull();
+  // 保存した前の版の書きかけを、残った書きかけとして知らせない
+  await expect(page.getByRole('region', { name: '前の版の書きかけ' })).toHaveCount(0);
 };
 
 test('職歴の編集の画面で続けて 2 回保存しても、書きかけが残らない', async ({ page, context }) => {
