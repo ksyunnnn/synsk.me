@@ -71,6 +71,7 @@ describe('runScheduled', () => {
 
     await runScheduled(THREE);
 
+    expect(requested).not.toEqual([]);
     expect(requested.every((url) => url.startsWith('https://qiita.com/'))).toBe(true);
     const qiita = await readFetchResult(env.DB, 'qiita');
     expect(qiita).toEqual(expect.objectContaining({ is_ok: 0 }));

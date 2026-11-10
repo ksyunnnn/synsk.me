@@ -106,7 +106,7 @@ describe('refreshNextSources', () => {
 describe('runScheduled', () => {
   const at = (iso: string) => new Date(iso).getTime();
 
-  const recorder = (options: { failRefresh?: boolean } = {}) => {
+  const recorder = (options: { failRefresh?: boolean; failSweep?: boolean } = {}) => {
     const calls: string[] = [];
     return {
       calls,
@@ -117,6 +117,7 @@ describe('runScheduled', () => {
         },
         sweep: async (now: Date) => {
           calls.push(`sweep ${now.toISOString()}`);
+          if (options.failSweep) throw new Error('作り物の突き合わせの失敗');
         },
       },
     };
@@ -140,5 +141,22 @@ describe('runScheduled', () => {
     const midnight = '2026-11-10T00:00:00.000Z';
     await expect(runScheduled(at(midnight), jobs)).rejects.toThrow('作り物の失敗');
     expect(calls).toEqual([`refresh ${midnight}`, `sweep ${midnight}`]);
+  });
+
+  it('突き合わせが投げたら、取り直しを終えたうえで実行を失敗にする', async () => {
+    const { calls, jobs } = recorder({ failSweep: true });
+    const midnight = '2026-11-10T00:00:00.000Z';
+    await expect(runScheduled(at(midnight), jobs)).rejects.toThrow('作り物の突き合わせの失敗');
+    expect(calls).toEqual([`refresh ${midnight}`, `sweep ${midnight}`]);
+  });
+
+  it('両方が投げたら、両方の失敗をまとめて投げる', async () => {
+    const { jobs } = recorder({ failRefresh: true, failSweep: true });
+    const error = await runScheduled(at('2026-11-10T00:00:00.000Z'), jobs).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(AggregateError);
+    expect((error as AggregateError).errors.map((e: Error) => e.message)).toEqual([
+      '作り物の失敗',
+      '作り物の突き合わせの失敗',
+    ]);
   });
 });

@@ -30,7 +30,7 @@ export type RefreshLimits = FetchLimits & {
  * 定期実行（worker/scheduled.ts）が使う本番の上限（research.md の R8）
  * - `maxRequests`・`timeoutMs`・`maxBytes`: 10 本・10 秒・1 MB。オーナーが 2026-11-10 に決めた（issue #219）
  * - `maxRemovals`: R8 の案の値（5 件）。消す件数の扱いは issue #280 で決める
- * - `maxGoneChecks`: 0。消えた URL を確かめる本数は issue #280 で決める。決まるまで確かめない
+ * - `maxGoneChecks`: 0 で、消えた URL を確かめない。本数は issue #280 で決める
  */
 export const PRODUCTION_REFRESH_LIMITS: RefreshLimits = {
   maxRequests: 10,

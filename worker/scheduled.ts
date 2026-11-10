@@ -27,7 +27,8 @@ const PRODUCTION_JOBS: ScheduledJobs = {
 
 /**
  * `scheduledTime` は予定の時刻（ミリ秒）。1 つが投げてもほかを行い、最後に投げて起動を失敗にする。
- * 失敗は Workers Logs の起動の記録に残る
+ * 投げた失敗は Workers Logs の起動の記録に残る。取得元ごとの取り直しの失敗は投げず、取得の結果
+ * （`fetch_result`）に書く（FR-016）
  */
 export const runScheduled = async (
   scheduledTime: number,
