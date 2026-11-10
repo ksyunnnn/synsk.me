@@ -9,7 +9,6 @@ import {
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
-import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import {
   InputField,
   SuggestingInputField,
@@ -105,13 +104,7 @@ export const ProjectForm = ({
   const checkedSkillIds = new Set(values.skillIds.split(','));
 
   return (
-    <DraftRetainingForm
-      action={formAction}
-      storageKey={`project:${project?.uid ?? 'new'}`}
-      version={project?.updatedAt}
-      result={result}
-      className="flex flex-col gap-6"
-    >
+    <form action={formAction} className="flex flex-col gap-6">
       {project && (
         <>
           <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />
@@ -249,6 +242,6 @@ export const ProjectForm = ({
           {project ? '保存する' : '登録する'}
         </button>
       </div>
-    </DraftRetainingForm>
+    </form>
   );
 };

@@ -4,7 +4,6 @@ import { OrganizationForm } from '@/features/organization/components/organizatio
 import { editOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
 import { TextLink } from '@/shared/components/text-link';
-import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -31,17 +30,11 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.organizations.list}>組織の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">組織を編集する</h1>
-      {saved === '1' && (
-        <DraftSavedNotice
-          storageKeys={[`organization:${organization.uid}`]}
-          version={organization.updatedAt}
-        />
-      )}
+      {saved === '1' && <p role="status">保存しました</p>}
       <OrganizationForm
         key={organization.updatedAt}
         action={editOrganization}
         organizationUid={organization.uid}
-        updatedAt={organization.updatedAt}
         initialValues={{ name: organization.name, nameMasked: organization.nameMasked ?? '' }}
         isReferencedByMasked={references.isReferencedByMasked}
       />

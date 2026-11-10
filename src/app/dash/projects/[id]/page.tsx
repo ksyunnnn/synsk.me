@@ -15,7 +15,6 @@ import {
 } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
 import { TextLink } from '@/shared/components/text-link';
-import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { routes } from '@/shared/routes';
 
@@ -60,12 +59,7 @@ const Page = async ({ params, searchParams }: Props) => {
           {NOTICES[notice]}
         </p>
       )}
-      {flags.saved === '1' && (
-        <DraftSavedNotice
-          storageKeys={['project:new', `project:${project.uid}`]}
-          version={project.updatedAt}
-        />
-      )}
+      {flags.saved === '1' && <p role="status">保存しました</p>}
       <p>
         <TextLink href={routes.project(project.slug)}>訪問者に見せるページを開く</TextLink>
       </p>

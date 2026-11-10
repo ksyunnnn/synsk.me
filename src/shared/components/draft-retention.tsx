@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type MouseEvent } from 'react';
 
 /**
- * 保存操作をしていない入力を、ブラウザの `localStorage` に持つフォーム（docs/REQUIREMENTS.md の
- * FR-14、specs/001-career-and-project/research.md の R16）。D1 には書かない。
+ * 保存操作をしていない入力を、ブラウザの `localStorage` に持つフォーム（specs/003-note/spec.md の
+ * FR-018、specs/003-note/research.md の R10）。D1 には書かない。
  *
  * - 入力のたびに、フォームの値を `storageKey` の名前で持つ
  * - 画面を開くと、持っている値を入力に戻す。隠れた入力（uid と楽観ロックの値）は戻さない
@@ -16,8 +16,7 @@ import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type MouseE
  *   `typedBeforeHydration`）
  * - `version` は、編集の画面が開いたときの行の更新日時で、持つ名前に含める。別の画面で先に
  *   保存された後に開き直すと名前が変わり、前の更新日時の書きかけは消さずに残し、自動では戻さない。
- *   戻すと、触っていない項目まで古い値で先の保存を上書きする（specs/001-career-and-project/spec.md
- *   の FR-042）
+ *   戻すと、触っていない項目まで古い値で先の保存を上書きする（specs/003-note/spec.md の FR-020）
  * - 前の版の書きかけ（同じ `storageKey` で、`version` が違う名前の書きかけ）があれば、フォームの
  *   上に、モーダルでない知らせを出す。オーナーは「書きかけを戻す」で入力に戻すか、「書きかけを
  *   捨てる」で消す。どちらも、その画面で次に入力するまでは「取り消す」で前の状態に戻せるので、
@@ -25,10 +24,11 @@ import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type MouseE
  *   1 件ずつ知らせる。日時を持たない形式で書いた書きかけは、日時を持つものの後に、名前の順で回す
  * - 書きかけは、書いた画面が開いたときの値（`base`）も持つ。「書きかけを戻す」は、`base` と違う
  *   項目（書きかけで変えた項目）だけを戻し、ほかの項目は開いた版の値のまま残す。触っていない項目を
- *   古い値に戻すと、保存したときに先の保存を上書きするため（FR-042、下の `mergeStale`）。`base` を
+ *   古い値に戻すと、保存したときに先の保存を上書きするため（FR-020、下の `mergeStale`）。`base` を
  *   持たない形式で書いた書きかけは、変えた項目が分からないので、すべての項目を戻す
  *
- * 使い手は 001 の実績・職歴・学歴・組織・スキルの入力。003 の note の入力も使う（R16）。
+ * 使い手は 003 の note の入力。保存していない入力を端末に残すのは note だけの要件で、ほかの
+ * 管理画面の入力は使わない（specs/003-note/spec.md の Clarifications の Session 2026-11-11）。
  * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前に打った入力は、
  * 動き始めた時点で書きかけ（localStorage）に書く。動く前に送られ、応答を待つ間に動き始めた
  * かもしれないので、送った書きかけの印も付け、移った先の `DraftSavedNotice` が消す。印は
@@ -40,7 +40,7 @@ type DraftValues = Record<string, string[]>;
 
 type Props = Omit<ComponentPropsWithoutRef<'form'>, 'action'> & {
   action: (formData: FormData) => void;
-  /** 書きかけを持つ名前。画面ごと・行ごとに違う値にする（例: `career:new`、`career:<uid>`） */
+  /** 書きかけを持つ名前。画面ごと・行ごとに違う値にする（例: `note:new`、`note:<uid>`） */
   storageKey: string;
   /** 開いたときの行の更新日時。登録の画面と、楽観ロックを持たない入力は渡さない */
   version?: string;
@@ -61,8 +61,8 @@ const SENT_BEFORE_HYDRATION_KEY = 'synsk:draft-sent-before-hydration';
 
 /**
  * 動き始めた時点で付けた印を、保存の成功と読んでよい時間。動く前の送信の応答は、この時間の
- * 内に返る。過ぎた印は送っていない書きかけのものとして扱い、消さない（REQUIREMENTS.md の
- * FR-14、docs/SOFTWARE_DESIGN.md の原則 2。推測に頼る範囲に上限を置く）
+ * 内に返る。過ぎた印は送っていない書きかけのものとして扱い、消さない（FR-018、
+ * docs/SOFTWARE_DESIGN.md の原則 2。推測に頼る範囲に上限を置く）
  */
 const SENT_BEFORE_HYDRATION_TTL_MS = 60_000;
 
@@ -342,9 +342,9 @@ const DRAFT_KEY_ATTRIBUTE = 'data-draft-key';
  *
  * react-dom 19.3.1 の hydration は、初めの値を持つ `<textarea>` の値を初めの値に戻す
  * （`react-dom-client` の `initTextarea` が `element.value = textContent` を入れる）。そのままでは、
- * 動く前に打った本文が消え、保存は初めの本文を送る（FR-14）。このモジュールは、フォームを
+ * 動く前に打った本文が消え、保存は初めの本文を送る（FR-018）。このモジュールは、フォームを
  * hydration する前に読み込まれる。読み込んだ時点の値と、それから hydration までの入力を持ち、
- * フォームが動き始めたら戻し、書きかけに書く（FR-14）。動き始める前にふつうのフォームとして
+ * フォームが動き始めたら戻し、書きかけに書く（FR-018）。動き始める前にふつうのフォームとして
  * 送られ、その応答を待つ間に動き始めることがあるので、送った書きかけの印も付ける
  */
 const typedBeforeHydration = new Map<string, DraftValues>();
@@ -615,12 +615,11 @@ const StaleDraftNotice = ({
  * 書きかけを消す。
  *
  * 編集の画面で続けて保存すると、同じ `?saved=1` の画面へ移り、この部品は置き直されない。
- * `version` に保存した行の更新日時を渡すと、保存のたびに値が変わり、送った書きかけを消し直す。
- * 一覧の画面へ移す入力（学歴・スキル）は、登録・編集の画面を挟むたびに置き直されるので渡さない。
+ * `version` に保存した版の値を渡すか、保存のたびに置き直すと、送った書きかけを消し直す。
  *
  * `storageKeys` には、保存に成功するとこの画面へ移るフォームの `storageKey` を挙げる。送った
  * 書きかけの名前がどれにも合わなければ消さない。ほかの画面の送信が応答を返さずに失敗した後、
- * ブラウザの「戻る」でこの画面へ戻ったときに、その画面の書きかけを消さないため（FR-14）
+ * ブラウザの「戻る」でこの画面へ戻ったときに、その画面の書きかけを消さないため（FR-018）
  */
 export const DraftSavedNotice = ({
   storageKeys,

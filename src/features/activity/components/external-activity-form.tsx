@@ -10,14 +10,13 @@ import {
   type ExternalActivityFormValues,
 } from '@/features/activity/domain/external-activity';
 import { OWNED_SOURCES, type OwnedSourceName } from '@/features/activity/domain/sources';
-import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import { InputField, SelectField } from '@/shared/components/field';
 
 /**
  * URL を指名した・手で入力した外部の activity を登録する・書き換えるフォーム
  * （specs/004-external-activity/contracts/dash.md）。Server Action は props で受け取り、`server/` を
- * 読み込まない（ADR-0026 の依存の向き 3）。保存していない入力は `DraftRetainingForm` が持つ
- * （REQUIREMENTS.md の FR-14）。入力の決まりはサーバで確かめ、`required` を付けない
+ * 読み込まない（ADR-0026 の依存の向き 3）。保存していない入力は持たない
+ * （contracts/dash.md）。入力の決まりはサーバで確かめ、`required` を付けない
  * （life event のフォームと同じ理由）。
  *
  * 編集では取得元を変えない。URL を指名する取得元の URL と題は取得元が決めたので、日付だけを入れる
@@ -73,12 +72,7 @@ export const ExternalActivityForm = ({ action, initialValues, editing }: Props) 
   const editsLink = !editing || editing.isManual;
 
   return (
-    <DraftRetainingForm
-      action={formAction}
-      storageKey={`external-activity:${editing?.uid ?? 'new'}`}
-      result={result}
-      className="flex flex-col gap-6"
-    >
+    <form action={formAction} className="flex flex-col gap-6">
       {editing && <input type="hidden" name={EXTERNAL_ACTIVITY_UID_FIELD} value={editing.uid} />}
       {result && result.status !== 'saved' && (
         <p role="alert" className="text-destructive">
@@ -146,6 +140,6 @@ export const ExternalActivityForm = ({ action, initialValues, editing }: Props) 
           {editing ? '保存する' : '登録する'}
         </button>
       </div>
-    </DraftRetainingForm>
+    </form>
   );
 };

@@ -6,8 +6,9 @@ import { createNote, openNoteEditor, uniqueNoteSlug, waitForHydration } from './
 /**
  * 書きかけの note の保持（specs/003-note/spec.md の FR-018・FR-019、User Story 4 の 1・2、
  * research.md の R10）。書きかけは共有担当の `DraftRetainingForm` がブラウザの `localStorage` に
- * 持ち、テストごとの context は別の保存先を持つ。書きかけは画面の JavaScript が動き始めた後の
- * 入力だけを持つため、書き込まれるまで入れ直す
+ * 持ち、テストごとの context は別の保存先を持つ。書きかけは、画面の JavaScript が動き始めた
+ * 時点の入力と、その後の入力を持つ（src/shared/components/draft-retention.tsx）。入力は、書きかけが
+ * 書き込まれるまで入れ直す
  */
 
 const noteDraftKeys = (page: Page) =>
@@ -290,4 +291,194 @@ test('知らせのボタンをキーボードで押すと、入れ替わった�
   await discard.focus();
   await page.keyboard.press('Enter');
   await expect(undo).toBeFocused();
+});
+
+test('前の版の書きかけを戻すと、書きかけで変えた項目だけが入り、先に保存した項目は残る', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('stale-merge'),
+    title: 'E2E 部分の書きかけの題',
+  });
+  await openNoteEditor(page, editUrl);
+  const other = await context.newPage();
+  await openNoteEditor(other, editUrl);
+  await textbox(other, '題').fill('E2E 先に保存した題');
+  await saveEdit(other);
+  await other.close();
+  await fillUntilDrafted(page, 'E2E 書きかけで変えた本文');
+  await reopen(page);
+
+  await staleNotice(page).getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(staleNotice(page)).toContainText('書きかけで変えた項目を戻しました');
+  await expect(textbox(page, '本文')).toHaveValue('E2E 書きかけで変えた本文');
+  // 書きかけで触っていない項目は、先に保存した値のまま（spec の FR-020）
+  await expect(textbox(page, '題')).toHaveValue('E2E 先に保存した題');
+});
+
+test('前の版の書きかけが、書いた画面が開いたときの値から何も変えていなければ、知らせない', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('stale-unchanged'),
+    title: 'E2E 変えない書きかけ',
+    body: 'E2E 変えない本文',
+  });
+  await openNoteEditor(page, editUrl);
+  const other = await context.newPage();
+  await openNoteEditor(other, editUrl);
+  await textbox(other, '題').fill('E2E 変えない書きかけの後に先に保存した題');
+  await saveEdit(other);
+  await other.close();
+  // 打ってから元に戻す。書きかけは、開いたときと同じ値を持つ
+  await expect
+    .poll(async () => {
+      await textbox(page, '本文').fill('E2E 一度だけ打った本文');
+      await textbox(page, '本文').fill('E2E 変えない本文');
+      return (await noteDraftKeys(page)).length > 0;
+    })
+    .toBe(true);
+  await reopen(page);
+
+  await expect(textbox(page, '題')).toHaveValue('E2E 変えない書きかけの後に先に保存した題');
+  await expectNoStaleNotice(page);
+});
+
+test('送信が応答を返さずに失敗した後、別の note の保存の知らせへ戻っても、書きかけが残る', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  // 別の note を作り、保存の知らせのある画面の URL を控える
+  await createNote(page, { slug: uniqueNoteSlug('back-saved'), title: 'E2E 戻る先の note' });
+  const savedUrl = page.url();
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('back-failed'),
+    title: 'E2E 送れなかった note',
+  });
+  // 保存の知らせのある画面を履歴に残してから、書きかけを送る画面へ移る
+  await page.goto(savedUrl);
+  await waitForHydration(textbox(page, '本文'));
+  await openNoteEditor(page, editUrl);
+  await fillUntilDrafted(page, 'E2E 送れなかった本文');
+  // Server Action の送信を切る。失敗の結果は来ない
+  const editPath = `**${new URL(editUrl).pathname}`;
+  await page.route(editPath, (route) =>
+    route.request().method() === 'POST' ? route.abort() : route.continue(),
+  );
+  const aborted = page.waitForEvent('requestfailed', (req) => req.method() === 'POST');
+  await page.getByRole('button', { name: '保存する' }).click();
+  await aborted;
+  await page.unroute(editPath);
+
+  // ブラウザの「戻る」で、別の note の保存の知らせのある画面へ戻る
+  await page.goBack();
+  await expect(page).toHaveURL(savedUrl);
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await waitForHydration(textbox(page, '本文'));
+
+  await openNoteEditor(page, editUrl);
+  await expect(textbox(page, '本文')).toHaveValue('E2E 送れなかった本文');
+});
+
+/*
+ * JavaScript が動く前（hydration の前）に打った本文が、hydration の後も残ること。react-dom の
+ * hydration は、初めの値を持つ `<textarea>` の値を初めの値に戻す（`initTextarea`）
+ */
+
+/**
+ * 画面のスクリプトの読み込みを止める。返した関数を呼ぶと、止めていた読み込みを流し、それ以降は
+ * 止めない。止めている要求が残るうちに経路の登録を外すと、Playwright が二重の処理として止まる
+ */
+const holdScripts = async (page: Page) => {
+  let release = () => {};
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/*', async (route) => {
+    if (route.request().resourceType() === 'script') await released;
+    await route.fallback();
+  });
+  return release;
+};
+
+/** スクリプトを止めて `url` を開き、動く前に本文を打ってから動かす */
+const typeBeforeHydration = async (page: Page, url: string, typed: string) => {
+  const release = await holdScripts(page);
+  await page.goto(url, { waitUntil: 'commit' });
+  await textbox(page, '本文').fill(typed);
+  release();
+  await waitForHydration(textbox(page, '本文'));
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+};
+
+test('JavaScript が動く前に本文を打っても、動いた後に本文が残り、保存で送られる', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 動く前に打った本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('pre-hydration-save'),
+    title: 'E2E 動く前に打つ',
+  });
+  await typeBeforeHydration(page, editUrl, typed);
+  await saveEdit(page);
+  await openNoteEditor(page, editUrl);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
+
+test('JavaScript が動く前に本文を打ち、保存せずに再読み込みしても、本文が残る', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 動く前に打って再読み込みした本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('pre-hydration-reload'),
+    title: 'E2E 動く前に打って再読み込みする',
+  });
+  await typeBeforeHydration(page, editUrl, typed);
+  await page.reload();
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
+
+test('保存の知らせの画面で JavaScript が動く前に本文を打ち、保存せずに再読み込みしても、本文が残る', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 知らせの画面で動く前に打った本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('pre-hydration-saved'),
+    title: 'E2E 知らせの画面で動く前に打つ',
+  });
+  await typeBeforeHydration(page, `${editUrl}?saved=1`, typed);
+  await page.reload();
+  await expect(textbox(page, '本文')).toHaveValue(typed);
+});
+
+test('JavaScript が動く前に打って送らずに離れ、60 秒を過ぎてから保存の知らせの画面を開いても、書きかけが残る', async ({
+  page,
+  context,
+}) => {
+  const typed = `E2E 送らずに離れた本文 ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('pre-hydration-ttl'),
+    title: 'E2E 送らずに離れる',
+  });
+  await typeBeforeHydration(page, editUrl, typed);
+  // 動き始めた時点で付けた印を、60 秒より前に付けたことにする
+  await page.evaluate(() =>
+    window.localStorage.setItem('synsk:draft-sent-before-hydration', String(Date.now() - 61_000)),
+  );
+  await page.goto(`${editUrl}?saved=1`);
+  await waitForHydration(textbox(page, '本文'));
+  await page.goto(editUrl);
+  await expect(textbox(page, '本文')).toHaveValue(typed);
 });

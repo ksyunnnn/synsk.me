@@ -9,7 +9,6 @@ import {
   removeLifeEventImage,
 } from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
-import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -42,14 +41,7 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.lifeEvents.list}>life event の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">life event を編集する</h1>
-      {/* 続けて保存すると同じ `?saved=1` の画面へ移る。life event は更新日時を持たないので、保存した値が
-          変わるたびに送った書きかけを消し直す */}
-      {saved === '1' && (
-        <DraftSavedNotice
-          storageKeys={['life-event:new', `life-event:${lifeEvent.uid}`]}
-          version={valuesVersion}
-        />
-      )}
+      {saved === '1' && <p role="status">保存しました</p>}
       <p>
         <TextLink href={routes.lifeEvent(lifeEvent.slug)}>訪問者のページを開く</TextLink>
       </p>
