@@ -200,6 +200,7 @@ description: "note の実装タスク"
 - [X] T042 [US6] 参照先の情報を URL の並びで読む処理と、URL ごとに書く処理を src/features/note/server/d1-note-repository.ts に足す
 - [X] T043 [US6] 参照先への取得を src/shared/server/link-preview-fetch.ts に作り、見た目の確認の画面が参照先の情報を持たない URL を取って書く（src/features/note/application/get-note-preview.ts）。取得した HTML を取得のモジュールの中で題と画像の URL に詰め替える（Anti-Corruption Layer）。上限は plan.md の「参照先への取得の上限」。tests/unit/link-preview-fetch.test.ts・tests/unit/note-usecases.test.ts・tests/workers/link-preview-fetch.test.ts・tests/integration/notes.test.ts で確かめる（FR-027、constitution II・VII、research.md の R13）
 - [X] T044 [US6] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に渡す部品（src/features/note/components/link-card.tsx）として、行に URL だけを書いた行を `link_preview` の題と画像を添えたカードで出し、題の無い URL をリンクで出す。tests/unit/note-link-card.test.ts で描き方を、tests/integration/notes.test.ts で URL カードを含む note の表示の前後で `link_preview` の行の数が変わらないことを確かめる（FR-027・FR-028・SC-005、User Story 6 の 1・2）
+- [X] T078 [US6] 見た目の確認の URL カードごとに「取り直す」を置く（User Story 6 の 3・4、FR-029。2026-11-10、オーナーの決定）。ユースケース src/features/note/application/refetch-link-preview.ts は、最も新しい版の本文の URL だけの段落の URL だけを src/shared/server/link-preview-fetch.ts の `fetchLinkPreview` で取り直し、取れたら `saveLinkPreview` で書き、取れなければ書かずに理由を返す。Server Action `refetchLinkPreview` と src/features/note/components/link-preview-refetch-form.tsx が理由をカードの下に出す。tests/unit/note-usecases.test.ts・tests/unit/note-link-card.test.ts・tests/integration/notes.test.ts・tests/e2e/note-preview.spec.ts で確かめる
 
 ---
 

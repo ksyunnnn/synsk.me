@@ -56,3 +56,26 @@ test('下書きの note の見た目の確認で、本文に置いた画像が�
   expect(res.status()).toBe(404);
   await visitor.close();
 });
+
+/**
+ * URL カードの「取り直す」（spec の User Story 6 の 3、FR-029）。取得はサーバの中で走り、ブラウザの
+ * 経路の差し替えでは作り物にできない。`.invalid`（RFC 6761）の URL は取得の部品が要求を出さずに
+ * 失敗にするため、外へ出ずに失敗の知らせを確かめる。取れたときの書き換えは単体と D1 の検査が持つ
+ */
+test('見た目の確認で URL カードを取り直し、取れなければ理由を出す', async ({ page, context }) => {
+  await actAsAuthor(context);
+  const slug = uniqueNoteSlug('preview-refetch');
+  const url = `https://${slug}.invalid/a`;
+  const editUrl = await createNote(page, { slug, title: `E2E 取り直しの題 ${slug}` });
+  await waitForHydration(textbox(page, '本文'));
+  await textbox(page, '本文').fill(url);
+  await saveEdit(page);
+
+  await page.goto(`${editUrl}/preview`);
+  await expect(page.getByRole('link', { name: url })).toBeVisible();
+  const button = page.getByRole('button', { name: '取り直す' });
+  await waitForHydration(button);
+  await button.click();
+  await expect(page.getByRole('alert')).toContainText('取り直せませんでした');
+  await expect(page.getByRole('link', { name: url })).toBeVisible();
+});

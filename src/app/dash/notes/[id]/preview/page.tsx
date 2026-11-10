@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { LinkPreviewRefetchForm } from '@/features/note/components/link-preview-refetch-form';
 import { VisitorNoteView } from '@/features/note/components/visitor-note';
+import { refetchLinkPreview } from '@/features/note/server/actions';
 import { getNotePreview } from '@/features/note/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 
@@ -10,14 +12,19 @@ export const instant = false;
 
 export const metadata: Metadata = { title: '訪問者に見せたときの見た目 | synsk.me' };
 
-type Props = { params: Promise<{ id: string }> };
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ refetched?: string | string[] }>;
+};
 
 /**
  * 公開したときの見た目（REQUIREMENTS.md の FR-13、specs/003-note/research.md の R15）。最も新しい版を
- * 訪問者向けと同じ部品で描き、状態と削除に関わらず出す
+ * 訪問者向けと同じ部品で描き、状態と削除に関わらず出す。URL だけの段落ごとに、参照先の情報を
+ * 取り直す操作を添える（spec の User Story 6 の 3）
  */
-const Page = async ({ params }: Props) => {
+const Page = async ({ params, searchParams }: Props) => {
   const { id } = await params;
+  const { refetched } = await searchParams;
   // オーナーでなければ、読む前に 403 になる
   const note = await getNotePreview(id);
   if (!note) notFound();
@@ -30,7 +37,14 @@ const Page = async ({ params }: Props) => {
       <p role="note" className="rounded-md border border-input px-4 py-2 text-sm">
         最も新しい版を、訪問者に見せたときの見た目で出しています
       </p>
-      <VisitorNoteView note={note} mediaBase={`/dash/notes/${id}/preview/media`} />
+      {refetched === '1' && <p role="status">参照先の情報を取り直しました</p>}
+      <VisitorNoteView
+        note={note}
+        mediaBase={`/dash/notes/${id}/preview/media`}
+        renderUrlLineAction={(url) => (
+          <LinkPreviewRefetchForm action={refetchLinkPreview} noteUid={id} url={url} />
+        )}
+      />
     </main>
   );
 };

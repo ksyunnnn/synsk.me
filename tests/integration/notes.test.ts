@@ -782,6 +782,65 @@ describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
   });
 });
 
+describe('URL カードを取り直す（User Story 6 の 3、FR-029・FR-033）', () => {
+  const FIELD = 'linkPreviewUrl';
+  /** `.invalid` は公開のインターネットで引けない名前（RFC 6761）。取得の部品は要求を出さずに失敗にする */
+  const URL_LINE = 'https://integration-refetch.invalid/a';
+
+  const seed = async (slug: string) => {
+    await insertLinkPreview(ctx.db, {
+      url: URL_LINE,
+      title: '前に取ったカードの題',
+      fetchedAt: '2026-11-01T00:00:00.000Z',
+    });
+    return insertNote(ctx.db, { slug, body: URL_LINE });
+  };
+  const readRow = () =>
+    ctx.db
+      .prepare('SELECT title, fetched_at FROM link_preview WHERE url = ?')
+      .bind(URL_LINE)
+      .first();
+
+  it('見た目の確認の URL カードに「取り直す」を置き、取れなければ行を残して理由を出す', async () => {
+    const note = await seed('integration-refetch-failed');
+    const before = await readRow();
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${note.uid}/preview`,
+      marker: `name="${FIELD}"`,
+      values: { noteUid: note.uid, [FIELD]: URL_LINE },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('取り直せませんでした');
+    expect(html).toContain('前に取ったカードの題');
+    expect(await readRow()).toEqual(before);
+  });
+
+  it('JWT のない refetchLinkPreview は取りに行かず、D1 を変えない', async () => {
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-refetch-forbidden',
+      body: URL_LINE,
+    });
+    const before = {
+      ...(await readNoteTables()),
+      link_preview: await readRows(ctx, 'link_preview'),
+    };
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${note.uid}/preview`,
+      marker: `name="${FIELD}"`,
+      values: { noteUid: note.uid, [FIELD]: URL_LINE },
+      asAuthor: false,
+      to: '/',
+    });
+    await res.arrayBuffer();
+    expect({
+      ...(await readNoteTables()),
+      link_preview: await readRows(ctx, 'link_preview'),
+    }).toEqual(before);
+  });
+});
+
 describe('見た目の確認の画像（REQUIREMENTS.md の FR-13、NFR-09）', () => {
   /** オーナーとして画像を足し、足した画像の置き場のキーを返す */
   const uploadAsOwner = async (noteUid: string) => {

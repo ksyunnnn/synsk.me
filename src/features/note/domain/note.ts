@@ -216,6 +216,24 @@ export type SyndicationFormResult = ActionResult<
   SyndicationFieldError
 >;
 
+/** 取り直す URL カードの入力の名前（User Story 6 の 3、FR-029）。URL だけの段落の URL を送る */
+export const LINK_PREVIEW_URL_FIELD = 'linkPreviewUrl';
+
+/**
+ * 参照先の情報を取れなかった理由。値は src/shared/server/link-preview-fetch.ts の
+ * `LinkPreviewFailure` と同じ。画面に理由を出すため、domain の言葉として持つ
+ */
+export type LinkPreviewFetchFailure =
+  'blocked' | 'http' | 'network' | 'timeout' | 'too-many-redirects';
+
+/** 取り直せなかった理由。`not-in-body` は、最も新しい版の本文に URL だけの段落として無い URL */
+export type LinkPreviewRefetchError = 'not-in-body' | LinkPreviewFetchFailure;
+
+export type LinkPreviewRefetchFormResult = ActionResult<
+  typeof LINK_PREVIEW_URL_FIELD,
+  LinkPreviewRefetchError
+>;
+
 /** 保存する内容 */
 export type NoteInput = NoteRevisionContent & { slug: string };
 

@@ -10,6 +10,7 @@ import { changeNoteFirstParagraphAsDescription as changeNoteFirstParagraphAsDesc
 import { createNote as createNoteUseCase } from '@/features/note/application/create-note';
 import { deleteNote as deleteNoteUseCase } from '@/features/note/application/delete-note';
 import { publishNote as publishNoteUseCase } from '@/features/note/application/publish-note';
+import { refetchLinkPreview as refetchLinkPreviewUseCase } from '@/features/note/application/refetch-link-preview';
 import { removeNoteSyndication as removeNoteSyndicationUseCase } from '@/features/note/application/remove-note-syndication';
 import { restoreNote as restoreNoteUseCase } from '@/features/note/application/restore-note';
 import { revertNote as revertNoteUseCase } from '@/features/note/application/revert-note';
@@ -18,6 +19,7 @@ import { unpublishNote as unpublishNoteUseCase } from '@/features/note/applicati
 import {
   CARD_IMAGE_FIELD,
   FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD,
+  LINK_PREVIEW_URL_FIELD,
   MEDIA_FILE_FIELD,
   NOTE_FIELDS,
   NOTE_UID_FIELD,
@@ -26,6 +28,7 @@ import {
   SYNDICATION_URL_FIELD,
   type CardImageFormResult,
   type FirstParagraphAsDescriptionFormResult,
+  type LinkPreviewRefetchFormResult,
   type MediaFormResult,
   type NoteFormResult,
   type RevertNoteResult,
@@ -35,6 +38,7 @@ import { createNoteDeps } from '@/features/note/server/queries';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
+import { fetchLinkPreview } from '@/shared/server/link-preview-fetch';
 
 /**
  * note のフォームが呼ぶ Server Action（specs/003-note/contracts/dash.md）。`page.tsx` が読み込み、
@@ -291,4 +295,36 @@ export const addNoteMedia = async (
   if (outcome.status === 'not-found') redirect(LIST);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
+};
+
+/**
+ * URL カードの参照先の情報を取り直し、見た目の確認の画面へ移る（User Story 6 の 3、FR-029）。
+ * 取得の上限と内部のアドレスの検査は共有の部品の本番の値のまま。取れなければ前の情報を残し、
+ * 理由を返す
+ */
+export const refetchLinkPreview = async (
+  _state: LinkPreviewRefetchFormResult | null,
+  formData: FormData,
+): Promise<LinkPreviewRefetchFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const url = readString(formData, LINK_PREVIEW_URL_FIELD);
+  const outcome = await refetchLinkPreviewUseCase(
+    { notes: deps.notes, fetchLinkPreview: (target) => fetchLinkPreview(target) },
+    author,
+    id,
+    url,
+    new Date().toISOString(),
+  );
+  if (outcome.status === 'refetched') redirect(`${editPath(uid)}/preview?refetched=1`);
+  if (outcome.status === 'not-found') redirect(LIST);
+  if (outcome.status === 'forbidden') return outcome;
+  return {
+    status: 'invalid',
+    errors: { [LINK_PREVIEW_URL_FIELD]: outcome.error },
+    values: { [LINK_PREVIEW_URL_FIELD]: url },
+  };
 };

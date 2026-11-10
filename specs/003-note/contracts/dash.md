@@ -23,7 +23,7 @@
 | `/dash/notes/{uid}` | 編集。識別子（一度でも公開したら読み取りだけ）・題・説明文・本文・開いた版の uid。公開・下書きに戻すの操作、説明文が空のときに本文の最初の段落を説明に使うか、代表画像の出どころ、転載先の一覧と足す・外す、版の一覧・見た目の確認・削除へのリンク。保存を止めたときの知らせ | FR-003・FR-005〜FR-007・FR-011・FR-014・FR-020・FR-021・FR-024・FR-031・FR-034 |
 | `/dash/notes/{uid}/revisions` | 版の一覧。保存した日時の新しい順。最も新しい版に印。公開した版の印は note が公開で削除していないときだけ付ける | FR-008・FR-014・FR-016 |
 | `/dash/notes/{uid}/revisions/{revisionUid}` | 過去の版の題・説明文・本文（保存したときのまま）と「この版に戻す」 | FR-008・FR-009 |
-| `/dash/notes/{uid}/preview` | 最も新しい版を訪問者に見せたときの見た目。訪問者向けと同じ部品で描く。状態と削除に関わらず出す。描く前に、URL だけの段落のうち参照先の情報を持たない URL を取って `link_preview` に書く（上限は plan.md の「参照先への取得の上限」） | REQUIREMENTS.md の FR-13、FR-027・FR-029（U9 の決定） |
+| `/dash/notes/{uid}/preview` | 最も新しい版を訪問者に見せたときの見た目。訪問者向けと同じ部品で描く。状態と削除に関わらず出す。描く前に、URL だけの段落のうち参照先の情報を持たない URL を取って `link_preview` に書く（上限は plan.md の「参照先への取得の上限」）。URL だけの段落ごとに「取り直す」を置く。取り直したときは「参照先の情報を取り直しました」を出す | REQUIREMENTS.md の FR-13、FR-027〜FR-029（U9 の決定）、User Story 6 の 3・4 |
 | `/dash/notes/{uid}/delete` | 削除の確認 | FR-016 |
 
 画像の追加は編集の画面に置き、足した画像を本文に貼る印（1 行目が `![代替テキスト](media:<storageKey> "ホバーで出す文")`、2 行目が `*キャプション*`。`storageKey` は `media.storage_key`。主キーは出さない。題の欄と 2 行目は省ける。research.md の R11）を示す。代表画像の出どころの入力は、`site`・その note の画像から選ぶ。 <!-- check-ignore: 本文の画像の記法の例 -->
@@ -44,6 +44,7 @@
 | `addNoteMedia` | uid・画像のファイル | `media` に足し、同じ画面へ 303 | オーナーでない／JPEG・PNG・WebP・GIF でない／10 MB を超える／無い・削除した |
 | `addNoteSyndication` | uid・転載先の URL | 同じ画面へ 303 | オーナーでない／http か https でない／既に記録した URL（同じ note か別の note）／無い・削除した |
 | `removeNoteSyndication` | uid・転載先の URL | 同じ画面へ 303 | オーナーでない／その note の転載先に無い |
+| `refetchLinkPreview` | uid・URL だけの段落の URL | その URL の題と画像を取り直して `link_preview` の行を書き換え（持っている行より前に取った中身では書き換えない）、見た目の確認の画面へ 303（`?refetched=1`）。取得の上限と内部のアドレスの拒否は見た目の確認を開いたときと同じ | オーナーでない／最も新しい版の本文に URL だけの段落として無い URL（取りに行かない）／取れなかった（理由は `blocked`・`http`・`network`・`timeout`・`too-many-redirects`。行は残し、そのカードの下に理由を出す）／無い note |
 
 ## 検査
 
