@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import {
+  chooseSiteOptions,
   fillCareer,
   fillProject,
   registerCareer,
@@ -173,7 +174,42 @@ test('職歴を別の画面で先に保存された後に開き直すと、前�
   await expect(textbox(page, '肩書')).toHaveValue('E2E 先に保存した肩書');
   await notice.getByRole('button', { name: '書きかけを戻す' }).click();
   await expect(textbox(page, '肩書')).toHaveValue('E2E 前の更新日時の書きかけ');
-  await expect(notice).toContainText('書きかけを戻しました');
+  await expect(notice).toContainText('書きかけで変えた項目を戻しました');
+});
+
+test('前の更新日時の書きかけを戻すと、書きかけで変えた項目だけが入り、先に保存した項目は残る', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await registerCareer(page, {
+    organizationName: 'E2E 部分の書きかけの組織',
+    organizationNameMasked: 'E2E 部分の書きかけの秘匿化した組織名',
+    role: 'E2E 部分の書きかけの保存した肩書',
+    onSite: true,
+  });
+  await page.goto(editUrl);
+  const other = await context.newPage();
+  await other.goto(editUrl);
+  await textbox(other, '組織名').fill('E2E 先に保存した組織名');
+  await chooseSiteOptions(other, { onSite: false });
+  await saveEdit(other);
+  await other.close();
+  await fillUntilDrafted(page, 'career', () =>
+    textbox(page, '肩書').fill('E2E 書きかけで変えた肩書'),
+  );
+  await page.reload();
+
+  const notice = page.getByRole('region', { name: '前の版の書きかけ' });
+  await notice.getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(notice).toContainText('書きかけで変えた項目を戻しました');
+  await expect(textbox(page, '肩書')).toHaveValue('E2E 書きかけで変えた肩書');
+  // 書きかけで触っていない項目は、先に保存した値のまま（specs/001-career-and-project/spec.md の FR-042）
+  await expect(textbox(page, '組織名')).toHaveValue('E2E 先に保存した組織名');
+  await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
+  await expect(textbox(page, '秘匿化した組織名')).toHaveValue(
+    'E2E 部分の書きかけの秘匿化した組織名',
+  );
 });
 
 test('実績の登録の画面で、選んだスキルと種類が再読み込みしても残る', async ({ page, context }) => {

@@ -143,7 +143,7 @@ test('先に保存された後に開き直すと、前の版の書きかけを�
 
   await staleNotice(page).getByRole('button', { name: '書きかけを戻す' }).click();
   await expect(textbox(page, '本文')).toHaveValue('E2E 前の版の書きかけ');
-  await expect(staleNotice(page)).toContainText('書きかけを戻しました');
+  await expect(staleNotice(page)).toContainText('書きかけで変えた項目を戻しました');
 
   await staleNotice(page).getByRole('button', { name: '取り消す' }).click();
   await expect(textbox(page, '本文')).toHaveValue('先に保存した本文');
