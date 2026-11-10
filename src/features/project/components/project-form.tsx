@@ -10,7 +10,12 @@ import {
   type ProjectFormValues,
 } from '@/features/project/domain/project';
 import { DraftRetainingForm } from '@/shared/components/draft-retention';
-import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import {
+  InputField,
+  SuggestingInputField,
+  SelectField,
+  TextareaField,
+} from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
@@ -25,7 +30,7 @@ import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind
  * 入力の決まりはサーバで確かめ、誤りを文言で返す。`required` を付けない。ブラウザが送信を
  * 止めると、どの項目の何が合わないかを同じ形で伝えられないため。
  *
- * 組織名は、選択肢を出す部品が決まるまでネイティブの文字の入力にする（plan.md の U3）。
+ * 組織名は、登録した組織の名前を選択肢に出す、ネイティブの `<datalist>` の入力にする（plan.md の U3）。
  */
 
 type ProjectFormAction = (
@@ -36,6 +41,8 @@ type ProjectFormAction = (
 type Props = {
   action: ProjectFormAction;
   initialValues: ProjectFormValues;
+  /** 組織名の選択肢。登録した組織の名前（FR-002） */
+  organizationNames: string[];
   /** つなげるスキルの選択肢（FR-032） */
   skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
@@ -79,7 +86,13 @@ const RESULT_MESSAGES = {
     'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
 
-export const ProjectForm = ({ action, initialValues, skillOptions, project }: Props) => {
+export const ProjectForm = ({
+  action,
+  initialValues,
+  organizationNames,
+  skillOptions,
+  project,
+}: Props) => {
   const [result, formAction] = useActionState(action, null);
   const values: ProjectFormValues =
     result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
@@ -119,9 +132,11 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
         description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
       />
 
-      <InputField
+      <SuggestingInputField
         name="organizationName"
         label="組織名"
+        hint="登録した組織から選ぶか、新しい組織名を入力します"
+        options={organizationNames}
         defaultValue={values.organizationName}
         autoComplete="off"
         error={errorOf('organizationName')}

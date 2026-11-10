@@ -21,6 +21,12 @@ export const listOrganizations = async (): Promise<Organization[]> => {
   return listOrganizationsUseCase(await createOrganizationRepository());
 };
 
+/** 職歴・実績の組織名の選択肢。登録した組織の名前（FR-002）。オーナーでなければ 403 */
+export const listOrganizationNames = async (): Promise<string[]> => {
+  await requireAuthor();
+  return (await createOrganizationRepository()).listNames();
+};
+
 /** オーナーが編集する組織と、指している職歴・実績の有無。オーナーでなければ 403。無い uid なら null */
 export const getOrganizationForEdit = async (
   uid: string,

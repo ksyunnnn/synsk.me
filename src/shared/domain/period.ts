@@ -3,9 +3,10 @@
  * 使い手は career・project・education と、002 の職務経歴書。
  *
  * 日付は `YYYY-MM-DD` の文字列のまま持ち、時刻帯を持たない。経験年数の計算もここに置く
- * （spec の FR-033）。職歴と実績の期間の重なりの判定は、端の扱いが決まるまで書かない
- * （specs/001-career-and-project/plan.md の U6 の残り）。
+ * （spec の FR-033）と、職歴の実績とスキルの求め方（FR-017・FR-035）もここに置く。
  */
+
+import type { SiteStatus } from '@/shared/domain/site-status';
 
 /** 暦の日付。`YYYY-MM-DD` の形で、実在する日 */
 export type CalendarDate = string & { readonly __brand: 'CalendarDate' };
@@ -121,3 +122,48 @@ export const toYearsAndMonths = (months: number): { years: number; months: numbe
  */
 export const formatPeriod = (period: Period): string =>
   `${period.startedOn} 〜 ${period.endedOn ?? ''}`;
+
+/*
+ * 職歴の実績とスキル（spec の FR-017・FR-035）。実績は職歴と直接つながらず、同じ組織で期間が
+ * 重なる実績を職歴の実績とする。重なりは日を単位に比べ、終わりの日も期間に含める。端の日だけ
+ * 接する組も重なるとする（specs/001-career-and-project/plan.md の U6 の残り、2026-11-10 の
+ * オーナーの決定）
+ */
+
+/**
+ * 2 つの期間が重なるか。終わりの日も期間に含め、端の日だけ接する組も重なる。終わりの日が空なら
+ * 続いていて、終わりが無い
+ */
+export const periodsOverlap = (a: Period, b: Period): boolean =>
+  // `YYYY-MM-DD` は文字列の順と日付の順が一致する
+  (b.endedOn === null || a.startedOn <= b.endedOn) &&
+  (a.endedOn === null || b.startedOn <= a.endedOn);
+
+/** 職歴と実績の、重なりの判定に使う値 */
+type Experience = { organizationId: number; period: Period };
+
+/** 職歴の実績。同じ組織で期間が重なる実績を、渡した順のまま返す。サイトに載せない実績も含む */
+export const projectsOfCareer = <P extends Experience>(
+  career: Experience,
+  projects: readonly P[],
+): P[] =>
+  projects.filter(
+    (project) =>
+      project.organizationId === career.organizationId &&
+      periodsOverlap(career.period, project.period),
+  );
+
+/**
+ * 職歴のスキル。職歴の実績につないだスキルを、重ねずに、出てきた順に合わせる。`visitor` は
+ * サイトで訪問者に出す職歴のスキルで、サイトに載せる実績（`published`）だけから求める（FR-035）
+ */
+export const skillsOfCareer = <S>(
+  career: Experience,
+  projects: readonly (Experience & { status: SiteStatus; skills: readonly S[] })[],
+  audience: 'owner' | 'visitor',
+): S[] => {
+  const shown = projectsOfCareer(career, projects).filter(
+    (project) => audience === 'owner' || project.status === 'published',
+  );
+  return [...new Set(shown.flatMap((project) => project.skills))];
+};

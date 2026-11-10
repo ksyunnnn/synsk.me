@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { listOrganizationNames } from '@/features/organization/server/queries';
 import { CareerForm } from '@/features/career/components/career-form';
 import { toCareerFormValues } from '@/features/career/domain/career';
 import { editCareer } from '@/features/career/server/actions';
@@ -22,7 +23,7 @@ const Page = async ({ params, searchParams }: Props) => {
   // オーナーでなければ、職歴を読む前に 403 になる
   const career = await getCareerForEdit((await params).id);
   if (!career) notFound();
-  const { saved } = await searchParams;
+  const [{ saved }, organizationNames] = await Promise.all([searchParams, listOrganizationNames()]);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
@@ -41,6 +42,7 @@ const Page = async ({ params, searchParams }: Props) => {
         key={career.updatedAt}
         action={editCareer}
         initialValues={toCareerFormValues(career)}
+        organizationNames={organizationNames}
         career={{ uid: career.uid, updatedAt: career.updatedAt }}
       />
       <p>

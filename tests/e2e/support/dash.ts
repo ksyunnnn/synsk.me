@@ -50,9 +50,18 @@ export const VISITOR_PAGES = ['/', '/about', '/contact', '/resume'] as const;
 export const textbox = (page: Page, name: string) =>
   page.getByRole('textbox', { name, exact: true });
 
+/**
+ * 職歴・実績の組織名の入力。選択肢（`<datalist>`）を持つ文字の入力は、role が combobox になる
+ * （https://www.w3.org/TR/html-aam-1.0/#el-input-textetc-autocomplete ）
+ */
+export const organizationInput = (page: Page) =>
+  page.getByRole('combobox', { name: '組織名', exact: true });
+
 /** 入力を省いた項目は、いまの値のまま触らない */
 const fillIfGiven = async (page: Page, name: string, value: string | undefined) => {
-  if (value !== undefined) await textbox(page, name).fill(value);
+  if (value === undefined) return;
+  const input = name === '組織名' ? organizationInput(page) : textbox(page, name);
+  await input.fill(value);
 };
 
 const isFocused = (target: Locator) => target.evaluate((el) => el === document.activeElement);

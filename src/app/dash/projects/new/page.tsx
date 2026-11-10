@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { ProjectForm } from '@/features/project/components/project-form';
 import { toProjectFormValues } from '@/features/project/domain/project';
 import { registerProject } from '@/features/project/server/actions';
+import { listOrganizationNames } from '@/features/organization/server/queries';
 import { listSkillOptions } from '@/features/project/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 
@@ -13,7 +14,10 @@ export const metadata: Metadata = { title: '実績を登録する | synsk.me' };
 
 const Page = async () => {
   // オーナーでなければ、読む前に 403 になる
-  const skillOptions = await listSkillOptions();
+  const [skillOptions, organizationNames] = await Promise.all([
+    listSkillOptions(),
+    listOrganizationNames(),
+  ]);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
@@ -24,6 +28,7 @@ const Page = async () => {
       <ProjectForm
         action={registerProject}
         initialValues={toProjectFormValues()}
+        organizationNames={organizationNames}
         skillOptions={skillOptions}
       />
     </main>
