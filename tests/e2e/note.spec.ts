@@ -363,3 +363,44 @@ test('過去の版の画面は、公開の note でだけ、戻しても訪問�
   await openOldest();
   await expect(notice).toBeVisible();
 });
+
+test('説明文が空の note で「説明を出さない」を選ぶと、訪問者のページの説明が消える（FR-034）', async ({
+  page,
+  context,
+  browser,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('no-first-paragraph');
+  await createNote(page, {
+    slug,
+    title: `E2E の説明を出さない題 ${slug}`,
+    body: 'E2E の最初の段落',
+  });
+  await submitAndWait(page, '最も新しい版を公開する');
+  await expect(page.getByRole('status')).toHaveText('公開しました');
+
+  const visitor = await openVisitor(browser);
+  expect(await visit(visitor, `/notes/${slug}`)).toBe(200);
+  await expect(visitor.locator('meta[name="description"]')).toHaveAttribute(
+    'content',
+    'E2E の最初の段落',
+  );
+
+  // 説明文の入力の説明は、空のときの説明が選んだ値で決まることを示す
+  await expect(textbox(page, '説明文')).toHaveAccessibleDescription(
+    '空にすると、「説明文が空のとき」で選んだ説明を出します',
+  );
+  const useFirstParagraph = page.getByRole('radio', { name: '本文の最初の段落を説明に使う' });
+  const noDescription = page.getByRole('radio', { name: '説明を出さない' });
+  await expect(useFirstParagraph).toBeChecked();
+  await noDescription.check();
+  await submitAndWait(page, '説明文が空のときの説明を変える');
+  await expect(page.getByRole('status')).toHaveText('説明文が空のときの説明を変えました');
+  await expect(noDescription).toBeChecked();
+
+  expect(await visit(visitor, `/notes/${slug}`)).toBe(200);
+  await expect(visitor.getByText('E2E の最初の段落')).toBeVisible();
+  await expect(visitor.locator('meta[name="description"]')).toHaveCount(0);
+  await expect(visitor.locator('meta[property="og:description"]')).toHaveCount(0);
+  await visitor.close();
+});

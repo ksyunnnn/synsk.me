@@ -10,13 +10,20 @@
 
 ## Contents
 
+- Clarifications
 - Terms
 - Clarifications
 - User Scenarios & Testing（User Story 1〜7、Edge Cases）
-- Requirements（作成と識別子・版と保存・公開と下書き・削除・同時編集と編集中の内容・画像・URL カード・転載先・書き換え）
+- Requirements（作成と識別子・版と保存・公開と下書き・削除・同時編集と編集中の内容・画像・URL カード・転載先・書き換え・説明）
 - Key Entities
 - Success Criteria
 - Assumptions
+
+## Clarifications
+
+### Session 2026-11-10
+
+- Q: 説明文が空の note では、ページの説明に何を出すか？ → A: オーナーが note ごとに、本文の最初の段落を説明に使うか、説明を出さないかを選ぶ。既定は本文の最初の段落を使う（2026-11-10、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766542397)）。選ぶ値は版でなく note に持ち、選び直しても版を足さない（2026-11-10、作業者。research.md の R19）
 
 ## Terms
 
@@ -239,9 +246,13 @@
 
 - **FR-033**: note・版・画像・転載先を書き換えられるのはオーナーだけである。訪問者はこれらを書き換えられない
 
+**説明**
+
+- **FR-034**: オーナーは note ごとに、説明文が空のときに、本文の最初の段落を説明に使うか、説明を出さないかを選べる。オーナーが選ばなければ、本文の最初の段落を使う。説明文が空でない版では、選んだ値にかかわらず説明文を説明に使う
+
 ### Key Entities *(include if feature involves data)*
 
-- **note**: 識別子・状態・公開した版・初めて公開した日時・削除したかどうか・代表画像の出どころを持つ。版・画像・転載先を持つ
+- **note**: 識別子・状態・公開した版・初めて公開した日時・削除したかどうか・代表画像の出どころ・説明文が空のときに本文の最初の段落を使うかを持つ。版・画像・転載先を持つ
 - **版**: 題・説明文・本文と、保存した日時を持つ。1 つの note に属し、書き換えない
 - **画像**: note の本文と代表画像から指される。画像の記録は、職歴・実績・life event の画像と同じ仕組みに持ち、持ち主は 1 つだけである
 - **参照先の情報**: 参照先の URL・題・画像の URL・取った日時を持つ。URL ごとに 1 つで、note には属さない
@@ -267,7 +278,7 @@
 - 転載先の URL と一致する外部の activity を一覧から除くことは、一覧の spec が持つ
 - 画像を収める仕組みは、職歴と実績・外部 activity の取得の spec と共有する。職歴・実績・life event の画像の要件は、それぞれの spec が持つ
 - 完全に削除できること（FR-11）、公開されたときの見た目を公開前に確認できること（FR-13）、保存操作をせずに編集内容が保持されること（FR-14）、公開していない内容を範囲の外の人への応答に含めないこと（NFR-08）、キャッシュに残さないこと（NFR-09）は [REQUIREMENTS.md](../../docs/REQUIREMENTS.md) が持つ
-- 他のサービスに URL が貼られたときのカードの題・説明・画像の出し方は [CRAWLING.md](../../docs/CRAWLING.md) が持つ。説明文が空の note は、本文の冒頭を説明に使う
+- 他のサービスに URL が貼られたときのカードの題・説明・画像の出し方は [CRAWLING.md](../../docs/CRAWLING.md) が持つ。説明文が空の note の説明は FR-034 に従う
 - 管理画面は `/dash/` 配下に置く（[ADR-0016](../../docs/decisions/0016-url-conventions.md)）。オーナーであることは、アプリケーションの外で Cloudflare Access が判定する（[ADR-0013](../../docs/decisions/0013-access-authentication.md)）
 
 **決まっていて、実装のときに詰めるもの**

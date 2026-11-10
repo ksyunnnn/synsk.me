@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { addNoteMedia as addNoteMediaUseCase } from '@/features/note/application/add-note-media';
 import { addNoteSyndication as addNoteSyndicationUseCase } from '@/features/note/application/add-note-syndication';
 import { changeNoteCardImage as changeNoteCardImageUseCase } from '@/features/note/application/change-note-card-image';
+import { changeNoteFirstParagraphAsDescription as changeNoteFirstParagraphAsDescriptionUseCase } from '@/features/note/application/change-note-first-paragraph-as-description';
 import { createNote as createNoteUseCase } from '@/features/note/application/create-note';
 import { deleteNote as deleteNoteUseCase } from '@/features/note/application/delete-note';
 import { publishNote as publishNoteUseCase } from '@/features/note/application/publish-note';
@@ -16,6 +17,7 @@ import { saveNote as saveNoteUseCase } from '@/features/note/application/save-no
 import { unpublishNote as unpublishNoteUseCase } from '@/features/note/application/unpublish-note';
 import {
   CARD_IMAGE_FIELD,
+  FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD,
   MEDIA_FILE_FIELD,
   NOTE_FIELDS,
   NOTE_UID_FIELD,
@@ -23,6 +25,7 @@ import {
   REVISION_UID_FIELD,
   SYNDICATION_URL_FIELD,
   type CardImageFormResult,
+  type FirstParagraphAsDescriptionFormResult,
   type MediaFormResult,
   type NoteFormResult,
   type RevertNoteResult,
@@ -239,6 +242,32 @@ export const changeNoteCardImage = async (
   if (outcome.status === 'not-found') redirect(LIST);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [CARD_IMAGE_FIELD]: outcome.error }, values: {} };
+};
+
+/** 説明文が空のときに本文の最初の段落を説明に使うかを変え、同じ画面へ移る（FR-034） */
+export const changeNoteFirstParagraphAsDescription = async (
+  _state: FirstParagraphAsDescriptionFormResult | null,
+  formData: FormData,
+): Promise<FirstParagraphAsDescriptionFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveNote(formData);
+  if (id === null) redirect(LIST);
+
+  const outcome = await changeNoteFirstParagraphAsDescriptionUseCase(
+    deps.notes,
+    author,
+    id,
+    readString(formData, FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD),
+  );
+  if (outcome.status === 'changed') redirect(`${editPath(uid)}?firstParagraphChanged=1`);
+  if (outcome.status === 'not-found') redirect(LIST);
+  if (outcome.status === 'forbidden') return outcome;
+  return {
+    status: 'invalid',
+    errors: { [FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD]: 'invalid' },
+    values: {},
+  };
 };
 
 /** 画像を 1 枚足し、同じ画面へ移る（FR-023、research.md の R12） */
