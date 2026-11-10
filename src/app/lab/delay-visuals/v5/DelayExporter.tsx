@@ -1,35 +1,71 @@
 'use client';
-// 自分の画像に v1 の最終版（横）か v2（縦）の表現をかけ、動画に書き出す
-// 見本の canvas は書き出す動画と同じ画素数で描く。見本で見たものがそのまま動画になる
+// 自分の写真に v1 の最終版（横）か v2（縦）の表現をかけ、動画に書き出す
+// プレビューの canvas は書き出す動画と同じ画素数で描く。プレビューで見たものがそのまま動画になる
 import { useEffect, useId, useRef, useState } from 'react';
+import {
+  ArrowCounterClockwise,
+  DownloadSimple,
+  Export,
+  ImageSquare,
+  Pause,
+  Play,
+} from '@phosphor-icons/react';
 
 import {
   drawFrame,
   exportVideo,
-  FPS,
   isAcceptedAspect,
   outputSize,
   UnsupportedError,
   type Direction,
 } from './encode';
 
-// コマのスライダーの段数。再生中は段に丸めず、経過時間からなめらかに位置を出す
+// 再生位置のスライダーの段数。再生中は段に丸めず、経過時間からなめらかに位置を出す
 const STEPS = 2000;
 
+// 最初の値と「リセット」で戻す値。オーナーが v1 の最終版で選んだもの
+const DEFAULTS = { seconds: 50, seam: 0.9, shift: 0.01, count: 6 };
+
+// 画面に出す言葉。出典は PR の本文にある
+const COPY = {
+  tagline: '写真が帯ごとに少し遅れて現れ、最後に揃う動画をつくる。',
+  choose: '写真を選択',
+  chooseHint: '動画の縦横比は写真と同じになる',
+  change: '写真を置き換える',
+  play: '再生',
+  pause: '一時停止',
+  position: '再生位置',
+  direction: '方向',
+  rightToLeft: '右から左',
+  topToBottom: '上から下',
+  duration: '長さ',
+  range: '遅れる範囲',
+  amount: '強さ',
+  strips: '帯の数',
+  reset: 'リセット',
+  export: '書き出す',
+  exporting: '書き出し中',
+  cancel: 'キャンセル',
+  done: '書き出し完了',
+  downloadHint: 'ダウンロードした動画は、「ファイル」App の「ダウンロード」フォルダに入ります。',
+  download: 'ダウンロード',
+  share: '共有',
+  aspectError:
+    '縦横比が 1:10 から 10:1 の写真を選んでください。Instagram のストーリーに載せられる範囲です。',
+  readError: 'この写真は読み込めませんでした。JPEG か PNG で試してください。',
+  unsupported:
+    'このブラウザでは動画を書き出せません。iPhone は iOS 16.4 以降の Safari で開いてください。',
+  failed: '書き出せませんでした。もう一度試してください。',
+} as const;
+
 const DIRECTIONS: { value: Direction; label: string }[] = [
-  { value: 'horizontal', label: '横（右から左へ）' },
-  { value: 'vertical', label: '縦（上から下へ）' },
+  { value: 'horizontal', label: COPY.rightToLeft },
+  { value: 'vertical', label: COPY.topToBottom },
 ];
 
-type Picked = {
-  name: string;
-  width: number;
-  height: number;
-  source: HTMLCanvasElement;
-  thumbnail: string;
-};
+type Picked = { width: number; height: number; source: HTMLCanvasElement };
 
-type Exported = { url: string; file: File; width: number; height: number; seconds: number };
+type Exported = { url: string; file: File };
 
 type ExportState =
   | { kind: 'idle' }
@@ -40,6 +76,12 @@ type ExportState =
 const focusRing =
   'outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
+// 秒を 0:12 の形にする
+const clock = (seconds: number) => {
+  const whole = Math.floor(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, '0')}`;
+};
+
 // 名前に書き出した日時（端末の時刻）を入れ、続けて書き出しても重ならないようにする
 const fileName = (direction: Direction) => {
   const now = new Date();
@@ -49,12 +91,9 @@ const fileName = (direction: Direction) => {
   return `delay-visuals-${direction}-${date}-${time}.mp4`;
 };
 
-// 画像を選ぶ欄に出す縮小版の長い辺
-const THUMBNAIL_SIZE = 192;
-
 class AspectError extends Error {}
 
-// 画像を読み、書き出す大きさに縮めた canvas にする。向きは画像の Exif に従う（ブラウザの既定）
+// 写真を読み、書き出す大きさに縮めた canvas にする。向きは写真の Exif に従う（ブラウザの既定）
 // 透明な部分は白にする。動画は透明を持てない
 const loadImage = (file: File) =>
   new Promise<Picked>((resolve, reject) => {
@@ -73,25 +112,17 @@ const loadImage = (file: File) =>
       ctx.fillRect(0, 0, width, height);
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
-      const ratio = THUMBNAIL_SIZE / Math.max(width, height);
-      const thumbnail = document.createElement('canvas');
-      thumbnail.width = Math.max(1, Math.round(width * ratio));
-      thumbnail.height = Math.max(1, Math.round(height * ratio));
-      thumbnail.getContext('2d')?.drawImage(source, 0, 0, thumbnail.width, thumbnail.height);
-      resolve({
-        name: file.name,
-        width,
-        height,
-        source,
-        thumbnail: thumbnail.toDataURL('image/jpeg', 0.8),
-      });
+      resolve({ width, height, source });
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
-      reject(new Error('画像を読めなかった'));
+      reject(new Error('写真を読めなかった'));
     };
     img.src = url;
   });
+
+const prefersReducedMotion = () =>
+  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const Slider = ({
   label,
@@ -128,6 +159,7 @@ const Slider = ({
         max={max}
         step={step}
         value={value}
+        aria-valuetext={display}
         disabled={disabled}
         onChange={(event) => onChange(Number(event.target.value))}
         className={`h-11 w-full accent-foreground disabled:opacity-50 ${focusRing}`}
@@ -138,24 +170,29 @@ const Slider = ({
 
 export const DelayExporter = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [picked, setPicked] = useState<Picked | null>(null);
   const [pickError, setPickError] = useState<string | null>(null);
   const [direction, setDirection] = useState<Direction>('horizontal');
-  const [step, setStep] = useState(STEPS / 2);
+  const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
-  // 最初の値は、オーナーが v1 の最終版で選んだもの
-  const [seconds, setSeconds] = useState(50);
-  const [seam, setSeam] = useState(0.9);
-  const [shift, setShift] = useState(0.01);
-  const [count, setCount] = useState(6);
+  const [seconds, setSeconds] = useState(DEFAULTS.seconds);
+  const [seam, setSeam] = useState(DEFAULTS.seam);
+  const [shift, setShift] = useState(DEFAULTS.shift);
+  const [count, setCount] = useState(DEFAULTS.count);
   const [exportState, setExportState] = useState<ExportState>({ kind: 'idle' });
   const [canShare, setCanShare] = useState(false);
 
   const running = exportState.kind === 'running';
   const exportedUrl = exportState.kind === 'done' ? exportState.result.url : null;
+  const isDefault =
+    seconds === DEFAULTS.seconds &&
+    seam === DEFAULTS.seam &&
+    shift === DEFAULTS.shift &&
+    count === DEFAULTS.count;
 
-  // 書き出した動画の URL は、次を書き出したときと、ページを離れたときに手放す
+  // 書き出した動画の URL は、設定を変えたときと、ページを離れたときに手放す
   useEffect(() => {
     if (!exportedUrl) return;
     return () => URL.revokeObjectURL(exportedUrl);
@@ -187,19 +224,26 @@ export const DelayExporter = () => {
     drawFrame(ctx, source, direction, { width, height, t: step / STEPS, seam, shift, count });
   }, [picked, direction, step, seam, shift, count]);
 
+  // 書き出した後に写真や設定を変えたら、書き出した動画は今の設定と合わなくなる。書き出す前に戻す
+  const edit =
+    <T,>(set: (value: T) => void) =>
+    (value: T) => {
+      set(value);
+      if (exportState.kind !== 'running') setExportState({ kind: 'idle' });
+    };
+
   const pick = async (file: File | undefined) => {
     if (!file) return;
     setPickError(null);
     setPlaying(false);
     try {
-      setPicked(await loadImage(file));
-      setExportState({ kind: 'idle' });
+      edit(setPicked)(await loadImage(file));
+      // 選んだらすぐに一度だけ再生し、表現を見せる。動きを減らす設定のときは止めたまま途中の絵を出す
+      const reduce = prefersReducedMotion();
+      setStep(reduce ? STEPS / 2 : 0);
+      setPlaying(!reduce);
     } catch (error) {
-      setPickError(
-        error instanceof AspectError
-          ? 'Instagram のストーリーに載せられる縦横比は 1:10 から 10:1 まで。その範囲の画像を選んでほしい。'
-          : 'この画像は読めなかった。JPEG か PNG で試してほしい。',
-      );
+      setPickError(error instanceof AspectError ? COPY.aspectError : COPY.readError);
     }
   };
 
@@ -211,7 +255,7 @@ export const DelayExporter = () => {
     setExportState({ kind: 'running', done: 0 });
     let lastPercent = 0;
     try {
-      const { blob, width, height } = await exportVideo({
+      const { blob } = await exportVideo({
         image: picked.source,
         direction,
         settings: { seconds, seam, shift, count },
@@ -228,10 +272,7 @@ export const DelayExporter = () => {
       setCanShare(
         typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] }),
       );
-      setExportState({
-        kind: 'done',
-        result: { url: URL.createObjectURL(blob), file, width, height, seconds },
-      });
+      setExportState({ kind: 'done', result: { url: URL.createObjectURL(blob), file } });
     } catch (error) {
       if (controller.signal.aborted) {
         setExportState({ kind: 'idle' });
@@ -239,10 +280,7 @@ export const DelayExporter = () => {
       }
       setExportState({
         kind: 'error',
-        message:
-          error instanceof UnsupportedError
-            ? 'このブラウザは H.264 の動画を書き出せない。iPhone は iOS 16.4 以降の Safari で開いてほしい。'
-            : '書き出しに失敗した。もう一度試してほしい。',
+        message: error instanceof UnsupportedError ? COPY.unsupported : COPY.failed,
       });
     } finally {
       abortRef.current = null;
@@ -257,56 +295,119 @@ export const DelayExporter = () => {
     }
   };
 
-  const axis = direction === 'horizontal' ? '幅' : '高さ';
+  const reset = () => {
+    edit(setSeconds)(DEFAULTS.seconds);
+    setSeam(DEFAULTS.seam);
+    setShift(DEFAULTS.shift);
+    setCount(DEFAULTS.count);
+  };
+
+  const disabled = !picked || running;
 
   return (
-    <div className="grid gap-12">
-      <section className="grid gap-4" aria-labelledby="pick-heading">
-        <h2 id="pick-heading" className="text-xs tracking-wider text-muted-foreground">
-          画像
-        </h2>
-        <label
-          className={`flex cursor-pointer items-center gap-6 rounded-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-4 has-[:focus-visible]:outline-ring ${running ? 'pointer-events-none opacity-50' : ''}`}
-        >
-          <input
-            type="file"
-            accept="image/*"
+    <div className="grid gap-8">
+      <header className="flex items-start justify-between gap-4">
+        <div className="grid gap-1">
+          <h1 className="text-xl">delay-visuals</h1>
+          <p className="text-sm text-muted-foreground">{COPY.tagline}</p>
+        </div>
+        {picked && (
+          <button
+            type="button"
             disabled={running}
-            className="sr-only"
-            onChange={(event) => {
-              void pick(event.target.files?.[0]);
-              event.target.value = '';
-            }}
-          />
-          <span className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-sm bg-foreground/5">
-            {picked ? (
-              // 端末の中で作った data URL を出す。next/image の最適化は通せない
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={picked.thumbnail} alt="" className="size-full object-cover" />
-            ) : (
-              <span aria-hidden className="text-2xl text-muted-foreground">
-                +
-              </span>
-            )}
-          </span>
-          <span className="grid min-w-0 gap-2">
-            <span className="text-xl break-all">{picked ? picked.name : '画像を選ぶ'}</span>
-            <span className="text-sm text-muted-foreground">
-              {picked
-                ? `動画は ${picked.width}×${picked.height}。押すと選び直せる`
-                : '動画の縦横比は、画像の縦横比になる'}
-            </span>
-          </span>
-        </label>
+            onClick={() => inputRef.current?.click()}
+            className={`h-11 shrink-0 text-sm underline underline-offset-4 disabled:opacity-50 active:opacity-70 ${focusRing}`}
+          >
+            {COPY.change}
+          </button>
+        )}
+      </header>
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        tabIndex={-1}
+        aria-hidden
+        className="sr-only"
+        onChange={(event) => {
+          void pick(event.target.files?.[0]);
+          event.target.value = '';
+        }}
+      />
+
+      <section className="grid gap-3" aria-label="プレビュー">
+        {/* 写真の有無で高さを変えない。読み込みの後に下の要素の位置をずらさない */}
+        <div className="grid h-[44svh] place-items-center overflow-hidden rounded-sm bg-foreground/5">
+          {picked ? (
+            <canvas
+              ref={canvasRef}
+              width={picked.width}
+              height={picked.height}
+              className="size-full object-contain"
+              role="img"
+              aria-label={
+                direction === 'horizontal'
+                  ? '選んだ写真が右から左へ現れるプレビュー'
+                  : '選んだ写真が上から下へ現れるプレビュー'
+              }
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              className={`grid size-full place-content-center justify-items-center gap-3 active:opacity-70 ${focusRing}`}
+            >
+              <ImageSquare aria-hidden size={40} weight="light" className="text-muted-foreground" />
+              <span className="text-base">{COPY.choose}</span>
+              <span className="text-sm text-muted-foreground">{COPY.chooseHint}</span>
+            </button>
+          )}
+        </div>
         {pickError && (
           <p role="alert" className="text-sm text-destructive">
             {pickError}
           </p>
         )}
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            aria-label={playing ? COPY.pause : COPY.play}
+            disabled={disabled}
+            onClick={() => {
+              if (step >= STEPS) setStep(0);
+              setPlaying((value) => !value);
+            }}
+            className={`grid size-11 shrink-0 place-items-center rounded-full bg-foreground/5 disabled:opacity-50 active:opacity-70 ${focusRing}`}
+          >
+            {playing ? (
+              <Pause aria-hidden size={20} weight="fill" />
+            ) : (
+              <Play aria-hidden size={20} weight="fill" />
+            )}
+          </button>
+          <input
+            type="range"
+            aria-label={COPY.position}
+            aria-valuetext={`${clock((step / STEPS) * seconds)} / ${clock(seconds)}`}
+            min={0}
+            max={STEPS}
+            value={step}
+            disabled={disabled}
+            onChange={(event) => {
+              setPlaying(false);
+              setStep(Number(event.target.value));
+            }}
+            className={`h-11 min-w-0 flex-1 accent-foreground disabled:opacity-50 ${focusRing}`}
+          />
+          <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+            {clock((step / STEPS) * seconds)} / {clock(seconds)}
+          </span>
+        </div>
       </section>
 
-      <fieldset className="grid gap-4" disabled={running}>
-        <legend className="mb-4 text-xs tracking-wider text-muted-foreground">向き</legend>
+      <fieldset className="grid gap-3" disabled={running}>
+        {/* 文字のラベルを持つセグメントには見出しを出さない（HIG の Segmented controls）。読み上げには残す */}
+        <legend className="sr-only">{COPY.direction}</legend>
         <div className="grid grid-cols-2 gap-1 rounded-full bg-foreground/5 p-1">
           {DIRECTIONS.map(({ value, label }) => (
             <label
@@ -318,7 +419,7 @@ export const DelayExporter = () => {
                 name="direction"
                 value={value}
                 checked={direction === value}
-                onChange={() => setDirection(value)}
+                onChange={() => edit(setDirection)(value)}
                 className="sr-only"
               />
               {label}
@@ -327,184 +428,129 @@ export const DelayExporter = () => {
         </div>
       </fieldset>
 
-      <section className="grid gap-4" aria-labelledby="preview-heading">
-        <h2 id="preview-heading" className="text-xs tracking-wider text-muted-foreground">
-          見本
-        </h2>
-        {picked ? (
-          <canvas
-            ref={canvasRef}
-            width={picked.width}
-            height={picked.height}
-            className="mx-auto block h-auto max-h-[60svh] w-auto max-w-full rounded-sm"
-            role="img"
-            aria-label={
-              direction === 'horizontal'
-                ? '選んだ画像を右から左へ出す見本'
-                : '選んだ画像を上から下へ出す見本'
-            }
-          />
-        ) : (
-          <p className="grid aspect-[4/3] place-items-center rounded-sm bg-foreground/5 text-sm text-muted-foreground">
-            画像を選ぶと、ここで動きを確かめられる
-          </p>
-        )}
-        <div className="flex items-center gap-4">
-          <button
-            type="button"
-            disabled={!picked || running}
-            onClick={() => {
-              if (step >= STEPS) setStep(0);
-              setPlaying((value) => !value);
-            }}
-            className={`h-11 shrink-0 rounded-full bg-foreground/5 px-5 text-sm disabled:opacity-50 ${focusRing}`}
-          >
-            {playing ? '止める' : '再生'}
-          </button>
-          <input
-            type="range"
-            aria-label="見本の位置"
-            min={0}
-            max={STEPS}
-            value={step}
-            disabled={!picked || running}
-            onChange={(event) => {
-              setPlaying(false);
-              setStep(Number(event.target.value));
-            }}
-            className={`h-11 min-w-0 flex-1 accent-foreground disabled:opacity-50 ${focusRing}`}
-          />
-          <span className="w-14 shrink-0 text-right text-sm text-muted-foreground tabular-nums">
-            {((step / STEPS) * seconds).toFixed(1)} 秒
-          </span>
-        </div>
-      </section>
-
-      <section className="grid gap-6" aria-labelledby="settings-heading">
-        <h2 id="settings-heading" className="text-xs tracking-wider text-muted-foreground">
-          設定
-        </h2>
+      <section className="grid gap-5" aria-label="設定">
         <Slider
-          label="再生の長さ"
+          label={COPY.duration}
           value={seconds}
           display={`${seconds} 秒`}
           min={4}
           max={60}
           step={1}
           disabled={running}
-          onChange={setSeconds}
+          onChange={edit(setSeconds)}
         />
         <Slider
-          label="内側の境目の位置"
+          label={COPY.range}
           value={seam}
-          display={seam.toFixed(2)}
+          display={`${Math.round(seam * 100)}%`}
           min={0.1}
           max={0.9}
           step={0.01}
           disabled={running}
-          onChange={setSeam}
+          onChange={edit(setSeam)}
         />
         <Slider
-          label="帯ごとのずれの最大"
+          label={COPY.amount}
           value={shift}
-          display={`${axis}の ${Math.round(shift * 100)}%`}
+          display={`${Math.round(shift * 100)}`}
           min={0}
           max={0.4}
           step={0.01}
           disabled={running}
-          onChange={setShift}
+          onChange={edit(setShift)}
         />
         <Slider
-          label="内側の境目の本数"
+          label={COPY.strips}
           value={count}
-          display={`${count} 本`}
+          display={`${count}`}
           min={1}
           max={60}
           step={1}
           disabled={running}
-          onChange={setCount}
+          onChange={edit(setCount)}
         />
-        <p className="text-sm text-muted-foreground">
-          Instagram のストーリーに載せる動画は 60 秒までなので、再生の長さも 60 秒までにしている。
-        </p>
+        <button
+          type="button"
+          disabled={running || isDefault}
+          onClick={reset}
+          className={`flex h-11 w-fit items-center gap-2 text-sm disabled:opacity-50 active:opacity-70 ${focusRing}`}
+        >
+          <ArrowCounterClockwise aria-hidden size={16} />
+          {COPY.reset}
+        </button>
       </section>
 
-      <section className="grid gap-4" aria-labelledby="export-heading">
-        <h2 id="export-heading" className="text-xs tracking-wider text-muted-foreground">
-          書き出し
-        </h2>
+      {/* 書き出しの操作は画面の下に留め、設定の途中からでも届くようにする */}
+      <div className="sticky bottom-0 -mx-6 grid gap-3 bg-linear-to-t from-border from-80% to-transparent px-6 pt-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="min-h-5 text-sm text-muted-foreground tabular-nums" aria-live="polite">
+          {exportState.kind === 'running' &&
+            `${COPY.exporting}… ${Math.round(exportState.done * 100)}%`}
+          {exportState.kind === 'done' &&
+            `${COPY.done}（${(exportState.result.file.size / 1_000_000).toFixed(1)} MB）`}
+          {exportState.kind === 'error' && (
+            <span role="alert" className="text-destructive">
+              {exportState.message}
+            </span>
+          )}
+        </div>
         {running ? (
-          <div className="grid gap-3">
+          <div className="flex items-center gap-4">
             <div
               role="progressbar"
-              aria-label="書き出しの進み"
+              aria-label={COPY.exporting}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(exportState.done * 100)}
-              className="h-1 overflow-hidden rounded-full bg-foreground/10"
+              className="h-1 flex-1 overflow-hidden rounded-full bg-foreground/10"
             >
               <div
                 className="h-full bg-foreground"
                 style={{ width: `${exportState.done * 100}%` }}
               />
             </div>
-            <div className="flex items-center justify-between gap-4 text-sm">
-              <span className="text-muted-foreground tabular-nums">
-                {Math.round(exportState.done * 100)}%（
-                {Math.round(exportState.done * seconds * FPS)} / {seconds * FPS} コマ）
-              </span>
-              <button
-                type="button"
-                onClick={() => abortRef.current?.abort()}
-                className={`h-11 rounded-full px-5 underline underline-offset-4 ${focusRing}`}
+            <button
+              type="button"
+              onClick={() => abortRef.current?.abort()}
+              className={`h-11 shrink-0 rounded-full px-5 text-sm active:opacity-70 ${focusRing}`}
+            >
+              {COPY.cancel}
+            </button>
+          </div>
+        ) : exportState.kind === 'done' ? (
+          <div className="grid gap-3">
+            <div className="flex gap-3">
+              <a
+                href={exportState.result.url}
+                download={exportState.result.file.name}
+                className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm text-background active:opacity-70 ${focusRing}`}
               >
-                やめる
-              </button>
+                <DownloadSimple aria-hidden size={18} />
+                {COPY.download}
+              </a>
+              {canShare && (
+                <button
+                  type="button"
+                  onClick={() => void share(exportState.result.file)}
+                  className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-background/70 px-6 text-sm active:opacity-70 ${focusRing}`}
+                >
+                  <Export aria-hidden size={18} />
+                  {COPY.share}
+                </button>
+              )}
             </div>
+            <p className="text-sm text-muted-foreground">{COPY.downloadHint}</p>
           </div>
         ) : (
           <button
             type="button"
             disabled={!picked}
             onClick={() => void startExport()}
-            className={`h-11 rounded-full bg-foreground px-6 text-sm text-background disabled:opacity-50 ${focusRing}`}
+            className={`h-11 rounded-full bg-foreground px-6 text-sm text-background disabled:opacity-50 active:opacity-70 ${focusRing}`}
           >
-            動画を書き出す（MP4・{seconds} 秒）
+            {COPY.export}
           </button>
         )}
-        {exportState.kind === 'error' && (
-          <p role="alert" className="text-sm text-destructive">
-            {exportState.message}
-          </p>
-        )}
-        {exportState.kind === 'done' && (
-          <div className="grid gap-4" aria-live="polite">
-            <p className="text-sm text-muted-foreground">
-              書き出した。{exportState.result.width}×{exportState.result.height}、
-              {exportState.result.seconds} 秒、
-              {(exportState.result.file.size / 1_000_000).toFixed(1)}MB。
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <a
-                href={exportState.result.url}
-                download={exportState.result.file.name}
-                className={`grid h-11 place-items-center rounded-full bg-foreground px-6 text-sm text-background ${focusRing}`}
-              >
-                ダウンロード
-              </a>
-              {canShare && (
-                <button
-                  type="button"
-                  onClick={() => void share(exportState.result.file)}
-                  className={`h-11 rounded-full bg-foreground/5 px-6 text-sm ${focusRing}`}
-                >
-                  共有
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-      </section>
+      </div>
     </div>
   );
 };
