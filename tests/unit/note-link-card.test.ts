@@ -72,4 +72,19 @@ describe('VisitorNoteView の URL カード', () => {
     );
     expect(html).not.toContain('<img');
   });
+
+  it('見た目の確認が渡した操作を、URL だけの段落ごとにその URL で添える。訪問者の表示は添えない', () => {
+    const value = note('https://example.com/a\n\n本文\n\nhttps://example.com/b', [
+      { url: 'https://example.com/a', title: '題', imageUrl: null },
+    ]);
+    const withAction = renderToStaticMarkup(
+      createElement(VisitorNoteView, {
+        note: value,
+        renderUrlLineAction: (url: string) => createElement('button', null, `取り直す ${url}`),
+      }),
+    );
+    expect(withAction).toContain('<button>取り直す https://example.com/a</button>');
+    expect(withAction).toContain('<button>取り直す https://example.com/b</button>');
+    expect(render(value)).not.toContain('<button');
+  });
 });

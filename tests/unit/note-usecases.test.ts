@@ -10,6 +10,7 @@ import { getPreviewNoteMedia } from '@/features/note/application/get-preview-not
 import { getVisitorNoteMedia } from '@/features/note/application/get-visitor-note-media';
 import { publishNote } from '@/features/note/application/publish-note';
 import { purgeNote } from '@/features/note/application/purge-note';
+import { refetchLinkPreview } from '@/features/note/application/refetch-link-preview';
 import { removeNoteSyndication } from '@/features/note/application/remove-note-syndication';
 import { restoreNote } from '@/features/note/application/restore-note';
 import { revertNote } from '@/features/note/application/revert-note';
@@ -703,5 +704,93 @@ describe('getNotePreview（U9、research.md の R13）', () => {
     const fetchLinkPreviews = vi.fn(async () => []);
     expect(await getNotePreview({ notes: fakeNotes(), fetchLinkPreviews }, 1, NOW)).toBeNull();
     expect(fetchLinkPreviews).not.toHaveBeenCalled();
+  });
+});
+
+describe('refetchLinkPreview（User Story 6 の 3、FR-029、2026-11-10 のオーナーの決定）', () => {
+  const A = 'https://example.com/a';
+  const preview = (body: string): NotePreview => ({
+    slug: 'sample-note',
+    title: '作り物の題',
+    description: null,
+    summary: null,
+    body,
+    publishedAt: null,
+    cardImage: { kind: 'generated' },
+    media: [],
+    linkPreviews: [{ url: A, title: '前に取った題', imageUrl: null }],
+  });
+  const notesWith = (body: string) =>
+    fakeNotes(note(), { findPreview: vi.fn(async () => preview(body)) });
+
+  it('最も新しい版の本文の URL を取り直し、取った中身で書き換える', async () => {
+    const notes = notesWith(`前の段落\n\n${A}`);
+    const fetchLinkPreview = vi.fn(async (url: string) => ({
+      status: 'fetched' as const,
+      url,
+      title: '取り直した題',
+      imageUrl: `${url}.png`,
+    }));
+
+    const outcome = await refetchLinkPreview({ notes, fetchLinkPreview }, OWNER, 1, A, NOW);
+
+    expect(outcome).toEqual({ status: 'refetched' });
+    expect(fetchLinkPreview).toHaveBeenCalledWith(A);
+    expect(notes.saveLinkPreview).toHaveBeenCalledWith({
+      url: A,
+      title: '取り直した題',
+      imageUrl: `${A}.png`,
+      fetchedAt: NOW,
+    });
+  });
+
+  it('取れなければ書かず、取れなかった理由を返す', async () => {
+    const notes = notesWith(A);
+    const fetchLinkPreview = vi.fn(async (url: string) => ({
+      status: 'failed' as const,
+      url,
+      reason: 'timeout' as const,
+    }));
+
+    const outcome = await refetchLinkPreview({ notes, fetchLinkPreview }, OWNER, 1, A, NOW);
+
+    expect(outcome).toEqual({ status: 'invalid', error: 'timeout' });
+    expect(notes.saveLinkPreview).not.toHaveBeenCalled();
+  });
+
+  it('最も新しい版の本文に URL だけの段落として無い URL は取りに行かない', async () => {
+    const notes = notesWith(`本文の中の ${A} は段落の一部`);
+    const fetchLinkPreview = vi.fn();
+
+    const outcome = await refetchLinkPreview({ notes, fetchLinkPreview }, OWNER, 1, A, NOW);
+
+    expect(outcome).toEqual({ status: 'invalid', error: 'not-in-body' });
+    expect(fetchLinkPreview).not.toHaveBeenCalled();
+    expect(notes.saveLinkPreview).not.toHaveBeenCalled();
+  });
+
+  it('オーナーでなければ、note を読まず、取りに行かず、書かない（FR-033）', async () => {
+    const notes = notesWith(A);
+    const fetchLinkPreview = vi.fn();
+
+    const outcome = await refetchLinkPreview({ notes, fetchLinkPreview }, null, 1, A, NOW);
+
+    expect(outcome).toEqual({ status: 'forbidden' });
+    expect(notes.findPreview).not.toHaveBeenCalled();
+    expect(fetchLinkPreview).not.toHaveBeenCalled();
+    expect(notes.saveLinkPreview).not.toHaveBeenCalled();
+  });
+
+  it('無い note は取りに行かずに not-found', async () => {
+    const fetchLinkPreview = vi.fn();
+    const outcome = await refetchLinkPreview(
+      { notes: fakeNotes(), fetchLinkPreview },
+      OWNER,
+      1,
+      A,
+      NOW,
+    );
+    expect(outcome).toEqual({ status: 'not-found' });
+    expect(fetchLinkPreview).not.toHaveBeenCalled();
   });
 });

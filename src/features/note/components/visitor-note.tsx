@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { NotePreview, VisitorNote } from '@/features/note/domain/note';
 import { LinkCard } from '@/features/note/components/link-card';
 import { MarkdownBody } from '@/shared/components/markdown-body';
@@ -23,15 +24,19 @@ const formatPublishedOn = (publishedAt: string) =>
 /**
  * 見た目の確認（`/dash/notes/{uid}/preview`）も同じ部品で描く（research.md の R15）。一度も公開して
  * いない note は初めて公開した日時を持たない。見た目の確認は `mediaBase` にオーナーだけが通る画像の
- * 経路を渡す。訪問者の経路は公開した版の画像だけを返すため（spec の FR-026）
+ * 経路を渡す。訪問者の経路は公開した版の画像だけを返すため（spec の FR-026）。見た目の確認は
+ * `renderUrlLineAction` に URL カードを取り直す操作を渡す（User Story 6 の 3）。訪問者の表示は渡さない
  */
 export const VisitorNoteView = ({
   note,
   mediaBase = `/notes/${encodeURIComponent(note.slug)}/media`,
+  renderUrlLineAction,
 }: {
   note: VisitorNote | NotePreview;
   /** 画像の `src` の前に付ける経路。置き場のキーを `/` でつなぐ */
   mediaBase?: string;
+  /** URL だけの段落の下に添える操作。その段落の URL を受け取る */
+  renderUrlLineAction?: (url: string) => ReactNode;
 }) => {
   const visibleMedia = new Set(note.media);
   const previews = new Map(note.linkPreviews.map((preview) => [preview.url, preview]));
@@ -54,7 +59,16 @@ export const VisitorNoteView = ({
           mediaSrc={(storageKey) =>
             visibleMedia.has(storageKey) ? `${mediaBase}/${storageKey}` : null
           }
-          renderUrlLine={(url) => <LinkCard url={url} preview={previews.get(url)} />}
+          renderUrlLine={(url) =>
+            renderUrlLineAction ? (
+              <div className="flex flex-col gap-2">
+                <LinkCard url={url} preview={previews.get(url)} />
+                {renderUrlLineAction(url)}
+              </div>
+            ) : (
+              <LinkCard url={url} preview={previews.get(url)} />
+            )
+          }
         />
       </div>
     </article>
