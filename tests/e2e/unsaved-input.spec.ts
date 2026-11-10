@@ -41,6 +41,24 @@ test('実績の編集の画面で、サイトに載せるかを選び直して�
   ).toEqual([]);
 });
 
+test('実績の編集の画面で、本文を書き換えて保存せずに再読み込みすると、保存した本文が出る', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const { editUrl } = await registerProject(page, {
+    organizationName: 'E2E 保存しない本文の組織',
+    organizationNameMasked: 'E2E 保存しない本文の秘匿化した組織名',
+    title: `E2E 保存しない本文 ${crypto.randomUUID()}`,
+    description: 'E2E 保存した本文',
+  });
+  await openForm(page, editUrl);
+  await textbox(page, '本文').fill('E2E 保存していない本文');
+  await page.reload();
+  await waitForHydration(textbox(page, '本文'));
+  await expect(textbox(page, '本文')).toHaveValue('E2E 保存した本文');
+});
+
 test('職歴の編集の画面で、肩書を書き換えて保存せずに再読み込みすると、保存した肩書が出る', async ({
   page,
   context,

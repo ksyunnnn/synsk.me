@@ -1,5 +1,6 @@
 import { useId, type ComponentPropsWithoutRef, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { TypedTextarea } from '@/shared/components/typed-textarea';
 
 /**
  * ネイティブの入力の要素に、ラベル・項目ごとの誤りの表示・フォーカスの見た目をかぶせる
@@ -121,7 +122,7 @@ export const TextareaField = ({
   const ids = useFieldIds(name, { hint, error });
   return (
     <FieldFrame ids={ids} label={label} hint={hint} error={error}>
-      <textarea
+      <TypedTextarea
         {...props}
         id={ids.control}
         name={name}

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { registerProject, textbox } from './support/dash';
+import { registerEducation, registerProject, textbox } from './support/dash';
+import { typeBeforeHydration } from './support/hydration';
 import { createNote, uniqueNoteSlug, waitForHydration } from './support/note';
 
 /**
@@ -195,5 +196,46 @@ test.describe('保存の知らせ', () => {
 
     await page.reload();
     await expect(page.getByRole('status')).toHaveCount(0);
+  });
+});
+
+test.describe('動く前の入力', () => {
+  test('実績の編集の画面で、JavaScript が動く前に本文を打っても、動いた後に残り、保存で送られる', async ({
+    page,
+    context,
+  }) => {
+    const typed = `E2E 動く前に打った実績の本文 ${crypto.randomUUID()}`;
+    await actAsAuthor(context);
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E 動く前の入力の組織',
+      organizationNameMasked: 'E2E 動く前の入力の秘匿化した組織名',
+      title: uniqueTitle('動く前の入力'),
+      description: 'E2E 初めの本文',
+    });
+    await typeBeforeHydration(page, editUrl, typed);
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('保存しました');
+    await page.goto(editUrl);
+    await expect(textbox(page, '本文')).toHaveValue(typed);
+  });
+
+  test('学歴の編集の画面で、JavaScript が動く前に備考を打っても、動いた後に残る', async ({
+    page,
+    context,
+  }) => {
+    const school = uniqueTitle('動く前の入力の学校');
+    await actAsAuthor(context);
+    await registerEducation(page, school);
+    await page.goto('/dash/educations');
+    await page.getByRole('link', { name: school, exact: true }).click();
+    await waitForHydration(page.locator('main form').first());
+    await textbox(page, '備考').fill('E2E 初めの備考');
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(page.getByRole('status')).toHaveText('保存しました');
+    await page.getByRole('link', { name: school, exact: true }).click();
+    await expect(textbox(page, '備考')).toHaveValue('E2E 初めの備考');
+    const editUrl = page.url();
+
+    await typeBeforeHydration(page, editUrl, 'E2E 動く前に打った備考', '備考');
   });
 });
