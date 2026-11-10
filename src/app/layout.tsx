@@ -1,7 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Lato } from 'next/font/google';
-import Script from 'next/script';
 import { Suspense } from 'react';
 import { Analytics } from './Analytics';
 import { DevTabTitle } from './DevTabTitle';
@@ -48,7 +47,6 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
           <Analytics />
         </Suspense>
         {process.env.NODE_ENV === 'development' && <DevTabTitle />}
-        <Script src="https://kit.fontawesome.com/fa9c201f80.js" crossOrigin="anonymous"></Script>
         {children}
       </body>
     </html>
