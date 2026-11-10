@@ -29,7 +29,7 @@
 
 **Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components）、React 19.3、Tailwind CSS 4。新しい package を足さない
 
-**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0012` と、共有担当のビュー `activity_feed` の migration（M1〜M4、[data-model.md](./data-model.md)）。005 は書き込まない
+**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0012` と、共有担当のビュー `activity_feed` の migration（M1〜M5、[data-model.md](./data-model.md)）。005 は書き込まない
 
 **Testing**: Vitest 4.1.11（単体）、`@cloudflare/vitest-plugin`（workerd と D1）、`createTestHarness()`（本番ビルドに対する結合）。ADR-0019 の 4 段階。一覧はオーナーの操作を持たないため E2E を足さない
 
@@ -83,7 +83,7 @@
 | 001-career-and-project | 無し。`src/features/project`・`career` を変えない |
 | 003-note | 無し。ビューが読む列（`note.status`・`note.deleted_at`・`note.published_revision_id`・`note.created_at`、`note_revision.title`・`description`、`syndication.url`）の意味を変えない（003 の research.md の R3） |
 | 004-external-activity | 無し。取得元で消えた activity の行を消す（004 の research.md の R6）。`activity.sort_at` の意味を変えない |
-| 共有 | ビューの migration M1〜M4（data-model.md の「要る migration の変更」） |
+| 共有 | ビューの migration M1〜M5（data-model.md の「要る migration の変更」） |
 | 005-feed | `src/features/activity/` の一覧のファイル（`domain/feed.ts`・`domain/feed-repository.ts`・`application/list-feed.ts`・`server/d1-feed-repository.ts`・`server/feed-queries.ts`・`components/feed.tsx`）と一覧の画面。004 のファイルとは名前で分ける |
 
 ## 要件と検査の対応
@@ -99,8 +99,8 @@
 | FR-005・FR-006・SC-002 | 下書き・削除・下書きに戻した note と、公開した後に保存した版の題が応答に含まれない。並ぶ note は公開した版の題 | W・結 |
 | FR-007・FR-009 | 種類ごとの並びの日付で並ぶ。職歴・実績は始まりの日で、終わりの日を使わない | W |
 | FR-008 | 公開・公開し直し・下書きから公開に戻しても並びの位置が変わらない | W |
-| FR-010・SC-004 | 並びの日付が同じ組を含めて決まった順で、2 回続けて読んだ順が同じ | W（種類をまたぐ同じ日の組は U3 が解けてから） |
-| FR-011 | 同じ日の life event が外部の activity より古い位置に並ぶ | W（U3 が解けてから） |
+| FR-010・SC-004 | 並びの日付が同じ組を含めて決まった順で、2 回続けて読んだ順が同じ | W |
+| FR-011 | 同じ日の life event が外部の activity より古い位置に並ぶ。日の境目は Asia/Tokyo の 0 時 | W |
 | FR-012・FR-013・SC-001 | 秘匿化した職歴・実績が出してよい値だけで並び、HTML と RSC の応答に実際の題・実際の組織名・本文の中身・関連 URL・画像が無い | 単（詰め替え）・結（応答） |
 | FR-013 の伏せた見た目 | 秘匿化した行の本文の場所に「非公開」が出る | 結 |
 | FR-014 | 秘匿化しない実績・職歴が実際の題と組織名で並ぶ | 結 |
@@ -113,20 +113,21 @@
 
 ## 未決
 
-この plan では決めない。止めるタスクは tasks.md が「止める未決: U<n>」で示す。番号は 005 の中だけの番号で、001・003・004 の plan.md の U と別のもの。
+下の表の U はこの plan では決めない。止めるタスクは tasks.md が「止める未決: U<n>」で示す。番号は 005 の中だけの番号で、001・003・004 の plan.md の U と別のもの。
+
+U3（暦の日付と日時が同じ日のときの順と、日の境目の時刻帯）は決まっていて、表に載せない。2026-11-10 にオーナーが決めた（issue #219 のコメント「005-feed U3「時点を Asia/Tokyo に換算する場所」をオーナーが決めた」、spec の FR-022）: 日の境目を Asia/Tokyo の 0 時にし、ビューが note と外部の activity の日時を Asia/Tokyo の時刻にして並べる。暦の日付は換算せず、新しい順の一覧では同じ日の日時より古い位置に並ぶ（research.md の R5、data-model.md の M5）。
 
 | ID | 未決 | 決める人 | 止める範囲 |
 |---|---|---|---|
 | U1 | 一覧を見せる画面の名前と URL（spec の「決定が無く」）。PM が推奨 `/` をオーナーに聞いている | オーナー | 一覧の画面（`src/app/` の `page.tsx`）と結合の検査。Repository・DTO・並べる計算は止めない |
 | U2 | 並びの日付が同じとき、どの種類を先に並べるか（spec の「決定が無く」）。仮の順（note・外部の activity・life event・実績・職歴）で作る（2026-11-09、PM の回答） | オーナー | 無し。決まれば `FEED_ITEM_TYPES` の配列を直す |
-| U3 | 暦の日付と日時が同じ日のときの順と、日の境目の時刻帯（spec の「決定が無く」）。004 の plan.md の U12（オーナーが入れる日付の持ち方）の答えを待つ（2026-11-09、PM の回答） | オーナー | 種類をまたいで同じ日の順を確かめる検査（FR-011、SC-004 の同じ日の組） |
 | U4 | 一覧から note・実績・life event の個別のページへリンクするか（spec の「決定が無く」） | オーナー | 無し。決まるまでリンクせず、slug を DTO に入れない |
 | U5 | 一覧に代表画像を出すか、外部の activity の代表の画像の出し方（spec の「決定が無く」、issue #186「URL カードの画像の出し方を決める」） | オーナー | 無し。決まるまで画像を DTO に入れない |
 | U6 | 転載先の URL と外部の activity の URL が一致するとみなす条件（spec の「決定が無く」） | オーナー | 無し。決まるまで文字列の完全一致（research.md の R7） |
 | U7 | 一覧の activity に並べる値（使ったスキル、秘匿化しない行の本文、実績の期間の見せ方、職歴の終わりの日を出すか。spec の Assumptions は UI を考えるときに決めるとする） | オーナー（デザイン） | 無し。決まるまで contracts/visitor-feed.md の最小の値 |
 | U8 | 1 ページの件数。仮の値の 20 で作る（2026-11-09、PM の回答）。読み取り行数は件数で変わらない（research.md の R8） | オーナー（デザイン） | 無し。決まれば `src/features/activity/domain/feed.ts` の定数を直す |
 
-依存（未決ではない）: 共有担当のビューの migration M1〜M4（data-model.md）。tasks.md は「止める依存: M<n>」と書く。
+依存（未決ではない）: 共有担当のビューの migration M1〜M5（data-model.md）。tasks.md は「止める依存: M<n>」と書く。
 
 ## spec どうしの重なり（issue #219 の調査）
 
@@ -136,7 +137,7 @@ issue #219 のコメント「spec どうしの重複・干渉・矛盾・依存�
 |---|---|
 | 干渉: `src/features/career/server` に、001 の残りのタスクと 005 の訪問者向けの取り出しが手を入れる | 005 は `src/features/career/` を変えない。職歴の訪問者向けの取り出し（001 の data-model.md、research.md の R15）は、ビューの職歴の腕と `src/features/activity/server/d1-feed-repository.ts` が持つ |
 | 干渉: ER 図の `gen_er8.py`・`er-options.html` を 003・004・005 が直すと衝突する | 005 は変えない。ビューを載せるかは共有担当が決める |
-| 干渉: migration の番号 | 005 は migration を書かない。ビューは共有担当が M1〜M4 として書く |
+| 干渉: migration の番号 | 005 は migration を書かない。ビューは共有担当が M1〜M5 として書く |
 | 依存: 005 → 001・003・004 | Walking Skeleton（Phase 3）は 001 の表とビューの M1 だけを待つ。note・外部の activity・life event の腕は 003・004 のコードを待たず、表（0004・0005）に作り物の行を入れて確かめる。003・004 が列の意味を変えないことは「一覧の読み口の置き場」の表 |
 | spec が ADR-0044 を指す | ADR-0044 は ADR-0046 に置き換わった。ADR-0046 は一覧の決定（ビュー、秘匿化をビューに書く、並べるキー）を変えずに引き継ぐ。この plan は ADR-0046 を根拠にする |
 | 画像・書きかけの保持・slug・uid | 005 は画像を配らず、入力も管理画面も持たないため、どれも使わない |

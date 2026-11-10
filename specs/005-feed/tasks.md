@@ -103,13 +103,13 @@ description: "一覧の実装タスク"
   - 下書き・削除・下書きに戻した note が並ばない（FR-005、US3 の Acceptance 1〜3）
   - 公開した後に題を直して保存した note が、公開した版の題と説明文で並ぶ（FR-006、US3 の Acceptance 4）
   - 2020-01-15 に作り 2025-03-01 に初めて公開した note が 2020-01-15 の位置に並び、公開し直しても・下書きに戻してから公開に戻しても位置が変わらない（FR-007・FR-008、US1 の Acceptance 2）
-  - note と職歴・実績が並びの日付の新しい順に並ぶ（FR-007）。同じ日の組は U3 が解けてから Phase 6 の T042 で確かめる
+  - note と職歴・実績が並びの日付の新しい順に並ぶ（FR-007）。同じ日の組は Phase 6 の T042 で確かめる
 - [ ] T022 [P] [US3] 下書き・削除した note と、公開した後に保存した版の題が、一覧の HTML と RSC の応答に含まれないことを tests/integration/feed.test.ts に足す（SC-002）。**止める依存: M2**。**止める未決: U1**
 
 ### Implementation
 
 - [x] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
-- [x] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す
+- [x] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す。作成日は T042 で `created_at` の列から詰めるようにした（data-model.md の M5）
 - [x] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
 
 **Checkpoint**: 職歴・実績・note の一覧
@@ -141,13 +141,13 @@ description: "一覧の実装タスク"
   - 分類が埋め込みの取得元の外部の activity が、種類・分類・取得元を持って並ぶ（US1 の Acceptance 4）。分類が埋め込みの取得元は 0012 が入れた行（例: `speakerdeck`）を使い、検査の中で `activity_source` に行を足さない
   - 保存した life event がすべて並ぶ（FR-003）
   - 行を消した外部の activity は並ばない（FR-002。消すのは 004）
-- [ ] T042 [US1] 種類をまたいで同じ日の組を含む検査用のデータで、順が手で並べた順と一致し、2 回続けて読んだ順が同じこと（SC-004）と、同じ日の life event が外部の activity より古い位置に並ぶこと（FR-011）を tests/workers/feed-repository.test.ts に足す。**止める依存: M3**。**止める未決: U3**
+- [x] T042 [US1] 種類をまたいで同じ日の組を含む検査用のデータで、順が手で並べた順と一致し、2 回続けて読んだ順が同じこと（SC-004）と、同じ日の life event が外部の activity より古い位置に並ぶこと（FR-011）を tests/workers/feed-repository.test.ts に足す。日の境目は Asia/Tokyo の 0 時（plan.md の U3 の決定）。**止める依存: M3・M5**
 - [ ] T043 [P] [US1] 外部の activity の行が取得元の URL へのリンクを持つことを tests/integration/feed.test.ts に足す（FR-020、US1 の Acceptance 5）。**止める依存: M3**。**止める未決: U1**
 
 ### Implementation
 
 - [x] T044 [US1] `FEED_ITEM_TYPES` と `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
-- [x] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す
+- [x] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す。外部の activity の公開日は T042 で `published_at` の列から詰めるようにした（data-model.md の M5）
 - [x] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `<a>` で取得元の URL へリンクする（`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない）。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
 
 **Checkpoint**: 5 つの種類の一覧（quickstart.md の 6 の前半）
@@ -200,11 +200,11 @@ description: "一覧の実装タスク"
 | 未決・依存 | 止めるタスク |
 |---|---|
 | U1 | T012・T016・T022・T033・T043 |
-| U3 | T042 |
 | M1 | T001・T011・T012 |
 | M2 | T021・T022 |
 | M3 | T030〜T033・T041・T042・T043 |
 | M4 | T050 |
+| M5 | T042 |
 
 ### Within Each Phase
 
