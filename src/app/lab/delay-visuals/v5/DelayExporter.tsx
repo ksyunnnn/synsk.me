@@ -1,10 +1,9 @@
 'use client';
 // 自分の写真に v1 の最終版（横）か v2（縦）の表現をかけ、動画に書き出す
 // プレビューの canvas は書き出す動画と同じ画素数で描く。プレビューで見たものがそのまま動画になる
-import { useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import {
   ArrowCounterClockwise,
-  CaretDown,
   DownloadSimple,
   Export,
   ImageSquare,
@@ -22,6 +21,7 @@ import {
   type Direction,
 } from './encode';
 import { drawGuides } from './guides';
+import { Sheet } from './Sheet';
 
 // 再生位置のスライダーの段数。再生中は段に丸めず、経過時間からなめらかに位置を出す
 const STEPS = 2000;
@@ -48,6 +48,9 @@ const COPY = {
   strips: '帯の数',
   reset: 'リセット',
   adjust: '調整',
+  close: '閉じる',
+  expand: '大きく表示',
+  shrink: '小さく表示',
   export: '書き出す',
   exporting: '書き出し中',
   cancel: 'キャンセル',
@@ -190,9 +193,14 @@ export const DelayExporter = () => {
   const [canShare, setCanShare] = useState(false);
   // プレビューに補助線を重ねるか。書き出す動画には効かない
   const [guides, setGuides] = useState(true);
-  // 調整の欄を開いているか。必要な人だけが開く
+  // 調整のシートを開いているか。必要な人だけが開く
   const [adjustOpen, setAdjustOpen] = useState(false);
-  const adjustId = useId();
+  const adjustButtonRef = useRef<HTMLButtonElement>(null);
+  const closeAdjust = useCallback(() => {
+    setAdjustOpen(false);
+    // 閉じたら、開いたボタンへフォーカスを戻す。後ろの画面の inert が外れた次のコマで戻す
+    requestAnimationFrame(() => adjustButtonRef.current?.focus());
+  }, []);
 
   const running = exportState.kind === 'running';
   const exportedUrl = exportState.kind === 'done' ? exportState.result.url : null;
@@ -381,170 +389,180 @@ export const DelayExporter = () => {
         : null;
 
   return (
-    <div className="grid gap-6 pb-16">
-      {/* 画面の上に留める帯。左にアプリの名前、右に書き出しの操作だけを置く。書き出しの段階に応じて、同じ場所で中身が入れ替わる */}
-      <div className="sticky top-0 z-10 -mx-4 px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
-        <div className="flex h-14 items-center justify-between gap-3 rounded-full bg-background/70 pr-1.5 pl-5 backdrop-blur-xl">
-          <h1 className="truncate text-base">delay-visuals</h1>
-          <div className="flex shrink-0 items-center gap-2">{outputActions}</div>
-        </div>
-        {outputMessage && (
-          <p
-            className={`absolute inset-x-4 top-full mt-2 rounded-2xl bg-background/70 px-4 py-2 text-xs backdrop-blur-xl ${exportState.kind === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}
-            role={exportState.kind === 'error' ? 'alert' : undefined}
-          >
-            {outputMessage}
-          </p>
-        )}
-      </div>
-      <p className="text-sm text-muted-foreground">{COPY.tagline}</p>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        tabIndex={-1}
-        aria-hidden
-        className="sr-only"
-        onChange={(event) => {
-          void pick(event.target.files?.[0]);
-          event.target.value = '';
-        }}
-      />
-
-      <section className="grid gap-3" aria-label="プレビュー">
-        {/* 写真の有無で高さを変えない。読み込みの後に下の要素の位置をずらさない */}
-        <div className="grid h-[44svh] place-items-center overflow-hidden rounded-sm bg-foreground/5">
-          {picked ? (
-            <canvas
-              ref={canvasRef}
-              width={picked.width}
-              height={picked.height}
-              className="size-full object-contain"
-              role="img"
-              aria-label={
-                direction === 'horizontal'
-                  ? '選んだ写真が右から左へ現れるプレビュー'
-                  : '選んだ写真が上から下へ現れるプレビュー'
-              }
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className={`grid size-full place-content-center justify-items-center gap-3 active:opacity-70 ${focusRing}`}
+    <>
+      {/* シートを開いている間は、後ろの画面を操作できなくする */}
+      <div inert={adjustOpen} className="grid gap-6 pb-16">
+        {/* 画面の上に留める帯。左にアプリの名前、右に書き出しの操作だけを置く。書き出しの段階に応じて、同じ場所で中身が入れ替わる */}
+        <div className="sticky top-0 z-10 -mx-4 px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
+          <div className="flex h-14 items-center justify-between gap-3 rounded-full bg-background/70 pr-1.5 pl-5 backdrop-blur-xl">
+            <h1 className="truncate text-base">delay-visuals</h1>
+            <div className="flex shrink-0 items-center gap-2">{outputActions}</div>
+          </div>
+          {outputMessage && (
+            <p
+              className={`absolute inset-x-4 top-full mt-2 rounded-2xl bg-background/70 px-4 py-2 text-xs backdrop-blur-xl ${exportState.kind === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}
+              role={exportState.kind === 'error' ? 'alert' : undefined}
             >
-              <ImageSquare aria-hidden size={40} weight="light" className="text-muted-foreground" />
-              <span className="text-base">{COPY.choose}</span>
-              <span className="text-sm text-muted-foreground">{COPY.chooseHint}</span>
-            </button>
+              {outputMessage}
+            </p>
           )}
         </div>
-        {pickError && (
-          <p role="alert" className="text-sm text-destructive">
-            {pickError}
-          </p>
-        )}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label={playing ? COPY.pause : COPY.play}
-            disabled={disabled}
-            onClick={() => {
-              if (step >= STEPS) setStep(0);
-              setPlaying((value) => !value);
-            }}
-            className={`grid size-11 shrink-0 place-items-center rounded-full bg-foreground/5 disabled:opacity-50 active:opacity-70 ${focusRing}`}
-          >
-            {playing ? (
-              <Pause aria-hidden size={20} weight="fill" />
+        <p className="text-sm text-muted-foreground">{COPY.tagline}</p>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          tabIndex={-1}
+          aria-hidden
+          className="sr-only"
+          onChange={(event) => {
+            void pick(event.target.files?.[0]);
+            event.target.value = '';
+          }}
+        />
+
+        <section className="grid gap-3" aria-label="プレビュー">
+          {/* 写真の有無で高さを変えない。読み込みの後に下の要素の位置をずらさない */}
+          <div className="grid h-[44svh] place-items-center overflow-hidden rounded-sm bg-foreground/5">
+            {picked ? (
+              <canvas
+                ref={canvasRef}
+                width={picked.width}
+                height={picked.height}
+                className="size-full object-contain"
+                role="img"
+                aria-label={
+                  direction === 'horizontal'
+                    ? '選んだ写真が右から左へ現れるプレビュー'
+                    : '選んだ写真が上から下へ現れるプレビュー'
+                }
+              />
             ) : (
-              <Play aria-hidden size={20} weight="fill" />
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className={`grid size-full place-content-center justify-items-center gap-3 active:opacity-70 ${focusRing}`}
+              >
+                <ImageSquare
+                  aria-hidden
+                  size={40}
+                  weight="light"
+                  className="text-muted-foreground"
+                />
+                <span className="text-base">{COPY.choose}</span>
+                <span className="text-sm text-muted-foreground">{COPY.chooseHint}</span>
+              </button>
             )}
-          </button>
-          <input
-            type="range"
-            aria-label={COPY.position}
-            aria-valuetext={`${clock((step / STEPS) * seconds)} / ${clock(seconds)}`}
-            min={0}
-            max={STEPS}
-            value={step}
-            disabled={disabled}
-            onChange={(event) => {
-              setPlaying(false);
-              setStep(Number(event.target.value));
-            }}
-            className={`h-11 min-w-0 flex-1 accent-foreground disabled:opacity-50 ${focusRing}`}
-          />
-          <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
-            {clock((step / STEPS) * seconds)} / {clock(seconds)}
-          </span>
-        </div>
-        {picked && (
-          <div className="flex items-center justify-between gap-4">
-            {/* 入力の写真に効く操作なので、書き出しの操作から離し、プレビューのそばに置く */}
+          </div>
+          {pickError && (
+            <p role="alert" className="text-sm text-destructive">
+              {pickError}
+            </p>
+          )}
+          <div className="flex items-center gap-3">
             <button
               type="button"
-              disabled={running}
-              onClick={() => inputRef.current?.click()}
-              className={`h-11 w-fit text-sm underline underline-offset-4 disabled:opacity-50 active:opacity-70 ${focusRing}`}
+              aria-label={playing ? COPY.pause : COPY.play}
+              disabled={disabled}
+              onClick={() => {
+                if (step >= STEPS) setStep(0);
+                setPlaying((value) => !value);
+              }}
+              className={`grid size-11 shrink-0 place-items-center rounded-full bg-foreground/5 disabled:opacity-50 active:opacity-70 ${focusRing}`}
             >
-              {COPY.change}
+              {playing ? (
+                <Pause aria-hidden size={20} weight="fill" />
+              ) : (
+                <Play aria-hidden size={20} weight="fill" />
+              )}
             </button>
-            <label className="flex h-11 cursor-pointer items-center gap-2 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring">
-              <input
-                type="checkbox"
-                role="switch"
-                checked={guides}
-                onChange={(event) => setGuides(event.target.checked)}
-                className="size-4 accent-foreground outline-none"
-              />
-              {COPY.guides}
-            </label>
+            <input
+              type="range"
+              aria-label={COPY.position}
+              aria-valuetext={`${clock((step / STEPS) * seconds)} / ${clock(seconds)}`}
+              min={0}
+              max={STEPS}
+              value={step}
+              disabled={disabled}
+              onChange={(event) => {
+                setPlaying(false);
+                setStep(Number(event.target.value));
+              }}
+              className={`h-11 min-w-0 flex-1 accent-foreground disabled:opacity-50 ${focusRing}`}
+            />
+            <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+              {clock((step / STEPS) * seconds)} / {clock(seconds)}
+            </span>
           </div>
-        )}
-      </section>
+          {picked && (
+            <div className="flex items-center justify-between gap-4">
+              {/* 入力の写真に効く操作なので、書き出しの操作から離し、プレビューのそばに置く */}
+              <button
+                type="button"
+                disabled={running}
+                onClick={() => inputRef.current?.click()}
+                className={`h-11 w-fit text-sm underline underline-offset-4 disabled:opacity-50 active:opacity-70 ${focusRing}`}
+              >
+                {COPY.change}
+              </button>
+              <label className="flex h-11 cursor-pointer items-center gap-2 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring">
+                <input
+                  type="checkbox"
+                  role="switch"
+                  checked={guides}
+                  onChange={(event) => setGuides(event.target.checked)}
+                  className="size-4 accent-foreground outline-none"
+                />
+                {COPY.guides}
+              </label>
+            </div>
+          )}
+        </section>
 
-      <fieldset className="grid gap-3" disabled={running}>
-        {/* 文字のラベルを持つセグメントには見出しを出さない（HIG の Segmented controls）。読み上げには残す */}
-        <legend className="sr-only">{COPY.direction}</legend>
-        <div className="grid grid-cols-2 gap-1 rounded-full bg-foreground/5 p-1">
-          {DIRECTIONS.map(({ value, label }) => (
-            <label
-              key={value}
-              className="grid h-11 cursor-pointer place-items-center rounded-full text-sm has-[:checked]:bg-foreground has-[:checked]:text-background has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring"
-            >
-              <input
-                type="radio"
-                name="direction"
-                value={value}
-                checked={direction === value}
-                onChange={() => edit(setDirection)(value)}
-                className="sr-only"
-              />
-              {label}
-            </label>
-          ))}
-        </div>
-      </fieldset>
+        <fieldset className="grid gap-3" disabled={running}>
+          {/* 文字のラベルを持つセグメントには見出しを出さない（HIG の Segmented controls）。読み上げには残す */}
+          <legend className="sr-only">{COPY.direction}</legend>
+          <div className="grid grid-cols-2 gap-1 rounded-full bg-foreground/5 p-1">
+            {DIRECTIONS.map(({ value, label }) => (
+              <label
+                key={value}
+                className="grid h-11 cursor-pointer place-items-center rounded-full text-sm has-[:checked]:bg-foreground has-[:checked]:text-background has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring"
+              >
+                <input
+                  type="radio"
+                  name="direction"
+                  value={value}
+                  checked={direction === value}
+                  onChange={() => edit(setDirection)(value)}
+                  className="sr-only"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
-      {/* 向きのほかの設定は、必要な人だけが開く（HIG の Disclosure controls）。開く操作は、開く欄のすぐ上に置く */}
-      <div className="grid gap-5">
+        {/* 向きのほかの設定は、必要な人だけが開く。画面の下から出るシートに置く */}
         <button
+          ref={adjustButtonRef}
           type="button"
-          aria-expanded={adjustOpen}
-          aria-controls={adjustId}
-          onClick={() => setAdjustOpen((value) => !value)}
+          aria-haspopup="dialog"
+          onClick={() => setAdjustOpen(true)}
           className={`flex h-11 w-fit items-center gap-2 text-sm active:opacity-70 ${focusRing}`}
         >
           <SlidersHorizontal aria-hidden size={18} />
           {COPY.adjust}
-          <CaretDown
-            aria-hidden
-            size={14}
-            className={`transition-transform duration-200 motion-reduce:transition-none ${adjustOpen ? 'rotate-180' : ''}`}
-          />
         </button>
-        <section id={adjustId} hidden={!adjustOpen} className="grid gap-5" aria-label={COPY.adjust}>
+      </div>
+      <Sheet
+        open={adjustOpen}
+        title={COPY.adjust}
+        closeLabel={COPY.close}
+        expandLabel={COPY.expand}
+        shrinkLabel={COPY.shrink}
+        onClose={closeAdjust}
+      >
+        <div className="grid gap-5">
           <Slider
             label={COPY.duration}
             value={seconds}
@@ -594,8 +612,8 @@ export const DelayExporter = () => {
             <ArrowCounterClockwise aria-hidden size={16} />
             {COPY.reset}
           </button>
-        </section>
-      </div>
-    </div>
+        </div>
+      </Sheet>
+    </>
   );
 };
