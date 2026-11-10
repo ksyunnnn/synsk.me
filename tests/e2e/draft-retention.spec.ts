@@ -447,10 +447,12 @@ const fillAndSave = async (page: Page, scope: string, fill: () => Promise<void>)
   await fillUntilDrafted(page, scope, fill);
   // 編集の画面のフォームは、保存した行の更新日時ごとに置き直される。置き直される前に次の入力を
   // 入れると、置き直しで消える。送る前のフォームに印を付け、印の無いフォームに替わるまで待つ。
-  // 前の画面が隠れて DOM に残ることがあるため、見えているフォームだけを調べる
+  // 前の画面が隠れて DOM に残ることがあるため、見えているフォームだけを調べる。編集の入力の
+  // フォームは画面の最初のフォームで、後に画像のフォームが続く
   await page
     .locator('main form')
     .filter({ visible: true })
+    .first()
     .evaluate((form) => form.setAttribute('data-e2e-stale', ''));
   await submitAndWait(page, '保存する');
   await expect(page.locator('main form[data-e2e-stale]').filter({ visible: true })).toHaveCount(0);

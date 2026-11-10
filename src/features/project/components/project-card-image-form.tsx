@@ -77,7 +77,7 @@ export const ProjectCardImageForm = ({ action, projectUid, current, mediaStorage
           type="submit"
           className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
-          代表画像を保存する
+          代表画像を選び直す
         </button>
       </div>
     </form>

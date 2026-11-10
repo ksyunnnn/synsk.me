@@ -320,8 +320,16 @@ describe('visitorProjectMediaAccess（FR-030）', () => {
   });
 
   it('秘匿化した実績と、訪問者に出さない実績の画像は hidden', () => {
-    const { media: _media, cardImageKey: _card, body: _body, url: _url, ...rest } = unmasked;
-    expect(visitorProjectMediaAccess({ ...rest, isMasked: true }, MEDIA_KEY)).toBe('hidden');
+    const masked = {
+      isMasked: true as const,
+      slug: unmasked.slug,
+      kind: unmasked.kind,
+      title: unmasked.title,
+      organizationName: unmasked.organizationName,
+      period: unmasked.period,
+      skills: [],
+    };
+    expect(visitorProjectMediaAccess(masked, MEDIA_KEY)).toBe('hidden');
     expect(visitorProjectMediaAccess(null, MEDIA_KEY)).toBe('hidden');
   });
 });
