@@ -71,6 +71,8 @@ export type Note = {
   cardImage: NoteCardImage;
   /** 代表画像に選んだ note の画像。`cardImage` が `media` のときだけ持つ */
   cardMediaStorageKey: MediaStorageKey | null;
+  /** 説明文が空のときに、本文の最初の段落を説明に使うか（FR-034）。版でなく note が持つ */
+  isFirstParagraphAsDescription: boolean;
   /** 最も新しい版。編集はここから始まる（FR-007） */
   latestRevision: NoteRevision;
   /** 公開した版の uid。一度も公開していなければ null */
@@ -165,6 +167,31 @@ export type CardImageFormResult = ActionResult<
   typeof CARD_IMAGE_FIELD,
   'invalid' | 'media-not-owned'
 >;
+
+/**
+ * 説明文が空のときに本文の最初の段落を説明に使うかの入力の名前（FR-034）。値は `1`（使う）か
+ * `0`（何も出さない）。1 つのラジオボタンの並びで送る
+ */
+export const FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD = 'isFirstParagraphAsDescription';
+
+/** 本文の最初の段落を説明に使うかの入力を読む。`1` と `0` のほかは読めず null */
+export const parseFirstParagraphAsDescription = (value: string): boolean | null =>
+  value === '1' ? true : value === '0' ? false : null;
+
+export type FirstParagraphAsDescriptionFormResult = ActionResult<
+  typeof FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD,
+  'invalid'
+>;
+
+/**
+ * `<meta name="description">` と OGP の説明（FR-034、research.md の R11・R19）。説明文があれば
+ * 説明文。空なら、本文の最初の段落を使う note だけが段落を使い、使わない note は null
+ */
+export const summaryOf = (
+  content: { description: string | null; firstParagraph: string | null },
+  isFirstParagraphAsDescription: boolean,
+): string | null =>
+  content.description ?? (isFirstParagraphAsDescription ? content.firstParagraph : null);
 
 /** 画像のファイルの入力の名前（FR-023）。1 回の操作で 1 枚（research.md の R12） */
 export const MEDIA_FILE_FIELD = 'mediaFile';
@@ -272,8 +299,9 @@ export type VisitorNote = {
   /** 公開した版の説明文。空なら null */
   description: string | null;
   /**
-   * `<meta name="description">` と OGP の説明。説明文が空なら本文の最初の段落の文字列で、どちらも
-   * 無ければ null（research.md の R11）。最初の段落に書いた生の HTML の文字は除かずに文字のまま
+   * `<meta name="description">` と OGP の説明。説明文が空なら、本文の最初の段落を使う note は
+   * その段落の文字列で、使わない note と、どちらも無い note は null（`summaryOf`、FR-034、
+   * research.md の R11）。最初の段落に書いた生の HTML の文字は除かずに文字のまま
    * 残す（2026-11-09、PM。本文の表示と揃える）
    */
   summary: string | null;

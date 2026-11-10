@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NoteCardImageForm } from '@/features/note/components/note-card-image-form';
+import { NoteFirstParagraphAsDescriptionForm } from '@/features/note/components/note-first-paragraph-as-description-form';
 import { NoteForm } from '@/features/note/components/note-form';
 import { NoteMediaForm } from '@/features/note/components/note-media-form';
 import { NoteRestoreForm } from '@/features/note/components/note-restore-form';
@@ -17,6 +18,7 @@ import {
   addNoteMedia,
   addNoteSyndication,
   changeNoteCardImage,
+  changeNoteFirstParagraphAsDescription,
   publishNote,
   removeNoteSyndication,
   restoreNote,
@@ -49,6 +51,7 @@ const NOTICES = {
   unsyndicated: '転載先を外しました',
   mediaAdded: '画像を足しました',
   cardImageChanged: '代表画像を変えました',
+  firstParagraphChanged: '説明文が空のときの説明を変えました',
 } as const;
 
 const Page = async ({ params, searchParams }: Props) => {
@@ -119,6 +122,11 @@ const Page = async ({ params, searchParams }: Props) => {
           openedRevisionUid: note.latestRevision.uid,
           hasBeenPublished: hasBeenPublished(note),
         }}
+      />
+      <NoteFirstParagraphAsDescriptionForm
+        action={changeNoteFirstParagraphAsDescription}
+        noteUid={note.uid}
+        current={note.isFirstParagraphAsDescription}
       />
       <NoteSyndicationForm
         noteUid={note.uid}

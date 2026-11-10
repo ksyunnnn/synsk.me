@@ -20,7 +20,7 @@
 | `/dash` | note の一覧への入口を足す | — |
 | `/dash/notes` | note の一覧。最も新しい版の題・識別子・状態・削除したか。削除した note も出す | FR-001・FR-016 |
 | `/dash/notes/new` | 作成。識別子・題・説明文・本文 | FR-001・FR-002・FR-005 |
-| `/dash/notes/{uid}` | 編集。識別子（一度でも公開したら読み取りだけ）・題・説明文・本文・開いた版の uid。公開・下書きに戻すの操作、代表画像の出どころ、転載先の一覧と足す・外す、版の一覧・見た目の確認・削除へのリンク。保存を止めたときの知らせ | FR-003・FR-005〜FR-007・FR-011・FR-014・FR-020・FR-021・FR-024・FR-031 |
+| `/dash/notes/{uid}` | 編集。識別子（一度でも公開したら読み取りだけ）・題・説明文・本文・開いた版の uid。公開・下書きに戻すの操作、説明文が空のときに本文の最初の段落を説明に使うか、代表画像の出どころ、転載先の一覧と足す・外す、版の一覧・見た目の確認・削除へのリンク。保存を止めたときの知らせ | FR-003・FR-005〜FR-007・FR-011・FR-014・FR-020・FR-021・FR-024・FR-031・FR-034 |
 | `/dash/notes/{uid}/revisions` | 版の一覧。保存した日時の新しい順。最も新しい版に印。公開した版の印は note が公開で削除していないときだけ付ける | FR-008・FR-014・FR-016 |
 | `/dash/notes/{uid}/revisions/{revisionUid}` | 過去の版の題・説明文・本文（保存したときのまま）と「この版に戻す」 | FR-008・FR-009 |
 | `/dash/notes/{uid}/preview` | 最も新しい版を訪問者に見せたときの見た目。訪問者向けと同じ部品で描く。状態と削除に関わらず出す | REQUIREMENTS.md の FR-13 |
@@ -40,6 +40,7 @@
 | `deleteNote` | uid | 削除済みの印を付け、一覧へ 303 | オーナーでない／無い |
 | `restoreNote` | uid | 削除済みの印を外し、編集の画面へ 303 | オーナーでない／無い |
 | `changeNoteCardImage` | uid・出どころ（`generated`・`site`・`media`）・`media` のときは画像の key | 同じ画面へ 303 | オーナーでない／その note の画像でない／無い・削除した |
+| `changeNoteFirstParagraphAsDescription` | uid・本文の最初の段落を説明に使うか（`1`・`0`） | `note.is_first_paragraph_as_description` を書き、同じ画面へ 303。版は足さない | オーナーでない／`1` と `0` のほかの値／無い・削除した |
 | `addNoteMedia` | uid・画像のファイル | `media` に足し、同じ画面へ 303 | オーナーでない／JPEG・PNG・WebP・GIF でない／10 MB を超える／無い・削除した |
 | `addNoteSyndication` | uid・転載先の URL | 同じ画面へ 303 | オーナーでない／http か https でない／既に記録した URL（同じ note か別の note）／無い・削除した |
 | `removeNoteSyndication` | uid・転載先の URL | 同じ画面へ 303 | オーナーでない／その note の転載先に無い |

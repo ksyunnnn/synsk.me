@@ -230,6 +230,7 @@ description: "note の実装タスク"
 - [X] T052 [P] tests/integration/dash-url-without-id.test.ts に、`/dash/notes` 配下のリンク・303 の行き先・隠しフィールドに数字だけの識別子が出ないことを足す（ADR-0051）
 - [ ] T053 quickstart.md の「手で確かめる」をブランチの Preview で行う
 - [X] T056 見た目の確認の画面の画像を、オーナーだけが通る経路 src/app/dash/notes/[id]/preview/media/[key]/route.ts で返す。確認している版（最も新しい版）の本文が指すその note の画像と代表画像だけを、共有担当の `respondWithMedia` に `restricted`（`no-store`）で渡す。訪問者の経路は公開した版の画像だけを返すまま。下書きの note の見た目の確認で画像が出ることを tests/e2e/note-preview.spec.ts で、200・403・404 と `no-store` を tests/integration/notes.test.ts で確かめる（REQUIREMENTS.md の FR-13・NFR-09、spec の FR-026）
+- [X] T059 説明文が空のときに本文の最初の段落を説明に使うかを note ごとに選べるようにする（FR-034、research.md の R19）。列 `note.is_first_paragraph_as_description` を migrations/0023 で足し、src/features/note/domain/note.ts の `summaryOf`、Repository の `changeFirstParagraphAsDescription`、src/features/note/application/change-note-first-paragraph-as-description.ts、Server Action、src/features/note/components/note-first-paragraph-as-description-form.tsx、src/app/notes/[slug]/page.tsx の説明と `twitter` を作る。tests/unit/note-domain.test.ts・tests/unit/note-usecases.test.ts・tests/workers/note-repository.test.ts・tests/integration/notes.test.ts で確かめる
 - [X] T057 完全に消すときに R2 の画像の実体を消せなくても、D1 の削除が済んでいれば成功を返す。残った画像は共有担当の置き場の突き合わせが消す（FR-017、research.md の R6）。tests/unit/note-usecases.test.ts で確かめる
 
 ---

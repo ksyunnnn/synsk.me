@@ -12,7 +12,9 @@ export const instant = false;
 type Props = { params: Promise<{ slug: string }> };
 
 // メタデータは訪問者向けの DTO の題と説明だけから作る（contracts/visitor-note.md の OGP）。
-// 説明は、説明文が空なら本文の最初の段落
+// 説明は、説明文が空なら、本文の最初の段落を使う note だけが段落を使う（FR-034）。説明が無ければ
+// 説明のタグを出さない。twitter は書かないと root layout のサイトの題と説明を引き継ぐため、
+// note の題と説明で書き直す
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
   const note = await getVisitorNote((await params).slug);
   if (!note) notFound();
@@ -26,6 +28,12 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
       description,
       type: 'article',
       ...(images ? { images } : {}),
+    },
+    twitter: {
+      // note の画像は 1200×630、サイト共通の画像は正方形（docs/CRAWLING.md）
+      card: note.cardImage.kind === 'media' ? 'summary_large_image' : 'summary',
+      title: note.title,
+      description,
     },
   };
 };

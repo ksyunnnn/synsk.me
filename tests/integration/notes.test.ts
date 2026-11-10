@@ -284,6 +284,8 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
     const html = await (await ctx.server.fetch('/notes/integration-no-description')).text();
     expect(html).toMatch(/<meta name="description" content="本文の最初の段落"/);
     expect(html).toMatch(/<meta property="og:description" content="本文の最初の段落"/);
+    expect(html).toMatch(/<meta name="twitter:title" content="説明文の無い題"/);
+    expect(html).toMatch(/<meta name="twitter:description" content="本文の最初の段落"/);
   });
 
   it('公開し直すと直した本文が出て、初めて公開した日時が変わらない（SC-004）', async () => {
@@ -587,6 +589,7 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
         `<meta property="og:image" content="[^"]*/notes/integration-card-media/media/${key}"`,
       ),
     );
+    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
   });
 
   it('代表画像を site にすると、サイト共通の画像が OGP に出る（FR-024）', async () => {
@@ -604,6 +607,7 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
     await publishNoteRow(ctx.db, note.id);
     const html = await (await ctx.server.fetch('/notes/integration-card-site')).text();
     expect(html).toMatch(/<meta property="og:image" content="[^"]*\/opengraph-image"/);
+    expect(html).toMatch(/<meta name="twitter:card" content="summary"/);
   });
 
   it('JWT のない changeNoteCardImage・addNoteMedia は D1 を変えない（FR-033）', async () => {
@@ -625,6 +629,44 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
       await res.arrayBuffer();
     }
     expect({ ...(await readNoteTables()), media: await readRows(ctx, 'media') }).toEqual(before);
+  });
+});
+
+describe('説明文が空のときの説明（FR-034・FR-033）', () => {
+  const FIELD = 'isFirstParagraphAsDescription';
+
+  it('本文の最初の段落を使わないにすると、説明文の空な note の説明が出ない', async () => {
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-no-first-paragraph',
+      title: '最初の段落を使わない題',
+      body: '説明に出さない最初の段落',
+    });
+    await publishNoteRow(ctx.db, note.id);
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${note.uid}`,
+      marker: `name="${FIELD}"`,
+      values: { noteUid: note.uid, [FIELD]: '0' },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+    const html = await (await ctx.server.fetch('/notes/integration-no-first-paragraph')).text();
+    expect(html).toContain('説明に出さない最初の段落');
+    expect(html).not.toMatch(/<meta name="description"/);
+    expect(html).not.toMatch(/<meta property="og:description"/);
+    expect(html).not.toMatch(/<meta name="twitter:description"/);
+  });
+
+  it('JWT のない changeNoteFirstParagraphAsDescription は D1 を変えない', async () => {
+    const before = await readNoteTables();
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${draft.uid}`,
+      marker: `name="${FIELD}"`,
+      values: { noteUid: draft.uid, [FIELD]: '0' },
+      asAuthor: false,
+      to: '/',
+    });
+    await res.arrayBuffer();
+    expect(await readNoteTables()).toEqual(before);
   });
 });
 

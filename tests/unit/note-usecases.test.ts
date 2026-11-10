@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { addNoteMedia } from '@/features/note/application/add-note-media';
 import { addNoteSyndication } from '@/features/note/application/add-note-syndication';
 import { changeNoteCardImage } from '@/features/note/application/change-note-card-image';
+import { changeNoteFirstParagraphAsDescription } from '@/features/note/application/change-note-first-paragraph-as-description';
 import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
 import { getPreviewNoteMedia } from '@/features/note/application/get-preview-note-media';
@@ -43,6 +44,7 @@ const note = (overrides: Partial<Note> = {}): Note => ({
   deletedAt: null,
   cardImage: 'generated',
   cardMediaStorageKey: null,
+  isFirstParagraphAsDescription: true,
   latestRevision: {
     uid: OPENED,
     title: '作り物の題',
@@ -86,6 +88,7 @@ const fakeNotes = (current: Note | null = note(), overrides: Partial<NoteReposit
     addSyndication: vi.fn(async () => ({ ok: true as const })),
     removeSyndication: vi.fn(async () => ({ ok: true })),
     changeCardImage: vi.fn(async () => ({ ok: true as const })),
+    changeFirstParagraphAsDescription: vi.fn(async () => ({ ok: true })),
     addMedia: vi.fn(async () => ({ ok: true })),
     findPreview: vi.fn(async () => null),
     purge: vi.fn(async () => ({ ok: true as const, storageKeys: [] as string[] })),
@@ -391,6 +394,44 @@ describe('changeNoteCardImage（FR-024・FR-025・FR-033）', () => {
     expect(await changeNoteCardImage(notes, OWNER, 1, `media:${KEY}`)).toEqual({
       status: 'invalid',
       error: 'media-not-owned',
+    });
+  });
+});
+
+describe('changeNoteFirstParagraphAsDescription（FR-034・FR-033）', () => {
+  it('オーナーでなければ書かない', async () => {
+    const notes = fakeNotes();
+    expect(await changeNoteFirstParagraphAsDescription(notes, null, 1, '0')).toEqual({
+      status: 'forbidden',
+    });
+    expect(notes.changeFirstParagraphAsDescription).not.toHaveBeenCalled();
+  });
+
+  it.each(['', '2', 'false'])('値「%s」は書かない', async (input) => {
+    const notes = fakeNotes();
+    expect(await changeNoteFirstParagraphAsDescription(notes, OWNER, 1, input)).toEqual({
+      status: 'invalid',
+    });
+    expect(notes.changeFirstParagraphAsDescription).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['1', true],
+    ['0', false],
+  ])('値「%s」を %s で書く', async (input, expected) => {
+    const notes = fakeNotes();
+    expect(await changeNoteFirstParagraphAsDescription(notes, OWNER, 1, input)).toEqual({
+      status: 'changed',
+    });
+    expect(notes.changeFirstParagraphAsDescription).toHaveBeenCalledWith(1, expected);
+  });
+
+  it('無いか削除した note なら not-found', async () => {
+    const notes = fakeNotes(note(), {
+      changeFirstParagraphAsDescription: vi.fn(async () => ({ ok: false })),
+    });
+    expect(await changeNoteFirstParagraphAsDescription(notes, OWNER, 1, '0')).toEqual({
+      status: 'not-found',
     });
   });
 });
