@@ -6,7 +6,10 @@ import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/applica
 import { getNotePreview as getNotePreviewUseCase } from '@/features/note/application/get-note-preview';
 import { getPreviewNoteMedia as getPreviewNoteMediaUseCase } from '@/features/note/application/get-preview-note-media';
 import { getVisitorNote as getVisitorNoteUseCase } from '@/features/note/application/get-visitor-note';
-import { getVisitorNoteMedia as getVisitorNoteMediaUseCase } from '@/features/note/application/get-visitor-note-media';
+import {
+  getVisitorNoteCardMedia as getVisitorNoteCardMediaUseCase,
+  getVisitorNoteMedia as getVisitorNoteMediaUseCase,
+} from '@/features/note/application/get-visitor-note-media';
 import {
   getNoteRevision as getNoteRevisionUseCase,
   listNoteRevisions as listNoteRevisionsUseCase,
@@ -21,6 +24,7 @@ import type {
   VisitorNote,
 } from '@/features/note/domain/note';
 import { createD1NoteRepository } from '@/features/note/server/d1-note-repository';
+import { respondWithSquareMedia } from '@/features/note/server/share-image';
 import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
@@ -72,6 +76,24 @@ export const respondWithNoteMedia = async (
       ? 'hidden'
       : await getVisitorNoteMediaUseCase(notes, slug, key);
   return respondWithMedia(media, key, access, ifNoneMatch);
+};
+
+/**
+ * 共有したときの画像（代表画像を小さい正方形に縮めたもの。plan.md の U8）。
+ * `/notes/{slug}/card/{key}` の `route.ts` が呼ぶ
+ */
+export const respondWithNoteCardMedia = async (
+  slug: string,
+  key: string,
+  ifNoneMatch: string | null,
+): Promise<Response> => {
+  const { notes, media } = await createNoteDeps();
+  // 形の違うキーは、D1 を読まずに `respondWithSquareMedia` が 404 にする
+  const access =
+    parseMediaStorageKey(key) === null
+      ? 'hidden'
+      : await getVisitorNoteCardMediaUseCase(notes, slug, key);
+  return respondWithSquareMedia(media, (await readEnv()).IMAGES, key, access, ifNoneMatch);
 };
 
 /**

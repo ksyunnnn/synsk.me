@@ -11,8 +11,7 @@ import {
 
 /**
  * 代表画像の出どころを選ぶフォーム（FR-024・FR-025、specs/003-note/contracts/dash.md）。
- * 自動で作る画像・サイト共通の画像・その note の画像から 1 つを選ぶ。選べる画像はその note の
- * 画像だけ。自動で作る画像の作り方は決まっていない（plan.md の U8）
+ * サイト共通の画像・その note の画像から 1 つを選ぶ。選べる画像はその note の画像だけ
  */
 
 type Action = (
@@ -47,7 +46,6 @@ export const NoteCardImageForm = ({ action, noteUid, current, mediaStorageKeys }
   const currentValue = toCardImageValue(current);
 
   const options: { value: string; label: string }[] = [
-    { value: 'generated', label: '題を入れて自動で作る画像' },
     { value: 'site', label: 'サイト共通の画像' },
     ...mediaStorageKeys.map((storageKey) => ({
       value: toCardImageValue({ kind: 'media', storageKey }),

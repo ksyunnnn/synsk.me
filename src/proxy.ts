@@ -29,7 +29,8 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  */
 
 export const config = {
-  // `/notes/:slug/media/:key` は経路を dynamic に固定するために入れる（ADR-0040 の Consequences）。
+  // `/notes/:slug/media/:key` と `/notes/:slug/card/:key` は経路を dynamic に固定するために入れる
+  // （ADR-0040 の Consequences）。
   // 見せてよいかは route.ts が確かめ、proxy は D1 を読まない（specs/003-note/research.md の R9）
   matcher: [
     '/projects/:slug',
@@ -37,6 +38,7 @@ export const config = {
     '/resume/:path*',
     '/notes/:slug',
     '/notes/:slug/media/:key',
+    '/notes/:slug/card/:key',
     '/dash',
     '/dash/:path*',
   ],

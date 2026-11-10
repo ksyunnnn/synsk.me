@@ -60,6 +60,11 @@ describe('訪問者が到達する経路', () => {
     expect(image?.startsWith(`${origin}/opengraph-image`)).toBe(true);
   });
 
+  it('/ の twitter:card は大きい画像のカード（サイト全体の設定。note のページだけが summary）', async () => {
+    const html = await (await server.fetch('/')).text();
+    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
+  });
+
   it('存在しない経路は 404 を返す', async () => {
     const res = await server.fetch('/__nonexistent');
     expect(res.status).toBe(404);
@@ -79,5 +84,17 @@ describe('画像を生成する経路', () => {
 
     const bytes = new Uint8Array(await res.arrayBuffer());
     expect(Array.from(bytes.slice(0, 4))).toEqual(PNG_SIGNATURE);
+  });
+
+  it('/note-card-site.png が 400×400 の PNG を返す（specs/003-note/plan.md の U8）', async () => {
+    const res = await server.fetch('/note-card-site.png');
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toMatch(/^image\/png/);
+
+    const bytes = new Uint8Array(await res.arrayBuffer());
+    expect(Array.from(bytes.slice(0, 4))).toEqual(PNG_SIGNATURE);
+    // IHDR の幅と高さ（PNG の仕様の 11.2.2）
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    expect([view.getUint32(16), view.getUint32(20)]).toEqual([400, 400]);
   });
 });

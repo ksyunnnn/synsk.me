@@ -98,7 +98,7 @@ describe('findForEdit（FR-007）', () => {
       status: 'published',
       publishedAt: '2026-11-01T00:00:00.000Z',
       deletedAt: null,
-      cardImage: 'generated',
+      cardImage: 'site',
       cardMediaStorageKey: null,
       latestRevision: { uid: latest.uid, title: '新しい題' },
       publishedRevisionUid: note.revision.uid,
@@ -290,7 +290,7 @@ describe('findVisitorBySlug（FR-012・FR-015、research.md の R7）', () => {
       summary: '公開した説明',
       body: '公開した本文',
       publishedAt: '2026-11-01T00:00:00.000Z',
-      cardImage: { kind: 'generated' },
+      cardImage: { kind: 'site' },
       media: [],
       linkPreviews: [],
     });
@@ -608,13 +608,25 @@ describe('転載先（FR-031・FR-032、User Story 7、research.md の R14）', 
 });
 
 describe('代表画像と画像（FR-023〜FR-025、User Story 5 の 3）', () => {
-  it('代表画像の既定は generated で、site に変えられる', async () => {
+  it('代表画像の既定は site で、その note の画像から site に戻せる', async () => {
     const note = await insertNote(env.DB);
-    expect((await notes.findForEdit(note.id))?.cardImage).toBe('generated');
-    expect(await notes.changeCardImage(note.id, { kind: 'site' })).toEqual({ ok: true });
     expect((await notes.findForEdit(note.id))?.cardImage).toBe('site');
-    expect(await notes.changeCardImage(note.id, { kind: 'generated' })).toEqual({ ok: true });
-    expect((await notes.findForEdit(note.id))?.cardImage).toBe('generated');
+    const media = await insertNoteMedia(env.DB, note.id);
+    expect(await notes.changeCardImage(note.id, { kind: 'media', ...media })).toEqual({
+      ok: true,
+    });
+    expect(await notes.changeCardImage(note.id, { kind: 'site' })).toEqual({ ok: true });
+    expect(await notes.findForEdit(note.id)).toMatchObject({
+      cardImage: 'site',
+      cardMediaStorageKey: null,
+    });
+  });
+
+  it('D1 は自動で作る画像（generated）を代表画像の出どころに持てない（FR-024）', async () => {
+    const note = await insertNote(env.DB);
+    await expect(
+      env.DB.prepare("UPDATE note SET card_image = 'generated' WHERE id = ?").bind(note.id).run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
   });
 
   it('その note の画像を代表画像にできる', async () => {
@@ -641,7 +653,7 @@ describe('代表画像と画像（FR-023〜FR-025、User Story 5 の 3）', () =
     expect(
       await notes.changeCardImage(a.id, { kind: 'media', storageKey: foreign.storageKey }),
     ).toEqual({ ok: false, reason: 'media-not-owned' });
-    expect((await notes.findForEdit(a.id))?.cardImage).toBe('generated');
+    expect((await notes.findForEdit(a.id))?.cardImage).toBe('site');
   });
 
   it('削除した note の代表画像は変えない', async () => {

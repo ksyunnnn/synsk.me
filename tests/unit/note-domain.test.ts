@@ -3,6 +3,7 @@ import {
   NOTE_CARD_IMAGES,
   NOTE_STATUSES,
   checkPublishable,
+  parseCardImageChoice,
   checkSlugChange,
   isVisibleToVisitors,
   parseNoteInput,
@@ -28,8 +29,22 @@ describe('値の並び', () => {
     expect(NOTE_STATUSES).toEqual(['draft', 'published']);
   });
 
-  it('代表画像の出どころは 3 つ（FR-024）', () => {
-    expect(NOTE_CARD_IMAGES).toEqual(['generated', 'media', 'site']);
+  it('代表画像の出どころは、その note の画像とサイト共通の画像の 2 つ（FR-024）', () => {
+    expect(NOTE_CARD_IMAGES).toEqual(['media', 'site']);
+  });
+});
+
+describe('parseCardImageChoice（FR-024）', () => {
+  it('site と、その note の画像の値を読む', () => {
+    expect(parseCardImageChoice('site')).toEqual({ kind: 'site' });
+    expect(parseCardImageChoice('media:00000000-0000-4000-8000-000000000000')).toEqual({
+      kind: 'media',
+      storageKey: '00000000-0000-4000-8000-000000000000',
+    });
+  });
+
+  it('自動で作る画像（generated）は選べない', () => {
+    expect(parseCardImageChoice('generated')).toBeNull();
   });
 });
 

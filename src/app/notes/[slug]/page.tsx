@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { VisitorNoteView } from '@/features/note/components/visitor-note';
-import type { VisitorNote } from '@/features/note/domain/note';
+import { NOTE_SHARE_IMAGE_SIZE, noteShareImagePath } from '@/features/note/domain/share-image';
 import { getVisitorNote } from '@/features/note/server/queries';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
@@ -12,12 +12,19 @@ export const instant = false;
 type Props = { params: Promise<{ slug: string }> };
 
 // メタデータは訪問者向けの DTO の題と説明だけから作る（contracts/visitor-note.md の OGP）。
-// 説明は、説明文が空なら本文の最初の段落
+// 説明は、説明文が空なら本文の最初の段落。共有したときは、小さい正方形の画像の隣に文字が並ぶ
+// カードにする（plan.md の U8）。`twitter:card` を `summary` にし、画像は代表画像を小さい正方形に
+// したもの。サイト全体の設定（`src/app/layout.tsx` の `summary_large_image`）は変えない
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
   const note = await getVisitorNote((await params).slug);
   if (!note) notFound();
   const description = note.summary ?? undefined;
-  const images = cardImageUrl(note);
+  const image = {
+    url: noteShareImagePath(note.slug, note.cardImage),
+    width: NOTE_SHARE_IMAGE_SIZE,
+    height: NOTE_SHARE_IMAGE_SIZE,
+    alt: note.title,
+  };
   return {
     title: `${note.title} | synsk.me`,
     description,
@@ -25,21 +32,15 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
       title: note.title,
       description,
       type: 'article',
-      ...(images ? { images } : {}),
+      images: [image],
+    },
+    twitter: {
+      card: 'summary',
+      title: note.title,
+      description,
+      images: [image],
     },
   };
-};
-
-/**
- * 代表画像の URL（research.md の R12）。`site` はサイト共通の画像（`src/app/opengraph-image.tsx`）、
- * `media` はその note の画像の配る経路。題を入れて自動で作る画像は作り方が決まるまで出さない
- * （plan.md の U8）
- */
-const cardImageUrl = ({ slug, cardImage }: VisitorNote): string | null => {
-  if (cardImage.kind === 'site') return '/opengraph-image';
-  if (cardImage.kind === 'media')
-    return `/notes/${encodeURIComponent(slug)}/media/${cardImage.storageKey}`;
-  return null;
 };
 
 const Page = async ({ params }: Props) => {

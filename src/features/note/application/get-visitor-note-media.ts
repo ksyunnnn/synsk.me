@@ -18,3 +18,18 @@ export const getVisitorNoteMedia = async (
     ? 'public'
     : 'hidden';
 };
+
+/**
+ * 共有したときの画像（代表画像を小さい正方形に縮めたもの）を訪問者に見せてよいか（plan.md の U8）。
+ * 公開で削除していない note の代表画像だけを `public` にする。本文の画像は縮めて配らない
+ */
+export const getVisitorNoteCardMedia = async (
+  notes: NoteRepository,
+  slug: string,
+  storageKey: string,
+): Promise<MediaAccess> => {
+  const note = await notes.findVisitorBySlug(slug);
+  return note?.cardImage.kind === 'media' && note.cardImage.storageKey === storageKey
+    ? 'public'
+    : 'hidden';
+};
