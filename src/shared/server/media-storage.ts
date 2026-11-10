@@ -106,11 +106,11 @@ export const createR2MediaSweepStorage = (bucket: R2Bucket): MediaSweepStorage =
 
 /** 組み立て用の関数。binding の名前は `wrangler.jsonc` の `r2_buckets` */
 export const createMediaStorage = async (): Promise<MediaStorage> =>
-  createR2MediaStorage((await readEnv()).NOTE_IMAGES);
+  createR2MediaStorage((await readEnv()).MEDIA);
 
 /** 突き合わせの組み立て用の関数。binding は `createMediaStorage` と同じ */
 export const createMediaSweepStorage = async (): Promise<MediaSweepStorage> =>
-  createR2MediaSweepStorage((await readEnv()).NOTE_IMAGES);
+  createR2MediaSweepStorage((await readEnv()).MEDIA);
 
 /**
  * 公開している画像のキャッシュの決まり。キャッシュしてよいが、使う前に毎回 Worker に確かめさせる。

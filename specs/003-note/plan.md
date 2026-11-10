@@ -27,7 +27,7 @@
 
 **Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions）、React 19.3、`jose`（001 のオーナーの判定）、Tailwind CSS 4。003 は package を足さない。Markdown の package は共有担当の Markdown の部品が足す（research.md の R11）
 
-**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0011` と、共有担当の migration で足す `note.uid`・`note_revision.uid`（research.md の R1）。画像は R2（binding `NOTE_IMAGES`）を共有担当の `src/shared/server/media-storage.ts` 越しに使う（R12）
+**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0011` と、共有担当の migration で足す `note.uid`・`note_revision.uid`（research.md の R1）。画像は R2（binding `MEDIA`）を共有担当の `src/shared/server/media-storage.ts` 越しに使う（R12）
 
 **Testing**: Vitest 4.1.11（単体）、`@cloudflare/vitest-plugin`（workerd と D1）、`createTestHarness()`（本番ビルドに対する結合）、Playwright（E2E、Chromium。スマートフォンの端末の設定を含む）。ADR-0019 の 4 段階
 

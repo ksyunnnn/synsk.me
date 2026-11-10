@@ -24,7 +24,7 @@
 
 **Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components・Server Actions・Cache Components）、React 19.3、`jose`（JWT の検証）、Tailwind CSS 4。headless のライブラリは未決（U3）
 
-**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0007` と `0008_rebuild_career_project_and_resume.sql`（research.md の R1）と `0009_add_status_to_career_and_project.sql`（`career.status`・`project.status`）。画像は R2（binding `NOTE_IMAGES`）
+**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0007` と `0008_rebuild_career_project_and_resume.sql`（research.md の R1）と `0009_add_status_to_career_and_project.sql`（`career.status`・`project.status`）。画像は R2（binding `MEDIA`）
 
 **Testing**: Vitest 4.1.11（単体）、`@cloudflare/vitest-plugin`（workerd と D1）、`createTestHarness()`（本番ビルドに対する結合）、Playwright（E2E、Chromium）。ADR-0019 の 4 段階
 

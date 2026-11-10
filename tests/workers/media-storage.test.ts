@@ -8,7 +8,7 @@ import { createR2MediaStorage, respondWithMedia } from '@/shared/server/media-st
  * 形式の見分け方の細部は tests/unit/media.test.ts が持つ
  */
 
-const storage = createR2MediaStorage(env.NOTE_IMAGES);
+const storage = createR2MediaStorage(env.MEDIA);
 
 const PNG_HEAD = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const png = (size = 64) => {
@@ -29,16 +29,16 @@ describe('save', () => {
     const media = await saveOrFail(new Blob([png()], { type: 'text/html' }));
     expect(media.type).toBe('image/png');
     expect(parseMediaStorageKey(media.storageKey)).toBe(media.storageKey);
-    const object = await env.NOTE_IMAGES.head(media.storageKey);
+    const object = await env.MEDIA.head(media.storageKey);
     expect(object?.httpMetadata?.contentType).toBe('image/png');
     expect(object?.size).toBe(64);
   });
 
   it('SVG を拒み、何も置かない', async () => {
-    const before = (await env.NOTE_IMAGES.list()).objects.length;
+    const before = (await env.MEDIA.list()).objects.length;
     const result = await storage.save(new Blob(['<svg></svg>'], { type: 'image/svg+xml' }));
     expect(result).toEqual({ ok: false, reason: 'unsupported-type' });
-    expect((await env.NOTE_IMAGES.list()).objects.length).toBe(before);
+    expect((await env.MEDIA.list()).objects.length).toBe(before);
   });
 
   it('10 MB を超える画像を、中身を読まずに拒む', async () => {
@@ -53,7 +53,7 @@ describe('remove', () => {
   it('置いた画像を消す。無いキーは無視する', async () => {
     const media = await saveOrFail(png());
     await storage.remove([media.storageKey, crypto.randomUUID()]);
-    expect(await env.NOTE_IMAGES.head(media.storageKey)).toBeNull();
+    expect(await env.MEDIA.head(media.storageKey)).toBeNull();
   });
 
   it('R2 が 1 回で受ける 1000 件を超えるキーも消す', async () => {
@@ -61,8 +61,8 @@ describe('remove', () => {
     const last = await saveOrFail(png());
     const missing = Array.from({ length: 1000 }, () => crypto.randomUUID());
     await storage.remove([first.storageKey, ...missing, last.storageKey]);
-    expect(await env.NOTE_IMAGES.head(first.storageKey)).toBeNull();
-    expect(await env.NOTE_IMAGES.head(last.storageKey)).toBeNull();
+    expect(await env.MEDIA.head(first.storageKey)).toBeNull();
+    expect(await env.MEDIA.head(last.storageKey)).toBeNull();
   });
 });
 
@@ -139,7 +139,7 @@ describe('respondWithMedia', () => {
       expect(missing.status).toBe(404);
       expect(missing.headers.get('Cache-Control')).toBe('no-store, must-revalidate');
       const key = crypto.randomUUID();
-      await env.NOTE_IMAGES.put(key, '<svg></svg>', {
+      await env.MEDIA.put(key, '<svg></svg>', {
         httpMetadata: { contentType: 'image/svg+xml' },
       });
       const svg = await respondWithMedia(storage, key, access);
