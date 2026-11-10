@@ -46,3 +46,32 @@ test.describe('保存のボタン', () => {
     await expect(page.getByRole('button', { name: '登録する', exact: true })).toBeInViewport();
   });
 });
+
+test.describe('フォームの区切り', () => {
+  test('実績と note の編集の画面で、内容の保存のボタンは、画像や転載先の操作と別の区切りにある', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E フォームの区切りの組織',
+      organizationNameMasked: 'E2E フォームの区切りの秘匿化した組織名',
+      title: uniqueTitle('フォームの区切り'),
+    });
+    await page.goto(editUrl);
+    const content = page.getByRole('region', { name: '内容', exact: true });
+    await expect(content.getByRole('button', { name: '保存する', exact: true })).toBeVisible();
+    await expect(content.getByRole('button', { name: '画像を足す' })).toHaveCount(0);
+    await expect(content.getByRole('button', { name: '代表画像を選び直す' })).toHaveCount(0);
+
+    const noteUrl = await createNote(page, {
+      slug: uniqueNoteSlug('form-sections'),
+      title: 'E2E フォームの区切りの note',
+    });
+    await page.goto(noteUrl);
+    const noteContent = page.getByRole('region', { name: '内容', exact: true });
+    await expect(noteContent.getByRole('button', { name: '保存する', exact: true })).toBeVisible();
+    await expect(noteContent.getByRole('button', { name: '転載先を記録する' })).toHaveCount(0);
+    await expect(noteContent.getByRole('button', { name: '画像を足す' })).toHaveCount(0);
+  });
+});

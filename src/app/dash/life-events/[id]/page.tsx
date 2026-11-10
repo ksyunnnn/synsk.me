@@ -9,6 +9,7 @@ import {
   removeLifeEventImage,
 } from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
+import { FormSection } from '@/shared/components/form-section';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -46,25 +47,31 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.lifeEvent(lifeEvent.slug)}>訪問者のページを開く</TextLink>
       </p>
       {/* 保存した値が変わったら、入力の初めの値を描き直す */}
-      <LifeEventForm
-        key={valuesVersion}
-        action={editLifeEvent}
-        initialValues={values}
-        uid={lifeEvent.uid}
-      />
-      {imageSaved === '1' && <p role="status">代表画像を登録しました</p>}
-      {imageRemoved === '1' && <p role="status">代表画像を外しました</p>}
-      <LifeEventImageForm
-        uid={lifeEvent.uid}
-        cardImageUrl={lifeEvent.cardImageUrl}
-        register={registerLifeEventImage}
-        remove={removeLifeEventImage}
-      />
-      <p>
-        <TextLink href={routes.dash.lifeEvents.delete(lifeEvent.uid)}>
-          この life event を削除する
-        </TextLink>
-      </p>
+      <FormSection title="内容" id="life-event-content">
+        <LifeEventForm
+          key={valuesVersion}
+          action={editLifeEvent}
+          initialValues={values}
+          uid={lifeEvent.uid}
+        />
+      </FormSection>
+      <FormSection>
+        {imageSaved === '1' && <p role="status">代表画像を登録しました</p>}
+        {imageRemoved === '1' && <p role="status">代表画像を外しました</p>}
+        <LifeEventImageForm
+          uid={lifeEvent.uid}
+          cardImageUrl={lifeEvent.cardImageUrl}
+          register={registerLifeEventImage}
+          remove={removeLifeEventImage}
+        />
+      </FormSection>
+      <FormSection>
+        <p>
+          <TextLink href={routes.dash.lifeEvents.delete(lifeEvent.uid)}>
+            この life event を削除する
+          </TextLink>
+        </p>
+      </FormSection>
     </main>
   );
 };
