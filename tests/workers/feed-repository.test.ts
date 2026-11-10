@@ -566,6 +566,110 @@ describe('外部の activity と life event（tasks.md の T041）', () => {
   });
 });
 
+/**
+ * 日時を Asia/Tokyo の日付で並べること（plan.md の U3。2026-11-10 にオーナーが決めた。
+ * https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6761595417 ）。ビューは note と
+ * 外部の activity の日時を Asia/Tokyo の時刻にして並べ、暦の日付は換算しない（migrations/0022）。
+ * 詰める日時は元の UTC の値のまま
+ */
+describe('Asia/Tokyo の日の境目（tasks.md の T042）', () => {
+  const insertNoteCreatedAt = async (createdAt: string, title: string) => {
+    const note = await insertNote(env.DB, { title });
+    await env.DB.prepare('UPDATE note SET created_at = ? WHERE id = ?')
+      .bind(createdAt, note.id)
+      .run();
+    await publishNoteRow(env.DB, note.id);
+    return note;
+  };
+
+  const insertExternal = (publishedAt: string, title: string) =>
+    insertActivity(env.DB, {
+      source: 'zenn',
+      externalId: `fake-${crypto.randomUUID()}`,
+      url: `https://example.com/${crypto.randomUUID()}`,
+      title,
+      publishedAt,
+    });
+
+  const insertLifeEvent = (happenedOn: string, title: string) =>
+    insertActivity(env.DB, {
+      source: 'life_event',
+      title,
+      happenedOn,
+      slug: `life-${crypto.randomUUID()}`,
+    });
+
+  const titles = async () =>
+    (await firstPage()).map((item) => (item.type === 'career' ? item.role : item.title));
+
+  it('UTC で前の日でも Asia/Tokyo で同じ日の note は、その日の life event より新しい位置に並び、作成日は UTC のまま', async () => {
+    await insertLifeEvent('2020-04-01', '4 月 1 日の出来事');
+    await insertNoteCreatedAt('2020-03-31T23:00:00.000Z', 'Asia/Tokyo で 4 月 1 日の note');
+
+    const items = await firstPage();
+    expect(items.map((item) => item.type)).toEqual(['note', 'life_event']);
+    expect(items[0]).toMatchObject({ createdAt: '2020-03-31T23:00:00.000Z' });
+  });
+
+  it('外部の activity は Asia/Tokyo の 0 時で日が替わり、公開日は UTC のまま', async () => {
+    await insertLifeEvent('2020-04-01', '4 月 1 日の出来事');
+    await insertExternal('2020-03-31T14:59:59.999Z', 'Asia/Tokyo で 3 月 31 日の終わり');
+    await insertExternal('2020-03-31T15:00:00.000Z', 'Asia/Tokyo で 4 月 1 日の始まり');
+
+    const items = await firstPage();
+    expect(items.map((item) => ('title' in item ? item.title : null))).toEqual([
+      'Asia/Tokyo で 4 月 1 日の始まり',
+      '4 月 1 日の出来事',
+      'Asia/Tokyo で 3 月 31 日の終わり',
+    ]);
+    expect(items[0]).toMatchObject({ publishedAt: '2020-03-31T15:00:00.000Z' });
+    expect(items[2]).toMatchObject({ publishedAt: '2020-03-31T14:59:59.999Z' });
+  });
+
+  it('オーナーが入れた日付（その日の UTC の 00:00）の外部の activity は、同じ日の life event より新しい位置に並ぶ（FR-011、0004 の sort_at の注釈）', async () => {
+    await insertExternal('2020-04-01T00:00:00.000Z', 'オーナーが 4 月 1 日と入れた記事');
+    await insertLifeEvent('2020-04-01', '4 月 1 日の出来事');
+
+    expect(await titles()).toEqual(['オーナーが 4 月 1 日と入れた記事', '4 月 1 日の出来事']);
+  });
+
+  it('種類をまたいで同じ日の組が、手で並べた順に並び、2 回読んでも同じ順（SC-004・FR-010・FR-011）', async () => {
+    const organizationId = await insertOrganization(env.DB, { name: '作り物株式会社' });
+    const day = '2020-04-01';
+    await insertCareer(env.DB, {
+      organizationId,
+      role: '職歴',
+      startedOn: day,
+      isMasked: false,
+      status: 'published',
+    });
+    await insertProject(env.DB, {
+      organizationId,
+      title: '実績',
+      startedOn: day,
+      isMasked: false,
+      status: 'published',
+    });
+    await insertLifeEvent(day, '先に入れた出来事');
+    await insertLifeEvent(day, '後に入れた出来事');
+    await insertExternal('2020-04-01T00:00:00.000Z', 'Asia/Tokyo で 9 時の記事');
+    await insertNoteCreatedAt('2020-03-31T22:00:00.000Z', 'Asia/Tokyo で 7 時の note');
+    await insertNoteCreatedAt('2020-04-01T03:00:00.000Z', 'Asia/Tokyo で 12 時の note');
+
+    const expected = [
+      'Asia/Tokyo で 12 時の note',
+      'Asia/Tokyo で 9 時の記事',
+      'Asia/Tokyo で 7 時の note',
+      '後に入れた出来事',
+      '先に入れた出来事',
+      '実績',
+      '職歴',
+    ];
+    expect(await titles()).toEqual(expected);
+    expect(await titles()).toEqual(expected);
+  });
+});
+
 describe('重なりの除外（tasks.md の T050）', () => {
   const SYNDICATED_URL = 'https://example.com/fake-syndicated';
 

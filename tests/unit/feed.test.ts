@@ -27,6 +27,8 @@ const row = (overrides: Partial<FeedRow>): FeedRow => ({
   source: null,
   source_kind: null,
   url: null,
+  created_at: null,
+  published_at: null,
   ...overrides,
 });
 
@@ -163,7 +165,9 @@ describe('toFeedItem の note（FR-006）', () => {
       item_type: 'note',
       title: '作り物の note の題',
       description: '作り物の説明文',
-      sort_at: '2020-01-15T09:00:00.000Z',
+      // ビューは並びの値を Asia/Tokyo の時刻にする（migrations/0022）。作成日は元の列から詰める
+      sort_at: '2020-01-15T18:00:00.000',
+      created_at: '2020-01-15T09:00:00.000Z',
       started_on: null,
       ...overrides,
     });
@@ -182,8 +186,9 @@ describe('toFeedItem の note（FR-006）', () => {
     expect(toFeedItem(noteRow({ description: null }))).toMatchObject({ description: null });
   });
 
-  it('題の欠けた行は詰めない', () => {
+  it('題か作成日の欠けた行は詰めない', () => {
     expect(toFeedItem(noteRow({ title: null }))).toBeNull();
+    expect(toFeedItem(noteRow({ created_at: null }))).toBeNull();
   });
 });
 
@@ -192,7 +197,8 @@ describe('toFeedItem の外部の activity（FR-018・FR-019）', () => {
     row({
       item_type: 'external_activity',
       title: '作り物の記事',
-      sort_at: '2024-05-01T12:00:00.000Z',
+      sort_at: '2024-05-01T21:00:00.000',
+      published_at: '2024-05-01T12:00:00.000Z',
       source: 'zenn',
       source_kind: 'article',
       url: 'https://example.com/fake-article',
@@ -227,9 +233,10 @@ describe('toFeedItem の外部の activity（FR-018・FR-019）', () => {
     expect(toFeedItem(activityRow({ source_kind: 'x' }))).toMatchObject({ sourceKind: 'other' });
   });
 
-  it('URL か取得元の欠けた行は詰めない', () => {
+  it('URL・取得元・公開日の欠けた行は詰めない', () => {
     expect(toFeedItem(activityRow({ url: null }))).toBeNull();
     expect(toFeedItem(activityRow({ source: null }))).toBeNull();
+    expect(toFeedItem(activityRow({ published_at: null }))).toBeNull();
   });
 
   it('http か https でない URL の行は詰めない', () => {
