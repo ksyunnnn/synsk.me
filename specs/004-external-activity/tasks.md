@@ -285,3 +285,16 @@ US1+US2+US3 → 入口 → US4 → US5 → US5 の画像（共有担当の media
 - 書き込みの Server Action は、先頭でオーナーを確かめる。呼び忘れは型でも lint でも検出しないため、結合の検査で各 Server Action を確かめる（ADR-0036 の Consequences）
 - 004 は migration と ER 図を変えない。要る変更は PM に伝える
 - コミットはタスクか論理のまとまりごと
+
+## Phase 9: Convergence
+
+2026-11-10 の `/speckit-converge` が、User Story 4 の作り残しを足した。U12 は 2026-11-10 にオーナーが案 (a) に決めた（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6759290491)）。U11 はオーナーが #281「登録していないサイトの URL から題を取り、登録のフォームの初期値に入れる」へ後回しにした。URL を指定して登録した activity の取り直しは #278「URL を指定して登録した activity を 1 件ずつ取り直せるようにする」が持ち、ここに入れない。
+
+- [ ] T084 [US4] 外部の activity の管理画面の型（uid を持ち、id を画面に出さない）を src/features/activity/domain/external-activity.ts に作り、URL を指名した・手で入力した activity の一覧・uid で読む・登録・編集・削除を src/features/activity/domain/activity-repository.ts と src/features/activity/server/d1-activity-repository.ts に足す。一覧を取る取得元と life event の行は書き換えず消さない per T012・T013・T015・FR-031・FR-033 (missing)
+- [ ] T085 [US4] URL を指名する登録を src/features/activity/application/register-external-activity.ts に作る。取得元のホストでない URL と一覧を取る取得元への登録を拒み、Spotify・YouTube・CodeSandbox の `fetchByUrl` で題などを取り、オーナーが入れた暦の日付をその日の UTC の 00:00 として `published_at` に入れ、日付の無い登録を拒む。題を取れない URL は、#281 が入るまでオーナーが入れた題で保存する（plan.md の U11 の推奨 (a)） per T050・FR-009・FR-011・U12 (missing)
+- [ ] T086 [P] [US4] X の取得元の処理を src/features/activity/server/sources/x.ts に作り、作り物の応答から `FetchedItem` に詰め替えることと、取れないとき null を返すことを tests/unit/activity-source-x.test.ts で確かめる（#176「X を取り込む」） per T051 (partial)
+- [ ] T087 [US4] 手で入力する登録（CodePen）と、登録していないサイトの登録（URL・題・日付を手で入れる、`normalizeWebUrl` で揃えた URL が既にあれば拒む）を register-external-activity.ts に足し、src/features/activity/domain/sources.ts に `unlisted` を載せる per T052・T053・FR-005・FR-010 (missing)
+- [ ] T088 [US4] 編集（日付、手で入力した activity は URL と題も）を src/features/activity/application/edit-external-activity.ts に、削除を src/features/activity/application/delete-external-activity.ts に作る。一覧を取る取得元の activity を拒む per T054・FR-022・FR-031・FR-033 (missing)
+- [ ] T089 [US4] Server Action `registerExternalActivity`・`editExternalActivity`・`deleteExternalActivity` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/external-activity-form.tsx（src/shared/components/draft-retention.tsx で保持）に作る per T056 (missing)
+- [ ] T090 [US4] 管理画面のページ src/app/dash/activities/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx を作り、src/proxy.ts の `DASH_ROW_EXISTS` に `activities` を、src/app/dash/page.tsx に「外部の activity」の入口を足す per T057・T019 (missing)
+- [ ] T091 [US4] T084〜T090 を確かめる: 登録・編集・削除のユースケースを tests/unit/activity-register.test.ts で、保存と `planRefresh` が公開日の無い項目の `published_at` を変えないことを tests/workers/activity-repository.test.ts で、JWT のない 3 つの Server Action が何も書かないことを tests/integration/activity-dash.test.ts で、キーボードだけの登録・編集・削除を tests/e2e/external-activity.spec.ts で per T049・T055・T058・T059・FR-012・SC-005・constitution I・V (missing)
