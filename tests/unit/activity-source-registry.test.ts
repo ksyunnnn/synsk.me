@@ -10,26 +10,35 @@ import { createFakeFetcher, jsonResponse } from '../support/activity-fakes';
 const LIMITS = { maxRequests: 1, timeoutMs: 1000, maxBytes: 100_000 };
 
 describe('createSourceRegistry', () => {
-  it('一覧を取る取得元のうち、GitHub を除くすべてに処理がある', async () => {
+  it('一覧を取る取得元のすべてに処理がある', async () => {
     const { fetcher } = createFakeFetcher({});
     const registry = createSourceRegistry(fetcher, {});
 
-    expect(LIST_SOURCES.filter((source) => !registry.hasListing(source))).toEqual(['github']);
-    await expect(registry.fetchListing('github', LIMITS)).rejects.toThrow(/GitHub/);
+    expect(LIST_SOURCES.filter((source) => !registry.hasListing(source))).toEqual([]);
+    await expect(registry.fetchListing('spotify', LIMITS)).rejects.toThrow(
+      /一覧を取る取得元でない/,
+    );
   });
 
-  it('Qiita にはアクセストークンを、connpass には API キーを渡す（R15）', async () => {
+  it('Qiita と GitHub にはトークンを、connpass には API キーを渡す（R15）', async () => {
     const { fetcher, requested } = createFakeFetcher({
       'https://qiita.com/api/v2/users/ksyunnnn/items?page=1&per_page=20': jsonResponse([], {
         'Total-Count': '0',
       }),
+      'https://api.github.com/users/ksyunnnn/repos?type=owner&sort=created&direction=asc&per_page=100&page=1':
+        jsonResponse([]),
     });
-    const registry = createSourceRegistry(fetcher, { QIITA_ACCESS_TOKEN: 'fake-token' });
+    const registry = createSourceRegistry(fetcher, {
+      QIITA_ACCESS_TOKEN: 'fake-token',
+      GITHUB_TOKEN: 'fake-github-token',
+    });
 
     await registry.fetchListing('qiita', LIMITS);
+    await registry.fetchListing('github', LIMITS);
     await expect(registry.fetchListing('connpass', LIMITS)).rejects.toThrow(/CONNPASS_API_KEY/);
 
     expect(requested[0]?.headers.get('Authorization')).toBe('Bearer fake-token');
+    expect(requested[1]?.headers.get('Authorization')).toBe('Bearer fake-github-token');
   });
 
   it('消えたかを確かめる手段は Zenn と Speaker Deck だけが持つ（R6）', async () => {
