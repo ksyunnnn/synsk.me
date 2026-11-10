@@ -27,7 +27,10 @@ import { Sheet } from './Sheet';
 const STEPS = 2000;
 
 // 最初の値と「リセット」で戻す値。長さはオーナーが 15 秒に決めた。ほかは、オーナーが v1 の最終版で選んだもの
-const DEFAULTS = { seconds: 15, seam: 0.9, shift: 0.01, count: 6 };
+const DEFAULTS = { seconds: 15, shift: 0.005, count: 6 };
+
+// 遅れる範囲は写真の全体に固定する。オーナーが変えられなくてよいと決めた
+const SEAM = 1;
 
 // 画面に出す言葉。出典は PR の本文にある
 const COPY = {
@@ -43,7 +46,6 @@ const COPY = {
   rightToLeft: '右から左',
   topToBottom: '上から下',
   duration: '長さ',
-  range: '遅れる範囲',
   amount: '強さ',
   strips: '帯の数',
   reset: 'リセット',
@@ -186,7 +188,6 @@ export const DelayExporter = () => {
   const [step, setStep] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [seconds, setSeconds] = useState(DEFAULTS.seconds);
-  const [seam, setSeam] = useState(DEFAULTS.seam);
   const [shift, setShift] = useState(DEFAULTS.shift);
   const [count, setCount] = useState(DEFAULTS.count);
   const [exportState, setExportState] = useState<ExportState>({ kind: 'idle' });
@@ -205,10 +206,7 @@ export const DelayExporter = () => {
   const running = exportState.kind === 'running';
   const exportedUrl = exportState.kind === 'done' ? exportState.result.url : null;
   const isDefault =
-    seconds === DEFAULTS.seconds &&
-    seam === DEFAULTS.seam &&
-    shift === DEFAULTS.shift &&
-    count === DEFAULTS.count;
+    seconds === DEFAULTS.seconds && shift === DEFAULTS.shift && count === DEFAULTS.count;
 
   // 書き出した動画の URL は、設定を変えたときと、ページを離れたときに手放す
   useEffect(() => {
@@ -239,10 +237,10 @@ export const DelayExporter = () => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx || !picked) return;
     const { width, height, source } = picked;
-    const frame = { width, height, t: step / STEPS, seam, shift, count };
+    const frame = { width, height, t: step / STEPS, seam: SEAM, shift, count };
     drawFrame(ctx, source, direction, frame);
     if (guides) drawGuides(ctx, direction, frame);
-  }, [picked, direction, step, seam, shift, count, guides]);
+  }, [picked, direction, step, shift, count, guides]);
 
   // 書き出した後に写真や設定を変えたら、書き出した動画は今の設定と合わなくなる。書き出す前に戻す
   const edit =
@@ -278,7 +276,7 @@ export const DelayExporter = () => {
       const { blob } = await exportVideo({
         image: picked.source,
         direction,
-        settings: { seconds, seam, shift, count },
+        settings: { seconds, seam: SEAM, shift, count },
         // 描き直しを減らすため、1% 進むごとに知らせる
         onProgress: (done) => {
           const percent = Math.floor(done * 100);
@@ -317,7 +315,6 @@ export const DelayExporter = () => {
 
   const reset = () => {
     edit(setSeconds)(DEFAULTS.seconds);
-    setSeam(DEFAULTS.seam);
     setShift(DEFAULTS.shift);
     setCount(DEFAULTS.count);
   };
@@ -574,22 +571,12 @@ export const DelayExporter = () => {
             onChange={edit(setSeconds)}
           />
           <Slider
-            label={COPY.range}
-            value={seam}
-            display={`${Math.round(seam * 100)}%`}
-            min={0.1}
-            max={0.9}
-            step={0.01}
-            disabled={running}
-            onChange={edit(setSeam)}
-          />
-          <Slider
             label={COPY.amount}
             value={shift}
-            display={`${Math.round(shift * 100)}`}
+            display={`${(shift * 100).toFixed(1)}%`}
             min={0}
             max={0.4}
-            step={0.01}
+            step={0.001}
             disabled={running}
             onChange={edit(setShift)}
           />

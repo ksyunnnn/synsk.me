@@ -27,6 +27,8 @@ export const drawFrame = (
 ) =>
   (direction === 'horizontal' ? drawHorizontal : drawVertical)(ctx, image, {
     ...frame,
+    // ずれは向きによらず幅を基準にする。ストーリーのように幅に合わせて出したとき、縦横比によらず同じに見える
+    shiftBasis: 'width',
     backdrop: true,
   });
 
