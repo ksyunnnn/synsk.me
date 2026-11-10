@@ -180,7 +180,7 @@ describe('オーナーの JWT がない書き込み（FR-031、constitution I）
       // 編集の画面の 2 つ目のフォームが、画像の登録
       const imageForm = [...html.matchAll(/<form\b[\s\S]*?<\/form>/g)][1]?.[0] ?? '';
       const fields = readActionFields(imageForm);
-      const { MEDIA } = await ctx.server.getWorker<{ MEDIA: R2Bucket }>().getEnv();
+      const { MEDIA } = await ctx.server.getWorker<Pick<Cloudflare.Env, 'MEDIA'>>().getEnv();
       const readMedia = async () =>
         (await ctx.db.prepare('SELECT * FROM media ORDER BY id').all()).results;
       const before = {
@@ -237,7 +237,7 @@ describe('/life-events/{slug}/media/{storage_key}', () => {
   const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
   beforeAll(async () => {
-    const { MEDIA } = await ctx.server.getWorker<{ MEDIA: R2Bucket }>().getEnv();
+    const { MEDIA } = await ctx.server.getWorker<Pick<Cloudflare.Env, 'MEDIA'>>().getEnv();
     for (const key of [CARD_KEY, OTHER_KEY]) {
       await MEDIA.put(key, PNG, { httpMetadata: { contentType: 'image/png' } });
     }

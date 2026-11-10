@@ -24,7 +24,7 @@
       "database_id": "23a6b53c-fb77-46ef-b299-a4696de72226",
     },
   ],
-  // 画像の保管先（ADR-0012）。note・project・career・life event が共有し、
+  // 画像の保管先（ADR-0012）。機能をまたいで共有し、
   // 読み書きは src/shared/server/media-storage.ts に閉じ込める。
   // IMAGES は Cloudflare Images が使うため別の名前にする
   "r2_buckets": [

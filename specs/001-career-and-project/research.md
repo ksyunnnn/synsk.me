@@ -128,7 +128,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 配る URL（この plan の案）: 実績の画像は `/projects/[slug]/media/[id]` で `project` の Repository が確かめて配る。職歴の画像は、職歴を訪問者に出す 005・002 が配る。決めるのは tasks.md の T076
 - 未決: 画像の追加の回数の上限の値。constitution II は費用のかかる処理に量と回数の上限の値を求め、U5 は大きさだけを決めた。止める範囲は画像の追加（FR-027・FR-028）
 - 決定（2026-11-04、オーナー。spec の FR-021）: 伏せた見た目の本文の形は、本文の場所に「非公開」と出し、問い合わせの場所への導線を置く。導線は問い合わせの場所のページ（別の spec）ができてから足す
-- 置き場: R2 は `wrangler.jsonc` の binding `MEDIA`（バケット `synsk-me-images`）。読み書きは `src/shared/server/media-storage.ts` に閉じ込める（constitution VIII）。使い手は `project`・`career`・003 の note
+- 置き場: R2 は `wrangler.jsonc` の binding `MEDIA`（バケット `synsk-me-images`）。読み書きは `src/shared/server/media-storage.ts` に閉じ込める（constitution VIII）。使い手は `project`・`career`・003 の note・004 の life event
 
 ## R15 職歴を訪問者に出す場所
 
