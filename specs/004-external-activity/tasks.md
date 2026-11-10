@@ -148,7 +148,7 @@ description: "外部 activity の取得の実装タスク"
 - [ ] T053 [US4] 登録していないサイトの登録を src/features/activity/application/register-external-activity.ts に足す。同じ URL を 2 行にしない（FR-005、US4 の Acceptance 4。取得元ごとの issue は無い）。**止める未決: U11・U12**
 - [ ] T054 [US4] 編集のユースケース（日付、手で入力した activity は URL と題も）を src/features/activity/application/edit-external-activity.ts に、削除のユースケースを src/features/activity/application/delete-external-activity.ts に作る（FR-031・FR-033）
 - [ ] T055 [P] [US4] URL を指名した activity の保存が日付をオーナーの入力の値だけで書き、`planRefresh` の書き込みが公開日の無い項目の `published_at` を変えないことと、登録・編集・削除の保存を tests/workers/activity-repository.test.ts で確かめる（FR-012・SC-005、research.md の R5）。**止める依存: 共有担当の migration**
-- [ ] T056 [US4] Server Action `registerExternalActivity`・`editExternalActivity`・`deleteExternalActivity` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/external-activity-form.tsx に作る。入力は共有担当の src/shared/components/draft-retention.tsx で保持する（contracts/dash.md）
+- [ ] T056 [US4] Server Action `registerExternalActivity`・`editExternalActivity`・`deleteExternalActivity` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/external-activity-form.tsx に作る（contracts/dash.md）
 - [ ] T057 [US4] 管理画面のページを src/app/dash/activities/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/activities/{uid}` の有無を足す。**止める依存: 共有担当の migration**
 - [ ] T058 [US4] JWT のない `registerExternalActivity`・`editExternalActivity`・`deleteExternalActivity` が何も書かないことを tests/integration/activity-dash.test.ts で確かめる（FR-031、constitution I）
 - [ ] T059 [US4] オーナーとして外部の activity を登録・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/external-activity.spec.ts で確かめる（constitution V）。登録は作り物の応答を返すように取得元の要求を差し替える
@@ -172,7 +172,7 @@ description: "外部 activity の取得の実装タスク"
 
 - [x] T064 [US5] 登録・編集・削除・訪問者向けの取り出しのユースケースを src/features/activity/application/register-life-event.ts・edit-life-event.ts・delete-life-event.ts・get-visitor-life-event.ts に作る。識別子の形と既定値は共有担当の src/shared/domain/slug.ts の `isSlug`・`newSlug` を使う（research.md の R11）
 - [x] T065 [US5] 訪問者向けの DTO `VisitorLifeEvent` と、出してよい列だけを読む取り出しを src/features/activity/domain/life-event.ts と src/features/activity/server/d1-life-event-repository.ts に足す（contracts/visitor-life-event.md、constitution の Allowlist Visibility）
-- [x] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）。入力は共有担当の src/shared/components/draft-retention.tsx で保持する
+- [x] T066 [US5] Server Action `registerLifeEvent`・`editLifeEvent`・`deleteLifeEvent` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/life-event-form.tsx に作る。リンク先の入力を持たない（FR-024）
 - [x] T067 [US5] 管理画面のページを src/app/dash/life-events/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx に作り、src/proxy.ts に `/dash/life-events/{uid}` の有無を足す。**止める依存: 共有担当の migration**
 - [x] T068 [US5] 訪問者のページを src/app/life-events/[slug]/page.tsx・src/app/life-events/[slug]/missing/page.tsx と src/features/activity/components/visitor-life-event.tsx に作り、src/proxy.ts の matcher に `/life-events/:slug` を足す
 - [x] T069 [US5] JWT のない life event の Server Action が何も書かないことを tests/integration/life-events.test.ts に足し、オーナーとして life event を作成・編集・削除し、キーボードだけで同じ操作ができることを tests/e2e/life-event.spec.ts で確かめる（FR-031、constitution I・V）
@@ -222,7 +222,6 @@ description: "外部 activity の取得の実装タスク"
 | U13 | なし（2026-11-10 に決まった。消えた URL を確かめる本数と消す件数は issue #280） |
 | 共有担当の migration | T001・T011・T021・T041・T043・T046・T048b（0019）・T055・T057・T061・T067 |
 | 共有担当の slug の部品（PR #222） | T064 |
-| 共有担当の書きかけの保持（001 の T072） | T056・T066 |
 | 共有担当の media-storage（001 の T075） | T070・T071・T072 |
 
 ### Within Each User Story
@@ -295,6 +294,6 @@ US1+US2+US3 → 入口 → US4 → US5 → US5 の画像（共有担当の media
 - [x] T086 [P] [US4] X の取得元の処理を src/features/activity/server/sources/x.ts に作り、作り物の応答から `FetchedItem` に詰め替えることと、取れないとき null を返すことを tests/unit/activity-source-x.test.ts で確かめる（#176「X を取り込む」） per T051 (partial)
 - [x] T087 [US4] 手で入力する登録（CodePen）と、登録していないサイトの登録（URL・題・日付を手で入れる、`normalizeWebUrl` で揃えた URL が既にあれば拒む）を register-external-activity.ts に足し、src/features/activity/domain/sources.ts に `unlisted` を載せる per T052・T053・FR-005・FR-010 (missing)
 - [x] T088 [US4] 編集（日付、手で入力した activity は URL と題も）を src/features/activity/application/edit-external-activity.ts に、削除を src/features/activity/application/delete-external-activity.ts に作る。一覧を取る取得元の activity を拒む per T054・FR-022・FR-031・FR-033 (missing)
-- [x] T089 [US4] Server Action `registerExternalActivity`・`editExternalActivity`・`deleteExternalActivity` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/external-activity-form.tsx（src/shared/components/draft-retention.tsx で保持）に作る per T056 (missing)
+- [x] T089 [US4] Server Action `registerExternalActivity`・`editExternalActivity`・`deleteExternalActivity` を src/features/activity/server/actions.ts に、入力を src/features/activity/components/external-activity-form.tsx に作る per T056 (missing)
 - [x] T090 [US4] 管理画面のページ src/app/dash/activities/page.tsx・new/page.tsx・[id]/page.tsx・[id]/delete/page.tsx・[id]/missing/page.tsx を作り、src/proxy.ts の `DASH_ROW_EXISTS` に `activities` を、src/app/dash/page.tsx に「外部の activity」の入口を足す per T057・T019 (missing)
 - [x] T091 [US4] T084〜T090 を確かめる: 登録・編集・削除のユースケースを tests/unit/activity-register.test.ts で、保存と `planRefresh` が公開日の無い項目の `published_at` を変えないことを tests/workers/activity-repository.test.ts で、JWT のない 3 つの Server Action が何も書かないことを tests/integration/activity-dash.test.ts で、キーボードだけの登録・編集・削除を tests/e2e/external-activity.spec.ts で per T049・T055・T058・T059・FR-012・SC-005・constitution I・V (missing)

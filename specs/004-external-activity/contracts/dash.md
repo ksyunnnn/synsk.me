@@ -8,7 +8,7 @@
 - Server Action は何より先に `src/shared/server/author.ts` でオーナーを確かめ、オーナーでなければ何も書かない（FR-031、constitution I）
 - 書き込みは `<form action={Server Action}>` で送り、JavaScript なしでも保存できる。失敗の結果は `src/shared/domain/action-result.ts` の `ActionResult` で返す
 - 行は `activity.uid` で開く（ADR-0051）。主キーと slug は管理画面の URL にもフォームにも出さない。無い uid は `src/proxy.ts` が `missing` へ rewrite する（404）
-- 入力中の内容は共有担当の `src/shared/components/draft-retention.tsx` で保持する（REQUIREMENTS.md の FR-14）
+- 保存していない入力は持たない。再読み込みすると、D1 に保存した値を出す（保存していない入力を端末に残すのは note だけの要件。003 の spec の FR-018）
 
 ## 画面
 

@@ -82,7 +82,6 @@
 | 手本の形 | `src/features/project/` の `domain/project-repository.ts`・`server/d1-project-repository.ts`・`server/queries.ts`・`server/actions.ts`・`application/deps.ts`・`application/register-project.ts`・`components/visitor-project.tsx`、`src/app/projects/[slug]/page.tsx`・`missing/page.tsx`、`src/app/dash/projects/*` | 同じ構成で `src/features/activity/` と画面を作る |
 | 検査の土台 | `tests/support/access.ts`、`tests/integration/support/`、`tests/e2e/support/author.ts`、`tests/workers/migrations.test.ts` | 結合・E2E のオーナー、D1 の作り物の行 |
 | 共有担当が作る: slug の部品 | `src/shared/domain/slug.ts`（`isSlug`・`newSlug`。PR #222「書きかけの保持の部品と slug の検査を src/shared/ にまとめた」） | life event の slug の形と既定値（FR-035） |
-| 共有担当が作る: 書きかけの保持 | `src/shared/components/draft-retention.tsx`（001 の T072） | life event と外部の activity の入力（REQUIREMENTS.md の FR-14） |
 | 共有担当が作る: 画像の保存と配信 | `src/shared/server/media-storage.ts`（001 の T075） | life event の代表画像の保存・配信・削除。形式と大きさの検査もこの部品を使う |
 
 ## 要件と検査の対応
@@ -148,7 +147,6 @@ issue #219 のコメント「spec どうしの重複・干渉・矛盾・依存�
 |---|---|
 | 画像の保存と配信の持ち主が決まっていない（004 の FR-030 だけが「003 が持つ」とする） | 共有担当の `src/shared/server/media-storage.ts` を使い、004 では作らない（2026-11-09、PM の回答） |
 | slug の形が 001・002・003・004 で同じ | 共有担当の `src/shared/domain/slug.ts` を使い、`src/features/activity/` に同じ関数を書かない |
-| 書きかけの保持（001 の T072、003 の FR-018） | 共有担当の `src/shared/components/draft-retention.tsx` を使う |
 | migration の番号が 003 と 004 で重なりうる | 004 は migration を書かない。要る変更は共有担当がまとめて書く |
 | media の表に 001・003・004 が書き込む | 004 は `media.activity_id` の行だけを、共有担当の部品越しに書く |
 | ER 図の `gen_er8.py`・`er-options.html` | 004 は変えない |
