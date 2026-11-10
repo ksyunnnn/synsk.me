@@ -261,3 +261,25 @@ test('キーボードだけで過去の版を開き、その版に戻せる（co
   await expect(page.getByRole('status')).toHaveText('過去の版の中身を、新しい版として保存しました');
   await expect(textbox(page, '本文')).toHaveValue('E2E の 1 つ目の版の本文');
 });
+
+test('版の一覧は、公開の note でだけ公開した版に印を付け、下書きに戻すと印を外す（FR-014）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('published-mark');
+  const editUrl = await createNote(page, { slug, title: `E2E の版の印の題 ${slug}` });
+
+  await submitAndWait(page, '最も新しい版を公開する');
+  await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
+  await page.goto(`${editUrl}/revisions`);
+  await expect(page.getByRole('list')).toContainText('・公開した版');
+
+  await openNoteEditor(page, editUrl);
+  await submitAndWait(page, '下書きに戻す');
+  await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
+  // 下書きに戻しても公開した版の記録は残る（FR-014）が、一覧では今も公開しているように読める印を出さない
+  await page.goto(`${editUrl}/revisions`);
+  await expect(page.getByRole('list')).toContainText('・最も新しい版');
+  await expect(page.getByRole('list')).not.toContainText('・公開した版');
+});
