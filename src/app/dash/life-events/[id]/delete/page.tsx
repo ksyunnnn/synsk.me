@@ -24,8 +24,7 @@ const Page = async ({ params }: Props) => {
       <h1 className="text-2xl font-bold">life event を削除する</h1>
       <p>次の life event を削除します。戻せません。訪問者のページも無くなります。</p>
       <p>
-        {lifeEvent.title ?? '（題なし）'}・
-        <time dateTime={lifeEvent.happenedOn}>{lifeEvent.happenedOn}</time>
+        {lifeEvent.title}・<time dateTime={lifeEvent.happenedOn}>{lifeEvent.happenedOn}</time>
       </p>
       <DeleteForm
         action={deleteLifeEvent}

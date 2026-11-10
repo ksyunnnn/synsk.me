@@ -47,6 +47,43 @@ test('起きた日の無い life event は作れず、入力が残る（FR-025�
   );
 });
 
+test('題の無い life event は作れず、題を消した保存もできない（FR-024）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  await page.goto('/dash/life-events/new');
+  const title = page.getByRole('textbox', { name: '題', exact: true });
+  await title.fill('   ');
+  await page.getByRole('textbox', { name: '起きた日', exact: true }).fill('2017-05-01');
+  await page.getByRole('textbox', { name: '識別子', exact: true }).fill('e2e-life-event-untitled');
+  await page.getByRole('button', { name: '作る' }).click();
+  await expect(page.getByRole('alert')).toHaveText('入力を確かめてください');
+  await expect(page.getByText('題を入力してください')).toBeVisible();
+  await expect(page.getByRole('textbox', { name: '起きた日', exact: true })).toHaveValue(
+    '2017-05-01',
+  );
+  expect((await page.goto('/life-events/e2e-life-event-untitled'))?.status()).toBe(404);
+
+  await page.goto('/dash/life-events/new');
+  await title.fill('E2E 題を消す出来事');
+  await page.getByRole('textbox', { name: '起きた日', exact: true }).fill('2017-05-02');
+  await page.getByRole('textbox', { name: '識別子', exact: true }).fill('e2e-life-event-retitle');
+  await page.getByRole('button', { name: '作る' }).click();
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await title.fill('');
+  await page.getByRole('button', { name: '保存する' }).click();
+  await expect(page.getByText('題を入力してください')).toBeVisible();
+  const editPath = new URL(page.url()).pathname;
+
+  await page.goto('/life-events/e2e-life-event-retitle');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('E2E 題を消す出来事');
+
+  await page.goto(`${editPath}/delete`);
+  await page.getByRole('button', { name: '削除する' }).click();
+  await expect(page.getByRole('status')).toHaveText('life event を削除しました');
+});
+
 test('オーナーはキーボードだけで life event を作り・書き換え・消せる（constitution V）', async ({
   page,
   context,

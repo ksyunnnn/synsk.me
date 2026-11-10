@@ -263,11 +263,12 @@ describe('toFeedItem の life event（FR-018・FR-019）', () => {
     });
   });
 
-  it('題と説明が空の行は、どちらも null で持つ', () => {
-    expect(toFeedItem(lifeEventRow({ title: null, description: null }))).toMatchObject({
-      title: null,
-      description: null,
-    });
+  it('説明が空の行は、説明を null で持つ', () => {
+    expect(toFeedItem(lifeEventRow({ description: null }))).toMatchObject({ description: null });
+  });
+
+  it('題の欠けた行は詰めない（004 の FR-024。行は migrations/0021 の CHECK が拒む）', () => {
+    expect(toFeedItem(lifeEventRow({ title: null }))).toBeNull();
   });
 });
 

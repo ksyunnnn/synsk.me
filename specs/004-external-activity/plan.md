@@ -74,7 +74,7 @@
 | 管理画面の uid | `src/shared/domain/uid.ts`（`parseUid`・`findIdByUid`） | `/dash/life-events/{uid}`・`/dash/activities/{uid}` |
 | Server Action の結果 | `src/shared/domain/action-result.ts`（`ActionResult`） | 4 つの登録・編集の結果 |
 | フォームの値 | `src/shared/server/form-data.ts`（`readString`） | Server Action の入力 |
-| 空の入力 | `src/shared/domain/empty-to-null.ts` | 説明・題の空 |
+| 空の入力 | `src/shared/domain/empty-to-null.ts` | life event の説明の空 |
 | URL の形 | `src/shared/domain/web-url.ts`（`isWebUrl`） | URL を指名する・手で入力する登録 |
 | 入力の部品 | `src/shared/components/field.tsx`、`src/shared/components/text-link.tsx` | 管理画面の入力とリンク |
 | 削除の確認 | `src/shared/components/delete-form.tsx` | `/dash/life-events/{uid}/delete`・`/dash/activities/{uid}/delete` |
@@ -135,7 +135,6 @@ spec の「決定が無く、この spec では決めない」のうち、作る
 |---|---|
 | 取得の結果をオーナーに見せる画面を持つか | 作らない。`fetch_result` に書くだけ |
 | 外部の activity の代表の画像の出し方 | `image_url` に URL を持つだけで、画像を保管しない。出し方は 005 と issue #186「URL カードの画像の出し方を決める」 |
-| life event の題を必ず入れるか | 必須にしない（`activity.title` は NULL 可、spec に要件が無い） |
 | life event の説明の書式と、説明の中に画像を置けるか | 説明は文字列で持ち、改行を保つ文字だけで見せる。書式は 001 の U4（本文の書式）が決まってから合わせる |
 | life event の個別のページに出す値と見せ方 | DTO の値（contracts/visitor-life-event.md）を出す。見せ方はデザインで決める |
 | 取得元が題を返さない URL を指名したときの扱い | U11 |

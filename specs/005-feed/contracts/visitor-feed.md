@@ -71,7 +71,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | 項目 | 元の列 |
 |---|---|
 | `type` | `'life_event'` |
-| `title` | `activity.title`（空あり） |
+| `title` | `activity.title`（空なし。004 の FR-024） |
 | `description` | `activity.description`（空あり） |
 | `happenedOn` | `sort_at`（元は `activity.happened_on`） |
 | `source` | `'life_event'` |

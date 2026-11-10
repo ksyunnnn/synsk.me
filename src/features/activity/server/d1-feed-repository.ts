@@ -108,6 +108,8 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
             : 'other',
       };
     case 'life_event':
+      // 題は空でない（004 の FR-024、migrations/0021 の CHECK）。欠けた行は note と同じく詰めない
+      if (row.title === null) return null;
       return {
         type: 'life_event',
         title: row.title,

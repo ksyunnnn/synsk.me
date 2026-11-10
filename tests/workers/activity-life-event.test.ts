@@ -70,11 +70,18 @@ describe('edit', () => {
   it('識別子を書き換えられ、古い識別子では見つからない（FR-035・SC-007）', async () => {
     const { id } = await register();
 
-    expect(await lifeEvents.edit(id, content({ slug: 'fake-renamed', title: null }))).toEqual({
+    expect(
+      await lifeEvents.edit(
+        id,
+        content({ slug: 'fake-renamed', title: '書き換えた作り物の出来事' }),
+      ),
+    ).toEqual({
       ok: true,
     });
     expect(await lifeEvents.hasSlug('fake-life-event')).toBe(false);
-    expect(await lifeEvents.findVisitorBySlug('fake-renamed')).toMatchObject({ title: null });
+    expect(await lifeEvents.findVisitorBySlug('fake-renamed')).toMatchObject({
+      title: '書き換えた作り物の出来事',
+    });
   });
 
   it('ほかの life event の識別子に書き換えるのを拒む', async () => {
