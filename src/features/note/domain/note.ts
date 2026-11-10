@@ -259,7 +259,10 @@ export const toNoteFormValues = (note?: Pick<Note, 'slug' | 'latestRevision'>): 
 export type VisitorNoteCardImage =
   { kind: 'generated' } | { kind: 'site' } | { kind: 'media'; storageKey: MediaStorageKey };
 
-/** URL だけの段落が指す参照先の情報（FR-029・FR-030）。カードの出し方は plan.md の U9 */
+/**
+ * URL だけの段落が指す参照先の情報（FR-029・FR-030）。題があればカードで、無ければリンクで出す
+ * （research.md の R13、`src/features/note/components/link-card.tsx`）
+ */
 export type VisitorLinkPreview = {
   url: string;
   title: string | null;

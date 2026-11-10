@@ -198,8 +198,8 @@ description: "note の実装タスク"
 ### Implementation for User Story 6
 
 - [X] T042 [US6] 参照先の情報を URL の並びで読む処理と、URL ごとに書く処理を src/features/note/server/d1-note-repository.ts に足す
-- [ ] T043 [US6] 参照先への取得を作る。取得した HTML を取得のモジュールの中で題と画像の URL に詰め替える（Anti-Corruption Layer）。1 回の保存で取りに行く URL の数・1 回の取得の時間と大きさの上限を plan.md に書いてから作る（FR-027、constitution II・VII、research.md の R13）。**止める未決: U9**
-- [ ] T044 [US6] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に渡す部品として、行に URL だけを書いた行を `link_preview` の題と画像を添えたカードで出し、URL カードを含む note の表示で参照先への `fetch` が 0 回であることを tests/integration/notes.test.ts で確かめる（FR-027・FR-028・SC-005、User Story 6 の 1・2）。**止める未決: U9**
+- [X] T043 [US6] 参照先への取得を src/shared/server/link-preview-fetch.ts に作り、見た目の確認の画面が参照先の情報を持たない URL を取って書く（src/features/note/application/get-note-preview.ts）。取得した HTML を取得のモジュールの中で題と画像の URL に詰め替える（Anti-Corruption Layer）。上限は plan.md の「参照先への取得の上限」。tests/unit/link-preview-fetch.test.ts・tests/unit/note-usecases.test.ts・tests/workers/link-preview-fetch.test.ts・tests/integration/notes.test.ts で確かめる（FR-027、constitution II・VII、research.md の R13）
+- [X] T044 [US6] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に渡す部品（src/features/note/components/link-card.tsx）として、行に URL だけを書いた行を `link_preview` の題と画像を添えたカードで出し、題の無い URL をリンクで出す。tests/unit/note-link-card.test.ts で描き方を、tests/integration/notes.test.ts で URL カードを含む note の表示の前後で `link_preview` の行の数が変わらないことを確かめる（FR-027・FR-028・SC-005、User Story 6 の 1・2）
 
 ---
 
@@ -248,7 +248,7 @@ description: "note の実装タスク"
 - US3: US1 に依存（保存した版を使う）。US2 と並べられる
 - US4: US1 に依存（保存の画面）。T033 は共有担当の書きかけの保持の部品を待つ
 - US5: US1 に依存。T037 だけが U8 を待つ
-- US6: US1 に依存。T041・T042 は U9 を待たない
+- US6: US1 に依存
 - US7: US1 に依存。US2〜US6 と並べられる
 
 ### 未決が止めるタスク
@@ -256,8 +256,7 @@ description: "note の実装タスク"
 | 未決 | 止めるタスク |
 |---|---|
 | U8 | T037 |
-| U9 | T043・T044 |
-| U1〜U7・U10〜U14 | 無し |
+| U1〜U7・U9〜U14 | 無し |
 
 ### Within Each User Story
 
@@ -294,7 +293,7 @@ T018 → T019、T020・T021 は並べる → T022
 
 ### Incremental Delivery
 
-US1+US2 → US3・US4 → US7 → US5（U8 を待たない部分）→ US6（U9 を待たない部分）→ Polish。各段階を Preview で確かめてからマージする
+US1+US2 → US3・US4 → US7 → US5（U8 を待たない部分）→ US6 → Polish。各段階を Preview で確かめてからマージする
 
 ## Notes
 

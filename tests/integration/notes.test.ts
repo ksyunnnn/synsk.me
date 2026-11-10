@@ -4,6 +4,7 @@ import { encodeActionCall, encodeForm, readActionFields } from './support/form';
 import { readRows } from './support/send';
 import {
   deleteNoteRow,
+  insertLinkPreview,
   insertNote,
   insertNoteMedia,
   insertNoteRevision,
@@ -278,6 +279,31 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
         expect(text).not.toContain(value);
       }
     }
+  });
+
+  it('URL だけの段落は、参照先の情報を持てばカードで、持たなければリンクで出し、表示では取りに行かない（FR-027・FR-028・SC-005）', async () => {
+    await insertLinkPreview(ctx.db, {
+      url: 'https://example.com/integration-visitor-known',
+      title: '訪問者のカードの題',
+      imageUrl: 'https://example.com/integration-visitor-known.png',
+    });
+    // 取りに行けば取れる名前の URL。表示で取れば `link_preview` に行が増える
+    const unknown = 'https://example.com/integration-visitor-unknown';
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-visitor-links',
+      body: `https://example.com/integration-visitor-known\n\n${unknown}`,
+    });
+    await publishNoteRow(ctx.db, note.id);
+    const countRows = async () =>
+      ctx.db.prepare('SELECT count(*) AS n FROM link_preview').first('n');
+    const before = await countRows();
+
+    const html = await (await ctx.server.fetch('/notes/integration-visitor-links')).text();
+
+    expect(html).toContain('訪問者のカードの題');
+    expect(html).toContain('src="https://example.com/integration-visitor-known.png"');
+    expect(html).toContain(`<p><a href="${unknown}">${unknown}</a></p>`);
+    expect(await countRows()).toBe(before);
   });
 
   it('説明文が空なら、本文の最初の段落が説明に出る', async () => {
@@ -647,6 +673,34 @@ describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
     expect(html).toContain('<strong>新しい</strong>');
     expect(html).toContain('公開していません');
     expect(html).not.toContain('見た目の確認の古い題');
+  });
+
+  it('参照先の情報を持つ URL はカードで、取れない URL はリンクで出し、取れない URL を書かない（U9）', async () => {
+    await insertLinkPreview(ctx.db, {
+      url: 'https://example.com/integration-preview-known',
+      title: '見た目の確認のカードの題',
+      imageUrl: 'https://example.com/integration-preview-known.png',
+    });
+    // `.invalid` は公開のインターネットで引けない名前（RFC 6761）。取得の部品は要求を出さずに失敗にする
+    const unfetched = 'https://integration-preview.invalid/a';
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-preview-links',
+      body: `https://example.com/integration-preview-known\n\n${unfetched}`,
+    });
+    const res = await ctx.server.fetch(`/dash/notes/${note.uid}/preview`, {
+      headers: await authorHeaders(),
+    });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('見た目の確認のカードの題');
+    expect(html).toContain('src="https://example.com/integration-preview-known.png"');
+    expect(html).toContain(`<p><a href="${unfetched}">${unfetched}</a></p>`);
+    expect(
+      await ctx.db
+        .prepare('SELECT count(*) AS n FROM link_preview WHERE url = ?')
+        .bind(unfetched)
+        .first('n'),
+    ).toBe(0);
   });
 
   it('オーナーの JWT がなければ 403 で、中身を返さない', async () => {
