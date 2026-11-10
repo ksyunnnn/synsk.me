@@ -10,6 +10,7 @@ import {
 } from '@/features/resume/components/resume-form-parts';
 import type { FieldError, ResumeSettingsField } from '@/features/resume/domain/resume-forms';
 import { InputField } from '@/shared/components/field';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 職務経歴書の設定（題・期限）のフォーム（specs/002-resume/contracts/dash.md の
@@ -73,9 +74,7 @@ export const ResumeSettingsForm = ({
         />
       )}
       <div>
-        <button type="submit" className={BUTTON}>
-          保存する
-        </button>
+        <SubmitButton className={BUTTON}>保存する</SubmitButton>
       </div>
     </form>
   );

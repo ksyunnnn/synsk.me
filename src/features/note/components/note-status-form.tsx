@@ -7,6 +7,7 @@ import {
   type NoteFormResult,
   type NoteStatus,
 } from '@/features/note/domain/note';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * note の公開と下書きに戻すの操作（specs/003-note/contracts/dash.md）。開いたときの版は送らず、
@@ -56,16 +57,14 @@ export const NoteStatusForm = ({ noteUid, status, publishAction, unpublishAction
       <div className="flex flex-wrap gap-3">
         <form action={publish}>
           <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />
-          <button type="submit" className={BUTTON}>
+          <SubmitButton className={BUTTON}>
             {status === 'published' ? '最も新しい版で公開し直す' : '最も新しい版を公開する'}
-          </button>
+          </SubmitButton>
         </form>
         {status === 'published' && (
           <form action={unpublish}>
             <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />
-            <button type="submit" className={BUTTON}>
-              下書きに戻す
-            </button>
+            <SubmitButton className={BUTTON}>下書きに戻す</SubmitButton>
           </form>
         )}
       </div>

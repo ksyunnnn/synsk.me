@@ -10,6 +10,7 @@ import {
   type MediaFormResult,
   type MediaRejection,
 } from '@/shared/domain/media';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 本文の画像を足すフォームと、足した画像を本文に貼る印の一覧。1 回の操作で 1 枚
@@ -87,12 +88,9 @@ export const MediaUploadForm = ({ action, owner, mediaStorageKeys, children }: P
           </p>
         )}
         <div>
-          <button
-            type="submit"
-            className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-          >
+          <SubmitButton className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             画像を足す
-          </button>
+          </SubmitButton>
         </div>
       </form>
     </section>

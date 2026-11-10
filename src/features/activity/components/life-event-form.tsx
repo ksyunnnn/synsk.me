@@ -10,6 +10,7 @@ import {
 } from '@/features/activity/domain/life-event';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * life event を作る・書き換えるフォーム（specs/004-external-activity/contracts/dash.md）。
@@ -99,12 +100,9 @@ export const LifeEventForm = ({ action, initialValues, uid }: Props) => {
         error={errorOf('slug')}
       />
       <FormActions>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {uid ? '保存する' : '作る'}
-        </button>
+        </SubmitButton>
       </FormActions>
     </form>
   );

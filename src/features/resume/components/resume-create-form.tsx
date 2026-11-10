@@ -21,6 +21,7 @@ import { InputField } from '@/shared/components/field';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 職務経歴書を作るフォーム（specs/002-resume/contracts/dash.md の `/dash/resumes/new`）。
@@ -171,12 +172,9 @@ export const ResumeCreateForm = ({
         selected={values?.educationIds ?? null}
       />
       <FormActions>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           作る
-        </button>
+        </SubmitButton>
       </FormActions>
     </form>
   );

@@ -10,6 +10,7 @@ import {
 import type { ActionResult } from '@/shared/domain/action-result';
 import { InputField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 組織名と秘匿化した組織名を直すフォーム。Server Action は props で受け取り、`server/` を
@@ -85,12 +86,9 @@ export const OrganizationForm = ({
         error={errorOf('nameMasked')}
       />
       <FormActions>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           保存する
-        </button>
+        </SubmitButton>
       </FormActions>
     </form>
   );

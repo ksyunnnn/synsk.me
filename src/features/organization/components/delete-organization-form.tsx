@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { ORGANIZATION_UID_FIELD } from '@/features/organization/application/edit-organization';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /** 組織を消す確認のフォーム。消せなければ理由を示す */
 
@@ -30,12 +31,9 @@ export const DeleteOrganizationForm = ({
         </p>
       )}
       <div>
-        <button
-          type="submit"
-          className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           削除する
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );
