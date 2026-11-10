@@ -79,8 +79,7 @@ export const respondWithSquareMedia = async (
       .transform({ width: NOTE_SHARE_IMAGE_SIZE, height: NOTE_SHARE_IMAGE_SIZE, fit: 'cover' })
       .output({ format: outputFormat(media.type) });
     return result.response({ headers });
-  } catch (error) {
-    console.error('共有したときの画像を縮められなかった', error);
+  } catch {
     return new Response(null, {
       status: 302,
       headers: { Location: SITE_NOTE_SHARE_IMAGE_PATH, 'Cache-Control': NO_STORE },
