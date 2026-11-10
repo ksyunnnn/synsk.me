@@ -34,7 +34,7 @@
 |---|---|---|
 | `item_type` | 種類。`career`・`project`・`note`・`external_activity`・`life_event` | M1 |
 | `item_number` | 種類ごとの元の行の主キー。並べる SQL の中だけで使い、DTO に入れない。外部キーではないので `_id` を付けない | M1 |
-| `sort_at` | 並びの日付。暦の日付（`YYYY-MM-DD`）か日時（`YYYY-MM-DDTHH:MM:SS.sssZ`）の文字列。`activity.sort_at` と同じ意味なので同じ名前にする | M1 |
+| `sort_at` | 並びの日付。暦の日付（`YYYY-MM-DD`）か、日時を Asia/Tokyo の時刻にした文字列（`YYYY-MM-DDTHH:MM:SS.sss`。末尾に `Z` を付けない）。時点ではないので、並べる SQL の中だけで使う。暦の日付は同じ日の日時より前に並ぶ（`activity.sort_at` と同じ並び方） | M1（日時の換算は M5） |
 | `is_masked` | 秘匿化した職歴・実績なら 1。ほかは 0 | M1 |
 | `title` | 秘匿化しない実績・note・外部の activity・life event の題。秘匿化した実績と職歴は `NULL` | M1 |
 | `title_masked` | 秘匿化した実績の `project.title_masked`。ほかの行は `NULL` | M1 |
@@ -46,6 +46,8 @@
 | `description` | note の公開した版の説明文、life event の説明 | M2 |
 | `source`・`source_kind` | 外部の activity と life event の取得元と分類（`activity_source.kind`） | M3 |
 | `url` | 外部の activity の取得元の URL | M3 |
+| `created_at` | note の作成日時（`note.created_at`。UTC の時点）。ほかの行は `NULL` | M5 |
+| `published_at` | 外部の activity の公開日時（`activity.published_at`。UTC の時点）。ほかの行は `NULL` | M5 |
 
 列の名前は `docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」に従う。種類は `kind` と呼ばない。`project.kind`（実績の種類）と `activity_source.kind`（分類）が別の意味で使っているため。
 
@@ -59,8 +61,8 @@
 |---|---|---|---|---|
 | 職歴 | `career.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `career.started_on` | `is_masked = 1` なら `organization_name` は `NULL`、`organization_name_masked` は `name_masked`。`description`・`url` は出さない | M1 |
 | 実績 | `project.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `project.started_on` | `is_masked = 1` なら `title`・`organization_name` は `NULL`、`title_masked`・`organization_name_masked` に秘匿化した値。`description`・`url`・`card_media_id` は出さない | M1 |
-| note | `note.status = 'published' AND note.deleted_at IS NULL`。題と説明文は `note.published_revision_id` の版 | `note.created_at` | — | M2 |
-| 外部の activity | `activity.source <> 'life_event'` で、公開で削除していない note の `syndication.url` と `activity.url` が一致しない | `activity.sort_at` | — | M3（除外は M4） |
+| note | `note.status = 'published' AND note.deleted_at IS NULL`。題と説明文は `note.published_revision_id` の版 | `note.created_at` を Asia/Tokyo の時刻にした値 | — | M2（換算は M5） |
+| 外部の activity | `activity.source <> 'life_event'` で、公開で削除していない note の `syndication.url` と `activity.url` が一致しない | `activity.published_at` を Asia/Tokyo の時刻にした値 | — | M3（除外は M4、換算は M5） |
 | life event | `activity.source = 'life_event'` のすべて | `activity.sort_at` | — | M3 |
 
 取得元で消えたと確かめた外部の activity は、004 が行を消す（004 の research.md の R6）。外部の activity の腕は、消えた行を除く条件を持たない（FR-002）。
@@ -75,6 +77,7 @@
 | M2 | ビューを作り直し、note の腕と `description` を足す | Phase 4（note） |
 | M3 | ビューを作り直し、外部の activity と life event の腕と、`source`・`source_kind`・`url` を足す | Phase 6（外部の activity と life event） |
 | M4 | ビューを作り直し、外部の activity の腕に転載先と一致する行の除外を足す | Phase 7（重なりの除外） |
+| M5 | ビューを作り直し、note と外部の activity の `sort_at` を Asia/Tokyo の時刻にし、`created_at`・`published_at` を足す（plan.md の U3 の決定、research.md の R5）。migrations/0022 | Phase 6 の T042 |
 
 ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有担当が決める。
 
@@ -98,6 +101,6 @@ ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有
 - `FeedItemType`: `FEED_ITEM_TYPES` から作る型
 - `FeedItem`: 種類で分けた型。項目は [contracts/visitor-feed.md](./contracts/visitor-feed.md) が持つ
 - `FeedRepository`（`src/features/activity/domain/feed-repository.ts`）: `list` が `FeedItem` の並びを返す。ページの引数は tasks.md の Phase 5 で足す
-- note の作成日・外部の activity の公開日・life event の起きた日は、ビューの `sort_at` から詰める。ビューに別の列を足さない
+- note の作成日はビューの `created_at`、外部の activity の公開日は `published_at` から詰める。`sort_at` は Asia/Tokyo の時刻にした並びの値で、時点として詰めない。life event の起きた日は `sort_at`（換算しない暦の日付）から詰める
 - 職歴と実績の期間は `src/shared/domain/period.ts` の `Period` を使う
 - 表の行の型は `server/d1-feed-repository.ts` の中だけで書く（001 の research.md の R3）

@@ -39,7 +39,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R3 ビューの形と、migration の分け方
 
-- 決めたこと: ビューの列と腕は [data-model.md](./data-model.md) の「一覧のビュー」が持つ。migration は腕を足すたびにビューを作り直す（`DROP VIEW` と `CREATE VIEW`）形で、4 本に分ける。M1 は職歴と実績の腕、M2 は note の腕、M3 は外部の activity と life event の腕、M4 は転載先と一致する外部の activity の除外。番号とファイル名は共有担当が付ける
+- 決めたこと: ビューの列と腕は [data-model.md](./data-model.md) の「一覧のビュー」が持つ。migration は腕を足すたびにビューを作り直す（`DROP VIEW` と `CREATE VIEW`）形で、5 本に分ける。M1 は職歴と実績の腕、M2 は note の腕、M3 は外部の activity と life event の腕、M4 は転載先と一致する外部の activity の除外、M5 は並びの値の Asia/Tokyo の時刻への換算（R5）。番号とファイル名は共有担当が付ける
 - 理由: issue #219 の進め方が、005 を 001 のデータだけの細い 1 本で先に通し、一覧の読み口を決めてから 003・004 の種類を足すとする（Walking Skeleton）。腕ごとに migration を分けると、各段階が失敗する検査から始められる。SQLite のビューは `ALTER VIEW` を持たず、変えるときは消して作り直す（[CREATE VIEW](https://sqlite.org/lang_createview.html)、2026-11-09 に確認）
 - 腕の列の型: 腕ごとに同じ位置の列の型を揃え、使わない列は型を揃えた `NULL` を置く。ADR-0046 の Consequences が、腕の式の affinity が揃わないと全行を読むとするため。読み取り行数は R8 で測る
 - 退けた案: 1 本の migration で 5 種類をまとめて作る。003・004 の種類を足す前に一覧の読み口を確かめる段階が無くなる
@@ -58,12 +58,17 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R5 並びの順
 
 - 決めたこと:
-  - ビューは並びの値 `sort_at` を文字列で持つ。職歴と実績は `started_on`（暦の日付）、note は `note.created_at`（日時）、外部の activity と life event は `activity.sort_at`（0004 の生成列）を使う（FR-007・FR-009）
+  - ビューは並びの値 `sort_at` を文字列で持つ。職歴と実績は `started_on`（暦の日付）、life event は `activity.sort_at`（0004 の生成列。暦の日付）を使う。note は `note.created_at`、外部の activity は `activity.published_at` を、Asia/Tokyo の時刻（`strftime('%Y-%m-%dT%H:%M:%f', <列>, '+9 hours')`）にして使う（FR-007・FR-009）
+  - 日の境目は Asia/Tokyo の 0 時にする（plan.md の U3。2026-11-10 にオーナーが決めた。issue #219 のコメント「005-feed U3「時点を Asia/Tokyo に換算する場所」をオーナーが決めた」）。換算はビューの定義に置く（migrations/0022、data-model.md の M5）。暦の日付は換算せず、文字列の比べ方で同じ日の日時より前に並ぶ（0004 の `sort_at` の注釈）。オーナーが入れた日付をその日の UTC の 00:00 の `published_at` に入れると（004 の plan.md の U12 の推奨 (a)）、Asia/Tokyo の 9 時になり、同じ日の life event より新しい位置に並ぶ（FR-011）
+  - 換算した `sort_at` は時点ではないので、並べる SQL の中だけで使う。note の作成日と外部の activity の公開日は、ビューの `created_at`・`published_at`（元の UTC の値）から詰める（contracts/visitor-feed.md）
+  - 換算した `sort_at` は `CAST(... AS TEXT)` で腕の列の型を揃える。式のままだと、ビューの外の条件が腕の中へ下りない（R3）
   - Repository の実装は `ORDER BY sort_at DESC, <種類の順>, item_number DESC` で読む。種類の順は `src/features/activity/domain/feed.ts` の 1 つの `as const` の配列に置き、SQL の `CASE` をその配列から作る。同じデータを読むたびに同じ順になる（FR-010）
   - 種類の順は仮の順（note・外部の activity・life event・実績・職歴）で作る。spec は「並びの日付が同じとき、どの種類を先に並べるか」を決めないため（plan.md の U2、2026-11-09 の PM の回答）。決まったら配列だけを直す
   - note は作成日で並べ、公開の操作で並びを変えない（FR-008）。`note.created_at` は公開で変わらない列（0005・0012）
-- 未決: 暦の日付と日時が同じ日のときの順と、日の境目の時刻帯（spec の「決定が無く」）。0004 の `sort_at` は、暦の日付を同じ日の日時より前に並べる（文字列の比べ方で、日の境目は UTC になる）。オーナーが入れる日付を `published_at` にどう入れるか（004 の plan.md の U12）に左右されるため、その答えを待つ（plan.md の U3）。止める範囲は、種類をまたいで同じ日の順を確かめる検査（FR-011、SC-004 の同じ日の組）
-- 退けた案: 種類の順をビューの列に持たせる。順を直すたびに migration が要る
+- 退けた案:
+  - 種類の順をビューの列に持たせる。順を直すたびに migration が要る
+  - Asia/Tokyo の時刻を書き込むときに生成列に持ち、ビューがその列を使う。2026-11-10 に 201 行の D1 で `EXPLAIN QUERY PLAN` を取り、ビューで換算する案と同じく並べ替えに索引を使わなかった。並びと索引の使い方が同じなら、変える箇所がビューの定義 1 か所の案が単純（docs/SOFTWARE_DESIGN.md の原則 9）
+  - 読んだ後にアプリケーションで並べる。ページ送りの `LIMIT`・`OFFSET` が SQL の並びに依る（R8）
 
 ## R6 訪問者向けの DTO
 
@@ -91,6 +96,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   - `meta.rows_read` はどれも 2,102 で、`meta.duration` は 0〜2 ミリ秒
   - `EXPLAIN QUERY PLAN` では、各腕の表を読み通し（`SCAN`）、全体を一時の B-tree で並べ替える。`LIMIT` を付けても読む行は減らない
   - 速さの面では、写して持つ形に移す必要を示す値は出ていない。移すかの判断はこの文書でしない
+  - 2026-11-10、migration 0022（`sort_at` を Asia/Tokyo の時刻にする。R5）を当てた D1 で、同じ件数のデータと同じ 4 つの文を 5 回ずつ流し直した。`meta.rows_read` はどれも 2,102 で、`meta.duration` は 0〜2 ミリ秒。`EXPLAIN QUERY PLAN` は各腕の `SCAN` と `USE TEMP B-TREE FOR ORDER BY` で、換算の前と同じ
 - 費用の懸念（issue #87「D1 の使用量が無料枠を超えないようにし、超過を検知する」）:
   - 1 回の一覧の表示で読む行は、並ぶ項目の全体の件数に比例する。上の計測では項目 1 件あたり約 3 行
   - D1 の Workers Free の読み取り行数の上限は 1 日 500 万行（[D1 の Pricing](https://developers.cloudflare.com/d1/platform/pricing/)、2026-11-09 に確認）。上の 700 件なら、一覧の表示 1 日約 2,378 回で上限に達する。項目が N 件なら約 500 万 ÷ 3N 回
