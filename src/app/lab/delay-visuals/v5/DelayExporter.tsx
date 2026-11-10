@@ -4,11 +4,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import {
   ArrowCounterClockwise,
+  CaretDown,
   DownloadSimple,
   Export,
   ImageSquare,
   Pause,
   Play,
+  SlidersHorizontal,
 } from '@phosphor-icons/react';
 
 import {
@@ -24,8 +26,8 @@ import { drawGuides } from './guides';
 // 再生位置のスライダーの段数。再生中は段に丸めず、経過時間からなめらかに位置を出す
 const STEPS = 2000;
 
-// 最初の値と「リセット」で戻す値。オーナーが v1 の最終版で選んだもの
-const DEFAULTS = { seconds: 50, seam: 0.9, shift: 0.01, count: 6 };
+// 最初の値と「リセット」で戻す値。長さはオーナーが 15 秒に決めた。ほかは、オーナーが v1 の最終版で選んだもの
+const DEFAULTS = { seconds: 15, seam: 0.9, shift: 0.01, count: 6 };
 
 // 画面に出す言葉。出典は PR の本文にある
 const COPY = {
@@ -45,6 +47,7 @@ const COPY = {
   amount: '強さ',
   strips: '帯の数',
   reset: 'リセット',
+  adjust: '調整',
   export: '書き出す',
   exporting: '書き出し中',
   cancel: 'キャンセル',
@@ -187,6 +190,9 @@ export const DelayExporter = () => {
   const [canShare, setCanShare] = useState(false);
   // プレビューに補助線を重ねるか。書き出す動画には効かない
   const [guides, setGuides] = useState(true);
+  // 調整の欄を開いているか。必要な人だけが開く
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const adjustId = useId();
 
   const running = exportState.kind === 'running';
   const exportedUrl = exportState.kind === 'done' ? exportState.result.url : null;
@@ -521,57 +527,75 @@ export const DelayExporter = () => {
         </div>
       </fieldset>
 
-      <section className="grid gap-5" aria-label="設定">
-        <Slider
-          label={COPY.duration}
-          value={seconds}
-          display={`${seconds} 秒`}
-          min={4}
-          max={60}
-          step={1}
-          disabled={running}
-          onChange={edit(setSeconds)}
-        />
-        <Slider
-          label={COPY.range}
-          value={seam}
-          display={`${Math.round(seam * 100)}%`}
-          min={0.1}
-          max={0.9}
-          step={0.01}
-          disabled={running}
-          onChange={edit(setSeam)}
-        />
-        <Slider
-          label={COPY.amount}
-          value={shift}
-          display={`${Math.round(shift * 100)}`}
-          min={0}
-          max={0.4}
-          step={0.01}
-          disabled={running}
-          onChange={edit(setShift)}
-        />
-        <Slider
-          label={COPY.strips}
-          value={count}
-          display={`${count}`}
-          min={1}
-          max={60}
-          step={1}
-          disabled={running}
-          onChange={edit(setCount)}
-        />
+      {/* 向きのほかの設定は、必要な人だけが開く（HIG の Disclosure controls）。開く操作は、開く欄のすぐ上に置く */}
+      <div className="grid gap-5">
         <button
           type="button"
-          disabled={running || isDefault}
-          onClick={reset}
-          className={`flex h-11 w-fit items-center gap-2 text-sm disabled:opacity-50 active:opacity-70 ${focusRing}`}
+          aria-expanded={adjustOpen}
+          aria-controls={adjustId}
+          onClick={() => setAdjustOpen((value) => !value)}
+          className={`flex h-11 w-fit items-center gap-2 text-sm active:opacity-70 ${focusRing}`}
         >
-          <ArrowCounterClockwise aria-hidden size={16} />
-          {COPY.reset}
+          <SlidersHorizontal aria-hidden size={18} />
+          {COPY.adjust}
+          <CaretDown
+            aria-hidden
+            size={14}
+            className={`transition-transform duration-200 motion-reduce:transition-none ${adjustOpen ? 'rotate-180' : ''}`}
+          />
         </button>
-      </section>
+        <section id={adjustId} hidden={!adjustOpen} className="grid gap-5" aria-label={COPY.adjust}>
+          <Slider
+            label={COPY.duration}
+            value={seconds}
+            display={`${seconds} 秒`}
+            min={4}
+            max={60}
+            step={1}
+            disabled={running}
+            onChange={edit(setSeconds)}
+          />
+          <Slider
+            label={COPY.range}
+            value={seam}
+            display={`${Math.round(seam * 100)}%`}
+            min={0.1}
+            max={0.9}
+            step={0.01}
+            disabled={running}
+            onChange={edit(setSeam)}
+          />
+          <Slider
+            label={COPY.amount}
+            value={shift}
+            display={`${Math.round(shift * 100)}`}
+            min={0}
+            max={0.4}
+            step={0.01}
+            disabled={running}
+            onChange={edit(setShift)}
+          />
+          <Slider
+            label={COPY.strips}
+            value={count}
+            display={`${count}`}
+            min={1}
+            max={60}
+            step={1}
+            disabled={running}
+            onChange={edit(setCount)}
+          />
+          <button
+            type="button"
+            disabled={running || isDefault}
+            onClick={reset}
+            className={`flex h-11 w-fit items-center gap-2 text-sm disabled:opacity-50 active:opacity-70 ${focusRing}`}
+          >
+            <ArrowCounterClockwise aria-hidden size={16} />
+            {COPY.reset}
+          </button>
+        </section>
+      </div>
     </div>
   );
 };
