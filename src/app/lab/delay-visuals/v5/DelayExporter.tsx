@@ -46,7 +46,7 @@ const COPY = {
   rightToLeft: '右から左',
   topToBottom: '上から下',
   duration: '長さ',
-  amount: '強さ',
+  amount: 'ずれの大きさ',
   strips: '帯の数',
   reset: 'リセット',
   adjust: '調整',
@@ -573,7 +573,7 @@ export const DelayExporter = () => {
           <Slider
             label={COPY.amount}
             value={shift}
-            display={`${(shift * 100).toFixed(1)}%`}
+            display={`幅の ${(shift * 100).toFixed(1)}%`}
             min={0}
             max={0.4}
             step={0.001}
