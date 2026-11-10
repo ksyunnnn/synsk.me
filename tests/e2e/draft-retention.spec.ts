@@ -212,6 +212,39 @@ test('前の更新日時の書きかけを戻すと、書きかけで変えた�
   );
 });
 
+test('前の更新日時の書きかけでチェックを外した項目を戻すと、外したまま入り、先に保存した項目は残る', async ({
+  page,
+  context,
+}) => {
+  const skill = `E2E 書きかけで外すスキル ${crypto.randomUUID()}`;
+  await actAsAuthor(context);
+  await registerSkill(page, skill);
+  const { editUrl } = await registerProject(page, {
+    organizationName: 'E2E 外す書きかけの実績の組織',
+    organizationNameMasked: 'E2E 外す書きかけの実績の秘匿化した組織名',
+    title: 'E2E 外す書きかけの保存した題',
+    skills: [skill],
+  });
+  await page.goto(editUrl);
+  const other = await context.newPage();
+  await other.goto(editUrl);
+  await textbox(other, '題').fill('E2E 先に保存した題');
+  await saveEdit(other);
+  await other.close();
+  await fillUntilDrafted(page, 'project', () =>
+    page.getByRole('checkbox', { name: skill, exact: true }).uncheck(),
+  );
+  await page.reload();
+  await expect(page.getByRole('checkbox', { name: skill, exact: true })).toBeChecked();
+
+  const notice = page.getByRole('region', { name: '前の版の書きかけ' });
+  await notice.getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(notice).toContainText('書きかけで変えた項目を戻しました');
+  // 外したチェックボックスは FormData に名前が残らない。名前が無いことを、外したと読む
+  await expect(page.getByRole('checkbox', { name: skill, exact: true })).not.toBeChecked();
+  await expect(textbox(page, '題')).toHaveValue('E2E 先に保存した題');
+});
+
 test('実績の登録の画面で、選んだスキルと種類が再読み込みしても残る', async ({ page, context }) => {
   const skill = `E2E 書きかけのスキル ${crypto.randomUUID()}`;
   await actAsAuthor(context);
