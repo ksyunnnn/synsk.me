@@ -23,6 +23,7 @@ import {
   type Direction,
 } from './encode';
 import { drawGuides } from './guides';
+import { Credit, LabBackLink } from './RouteLinks';
 import { Sheet } from './Sheet';
 
 // 再生位置のスライダーの段数。再生中は段に丸めず、経過時間からなめらかに位置を出す
@@ -412,6 +413,7 @@ export const DelayExporter = () => {
             </p>
           )}
         </div>
+        <LabBackLink />
         <p className="text-sm text-muted-foreground">{COPY.tagline}</p>
         <input
           ref={inputRef}
@@ -560,6 +562,7 @@ export const DelayExporter = () => {
           <SlidersHorizontal aria-hidden size={18} />
           {COPY.adjust}
         </button>
+        <Credit />
       </div>
       <Sheet
         open={adjustOpen}
