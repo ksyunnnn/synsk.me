@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { VisitorLifeEventView } from '@/features/activity/components/visitor-life-event';
 import { getVisitorLifeEvent } from '@/features/activity/server/queries';
+import { BackToTopLink } from '@/shared/components/back-to-top-link';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）。キャッシュしない
@@ -24,7 +25,8 @@ const Page = async ({ params }: Props) => {
   if (!lifeEvent) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12">
+    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
+      <BackToTopLink />
       <VisitorLifeEventView lifeEvent={lifeEvent} />
     </main>
   );

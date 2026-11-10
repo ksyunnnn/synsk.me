@@ -1,6 +1,14 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { registerEducation, registerProject, textbox } from './support/dash';
+import {
+  createEmptyLimitedResume,
+  openVisitor,
+  registerEducation,
+  registerProject,
+  setResumeVisible,
+  submitAndWait,
+  textbox,
+} from './support/dash';
 import { typeBeforeHydration } from './support/hydration';
 import { createNote, uniqueNoteSlug, waitForHydration } from './support/note';
 
@@ -237,5 +245,44 @@ test.describe('動く前の入力', () => {
     const editUrl = page.url();
 
     await typeBeforeHydration(page, editUrl, 'E2E 動く前に打った備考', '備考');
+  });
+});
+
+test.describe('戻る道', () => {
+  test('訪問者の個別のページから、トップへ戻れる', async ({ page, context, browser }) => {
+    await actAsAuthor(context);
+    const { path: projectPath } = await registerProject(page, {
+      organizationName: 'E2E 戻る道の組織',
+      organizationNameMasked: 'E2E 戻る道の秘匿化した組織名',
+      title: uniqueTitle('戻る道の実績'),
+      onSite: true,
+      isMasked: false,
+    });
+    const noteSlug = uniqueNoteSlug('back-to-top');
+    await createNote(page, { slug: noteSlug, title: 'E2E 戻る道の note' });
+    await submitAndWait(page, '最も新しい版を公開する');
+    const lifeEventSlug = `e2e-back-to-top-${crypto.randomUUID().slice(0, 8)}`;
+    await page.goto('/dash/life-events/new');
+    await textbox(page, '題').fill('E2E 戻る道の出来事');
+    await textbox(page, '起きた日').fill('2020-04-01');
+    await textbox(page, '識別子').fill(lifeEventSlug);
+    await page.getByRole('button', { name: '作る' }).click();
+    await expect(page.getByRole('status')).toHaveText('保存しました');
+    await createEmptyLimitedResume(page, uniqueTitle('戻る道の職務経歴書'));
+    const resumeUrl = await textbox(page, '限定公開用の URL').inputValue();
+    await setResumeVisible(page, true);
+
+    const visitor = await openVisitor(browser);
+    for (const path of [
+      projectPath,
+      `/notes/${noteSlug}`,
+      `/life-events/${lifeEventSlug}`,
+      new URL(resumeUrl).pathname,
+    ]) {
+      await visitor.goto(path);
+      await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
+      await expect(visitor).toHaveURL('/top-draft');
+    }
+    await visitor.close();
   });
 });
