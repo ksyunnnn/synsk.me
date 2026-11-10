@@ -2,9 +2,16 @@ import 'server-only';
 
 import type {
   ActivityRepository,
+  ExternalActivityRepository,
   ItemChanges,
   StoredItem,
 } from '@/features/activity/domain/activity-repository';
+import { toPublishedOn, type ExternalActivity } from '@/features/activity/domain/external-activity';
+import {
+  isOwnedSourceName,
+  OWNED_SOURCES,
+  type OwnedSourceName,
+} from '@/features/activity/domain/sources';
 
 /**
  * `ActivityRepository` の D1 の実装（docs/SOFTWARE_DESIGN.md の Repository）。行の型はこの
@@ -166,5 +173,104 @@ export const createD1ActivityRepository = (db: D1Database): ActivityRepository =
       .prepare('SELECT source, fetched_at FROM fetch_result')
       .all<{ source: string; fetched_at: string }>();
     return Object.fromEntries(results.map((row) => [row.source, row.fetched_at]));
+  },
+});
+
+type ExternalActivityRow = {
+  id: number;
+  uid: string;
+  source: OwnedSourceName;
+  url: string;
+  title: string;
+  published_at: string;
+};
+
+/** URL を指名する・手で入力する取得元の行だけを指す条件。値は取得元の表の定数（FR-022） */
+const IS_OWNED = `source IN (${OWNED_SOURCES.map((name) => `'${name}'`).join(', ')}) AND source <> 'life_event'`;
+
+const isUrlTaken = (error: unknown) =>
+  error instanceof Error &&
+  error.message.includes('UNIQUE constraint failed: activity.source, activity.url');
+
+const toExternalActivity = (row: ExternalActivityRow): ExternalActivity => ({
+  id: row.id,
+  uid: row.uid,
+  source: row.source,
+  url: row.url,
+  title: row.title,
+  publishedOn: toPublishedOn(row.published_at),
+});
+
+const SELECT_EXTERNAL = 'SELECT id, uid, source, url, title, published_at FROM activity';
+
+/**
+ * `ExternalActivityRepository` の D1 の実装。どの文も `IS_OWNED` を条件にし、一覧を取る取得元の
+ * 行と life event の行を読み書きしない（FR-022・FR-031・FR-033）
+ */
+export const createD1ExternalActivityRepository = (db: D1Database): ExternalActivityRepository => ({
+  list: async () => {
+    const { results } = await db
+      .prepare(`${SELECT_EXTERNAL} WHERE ${IS_OWNED} ORDER BY published_at DESC, id DESC`)
+      .all<ExternalActivityRow>();
+    return results.map(toExternalActivity);
+  },
+
+  findIdByUid: async (uid) => {
+    const row = await db
+      .prepare(`SELECT id FROM activity WHERE ${IS_OWNED} AND uid = ?`)
+      .bind(uid)
+      .first<{ id: number }>();
+    return row?.id ?? null;
+  },
+
+  findForEdit: async (id) => {
+    const row = await db
+      .prepare(`${SELECT_EXTERNAL} WHERE ${IS_OWNED} AND id = ?`)
+      .bind(id)
+      .first<ExternalActivityRow>();
+    return row ? toExternalActivity(row) : null;
+  },
+
+  register: async (source, content) => {
+    if (!isOwnedSourceName(source)) throw new Error(`管理画面で登録する取得元でない: ${source}`);
+    try {
+      const row = await db
+        .prepare(
+          'INSERT INTO activity (source, url, title, published_at, image_url) VALUES (?, ?, ?, ?, ?) RETURNING id, uid',
+        )
+        .bind(source, content.url, content.title, content.publishedAt, content.imageUrl)
+        .first<{ id: number; uid: string }>();
+      if (!row) throw new Error('外部の activity の行を入れられなかった');
+      return { ok: true, id: row.id, uid: row.uid };
+    } catch (error) {
+      if (isUrlTaken(error)) return { ok: false, reason: 'url-taken' };
+      throw error;
+    }
+  },
+
+  edit: async (id, changes) => {
+    const entries = (['url', 'title', 'publishedAt'] as const)
+      .filter((key) => changes[key] !== undefined)
+      .map((key) => [COLUMNS[key], changes[key]] as const);
+    try {
+      const result = await db
+        .prepare(
+          `UPDATE activity SET ${entries.map(([column]) => `${column} = ?`).join(', ')} WHERE ${IS_OWNED} AND id = ?`,
+        )
+        .bind(...entries.map(([, value]) => value), id)
+        .run();
+      return result.meta.changes > 0 ? { ok: true } : { ok: false, reason: 'not-found' };
+    } catch (error) {
+      if (isUrlTaken(error)) return { ok: false, reason: 'url-taken' };
+      throw error;
+    }
+  },
+
+  delete: async (id) => {
+    const result = await db
+      .prepare(`DELETE FROM activity WHERE ${IS_OWNED} AND id = ?`)
+      .bind(id)
+      .run();
+    return result.meta.changes > 0;
   },
 });

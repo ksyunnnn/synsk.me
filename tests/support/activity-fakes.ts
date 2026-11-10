@@ -1,9 +1,11 @@
 import type {
   ActivityRepository,
+  ExternalActivityRepository,
   FetchResultWrite,
   RefreshPlan,
   StoredItem,
 } from '@/features/activity/domain/activity-repository';
+import { toPublishedOn, type ExternalActivity } from '@/features/activity/domain/external-activity';
 import type {
   NotModified,
   SourceListing,
@@ -58,6 +60,67 @@ export const createFakeActivityRepository = (
     listFetchedAt: async () => ({}),
   };
   return { repository, applied, failures, notModified };
+};
+
+/**
+ * URL を指名した・手で入力した外部の activity を覚える、メモリの上の Repository。同じ取得元の
+ * 同じ URL を拒む（D1 の `activity_source_url` の UNIQUE と同じ）
+ */
+export const createFakeExternalActivityRepository = (initial: ExternalActivity[] = []) => {
+  const rows = new Map<number, ExternalActivity & { imageUrl: string | null }>(
+    initial.map((row) => [row.id, { ...row, imageUrl: null }]),
+  );
+  let nextId = Math.max(0, ...initial.map((row) => row.id)) + 1;
+  const isTaken = (source: string, url: string, except?: number) =>
+    [...rows.values()].some((row) => row.source === source && row.url === url && row.id !== except);
+  const repository: ExternalActivityRepository = {
+    list: async () => [...rows.values()],
+    findIdByUid: async (uid) => [...rows.values()].find((row) => row.uid === uid)?.id ?? null,
+    findForEdit: async (id) => {
+      const row = rows.get(id);
+      return row
+        ? {
+            id: row.id,
+            uid: row.uid,
+            source: row.source,
+            url: row.url,
+            title: row.title,
+            publishedOn: row.publishedOn,
+          }
+        : null;
+    },
+    register: async (source, content) => {
+      if (isTaken(source, content.url)) return { ok: false, reason: 'url-taken' };
+      const id = nextId++;
+      const uid = id.toString(16).padStart(32, '0');
+      rows.set(id, {
+        id,
+        uid,
+        source,
+        url: content.url,
+        title: content.title,
+        publishedOn: toPublishedOn(content.publishedAt),
+        imageUrl: content.imageUrl,
+      });
+      return { ok: true, id, uid };
+    },
+    edit: async (id, changes) => {
+      const row = rows.get(id);
+      if (!row) return { ok: false, reason: 'not-found' };
+      if (changes.url !== undefined && isTaken(row.source, changes.url, id)) {
+        return { ok: false, reason: 'url-taken' };
+      }
+      rows.set(id, {
+        ...row,
+        url: changes.url ?? row.url,
+        title: changes.title ?? row.title,
+        publishedOn: toPublishedOn(changes.publishedAt),
+      });
+      return { ok: true };
+    },
+    delete: async (id) => rows.delete(id),
+  };
+  return { repository, rows };
 };
 
 /** URL ごとに決めた応答を返す fetcher。決めていない URL には 404 を返し、要求した URL を覚える */

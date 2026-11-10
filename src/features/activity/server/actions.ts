@@ -3,8 +3,17 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
+import { deleteExternalActivity as deleteExternalActivityUseCase } from '@/features/activity/application/delete-external-activity';
 import { deleteLifeEvent as deleteLifeEventUseCase } from '@/features/activity/application/delete-life-event';
+import { editExternalActivity as editExternalActivityUseCase } from '@/features/activity/application/edit-external-activity';
 import { editLifeEvent as editLifeEventUseCase } from '@/features/activity/application/edit-life-event';
+import { registerExternalActivity as registerExternalActivityUseCase } from '@/features/activity/application/register-external-activity';
+import {
+  EXTERNAL_ACTIVITY_FIELDS,
+  EXTERNAL_ACTIVITY_UID_FIELD,
+  type ExternalActivityFormResult,
+  type ExternalActivityFormValues,
+} from '@/features/activity/domain/external-activity';
 import {
   registerLifeEventImage as registerLifeEventImageUseCase,
   removeLifeEventImage as removeLifeEventImageUseCase,
@@ -18,7 +27,11 @@ import {
   type LifeEventFormResult,
   type LifeEventFormValues,
 } from '@/features/activity/domain/life-event';
-import { createLifeEventRepository } from '@/features/activity/server/queries';
+import {
+  createExternalActivityRepository,
+  createFetchByUrl,
+  createLifeEventRepository,
+} from '@/features/activity/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { createMediaStorage } from '@/shared/server/media-storage';
@@ -82,6 +95,68 @@ export const deleteLifeEvent = async (
   const outcome = await deleteLifeEventUseCase(lifeEvents, await createMediaStorage(), author, id);
   if (outcome.status === 'forbidden') return outcome;
   redirect('/dash/life-events?deleted=1');
+};
+
+const readExternalActivityValues = (formData: FormData): ExternalActivityFormValues =>
+  readValues(formData, EXTERNAL_ACTIVITY_FIELDS);
+
+/**
+ * URL を指名した・手で入力した外部の activity を登録し、一覧の画面へ移る（FR-009・FR-010）。
+ * オーナーでなければ外へ要求を出さない（ユースケースの先頭）
+ */
+export const registerExternalActivity = async (
+  _state: ExternalActivityFormResult | null,
+  formData: FormData,
+): Promise<ExternalActivityFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const outcome = await registerExternalActivityUseCase(
+    await createExternalActivityRepository(),
+    await createFetchByUrl(),
+    author,
+    readExternalActivityValues(formData),
+  );
+  if (outcome.status === 'registered') redirect('/dash/activities?saved=1');
+  return outcome;
+};
+
+/** 外部の activity を書き換え、同じ画面へ移る */
+export const editExternalActivity = async (
+  _state: ExternalActivityFormResult | null,
+  formData: FormData,
+): Promise<ExternalActivityFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const activities = await createExternalActivityRepository();
+  const uid = readString(formData, EXTERNAL_ACTIVITY_UID_FIELD);
+  const id = await findIdByUid(activities, uid);
+  if (id === null) redirect('/dash/activities');
+
+  const outcome = await editExternalActivityUseCase(
+    activities,
+    author,
+    id,
+    readExternalActivityValues(formData),
+  );
+  if (outcome.status === 'saved') redirect(`/dash/activities/${uid}?saved=1`);
+  if (outcome.status === 'not-found') redirect('/dash/activities');
+  return outcome;
+};
+
+/** 外部の activity を消し、一覧の画面へ移る（FR-033）。確認の画面のフォームが呼ぶ */
+export const deleteExternalActivity = async (
+  _state: { status: 'forbidden' } | null,
+  formData: FormData,
+): Promise<{ status: 'forbidden' }> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const activities = await createExternalActivityRepository();
+  const id = await findIdByUid(activities, readString(formData, EXTERNAL_ACTIVITY_UID_FIELD));
+  if (id === null) redirect('/dash/activities');
+
+  const outcome = await deleteExternalActivityUseCase(activities, author, id);
+  if (outcome.status === 'forbidden') return outcome;
+  redirect('/dash/activities?deleted=1');
 };
 
 /** 画像の操作の結果。保存したら同じ画面へ移すので、画面に返すのは保存しなかったときだけ */

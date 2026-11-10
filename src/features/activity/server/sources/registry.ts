@@ -1,8 +1,19 @@
 import 'server-only';
 
 import type { ActivityDeps, GoneChecker } from '@/features/activity/application/deps';
-import { isListSourceName, type ListSourceName } from '@/features/activity/domain/sources';
+import type { UrlFetchedItem } from '@/features/activity/domain/fetched-item';
+import type { FetchLimits } from '@/features/activity/domain/limits';
+import {
+  isListSourceName,
+  isUrlSourceName,
+  type ListSourceName,
+  type UrlSourceName,
+} from '@/features/activity/domain/sources';
+import { fetchByUrl as fetchCodeSandbox } from '@/features/activity/server/sources/codesandbox';
 import { fetchListing as fetchConnpass } from '@/features/activity/server/sources/connpass';
+import { fetchByUrl as fetchSpotify } from '@/features/activity/server/sources/spotify';
+import { fetchByUrl as fetchX } from '@/features/activity/server/sources/x';
+import { fetchByUrl as fetchYouTube } from '@/features/activity/server/sources/youtube';
 import { fetchListing as fetchDevto } from '@/features/activity/server/sources/devto';
 import type { Fetcher } from '@/features/activity/server/sources/fetch-with-limits';
 import { fetchListing as fetchGitHub } from '@/features/activity/server/sources/github';
@@ -44,6 +55,16 @@ export const createSourceRegistry = (fetcher: Fetcher, env: SourceCredentialEnv)
     speakerdeck: (url, limits) => checkSpeakerDeckGone(fetcher, url, limits),
   };
 
+  const byUrl: Record<
+    UrlSourceName,
+    (url: string, limits: FetchLimits) => Promise<UrlFetchedItem | null>
+  > = {
+    spotify: (url, limits) => fetchSpotify(fetcher, url, limits),
+    youtube: (url, limits) => fetchYouTube(fetcher, url, limits),
+    codesandbox: (url, limits) => fetchCodeSandbox(fetcher, url, limits),
+    x: (url, limits) => fetchX(fetcher, url, limits),
+  };
+
   const listingOf = (source: string) => (isListSourceName(source) ? listings[source] : undefined);
 
   return {
@@ -58,5 +79,11 @@ export const createSourceRegistry = (fetcher: Fetcher, env: SourceCredentialEnv)
     /** 確かめる手段を持たない取得元は undefined。取得のユースケースは確かめない */
     goneCheckOf: (source: string): GoneChecker | undefined =>
       isListSourceName(source) ? goneChecks[source] : undefined,
+    /** URL を指名する取得元の 1 つの URL から題などを取る。ほかの取得元には要求を出さず投げる */
+    fetchByUrl: (source: string, url: string, limits: FetchLimits) => {
+      const fetchOne = isUrlSourceName(source) ? byUrl[source] : undefined;
+      if (!fetchOne) return Promise.reject(new Error(`URL を指名する取得元でない: ${source}`));
+      return fetchOne(url, limits);
+    },
   };
 };

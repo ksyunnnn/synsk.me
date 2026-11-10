@@ -3,7 +3,11 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { refreshSources } from '@/features/activity/application/refresh-sources';
 import type { GoneCheck } from '@/features/activity/domain/fetched-item';
 import { SOURCES } from '@/features/activity/domain/sources';
-import { createD1ActivityRepository } from '@/features/activity/server/d1-activity-repository';
+import { planRefresh } from '@/features/activity/application/plan-refresh';
+import {
+  createD1ActivityRepository,
+  createD1ExternalActivityRepository,
+} from '@/features/activity/server/d1-activity-repository';
 import {
   deleteActivityRows,
   insertActivity,
@@ -559,5 +563,112 @@ describe('404 が続いた回数', () => {
     await run([OLD_URL], 'gone', T2);
 
     expect((await readCount(id))?.n).toBe(0);
+  });
+});
+
+/**
+ * URL を指名した・手で入力した外部の activity の保存（`ExternalActivityRepository`、FR-005・FR-011・
+ * FR-012・FR-022・FR-033、plan.md の U12）
+ */
+describe('ExternalActivityRepository', () => {
+  const owned = createD1ExternalActivityRepository(env.DB);
+  const SPOTIFY_URL = 'https://open.spotify.com/playlist/0000000000000000000fake';
+  const content = (overrides = {}) => ({
+    url: SPOTIFY_URL,
+    title: '作り物のプレイリスト',
+    publishedAt: '2024-03-01T00:00:00.000Z',
+    imageUrl: null,
+    ...overrides,
+  });
+
+  it('登録した行を uid で開け、日付は入れた日付のまま読める', async () => {
+    const result = await owned.register('spotify', content());
+    if (!result.ok) throw new Error('登録できなかった');
+
+    expect(result.uid).toMatch(/^[0-9a-f]{32}$/);
+    const id = await owned.findIdByUid(result.uid);
+    expect(id).toBe(result.id);
+    expect(await owned.findForEdit(result.id)).toEqual({
+      id: result.id,
+      uid: result.uid,
+      source: 'spotify',
+      url: SPOTIFY_URL,
+      title: '作り物のプレイリスト',
+      publishedOn: '2024-03-01',
+    });
+  });
+
+  it('同じ取得元の同じ URL は url-taken（FR-005）', async () => {
+    await owned.register('unlisted', content({ url: 'https://example.com/fake' }));
+
+    expect(await owned.register('unlisted', content({ url: 'https://example.com/fake' }))).toEqual({
+      ok: false,
+      reason: 'url-taken',
+    });
+  });
+
+  it('一覧を取る取得元の行と life event の行は、一覧に出さず、開けず、書き換えず、消さない（FR-022）', async () => {
+    const listId = await insertActivity(env.DB, {
+      source: 'zenn',
+      url: 'https://zenn.dev/ksyunnnn/articles/fake',
+      title: '作り物の記事',
+      publishedAt: PUBLISHED,
+    });
+    const lifeEventId = await insertLifeEvent(env.DB);
+    const before = await env.DB.prepare('SELECT * FROM activity ORDER BY id').all();
+    const uids = await env.DB.prepare('SELECT uid FROM activity').all<{ uid: string }>();
+
+    expect(await owned.list()).toEqual([]);
+    for (const { uid } of uids.results) expect(await owned.findIdByUid(uid)).toBeNull();
+    for (const id of [listId, lifeEventId]) {
+      expect(await owned.findForEdit(id)).toBeNull();
+      expect(await owned.edit(id, { publishedAt: T1 })).toEqual({ ok: false, reason: 'not-found' });
+      expect(await owned.delete(id)).toBe(false);
+    }
+    expect(await env.DB.prepare('SELECT * FROM activity ORDER BY id').all()).toEqual(before);
+  });
+
+  it('一覧を取る取得元への登録は投げ、行を書かない', async () => {
+    await expect(owned.register('zenn' as never, content())).rejects.toThrow();
+    expect(await readActivityRows(env.DB, 'zenn')).toEqual([]);
+  });
+
+  it('編集は渡した列だけを書き換え、削除は行を消す（FR-033）', async () => {
+    const result = await owned.register(
+      'codepen',
+      content({ url: 'https://codepen.io/fake/pen/a' }),
+    );
+    if (!result.ok) throw new Error('登録できなかった');
+
+    expect(await owned.edit(result.id, { publishedAt: '2024-05-05T00:00:00.000Z' })).toEqual({
+      ok: true,
+    });
+    expect(await owned.findForEdit(result.id)).toMatchObject({
+      url: 'https://codepen.io/fake/pen/a',
+      title: '作り物のプレイリスト',
+      publishedOn: '2024-05-05',
+    });
+
+    expect(await owned.delete(result.id)).toBe(true);
+    expect(await owned.findForEdit(result.id)).toBeNull();
+  });
+
+  it('公開日の無い項目で取り直しても、オーナーが登録した日付を変えない（FR-012）', async () => {
+    const result = await owned.register('spotify', content());
+    if (!result.ok) throw new Error('登録できなかった');
+    const stored = await activities.listStoredForRefresh('spotify');
+
+    const plan = planRefresh(stored, [{ url: SPOTIFY_URL, title: '題を変えたプレイリスト' }]);
+    await activities.applyRefresh(
+      'spotify',
+      { ...plan, deletes: [] },
+      { fetchedAt: T1, reason: null, validators: null },
+    );
+
+    expect(plan.updates).toEqual([{ id: result.id, changes: { title: '題を変えたプレイリスト' } }]);
+    expect(await owned.findForEdit(result.id)).toMatchObject({
+      title: '題を変えたプレイリスト',
+      publishedOn: '2024-03-01',
+    });
   });
 });

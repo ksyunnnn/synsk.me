@@ -22,6 +22,7 @@ const SECTIONS = [
   { href: '/dash/resumes', label: '職務経歴書' },
   { href: '/dash/notes', label: 'note' },
   { href: '/dash/life-events', label: 'life event' },
+  { href: '/dash/activities', label: '外部の activity' },
 ] as const;
 
 const Page = async () => {

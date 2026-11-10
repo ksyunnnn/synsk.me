@@ -1,5 +1,9 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { hasLifeEventSlug, hasLifeEventUid } from '@/features/activity/server/queries';
+import {
+  hasExternalActivityUid,
+  hasLifeEventSlug,
+  hasLifeEventUid,
+} from '@/features/activity/server/queries';
 import { hasCareerUid } from '@/features/career/server/queries';
 import { hasEducationUid } from '@/features/education/server/queries';
 import { findMissingNoteRevision, hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
@@ -62,6 +66,7 @@ const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
   educations: hasEducationUid,
   resumes: hasResumeUid,
   'life-events': hasLifeEventUid,
+  activities: hasExternalActivityUid,
   notes: hasNoteUid,
 };
 
