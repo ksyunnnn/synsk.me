@@ -257,7 +257,16 @@ const fillAndSave = async (page: Page, scope: string, fill: () => Promise<void>)
 const expectNoDraftLeft = async (page: Page) => {
   await expect.poll(() => draftKeys(page)).toEqual([]);
   expect(await sentKey(page)).toBeNull();
-  // 保存した前の版の書きかけを、残った書きかけとして知らせない
+};
+
+/**
+ * 保存した前の版の書きかけを、残った書きかけとして知らせない。知らせは画面の JavaScript が
+ * 書きかけを探した後に出るので、探し終えた印を待ってから数える
+ */
+const expectNoStaleNotice = async (page: Page) => {
+  await expect(
+    page.locator('main form[data-draft-stale-checked]').filter({ visible: true }),
+  ).toHaveCount(1);
   await expect(page.getByRole('region', { name: '前の版の書きかけ' })).toHaveCount(0);
 };
 
@@ -275,6 +284,7 @@ test('職歴の編集の画面で続けて 2 回保存しても、書きかけ�
     await expect(textbox(page, '肩書')).toHaveValue(`E2E 続けて保存する肩書 ${n}`);
   }
   await expectNoDraftLeft(page);
+  await expectNoStaleNotice(page);
 });
 
 test('実績の編集の画面で続けて 2 回保存しても、書きかけが残らない', async ({ page, context }) => {
@@ -289,6 +299,7 @@ test('実績の編集の画面で続けて 2 回保存しても、書きかけ�
     await expect(textbox(page, '題')).toHaveValue(`E2E 続けて保存する題 ${n}`);
   }
   await expectNoDraftLeft(page);
+  await expectNoStaleNotice(page);
 });
 
 test('組織の編集の画面で続けて 2 回保存しても、書きかけが残らない', async ({ page, context }) => {
@@ -311,6 +322,7 @@ test('組織の編集の画面で続けて 2 回保存しても、書きかけ�
     );
   }
   await expectNoDraftLeft(page);
+  await expectNoStaleNotice(page);
 });
 
 test('スキルと学歴を登録してから編集しても、書きかけが残らない', async ({ page, context }) => {

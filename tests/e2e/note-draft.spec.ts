@@ -92,6 +92,17 @@ test('保存を止められたとき、書きかけが消えない（spec の Ed
 /** 前の版から書いた書きかけの知らせ。編集の画面のフォームの上に出る */
 const staleNotice = (page: Page) => page.getByRole('region', { name: '前の版の書きかけ' });
 
+/**
+ * 前の版の書きかけの知らせが出ていないことを確かめる。知らせは画面の JavaScript が書きかけを
+ * 探した後に出るので、探し終えた印（`data-draft-stale-checked`）を待ってから数える
+ */
+const expectNoStaleNotice = async (page: Page) => {
+  await expect(
+    page.locator('form[data-draft-stale-checked]').filter({ visible: true }),
+  ).toHaveCount(1);
+  await expect(staleNotice(page)).toHaveCount(0);
+};
+
 /** 前の版の書きかけを知らせる文 */
 const STALE_MESSAGE = 'この画面を開く前の版から書いた書きかけ';
 
@@ -143,7 +154,7 @@ test('先に保存された後に開き直すと、前の版の書きかけを�
   await expect(textbox(page, '本文')).toHaveValue('E2E 前の版の書きかけ');
   await reopen(page);
   await expect(textbox(page, '本文')).toHaveValue('E2E 前の版の書きかけ');
-  await expect(staleNotice(page)).toHaveCount(0);
+  await expectNoStaleNotice(page);
 });
 
 test('前の版の書きかけを捨てると知らせが変わり、取り消すと残り、捨てて開き直すと出ない', async ({
@@ -168,7 +179,7 @@ test('前の版の書きかけを捨てると知らせが変わり、取り消�
   await staleNotice(page).getByRole('button', { name: '書きかけを捨てる' }).click();
   await expect(staleNotice(page)).toContainText('書きかけを捨てました');
   await reopen(page);
-  await expect(staleNotice(page)).toHaveCount(0);
+  await expectNoStaleNotice(page);
   await expect(textbox(page, '本文')).toHaveValue('先に保存した本文');
   expect(await noteDraftKeys(page)).toEqual([]);
 });
@@ -206,5 +217,77 @@ test('前の版の書きかけが 2 つ以上あると、書いた日時の新�
     await expect(staleNotice(page)).toContainText('書きかけを捨てました');
     await reopen(page);
   }
-  await expect(staleNotice(page)).toHaveCount(0);
+  await expectNoStaleNotice(page);
+});
+
+/** 編集の画面の書きかけの名前から、版を除いた部分。別の版の書きかけを置くのに使う */
+const draftStem = async (page: Page) => {
+  const key = await page.locator('form[data-draft-key]').getAttribute('data-draft-key');
+  if (key === null) throw new Error('書きかけの名前が無い');
+  return key.replace(/@[^@]*$/, '');
+};
+
+test('送って応答が無いまま先に保存された書きかけも、保存の知らせの無い画面で開き直すと知らせる', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('stale-unsent'),
+    title: 'E2E 応答の無かった書きかけ',
+  });
+  await openNoteEditor(page, editUrl);
+  const stem = await draftStem(page);
+  // 送信が応答を返さずに失敗すると、送った印（synsk:draft-sent）が前の版の書きかけを指したまま残る
+  await page.evaluate((stem) => {
+    const key = `${stem}@failed-send`;
+    window.localStorage.setItem(
+      key,
+      JSON.stringify({
+        writtenAt: '2026-01-01T00:00:00.000Z',
+        values: { body: ['E2E 届かなかった本文'] },
+      }),
+    );
+    window.localStorage.setItem('synsk:draft-sent', key);
+  }, stem);
+  await reopen(page);
+
+  await expect(staleNotice(page)).toContainText(STALE_MESSAGE);
+  await staleNotice(page).getByRole('button', { name: '書きかけを戻す' }).click();
+  await expect(textbox(page, '本文')).toHaveValue('E2E 届かなかった本文');
+});
+
+test('知らせのボタンをキーボードで押すと、入れ替わったボタンに焦点が移る', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const editUrl = await createNote(page, {
+    slug: uniqueNoteSlug('stale-focus'),
+    title: 'E2E 知らせの焦点',
+  });
+  await openNoteEditor(page, editUrl);
+  const stem = await draftStem(page);
+  await page.evaluate((stem) => {
+    window.localStorage.setItem(
+      `${stem}@older`,
+      JSON.stringify({
+        writtenAt: '2026-01-01T00:00:00.000Z',
+        values: { body: ['E2E 焦点の書きかけ'] },
+      }),
+    );
+  }, stem);
+  await reopen(page);
+
+  const restore = staleNotice(page).getByRole('button', { name: '書きかけを戻す' });
+  const discard = staleNotice(page).getByRole('button', { name: '書きかけを捨てる' });
+  const undo = staleNotice(page).getByRole('button', { name: '取り消す' });
+  await restore.focus();
+  await page.keyboard.press('Enter');
+  await expect(undo).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(restore).toBeFocused();
+  await discard.focus();
+  await page.keyboard.press('Enter');
+  await expect(undo).toBeFocused();
 });

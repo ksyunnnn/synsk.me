@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type ComponentPropsWithoutRef } from 'react';
+import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type MouseEvent } from 'react';
 
 /**
  * 保存操作をしていない入力を、ブラウザの `localStorage` に持つフォーム（docs/REQUIREMENTS.md の
@@ -114,14 +114,15 @@ type StaleDraft = { key: string; stored: string; values: DraftValues };
  * 同じ `storageKey` の、`version` が違う書きかけ。書いた日時の新しいものから並べ、日時を持たない
  * ものは後に名前の順で並べる。
  *
- * 送って保存の成功を待っている書きかけ（`SENT_KEY`）は挙げない。編集の画面で保存すると、新しい
- * 版で開き直した `?saved=1` の画面で、送った前の版の書きかけを `DraftSavedNotice` が消す。
- * どちらの部品が先に動くかは、画面の中で置いた順で変わる。消される前の書きかけを知らせないようにする。
- * 送信が応答を返さずに失敗した書きかけは、ほかの送信で `SENT_KEY` が変わると知らせる
+ * 保存の知らせの画面（`?saved=1`）では、送って保存の成功を待っている書きかけ（`SENT_KEY`）を
+ * 挙げない。編集の画面で保存すると、新しい版で開き直したその画面で、送った前の版の書きかけを
+ * `DraftSavedNotice` が消す。どちらの部品が先に動くかは、画面の中で置いた順で変わる。消される前の
+ * 書きかけを知らせないようにする。ほかの画面では挙げる。送信が応答を返さずに失敗した後に、別の
+ * 画面で先に保存されると、送った書きかけは前の版の書きかけになり、保存されていないため
  */
 const findStaleDrafts = (storageKey: string, currentKey: string): StaleDraft[] => {
   const prefix = `${toStorageKey(storageKey, undefined)}@`;
-  const sent = read(SENT_KEY);
+  const sent = new URLSearchParams(window.location.search).has('saved') ? read(SENT_KEY) : null;
   const found: (StaleDraft & { writtenAt?: string })[] = [];
   try {
     for (let i = 0; i < window.localStorage.length; i++) {
@@ -302,8 +303,8 @@ export const DraftRetainingForm = ({
   /** 送信した値。失敗の結果が来たら持ち直す */
   const submittedRef = useRef<DraftValues | null>(null);
   const key = toStorageKey(storageKey, version);
-  /** 知らせている前の版の書きかけ */
-  const [stale, setStale] = useState<StaleDraft | null>(null);
+  /** 知らせている前の版の書きかけ。`undefined` は、まだ探していないこと */
+  const [stale, setStale] = useState<StaleDraft | null | undefined>(undefined);
   /** 知らせている書きかけに行った操作。取り消すときに使う */
   const [outcome, setOutcome] = useState<StaleOutcome | null>(null);
   /** 操作の後に入力したら、取り消しを出すのをやめる。入力の処理から読む */
@@ -408,7 +409,14 @@ export const DraftRetainingForm = ({
   };
 
   return (
-    <form ref={formRef} action={action} {...props} {...{ [DRAFT_KEY_ATTRIBUTE]: key }}>
+    <form
+      ref={formRef}
+      action={action}
+      {...props}
+      {...{ [DRAFT_KEY_ATTRIBUTE]: key }}
+      // 前の版の書きかけを探し終えた印。知らせが出ないことを確かめるテストが待つ
+      {...(stale !== undefined && { 'data-draft-stale-checked': '' })}
+    >
       {stale && (
         <StaleDraftNotice
           outcome={outcome?.kind ?? null}
@@ -445,36 +453,63 @@ const StaleDraftNotice = ({
   onRestore: () => void;
   onDiscard: () => void;
   onUndo: () => void;
-}) => (
-  <section
-    aria-label="前の版の書きかけ"
-    className="flex flex-col gap-3 rounded-md border border-border p-4"
-  >
-    <p aria-live="polite" className="text-sm">
-      {outcome === 'restored'
-        ? '書きかけを戻しました。'
-        : outcome === 'discarded'
-          ? '書きかけを捨てました。'
-          : 'この画面を開く前の版から書いた書きかけが、この端末に残っています。'}
-    </p>
-    <div className="flex flex-wrap gap-2">
-      {outcome === null ? (
-        <>
-          <button type="button" className={STALE_BUTTON_CLASS} onClick={onRestore}>
-            書きかけを戻す
+}) => {
+  const buttonsRef = useRef<HTMLDivElement>(null);
+  /** 押したボタンは入れ替わって消え、焦点を失う。入れ替わった先の最初のボタンへ移すか */
+  const refocusRef = useRef(false);
+  /** 押したボタンが焦点を持っていたら、入れ替わった先のボタンへ焦点を移す */
+  const press = (event: MouseEvent<HTMLButtonElement>, handler: () => void) => {
+    refocusRef.current = event.currentTarget === document.activeElement;
+    handler();
+  };
+  useEffect(() => {
+    if (!refocusRef.current) return;
+    refocusRef.current = false;
+    buttonsRef.current?.querySelector('button')?.focus();
+  }, [outcome]);
+  return (
+    <section
+      aria-label="前の版の書きかけ"
+      className="flex flex-col gap-3 rounded-md border border-border p-4"
+    >
+      <p aria-live="polite" className="text-sm">
+        {outcome === 'restored'
+          ? '書きかけを戻しました。'
+          : outcome === 'discarded'
+            ? '書きかけを捨てました。'
+            : 'この画面を開く前の版から書いた書きかけが、この端末に残っています。'}
+      </p>
+      <div ref={buttonsRef} className="flex flex-wrap gap-2">
+        {outcome === null ? (
+          <>
+            <button
+              type="button"
+              className={STALE_BUTTON_CLASS}
+              onClick={(event) => press(event, onRestore)}
+            >
+              書きかけを戻す
+            </button>
+            <button
+              type="button"
+              className={STALE_BUTTON_CLASS}
+              onClick={(event) => press(event, onDiscard)}
+            >
+              書きかけを捨てる
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={STALE_BUTTON_CLASS}
+            onClick={(event) => press(event, onUndo)}
+          >
+            取り消す
           </button>
-          <button type="button" className={STALE_BUTTON_CLASS} onClick={onDiscard}>
-            書きかけを捨てる
-          </button>
-        </>
-      ) : (
-        <button type="button" className={STALE_BUTTON_CLASS} onClick={onUndo}>
-          取り消す
-        </button>
-      )}
-    </div>
-  </section>
-);
+        )}
+      </div>
+    </section>
+  );
+};
 
 /**
  * 保存の成功を知らせる。Server Action が保存に成功して移した `?saved=1` の画面に置き、送った
