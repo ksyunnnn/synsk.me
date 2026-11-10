@@ -4,6 +4,7 @@ import { DeleteProjectForm } from '@/features/project/components/delete-project-
 import { deleteProject } from '@/features/project/server/actions';
 import { getProjectForEdit } from '@/features/project/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -27,7 +28,7 @@ const Page = async ({ params }: Props) => {
       <p>題: {project.title}</p>
       <DeleteProjectForm action={deleteProject} projectUid={project.uid} />
       <p>
-        <TextLink href={`/dash/projects/${project.uid}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.projects.row(project.uid)}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

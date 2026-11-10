@@ -27,6 +27,7 @@ import {
 } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -69,7 +70,7 @@ const Page = async ({ params, searchParams }: Props) => {
     return (
       <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
         <p>
-          <TextLink href="/dash/notes">note の一覧へ戻る</TextLink>
+          <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
         </p>
         <h1 className="text-2xl font-bold">削除した note</h1>
         <p>
@@ -94,7 +95,7 @@ const Page = async ({ params, searchParams }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href="/dash/notes">note の一覧へ戻る</TextLink>
+        <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">note を編集する</h1>
       {flags.saved === '1' && (
@@ -103,7 +104,7 @@ const Page = async ({ params, searchParams }: Props) => {
       {notice && <p role="status">{NOTICES[notice]}</p>}
       {isVisibleToVisitors(note) && (
         <p>
-          <TextLink href={`/notes/${note.slug}`}>訪問者に見せるページを開く</TextLink>
+          <TextLink href={routes.note(note.slug)}>訪問者に見せるページを開く</TextLink>
         </p>
       )}
       <NoteStatusForm
@@ -151,15 +152,15 @@ const Page = async ({ params, searchParams }: Props) => {
       />
       <ul className="flex flex-col gap-2">
         <li>
-          <TextLink href={`/dash/notes/${note.uid}/revisions`}>版の一覧</TextLink>
+          <TextLink href={routes.dash.notes.revisions(note.uid)}>版の一覧</TextLink>
         </li>
         <li>
-          <TextLink href={`/dash/notes/${note.uid}/preview`}>
+          <TextLink href={routes.dash.notes.preview(note.uid)}>
             最も新しい版を、訪問者に見せたときの見た目で確かめる
           </TextLink>
         </li>
         <li>
-          <TextLink href={`/dash/notes/${note.uid}/delete`}>この note を削除する</TextLink>
+          <TextLink href={routes.dash.notes.delete(note.uid)}>この note を削除する</TextLink>
         </li>
       </ul>
     </main>

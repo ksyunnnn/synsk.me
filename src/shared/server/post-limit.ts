@@ -1,3 +1,4 @@
+import { routes } from '@/shared/routes';
 /**
  * `/dash` の外への POST の本文の上限。Worker の入口（worker/index.ts）が、vinext に渡す前に拒む。
  *
@@ -11,7 +12,8 @@
 /** `/dash` の外への POST の本文の上限。vinext の Server Action の既定と同じ 1 MB */
 export const PUBLIC_POST_MAX_BYTES = 1024 * 1024;
 
-const isDashPath = (pathname: string) => pathname === '/dash' || pathname.startsWith('/dash/');
+const isDashPath = (pathname: string) =>
+  pathname === routes.dash.index || pathname.startsWith(`${routes.dash.index}/`);
 
 /**
  * 入口で拒むなら、その応答。通すなら null。

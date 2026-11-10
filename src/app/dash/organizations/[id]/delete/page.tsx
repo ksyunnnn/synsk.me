@@ -4,6 +4,7 @@ import { DeleteOrganizationForm } from '@/features/organization/components/delet
 import { deleteOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -26,7 +27,7 @@ const Page = async ({ params }: Props) => {
       <p>組織名: {organization.name}</p>
       <DeleteOrganizationForm action={deleteOrganization} organizationUid={organization.uid} />
       <p>
-        <TextLink href={`/dash/organizations/${organization.uid}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.organizations.row(organization.uid)}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

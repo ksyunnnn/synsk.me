@@ -1,12 +1,13 @@
 import Link from 'next/link';
 
 import { getVersions } from './registry';
+import { routes } from '@/shared/routes';
 
 export const VersionList = ({ name, description }: { name: string; description?: string }) => (
   <main className="mx-auto grid min-h-screen max-w-[480px] content-center gap-8 px-6 py-16">
     <div className="grid gap-1">
       <Link
-        href="/lab"
+        href={routes.lab}
         className="w-fit text-sm text-muted-foreground underline underline-offset-4"
       >
         lab

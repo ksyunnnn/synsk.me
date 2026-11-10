@@ -7,12 +7,13 @@ import { Feed } from '@/features/activity/components/feed';
 import { readFeedPage } from '@/features/activity/domain/feed';
 import { listFeedItems } from '@/features/activity/server/feed-queries';
 import { fontFamily, sourceSans } from '@/lib/fonts';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す。D1 から読めない
 // ときに 500 を返すため、`loading.tsx` を置かない。キャッシュしない（specs/005-feed/research.md の R9）
 export const instant = false;
 
-const PATH = '/top-draft';
+const PATH = routes.top;
 
 type Props = { searchParams: Promise<{ page?: string | string[] }> };
 
@@ -59,13 +60,13 @@ const Page = async ({ searchParams }: Props) => {
         </section>
 
         <section className="grid gap-4">
-          <TextLink href="/resume">職務経歴書を見る →</TextLink>
-          <TextLink href="/about">自己紹介へ →</TextLink>
+          <TextLink href={routes.resumes}>職務経歴書を見る →</TextLink>
+          <TextLink href={routes.about}>自己紹介へ →</TextLink>
         </section>
 
         <section id="contact" className="grid gap-4">
           <Link
-            href="/contact"
+            href={routes.contact}
             className="inline-flex h-11 w-fit items-center rounded-full border border-foreground px-6 font-normal"
           >
             連絡する

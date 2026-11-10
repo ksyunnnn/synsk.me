@@ -3,6 +3,7 @@ import { OWNED_SOURCE_LABELS } from '@/features/activity/domain/external-activit
 import { listExternalActivities } from '@/features/activity/server/queries';
 import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -26,7 +27,7 @@ const Page = async ({ searchParams }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href="/dash">管理画面へ戻る</TextLink>
+        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">外部の activity</h1>
       <p>URL を指名して、または手で入力して登録した activity です。</p>
@@ -34,7 +35,7 @@ const Page = async ({ searchParams }: Props) => {
       {saved === '1' && <DraftSavedNotice storageKeys={['external-activity:new']} />}
       {deleted === '1' && <p role="status">外部の activity を削除しました</p>}
       <p>
-        <TextLink href="/dash/activities/new">外部の activity を登録する</TextLink>
+        <TextLink href={routes.dash.activities.new}>外部の activity を登録する</TextLink>
       </p>
       {activities.length === 0 ? (
         <p>登録した外部の activity はありません</p>
@@ -42,7 +43,7 @@ const Page = async ({ searchParams }: Props) => {
         <ul className="flex flex-col gap-3">
           {activities.map((activity) => (
             <li key={activity.id} className="flex flex-col">
-              <TextLink href={`/dash/activities/${activity.uid}`}>{activity.title}</TextLink>
+              <TextLink href={routes.dash.activities.row(activity.uid)}>{activity.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 <time dateTime={activity.publishedOn}>{activity.publishedOn}</time>・
                 {OWNED_SOURCE_LABELS[activity.source]}

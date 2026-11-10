@@ -19,6 +19,7 @@ import {
 } from '@/features/resume/components/resume-source-fieldset';
 import { InputField } from '@/shared/components/field';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 /**
  * 職務経歴書を作るフォーム（specs/002-resume/contracts/dash.md の `/dash/resumes/new`）。
@@ -95,7 +96,7 @@ const ResumeCreated = ({
         </>
       )}
       <p>
-        <TextLink href={`/dash/resumes/${created.uid}`}>設定の画面へ</TextLink>
+        <TextLink href={routes.dash.resumes.row(created.uid)}>設定の画面へ</TextLink>
       </p>
     </div>
   );

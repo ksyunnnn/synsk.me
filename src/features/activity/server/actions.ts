@@ -36,6 +36,7 @@ import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { createMediaStorage } from '@/shared/server/media-storage';
 import { readString, readValues } from '@/shared/server/form-data';
+import { routes } from '@/shared/routes';
 
 /**
  * life event のフォームが呼ぶ Server Action（specs/004-external-activity/contracts/dash.md）。
@@ -59,7 +60,8 @@ export const registerLifeEvent = async (
     await getCurrentAuthor(),
     readLifeEventValues(formData),
   );
-  if (outcome.status === 'registered') redirect(`/dash/life-events/${outcome.uid}?saved=1`);
+  if (outcome.status === 'registered')
+    redirect(`${routes.dash.lifeEvents.row(outcome.uid)}?saved=1`);
   return outcome;
 };
 
@@ -73,11 +75,11 @@ export const editLifeEvent = async (
   const lifeEvents = await createLifeEventRepository();
   const uid = readString(formData, LIFE_EVENT_UID_FIELD);
   const id = await findIdByUid(lifeEvents, uid);
-  if (id === null) redirect('/dash/life-events');
+  if (id === null) redirect(routes.dash.lifeEvents.list);
 
   const outcome = await editLifeEventUseCase(lifeEvents, author, id, readLifeEventValues(formData));
-  if (outcome.status === 'saved') redirect(`/dash/life-events/${uid}?saved=1`);
-  if (outcome.status === 'not-found') redirect('/dash/life-events');
+  if (outcome.status === 'saved') redirect(`${routes.dash.lifeEvents.row(uid)}?saved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.lifeEvents.list);
   return outcome;
 };
 
@@ -90,11 +92,11 @@ export const deleteLifeEvent = async (
   if (!author) return { status: 'forbidden' };
   const lifeEvents = await createLifeEventRepository();
   const id = await findIdByUid(lifeEvents, readString(formData, LIFE_EVENT_UID_FIELD));
-  if (id === null) redirect('/dash/life-events');
+  if (id === null) redirect(routes.dash.lifeEvents.list);
 
   const outcome = await deleteLifeEventUseCase(lifeEvents, await createMediaStorage(), author, id);
   if (outcome.status === 'forbidden') return outcome;
-  redirect('/dash/life-events?deleted=1');
+  redirect(`${routes.dash.lifeEvents.list}?deleted=1`);
 };
 
 const readExternalActivityValues = (formData: FormData): ExternalActivityFormValues =>
@@ -116,7 +118,7 @@ export const registerExternalActivity = async (
     author,
     readExternalActivityValues(formData),
   );
-  if (outcome.status === 'registered') redirect('/dash/activities?saved=1');
+  if (outcome.status === 'registered') redirect(`${routes.dash.activities.list}?saved=1`);
   return outcome;
 };
 
@@ -130,7 +132,7 @@ export const editExternalActivity = async (
   const activities = await createExternalActivityRepository();
   const uid = readString(formData, EXTERNAL_ACTIVITY_UID_FIELD);
   const id = await findIdByUid(activities, uid);
-  if (id === null) redirect('/dash/activities');
+  if (id === null) redirect(routes.dash.activities.list);
 
   const outcome = await editExternalActivityUseCase(
     activities,
@@ -138,8 +140,8 @@ export const editExternalActivity = async (
     id,
     readExternalActivityValues(formData),
   );
-  if (outcome.status === 'saved') redirect(`/dash/activities/${uid}?saved=1`);
-  if (outcome.status === 'not-found') redirect('/dash/activities');
+  if (outcome.status === 'saved') redirect(`${routes.dash.activities.row(uid)}?saved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.activities.list);
   return outcome;
 };
 
@@ -152,11 +154,11 @@ export const deleteExternalActivity = async (
   if (!author) return { status: 'forbidden' };
   const activities = await createExternalActivityRepository();
   const id = await findIdByUid(activities, readString(formData, EXTERNAL_ACTIVITY_UID_FIELD));
-  if (id === null) redirect('/dash/activities');
+  if (id === null) redirect(routes.dash.activities.list);
 
   const outcome = await deleteExternalActivityUseCase(activities, author, id);
   if (outcome.status === 'forbidden') return outcome;
-  redirect('/dash/activities?deleted=1');
+  redirect(`${routes.dash.activities.list}?deleted=1`);
 };
 
 /** 画像の操作の結果。保存したら同じ画面へ移すので、画面に返すのは保存しなかったときだけ */
@@ -178,7 +180,7 @@ export const registerLifeEventImage = async (
   const lifeEvents = await createLifeEventRepository();
   const uid = readString(formData, LIFE_EVENT_UID_FIELD);
   const id = await findIdByUid(lifeEvents, uid);
-  if (id === null) redirect('/dash/life-events');
+  if (id === null) redirect(routes.dash.lifeEvents.list);
 
   const file = formData.get(LIFE_EVENT_IMAGE_FIELD);
   const outcome = await registerLifeEventImageUseCase(
@@ -188,8 +190,8 @@ export const registerLifeEventImage = async (
     id,
     file instanceof Blob ? file : new Blob([]),
   );
-  if (outcome.status === 'saved') redirect(`/dash/life-events/${uid}?imageSaved=1`);
-  if (outcome.status === 'not-found') redirect('/dash/life-events');
+  if (outcome.status === 'saved') redirect(`${routes.dash.lifeEvents.row(uid)}?imageSaved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.lifeEvents.list);
   return outcome;
 };
 
@@ -203,7 +205,7 @@ export const removeLifeEventImage = async (
   const lifeEvents = await createLifeEventRepository();
   const uid = readString(formData, LIFE_EVENT_UID_FIELD);
   const id = await findIdByUid(lifeEvents, uid);
-  if (id === null) redirect('/dash/life-events');
+  if (id === null) redirect(routes.dash.lifeEvents.list);
 
   const outcome = await removeLifeEventImageUseCase(
     lifeEvents,
@@ -211,7 +213,7 @@ export const removeLifeEventImage = async (
     author,
     id,
   );
-  if (outcome.status === 'saved') redirect(`/dash/life-events/${uid}?imageRemoved=1`);
-  if (outcome.status === 'not-found') redirect('/dash/life-events');
+  if (outcome.status === 'saved') redirect(`${routes.dash.lifeEvents.row(uid)}?imageRemoved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.lifeEvents.list);
   return outcome;
 };

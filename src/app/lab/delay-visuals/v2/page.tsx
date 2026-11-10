@@ -2,12 +2,13 @@
 import Link from 'next/link';
 
 import { VerticalReveal } from './VerticalReveal';
+import { routes } from '@/shared/routes';
 
 const Page = () => (
   <main className="mx-auto grid max-w-[640px] gap-10 px-6 py-16">
     <div className="grid gap-2">
       <Link
-        href="/lab/delay-visuals"
+        href={routes.labPage('delay-visuals')}
         className="w-fit text-sm text-muted-foreground underline underline-offset-4"
       >
         delay-visuals

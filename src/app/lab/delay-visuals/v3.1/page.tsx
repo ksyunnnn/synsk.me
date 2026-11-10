@@ -2,12 +2,13 @@
 import Link from 'next/link';
 
 import { MockTop } from './MockTop';
+import { routes } from '@/shared/routes';
 
 const Page = () => (
   <>
     <div className="mx-auto grid max-w-[480px] gap-2 px-6 pt-16 pb-8">
       <Link
-        href="/lab/delay-visuals"
+        href={routes.labPage('delay-visuals')}
         className="w-fit text-sm text-muted-foreground underline underline-offset-4"
       >
         delay-visuals

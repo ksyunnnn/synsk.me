@@ -3,14 +3,15 @@ import Link from 'next/link';
 
 import { MockTop } from '../v3.1/MockTop';
 import { ScrollDelayPage } from './ScrollDelayPage';
+import { routes } from '@/shared/routes';
 
-const ARTICLE = '/lab/delay-visuals/v4.2/rebuild';
+const ARTICLE = routes.labPage('delay-visuals', 'v4.2', 'rebuild');
 
 const Page = () => (
   <>
     <div className="mx-auto grid max-w-[480px] gap-2 px-6 pt-16 pb-8">
       <Link
-        href="/lab/delay-visuals"
+        href={routes.labPage('delay-visuals')}
         className="w-fit text-sm text-muted-foreground underline underline-offset-4"
       >
         delay-visuals

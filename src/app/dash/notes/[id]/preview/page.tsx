@@ -5,6 +5,7 @@ import { VisitorNoteView } from '@/features/note/components/visitor-note';
 import { refetchLinkPreview } from '@/features/note/server/actions';
 import { getNotePreview } from '@/features/note/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -32,7 +33,7 @@ const Page = async ({ params, searchParams }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href={`/dash/notes/${id}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.notes.row(id)}>編集の画面へ戻る</TextLink>
       </p>
       <p role="note" className="rounded-md border border-input px-4 py-2 text-sm">
         最も新しい版を、訪問者に見せたときの見た目で出しています
@@ -40,7 +41,7 @@ const Page = async ({ params, searchParams }: Props) => {
       {refetched === '1' && <p role="status">参照先の情報を取り直しました</p>}
       <VisitorNoteView
         note={note}
-        mediaBase={`/dash/notes/${id}/preview/media`}
+        mediaBase={routes.dash.notes.previewMedia(id)}
         renderUrlLineAction={(url) => (
           <LinkPreviewRefetchForm action={refetchLinkPreview} noteUid={id} url={url} />
         )}

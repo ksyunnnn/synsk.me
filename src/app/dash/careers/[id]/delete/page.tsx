@@ -5,6 +5,7 @@ import { deleteCareer } from '@/features/career/server/actions';
 import { getCareerForEdit } from '@/features/career/server/queries';
 import { DeleteForm } from '@/shared/components/delete-form';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -35,7 +36,7 @@ const Page = async ({ params }: Props) => {
         }}
       />
       <p>
-        <TextLink href={`/dash/careers/${career.uid}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.careers.row(career.uid)}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

@@ -4,6 +4,7 @@ import { normalizeNewlines } from '@/shared/domain/newlines';
 import { parseCalendarDate, type CalendarDate } from '@/shared/domain/period';
 import { isSlug, newSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
+import { routes } from '@/shared/routes';
 
 /**
  * life event の型と決まり（specs/004-external-activity/spec.md の FR-023〜FR-026・FR-034・FR-035、
@@ -51,7 +52,7 @@ export type VisitorLifeEvent = {
 
 /** 代表画像を配る経路（contracts/visitor-life-event.md の「画像の経路」）。値は `media.storage_key` */
 export const lifeEventImagePath = (slug: string, storageKey: string) =>
-  `/life-events/${slug}/media/${storageKey}`;
+  routes.lifeEventMedia(slug, storageKey);
 
 export const LIFE_EVENT_IMAGE_FIELD = 'image';
 

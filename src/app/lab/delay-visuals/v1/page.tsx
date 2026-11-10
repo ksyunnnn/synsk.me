@@ -2,6 +2,7 @@
 import Link from 'next/link';
 
 import { DelayReveal } from './DelayReveal';
+import { routes } from '@/shared/routes';
 
 type Column = 'A' | 'B' | 'C' | 'D';
 
@@ -228,7 +229,7 @@ const Page = () => (
   <main className="mx-auto grid max-w-[640px] gap-10 px-6 py-16">
     <div className="grid gap-2">
       <Link
-        href="/lab/delay-visuals"
+        href={routes.labPage('delay-visuals')}
         className="w-fit text-sm text-muted-foreground underline underline-offset-4"
       >
         delay-visuals

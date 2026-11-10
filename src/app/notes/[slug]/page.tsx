@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { VisitorNoteView } from '@/features/note/components/visitor-note';
 import type { VisitorNote } from '@/features/note/domain/note';
 import { getVisitorNote } from '@/features/note/server/queries';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）。キャッシュしない
@@ -53,7 +54,7 @@ export const generateMetadata = async (
  */
 const cardImageUrl = ({ slug, cardImage }: VisitorNote): string[] =>
   cardImage.kind === 'media'
-    ? [`/notes/${encodeURIComponent(slug)}/media/${cardImage.storageKey}`]
+    ? [`${routes.noteMedia(encodeURIComponent(slug))}/${cardImage.storageKey}`]
     : [];
 
 const Page = async ({ params }: Props) => {
