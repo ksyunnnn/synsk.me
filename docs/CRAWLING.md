@@ -2,7 +2,7 @@
 
 > 機械の読み手にどう応えるかを書く。理由と実装方法は書かない。
 
-根拠: [ADR-0053](./decisions/0053-machine-readers-with-small-note-card.md)
+根拠: [ADR-0024](./decisions/0024-machine-readers.md)、[ADR-0053](./decisions/0053-small-note-card-without-generated-image.md)
 
 ---
 

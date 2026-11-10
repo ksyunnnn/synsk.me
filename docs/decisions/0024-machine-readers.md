@@ -1,5 +1,5 @@
 ---
-status: superseded by ADR-0053
+status: accepted
 date: 2026-09-13
 decision-makers: synsk
 consulted: Claude
