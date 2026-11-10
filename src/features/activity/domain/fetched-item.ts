@@ -27,7 +27,12 @@ export type FetchedItem = {
   imageUrl?: string;
 };
 
-/** 一覧を取る取得元の 1 回分の結果 */
+/**
+ * URL を指名する取得元が 1 つの URL から取ったもの。題を返さない取得元（X）では題が無く、
+ * オーナーが入れた題で保存する（plan.md の U11 の (a)）
+ */
+export type UrlFetchedItem = Omit<FetchedItem, 'title'> & { title?: string };
+
 /**
  * 取得元が返した、変わったかを確かめる値（research.md の R9、migrations/0014）。ヘッダの文字列の
  * まま持ち、次の要求に同じ文字列を送る。取得元が返さなければ null

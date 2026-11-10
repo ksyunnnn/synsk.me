@@ -55,6 +55,7 @@ vi.mock('@/features/resume/server/queries', () => resumes);
 const lifeEvents = vi.hoisted(() => ({
   hasLifeEventSlug: vi.fn<(slug: string) => Promise<boolean>>(),
   hasLifeEventUid: vi.fn<(uid: string) => Promise<boolean>>(),
+  hasExternalActivityUid: vi.fn<(uid: string) => Promise<boolean>>(),
 }));
 vi.mock('@/features/activity/server/queries', () => lifeEvents);
 const notes = vi.hoisted(() => ({
@@ -93,6 +94,7 @@ beforeEach(() => {
   resumes.findMissingResumeRow.mockResolvedValue(null);
   lifeEvents.hasLifeEventSlug.mockResolvedValue(true);
   lifeEvents.hasLifeEventUid.mockResolvedValue(true);
+  lifeEvents.hasExternalActivityUid.mockResolvedValue(true);
   notes.hasNoteSlug.mockResolvedValue(true);
   notes.hasNoteUid.mockResolvedValue(true);
   notes.findMissingNoteRevision.mockResolvedValue(null);
@@ -383,6 +385,21 @@ describe('/dash/life-events/{uid}', () => {
   it.each(['/dash/life-events', '/dash/life-events/new'])('%s は行の有無を見ない', async (path) => {
     expect(await rewrittenPath(path)).toBeNull();
     expect(lifeEvents.hasLifeEventUid).not.toHaveBeenCalled();
+  });
+});
+
+describe('/dash/activities/{uid}（specs/004-external-activity/contracts/dash.md）', () => {
+  it.each([`/dash/activities/${UID}`, `/dash/activities/${UID}/delete`])(
+    '無い uid の %s は 404 の画面へ rewrite する',
+    async (path) => {
+      lifeEvents.hasExternalActivityUid.mockResolvedValue(false);
+      expect(await rewrittenPath(path)).toBe(`/dash/activities/${UID}/missing`);
+    },
+  );
+
+  it.each(['/dash/activities', '/dash/activities/new'])('%s は行の有無を見ない', async (path) => {
+    expect(await rewrittenPath(path)).toBeNull();
+    expect(lifeEvents.hasExternalActivityUid).not.toHaveBeenCalled();
   });
 });
 

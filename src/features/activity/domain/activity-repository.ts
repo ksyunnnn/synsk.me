@@ -1,4 +1,11 @@
+import type {
+  ExternalActivity,
+  ExternalActivityContent,
+  ExternalActivityId,
+} from '@/features/activity/domain/external-activity';
 import type { FetchedItem, SourceName, Validators } from '@/features/activity/domain/fetched-item';
+import type { OwnedSourceName } from '@/features/activity/domain/sources';
+import type { Uid } from '@/shared/domain/uid';
 
 /**
  * activity の取り出し方と保存の仕方（docs/SOFTWARE_DESIGN.md の Repository）。
@@ -86,3 +93,33 @@ export type ActivityRepository = {
   /** 取得元ごとの、最後に取り直した日時（成否を問わない）。取り直したことの無い取得元は持たない */
   listFetchedAt: () => Promise<Partial<Record<SourceName, string>>>;
 };
+
+/**
+ * オーナーが管理画面で登録・編集・削除する外部の activity（URL を指名した・手で入力した activity）の
+ * 取り出し方と保存の仕方。D1 の実装は src/features/activity/server/d1-activity-repository.ts の
+ * `createD1ExternalActivityRepository`。どの文も URL を指名する・手で入力する取得元の行だけを
+ * 読み書きし、一覧を取る取得元の行と life event の行を書き換えず消さない（FR-022・FR-031・FR-033）
+ */
+export type ExternalActivityRepository = {
+  /** オーナーの一覧。公開日の新しい順 */
+  list: () => Promise<ExternalActivity[]>;
+  /** 管理画面の URL とフォームの uid が指す activity の id。無ければ null */
+  findIdByUid: (uid: Uid) => Promise<ExternalActivityId | null>;
+  findForEdit: (id: ExternalActivityId) => Promise<ExternalActivity | null>;
+  /** 同じ取得元に同じ URL が既にあれば `url-taken`（FR-005・FR-008） */
+  register: (
+    source: OwnedSourceName,
+    content: ExternalActivityContent,
+  ) => Promise<{ ok: true; id: ExternalActivityId; uid: Uid } | { ok: false; reason: 'url-taken' }>;
+  /** 渡した列だけを書き換える */
+  edit: (
+    id: ExternalActivityId,
+    changes: ExternalActivityChanges,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'url-taken' | 'not-found' }>;
+  /** 無い id なら偽 */
+  delete: (id: ExternalActivityId) => Promise<boolean>;
+};
+
+/** 編集で書き換える列。URL と題は手で入力する取得元だけが持つ（contracts/dash.md） */
+export type ExternalActivityChanges = Pick<ExternalActivityContent, 'publishedAt'> &
+  Partial<Pick<ExternalActivityContent, 'url' | 'title'>>;

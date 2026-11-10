@@ -2,6 +2,12 @@ import 'server-only';
 
 import { cache } from 'react';
 import { getVisitorLifeEvent as getVisitorLifeEventUseCase } from '@/features/activity/application/get-visitor-life-event';
+import type { FetchByUrl } from '@/features/activity/application/register-external-activity';
+import type { ExternalActivityRepository } from '@/features/activity/domain/activity-repository';
+import type { ExternalActivity } from '@/features/activity/domain/external-activity';
+import { PRODUCTION_REFRESH_LIMITS } from '@/features/activity/domain/limits';
+import { createD1ExternalActivityRepository } from '@/features/activity/server/d1-activity-repository';
+import { createSourceRegistry } from '@/features/activity/server/sources/registry';
 import type {
   LifeEvent,
   LifeEventSummary,
@@ -45,9 +51,39 @@ export const getLifeEventForEdit = async (uid: string): Promise<LifeEvent | null
   return id === null ? null : lifeEvents.findForEdit(id);
 };
 
+export const createExternalActivityRepository = async (): Promise<ExternalActivityRepository> =>
+  createD1ExternalActivityRepository((await readEnv()).DB);
+
+/**
+ * URL を指名する取得元の 1 つの URL から題などを取る関数。外への要求は Workers の `fetch` で出し、
+ * 上限は取り直しと同じ本番の値（src/features/activity/domain/limits.ts）を使う
+ */
+export const createFetchByUrl = async (): Promise<FetchByUrl> => {
+  const registry = createSourceRegistry((url, init) => fetch(url, init), await readEnv());
+  return (source, url) => registry.fetchByUrl(source, url, PRODUCTION_REFRESH_LIMITS);
+};
+
+/** URL を指名した・手で入力した外部の activity のオーナーの一覧。オーナーでなければ 403 */
+export const listExternalActivities = async (): Promise<ExternalActivity[]> => {
+  await requireAuthor();
+  return (await createExternalActivityRepository()).list();
+};
+
+/** オーナーが編集する外部の activity。オーナーでなければ 403。無い uid なら null */
+export const getExternalActivityForEdit = async (uid: string): Promise<ExternalActivity | null> => {
+  await requireAuthor();
+  const activities = await createExternalActivityRepository();
+  const id = await findIdByUid(activities, uid);
+  return id === null ? null : activities.findForEdit(id);
+};
+
 /*
  * 以下は `src/proxy.ts` が描画の前に呼ぶ。題や説明を読まず、有無だけを返す
  */
+
+/** オーナーが編集できる外部の activity がある uid か。`getExternalActivityForEdit` と一致する */
+export const hasExternalActivityUid = async (uid: string): Promise<boolean> =>
+  (await findIdByUid(await createExternalActivityRepository(), uid)) !== null;
 
 /** 訪問者に見せる life event がある識別子か。`getVisitorLifeEvent` が null を返さない識別子と一致する */
 export const hasLifeEventSlug = async (slug: string): Promise<boolean> =>
