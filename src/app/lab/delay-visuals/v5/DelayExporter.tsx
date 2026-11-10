@@ -420,13 +420,15 @@ export const DelayExporter = () => {
 
         <section className="grid gap-3" aria-label="プレビュー">
           {/* 写真の有無で高さを変えない。読み込みの後に下の要素の位置をずらさない */}
-          <div className="grid h-[44svh] place-items-center overflow-hidden rounded-sm bg-foreground/5">
+          <div className="relative grid h-[44svh] place-items-center overflow-hidden rounded-sm bg-foreground/5">
             {picked ? (
               <canvas
                 ref={canvasRef}
                 width={picked.width}
                 height={picked.height}
-                className="size-full object-contain"
+                // 枠に重ねて置き、枠の大きさの中に写真の全体を収める。grid の行に置くと、縦長の写真では
+                // canvas の高さが枠より大きくなり、下が切れる
+                className="absolute inset-0 size-full object-contain"
                 role="img"
                 aria-label={
                   direction === 'horizontal'
