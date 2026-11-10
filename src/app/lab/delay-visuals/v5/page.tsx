@@ -20,7 +20,7 @@ const Page = () => (
       className="pointer-events-none absolute inset-0 opacity-15 mix-blend-multiply"
       style={{ backgroundImage: NOISE }}
     />
-    <main className="relative mx-auto max-w-[640px] px-6 pt-10">
+    <main className="relative mx-auto max-w-[640px] px-6">
       <DelayExporter />
     </main>
   </div>

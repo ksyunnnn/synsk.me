@@ -304,24 +304,88 @@ export const DelayExporter = () => {
 
   const disabled = !picked || running;
 
-  return (
-    <div className="grid gap-8">
-      <header className="flex items-start justify-between gap-4">
-        <div className="grid gap-1">
-          <h1 className="text-xl">delay-visuals</h1>
-          <p className="text-sm text-muted-foreground">{COPY.tagline}</p>
+  const outputActions =
+    exportState.kind === 'running' ? (
+      <>
+        <div
+          role="progressbar"
+          aria-label={COPY.exporting}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(exportState.done * 100)}
+          className="h-1 w-16 overflow-hidden rounded-full bg-foreground/10"
+        >
+          <div className="h-full bg-foreground" style={{ width: `${exportState.done * 100}%` }} />
         </div>
-        {picked && (
+        <span className="w-9 text-right text-xs text-muted-foreground tabular-nums">
+          {Math.round(exportState.done * 100)}%
+        </span>
+        <button
+          type="button"
+          onClick={() => abortRef.current?.abort()}
+          className={`h-11 rounded-full px-4 text-sm active:opacity-70 ${focusRing}`}
+        >
+          {COPY.cancel}
+        </button>
+      </>
+    ) : exportState.kind === 'done' ? (
+      <>
+        {canShare && (
           <button
             type="button"
-            disabled={running}
-            onClick={() => inputRef.current?.click()}
-            className={`h-11 shrink-0 text-sm underline underline-offset-4 disabled:opacity-50 active:opacity-70 ${focusRing}`}
+            onClick={() => void share(exportState.result.file)}
+            className={`flex h-11 items-center gap-1.5 rounded-full px-3 text-sm active:opacity-70 ${focusRing}`}
           >
-            {COPY.change}
+            <Export aria-hidden size={18} />
+            {COPY.share}
           </button>
         )}
-      </header>
+        <a
+          href={exportState.result.url}
+          download={exportState.result.file.name}
+          className={`flex h-11 items-center gap-1.5 rounded-full bg-foreground px-4 text-sm text-background active:opacity-70 ${focusRing}`}
+        >
+          <DownloadSimple aria-hidden size={18} />
+          {COPY.download}
+        </a>
+      </>
+    ) : (
+      <button
+        type="button"
+        disabled={!picked}
+        onClick={() => void startExport()}
+        className={`h-11 rounded-full bg-foreground px-5 text-sm text-background disabled:opacity-50 active:opacity-70 ${focusRing}`}
+      >
+        {COPY.export}
+      </button>
+    );
+
+  // 帯の下に重ねて出す一言。書き出しの結果と、失敗の理由。重ねるので、下の要素の位置をずらさない
+  const outputMessage =
+    exportState.kind === 'done'
+      ? `${COPY.done}（${(exportState.result.file.size / 1_000_000).toFixed(1)} MB）。${COPY.downloadHint}`
+      : exportState.kind === 'error'
+        ? exportState.message
+        : null;
+
+  return (
+    <div className="grid gap-6 pb-16">
+      {/* 画面の上に留める帯。左にアプリの名前、右に書き出しの操作だけを置く。書き出しの段階に応じて、同じ場所で中身が入れ替わる */}
+      <div className="sticky top-0 z-10 -mx-4 px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
+        <div className="flex h-14 items-center justify-between gap-3 rounded-full bg-background/70 pr-1.5 pl-5 backdrop-blur-xl">
+          <h1 className="truncate text-base">delay-visuals</h1>
+          <div className="flex shrink-0 items-center gap-2">{outputActions}</div>
+        </div>
+        {outputMessage && (
+          <p
+            className={`absolute inset-x-4 top-full mt-2 rounded-2xl bg-background/70 px-4 py-2 text-xs backdrop-blur-xl ${exportState.kind === 'error' ? 'text-destructive' : 'text-muted-foreground'}`}
+            role={exportState.kind === 'error' ? 'alert' : undefined}
+          >
+            {outputMessage}
+          </p>
+        )}
+      </div>
+      <p className="text-sm text-muted-foreground">{COPY.tagline}</p>
       <input
         ref={inputRef}
         type="file"
@@ -403,6 +467,17 @@ export const DelayExporter = () => {
             {clock((step / STEPS) * seconds)} / {clock(seconds)}
           </span>
         </div>
+        {/* 入力の写真に効く操作なので、書き出しの操作から離し、プレビューのそばに置く */}
+        {picked && (
+          <button
+            type="button"
+            disabled={running}
+            onClick={() => inputRef.current?.click()}
+            className={`h-11 w-fit text-sm underline underline-offset-4 disabled:opacity-50 active:opacity-70 ${focusRing}`}
+          >
+            {COPY.change}
+          </button>
+        )}
       </section>
 
       <fieldset className="grid gap-3" disabled={running}>
@@ -479,78 +554,6 @@ export const DelayExporter = () => {
           {COPY.reset}
         </button>
       </section>
-
-      {/* 書き出しの操作は画面の下に留め、設定の途中からでも届くようにする */}
-      <div className="sticky bottom-0 -mx-6 grid gap-3 bg-linear-to-t from-border from-80% to-transparent px-6 pt-8 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-        <div className="min-h-5 text-sm text-muted-foreground tabular-nums" aria-live="polite">
-          {exportState.kind === 'running' &&
-            `${COPY.exporting}… ${Math.round(exportState.done * 100)}%`}
-          {exportState.kind === 'done' &&
-            `${COPY.done}（${(exportState.result.file.size / 1_000_000).toFixed(1)} MB）`}
-          {exportState.kind === 'error' && (
-            <span role="alert" className="text-destructive">
-              {exportState.message}
-            </span>
-          )}
-        </div>
-        {running ? (
-          <div className="flex items-center gap-4">
-            <div
-              role="progressbar"
-              aria-label={COPY.exporting}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(exportState.done * 100)}
-              className="h-1 flex-1 overflow-hidden rounded-full bg-foreground/10"
-            >
-              <div
-                className="h-full bg-foreground"
-                style={{ width: `${exportState.done * 100}%` }}
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => abortRef.current?.abort()}
-              className={`h-11 shrink-0 rounded-full px-5 text-sm active:opacity-70 ${focusRing}`}
-            >
-              {COPY.cancel}
-            </button>
-          </div>
-        ) : exportState.kind === 'done' ? (
-          <div className="grid gap-3">
-            <div className="flex gap-3">
-              <a
-                href={exportState.result.url}
-                download={exportState.result.file.name}
-                className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-foreground px-6 text-sm text-background active:opacity-70 ${focusRing}`}
-              >
-                <DownloadSimple aria-hidden size={18} />
-                {COPY.download}
-              </a>
-              {canShare && (
-                <button
-                  type="button"
-                  onClick={() => void share(exportState.result.file)}
-                  className={`flex h-11 flex-1 items-center justify-center gap-2 rounded-full bg-background/70 px-6 text-sm active:opacity-70 ${focusRing}`}
-                >
-                  <Export aria-hidden size={18} />
-                  {COPY.share}
-                </button>
-              )}
-            </div>
-            <p className="text-sm text-muted-foreground">{COPY.downloadHint}</p>
-          </div>
-        ) : (
-          <button
-            type="button"
-            disabled={!picked}
-            onClick={() => void startExport()}
-            className={`h-11 rounded-full bg-foreground px-6 text-sm text-background disabled:opacity-50 active:opacity-70 ${focusRing}`}
-          >
-            {COPY.export}
-          </button>
-        )}
-      </div>
     </div>
   );
 };
