@@ -49,7 +49,9 @@ beforeAll(async () => {
     env.DB.prepare(
       "UPDATE note SET status = 'published', published_revision_id = 1, published_at = '2026-01-02T03:04:05.000Z' WHERE id = 1",
     ),
-    env.DB.prepare("UPDATE note SET card_image = 'site' WHERE id = 2"),
+    env.DB.prepare(
+      "UPDATE note SET card_image = 'site', is_first_paragraph_as_description = 0 WHERE id = 2",
+    ),
     env.DB.prepare("INSERT INTO media (id, note_id, storage_key) VALUES (1, 3, 'fake/note-3')"),
     env.DB.prepare("UPDATE note SET card_image = 'media', card_media_id = 1 WHERE id = 3"),
     env.DB.prepare(
@@ -108,6 +110,14 @@ describe('migration 0024 を行のある D1 に当てる', () => {
       "INSERT INTO note (slug) VALUES ('fake-after') RETURNING id, card_image",
     ).first<{ id: number; card_image: string }>();
     expect(row).toEqual({ id: 5, card_image: 'site' });
+  });
+
+  it('説明文が空のときの設定は 0 か 1 で、既定は 1 のまま（0023）', async () => {
+    const rows = (await rowsOf('note')).filter((row) => Number(row.id) <= 3);
+    expect(rows.map((row) => row.is_first_paragraph_as_description)).toEqual([1, 0, 1]);
+    await expect(
+      env.DB.prepare('UPDATE note SET is_first_paragraph_as_description = 2 WHERE id = 1').run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
   });
 
   it('generated を持てない（FR-024）', async () => {

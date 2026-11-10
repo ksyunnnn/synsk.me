@@ -160,6 +160,7 @@ note = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("status", "text · CHECK"),
     ("→ published_revision_id", "integer · 空可"), ("published_at", "text · 空可"),
     ("deleted_at", "text · 空可"), ("card_image", "text · CHECK"), ("→ card_media_id", "integer · 空可"),
+    ("is_first_paragraph_as_description", "既定 1"),
 ] + TS
 revision = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ note_id", "integer"), ("title", "text"), ("description", "text · 空可"), ("body", "text")] + C
 media = [("# id", "integer"), ("→ note_id", "integer · 空可"), ("→ project_id", "integer · 空可"), ("→ career_id", "integer · 空可"), ("→ activity_id", "integer · 空可"), ("storage_key", "text · unique")] + C
@@ -229,12 +230,12 @@ el += label(1436, 798, "0..1") + label(1466, 798, "0..1")
 el += rel_label(1450, 824, "PUBLISHED")
 el += path("M 1420,924 H 1480")
 el += label(1432, 906, "1") + label(1460, 906, "0..N")
-el += path("M 1250,952 V 1032")
-el += path("M 1330,952 V 1032")
-el += label(1264, 958, "1") + label(1272, 1014, "0..N")
-el += rel_label(1215, 986, "NOTE_ID")
-el += label(1352, 958, "0..1") + label(1352, 1014, "0..1")
-el += rel_label(1356, 986, "CARD")
+el += path("M 1250,972 V 1032")
+el += path("M 1330,972 V 1032")
+el += label(1264, 978, "1") + label(1272, 1014, "0..N")
+el += rel_label(1215, 996, "NOTE_ID")
+el += label(1352, 978, "0..1") + label(1352, 1014, "0..1")
+el += rel_label(1356, 996, "CARD")
 
 el += entity(40, 60, 260, "resume", "職務経歴書の版。複数持つ", resume)
 el += entity(335, 60, 210, "resume_career", "職務経歴書に写した職歴", resume_career)
@@ -250,7 +251,7 @@ el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
 el += entity(1500, 300, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
 el += entity(1740, 60, 270, "activity_feed", "一覧。種類ごとの 5 つの腕を UNION ALL", feed, kind="VIEW")
-el += entity(1160, 656, 260, "note", "synsk.me で書く記事の本体", note)
+el += entity(1140, 656, 280, "note", "synsk.me で書く記事の本体", note)
 el += entity(1480, 656, 220, "note_revision", "note の版。保存のたびに 1 行", revision)
 el += entity(1160, 1032, 260, "media", "画像。持ち主の列は 1 つだけ入る。実体は R2", media)
 el += entity(1480, 900, 220, "syndication", "note を転載した先の URL（POSSE）", synd)

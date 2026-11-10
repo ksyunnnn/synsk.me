@@ -12,11 +12,11 @@ export const instant = false;
 type Props = { params: Promise<{ slug: string }> };
 
 // メタデータは訪問者向けの DTO の題と説明だけから作る（contracts/visitor-note.md の OGP）。
-// 説明は、説明文が空なら本文の最初の段落。共有したときは、小さい画像の隣に文字が並ぶカードにする
-// ため、`twitter:card` を `summary` にする（plan.md の U8）。サイト全体の設定（`src/app/layout.tsx`
-// の `summary_large_image`）は変えない。`twitter` を書くと root layout の `twitter` を置き換えるため、
-// `twitter:creator` は親のメタデータから引き継ぐ
-// （https://nextjs.org/docs/app/api-reference/functions/generate-metadata の `parent`）
+// 説明は、説明文が空なら、本文の最初の段落を使う note だけが段落を使う（FR-034）。説明が無ければ
+// 説明のタグを出さない。twitter は書かないと root layout のサイトの題と説明を引き継ぐため、
+// note の題と説明で書き直す。書くと root layout の twitter を丸ごと置き換えるため、作者は root
+// layout の値を引き継ぐ。共有したときは、小さい画像の隣に文字が並ぶカードにするため、カードの
+// 種類は `summary` にする（plan.md の U8）。サイト全体の `summary_large_image` は変えない
 export const generateMetadata = async (
   { params }: Props,
   parent: ResolvingMetadata,
@@ -25,6 +25,7 @@ export const generateMetadata = async (
   if (!note) notFound();
   const description = note.summary ?? undefined;
   const images = cardImageUrl(note);
+  const creator = (await parent).twitter?.creator ?? undefined;
   return {
     title: `${note.title} | synsk.me`,
     description,
@@ -36,7 +37,7 @@ export const generateMetadata = async (
     },
     twitter: {
       card: 'summary',
-      creator: (await parent).twitter?.creator ?? undefined,
+      creator,
       title: note.title,
       description,
       images,

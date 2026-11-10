@@ -22,6 +22,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - R16 スマートフォンからの操作
 - R17 版が増えたときの扱い
 - R18 ほかの spec との重なり（issue #219 の調査）
+- R19 説明文が空のときの説明
 
 ---
 
@@ -82,7 +83,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 ## R7 訪問者への取り出し
 
 - 決めたこと: 訪問者向けの取り出しは、Repository の実装の中で `note.status = 'published' AND note.deleted_at IS NULL` を条件にし、`note.published_revision_id` の版だけを読む。出す項目は [contracts/visitor-note.md](./contracts/visitor-note.md) の DTO に列挙する（FR-012・FR-015・FR-016・SC-001）。最も新しい版は読まない
-- ページの `<title>` と OGP の説明にも同じ DTO の値を使う。説明文が空なら本文の冒頭を説明に使う（spec の Assumptions、`docs/CRAWLING.md`）。冒頭の抜き出し方は R11
+- ページの `<title>` と OGP の説明にも同じ DTO の値を使う。説明文が空のときの説明は R19、冒頭の抜き出し方は R11
 - 訪問者の URL は `/notes/{slug}`（FR-004）。ADR-0048 が「URL は resourceful routing に従い、コレクション名と識別子で表す」とし、Consequences に `/notes` を切れば一覧に辿り着けるとする。spec はこの形を未決とするため、オーナーに確かめる（U2）
 - 削除した note の URL は、無い識別子と同じ 404 にする。中身を応答に含めない（FR-016）。別の応答にするかは未決（U10）
 - 理由: ADR-0029（取り出すときに確かめる）、ADR-0028（DTO）、constitution の Allowlist Visibility
@@ -139,7 +140,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
   - カードにする行: 段落の中身が `http` か `https` の URL の文字列 1 つだけの行。行の中に文と並べて書いた URL はカードにしない。GFM を使わないため、`<https://…>` の autolink かリンクの記法で書いた URL だけがリンクになり、そのまま書いた URL は文字列で出る（CommonMark の Autolinks）。カードにする行は R13 の見せ方で出す
   - `<https://…>` の autolink だけの段落はカードにせず、リンクで出す。カードにせずに URL を書く手段として残す（2026-11-09、PM）
   - リストと引用の中の段落も、カードにする行と画像の印の見分けの対象に含める。項目の間に空行の無いリストの項目も段落として扱う（2026-11-09、PM）
-  - 説明文が空のときの説明: 本文の最初の段落の文字列（改行は空白にする）。画像の印だけの段落は、キャプションの行を含めて最初の段落に数えない
+  - 説明文が空のときの説明: 本文の最初の段落の文字列（改行は空白にする）。使うかは note ごとに選ぶ（R19）。画像の印だけの段落は、キャプションの行を含めて最初の段落に数えない
   - 書式は CommonMark だけを使う
 - 理由: 原則 1（守る over 手軽さ）。HTML の文字列を作って差し込む形（`marked` など）は、出力をもう一度無害にする処理が要る
 - 退けた案: `marked`・`markdown-it`（HTML の文字列を返し、`dangerouslySetInnerHTML` と無害化の package が要る）。正規表現で画像の印と URL を拾う（上の理由）。note の中に Markdown の部品を作る（001 の T077 と同じものを 2 つ作る）。題の欄をキャプションにする（2026-11-10、オーナー。キャプションは Zenn の書き方に揃え、題の欄はホバーで出す文にする）
@@ -221,3 +222,10 @@ issue #219 の報告「spec どうしの重複・干渉・矛盾・依存を調�
 | 本文の書式（U4）を 001 の職歴・実績の本文（001 の T077）と 003 が使う | Markdown を読む部品と描く部品は共有担当が `src/shared/` に作る（2026-11-09、PM。R11） |
 | 004 の research.md が、題の取り方の案 (b) で 003 の URL カードの取得を使うとする | 参照先への取得は `src/shared/server/link-preview-fetch.ts` に置き、004 の issue #281 が同じ部品を使う（R13） |
 | 依存 003 → 001、004 → 003（画像）、005 → 003 | 001・002 の部品を使う（R2）。005 が読む列の意味を変えない（R3）。004 とは画像の部品を共有担当経由で共有する |
+
+## R19 説明文が空のときの説明
+
+- 決定（2026-11-10、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766542397)）: note ごとに、本文の最初の段落を説明に使うか、説明を出さないかを選ぶ。既定は使う（FR-034）。前例は Jekyll の excerpt（既定で最初の段落、https://jekyllrb.com/docs/posts/ ）
+- 決めたこと: 選んだ値は `note.is_first_paragraph_as_description`（0 か 1、既定 1）に持つ（`migrations/0023`）。名前は SOFTWARE_DESIGN の「列の名前を意味ごとに1つにする」の `is_` に従う。編集の画面に、保存のフォームとは別のフォームを置き、ラジオボタン 2 つ（`1`・`0`）で選ぶ。代表画像のフォームと同じく、選び直すとすぐ書き、版を足さない。訪問者の説明は `summaryOf` が決め、`<meta name="description">`・`og:description`・`twitter:description` に同じ値を出す。説明が無ければ 3 つとも出さない
+- 理由: 選ぶ値は note の見せ方の設定で、版の中身（題・説明文・本文）ではない。代表画像の出どころ（`note.card_image`）と同じ置き場にする。版は書き換えない（FR-006）ため、版に持つと選び直すたびに版を足し、同時編集の比べ方（R4）にも当たる。note に持つので、選び直すと公開し直さずに訪問者の説明が変わる。代表画像と同じ扱い
+- 退けた案: 版（`note_revision`）に持つ（上の理由）。保存のフォームに入れて `saveNote` で書く（版を足す操作と、版の外の設定を 1 つの操作に混ぜる）。一覧（`activity_feed`）の説明にも当てる（一覧の note の行は説明文だけを出し、本文の最初の段落を使っていない。005 の data-model.md）

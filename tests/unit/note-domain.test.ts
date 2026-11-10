@@ -6,7 +6,9 @@ import {
   parseCardImageChoice,
   checkSlugChange,
   isVisibleToVisitors,
+  parseFirstParagraphAsDescription,
   parseNoteInput,
+  summaryOf,
   toNoteFormValues,
   type NoteFormValues,
 } from '@/features/note/domain/note';
@@ -156,4 +158,24 @@ describe('isVisibleToVisitors（FR-014〜FR-016）', () => {
       expect(isVisibleToVisitors({ status, deletedAt: '2026-11-10T00:00:00.000Z' })).toBe(false);
     },
   );
+});
+
+describe('説明文が空のときの説明（FR-034）', () => {
+  it('入力の 1 は本文の最初の段落を使い、0 は使わず、ほかの値は読めない', () => {
+    expect(parseFirstParagraphAsDescription('1')).toBe(true);
+    expect(parseFirstParagraphAsDescription('0')).toBe(false);
+    expect(parseFirstParagraphAsDescription('')).toBeNull();
+    expect(parseFirstParagraphAsDescription('true')).toBeNull();
+  });
+
+  it('説明文があれば、設定にかかわらず説明文を使う', () => {
+    expect(summaryOf({ description: '説明文', firstParagraph: '段落' }, true)).toBe('説明文');
+    expect(summaryOf({ description: '説明文', firstParagraph: '段落' }, false)).toBe('説明文');
+  });
+
+  it('説明文が空なら、本文の最初の段落を使う設定のときだけ段落を使う', () => {
+    expect(summaryOf({ description: null, firstParagraph: '段落' }, true)).toBe('段落');
+    expect(summaryOf({ description: null, firstParagraph: '段落' }, false)).toBeNull();
+    expect(summaryOf({ description: null, firstParagraph: null }, true)).toBeNull();
+  });
 });

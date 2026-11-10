@@ -100,6 +100,7 @@ describe('findForEdit（FR-007）', () => {
       deletedAt: null,
       cardImage: 'site',
       cardMediaStorageKey: null,
+      isFirstParagraphAsDescription: true,
       latestRevision: { uid: latest.uid, title: '新しい題' },
       publishedRevisionUid: note.revision.uid,
       mediaStorageKeys: [],
@@ -347,6 +348,28 @@ describe('findVisitorBySlug の本文の読み出し（T006、research.md の R1
     const note = await insertNote(env.DB, { slug: 'has-description', description: '説明文' });
     await publishNoteRow(env.DB, note.id);
     expect((await notes.findVisitorBySlug('has-description'))?.summary).toBe('説明文');
+  });
+
+  it('本文の最初の段落を使わない note は、説明文が空なら説明を持たない（FR-034）', async () => {
+    const note = await insertNote(env.DB, {
+      slug: 'no-first-paragraph',
+      description: null,
+      body: '最初の段落',
+    });
+    await publishNoteRow(env.DB, note.id);
+    expect(await notes.changeFirstParagraphAsDescription(note.id, false)).toEqual({ ok: true });
+    expect(await notes.findVisitorBySlug('no-first-paragraph')).toMatchObject({
+      description: null,
+      summary: null,
+    });
+    expect((await notes.findPreview(note.id))?.summary).toBeNull();
+  });
+
+  it('本文の最初の段落を使わない note でも、説明文があれば説明文を出す（FR-034）', async () => {
+    const note = await insertNote(env.DB, { slug: 'keeps-description', description: '説明文' });
+    await publishNoteRow(env.DB, note.id);
+    await notes.changeFirstParagraphAsDescription(note.id, false);
+    expect((await notes.findVisitorBySlug('keeps-description'))?.summary).toBe('説明文');
   });
 
   it('URL だけの段落が指す参照先の情報を、取ったことのある URL だけ入れる', async () => {
@@ -604,6 +627,46 @@ describe('転載先（FR-031・FR-032、User Story 7、research.md の R14）', 
     expect(await notes.removeSyndication(a.id, 'https://example.com/a')).toEqual({ ok: true });
     expect((await notes.findForEdit(a.id))?.syndicationUrls).toEqual([]);
     expect((await notes.findForEdit(b.id))?.syndicationUrls).toEqual(['https://example.com/b']);
+  });
+});
+
+describe('説明文が空のときに本文の最初の段落を使うか（FR-034）', () => {
+  it('既定は使い、使わないに変え、使うに戻せる', async () => {
+    const note = await insertNote(env.DB);
+    expect((await notes.findForEdit(note.id))?.isFirstParagraphAsDescription).toBe(true);
+    expect(await notes.changeFirstParagraphAsDescription(note.id, false)).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.isFirstParagraphAsDescription).toBe(false);
+    expect(await notes.changeFirstParagraphAsDescription(note.id, true)).toEqual({ ok: true });
+    expect((await notes.findForEdit(note.id))?.isFirstParagraphAsDescription).toBe(true);
+  });
+
+  it('版を足さない', async () => {
+    const note = await insertNote(env.DB);
+    await notes.changeFirstParagraphAsDescription(note.id, false);
+    expect(await revisionsOf(note.id)).toHaveLength(1);
+  });
+
+  it('削除した note と無い note は変えない', async () => {
+    const note = await insertNote(env.DB);
+    await deleteNoteRow(env.DB, note.id);
+    expect(await notes.changeFirstParagraphAsDescription(note.id, false)).toEqual({ ok: false });
+    expect(
+      await env.DB.prepare('SELECT is_first_paragraph_as_description AS v FROM note WHERE id = ?')
+        .bind(note.id)
+        .first<{ v: number }>(),
+    ).toEqual({ v: 1 });
+    expect(await notes.changeFirstParagraphAsDescription(note.id + 1000, false)).toEqual({
+      ok: false,
+    });
+  });
+
+  it('0 と 1 のほかの値を CHECK が拒む', async () => {
+    const note = await insertNote(env.DB);
+    await expect(
+      env.DB.prepare('UPDATE note SET is_first_paragraph_as_description = 2 WHERE id = ?')
+        .bind(note.id)
+        .run(),
+    ).rejects.toThrow(/CHECK constraint failed/);
   });
 });
 

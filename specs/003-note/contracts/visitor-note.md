@@ -23,6 +23,7 @@ Repository の実装は `note.status = 'published' AND note.deleted_at IS NULL` 
 | `slug` | `note.slug` |
 | `title` | 公開した版の `note_revision.title` |
 | `description` | 公開した版の `note_revision.description`（空あり） |
+| `summary` | `<meta name="description">` と OGP の説明。`description` があればそれ。空なら、`note.is_first_paragraph_as_description` が 1 の note は公開した版の本文の最初の段落の文字列、0 の note は空（FR-034、research.md の R11・R19） |
 | `body` | 公開した版の `note_revision.body`。共有担当の Markdown の部品で描き、生の HTML を通さない（research.md の R11） |
 | `publishedAt` | `note.published_at`（初めて公開した日時、FR-013） |
 | `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`site` はサイト共通の画像 |
@@ -33,7 +34,7 @@ DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開�
 
 ## OGP
 
-`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `description`。`description` が空なら、本文の最初の段落の文字列を出す（research.md の R11）。`twitter:card` は `summary`。画像は `cardImage` が `media` のとき、`/notes/{slug}/media/{key}`（縮めない原本）を `og:image` と `twitter:image` に 1 つずつ出す。`site` のときは画像のタグを出さない（research.md の R12）。
+`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `summary`。`<meta name="description">`・`og:description`・`twitter:description` に同じ値を出し、`summary` が空なら 3 つとも出さない（FR-034）。`twitter:title` も `title` にする。書かないと root layout のサイトの題と説明を引き継ぐため。`twitter:card` は `summary`（plan.md の U8）。`twitter` を書くと root layout の `twitter` を丸ごと置き換えるため、`twitter:creator` は root layout の値を引き継ぐ。画像は `cardImage` が `media` のとき、`/notes/{slug}/media/{key}`（縮めない原本）を `og:image` と `twitter:image` に 1 つずつ出す。`site` のときは画像のタグを出さない（research.md の R12）。
 
 ## 検査
 
@@ -42,4 +43,5 @@ DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開�
 - 結合: 公開した後に保存して公開し直していない版の題・説明文・本文が、`/notes/{slug}` の応答に含まれない（FR-012・SC-001）
 - 結合: 公開し直した後、同じ URL で直した本文が出て、`publishedAt` が変わらない（User Story 1 の 5、SC-004）
 - 結合: 公開した版の本文に無く代表画像でもない画像、下書きと削除した note の画像の経路が中身を返さず `no-store` を持つ（FR-026・SC-001、User Story 5 の 4・5）
+- 結合: 説明文が空の note で、本文の最初の段落を使う note は段落が 3 つの説明に出て、使わない note は 3 つの説明のタグが無い（FR-034）
 - 結合: URL カードを含む note の表示で、参照先への取得が 0 回（SC-005）。`createTestHarness()` は Worker から外への要求を数える手段を持たないため、取りに行けば行が増える URL を書いた note を表示し、前後で `link_preview` の行の数が変わらないことを確かめる。訪問者の経路の組み立て用の関数は取得の部品を受け取らない

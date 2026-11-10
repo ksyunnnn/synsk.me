@@ -23,7 +23,8 @@ CREATE TABLE note_copy AS SELECT * FROM note;
 
 DROP TABLE note;
 
--- 列と CHECK の意味は 0005・0012 の注釈のとおり。変えたのは card_image の CHECK と DEFAULT
+-- 列と CHECK の意味は 0005・0012・0023 の注釈のとおり。変えたのは card_image の CHECK と DEFAULT。
+-- 列の並びは 0023 までと同じにする
 CREATE TABLE note (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   -- 管理画面の URL に出す識別子。形と入れ方は 0012 の冒頭のとおり
@@ -60,6 +61,10 @@ CREATE TABLE note (
   updated_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) CHECK (
     strftime('%Y-%m-%dT%H:%M:%fZ', updated_at) IS updated_at
   ),
+  -- 説明文が空のときに本文の最初の段落を説明に使うか。1 は使い、0 は何も出さない（0023）
+  is_first_paragraph_as_description INTEGER NOT NULL DEFAULT 1 CHECK (
+    is_first_paragraph_as_description IN (0, 1)
+  ),
   -- 公開したことのある note だけが、公開した版と初めて公開した日時を持つ
   CHECK ((published_revision_id IS NULL) = (published_at IS NULL)),
   -- 公開の note は、訪問者に見せる版を持つ
@@ -75,12 +80,12 @@ CREATE TABLE note (
 -- uid も写す。管理画面の URL が指す行を変えない。generated は site に変える（冒頭の注釈）
 INSERT INTO note (
   id, uid, slug, status, published_revision_id, published_at, deleted_at, card_image,
-  card_media_id, created_at, updated_at
+  card_media_id, created_at, updated_at, is_first_paragraph_as_description
 )
 SELECT
   id, uid, slug, status, published_revision_id, published_at, deleted_at,
   CASE card_image WHEN 'generated' THEN 'site' ELSE card_image END,
-  card_media_id, created_at, updated_at
+  card_media_id, created_at, updated_at, is_first_paragraph_as_description
 FROM note_copy;
 
 DELETE FROM sqlite_sequence WHERE name = 'note';
@@ -90,7 +95,7 @@ INSERT INTO sqlite_sequence (name, seq) SELECT name, seq FROM sequence_copy;
 DROP TABLE sequence_copy;
 DROP TABLE note_copy;
 
--- 0005 と同じトリガ
+-- 0005 と同じトリガ。0023 は作り直していない
 CREATE TRIGGER note_slug_fixed_after_publication
 BEFORE UPDATE OF slug ON note
 FOR EACH ROW
