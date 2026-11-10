@@ -27,8 +27,8 @@ const PRERENDER_PATHS = './dist/server/vinext-prerender-paths.json';
  */
 const CACHEABLE_PATHS = [
   '/',
-  // トップの下書きと、そのリンク先のモック。データも認証も使わない（#148）
-  '/top-draft',
+  // トップの下書きのリンク先のモック。データも認証も使わない（#148）。トップの下書き
+  // `/top-draft` は要求ごとに D1 の一覧を読むので載せない（specs/005-feed/research.md の R9）
   '/about',
   '/contact',
   '/resume',

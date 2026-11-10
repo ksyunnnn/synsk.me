@@ -119,16 +119,52 @@ const FeedRow = ({ item }: { item: FeedItem }) => {
   }
 };
 
-export const Feed = ({ items }: { items: FeedItem[] }) =>
-  items.length === 0 ? (
-    <p>まだ何もない</p>
-  ) : (
-    <ol className="flex flex-col gap-6">
-      {items.map((item, index) => (
-        // 主キーを応答に出さないため、key は並びの位置で付ける（research.md の R6）
-        <li key={index}>
-          <FeedRow item={item} />
-        </li>
-      ))}
-    </ol>
+const linkClassName =
+  'w-fit underline underline-offset-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+
+/** 番号のページへのリンクの行き先。1 ページ目は問い合わせを付けない。主キーを含めない（ADR-0048） */
+const pageHref = (basePath: string, page: number) =>
+  page === 1 ? basePath : `${basePath}?page=${page}`;
+
+type FeedProps = {
+  items: FeedItem[];
+  /** 表示しているページの番号（1 から数える） */
+  page: number;
+  hasNextPage: boolean;
+  /** 一覧の画面の経路。ページ送りのリンクの行き先に使う */
+  basePath: string;
+};
+
+/**
+ * 一覧とページ送り（research.md の R8）。ページ送りは JavaScript なしでも移れるよう `<a>` で作る。
+ * 2 ページ目より先で 0 件のときは、最後のページの先なので「まだ何もない」を出さず、1 ページ目への
+ * リンクを出す
+ */
+export const Feed = ({ items, page, hasNextPage, basePath }: FeedProps) => {
+  if (items.length === 0) {
+    return page === 1 ? (
+      <p>まだ何もない</p>
+    ) : (
+      <a href={pageHref(basePath, 1)} className={linkClassName}>
+        1 ページ目へ
+      </a>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-6">
+      <ol className="flex flex-col gap-6">
+        {items.map((item, index) => (
+          // 主キーを応答に出さないため、key は並びの位置で付ける（research.md の R6）
+          <li key={index}>
+            <FeedRow item={item} />
+          </li>
+        ))}
+      </ol>
+      {hasNextPage && (
+        <a href={pageHref(basePath, page + 1)} className={linkClassName}>
+          次のページ
+        </a>
+      )}
+    </div>
   );
+};

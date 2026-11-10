@@ -1,13 +1,20 @@
 // 新しいトップの下書き。#148 のローデザイン（配置と呼び名だけ）をそのまま書いたもの。
-// timeline は mock-data.json（値はすべて作り物）から読み、列の値をそのまま出す。完成したら中身を `/` に移し、このフォルダを消す。
+// timeline は D1 の一覧（specs/005-feed）を出す（#166）。完成したら中身を `/` に移し、このフォルダを消す。
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+import { Feed } from '@/features/activity/components/feed';
+import { readFeedPage } from '@/features/activity/domain/feed';
+import { listFeedItems } from '@/features/activity/server/feed-queries';
 import { fontFamily, sourceSans } from '@/lib/fonts';
 
-import { getTimeline } from './mockTimeline';
-import { Embed } from './Embed';
-import { SourceIcon } from './SourceIcon';
+// 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す。D1 から読めない
+// ときに 500 を返すため、`loading.tsx` を置かない。キャッシュしない（specs/005-feed/research.md の R9）
+export const instant = false;
+
+const PATH = '/top-draft';
+
+type Props = { searchParams: Promise<{ page?: string | string[] }> };
 
 export const metadata: Metadata = {
   title: 'トップの下書き | synsk.me',
@@ -20,8 +27,9 @@ const TextLink = ({ href, children }: { href: string; children: React.ReactNode 
   </Link>
 );
 
-const Page = async () => {
-  'use cache';
+const Page = async ({ searchParams }: Props) => {
+  const page = readFeedPage((await searchParams).page);
+  const { items, hasNextPage } = await listFeedItems(page);
   return (
     <div
       className={`${sourceSans.className} min-h-screen bg-background text-foreground`}
@@ -39,57 +47,7 @@ const Page = async () => {
         </section>
 
         <section className="grid gap-4">
-          <ul className="grid gap-4">
-            {getTimeline().map((entry) => (
-              <li
-                key={entry.key}
-                className="grid gap-1.5 border-b border-border pb-4 last:border-b-0 last:pb-0"
-              >
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <span className="tabular-nums">{entry.sortAt}</span>
-                  <SourceIcon source={entry.label} className="size-3.5" />
-                  <span>{entry.label}</span>
-                  {entry.kind && <span>{entry.kind}</span>}
-                </div>
-                {entry.kind === 'embed' && entry.href ? (
-                  <Embed
-                    source={entry.label}
-                    url={entry.href}
-                    title={entry.title}
-                    api={entry.api}
-                  />
-                ) : (
-                  <>
-                    {entry.href ? (
-                      <a href={entry.href} className="font-normal underline underline-offset-4">
-                        {entry.title}
-                      </a>
-                    ) : (
-                      <span className="font-normal">{entry.title}</span>
-                    )}
-                    {entry.organization && <span className="text-sm">{entry.organization}</span>}
-                    {entry.description && (
-                      <p className="text-sm whitespace-pre-wrap text-muted-foreground">
-                        {entry.description}
-                      </p>
-                    )}
-                    {entry.imageUrl && (
-                      // ダミー画像は外部のサービスから直接読む。最適化はデザインが決まってから考える
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={entry.imageUrl}
-                        alt=""
-                        width={1200}
-                        height={630}
-                        loading="lazy"
-                        className="aspect-[1200/630] w-full rounded-md object-cover"
-                      />
-                    )}
-                  </>
-                )}
-              </li>
-            ))}
-          </ul>
+          <Feed items={items} page={page} hasNextPage={hasNextPage} basePath={PATH} />
         </section>
 
         <section className="grid gap-4">
