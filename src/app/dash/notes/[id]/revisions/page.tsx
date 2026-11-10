@@ -25,7 +25,7 @@ const Page = async ({ params }: Props) => {
       </p>
       <h1 className="text-2xl font-bold">版の一覧</h1>
       <p>{note.latestRevision.title || '（題なし）'}</p>
-      <NoteRevisionList noteUid={note.uid} revisions={revisions} />
+      <NoteRevisionList noteUid={note.uid} noteStatus={note.status} revisions={revisions} />
     </main>
   );
 };

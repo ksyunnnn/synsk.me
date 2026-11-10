@@ -261,3 +261,70 @@ test('キーボードだけで過去の版を開き、その版に戻せる（co
   await expect(page.getByRole('status')).toHaveText('過去の版の中身を、新しい版として保存しました');
   await expect(textbox(page, '本文')).toHaveValue('E2E の 1 つ目の版の本文');
 });
+
+test('版の一覧は、公開の note でだけ公開した版に印を付け、下書きに戻すと印を外す（FR-014）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('published-mark');
+  const editUrl = await createNote(page, { slug, title: `E2E の版の印の題 ${slug}` });
+
+  await submitAndWait(page, '最も新しい版を公開する');
+  await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
+  // 公開した後に版を足し、公開した版と最も新しい版を別の版にする
+  await openNoteEditor(page, editUrl);
+  await textbox(page, '本文').fill('E2E の公開した後の版の本文');
+  await saveEdit(page);
+  await expect(textbox(page, '本文')).toHaveValue('E2E の公開した後の版の本文');
+  await page.goto(`${editUrl}/revisions`);
+  await expect(page.getByRole('listitem').first()).toContainText('・最も新しい版');
+  await expect(page.getByRole('listitem').first()).not.toContainText('・公開した版');
+  await expect(page.getByRole('listitem').last()).toContainText('・公開した版');
+
+  await openNoteEditor(page, editUrl);
+  await submitAndWait(page, '下書きに戻す');
+  await expect(page.getByRole('heading', { name: '状態: 下書き' })).toBeVisible();
+  // 下書きに戻しても公開した版の記録は残る（FR-014）が、一覧では訪問者に見せている版と読める印を出さない
+  await page.goto(`${editUrl}/revisions`);
+  await expect(page.getByRole('list')).toContainText('・最も新しい版');
+  await expect(page.getByRole('list')).not.toContainText('・公開した版');
+});
+
+test('過去の版の画面は、公開の note でだけ、戻しても訪問者には今の公開した版を見せると知らせる（FR-009・FR-014）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('revert-notice');
+  const editUrl = await createNote(page, {
+    slug,
+    title: `E2E の戻す説明の題 ${slug}`,
+    body: 'E2E の 1 つ目の版の本文',
+  });
+  await openNoteEditor(page, editUrl);
+  await textbox(page, '本文').fill('E2E の 2 つ目の版の本文');
+  await saveEdit(page);
+  await expect(textbox(page, '本文')).toHaveValue('E2E の 2 つ目の版の本文');
+
+  const openOldest = async () => {
+    await page.goto(`${editUrl}/revisions`);
+    // 版の一覧は新しい順。最後のリンクが 1 つ目の版
+    await page.getByRole('list').getByRole('link').last().click();
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('過去の版');
+  };
+  const notice = page.getByText('訪問者には、公開し直すまで今の公開した版を見せます');
+
+  // 下書きの note は訪問者に見せる版を持たないため、訪問者についての説明を出さない
+  await openOldest();
+  await expect(
+    page.getByText('戻すと、この版の題・説明文・本文が新しい版として保存されます'),
+  ).toBeVisible();
+  await expect(notice).toHaveCount(0);
+
+  await openNoteEditor(page, editUrl);
+  await submitAndWait(page, '最も新しい版を公開する');
+  await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
+  await openOldest();
+  await expect(notice).toBeVisible();
+});
