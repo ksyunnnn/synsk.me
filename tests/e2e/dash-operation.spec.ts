@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { registerProject } from './support/dash';
+import { registerProject, textbox } from './support/dash';
 import { createNote, uniqueNoteSlug, waitForHydration } from './support/note';
 
 /**
@@ -112,5 +112,51 @@ test.describe('送っている間', () => {
     release();
     await expect(page.getByRole('status')).toHaveText('保存しました');
     await expect(page.getByRole('button', { name: '保存する', exact: true })).toBeEnabled();
+  });
+});
+
+test.describe('失敗の位置', () => {
+  test('入力の誤りで保存できないと、最初の誤りの項目へフォーカスが移り、画面に見える', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E 失敗の位置の組織',
+      organizationNameMasked: 'E2E 失敗の位置の秘匿化した組織名',
+      title: uniqueTitle('失敗の位置'),
+    });
+    await page.goto(editUrl);
+    await waitForHydration(page.locator('main form').first());
+    await textbox(page, '題').fill('');
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(textbox(page, '題')).toBeFocused();
+    await expect(textbox(page, '題')).toBeInViewport();
+  });
+
+  test('別の画面で先に保存されていて保存できないと、理由の文言へフォーカスが移る', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E 失敗の位置の先の保存の組織',
+      organizationNameMasked: 'E2E 失敗の位置の先の保存の秘匿化した組織名',
+      title: uniqueTitle('失敗の位置の先の保存'),
+    });
+    await page.goto(editUrl);
+    await waitForHydration(page.locator('main form').first());
+
+    const other = await context.newPage();
+    await other.goto(editUrl);
+    await waitForHydration(other.locator('main form').first());
+    await textbox(other, '題').fill(uniqueTitle('先に保存した題'));
+    await other.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(other.getByRole('status')).toHaveText('保存しました');
+    await other.close();
+
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(page.getByRole('alert')).toBeFocused();
   });
 });
