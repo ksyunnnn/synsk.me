@@ -139,7 +139,7 @@ export type NoteRepository = {
    * 置き場に置いた画像を、その note の画像として記録する（FR-023、research.md の R12）。無いか
    * 削除した note なら `ok: false`
    */
-  addMedia: (id: NoteId, storageKey: MediaStorageKey) => Promise<{ ok: boolean }>;
+  addMedia: (id: NoteId, storageKey: MediaStorageKey, size: number) => Promise<{ ok: boolean }>;
   /**
    * note を完全に消す（FR-017、research.md の R6）。画像の記録・転載先・版・note を 1 つの
    * トランザクションで消し、参照先の情報は残す。消した画像の置き場のキーを返す。置き場の実体は

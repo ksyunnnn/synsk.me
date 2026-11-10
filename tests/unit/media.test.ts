@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   MEDIA_MAX_BYTES,
+  MEDIA_TOTAL_MAX_BYTES,
+  checkMediaQuota,
   checkMediaSize,
   detectMediaType,
   parseMediaStorageKey,
@@ -48,6 +50,17 @@ describe('大きさ', () => {
 
   it('空を拒む', () => {
     expect(checkMediaSize(0)).toBe('empty');
+  });
+});
+
+describe('置き場の総量', () => {
+  it('上限は R2 の無料枠 10 GB-month を下回る 8 GB', () => {
+    expect(MEDIA_TOTAL_MAX_BYTES).toBe(8 * 10 ** 9);
+  });
+
+  it('置いた量と足す画像の合計が上限ちょうどなら通し、1 バイト超えると拒む', () => {
+    expect(checkMediaQuota(MEDIA_TOTAL_MAX_BYTES - 100, 100)).toBeNull();
+    expect(checkMediaQuota(MEDIA_TOTAL_MAX_BYTES - 100, 101)).toBe('storage-full');
   });
 });
 

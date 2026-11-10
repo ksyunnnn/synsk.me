@@ -2,6 +2,7 @@ import 'server-only';
 
 import {
   MEDIA_SIGNATURE_BYTES,
+  checkMediaQuota,
   checkMediaSize,
   detectMediaType,
   isMediaType,
@@ -9,8 +10,10 @@ import {
   type MediaAccess,
   type MediaStorage,
   type MediaSweepStorage,
+  type MediaUsage,
 } from '@/shared/domain/media';
 import { readEnv } from '@/shared/server/env';
+import { createD1MediaUsage } from '@/shared/server/media-usage';
 import { NO_STORE } from '@/shared/server/preview-no-store';
 
 /**
@@ -41,10 +44,25 @@ const ENTITY_TAG = String.raw`(?:W\/)?"[\x21\x23-\x7e]*"`;
 const IF_NONE_MATCH = new RegExp(`^(?:\\*|${ENTITY_TAG}(?:[ \\t]*,[ \\t]*${ENTITY_TAG})*)$`);
 const isIfNoneMatch = (value: string) => IF_NONE_MATCH.test(value.trim());
 
-export const createR2MediaStorage = (bucket: R2Bucket): MediaStorage => ({
+/** 消す。無いキーは無視する */
+const removeFrom =
+  (bucket: R2Bucket): MediaStorage['remove'] =>
+  async (storageKeys) => {
+    for (let start = 0; start < storageKeys.length; start += R2_DELETE_MAX_KEYS) {
+      await bucket.delete(storageKeys.slice(start, start + R2_DELETE_MAX_KEYS));
+    }
+  };
+
+/**
+ * `usage` は置いた画像の総量を知る。総量は置く前に 1 回読み、上限を超えるなら置かない
+ * （`MEDIA_TOTAL_MAX_BYTES`）。同時に 2 枚を足すと両方が通りうるが、上限と無料枠の差が吸う
+ */
+export const createR2MediaStorage = (bucket: R2Bucket, usage: MediaUsage): MediaStorage => ({
   save: async (file) => {
     const sizeRejection = checkMediaSize(file.size);
     if (sizeRejection) return { ok: false, reason: sizeRejection };
+    const quotaRejection = checkMediaQuota(await usage.totalBytes(), file.size);
+    if (quotaRejection) return { ok: false, reason: quotaRejection };
     const head = new Uint8Array(await file.slice(0, MEDIA_SIGNATURE_BYTES).arrayBuffer());
     const type = detectMediaType(head);
     if (type === null) return { ok: false, reason: 'unsupported-type' };
@@ -71,16 +89,12 @@ export const createR2MediaStorage = (bucket: R2Bucket): MediaStorage => ({
     return { body: object.body, type, size: object.size, etag: object.httpEtag };
   },
 
-  remove: async (storageKeys) => {
-    for (let start = 0; start < storageKeys.length; start += R2_DELETE_MAX_KEYS) {
-      await bucket.delete(storageKeys.slice(start, start + R2_DELETE_MAX_KEYS));
-    }
-  },
+  remove: removeFrom(bucket),
 });
 
 /** 突き合わせが使う置き場の操作の R2 の実装（src/shared/server/sweep-orphaned-media.ts） */
 export const createR2MediaSweepStorage = (bucket: R2Bucket): MediaSweepStorage => ({
-  remove: createR2MediaStorage(bucket).remove,
+  remove: removeFrom(bucket),
   list: async ({ cursor, limit }) => {
     // 続きは最後に読んだキーの後から読む（R2ListOptions の startAfter）
     const listed = await bucket.list({ limit, ...(cursor === null ? {} : { startAfter: cursor }) });
@@ -105,8 +119,10 @@ export const createR2MediaSweepStorage = (bucket: R2Bucket): MediaSweepStorage =
 });
 
 /** 組み立て用の関数。binding の名前は `wrangler.jsonc` の `r2_buckets` */
-export const createMediaStorage = async (): Promise<MediaStorage> =>
-  createR2MediaStorage((await readEnv()).MEDIA);
+export const createMediaStorage = async (): Promise<MediaStorage> => {
+  const env = await readEnv();
+  return createR2MediaStorage(env.MEDIA, createD1MediaUsage(env.DB));
+};
 
 /** 突き合わせの組み立て用の関数。binding は `createMediaStorage` と同じ */
 export const createMediaSweepStorage = async (): Promise<MediaSweepStorage> =>

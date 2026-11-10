@@ -508,13 +508,13 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       return { ok: result.meta.changes > 0 };
     },
 
-    addMedia: async (id, storageKey) => {
+    addMedia: async (id, storageKey, size) => {
       const result = await db
         .prepare(
-          `INSERT INTO media (note_id, storage_key)
-           SELECT id, ? FROM note WHERE id = ? AND deleted_at IS NULL`,
+          `INSERT INTO media (note_id, storage_key, size)
+           SELECT id, ?, ? FROM note WHERE id = ? AND deleted_at IS NULL`,
         )
-        .bind(storageKey, id)
+        .bind(storageKey, size, id)
         .run();
       return { ok: result.meta.changes > 0 };
     },

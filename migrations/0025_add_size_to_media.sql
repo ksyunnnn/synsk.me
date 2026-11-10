@@ -1,0 +1,14 @@
+-- media に、置き場に置いた画像の大きさ size（バイト）を足す。書き方の決まりは 0003 の冒頭にある。
+--
+-- 置き場（R2）の画像の総量に上限をかける（src/shared/domain/media.ts の MEDIA_TOTAL_MAX_BYTES。
+-- 2026-11-10 に PM が承認した。issue #219）。画像を足す前に size の合計を読み、上限を超えるなら
+-- 置かない。総量は置き場の一覧で数えない。一覧は 1 回ごとに課金の対象の操作（Class A）で、
+-- 1,000 件ごとに回数が増える（https://developers.cloudflare.com/r2/pricing/ ）
+--
+-- 既にある行は 0 で入る。migration は置き場を読めないため、既にある画像の大きさを埋めない。
+-- 0 の行は総量に数えないので、本番に当てる前に media の行の数を確かめる
+-- （SELECT COUNT(*) FROM media）。
+--
+-- NOT NULL で既定値が定数の列は ALTER TABLE ADD COLUMN で足せるため、表を作り直さない。CHECK は
+-- 既にある行にも当たる（https://www.sqlite.org/lang_altertable.html#altertabaddcol）
+ALTER TABLE media ADD COLUMN size INTEGER NOT NULL DEFAULT 0 CHECK (size >= 0);

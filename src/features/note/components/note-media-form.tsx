@@ -7,7 +7,12 @@ import {
   mediaMarkOf,
   type MediaFormResult,
 } from '@/features/note/domain/note';
-import { MEDIA_MAX_BYTES, MEDIA_TYPES, type MediaRejection } from '@/shared/domain/media';
+import {
+  MEDIA_MAX_BYTES,
+  MEDIA_STORAGE_FULL_MESSAGE,
+  MEDIA_TYPES,
+  type MediaRejection,
+} from '@/shared/domain/media';
 
 /**
  * note の画像を足すフォームと、足した画像を本文に貼る印の一覧（FR-023、specs/003-note/contracts/dash.md）。
@@ -25,6 +30,7 @@ const ERROR_MESSAGES: Record<MediaRejection, string> = {
   empty: '画像のファイルを選んでください',
   'too-large': `画像は 1 枚 ${MAX_MB} MB までにしてください`,
   'unsupported-type': '画像は JPEG・PNG・WebP・GIF にしてください',
+  'storage-full': MEDIA_STORAGE_FULL_MESSAGE,
 };
 
 const FORBIDDEN = 'オーナーであることを確かめられませんでした。ログインし直してください';

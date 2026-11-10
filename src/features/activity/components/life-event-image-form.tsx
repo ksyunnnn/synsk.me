@@ -5,7 +5,11 @@ import {
   LIFE_EVENT_IMAGE_FIELD,
   LIFE_EVENT_UID_FIELD,
 } from '@/features/activity/domain/life-event';
-import { MEDIA_TYPES, type MediaRejection } from '@/shared/domain/media';
+import {
+  MEDIA_STORAGE_FULL_MESSAGE,
+  MEDIA_TYPES,
+  type MediaRejection,
+} from '@/shared/domain/media';
 
 /**
  * life event の代表画像を登録する・外すフォーム（specs/004-external-activity/contracts/dash.md）。
@@ -28,6 +32,7 @@ const MESSAGES: Record<'forbidden' | MediaRejection, string> = {
   empty: '画像のファイルを選んでください',
   'too-large': '画像は 1 枚 10 MB までです',
   'unsupported-type': '画像は JPEG・PNG・WebP・GIF のどれかにしてください',
+  'storage-full': MEDIA_STORAGE_FULL_MESSAGE,
 };
 
 const messageOf = (result: Result | null) =>

@@ -1,6 +1,13 @@
-import { env } from 'cloudflare:test';
+import { applyD1Migrations, env } from 'cloudflare:test';
 import { describe, expect, it, vi } from 'vitest';
-import { MEDIA_MAX_BYTES, parseMediaStorageKey, type MediaStorage } from '@/shared/domain/media';
+import {
+  MEDIA_MAX_BYTES,
+  MEDIA_TOTAL_MAX_BYTES,
+  parseMediaStorageKey,
+  type MediaStorage,
+} from '@/shared/domain/media';
+import { createD1MediaUsage } from '@/shared/server/media-usage';
+import { insertNote } from '../support/note-rows';
 import { createR2MediaStorage, respondWithMedia } from '@/shared/server/media-storage';
 
 /**
@@ -8,7 +15,7 @@ import { createR2MediaStorage, respondWithMedia } from '@/shared/server/media-st
  * 形式の見分け方の細部は tests/unit/media.test.ts が持つ
  */
 
-const storage = createR2MediaStorage(env.MEDIA);
+const storage = createR2MediaStorage(env.MEDIA, { totalBytes: async () => 0 });
 
 const PNG_HEAD = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
 const png = (size = 64) => {
@@ -46,6 +53,38 @@ describe('save', () => {
     const slice = vi.spyOn(file, 'slice');
     expect(await storage.save(file)).toEqual({ ok: false, reason: 'too-large' });
     expect(slice).not.toHaveBeenCalled();
+  });
+});
+
+describe('置き場の総量（MEDIA_TOTAL_MAX_BYTES）', () => {
+  it('置いた量に足すと上限を超える画像を拒み、何も置かない', async () => {
+    const full = createR2MediaStorage(env.MEDIA, {
+      totalBytes: async () => MEDIA_TOTAL_MAX_BYTES - 63,
+    });
+    const before = (await env.MEDIA.list()).objects.length;
+    expect(await full.save(png(64))).toEqual({ ok: false, reason: 'storage-full' });
+    expect((await env.MEDIA.list()).objects.length).toBe(before);
+  });
+
+  it('上限ちょうどまでは置く', async () => {
+    const nearlyFull = createR2MediaStorage(env.MEDIA, {
+      totalBytes: async () => MEDIA_TOTAL_MAX_BYTES - 64,
+    });
+    const result = await nearlyFull.save(png(64));
+    expect(result.ok).toBe(true);
+  });
+
+  it('D1 の実装は、すべての持ち主の media.size を合わせる', async () => {
+    await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
+    const usage = createD1MediaUsage(env.DB);
+    const before = await usage.totalBytes();
+    const note = await insertNote(env.DB);
+    await env.DB.prepare(
+      'INSERT INTO media (note_id, storage_key, size) VALUES (?1, ?2, 100), (?1, ?3, 250)',
+    )
+      .bind(note.id, crypto.randomUUID(), crypto.randomUUID())
+      .run();
+    expect(await usage.totalBytes()).toBe(before + 350);
   });
 });
 

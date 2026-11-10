@@ -34,14 +34,40 @@ export const detectMediaType = (head: Uint8Array): MediaType | null => {
   return null;
 };
 
-/** 画像を受けない理由 */
-export type MediaRejection = 'empty' | 'too-large' | 'unsupported-type';
+/**
+ * 置き場に置く画像の総量の上限。note・実績・職歴・life event の画像を合わせて数える。R2 は無料枠
+ * （保存 10 GB-month）を超えると課金される（https://developers.cloudflare.com/r2/pricing/ ）ため、
+ * 無料枠を下回る値で止める（docs/SOFTWARE_DESIGN.md の原則 2）。無料枠との差の 2 GB は、`media` の
+ * 行を持たない消し損ね（`ORPHAN_GRACE_MS` の間は消さない）を吸う。値は 2026-11-10 に PM が承認した
+ * （issue #219）
+ */
+export const MEDIA_TOTAL_MAX_BYTES = 8 * 10 ** 9;
+
+/** 画像を受けない理由。`storage-full` は置き場の総量が上限を超えること */
+export type MediaRejection = 'empty' | 'too-large' | 'unsupported-type' | 'storage-full';
 
 /** 大きさを確かめる。中身を読む前に止めるため、形式より先に確かめる */
 export const checkMediaSize = (size: number): MediaRejection | null => {
   if (size === 0) return 'empty';
   if (size > MEDIA_MAX_BYTES) return 'too-large';
   return null;
+};
+
+/** 置き場の総量が上限を超えるときに、画像を足す画面が出す文言。どの機能の画面も同じ文言にする */
+export const MEDIA_STORAGE_FULL_MESSAGE =
+  '画像の置き場が上限（8 GB）に達しました。使わない画像を消してから足してください';
+
+/** 置いた量 `usedBytes` に `size` の画像を足すと総量の上限を超えるなら `storage-full` */
+export const checkMediaQuota = (usedBytes: number, size: number): MediaRejection | null =>
+  usedBytes + size > MEDIA_TOTAL_MAX_BYTES ? 'storage-full' : null;
+
+/**
+ * 置いた画像の総量を知る。`media.size` の合計で、置き場を数えない。置き場の一覧は 1 回ごとに
+ * 課金の対象の操作（Class A）で、1,000 件ごとに回数が増える
+ */
+export type MediaUsage = {
+  /** `media` の行の `size` の合計（バイト） */
+  totalBytes: () => Promise<number>;
 };
 
 /**
@@ -74,7 +100,10 @@ export type StoredMedia = {
 };
 
 export type MediaStorage = {
-  /** 形式と大きさを確かめてから置く。置き場のキーは推測できない値で、持ち主から作らない */
+  /**
+   * 形式と大きさと置き場の総量を確かめてから置く。置き場のキーは推測できない値で、持ち主から
+   * 作らない。使い手は、返った `size` を `media.size` に記録する（総量の数え方、`MediaUsage`）
+   */
   save: (
     file: Blob,
   ) => Promise<{ ok: true; media: SavedMedia } | { ok: false; reason: MediaRejection }>;

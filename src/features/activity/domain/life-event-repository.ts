@@ -46,6 +46,7 @@ export type LifeEventRepository = {
   replaceCardImage: (
     id: LifeEventId,
     storageKey: MediaStorageKey,
+    size: number,
   ) => Promise<{ ok: true; removedKeys: MediaStorageKey[] } | { ok: false }>;
   /** 代表画像を外し、画像の行を消す。消した画像の置き場のキーを返す。無い id なら `ok: false` */
   removeCardImage: (

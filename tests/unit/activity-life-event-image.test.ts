@@ -54,7 +54,7 @@ describe('registerLifeEventImage', () => {
     expect(await registerLifeEventImage(lifeEvents, storage, OWNER, 1, FILE)).toEqual({
       status: 'saved',
     });
-    expect(lifeEvents.replaceCardImage).toHaveBeenCalledWith(1, NEW_KEY);
+    expect(lifeEvents.replaceCardImage).toHaveBeenCalledWith(1, NEW_KEY, 4);
     expect(storage.remove).toHaveBeenCalledWith([OLD_KEY]);
   });
 

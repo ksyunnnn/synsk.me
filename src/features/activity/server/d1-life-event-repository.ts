@@ -169,13 +169,13 @@ export const createD1LifeEventRepository = (db: D1Database): LifeEventRepository
         : { ok: false };
     },
 
-    replaceCardImage: async (id, storageKey) => {
+    replaceCardImage: async (id, storageKey, size) => {
       const [inserted, , removed] = await db.batch([
         db
           .prepare(
-            "INSERT INTO media (activity_id, storage_key) SELECT ?1, ?2 WHERE EXISTS (SELECT 1 FROM activity WHERE source = 'life_event' AND id = ?1)",
+            "INSERT INTO media (activity_id, storage_key, size) SELECT ?1, ?2, ?3 WHERE EXISTS (SELECT 1 FROM activity WHERE source = 'life_event' AND id = ?1)",
           )
-          .bind(id, storageKey),
+          .bind(id, storageKey, size),
         db
           .prepare(
             "UPDATE activity SET card_media_id = (SELECT id FROM media WHERE storage_key = ?) WHERE source = 'life_event' AND id = ?",
