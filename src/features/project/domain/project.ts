@@ -1,4 +1,5 @@
 import type { ActionResult } from '@/shared/domain/action-result';
+import type { MediaStorageKey } from '@/shared/domain/media';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
@@ -38,6 +39,10 @@ export type Project = {
   url: string | null;
   /** つないだスキルの id（FR-032） */
   skillIds: number[];
+  /** この実績の画像の置き場のキー。足した順（FR-027） */
+  mediaStorageKeys: MediaStorageKey[];
+  /** 代表画像の置き場のキー。無ければ null（FR-028） */
+  cardMediaKey: MediaStorageKey | null;
   /** 更新日時。編集の画面を開いたときの値を、楽観ロックに使う（research.md の R7） */
   updatedAt: string;
 };
@@ -90,6 +95,21 @@ export type ProjectField = (typeof PROJECT_FIELDS)[number];
 
 /** 編集の画面のフォームが、入力の項目とは別に送る値 */
 export const PROJECT_UID_FIELD = 'projectUid';
+
+/**
+ * 代表画像を選ぶ入力の名前（FR-028）。値はその実績の画像の置き場のキーか、代表画像を外す `none`
+ */
+export const CARD_IMAGE_FIELD = 'cardImage';
+export const NO_CARD_IMAGE = 'none';
+
+/** 画像を足すフォームが、足した画像を代表画像にもするときに送る値（FR-028 の「本文とは別に登録」） */
+export const AS_CARD_IMAGE_FIELD = 'asCardImage';
+
+/** 代表画像を選ぶ Server Action の結果。`media-not-owned` はその実績の画像でないキー */
+export type CardImageFormResult = ActionResult<
+  typeof CARD_IMAGE_FIELD,
+  'invalid' | 'media-not-owned'
+>;
 export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 export type ProjectFieldError =
@@ -223,7 +243,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
  * 出してよい列だけを読んで詰める。画面・`<title>`・OGP はこの値だけを使う
  */
 
-/** 秘匿化しない実績。代表画像は、配る経路を作るまで持たない（tasks.md の T076） */
+/** 秘匿化しない実績 */
 export type UnmaskedVisitorProject = {
   isMasked: false;
   slug: string;
@@ -232,9 +252,16 @@ export type UnmaskedVisitorProject = {
   organizationName: string;
   period: Period;
   skills: string[];
-  /** 表示は tasks.md の T077 が作る */
+  /** 本文の Markdown（FR-023、plan.md の U4） */
   body: string | null;
   url: string | null;
+  /**
+   * 訪問者に出してよい画像の置き場のキー。本文が指す、この実績の画像だけ（FR-030）。本文の画像は
+   * このキーだけを `/projects/{slug}/media/{key}` で出す
+   */
+  media: MediaStorageKey[];
+  /** 代表画像の置き場のキー。無ければ null（FR-028・FR-030） */
+  cardImageKey: MediaStorageKey | null;
 };
 
 /** 秘匿化した実績。本文・関連 URL・画像を持たない（FR-021・FR-022・FR-026・FR-030） */

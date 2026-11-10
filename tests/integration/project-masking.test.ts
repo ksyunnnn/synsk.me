@@ -179,6 +179,162 @@ it('秘匿化した実績のページの <title> と OGP は、秘匿化した�
   expect(text).toContain(`<meta property="og:title" content="${SHOWN.title}"`);
 });
 
+/** 1×1 の PNG（作り物）。共有の media-storage.ts が先頭のバイトで形式を見分ける */
+const PNG = Uint8Array.from(
+  atob(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  ),
+  (char) => char.charCodeAt(0),
+);
+
+describe('実績の本文と画像（FR-021・FR-023・FR-027・FR-028・FR-030、SC-001）', () => {
+  const OPEN_SLUG = 'fake-media-open';
+  const MASKED_MEDIA_SLUG = '7c1d2e3f-4a5b-4c6d-8e7f-8091a2b3c4d5';
+  const DRAFT_SLUG = 'fake-media-draft';
+  const RAW_HTML = '<script>alert("作り物")</script>';
+  const MASKED_BODY = '隠す作り物の画像つきの本文';
+
+  const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
+
+  /** オーナーとして、編集の画面の画像のフォームで画像を 1 枚足し、足した画像のキーを返す */
+  const upload = async (projectId: number, extra: Record<string, string> = {}) => {
+    const uid = await uidOf(ctx.db, 'project', projectId);
+    const path = `/dash/projects/${uid}`;
+    const page = await ctx.server.fetch(path, { headers: await authorHeaders() });
+    const forms = (await page.text()).match(/<form\b[\s\S]*?<\/form>/g) ?? [];
+    const form = forms.find((html) => html.includes('name="mediaFile"'));
+    if (!form) throw new Error('画像のフォームが無い');
+    const body = new FormData();
+    for (const [name, value] of Object.entries(readActionFields(form))) body.append(name, value);
+    body.append('projectUid', uid);
+    for (const [name, value] of Object.entries(extra)) body.append(name, value);
+    body.append('mediaFile', new Blob([PNG], { type: 'image/png' }));
+    const encoded = new Response(body);
+    const res = await ctx.server.fetch(path, {
+      method: 'POST',
+      body: await encoded.arrayBuffer(),
+      headers: {
+        ...(await authorHeaders()),
+        'content-type': encoded.headers.get('content-type') ?? '',
+      },
+      redirect: 'manual',
+    });
+    expect(res.status).toBe(303);
+    const row = await ctx.db
+      .prepare('SELECT storage_key, size FROM media WHERE project_id = ? ORDER BY id DESC')
+      .bind(projectId)
+      .first<{ storage_key: string; size: number }>();
+    if (!row) throw new Error('画像が記録されていない');
+    expect(row.size).toBe(PNG.byteLength);
+    return row.storage_key;
+  };
+
+  const setBody = (id: number, description: string) =>
+    ctx.db.prepare('UPDATE project SET description = ? WHERE id = ?').bind(description, id).run();
+
+  const fetchMedia = (slug: string, key: string) =>
+    ctx.server.fetch(`/projects/${slug}/media/${key}`);
+
+  const expectHidden = async (res: Response) => {
+    expect(res.status).toBe(404);
+    expect(res.headers.get('cache-control')).toContain('no-store');
+    expect((await res.arrayBuffer()).byteLength).toBe(0);
+  };
+
+  let openId: number;
+  let maskedMediaId: number;
+  let draftId: number;
+
+  beforeAll(async () => {
+    const org = await insertOrganization(ctx.db, {
+      name: '画像の作り物の組織',
+      nameMasked: '画像の作り物の秘匿化した組織',
+    });
+    openId = await insertProject(ctx.db, {
+      organizationId: org,
+      slug: OPEN_SLUG,
+      title: '画像つきの作り物の実績',
+      isMasked: false,
+      status: 'published',
+    });
+    maskedMediaId = await insertProject(ctx.db, {
+      organizationId: org,
+      slug: MASKED_MEDIA_SLUG,
+      title: '画像つきの隠す作り物の実績',
+      titleMasked: '画像つきの秘匿化した題',
+      isMasked: true,
+      status: 'published',
+    });
+    draftId = await insertProject(ctx.db, {
+      organizationId: org,
+      slug: DRAFT_SLUG,
+      title: 'サイトに載せない作り物の実績',
+      isMasked: false,
+      status: 'draft',
+    });
+  });
+
+  it.each([
+    ['HTML', AS_HTML],
+    ['RSC', AS_RSC],
+  ])('秘匿化しない実績の本文を Markdown で出し、生の HTML を通さない（%s）', async (_, as) => {
+    await setBody(openId, `**強調した作り物の本文**\n\n${RAW_HTML}`);
+    const { status, text } = await fetchVisitor(OPEN_SLUG, as);
+    expect(status).toBe(200);
+    expect(text).toContain('強調した作り物の本文');
+    expect(text).not.toContain(RAW_HTML);
+    if (as === AS_HTML) {
+      expect(text).toContain('<strong>強調した作り物の本文</strong>');
+      expect(text).toContain('&lt;script&gt;');
+    }
+  });
+
+  it('本文が指す画像と代表画像は 200 で原本を返し、本文が指さない画像は 404', async () => {
+    const bodyKey = await upload(openId);
+    const cardKey = await upload(openId, { asCardImage: '1' });
+    const unusedKey = await upload(openId);
+    await setBody(openId, `![作り物の図](media:${bodyKey})\n*作り物のキャプション*`);
+
+    const html = (await fetchVisitor(OPEN_SLUG, AS_HTML)).text;
+    expect(html).toContain(`<img src="/projects/${OPEN_SLUG}/media/${bodyKey}" alt="作り物の図"/>`);
+    expect(html).toContain(`src="/projects/${OPEN_SLUG}/media/${cardKey}"`);
+    expect(html).not.toContain(unusedKey);
+
+    for (const key of [bodyKey, cardKey]) {
+      const res = await fetchMedia(OPEN_SLUG, key);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toBe('image/png');
+      expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
+    }
+    await expectHidden(await fetchMedia(OPEN_SLUG, unusedKey));
+    // ほかの実績の識別子からは、同じ画像を返さない
+    await expectHidden(await fetchMedia(DRAFT_SLUG, bodyKey));
+  });
+
+  it('秘匿化した実績の画像は、本文が指し代表画像でも 404 で、本文も画像のキーも応答に含めない', async () => {
+    const key = await upload(maskedMediaId, { asCardImage: '1' });
+    await setBody(maskedMediaId, `${MASKED_BODY}\n\n![隠す図](media:${key})`);
+
+    await expectHidden(await fetchMedia(MASKED_MEDIA_SLUG, key));
+    for (const as of [AS_HTML, AS_RSC]) {
+      const { status, text } = await fetchVisitor(MASKED_MEDIA_SLUG, as);
+      expect(status).toBe(200);
+      expect(text).not.toContain(MASKED_BODY);
+      expect(text).not.toContain(key);
+    }
+  });
+
+  it('サイトに載せない実績の画像は 404', async () => {
+    const key = await upload(draftId, { asCardImage: '1' });
+    await setBody(draftId, `![図](media:${key})`);
+    await expectHidden(await fetchMedia(DRAFT_SLUG, key));
+  });
+
+  it('形の違うキーは 404', async () => {
+    await expectHidden(await fetchMedia(OPEN_SLUG, 'not-a-uuid'));
+  });
+});
+
 describe('秘匿化を切り替えた直後の要求（FR-043）', () => {
   const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
 

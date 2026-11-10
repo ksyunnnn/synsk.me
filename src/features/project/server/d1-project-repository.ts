@@ -8,6 +8,7 @@ import type {
   UnmaskedVisitorProject,
 } from '@/features/project/domain/project';
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
+import { readMarkdown } from '@/shared/domain/markdown';
 import type { CalendarDate } from '@/shared/domain/period';
 import type { SiteStatus } from '@/shared/domain/site-status';
 import {
@@ -41,6 +42,7 @@ type ProjectRow = {
   ended_on: string | null;
   description: string | null;
   url: string | null;
+  card_storage_key: string | null;
   updated_at: string;
 };
 
@@ -54,6 +56,7 @@ type UnmaskedVisitorRow = {
   ended_on: string | null;
   description: string | null;
   url: string | null;
+  card_storage_key: string | null;
 };
 
 /**
@@ -75,7 +78,7 @@ const toPeriod = (row: { started_on: string; ended_on: string | null }) => ({
   endedOn: row.ended_on as CalendarDate | null,
 });
 
-const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
+const toProject = (row: ProjectRow, skillIds: number[], mediaStorageKeys: string[]): Project => ({
   id: row.id,
   uid: row.uid,
   slug: row.slug,
@@ -93,13 +96,19 @@ const toProject = (row: ProjectRow, skillIds: number[]): Project => ({
   description: row.description,
   url: row.url,
   skillIds,
+  mediaStorageKeys,
+  cardMediaKey: row.card_storage_key,
   updatedAt: row.updated_at,
 });
 
 const EDIT_COLUMNS = `
   p.id, p.uid, p.slug, p.organization_id, o.name AS organization_name,
   o.name_masked AS organization_name_masked, p.kind, p.title, p.title_masked, p.is_masked,
-  p.status, p.started_on, p.ended_on, p.description, p.url, p.updated_at`;
+  p.status, p.started_on, p.ended_on, p.description, p.url, cm.storage_key AS card_storage_key,
+  p.updated_at`;
+
+/** 代表画像の行。`card_media_id` は複合の外部キーで、その実績の画像だけを指す */
+const CARD_MEDIA_JOIN = 'LEFT JOIN media cm ON cm.id = p.card_media_id';
 
 /**
  * 訪問者に出してよい実績の条件。サイトに載せる実績だけを出す（spec の FR-045）。秘匿化した
@@ -142,14 +151,16 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     findVisitorBySlug: async (slug) => {
       // 秘匿化するかで、読む列を分ける。どちらか一方だけが行を返す（research.md の R5）。
       // サイトに載せない実績は、どちらも返さない（spec の FR-045）
-      const [unmasked, masked, skills] = await db.batch<
-        UnmaskedVisitorRow | MaskedVisitorRow | { name: string }
+      // 画像の行は秘匿化しない実績のものだけを読む。秘匿化した実績では、画像を指す値も読まない
+      // （FR-030）
+      const [unmasked, masked, skills, media] = await db.batch<
+        UnmaskedVisitorRow | MaskedVisitorRow | { name: string } | { storage_key: string }
       >([
         db
           .prepare(
             `SELECT p.slug, p.kind, p.title, o.name AS organization_name, p.started_on,
-               p.ended_on, p.description, p.url
-             FROM project p JOIN organization o ON o.id = p.organization_id
+               p.ended_on, p.description, p.url, cm.storage_key AS card_storage_key
+             FROM project p JOIN organization o ON o.id = p.organization_id ${CARD_MEDIA_JOIN}
              WHERE p.slug = ? AND p.status = 'published' AND p.is_masked = 0`,
           )
           .bind(slug),
@@ -170,11 +181,23 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
              WHERE p.slug = ? ORDER BY s.name`,
           )
           .bind(slug),
+        db
+          .prepare(
+            `SELECT m.storage_key FROM media m JOIN project p ON p.id = m.project_id
+             WHERE p.slug = ? AND p.status = 'published' AND p.is_masked = 0`,
+          )
+          .bind(slug),
       ]);
       const skillNames = (skills.results as { name: string }[]).map((row) => row.name);
 
       const unmaskedRow = unmasked.results[0] as UnmaskedVisitorRow | undefined;
       if (unmaskedRow) {
+        // 本文が指す画像のうち、この実績の画像だけを出す。ほかの持ち主の画像のキーは出さない
+        const owned = new Set(
+          (media.results as { storage_key: string }[]).map((r) => r.storage_key),
+        );
+        const bodyKeys =
+          unmaskedRow.description === null ? [] : readMarkdown(unmaskedRow.description).mediaKeys;
         const dto: UnmaskedVisitorProject = {
           isMasked: false,
           slug: unmaskedRow.slug,
@@ -185,6 +208,8 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
           skills: skillNames,
           body: unmaskedRow.description,
           url: unmaskedRow.url,
+          media: bodyKeys.filter((key) => owned.has(key)),
+          cardImageKey: unmaskedRow.card_storage_key,
         };
         return dto;
       }
@@ -205,20 +230,24 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
     },
 
     findForEdit: async (id) => {
-      const [project, skills] = await db.batch<ProjectRow | { skill_id: number }>([
+      const [project, skills, media] = await db.batch<
+        ProjectRow | { skill_id: number } | { storage_key: string }
+      >([
         db
           .prepare(
             `SELECT ${EDIT_COLUMNS} FROM project p JOIN organization o ON o.id = p.organization_id
-             WHERE p.id = ?`,
+             ${CARD_MEDIA_JOIN} WHERE p.id = ?`,
           )
           .bind(id),
         db
           .prepare('SELECT skill_id FROM project_skill WHERE project_id = ? ORDER BY skill_id')
           .bind(id),
+        db.prepare('SELECT storage_key FROM media WHERE project_id = ? ORDER BY id').bind(id),
       ]);
       const row = project.results[0] as ProjectRow | undefined;
       const skillIds = (skills.results as { skill_id: number }[]).map((r) => r.skill_id);
-      return row ? toProject(row, skillIds) : null;
+      const keys = (media.results as { storage_key: string }[]).map((r) => r.storage_key);
+      return row ? toProject(row, skillIds, keys) : null;
     },
 
     listSkillOptions: async () => {
@@ -364,15 +393,49 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
 
     delete: async (id) => {
       // 外部キーは NO ACTION のため、子の行を先に空にするか消す（research.md の R8）。
-      // 写した職務経歴書の行は残す。R2 の画像は、画像を扱うまで無い（tasks.md の T075）
-      const results = await db.batch([
+      // 写した職務経歴書の行は残す。消す画像のキーは、同じ batch() の最初の文で読む
+      const [media, ...results] = await db.batch<{ storage_key: string }>([
+        db.prepare('SELECT storage_key FROM media WHERE project_id = ? ORDER BY id').bind(id),
         db.prepare('UPDATE resume_project SET project_id = NULL WHERE project_id = ?').bind(id),
         db.prepare('UPDATE project SET card_media_id = NULL WHERE id = ?').bind(id),
         db.prepare('DELETE FROM project_skill WHERE project_id = ?').bind(id),
         db.prepare('DELETE FROM media WHERE project_id = ?').bind(id),
         db.prepare('DELETE FROM project WHERE id = ?').bind(id),
       ]);
-      return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
+      if ((results.at(-1)?.meta.changes ?? 0) === 0) return { ok: false };
+      return { ok: true, storageKeys: (media?.results ?? []).map((row) => row.storage_key) };
+    },
+
+    addMedia: async (id, { storageKey, size }, { asCardImage }) => {
+      const insert = db
+        .prepare(
+          'INSERT INTO media (project_id, storage_key, size) SELECT id, ?, ? FROM project WHERE id = ?',
+        )
+        .bind(storageKey, size, id);
+      const setCard = db
+        .prepare(
+          `UPDATE project SET card_media_id = (SELECT id FROM media WHERE project_id = ?1 AND storage_key = ?2)
+           WHERE id = ?1`,
+        )
+        .bind(id, storageKey);
+      const [result] = await db.batch(asCardImage ? [insert, setCard] : [insert]);
+      return { ok: (result?.meta.changes ?? 0) > 0 };
+    },
+
+    changeCardImage: async (id, storageKey) => {
+      const result =
+        storageKey === null
+          ? await db.prepare('UPDATE project SET card_media_id = NULL WHERE id = ?').bind(id).run()
+          : await db
+              .prepare(
+                `UPDATE project SET card_media_id = m.id FROM media m
+                 WHERE project.id = ?1 AND m.project_id = ?1 AND m.storage_key = ?2`,
+              )
+              .bind(id, storageKey)
+              .run();
+      if (result.meta.changes > 0) return { ok: true };
+      const exists = await db.prepare('SELECT 1 FROM project WHERE id = ?').bind(id).first();
+      return { ok: false, reason: exists === null ? 'not-found' : 'media-not-owned' };
     },
 
     hasSlug: async (slug) =>

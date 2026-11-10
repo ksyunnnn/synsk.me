@@ -1,7 +1,6 @@
 import 'server-only';
 
 import type { MediaUsage } from '@/shared/domain/media';
-import { readEnv } from '@/shared/server/env';
 
 /**
  * 置いた画像の総量の D1 の実装（src/shared/domain/media.ts の `MediaUsage`）。`media` はすべての

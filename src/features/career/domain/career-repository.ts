@@ -1,3 +1,4 @@
+import type { MediaStorageKey } from '@/shared/domain/media';
 import type { Uid } from '@/shared/domain/uid';
 import type {
   Career,
@@ -32,6 +33,14 @@ export type CareerRepository = {
   ) => Promise<
     { ok: true } | { ok: false; reason: 'masked-name-required' | 'conflict' | 'not-found' }
   >;
-  /** 物理削除する（research.md の R8） */
-  delete: (id: CareerId) => Promise<{ ok: boolean }>;
+  /**
+   * 物理削除する（research.md の R8）。画像の行も消し、消した画像の置き場のキーを返す。置き場の
+   * 実体はユースケースが消す。無い id なら `ok: false`
+   */
+  delete: (id: CareerId) => Promise<{ ok: true; storageKeys: MediaStorageKey[] } | { ok: false }>;
+  /** 置き場に置いた画像を、その職歴の画像として記録する（FR-027）。無い id なら `ok: false` */
+  addMedia: (
+    id: CareerId,
+    media: { storageKey: MediaStorageKey; size: number },
+  ) => Promise<{ ok: boolean }>;
 };

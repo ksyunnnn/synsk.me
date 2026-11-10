@@ -1,3 +1,5 @@
+import type { ActionResult } from '@/shared/domain/action-result';
+
 /**
  * 画像の形式と大きさの決まりと、画像の置き場のインタフェース（U5 の決定、2026-11-09。
  * specs/001-career-and-project/plan.md の「未決」の U5）。使い手は 001 の実績・職歴、003 の note、
@@ -42,6 +44,12 @@ export const detectMediaType = (head: Uint8Array): MediaType | null => {
  * （issue #219）
  */
 export const MEDIA_TOTAL_MAX_BYTES = 8 * 10 ** 9;
+
+/** 画像のファイルの入力の名前。1 回の操作で 1 枚（specs/003-note/research.md の R12） */
+export const MEDIA_FILE_FIELD = 'mediaFile';
+
+/** 画像を足す Server Action の結果 */
+export type MediaFormResult = ActionResult<typeof MEDIA_FILE_FIELD, MediaRejection>;
 
 /** 画像を受けない理由。`storage-full` は置き場の総量が上限を超えること */
 export type MediaRejection = 'empty' | 'too-large' | 'unsupported-type' | 'storage-full';

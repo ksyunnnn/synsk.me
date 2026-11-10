@@ -452,6 +452,18 @@ describe('/dash/notes/{uid}/revisions/{revisionUid}', () => {
   );
 });
 
+/** 実績の画像の経路（specs/001-career-and-project/spec.md の FR-030） */
+describe('/projects/{slug}/media/{key}', () => {
+  const PATH = '/projects/a-slug/media/11111111-1111-4111-8111-111111111111';
+
+  it('proxy の対象にし、D1 を読まずに通す', async () => {
+    expect(unstable_doesMiddlewareMatch({ config, url: PATH })).toBe(true);
+    projects.hasProjectSlug.mockResolvedValue(false);
+    expect(await rewrittenPath(PATH)).toBeNull();
+    expect(projects.hasProjectSlug).not.toHaveBeenCalled();
+  });
+});
+
 /** note の画像の経路（specs/003-note/research.md の R9） */
 describe('/notes/{slug}/media/{key}', () => {
   const PATH = '/notes/a-slug/media/11111111-1111-4111-8111-111111111111';

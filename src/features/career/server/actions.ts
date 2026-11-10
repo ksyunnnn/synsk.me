@@ -3,6 +3,7 @@
 import 'server-only';
 
 import { redirect } from 'next/navigation';
+import { addCareerMedia as addCareerMediaUseCase } from '@/features/career/application/add-career-media';
 import { deleteCareer as deleteCareerUseCase } from '@/features/career/application/delete-career';
 import { editCareer as editCareerUseCase } from '@/features/career/application/edit-career';
 import { registerCareer as registerCareerUseCase } from '@/features/career/application/register-career';
@@ -13,6 +14,7 @@ import {
   type CareerFormResult,
 } from '@/features/career/domain/career';
 import { createCareerDeps } from '@/features/career/server/queries';
+import { MEDIA_FILE_FIELD, type MediaFormResult } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
@@ -64,10 +66,35 @@ export const deleteCareer = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { careers } = await createCareerDeps();
-  const id = await findIdByUid(careers, readString(formData, CAREER_UID_FIELD));
+  const deps = await createCareerDeps();
+  const id = await findIdByUid(deps.careers, readString(formData, CAREER_UID_FIELD));
   if (id === null) redirect('/dash/careers');
-  const outcome = await deleteCareerUseCase(careers, author, id);
+  const outcome = await deleteCareerUseCase(deps, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
   redirect('/dash/careers?deleted=1');
+};
+
+/** 本文の画像を 1 枚足し、同じ画面へ移る（FR-027） */
+export const addCareerMedia = async (
+  _state: MediaFormResult | null,
+  formData: FormData,
+): Promise<MediaFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const deps = await createCareerDeps();
+  const uid = readString(formData, CAREER_UID_FIELD);
+  const id = await findIdByUid(deps.careers, uid);
+  if (id === null) redirect('/dash/careers');
+
+  const file = formData.get(MEDIA_FILE_FIELD);
+  const outcome = await addCareerMediaUseCase(
+    deps,
+    author,
+    id,
+    file instanceof Blob && file.size > 0 ? file : null,
+  );
+  if (outcome.status === 'added') redirect(`/dash/careers/${uid}?mediaAdded=1`);
+  if (outcome.status === 'not-found') redirect('/dash/careers');
+  if (outcome.status === 'forbidden') return outcome;
+  return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
 };

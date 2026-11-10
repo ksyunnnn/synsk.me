@@ -274,7 +274,7 @@ describe('delete', () => {
       .bind(resume?.id, id)
       .run();
 
-    expect(await projects.delete(id)).toEqual({ ok: true });
+    expect(await projects.delete(id)).toEqual({ ok: true, storageKeys: [] });
     expect(await projects.findForEdit(id)).toBeNull();
     expect(await env.DB.prepare('SELECT project_id, title FROM resume_project').first()).toEqual({
       project_id: null,
@@ -287,6 +287,90 @@ describe('delete', () => {
 
   it('無い id なら ok: false', async () => {
     expect(await projects.delete(999)).toEqual({ ok: false });
+  });
+
+  it('画像の行も消し、消した画像の置き場のキーを返す', async () => {
+    const id = await register();
+    const key = crypto.randomUUID();
+    await projects.addMedia(id, { storageKey: key, size: 64 }, { asCardImage: true });
+    expect(await projects.delete(id)).toEqual({ ok: true, storageKeys: [key] });
+    expect(
+      await env.DB.prepare('SELECT 1 FROM media WHERE storage_key = ?').bind(key).first(),
+    ).toBeNull();
+  });
+});
+
+describe('画像（FR-027・FR-028）', () => {
+  it('画像を大きさとともに記録し、編集の画面の値に足した順で出す', async () => {
+    const id = await register();
+    const [first, second] = [crypto.randomUUID(), crypto.randomUUID()];
+    expect(
+      await projects.addMedia(id, { storageKey: first, size: 64 }, { asCardImage: false }),
+    ).toEqual({ ok: true });
+    await projects.addMedia(id, { storageKey: second, size: 128 }, { asCardImage: false });
+    const project = await projects.findForEdit(id);
+    expect(project?.mediaStorageKeys).toEqual([first, second]);
+    expect(project?.cardMediaKey).toBeNull();
+    expect(
+      await env.DB.prepare('SELECT size FROM media WHERE storage_key = ?').bind(second).first(),
+    ).toEqual({ size: 128 });
+  });
+
+  it('代表画像にもする指定なら、同じ操作で代表画像にする', async () => {
+    const id = await register();
+    const key = crypto.randomUUID();
+    await projects.addMedia(id, { storageKey: key, size: 64 }, { asCardImage: true });
+    expect((await projects.findForEdit(id))?.cardMediaKey).toBe(key);
+  });
+
+  it('無い実績には記録しない', async () => {
+    expect(
+      await projects.addMedia(
+        999,
+        { storageKey: crypto.randomUUID(), size: 64 },
+        { asCardImage: true },
+      ),
+    ).toEqual({ ok: false });
+  });
+
+  it('代表画像はその実績の画像だけから選べ、外せる', async () => {
+    const id = await register();
+    const other = await register();
+    const own = crypto.randomUUID();
+    const others = crypto.randomUUID();
+    await projects.addMedia(id, { storageKey: own, size: 64 }, { asCardImage: false });
+    await projects.addMedia(other, { storageKey: others, size: 64 }, { asCardImage: false });
+
+    expect(await projects.changeCardImage(id, own)).toEqual({ ok: true });
+    expect((await projects.findForEdit(id))?.cardMediaKey).toBe(own);
+    expect(await projects.changeCardImage(id, others)).toEqual({
+      ok: false,
+      reason: 'media-not-owned',
+    });
+    expect((await projects.findForEdit(id))?.cardMediaKey).toBe(own);
+    expect(await projects.changeCardImage(id, null)).toEqual({ ok: true });
+    expect((await projects.findForEdit(id))?.cardMediaKey).toBeNull();
+    expect(await projects.changeCardImage(999, own)).toEqual({ ok: false, reason: 'not-found' });
+  });
+
+  it('訪問者向けには、本文が指すその実績の画像と代表画像のキーだけを出す（FR-030）', async () => {
+    const own = crypto.randomUUID();
+    const card = crypto.randomUUID();
+    const notOwned = crypto.randomUUID();
+    const slug = 'fake-media-project';
+    const id = await register({
+      slug,
+      isMasked: false,
+      status: 'published',
+      description: `![図](media:${own})\n\n![よその図](media:${notOwned})`,
+    });
+    const other = await register();
+    await projects.addMedia(id, { storageKey: own, size: 64 }, { asCardImage: false });
+    await projects.addMedia(id, { storageKey: card, size: 64 }, { asCardImage: true });
+    await projects.addMedia(other, { storageKey: notOwned, size: 64 }, { asCardImage: false });
+
+    const visitor = await projects.findVisitorBySlug(slug);
+    expect(visitor).toMatchObject({ isMasked: false, media: [own], cardImageKey: card });
   });
 });
 
