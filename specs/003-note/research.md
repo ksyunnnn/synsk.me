@@ -107,7 +107,9 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 ## R10 書きかけの保持
 
 - 決めたこと: 編集の画面は、共有担当の `src/shared/components/draft-retention.tsx` の `DraftRetainingForm` を使い、書きかけの内容をその端末の `localStorage` に持つ。`storageKey` は `note:<note の uid>`、`version` は開いたときの最も新しい版の uid、`result` は Server Action の結果を渡す。部品は送信で消し、`saved` 以外の結果（`conflict` を含む）で送った値を持ち直す（FR-018・FR-019、User Story 4、spec の Edge Cases）
-- `version` に版の uid を渡す理由: 渡さないと、別の画面で先に保存された後に開き直したとき、古い版から書いた書きかけが最も新しい版の中身の上に戻り、触っていない項目まで古い値で保存する（FR-020 が防ぐ上書き）。渡すと、前の版の書きかけは消さずに残し、自動では戻さない。残した書きかけをオーナーにどう見せるかは U7 に含める
+- `version` に版の uid を渡す理由: 渡さないと、別の画面で先に保存された後に開き直したとき、古い版から書いた書きかけが最も新しい版の中身の上に戻り、触っていない項目まで古い値で保存する（FR-020 が防ぐ上書き）。渡すと、前の版の書きかけは消さずに残し、自動では戻さない
+- 前の版の書きかけの見せ方（2026-11-10、オーナーから任されて Claude が決めた。並びは PM が決めた）: 開き直した編集の画面は最も新しい版を出し、フォームの上にモーダルでない知らせを置く。オーナーは「書きかけを戻す」で入力に戻すか、「書きかけを捨てる」で消す。どちらも、次に入力するまでは「取り消す」で前の状態に戻せるので、確認を求めない。書きかけは書いた日時を持ち、新しいものから 1 件ずつ知らせる。日時を持たない形式の書きかけは、日時を持つものの後に名前の順で回す
+- 見せ方の理由: 開いた画面に出す知らせは作業を止めず、その内容の近くに置く（[HIG の Alerts](https://developer.apple.com/design/human-interface-guidelines/alerts) の「Avoid showing an alert when your app starts」「Avoid using an alert merely to provide information」、[HIG の Feedback](https://developer.apple.com/design/human-interface-guidelines/feedback) の「Consider integrating status feedback into your interface」）。取り消せる操作には確認を出さない（HIG の Alerts の「Avoid displaying alerts for common, undoable actions」、[HIG の Undo and redo](https://developer.apple.com/design/human-interface-guidelines/undo-and-redo) の「Show the results of an undo or redo」）。新しいものから知らせるのは、名前の順はオーナーにとって意味のない並びだから（PRINCIPLES の「たどり着きたい情報 over 演出」）。書きかけを消すのはオーナーが捨てたときだけ（spec の Edge Cases）
 - D1 には書かない。別の端末は D1 の最も新しい版を読むため、書きかけの内容は出ない（FR-019）
 - 理由: `docs/REQUIREMENTS.md` の FR-14、001 の research.md の R16
 - 退けた案: 書きかけの内容を D1 に自動で保存する（FR-018 が保管するデータに書かないとする）
