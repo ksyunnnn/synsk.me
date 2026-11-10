@@ -30,7 +30,7 @@ const TWITTER_URL = 'http://twitter.com/ksyunnnn';
 export const Credit = () => {
   if (isLab(usePathname())) return null;
   return (
-    <footer className="pt-24 pb-8 text-xs text-muted-foreground">
+    <footer className="pt-24 pb-[max(2rem,env(safe-area-inset-bottom))] text-xs text-muted-foreground">
       つくった人{' '}
       <a
         href={TWITTER_URL}
