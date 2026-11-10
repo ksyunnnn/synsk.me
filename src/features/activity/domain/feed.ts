@@ -135,3 +135,16 @@ export type FeedPage = {
   /** 次のページに項目があるか */
   hasNextPage: boolean;
 };
+
+/**
+ * 一覧の画面の問い合わせの値 `page` を、ページの番号として読む（research.md の R8、tasks.md の
+ * T033）。無い値、10 進の数字だけでない値、1 より小さい値は 1 ページ目にする。同じ名前が
+ * 複数あるときは最初の値を読む。安全な整数を超える番号は丸めずに返し、Repository が最後の
+ * ページの先として項目を返さない
+ */
+export const readFeedPage = (value: string | string[] | undefined): number => {
+  const first = Array.isArray(value) ? value[0] : value;
+  if (first === undefined || !/^\d+$/.test(first)) return 1;
+  const page = Number(first);
+  return page < 1 ? 1 : page;
+};

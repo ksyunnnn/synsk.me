@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { FEED_ITEM_TYPES, toTokyoCalendarDate } from '@/features/activity/domain/feed';
+import {
+  FEED_ITEM_TYPES,
+  readFeedPage,
+  toTokyoCalendarDate,
+} from '@/features/activity/domain/feed';
 import { toFeedItem } from '@/features/activity/server/d1-feed-repository';
 
 /**
@@ -284,5 +288,27 @@ describe('toTokyoCalendarDate', () => {
     expect(toTokyoCalendarDate('2020-01-15T14:59:59.999Z')).toBe('2020-01-15');
     expect(toTokyoCalendarDate('2020-01-15T15:00:00.000Z')).toBe('2020-01-16');
     expect(toTokyoCalendarDate('2024-12-31T15:00:00.000Z')).toBe('2025-01-01');
+  });
+});
+
+describe('readFeedPage', () => {
+  it('1 以上の整数の文字列は、その番号のページとして読む（research.md の R8）', () => {
+    expect(readFeedPage('1')).toBe(1);
+    expect(readFeedPage('2')).toBe(2);
+    expect(readFeedPage('120')).toBe(120);
+  });
+
+  it('無い値・数でない値・1 より小さい値・整数でない値は 1 ページ目として読む（T033）', () => {
+    for (const value of [undefined, '', 'abc', '0', '-1', '1.5', '2e3', ' 2', '0x2']) {
+      expect(readFeedPage(value), String(value)).toBe(1);
+    }
+  });
+
+  it('同じ名前が複数あるときは、最初の値を読む', () => {
+    expect(readFeedPage(['3', '5'])).toBe(3);
+  });
+
+  it('安全な整数を超える番号は、丸めずに最後のページの先として扱える値のまま返す', () => {
+    expect(Number.isSafeInteger(readFeedPage('99999999999999999999'))).toBe(false);
   });
 });

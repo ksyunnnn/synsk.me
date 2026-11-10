@@ -252,6 +252,6 @@ Phase 3（職歴と実績）→ Phase 4（note）→ Phase 5（ページ送り�
 
 2026-11-10 の `/speckit-converge` で、止める未決と依存が解けたのに作っていない仕事を足した。U1 の決定は issue #219 のコメント「005-feed U1「一覧を見せる URL」をオーナーに確かめた」（一覧の URL は `/`。開発の途中では `/` にあたる画面は src/app/top-draft/）にある。M1〜M3 は migrations/0013・0016〜0018 にある
 
-- [ ] T063 一覧の画面を、開発中の `/` の置き場 src/app/top-draft/page.tsx で src/features/activity/ の一覧の取り出しにつなぎ、作り物の mock-data.json の代わりに D1 の行を出す。T016 の書き方（`export const instant = false`、`loading.tsx` を置かない、`'use cache'`・`revalidate`・`dynamic` を書かない。research.md の R9）に従う。T016 の続き per FR-001・US1 (missing)
-- [ ] T064 src/features/activity/components/feed.tsx に次のページへのリンクを足し、一覧の画面が `page` の問い合わせの値を読む。読み方と最後のページの先は T033 のとおり。T033 の続き per FR-010・ADR-0048 (missing)
-- [ ] T065 T063 の画面の HTML と RSC の応答を tests/integration/feed.test.ts で確かめる。T012（秘匿化・サイトに載せない職歴と実績）・T022（下書き・削除した note と公開した後の版）・T033（リンクに主キーを含めない）・T043（外部の activity の取得元へのリンク）の内容を含める per SC-001・SC-002・FR-004〜FR-006・FR-013・FR-020 (missing)
+- [x] T063 一覧の画面を、開発中の `/` の置き場 src/app/top-draft/page.tsx で src/features/activity/ の一覧の取り出しにつなぎ、作り物の mock-data.json の代わりに D1 の行を出す。T016 の書き方（`export const instant = false`、`loading.tsx` を置かない、`'use cache'`・`revalidate`・`dynamic` を書かない。research.md の R9）に従う。T016 の続き per FR-001・US1 (missing)
+- [x] T064 src/features/activity/components/feed.tsx に次のページへのリンクを足し、一覧の画面が `page` の問い合わせの値を読む。読み方と最後のページの先は T033 のとおり。T033 の続き per FR-010・ADR-0048 (missing)
+- [x] T065 T063 の画面の HTML と RSC の応答を tests/integration/feed.test.ts で確かめる。T012（秘匿化・サイトに載せない職歴と実績）・T022（下書き・削除した note と公開した後の版）・T033（リンクに主キーを含めない）・T043（外部の activity の取得元へのリンク）の内容を含める per SC-001・SC-002・FR-004〜FR-006・FR-013・FR-020 (missing)
