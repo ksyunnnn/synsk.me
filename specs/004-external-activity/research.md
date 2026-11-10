@@ -76,7 +76,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
   - `isComplete` が偽のとき（Zenn は 20 件、Medium は 10 件で打ち切る）: 一覧に無いことを候補の根拠にしない（FR-018）
   - URL を指名する取得元と、確かめる手段を持たない取得元: 自動では消さない。オーナーが synsk.me の側で削除する（FR-033）
   - `isComplete` が偽で、個別の URL で確かめる手段を持つ取得元（Zenn・Speaker Deck）: 一覧に無い activity の URL を 1 本ずつ取り直す。続けて 2 回 404 が返った行を消えた候補にする。1 回目の 404 では消さず、404 が続いた回数を 1 にする。2xx なら残っている。ほか（5xx・待ち時間・大きさ・ほかの 4xx・取り直しの失敗）は判定せず、消さない（FR-020）。2xx と判定できない応答は回数を 0 に戻す。理由: 1 回の 404 は取得元の一時の誤りでも返ることがあり、消したものは取り消せない（2026-11-09、PM の決定。根拠は FR-017 と原則 2）。判定できない応答でも 0 に戻すのは、「続けて 2 回」を、間に判定できない回を挟まない 2 回にするため。回数を残すと、404 と判定できない回が交互に続いたときにも消し、消す方へ進む（原則 2）。回数を持つ列は共有担当の migration 0019 が足す `activity.consecutive_gone_count`（INTEGER NOT NULL DEFAULT 0、PR #271）。回数は取得の回をまたいで D1 に持ち越す。取得元の一覧に載った行は残っている証拠なので、回数を 0 に戻す。戻さないと、次に一覧から外れた回の 1 回の 404 で消える。実装は `src/features/activity/server/sources/gone.ts` と、`zenn.ts`・`speakerdeck.ts` の `checkGone`
-  - 1 回の取得で取り直す本数に上限を持つ（R8 の表、U13。決まるまでは 1）。どれを取り直すかは、確かめたことの無い行を先に、次に `activity.gone_checked_at`（migrations/0015）の古い順に、同じなら公開日の古い順に選ぶ（`src/features/activity/application/plan-removals.ts` の `pickGoneChecks`）。取り直した行のうち消さなかった行に、取り直した日時と 404 が続いた回数を書く（回数の D1 の読み書きは T048b）。404 が続いている行は、確かめたことの無い行より先に選ぶ。後に回すと、2 回目を確かめるまでに一覧に無いほかの行をすべて回る
+  - 1 回の取得で取り直す本数に上限を持つ（R8 の表。本番の値は issue #280 で決める。決まるまでは 0 で、取り直さない）。どれを取り直すかは、確かめたことの無い行を先に、次に `activity.gone_checked_at`（migrations/0015）の古い順に、同じなら公開日の古い順に選ぶ（`src/features/activity/application/plan-removals.ts` の `pickGoneChecks`）。取り直した行のうち消さなかった行に、取り直した日時と 404 が続いた回数を書く（回数の D1 の読み書きは T048b）。404 が続いている行は、確かめたことの無い行より先に選ぶ。後に回すと、2 回目を確かめるまでに一覧に無いほかの行をすべて回る
   - 取り直すときはリダイレクトを辿らない。移った先の 404 は元の URL が消えた証拠にならず、3xx は判定しない
   - `gone_checked_at` は確かめる順を決めるための日時で、消えた印ではない。消えたと確かめた行は、ほかの消えた行と同じく行ごと消す。一覧（005）は `gone_checked_at` を読まない
   - 取得元が条件付きの要求に 304 を返した回（R9）も取り直す。一覧に載らない古い記事を消しても RSS は変わらず、304 が続くため。一覧の中身が無いので、前の回までに一覧に無いとして確かめたことのある行（確かめた日時を持つ行）から同じ順で選ぶ。一覧に載っている行を選ぶと、回数を回をまたいで持つので、一時の 404 が 304 の回に 2 回続いただけで一覧に載っている行を消す
@@ -119,19 +119,19 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 ## R8 外への要求の上限
 
 - constitution II は、外への発信と費用のかかる処理に、量と回数の上限の値を plan に書くよう求める。spec の Assumptions も「上限の値は plan が持つ」とする
-- 案（U13。オーナーの承認を待つ）
+- 本番の値は `src/features/activity/domain/limits.ts` の `PRODUCTION_REFRESH_LIMITS` と `SOURCES_PER_RUN`。表の「状態」の列が、オーナーが決めた値か案の値かを示す
 
-| 上限 | 案の値 | 理由 |
-|---|---|---|
-| 1 回の取得で 1 つの取得元に出す要求の数 | 10 本 | Qiita の未認証の上限は 60 回/時/IP、GitHub は 60 回/時/IP（検証記録）。Workers は共有の IP から出る |
-| 1 本の要求の待ち時間 | 10 秒で打ち切り、失敗にする | 応答しない取得元で取得全体を待たせない（FR-015） |
-| 1 本の応答の大きさ | 1 MB で打ち切り、失敗にする | Qiita の 1 頁は 214 KB、Medium の RSS は 87 KB（検証記録） |
-| 1 回の取得で 1 つの取得元の一覧に無い URL を取り直す本数（R6） | 未定（U13）。決まるまでは 1 | 取り直すたびに外への要求が 1 本増える。`gone_checked_at` の古い順に回すので、本数が少なくても順に確かめる |
-| 1 回の取得で 1 つの取得元から消す件数 | 5 件 | FR-019。候補がこれを超えた回は 1 件も消さず、`fetch_result.reason` に書く |
-| connpass の要求の間隔 | 5 秒に 1 回 | 検証記録（申請の条件） |
-| Cron の実行の間隔 | 1 日 1 回 | 更新が無いのに実行が回り続ける無駄を抑える（R9）。1 つの取得元を取り直す間隔は「実行の間隔 × 一覧を取る取得元の数（7）÷ 1 回の実行で扱う取得元の数」で、1 日 1 回・1 回に 1 つなら 7 日に 1 回になり、一覧に載るのが最大 7 日遅れる |
-| 1 回の実行で扱う取得元の数 | 未定（U13）。決まるまでは 1 | R9 の解析の時間の実測の表で、Qiita の取得元ごとの処理だけで 4〜6 ms かかる。1 にすれば、取得元 1 つの解析と D1 の呼び出しだけが 1 回の実行に載る |
-| 1 回の実行で出す要求の総数と、取得元への配り方 | 未定（U13） | Workers Free の 1 回の呼び出しの subrequest の上限 50 本（R9）は、外への要求と D1 の呼び出しを合わせて数える。1 つの取得元に 10 本では 7 つの取得元で外への要求だけで 70 本になり、超える |
+| 上限 | 値 | 状態 | 理由 |
+|---|---|---|---|
+| 1 回の取得で 1 つの取得元に出す要求の数 | 10 本 | 2026-11-10 にオーナーが決めた（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6765032920)） | Qiita の未認証の上限は 60 回/時/IP、GitHub は 60 回/時/IP（検証記録）。Workers は共有の IP から出る |
+| 1 本の要求の待ち時間 | 10 秒で打ち切り、失敗にする | 2026-11-10 にオーナーが承認した | 応答しない取得元で取得全体を待たせない（FR-015） |
+| 1 本の応答の大きさ | 1 MB（1,048,576 バイト）で打ち切り、失敗にする | 2026-11-10 にオーナーが承認した | Qiita の 1 頁は 214 KB、Medium の RSS は 87 KB（検証記録） |
+| 1 回の取得で 1 つの取得元の一覧に無い URL を取り直す本数（R6） | 0（取り直さない） | 未定。issue #280 で決める | 取り直すたびに外への要求が 1 本増える。`gone_checked_at` の古い順に回すので、本数が少なくても順に確かめる |
+| 1 回の取得で 1 つの取得元から消す件数 | 5 件 | 案。issue #280 で決める | FR-019。候補がこれを超えた回は 1 件も消さず、`fetch_result.reason` に書く |
+| connpass の要求の間隔 | 5 秒に 1 回 | 申請の条件 | 検証記録（申請の条件） |
+| Cron の実行の間隔 | 1 日 7 回。式は `0 0,3,7,10,14,17,21 * * *`（UTC、間は 3 時間と 4 時間の交互） | 2026-11-10 にオーナーが決めた（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6764855303)） | 1 つの取得元を取り直す間隔は「実行の間隔 × 一覧を取る取得元の数（7）÷ 1 回の実行で扱う取得元の数」で、7 つの取得元を毎日 1 度ずつ回る。24 は 7 で割り切れないので、時の並びで間を揃える。式は 1 本にする（Cron Triggers はアカウントで 5 本まで） |
+| 1 回の実行で扱う取得元の数 | 1 | 2026-11-10 にオーナーが決めた（同上） | R9 の解析の時間の実測の表で、Qiita の取得元ごとの処理だけで 4〜6 ms かかる。1 にすれば、取得元 1 つの解析と D1 の呼び出しだけが 1 回の実行に載る |
+| 1 回の実行で出す要求の総数と、取得元への配り方 | 取得元 1 つに 10 本。D1 と合わせて 16 本以下、消し損ねた画像の突き合わせを足して 24 本以下 | 上の 2 行から決まる | Workers Free の 1 回の呼び出しの subrequest の上限 50 本（R9）は、外への要求と D1 の呼び出しを合わせて数える。1 つの取得元に 10 本では 7 つの取得元で外への要求だけで 70 本になり、超える |
 
 - 値はユースケースに引数で渡し（`limits`）、単体の検査では作り物の値を渡す。本番の値は `src/features/activity/domain/limits.ts` の 1 か所に置く
 - D1 の 1 日の書き込みの上限（10 万行、spec の Assumptions）: R5 の書き方で、1 回の取得が書く行は「新しい項目＋直った項目＋取得元の数」に限られる。1 日の実行の回数を n とすると、1 日に書く行は「新しい項目＋直った項目＋n × 1 回の実行で扱う取得元の数」（実行の前に順番を取る 1 文を含めると、その倍）で、n が 24 でも上限に届かない
@@ -181,7 +181,8 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - 上の値は取得元ごとの処理（`fetchListing`）だけで、1 回の実行の全体（D1 の行の詰め替え・`planRefresh`・`batch()` の文の組み立て・isolate の立ち上がり）を含まない。Qiita は `per_page=100` の 1 頁で測っており、本番の要求（R7 の 20 件の頁）とは形が違う。1 回の実行で扱う取得元の数を 1 にして 10 ms に収まるかは、本番の値で確かめる
 
-- 本番の 1 回ごとの CPU 時間は、Workers の Metrics の「CPU Time per execution」で見る（[Metrics and analytics](https://developers.cloudflare.com/workers/observability/metrics-and-analytics/)）。Cron の実行だけに絞れるかは、その頁に書かれていない
+- 本番の 1 回ごとの CPU 時間は、Workers Logs の起動の記録の `$workers.cpuTimeMs` で読む。`wrangler.jsonc` の `observability.enabled` で記録を残す。Cron の起動の記録は、メッセージに Cron の式を持つ（[Workers Logs](https://developers.cloudflare.com/workers/observability/logs/workers-logs/)、2026-10-12 更新）。`$workers.cpuTimeMs` は Query Builder の絞り込みの項目に挙がる（[Query Builder](https://developers.cloudflare.com/workers/observability/query-builder/)、2026-10-02 更新）。Free の記録は 1 日 20 万件で、3 日残る（Workers Logs の頁）。全体の Metrics の「CPU Time per execution」（[Metrics and analytics](https://developers.cloudflare.com/workers/observability/metrics-and-analytics/)）は、Cron の実行だけに絞れるかが書かれていない
+- 消し損ねた画像の突き合わせ（src/shared/server/sweep-orphaned-media.ts）は、同じ Cron の起動のうち UTC の 0 時の回だけで回す（`worker/scheduled.ts`）。subrequest は取り直しと合わせて 1 回 24 本以下で 50 本に収まるので、7 回とも回せる。0 時の回だけにするのは、CPU 時間を足す回を 7 回のうち 1 回にするため。突き合わせは画像を置いてから 1 日を過ぎるまで消さないので、1 日 1 回にしても消えるのが遅れるのは 1 日以内になる。取り直しを先にし、突き合わせで実行が止まっても取り直しの結果は書き終えている。回は `controller.scheduledTime`（[Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/)、2026-10-17 更新）の UTC の時で見分ける。式は 1 本なので、`controller.cron` では見分けられない
 
 ## R10 URL を指名する・手で入力する登録
 

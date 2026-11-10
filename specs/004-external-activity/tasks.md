@@ -60,7 +60,7 @@ description: "外部 activity の取得の実装タスク"
 - [ ] T015 D1 の実装を src/features/activity/server/d1-activity-repository.ts に作る。行の型はこのファイルの中だけで書く。取得の書き込みの文は `source <> 'life_event'` を条件にする（FR-032、research.md の R13）
 - [x] T016 [P] 作り物の activity の行を D1 に入れる道具を tests/support/activity-rows.ts に作る
 - [x] T017 ユースケースが受け取るもの（`ActivityDeps`）を src/features/activity/application/deps.ts に、組み立て用の関数を src/features/activity/server/refresh-queries.ts（取得）と src/features/activity/server/queries.ts（life event）に、取得元の名前から処理を引く表を src/features/activity/server/sources/registry.ts に作る。手本は src/features/project/application/deps.ts と src/features/project/server/queries.ts
-- [ ] T018 本番の上限の値を src/features/activity/domain/limits.ts に置く（research.md の R8）。**止める未決: U13**
+- [x] T018 本番の上限の値を src/features/activity/domain/limits.ts に置く（research.md の R8）。消す件数（R8 の案の値の 5 件）と消えた URL を確かめる本数（0）は issue #280 で決める
 - [ ] T019 src/app/dash/page.tsx の入口に「life event」と「外部の activity」を足す
 
 ---
@@ -98,7 +98,7 @@ description: "外部 activity の取得の実装タスク"
 
 ### 取得の入口
 
-- [ ] T040 [US1] `worker/index.ts` に `scheduled` を足して `pickSourcesForRun` で選んだ取得元の順番を取り（`recordFetchFailure` で「取り直しを始めて終わらなかった」と書く、research.md の R9）、`refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で確かめる（FR-036）。**止める未決: U13**
+- [x] T040 [US1] `worker/index.ts` に `scheduled` を足して `pickSourcesForRun` で選んだ取得元の順番を取り（`recordFetchFailure` で「取り直しを始めて終わらなかった」と書く、research.md の R9）、`refreshSources` を呼び、`wrangler.jsonc` に `triggers` を書く。間隔は research.md の R8 の値を使う（R9）。UTC の 0 時の回は消し損ねた画像の突き合わせ（src/shared/server/sweep-orphaned-media.ts）も呼ぶ。`triggers` があることと、`scheduled` が `refreshSources` を呼ぶことを tests/unit/activity-scheduled.test.ts で、本番と同じ組み立てで 1 つの取得元だけを取り直すことを tests/workers/activity-scheduled.test.ts で確かめる（FR-036）
 - [x] T041 [US1] 条件付きの要求（research.md の R9）: 取得元が返した `ETag`・`Last-Modified` を、activity を書く `batch()` の中で `fetch_result` に書き、次の実行で `If-None-Match`・`If-Modified-Since` を付け、304 なら activity を書かず `fetch_result` を成功として書くことを tests/unit/activity-refresh-sources.test.ts と tests/workers/activity-repository.test.ts で確かめる。2 頁目以降を取った・上限で消さずに残した・公開日の欠けた項目を取り込まなかったときは値を NULL にし、失敗した回は前の値を残す。**止める依存: 共有担当の migration**（`fetch_result` の列）
 
 ---
@@ -219,7 +219,7 @@ description: "外部 activity の取得の実装タスク"
 |---|---|
 | U11 | T050 の題を取れないときの分岐、T053 |
 | U12 | T050・T052・T053 |
-| U13 | T018・T040 |
+| U13 | なし（2026-11-10 に決まった。消えた URL を確かめる本数と消す件数は issue #280） |
 | 共有担当の migration | T001・T011・T021・T041・T043・T046・T048b（0019）・T055・T057・T061・T067 |
 | 共有担当の slug の部品（PR #222） | T064 |
 | 共有担当の書きかけの保持（001 の T072） | T056・T066 |
@@ -277,7 +277,7 @@ T030・T031・T032・T033・T034・T035・T036 は並べる
 
 ### Incremental Delivery
 
-US1+US2+US3 → 入口（U13 が解けてから）→ US4 → US5 → US5 の画像（共有担当の media-storage が入ってから）→ Polish。各段階を Preview で確かめてから epic に入れる
+US1+US2+US3 → 入口 → US4 → US5 → US5 の画像（共有担当の media-storage が入ってから）→ Polish。各段階を Preview で確かめてから epic に入れる
 
 ## Notes
 

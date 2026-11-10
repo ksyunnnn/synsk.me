@@ -1,14 +1,17 @@
 import 'server-only';
 
 import type { ActivityDeps } from '@/features/activity/application/deps';
+import { refreshNextSources } from '@/features/activity/application/refresh-next-sources';
+import type { RefreshOutcome } from '@/features/activity/domain/fetched-item';
+import { PRODUCTION_REFRESH_LIMITS, SOURCES_PER_RUN } from '@/features/activity/domain/limits';
+import { LIST_SOURCES } from '@/features/activity/domain/sources';
 import { createD1ActivityRepository } from '@/features/activity/server/d1-activity-repository';
 import { createSourceRegistry } from '@/features/activity/server/sources/registry';
 import { readEnv } from '@/shared/server/env';
 
 /**
  * 取得のユースケースの組み立て用の関数（docs/SOFTWARE_DESIGN.md の「組み立て用の関数」、ADR-0030）。
- * 呼び手は取得の入口（Cron の `scheduled`、tasks.md の T040）で、U13 の上限の値と一緒に
- * `refreshSources` に渡す。外への要求は Workers の `fetch` で出す
+ * 外への要求は Workers の `fetch` で出す
  */
 export const createActivityDeps = async (): Promise<ActivityDeps> => {
   const env = await readEnv();
@@ -19,3 +22,17 @@ export const createActivityDeps = async (): Promise<ActivityDeps> => {
     goneCheckOf: registry.goneCheckOf,
   };
 };
+
+/**
+ * 定期実行の入口（worker/scheduled.ts）が呼ぶ。一覧を取る取得元から、本番の上限
+ * （src/features/activity/domain/limits.ts）で次の取得元を取り直す。取り直しの処理を持たない取得元
+ * （GitHub）も候補に入れ、選ばれた回は取得の結果に失敗と理由を書く。処理ができれば、そのまま回る
+ */
+export const refreshNextSourcesNow = async (now: string): Promise<RefreshOutcome[]> =>
+  refreshNextSources(
+    await createActivityDeps(),
+    LIST_SOURCES,
+    now,
+    PRODUCTION_REFRESH_LIMITS,
+    SOURCES_PER_RUN,
+  );
