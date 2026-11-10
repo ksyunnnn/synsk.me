@@ -26,7 +26,7 @@ Repository の実装は `note.status = 'published' AND note.deleted_at IS NULL` 
 | `summary` | `<meta name="description">` と OGP の説明。`description` があればそれ。空なら、`note.is_first_paragraph_as_description` が 1 の note は公開した版の本文の最初の段落の文字列、0 の note は空（FR-034、research.md の R11・R19） |
 | `body` | 公開した版の `note_revision.body`。共有担当の Markdown の部品で描き、生の HTML を通さない（research.md の R11） |
 | `publishedAt` | `note.published_at`（初めて公開した日時、FR-013） |
-| `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`generated` の画像は plan.md の U8、`media` の画像は `/notes/{slug}/media/{key}`。`site` はサイト共通の画像 |
+| `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`site` は note 用のサイト共通の 400×400 の画像で、オーナーが用意するまで出さない |
 | `media` | 公開した版の本文が指す画像のうち、その note の `media` の行にある `storage_key` の並び。画像の `src` はこの並びにある値だけから作る（research.md の R11・R12） |
 | `linkPreviews` | 公開した版の本文の URL が指す `link_preview` の `url`・`title`・`image_url`。カードにするのは行に URL だけを書いた行（research.md の R11）。題を持つ URL は題・ホスト名・画像を添えたカードで、行が無いか題が NULL の URL は URL の文字列のリンクで出す（R13） |
 
@@ -34,7 +34,7 @@ DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開�
 
 ## OGP
 
-`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `summary`。`<meta name="description">`・`og:description`・`twitter:description` に同じ値を出し、`summary` が空なら 3 つとも出さない（FR-034）。`twitter:title` も `title` にする。書かないと root layout のサイトの題と説明を引き継ぐため。画像は `cardImage`。`twitter` を書くと root layout の `twitter` を丸ごと置き換えるため、`twitter:card` は root layout と同じ `summary_large_image` を書き、`twitter:creator` は root layout の値を引き継ぐ。
+`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `summary`。`<meta name="description">`・`og:description`・`twitter:description` に同じ値を出し、`summary` が空なら 3 つとも出さない（FR-034）。`twitter:title` も `title` にする。書かないと root layout のサイトの題と説明を引き継ぐため。`twitter:card` は `summary`（plan.md の U8）。`twitter` を書くと root layout の `twitter` を丸ごと置き換えるため、`twitter:creator` は root layout の値を引き継ぐ。画像は `cardImage` が `media` のとき、`/notes/{slug}/media/{key}`（縮めない原本）を `og:image` と `twitter:image` に 1 つずつ出す。`site` のときは画像のタグを出さない（research.md の R12）。
 
 ## 検査
 

@@ -312,8 +312,8 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
     expect(html).toMatch(/<meta property="og:description" content="本文の最初の段落"/);
     expect(html).toMatch(/<meta name="twitter:title" content="説明文の無い題"/);
     expect(html).toMatch(/<meta name="twitter:description" content="本文の最初の段落"/);
-    // twitter を書き直しても、root layout のカードの種類と作者は残す
-    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
+    // twitter を書き直しても、root layout の作者は残す。カードの種類は note のページの summary（plan.md の U8）
+    expect(html).toMatch(/<meta name="twitter:card" content="summary"/);
     expect(html).toMatch(/<meta name="twitter:creator" content="@ksyunnnn"/);
   });
 
@@ -552,6 +552,39 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
 
   const fetchMedia = (slug: string, key: string) => ctx.server.fetch(`/notes/${slug}/media/${key}`);
 
+  /** 代表画像の出どころを変える */
+  const sendCardImage = async (noteUid: string, cardImage: string) => {
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${noteUid}`,
+      marker: 'name="cardImage"',
+      values: { noteUid, cardImage },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+  };
+
+  /**
+   * 共有したときに小さい画像のカードになるタグ（plan.md の U8）。X は summary で、サイト全体の
+   * summary_large_image は出さない。`imagePath` があれば OGP と X の画像はそれを 1 つだけ指し、
+   * 無ければ画像のタグを出さない（サイト共通の 1200×630 の画像を引き継がない）
+   */
+  const expectSmallCard = (html: string, imagePath: string | null) => {
+    expect(html).toMatch(/<meta name="twitter:card" content="summary"/);
+    expect(html).not.toContain('summary_large_image');
+    // サイト全体の twitter:creator は note のページでも出る
+    expect(html).toMatch(/<meta name="twitter:creator" content="@ksyunnnn"/);
+    if (imagePath === null) {
+      expect(html).not.toMatch(/<meta property="og:image/);
+      expect(html).not.toMatch(/<meta name="twitter:image/);
+      expect(html).not.toContain('/opengraph-image');
+      return;
+    }
+    expect(html).toMatch(new RegExp(`<meta property="og:image" content="[^"]*${imagePath}"`));
+    expect(html).toMatch(new RegExp(`<meta name="twitter:image" content="[^"]*${imagePath}"`));
+    expect(html.match(/<meta property="og:image" /g)).toHaveLength(1);
+    expect(html.match(/<meta name="twitter:image" /g)).toHaveLength(1);
+  };
+
   const expectHidden = async (res: Awaited<ReturnType<typeof fetchMedia>>) => {
     expect(res.status).toBe(404);
     expect(res.headers.get('cache-control')).toContain('no-store');
@@ -597,44 +630,39 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
     await expectHidden(await fetchMedia('integration-deleted-image', key));
   });
 
-  it('代表画像に選んだ画像は、本文に無くても返り、OGP に出る', async () => {
+  it('代表画像に選んだ画像は、本文に無くても返り、縮めない原本の経路が OGP と X の画像に出る（plan.md の U8）', async () => {
     const note = await insertNote(ctx.db, {
       slug: 'integration-card-media',
       title: '代表画像の題',
     });
     const key = await upload(note.uid);
-    const res = await submitFormWith({
-      formPath: `/dash/notes/${note.uid}`,
-      marker: 'name="cardImage"',
-      values: { noteUid: note.uid, cardImage: `media:${key}` },
-      asAuthor: true,
-    });
-    expect(res.status).toBe(303);
+    await sendCardImage(note.uid, `media:${key}`);
     await publishNoteRow(ctx.db, note.id);
-    expect((await fetchMedia('integration-card-media', key)).status).toBe(200);
+    const original = await fetchMedia('integration-card-media', key);
+    expect(original.status).toBe(200);
+    expect(new Uint8Array(await original.arrayBuffer())).toEqual(PNG);
     const html = await (await ctx.server.fetch('/notes/integration-card-media')).text();
-    expect(html).toMatch(
-      new RegExp(
-        `<meta property="og:image" content="[^"]*/notes/integration-card-media/media/${key}"`,
-      ),
-    );
+    expectSmallCard(html, `/notes/integration-card-media/media/${key}`);
   });
 
-  it('代表画像を site にすると、サイト共通の画像が OGP に出る（FR-024）', async () => {
+  it('代表画像を site にすると、画像の無い小さいカードになる（FR-024、plan.md の U8）', async () => {
     const note = await insertNote(ctx.db, {
       slug: 'integration-card-site',
       title: 'サイトの画像の題',
     });
-    const res = await submitFormWith({
-      formPath: `/dash/notes/${note.uid}`,
-      marker: 'name="cardImage"',
-      values: { noteUid: note.uid, cardImage: 'site' },
-      asAuthor: true,
-    });
-    expect(res.status).toBe(303);
+    const key = await upload(note.uid);
+    await sendCardImage(note.uid, `media:${key}`);
+    await sendCardImage(note.uid, 'site');
     await publishNoteRow(ctx.db, note.id);
     const html = await (await ctx.server.fetch('/notes/integration-card-site')).text();
-    expect(html).toMatch(/<meta property="og:image" content="[^"]*\/opengraph-image"/);
+    expectSmallCard(html, null);
+  });
+
+  it('代表画像を選ばない note は、画像の無い小さいカードになる（FR-024）', async () => {
+    const note = await insertNote(ctx.db, { slug: 'integration-card-default' });
+    await publishNoteRow(ctx.db, note.id);
+    const html = await (await ctx.server.fetch('/notes/integration-card-default')).text();
+    expectSmallCard(html, null);
   });
 
   it('JWT のない changeNoteCardImage・addNoteMedia は D1 を変えない（FR-033）', async () => {

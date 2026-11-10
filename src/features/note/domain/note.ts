@@ -24,10 +24,10 @@ export const NOTE_STATUS_LABELS: Record<NoteStatus, string> = {
 };
 
 /**
- * 代表画像の出どころ（FR-024）。`note.card_image` の CHECK と同じ値。`generated` は題を入れて
- * 自動で作る画像、`media` はその note の画像、`site` はサイト共通の画像
+ * 代表画像の出どころ（FR-024）。`note.card_image` の CHECK と同じ値。`media` はその note の画像、
+ * `site` は note 用のサイト共通の画像
  */
-export const NOTE_CARD_IMAGES = ['generated', 'media', 'site'] as const;
+export const NOTE_CARD_IMAGES = ['media', 'site'] as const;
 export type NoteCardImage = (typeof NOTE_CARD_IMAGES)[number];
 
 export const isNoteCardImage = (value: string): value is NoteCardImage =>
@@ -142,7 +142,7 @@ export type NoteFormResult = ActionResult<NoteField, NoteFieldError>;
 export type RevertNoteResult = { status: 'forbidden' } | { status: 'conflict' };
 
 /**
- * 代表画像の入力の名前（FR-024・FR-025）。値は `generated`・`site`、その note の画像なら
+ * 代表画像の入力の名前（FR-024・FR-025）。値は `site`、その note の画像なら
  * `media:<storageKey>`。1 つのラジオボタンの並びで送る
  */
 export const CARD_IMAGE_FIELD = 'cardImage';
@@ -159,7 +159,7 @@ export const parseCardImageChoice = (value: string): VisitorNoteCardImage | null
     const storageKey = parseMediaStorageKey(value.slice(CARD_MEDIA_PREFIX.length));
     return storageKey === null ? null : { kind: 'media', storageKey };
   }
-  return value === 'generated' || value === 'site' ? { kind: value } : null;
+  return value === 'site' ? { kind: 'site' } : null;
 };
 
 /** 代表画像の誤り。`media-not-owned` は、その note の画像でない（FR-025） */
@@ -282,9 +282,9 @@ export const toNoteFormValues = (note?: Pick<Note, 'slug' | 'latestRevision'>): 
  * note の公開した版だけを読んで詰める。画面・`<title>`・OGP はこの値だけを使う
  */
 
-/** 代表画像。`generated` の画像の作り方は plan.md の U8 */
+/** 代表画像。`site` の note のカードに出す画像は plan.md の U8 */
 export type VisitorNoteCardImage =
-  { kind: 'generated' } | { kind: 'site' } | { kind: 'media'; storageKey: MediaStorageKey };
+  { kind: 'site' } | { kind: 'media'; storageKey: MediaStorageKey };
 
 /**
  * URL だけの段落が指す参照先の情報（FR-029・FR-030）。題があればカードで、無ければリンクで出す

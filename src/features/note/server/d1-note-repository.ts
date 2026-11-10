@@ -92,8 +92,8 @@ const errorIncludes = (error: unknown, text: string) =>
 
 const toCardImage = (cardImage: NoteCardImage, storageKey: string | null): VisitorNoteCardImage => {
   if (cardImage === 'media' && storageKey !== null) return { kind: 'media', storageKey };
-  // 外部キーと CHECK が media の行を持たない `media` を許さない。読めなければ自動で作る画像に倒す
-  return cardImage === 'site' ? { kind: 'site' } : { kind: 'generated' };
+  // 外部キーと CHECK が media の行を持たない `media` を許さない。読めなければ note 用のサイト共通の画像に倒す
+  return { kind: 'site' };
 };
 
 type LinkPreviewRow = { url: string; title: string | null; image_url: string | null };

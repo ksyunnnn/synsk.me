@@ -80,7 +80,7 @@ def rules_note(x, y):
         "activity_feed: sort_at は note.created_at・activity.published_at を Asia/Tokyo の時刻にした値か、年月日。元の日時は created_at・published_at",
         "activity_feed: 公開中で削除していない note の syndication.url と URL が一致する外部の activity は出さない（転載の重なり）",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public（既定は limited）。project.kind は application・talk・event・other",
-        "CHECK の値: activity_source.kind は article・embed・life_event・other。note.card_image は generated・media・site",
+        "CHECK の値: activity_source.kind は article・embed・life_event・other。note.card_image は media・site（既定は site）",
         "年月日の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",
         "media は、持ち主の列（note_id・project_id・career_id・activity_id）のちょうど 1 つが入る（CHECK）",

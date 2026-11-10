@@ -26,7 +26,7 @@
 | `/dash/notes/{uid}/preview` | 最も新しい版を訪問者に見せたときの見た目。訪問者向けと同じ部品で描く。状態と削除に関わらず出す。描く前に、URL だけの段落のうち参照先の情報を持たない URL を取って `link_preview` に書く（上限は plan.md の「参照先への取得の上限」） | REQUIREMENTS.md の FR-13、FR-027・FR-029（U9 の決定） |
 | `/dash/notes/{uid}/delete` | 削除の確認 | FR-016 |
 
-画像の追加は編集の画面に置き、足した画像を本文に貼る印（1 行目が `![代替テキスト](media:<storageKey> "ホバーで出す文")`、2 行目が `*キャプション*`。`storageKey` は `media.storage_key`。主キーは出さない。題の欄と 2 行目は省ける。research.md の R11）を示す。代表画像の出どころの入力は、`generated`・`site`・その note の画像から選ぶ。 <!-- check-ignore: 本文の画像の記法の例 -->
+画像の追加は編集の画面に置き、足した画像を本文に貼る印（1 行目が `![代替テキスト](media:<storageKey> "ホバーで出す文")`、2 行目が `*キャプション*`。`storageKey` は `media.storage_key`。主キーは出さない。題の欄と 2 行目は省ける。research.md の R11）を示す。代表画像の出どころの入力は、`site`・その note の画像から選ぶ。 <!-- check-ignore: 本文の画像の記法の例 -->
 
 ## Server Action
 
@@ -39,7 +39,7 @@
 | `unpublishNote` | uid | 下書きに戻し、同じ画面へ 303 | オーナーでない／無い・削除した |
 | `deleteNote` | uid | 削除済みの印を付け、一覧へ 303 | オーナーでない／無い |
 | `restoreNote` | uid | 削除済みの印を外し、編集の画面へ 303 | オーナーでない／無い |
-| `changeNoteCardImage` | uid・出どころ（`generated`・`site`・`media`）・`media` のときは画像の key | 同じ画面へ 303 | オーナーでない／その note の画像でない／無い・削除した |
+| `changeNoteCardImage` | uid・出どころ（`site`・`media`）・`media` のときは画像の key | 同じ画面へ 303 | オーナーでない／その note の画像でない／無い・削除した |
 | `changeNoteFirstParagraphAsDescription` | uid・本文の最初の段落を説明に使うか（`1`・`0`） | `note.is_first_paragraph_as_description` を書き、同じ画面へ 303。版は足さない | オーナーでない／`1` と `0` のほかの値／無い・削除した |
 | `addNoteMedia` | uid・画像のファイル | `media` に足し、同じ画面へ 303 | オーナーでない／JPEG・PNG・WebP・GIF でない／10 MB を超える／無い・削除した |
 | `addNoteSyndication` | uid・転載先の URL | 同じ画面へ 303 | オーナーでない／http か https でない／既に記録した URL（同じ note か別の note）／無い・削除した |

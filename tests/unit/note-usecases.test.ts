@@ -43,7 +43,7 @@ const note = (overrides: Partial<Note> = {}): Note => ({
   status: 'draft',
   publishedAt: null,
   deletedAt: null,
-  cardImage: 'generated',
+  cardImage: 'site',
   cardMediaStorageKey: null,
   isFirstParagraphAsDescription: true,
   latestRevision: {
@@ -642,7 +642,7 @@ describe('getNotePreview（U9、research.md の R13）', () => {
     summary: null,
     body,
     publishedAt: null,
-    cardImage: { kind: 'generated' },
+    cardImage: { kind: 'site' },
     media: [],
     linkPreviews,
   });

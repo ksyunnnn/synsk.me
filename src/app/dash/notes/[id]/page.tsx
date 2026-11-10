@@ -145,7 +145,7 @@ const Page = async ({ params, searchParams }: Props) => {
         current={
           note.cardImage === 'media' && note.cardMediaStorageKey !== null
             ? { kind: 'media', storageKey: note.cardMediaStorageKey }
-            : { kind: note.cardImage === 'site' ? 'site' : 'generated' }
+            : { kind: 'site' }
         }
         mediaStorageKeys={note.mediaStorageKeys}
       />
