@@ -3,6 +3,8 @@
 // image は描く範囲そのもの。縦横比は width × height と同じにする
 
 // t は再生の進み（0〜1）。seam は内側の境目の位置、shift は帯ごとのずれの最大（動く向きの長さに対する割合）
+// backdrop を true にすると、帯を描く前に画像をずらさずに敷く。帯が画像の外を読んだ部分と、帯の境目の
+// 半端な画素が透けない。動画は透明を持てないため、書き出すときに使う
 export type RevealFrame = {
   width: number;
   height: number;
@@ -10,19 +12,21 @@ export type RevealFrame = {
   seam: number;
   shift: number;
   count: number;
+  backdrop?: boolean;
 };
 
 // 写真を右から左へ出す。内側の境目より右はそのまま、左は帯ごとに右にずれた位置から左へ追いついて揃う
 export const drawHorizontal = (
   ctx: CanvasRenderingContext2D,
   image: CanvasImageSource & { width: number; height: number },
-  { width, height, t, seam, shift, count }: RevealFrame,
+  { width, height, t, seam, shift, count, backdrop }: RevealFrame,
 ) => {
   const scale = image.width / width;
   const seamX = width * seam;
   const revealX = width * (1 - t);
 
   ctx.clearRect(0, 0, width, height);
+  if (backdrop) ctx.drawImage(image, 0, 0, width, height);
   // u は表示の境目がその帯の右端から何帯ぶん進んだか。u = 0 で右に最大ずれ、u = 1 で揃う
   const gap = seamX / count;
   const maxShift = width * shift;
@@ -66,7 +70,7 @@ export const drawHorizontal = (
 export const drawVertical = (
   ctx: CanvasRenderingContext2D,
   image: CanvasImageSource & { width: number; height: number },
-  { width, height, t, seam, shift, count }: RevealFrame,
+  { width, height, t, seam, shift, count, backdrop }: RevealFrame,
 ) => {
   const scale = image.width / width;
   // いちばん上の内側の境目。seam は横と同じく「動かない側の反対からの割合」
@@ -76,6 +80,7 @@ export const drawVertical = (
   const maxShift = height * shift;
 
   ctx.clearRect(0, 0, width, height);
+  if (backdrop) ctx.drawImage(image, 0, 0, width, height);
   // いちばん上の境目より上: そのまま
   ctx.drawImage(image, 0, 0, image.width, seamY * scale, 0, 0, width, seamY);
   // その下の帯: u は表示の境目がその帯の上端から何帯ぶん進んだか。u = 0 で上に最大ずれ、u = 1 で揃う

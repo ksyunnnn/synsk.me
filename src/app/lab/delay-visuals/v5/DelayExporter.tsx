@@ -7,6 +7,7 @@ import {
   drawFrame,
   exportVideo,
   FPS,
+  isAcceptedAspect,
   outputSize,
   UnsupportedError,
   type Direction,
@@ -48,27 +49,41 @@ const fileName = (direction: Direction) => {
   return `delay-visuals-${direction}-${date}-${time}.mp4`;
 };
 
+// 画像を選ぶ欄に出す縮小版の長い辺
+const THUMBNAIL_SIZE = 192;
+
+class AspectError extends Error {}
+
 // 画像を読み、書き出す大きさに縮めた canvas にする。向きは画像の Exif に従う（ブラウザの既定）
+// 透明な部分は白にする。動画は透明を持てない
 const loadImage = (file: File) =>
   new Promise<Picked>((resolve, reject) => {
     const url = URL.createObjectURL(file);
     const img = new Image();
     img.onload = () => {
       URL.revokeObjectURL(url);
+      if (!isAcceptedAspect(img.naturalWidth, img.naturalHeight)) return reject(new AspectError());
       const { width, height } = outputSize(img.naturalWidth, img.naturalHeight);
       const source = document.createElement('canvas');
       source.width = width;
       source.height = height;
       const ctx = source.getContext('2d');
       if (!ctx) return reject(new Error('canvas を使えない'));
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
       ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(img, 0, 0, width, height);
+      const ratio = THUMBNAIL_SIZE / Math.max(width, height);
+      const thumbnail = document.createElement('canvas');
+      thumbnail.width = Math.max(1, Math.round(width * ratio));
+      thumbnail.height = Math.max(1, Math.round(height * ratio));
+      thumbnail.getContext('2d')?.drawImage(source, 0, 0, thumbnail.width, thumbnail.height);
       resolve({
         name: file.name,
         width,
         height,
         source,
-        thumbnail: source.toDataURL('image/jpeg', 0.6),
+        thumbnail: thumbnail.toDataURL('image/jpeg', 0.8),
       });
     };
     img.onerror = () => {
@@ -179,8 +194,12 @@ export const DelayExporter = () => {
     try {
       setPicked(await loadImage(file));
       setExportState({ kind: 'idle' });
-    } catch {
-      setPickError('この画像は読めなかった。JPEG か PNG で試してほしい。');
+    } catch (error) {
+      setPickError(
+        error instanceof AspectError
+          ? 'Instagram のストーリーに載せられる縦横比は 1:10 から 10:1 まで。その範囲の画像を選んでほしい。'
+          : 'この画像は読めなかった。JPEG か PNG で試してほしい。',
+      );
     }
   };
 
@@ -190,12 +209,19 @@ export const DelayExporter = () => {
     const controller = new AbortController();
     abortRef.current = controller;
     setExportState({ kind: 'running', done: 0 });
+    let lastPercent = 0;
     try {
       const { blob, width, height } = await exportVideo({
         image: picked.source,
         direction,
         settings: { seconds, seam, shift, count },
-        onProgress: (done) => setExportState({ kind: 'running', done }),
+        // 描き直しを減らすため、1% 進むごとに知らせる
+        onProgress: (done) => {
+          const percent = Math.floor(done * 100);
+          if (percent === lastPercent) return;
+          lastPercent = percent;
+          setExportState({ kind: 'running', done: percent / 100 });
+        },
         signal: controller.signal,
       });
       const file = new File([blob], fileName(direction), { type: 'video/mp4' });

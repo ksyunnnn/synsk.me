@@ -24,7 +24,17 @@ export const drawFrame = (
   image: HTMLCanvasElement,
   direction: Direction,
   frame: RevealFrame,
-) => (direction === 'horizontal' ? drawHorizontal : drawVertical)(ctx, image, frame);
+) =>
+  (direction === 'horizontal' ? drawHorizontal : drawVertical)(ctx, image, {
+    ...frame,
+    backdrop: true,
+  });
+
+// Instagram のストーリーの動画の縦横比は 0.1:1 から 10:1 まで（上の Story Video Specifications）
+export const isAcceptedAspect = (imageWidth: number, imageHeight: number) => {
+  const aspect = imageWidth / imageHeight;
+  return aspect >= 0.1 && aspect <= 10;
+};
 
 // 画像の縦横比を保ったまま、長い辺を 1920 画素まで、マクロブロックをレベル 4.0 の上限まで縮める。辺は符号化のために偶数にする
 export const outputSize = (imageWidth: number, imageHeight: number) => {
@@ -104,6 +114,8 @@ export const exportVideo = async ({
       onProgress((i + 1) / frames);
     }
     await output.finalize();
+    // 仕上げの間にやめたときも、動画を返さない
+    signal.throwIfAborted();
   } catch (error) {
     await output.cancel();
     throw error;
