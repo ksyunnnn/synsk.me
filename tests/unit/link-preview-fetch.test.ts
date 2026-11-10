@@ -68,6 +68,24 @@ describe('readLinkPreview', () => {
     ).toBe('A & B ああ "q" <tag>');
   });
 
+  it('題によく現れる名前の文字参照を文字に戻す', () => {
+    expect(
+      readLinkPreview(
+        '<title>A &raquo; B &hellip; &ndash; &mdash; &rsquo;s &copy; &laquo;</title>',
+        PAGE,
+      ).title,
+    ).toBe('A » B … – — ’s © «');
+  });
+
+  it('引用符の中の > で meta の要素を切らない', () => {
+    expect(
+      readLinkPreview(
+        '<meta content="Docs > Guide" property="og:title"><meta property="og:image" content=\'/a>b.png\'>',
+        PAGE,
+      ),
+    ).toEqual({ title: 'Docs > Guide', imageUrl: 'https://example.com/a%3Eb.png' });
+  });
+
   it('題は 200 文字で切る', () => {
     const title = readLinkPreview(`<title>${'あ'.repeat(250)}</title>`, PAGE).title;
     expect(title).toHaveLength(200);
@@ -417,6 +435,33 @@ describe('fetchLinkPreview', () => {
 });
 
 describe('fetchLinkPreviews', () => {
+  it('要求を出さない URL は上限の数に数えず、後ろの URL を取る', async () => {
+    const requested: string[] = [];
+    const fetcher: LinkPreviewFetcher = async (url) => {
+      requested.push(url);
+      return html(`<title>${url}</title>`);
+    };
+
+    const results = await fetchLinkPreviews(
+      [
+        'https://a.invalid/1',
+        'http://localhost/2',
+        'https://example.com/3',
+        'https://example.com/4',
+        'https://example.com/5',
+      ],
+      { fetcher, limits: LIMITS },
+    );
+
+    expect(results).toEqual([
+      { status: 'failed', url: 'https://a.invalid/1', reason: 'blocked' },
+      { status: 'failed', url: 'http://localhost/2', reason: 'blocked' },
+      expect.objectContaining({ status: 'fetched', url: 'https://example.com/3' }),
+      expect.objectContaining({ status: 'fetched', url: 'https://example.com/4' }),
+    ]);
+    expect(requested.sort()).toEqual(['https://example.com/3', 'https://example.com/4']);
+  });
+
   it('上限の数の URL だけを並べて取り、残りに要求を出さない', async () => {
     const requested: string[] = [];
     const fetcher: LinkPreviewFetcher = async (url) => {

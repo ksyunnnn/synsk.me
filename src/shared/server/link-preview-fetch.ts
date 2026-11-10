@@ -89,6 +89,21 @@ const ENTITIES: Record<string, string> = {
   quot: '"',
   apos: "'",
   nbsp: ' ',
+  laquo: '«',
+  raquo: '»',
+  hellip: '…',
+  ndash: '–',
+  mdash: '—',
+  lsquo: '‘',
+  rsquo: '’',
+  ldquo: '“',
+  rdquo: '”',
+  middot: '·',
+  bull: '•',
+  copy: '©',
+  reg: '®',
+  trade: '™',
+  yen: '¥',
 };
 
 /** 文字参照を文字に戻す。名前の参照は HTML の属性と題によく現れるものだけを戻す */
@@ -146,7 +161,7 @@ export const readLinkPreview = (html: string, pageUrl: string): LinkPreview => {
     .replace(/<(script|style)\b[^>]*>[\s\S]*?(?:<\/\1\s*>|$)/gi, '');
 
   const meta = new Map<string, string>();
-  for (const [tag] of text.matchAll(/<meta\b[^>]*>/gi)) {
+  for (const [tag] of text.matchAll(/<meta\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi)) {
     const attributes = attributesOf(tag.slice('<meta'.length));
     const key = (attributes.get('property') ?? attributes.get('name'))?.toLowerCase();
     const content = attributes.get('content');
@@ -328,14 +343,26 @@ export const fetchLinkPreview = async (
   }
 };
 
+/** 要求を出してよい URL か。URL として読めなければ false */
+const isFetchableText = (url: string): boolean => {
+  try {
+    return isFetchableUrl(new URL(url));
+  } catch {
+    return false;
+  }
+};
+
 /**
- * URL の並びの題と画像の URL を、上限の数まで並べて取る。超えた分には要求を出さず、結果にも
- * 含めない。結果は取った URL の順
+ * URL の並びの題と画像の URL を、上限の数まで並べて取る。要求を出さない URL は上限の数に数えず
+ * `blocked` の失敗にする（取れない URL が前に並んでも後ろの URL を取るため）。超えた分には要求を
+ * 出さず、結果にも含めない。結果は渡した URL の順
  */
 export const fetchLinkPreviews = (
   urls: string[],
   options: Options = {},
 ): Promise<LinkPreviewResult[]> => {
   const limits = options.limits ?? LINK_PREVIEW_LIMITS;
-  return Promise.all(urls.slice(0, limits.maxUrls).map((url) => fetchLinkPreview(url, options)));
+  let remaining = limits.maxUrls;
+  const targets = urls.filter((url) => !isFetchableText(url) || remaining-- > 0);
+  return Promise.all(targets.map((url) => fetchLinkPreview(url, options)));
 };
