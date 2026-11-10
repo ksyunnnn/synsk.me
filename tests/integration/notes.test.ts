@@ -225,8 +225,8 @@ beforeAll(async () => {
       await insertNoteRevision(db, withMedia.id, {
         title: '画像のある題',
         body: [
-          `![自分の画像の代替テキスト](media:${ownMediaKey} "自分の画像のキャプション")`,
-          `![無い画像の代替テキスト](media:${MISSING_MEDIA_KEY} "無い画像のキャプション")`,
+          `![自分の画像の代替テキスト](media:${ownMediaKey} "自分の画像のホバーの文")\n*自分の画像のキャプション*`,
+          `![無い画像の代替テキスト](media:${MISSING_MEDIA_KEY})\n*無い画像のキャプション*`,
         ].join('\n\n'),
       });
       await publishNoteRow(db, withMedia.id);
@@ -295,11 +295,11 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
     expect(html).toContain('dateTime="2026-11-01T00:00:00.000Z"');
   });
 
-  it('画像の印は figure・img alt・figcaption で出し、その note の画像に無い印は出さない（T040）', async () => {
+  it('画像の印は figure・img alt・title・figcaption で出し、その note の画像に無い印は出さない（T040）', async () => {
     const html = await (await ctx.server.fetch('/notes/integration-media')).text();
     expect(html).toMatch(
       new RegExp(
-        `<figure><img src="/notes/integration-media/media/${ownMediaKey}" alt="自分の画像の代替テキスト"/><figcaption>自分の画像のキャプション</figcaption></figure>`,
+        `<figure><img src="/notes/integration-media/media/${ownMediaKey}" alt="自分の画像の代替テキスト" title="自分の画像のホバーの文"/><figcaption>自分の画像のキャプション</figcaption></figure>`,
       ),
     );
     expect(html).not.toContain(MISSING_MEDIA_KEY);
@@ -534,7 +534,7 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
 
     await insertNoteRevision(ctx.db, note.id, {
       title: '画像の題',
-      body: `![代替テキスト](media:${key} "キャプション")`,
+      body: `![代替テキスト](media:${key})\n*キャプション*`,
     });
     await publishNoteRow(ctx.db, note.id);
     const res = await fetchMedia('integration-image', key);

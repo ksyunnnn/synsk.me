@@ -44,12 +44,13 @@ export const NoteMediaForm = ({ action, noteUid, mediaStorageKeys }: Props) => {
       ) : (
         <>
           <p className="text-sm text-muted-foreground">
-            本文に次の印を書くと、画像を置けます。代替テキストとキャプションを書き換えてください
+            本文に次の印を書くと、画像を置けます。代替テキスト・ホバーで出す文・キャプションを書き換えてください。ホバーで出す文（
+            {'"…"'}）とキャプションの行（{'*…*'}）は、要らなければ消せます
           </p>
           <ul className="flex flex-col gap-2">
             {mediaStorageKeys.map((key) => (
               <li key={key}>
-                <code className="break-all">{mediaMarkOf(key)}</code>
+                <code className="break-all whitespace-pre-wrap">{mediaMarkOf(key)}</code>
               </li>
             ))}
           </ul>

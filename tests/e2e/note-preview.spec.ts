@@ -37,7 +37,7 @@ test('下書きの note の見た目の確認で、本文に置いた画像が�
 
   await waitForHydration(textbox(page, '本文'));
   await textbox(page, '本文').fill(
-    `![E2E の画像の代替テキスト](media:${key} "E2E の画像のキャプション")`,
+    `![E2E の画像の代替テキスト](media:${key} "E2E の画像のホバーの文")\n*E2E の画像のキャプション*`,
   );
   await saveEdit(page);
 
@@ -47,7 +47,8 @@ test('下書きの note の見た目の確認で、本文に置いた画像が�
   await expect
     .poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth))
     .toBe(1);
-  await expect(page.getByText('E2E の画像のキャプション')).toBeVisible();
+  await expect(image).toHaveAttribute('title', 'E2E の画像のホバーの文');
+  await expect(page.locator('figcaption')).toHaveText('E2E の画像のキャプション');
 
   // 公開していないため、訪問者の経路では返さない
   const visitor = await openVisitor(browser);
