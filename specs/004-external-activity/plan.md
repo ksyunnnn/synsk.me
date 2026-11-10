@@ -74,7 +74,7 @@
 | 管理画面の uid | `src/shared/domain/uid.ts`（`parseUid`・`findIdByUid`） | `/dash/life-events/{uid}`・`/dash/activities/{uid}` |
 | Server Action の結果 | `src/shared/domain/action-result.ts`（`ActionResult`） | 4 つの登録・編集の結果 |
 | フォームの値 | `src/shared/server/form-data.ts`（`readString`） | Server Action の入力 |
-| 空の入力 | `src/shared/domain/empty-to-null.ts` | 説明・題の空 |
+| 空の入力 | `src/shared/domain/empty-to-null.ts` | life event の説明の空 |
 | URL の形 | `src/shared/domain/web-url.ts`（`isWebUrl`） | URL を指名する・手で入力する登録 |
 | 入力の部品 | `src/shared/components/field.tsx`、`src/shared/components/text-link.tsx` | 管理画面の入力とリンク |
 | 削除の確認 | `src/shared/components/delete-form.tsx` | `/dash/life-events/{uid}/delete`・`/dash/activities/{uid}/delete` |

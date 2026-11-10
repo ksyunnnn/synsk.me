@@ -20,7 +20,7 @@ export type RegisterLifeEventOutcome =
     };
 
 /**
- * life event を作る（FR-023・FR-025・FR-035）。オーナーでなければ何も書かない（FR-031）。
+ * life event を作る（FR-023・FR-024・FR-025・FR-035）。オーナーでなければ何も書かない（FR-031）。
  * 識別子が空なら、推測できない値を入れる
  */
 export const registerLifeEvent = async (

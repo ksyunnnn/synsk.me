@@ -35,6 +35,7 @@ describe('migration 0021 を、題の空な life event のある D1 に当てる
     ['NULL', null],
     ['空の文字列', ''],
     ['空白だけ', ' 　'],
+    ['ノーブレークスペースだけ', ' '],
   ])('題が %s だと当てられず、値と 0020 までの定義が残る', async (_, title) => {
     await env.DB.prepare('UPDATE activity SET title = ? WHERE id = 1').bind(title).run();
 

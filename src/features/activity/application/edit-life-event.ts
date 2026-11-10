@@ -20,7 +20,7 @@ export type EditLifeEventOutcome =
     };
 
 /**
- * life event を書き換える（FR-023・FR-025・FR-035）。オーナーでなければ何も書かない（FR-031）。
+ * life event を書き換える（FR-023・FR-024・FR-025・FR-035）。オーナーでなければ何も書かない（FR-031）。
  * 識別子が空なら今の識別子のまま。先に保存された画面の保存を止める要件は無い（research.md の R11）
  */
 export const editLifeEvent = async (

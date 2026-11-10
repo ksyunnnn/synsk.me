@@ -36,7 +36,7 @@
 | `fetch_result` に、取得元が前回返した `ETag` と `Last-Modified` の列（どちらも NULL 可） | 条件付きの要求で、変わっていない取得元の中身を取り直さない（research.md の R9）。`migrations/0014` が `etag`・`last_modified` として足す。値はヘッダの文字列のままで、日時として読まない |
 | `activity.gone_checked_at`（取得元で消えたかを最後に確かめた日時、NULL 可） | すべて取らない取得元で、一覧に無い activity の URL を取り直す順を決める（research.md の R6）。`migrations/0015` が足す |
 | `activity.consecutive_gone_count`（取り直した URL が続けて 404 を返した回数、INTEGER NOT NULL DEFAULT 0、life event では 0） | 続けて 2 回 404 が返った activity だけを消す（research.md の R6）。`migrations/0019` が足す。コードでは `StoredItem.goneStreak` が読む値、`RefreshPlan.goneChecked` の `goneStreak` が書く値、`RefreshPlan.goneResets` が 0 に戻す行。404 で 1 足し、2xx と判定できない応答と、一覧に載った回に 0 に戻す |
-| life event の題が空でない（`source <> 'life_event'` か、`trim(title) <> ''`）CHECK | FR-024（2026-11-10、オーナーが題を必須にした）。0020 と同じく life event の列の決まりをスキーマに置く。`migrations/0021` が `life_event_with_title` として足す |
+| life event の題が空でない（`source <> 'life_event'` か、題が NULL でなく、JavaScript の `trim()` が除く空白を除いても空でない）CHECK | FR-024（2026-11-10、オーナーが題を必須にした）。0020 と同じく life event の列の決まりをスキーマに置く。`migrations/0021` が `life_event_with_title` として足す |
 
 取得元で消えた activity の印の列は持たない。消えたと確かめた行は消す（research.md の R6）。`gone_checked_at` は確かめる順を決める日時で、`consecutive_gone_count` は消すかを決める回数で、どちらも消えた印ではない。
 

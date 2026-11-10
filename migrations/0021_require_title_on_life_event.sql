@@ -2,16 +2,20 @@
 -- 冒頭にある。
 --
 -- 004 の spec は、life event の題を必ず入れるとする（FR-024。2026-11-10 にオーナーが決めた。
--- https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6765023021 ）。NULL と、空白（半角の
--- 空白・タブ・改行・全角の空白）だけの値を拒む。0020 と同じく、life event の列の決まりを CHECK に
--- 置き、アプリケーションの入力の検査を通らない書き込みも拒む（docs/SOFTWARE_DESIGN.md の原則 2）。
+-- https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6765023021 ）。NULL と、空白だけの値を
+-- 拒む。空白は JavaScript の String.prototype.trim() が除く文字（ECMAScript の WhiteSpace と
+-- LineTerminator。BMP の 25 文字）で、アプリケーションの入力の検査（parseLifeEventContent）と
+-- 同じにする。SQLite の trim() は既定で半角の空白だけを除くため、文字を並べて渡す。0020 と同じく、
+-- life event の列の決まりを CHECK に置き、アプリケーションの入力の検査を通らない書き込みも拒む
+-- （docs/SOFTWARE_DESIGN.md の原則 2）。
 -- 外部の activity の題は、取得元が題を返さないことがあるため、空のままにできる
 --
 -- 既にある life event の行の題が空なら、行を入れ直すところで CHECK が止め、migration は当たらない。
 -- 題を黙って埋めない（原則 2）。当てる前に、本番と preview の D1 で次の文が 0 行を返すことを
 -- 確かめる。行があれば、その行に題を入れてから当てる
 --   SELECT id, uid FROM activity WHERE source = 'life_event'
---     AND (title IS NULL OR trim(title, ' ' || char(9, 10, 13, 12288)) = '');
+--     AND (title IS NULL OR trim(title, char(9, 10, 11, 12, 13, 32, 160, 5760, 8192, 8193, 8194,
+--       8195, 8196, 8197, 8198, 8199, 8200, 8201, 8202, 8232, 8233, 8239, 8287, 12288, 65279)) = '');
 --
 -- SQLite は ALTER TABLE で CHECK を足せないため、表を作り直す。作り直し方は 0012・0020 と同じで、
 -- 行・uid・sqlite_sequence を保ち、指している表（media）は作り直さず、外部キーの検査を
@@ -98,11 +102,20 @@ CREATE TABLE activity (
     source <> 'life_event'
     OR (published_at IS NULL AND url IS NULL AND external_id IS NULL AND image_url IS NULL)
   ),
-  -- life event は空白だけでない題を持つ（004 の spec の FR-024）。名前を付け、拒んだときの文言で、
-  -- この決まりに当たったと分かるようにする
+  -- life event は空白だけでない題を持つ（004 の spec の FR-024）。空白の文字は冒頭の注釈のとおり。
+  -- 名前を付け、拒んだときの文言で、この決まりに当たったと分かるようにする
   CONSTRAINT life_event_with_title CHECK (
     source <> 'life_event'
-    OR (title IS NOT NULL AND trim(title, ' ' || char(9, 10, 13, 12288)) <> '')
+    OR (
+      title IS NOT NULL
+      AND trim(
+        title,
+        char(
+          9, 10, 11, 12, 13, 32, 160, 5760, 8192, 8193, 8194, 8195, 8196, 8197, 8198, 8199, 8200,
+          8201, 8202, 8232, 8233, 8239, 8287, 12288, 65279
+        )
+      ) <> ''
+    )
   ),
   -- 取得し直したときに同じ項目を 2 行にしない
   UNIQUE (source, external_id),

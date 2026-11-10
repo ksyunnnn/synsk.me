@@ -89,8 +89,8 @@ export type ExternalActivityFeedItem = {
 /** life event。slug と代表画像を持たない（plan.md の U4・U5） */
 export type LifeEventFeedItem = {
   type: 'life_event';
-  /** 空なら null */
-  title: string | null;
+  /** 空でない（004 の FR-024） */
+  title: string;
   /** 空なら null */
   description: string | null;
   happenedOn: CalendarDate;

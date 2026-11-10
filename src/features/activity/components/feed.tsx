@@ -96,7 +96,7 @@ const ExternalActivityRow = ({ item }: { item: ExternalActivityFeedItem }) => (
 const LifeEventRow = ({ item }: { item: LifeEventFeedItem }) => (
   <article className="flex flex-col gap-1">
     <p className="text-sm text-muted-foreground">life event</p>
-    {item.title && <h2 className="font-bold">{item.title}</h2>}
+    <h2 className="font-bold">{item.title}</h2>
     {item.description && <p>{item.description}</p>}
     <p className="text-sm text-muted-foreground">
       <time dateTime={item.happenedOn}>{item.happenedOn}</time>

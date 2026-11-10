@@ -45,7 +45,7 @@ beforeAll(async () => {
     ),
     env.DB.prepare('UPDATE activity SET card_media_id = 1 WHERE id = 1'),
     env.DB.prepare(
-      "INSERT INTO activity (id, source, external_id, url, published_at) VALUES (2, 'zenn', 'fake-1', 'https://zenn.dev/fake/articles/fake-1', '2026-01-03T00:00:00.000Z')",
+      "INSERT INTO activity (id, source, external_id, url, title, published_at, gone_checked_at, consecutive_gone_count) VALUES (2, 'zenn', 'fake-1', 'https://zenn.dev/fake/articles/fake-1', '作り物の記事', '2026-01-03T00:00:00.000Z', '2026-11-01T00:00:00.000Z', 1)",
     ),
     env.DB.prepare(
       "INSERT INTO activity (id, source, url, title, published_at) VALUES (5, 'unlisted', 'https://example.com/fake-article', '作り物の消した記事', '2026-01-04T00:00:00.000Z')",
@@ -113,6 +113,19 @@ describe('migration 0021 を行のある D1 に当てる', () => {
         .bind(title)
         .run(),
     ).rejects.toThrow(/CHECK constraint failed: life_event_with_title/);
+  });
+
+  it('アプリケーションの trim() が除く空白は、その文字だけの題を持てない（FR-024）', async () => {
+    const whitespaces = Array.from({ length: 0x10000 }, (_, code) =>
+      String.fromCharCode(code),
+    ).filter((char) => char.trim() === '');
+    expect(whitespaces.length).toBeGreaterThan(20);
+    for (const char of whitespaces) {
+      await expect(
+        env.DB.prepare('UPDATE activity SET title = ? WHERE id = 1').bind(`${char}${char}`).run(),
+        `U+${char.charCodeAt(0).toString(16).toUpperCase().padStart(4, '0')}`,
+      ).rejects.toThrow(/CHECK constraint failed: life_event_with_title/);
+    }
   });
 
   it('外部の activity の行は題を空にできる', async () => {
