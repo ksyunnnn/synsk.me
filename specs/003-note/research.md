@@ -157,12 +157,11 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 未決:
   - U14: 本文から消した画像のデータを残すか、画像の置き場と保管するデータのずれの扱い（spec の「決定が無く」）。決まるまで、本文から消した画像も `media` と R2 に残す。訪問者には公開した版の本文が指す画像だけを出すため、残しても出ない
 - 共有したときの画像（U8 の決定。2026-11-10、オーナー。[issue #219 の U8 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766846712)）:
-  - note のページの `generateMetadata` は、`twitter:card` を `summary` にし、`og:image` と `twitter:image` に 400×400 の正方形を 1 つだけ出す。`og:image:width`・`og:image:height` も出す。サイト全体の `src/app/layout.tsx` の `summary_large_image` と、サイト共通の 1200×630 の画像 `src/app/opengraph-image.tsx` は変えない
-  - 大きさの根拠: X の Summary Card は 1:1 で最小 144×144、Facebook は最小 200×200（https://developers.facebook.com/docs/sharing/webmasters/images/ ）、LinkedIn は幅 401 px 未満を小さい画像で出す（https://www.linkedin.com/help/linkedin/answer/a521928 ）。400 はこの 3 つを満たす
-  - `media`: `/notes/{slug}/card/{key}` が、公開で削除していない note の代表画像だけを、Images binding（`wrangler.jsonc` の `IMAGES`）で 400×400 の `cover` に縮めて返す。JPEG は JPEG、ほかは PNG で出す。本文の画像と `/notes/{slug}/media/{key}` は原本のまま返し、縮めない。見せない画像は 404 と `no-store`。`Cache-Control: no-cache` と、原本の ETag から作った ETag を付け、確かめ直しが合えば縮めずに 304 を返す。縮められなければ（Free の上限を超えたときの 9422 など）、`site` の画像へ `no-store` の 302 で移す
-  - 変換の数: Images の Free プランは月に 5,000 の異なる変換までで、同じ画像と同じ値の変換は月に 1 回と数える（https://developers.cloudflare.com/images/pricing/ ）。縮めるのは代表画像だけのため、数は代表画像に選んだ画像の数を超えない
-  - `site`: `/note-card-site.png` の 400×400 の画像。`.` は識別子に使えない文字のため、note の URL と重ならない
-- 退けた案（U8）: 題を入れた画像を自動で作る（Workers で描く・Cloudflare Images で文字を重ねる・ブラウザで描いて R2 に置く・Browser Rendering・Cloudinary）。オーナーが機能を作らないと決めた。`twitter:card` を `summary` にするだけで画像を縮めない。Facebook と LinkedIn は画像の大きさでカードの形を決めるため、大きく出る
+  - note のページの `generateMetadata` は、`twitter:card` を `summary` にする。サイト全体の `src/app/layout.tsx` の `summary_large_image` と、サイト共通の 1200×630 の画像 `src/app/opengraph-image.tsx` は変えない
+  - `media`: `og:image` と `twitter:image` は、代表画像の原本の経路 `/notes/{slug}/media/{key}` を 1 つだけ指す。縮めない（オーナーが選んだ画像の大きさに従う）
+  - `site`: note 用のサイト共通の 400×400 の画像を使う。画像はオーナーが用意する（#294）。用意するまでは、`og:image` と `twitter:image` を出さない。`openGraph.images` と `twitter.images` に空の並びを渡し、サイト共通の 1200×630 の画像を引き継がない。仮の画像は置かない（索引されるのを避けるため）
+  - 大きさの根拠（note 用のサイト共通の 400×400 の画像）: X の Summary Card は 1:1 で最小 144×144、Facebook は最小 200×200（https://developers.facebook.com/docs/sharing/webmasters/images/ ）、LinkedIn は幅 401 px 未満を小さい画像で出す（https://www.linkedin.com/help/linkedin/answer/a521928 ）。400×400 はこの 3 つを満たす
+- 退けた案（U8）: 題を入れた画像を自動で作る（Workers で描く・Cloudflare Images で文字を重ねる・ブラウザで描いて R2 に置く・Browser Rendering・Cloudinary）。オーナーが機能を作らないと決めた。`media` の画像を共有したときだけ 400×400 に縮める。オーナーが選んだ画像は縮めないと決めた
 - 理由: 004 の spec の FR-030 は画像の仕組みを 003 が持つとするが、issue #219 の進め方の宣言（2026-11-09）が画像の保存と配信を共有担当に割り当てた。003 の plan は共有担当の部品を使う
 
 ## R13 URL カード

@@ -5,7 +5,7 @@ decision-makers: synsk
 consulted: Claude Code
 ---
 
-# 機械の読み手を歓迎し、キャッシュで受ける。note のカードは小さい正方形の画像で、題を入れた画像を作らない
+# 機械の読み手を歓迎し、キャッシュで受ける。note のカードは小さい画像のカードで、題を入れた画像を作らない
 
 ## Context and Problem Statement
 
@@ -16,6 +16,8 @@ consulted: Claude Code
 - 題を入れた画像を自動で作る機能は持たない。synsk.me はメディアのサイトではないため
 - note を SNS で共有したとき、大きな画像のカードではなく、小さい画像の隣に文字が並ぶカードにする。サイト共通の画像とサイト全体の設定は変えない
 - 大きな画像を強制する SNS が現れたら、そのときに自動で作ることを検討する
+- note に追加した画像を使うときは、その画像の大きさに従い、縮めない
+- 代表画像を選ばない note は、note 用のサイト共通の 400×400 の画像を使う。画像はオーナーが用意する。用意するまでは、カードに画像を付けない。仮の画像は、索引されるのを避けるため置かない
 
 カードの形について、2026-11-10 に公式のドキュメントで確かめた事実は次のとおり。
 
@@ -80,7 +82,7 @@ synsk.me は note、timeline、職務経歴書を公開する。公開すれば�
 - 構造化データは、AI の読み手のためには足さない。Google が生成 AI 検索に不要と明記しており、Ahrefs の差の差分析（処置 1,885 件、対照 4,000 件）でも AI Overviews での引用が 4.6% 減っている
 - リンクが貼られたときのカードは、URL を知らない人にも見えるものとして扱い、出す情報をそのページを開いた人が見られる範囲に収める。展示ではなく対話の入り口として作り、情報を詰め込まず、気を引くための誇張をしない
 - note のカード画像は、note に追加した画像とサイト共通のアイキャッチから選び、既定をサイト共通のアイキャッチとする。題を入れた画像は作らない。synsk.me はメディアのサイトではないため
-- note のカードは、小さい正方形の画像の隣に文字が並ぶ形にする。X は `twitter:card` で形を決め、Facebook と LinkedIn は画像の大きさで形を決めるため、`twitter:card` を `summary` にし、画像を 200×200 以上・幅 401 px 未満の正方形にする。検討したのは、`summary` にするだけ、加えて画像を小さい正方形にする、の2つ。`summary` にするだけでは、Facebook と LinkedIn で大きく出る。サイト全体のカードの形とサイト共通の画像は変えない
+- note のカードは、小さい画像の隣に文字が並ぶ形にし、`twitter:card` を `summary` にする。note に追加した画像は縮めずに使う。代表画像を選ばない note は note 用のサイト共通の 400×400 の画像を使い、オーナーが用意するまではカードに画像を付けない。検討したのは、`summary` にするだけ、加えて共有したときの画像を 400×400 に縮める、の2つ。オーナーが選んだ画像は、その大きさに従う。Facebook と LinkedIn は画像の大きさでカードの形を決めるため、大きな画像を選んだ note は、そこでは大きく出る。サイト全体のカードの形とサイト共通の 1200×630 の画像は変えない
 - 限定公開のページのカードには中身を出さない。リンクのプレビューを作るクローラーのうち、Meta の `facebookexternalhit` と Google の `GoogleMessages` は `robots.txt` を適用しないと公式に書かれており、チャットに貼られた URL のカードは居合わせた全員に見えるため
 
 ### 取得の後の利用
@@ -103,6 +105,8 @@ synsk.me は note、timeline、職務経歴書を公開する。公開すれば�
 * Bad, because 限定公開の URL が流出すれば、URL を知った者と、その代理で取得するクローラーには見える
 * Bad, because note ごとの区別は、オーナーが画像を選んだ note でしかつかない
 * Bad, because 大きな画像を強制する SNS では、note のカードが小さく、または画像なしで出うる
+* Bad, because 大きな画像を選んだ note は、Facebook と LinkedIn では大きなカードで出る
+* Bad, because note 用のサイト共通の 400×400 の画像を用意するまで、代表画像を選ばない note のカードに画像が無い
 * Bad, because Free の AI Crawl Control は直近24時間分しか表示せず、取得の量の推移を追えない
 
 ### Confirmation
@@ -114,7 +118,7 @@ synsk.me は note、timeline、職務経歴書を公開する。公開すれば�
 - 同じ note を2回取得すると、2回目が `cf-cache-status: HIT` を返す。取得にはブラウザ相当のヘッダを付ける（ADR-0018）
 - Cloudflare API で、ゾーンの Bot Fight Mode が無効であり、レート制限ルールが1本あることを確かめる
 - 限定公開のページの `og:title`、`og:description`、`og:image` が中身を含まない
-- note のページの `twitter:card` が `summary` で、`og:image` と `twitter:image` が指す画像が 200×200 以上・幅 401 px 未満の正方形である。`tests/integration/notes.test.ts` が本番のビルド出力で確かめる
+- note のページの `twitter:card` が `summary` で、`og:image` と `twitter:image` が、代表画像を選んだ note では縮めない原本を指し、選ばない note では出ない。`tests/integration/notes.test.ts` が本番のビルド出力で確かめる
 - `note.card_image` の CHECK が、題を入れた自動生成の値を持たない（`migrations/0024_remove_generated_card_image_from_note.sql`）
 
 ## Pros and Cons of the Options

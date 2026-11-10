@@ -43,7 +43,7 @@
 | 公開する版は同じ note の、題が空でない版 | トリガ `note_published_revision_valid`、複合の外部キー | FR-011 |
 | 公開の note は公開した版を持つ | `note` の CHECK | FR-011・FR-012 |
 | 初めて公開した日時を変えない | トリガ `note_published_at_fixed` | FR-013 |
-| 代表画像の出どころはその note の画像かサイト共通の画像、既定はサイト共通の画像 | `note.card_image` の CHECK と DEFAULT（migration 0024） | FR-024 |
+| 代表画像の出どころはその note の画像か note 用のサイト共通の 400×400 の画像、既定は note 用のサイト共通の 400×400 の画像 | `note.card_image` の CHECK と DEFAULT（migration 0024） | FR-024 |
 | 代表画像の画像はその note の画像だけ | `note` の複合の外部キー `(id, card_media_id)` | FR-025 |
 | 画像の持ち主は 1 つだけ | `media` の CHECK | spec の Key Entities |
 | 参照先の情報は URL ごとに 1 つ | `link_preview.url` の UNIQUE | FR-029 |

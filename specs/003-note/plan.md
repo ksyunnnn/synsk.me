@@ -48,7 +48,7 @@
 | 原則・制約 | 判定 | 根拠 |
 |---|---|---|
 | I. Protected Values | 通る | 訪問者向けの取り出しは、公開で削除していない note の公開した版だけを読む（R7、[contracts/visitor-note.md](./contracts/visitor-note.md)）。画像は公開で削除していない note の、公開した版の本文と代表画像だけを出し、公開していない画像は `no-store`（R12）。書き込みの Server Action は先頭でオーナーを確かめ、オーナーでない呼び出しが何も書かないことを結合で確かめる（[contracts/dash.md](./contracts/dash.md)） |
-| II. Stop on Missing Input | 条件付きで通る | 公開は題が空なら止める（FR-011）。画像の追加は 1 回の操作で 1 枚、1 枚 10 MB まで、形式は JPEG・PNG・WebP・GIF（R12）。参照先への取得（U9）は、量と回数の上限の値が決まるまで作らない。共有したときの画像を縮める変換は、代表画像に選んだ画像だけを対象にし、Cloudflare Images の Free の上限（月に 5,000 の異なる変換）を超えない（research.md の R12） |
+| II. Stop on Missing Input | 条件付きで通る | 公開は題が空なら止める（FR-011）。画像の追加は 1 回の操作で 1 枚、1 枚 10 MB まで、形式は JPEG・PNG・WebP・GIF（R12）。参照先への取得（U9）は、量と回数の上限の値が決まるまで作らない |
 | III. Verified Scope | 通る | 要件と検査の対応は下の表。U が止める要件は、解けるまで範囲に入れない |
 | IV. Partial Availability | 通る | ページの取得元は D1 の 1 つ。URL カードの参照先の情報が無い URL も note を出す（spec の Edge Cases、R13）。画面は NFR-02 の状態で成立する |
 | V. Accessible Controls | 通る | 入力はネイティブの要素と `<form>`。E2E でキーボードだけの操作とスマートフォンの端末の設定を確かめる（R16） |
@@ -121,7 +121,7 @@
 | FR-020・FR-021・SC-002・User Story 4 の 3・4 | 開いた後に別の画面で保存されていたら書かず、続けて 2 回の保存は通る | W（判定）・E（知らせと入力が残ること） |
 | FR-022・SC-006 | スマートフォンの端末の設定で作成・保存・公開 | E |
 | FR-023・FR-025 の画像・FR-026・User Story 5 の 1・3〜5 | 公開した版の本文が指す画像の id を読む（コードの中の印を拾わない） | 単（本文の読み方）・W（追加と代表画像）・結（配る経路の 200・404 と `no-store`） |
-| FR-024・User Story 5 の 2 | 代表画像を選ばなければ `site`。D1 は `generated` を持てない。note のページは `twitter:card` が `summary` で、`og:image` と `twitter:image` は 400×400 の正方形を 1 つだけ指す。代表画像の原本の経路と本文の画像は縮めない | W（既定・CHECK・migration 0024 の行の変換）・結（タグ・正方形の大きさ・304・見せない画像の 404・トップの `summary_large_image`） |
+| FR-024・User Story 5 の 2 | 代表画像を選ばなければ `site`。D1 は `generated` を持てない。note のページは `twitter:card` が `summary`。`media` の note は `og:image` と `twitter:image` が原本の経路を 1 つだけ指し、`site` の note は画像のタグを出さない（サイト共通の 1200×630 の画像を引き継がない） | W（既定・CHECK・migration 0024 の行の変換）・結（タグ・原本のバイト・トップの `summary_large_image`） |
 | FR-027 | 行に URL だけを書いた行を見分け、文の中の URL を見分けない | 単。カードの表示は U9 が解けてから |
 | FR-028・SC-005・User Story 6 の 2 | 表示のたびに参照先へ取りに行かない | 結（`fetch` を数える。カードの表示は U9） |
 | FR-029・FR-030・User Story 6 の 3 | 参照先の情報は URL ごとに 1 つで、取り直すと同じ行が変わる。画像は URL だけ | W |
@@ -146,7 +146,7 @@
 | U5 | 決定済み（2026-11-09、オーナーから任されて Claude が決めた。001 と共有）。R2 の原本を Worker が確かめて変換せずに返し、公開していない画像は `no-store`。JPEG・PNG・WebP・GIF、1 枚 10 MB まで（research.md の R12） | — | 無し |
 | U6 | 公開の操作でも、保存と同じく編集を始めたときの版と比べるか | オーナー | 無し。決まるまで比べず、その時点の最も新しい版を公開する（FR-011） |
 | U7 | 保存を止めたあと、オーナーが内容を合わせる手順。前の版の書きかけの見せ方は決定済み（2026-11-10、オーナーから任されて Claude が決めた）: 開き直した編集の画面で知らせ、戻す・捨てるを選ばせる。戻す範囲も決定済み（2026-11-10、同じ）: 書きかけで変えた項目だけを戻す（research.md の R10） | オーナー | 無し。決まるまで、知らせて入力を残し、開き直したら前の版の書きかけを知らせる（FR-020） |
-| U8 | 決定済み（2026-11-10、オーナー。[issue #219 の U8 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766846712)）。題を入れて自動で作る画像を持たず、代表画像の出どころから `generated` を外す。note のページは小さい正方形の画像の隣に文字が並ぶカード（`twitter:card` を `summary`）にし、共有したときの画像を 400×400 の正方形にする。サイト共通の画像とサイト全体の設定は変えない（research.md の R12、[ADR-0053](../../docs/decisions/0053-machine-readers-with-small-note-card.md)） | — | 無し |
+| U8 | 決定済み（2026-11-10、オーナー。[issue #219 の U8 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766846712)）。題を入れて自動で作る画像を持たず、代表画像の出どころから `generated` を外す。note のページは小さい画像の隣に文字が並ぶカード（`twitter:card` を `summary`）にする。`media` の画像は縮めない。`site` の画像（note 用のサイト共通の 400×400 の画像）はオーナーが用意するまで出さない。サイト共通の 1200×630 の画像とサイト全体の設定は変えない（research.md の R12、[ADR-0053](../../docs/decisions/0053-machine-readers-with-small-note-card.md)） | オーナー（`site` の画像を用意する。#294） | `site` の note のカードの画像だけ。決まるまで画像を付けない |
 | U9 | 参照先の情報を取る時機と取り直す時機、本文から消えた URL の情報、取れなかった URL の見せ方、カードの画像の出し方 | オーナー | 参照先への取得とカードの表示。`link_preview` の読み書きは止めない |
 | U10 | 削除した note の URL を訪問者が開いたときの応答 | オーナー | 無し。決まるまで無い識別子と同じ 404 |
 | U11 | 転載先の URL を訪問者に見せるか | オーナー | 無し。決まるまで DTO に入れない |

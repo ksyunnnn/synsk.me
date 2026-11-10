@@ -5,10 +5,7 @@ import { changeNoteCardImage } from '@/features/note/application/change-note-car
 import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
 import { getPreviewNoteMedia } from '@/features/note/application/get-preview-note-media';
-import {
-  getVisitorNoteCardMedia,
-  getVisitorNoteMedia,
-} from '@/features/note/application/get-visitor-note-media';
+import { getVisitorNoteMedia } from '@/features/note/application/get-visitor-note-media';
 import { publishNote } from '@/features/note/application/publish-note';
 import { purgeNote } from '@/features/note/application/purge-note';
 import { removeNoteSyndication } from '@/features/note/application/remove-note-syndication';
@@ -504,13 +501,6 @@ describe('getVisitorNoteMedia（FR-026）', () => {
 
   it('訪問者に見せない note の画像は hidden', async () => {
     expect(await getVisitorNoteMedia(fakeNotes(), 'sample-note', BODY_KEY)).toBe('hidden');
-  });
-
-  it('共有したときの画像は、代表画像だけを public にする（plan.md の U8）', async () => {
-    const notes = fakeNotes(note(), { findVisitorBySlug: vi.fn(async () => visitorNote) });
-    expect(await getVisitorNoteCardMedia(notes, 'sample-note', CARD_KEY)).toBe('public');
-    expect(await getVisitorNoteCardMedia(notes, 'sample-note', BODY_KEY)).toBe('hidden');
-    expect(await getVisitorNoteCardMedia(fakeNotes(), 'sample-note', CARD_KEY)).toBe('hidden');
   });
 });
 

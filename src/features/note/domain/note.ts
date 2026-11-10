@@ -255,7 +255,7 @@ export const toNoteFormValues = (note?: Pick<Note, 'slug' | 'latestRevision'>): 
  * note の公開した版だけを読んで詰める。画面・`<title>`・OGP はこの値だけを使う
  */
 
-/** 代表画像。共有したときに出す画像は `share-image.ts` が決める（plan.md の U8） */
+/** 代表画像。`site` の note のカードに出す画像は plan.md の U8 */
 export type VisitorNoteCardImage =
   { kind: 'site' } | { kind: 'media'; storageKey: MediaStorageKey };
 

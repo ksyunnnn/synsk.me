@@ -33,14 +33,7 @@ DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開�
 
 ## OGP
 
-`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `description`。`description` が空なら、本文の最初の段落の文字列を出す（research.md の R11）。`twitter:card` は `summary`。画像は `cardImage` から作る 400×400 の正方形で、`og:image`（`og:image:width`・`og:image:height` つき）と `twitter:image` に 1 つずつ出す（research.md の R12）。
-
-| `cardImage` | 画像の URL |
-|---|---|
-| `media` | `/notes/{slug}/card/{key}`。代表画像を 400×400 に縮めたもの。公開で削除していない note の代表画像のときだけ 200、ほかは 404 と `no-store` |
-| `site` | `/note-card-site.png` |
-
-代表画像の原本は `/notes/{slug}/media/{key}` が縮めずに返す。
+`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `description`。`description` が空なら、本文の最初の段落の文字列を出す（research.md の R11）。`twitter:card` は `summary`。画像は `cardImage` が `media` のとき、`/notes/{slug}/media/{key}`（縮めない原本）を `og:image` と `twitter:image` に 1 つずつ出す。`site` のときは画像のタグを出さない（research.md の R12）。
 
 ## 検査
 
