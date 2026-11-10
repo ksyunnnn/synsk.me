@@ -14,8 +14,7 @@ type Props = { params: Promise<{ slug: string }> };
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
   const lifeEvent = await getVisitorLifeEvent((await params).slug);
   if (!lifeEvent) notFound();
-  const title = lifeEvent.title ?? lifeEvent.happenedOn;
-  return { title: `${title} | synsk.me`, openGraph: { title } };
+  return { title: `${lifeEvent.title} | synsk.me`, openGraph: { title: lifeEvent.title } };
 };
 
 const Page = async ({ params }: Props) => {

@@ -31,9 +31,7 @@ const Page = async ({ searchParams }: Props) => {
         <ul className="flex flex-col gap-3">
           {lifeEvents.map((lifeEvent) => (
             <li key={lifeEvent.id} className="flex flex-col">
-              <TextLink href={`/dash/life-events/${lifeEvent.uid}`}>
-                {lifeEvent.title ?? '（題なし）'}
-              </TextLink>
+              <TextLink href={`/dash/life-events/${lifeEvent.uid}`}>{lifeEvent.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 <time dateTime={lifeEvent.happenedOn}>{lifeEvent.happenedOn}</time>・ /life-events/
                 {lifeEvent.slug}

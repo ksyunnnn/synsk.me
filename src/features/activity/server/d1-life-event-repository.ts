@@ -19,7 +19,8 @@ type LifeEventRow = {
   id: number;
   uid: string;
   slug: string;
-  title: string | null;
+  /** life event の行では空でない（migrations/0021 の CHECK）。FR-024 */
+  title: string;
   description: string | null;
   happened_on: string;
   /** 代表画像の置き場のキー（`media.storage_key`）。無ければ null */

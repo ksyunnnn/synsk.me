@@ -15,7 +15,11 @@ import { InputField, TextareaField } from '@/shared/components/field';
  * life event を作る・書き換えるフォーム（specs/004-external-activity/contracts/dash.md）。
  * Server Action は props で受け取り、`server/` を読み込まない（ADR-0026 の依存の向き 3）。
  * リンク先の入力を持たない（FR-024）。保存していない入力は `DraftRetainingForm` が持つ
- * （REQUIREMENTS.md の FR-14）
+ * （REQUIREMENTS.md の FR-14）。
+ *
+ * 入力の決まり（題と起きた日は必須。FR-024・FR-025）はサーバで確かめ、誤りを文言で返す。
+ * `required` を付けない。実績のフォーム（src/features/project/components/project-form.tsx）と同じで、
+ * ブラウザが送信を止めると、どの項目の何が合わないかを同じ形で伝えられないため
  */
 
 type Props = {
@@ -26,7 +30,7 @@ type Props = {
 };
 
 const ERROR_MESSAGES: Record<LifeEventField, Partial<Record<LifeEventFieldError, string>>> = {
-  title: {},
+  title: { missing: '題を入力してください' },
   description: {},
   happenedOn: {
     missing: '起きた日を入力してください',

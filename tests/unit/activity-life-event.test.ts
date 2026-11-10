@@ -83,6 +83,19 @@ describe('registerLifeEvent', () => {
     expect(lifeEvents.register).not.toHaveBeenCalled();
   });
 
+  it.each(['', '   '])('題の無い登録を拒み、何も書かない（FR-024、題 %j）', async (title) => {
+    const outcome = await registerLifeEvent(lifeEvents, OWNER, values({ title }));
+
+    expect(outcome).toMatchObject({ status: 'invalid', errors: { title: 'missing' } });
+    expect(lifeEvents.register).not.toHaveBeenCalled();
+  });
+
+  it('題の前後の空白を除いて登録する', async () => {
+    await registerLifeEvent(lifeEvents, OWNER, values({ title: '  作り物の出来事  ' }));
+
+    expect(lifeEvents.register.mock.calls[0]?.[0]).toMatchObject({ title: '作り物の出来事' });
+  });
+
   it('形の違う起きた日を拒む', async () => {
     const outcome = await registerLifeEvent(
       lifeEvents,
@@ -140,6 +153,13 @@ describe('editLifeEvent', () => {
     const outcome = await editLifeEvent(lifeEvents, OWNER, 1, values({ happenedOn: '' }));
 
     expect(outcome).toMatchObject({ status: 'invalid', errors: { happenedOn: 'missing' } });
+    expect(lifeEvents.edit).not.toHaveBeenCalled();
+  });
+
+  it('題を消した保存を拒む（FR-024）', async () => {
+    const outcome = await editLifeEvent(lifeEvents, OWNER, 1, values({ title: '' }));
+
+    expect(outcome).toMatchObject({ status: 'invalid', errors: { title: 'missing' } });
     expect(lifeEvents.edit).not.toHaveBeenCalled();
   });
 

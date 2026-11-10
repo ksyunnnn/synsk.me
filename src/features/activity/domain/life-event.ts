@@ -20,7 +20,7 @@ export type LifeEvent = {
   uid: Uid;
   /** 訪問者向けの URL の識別子（FR-035） */
   slug: string;
-  title: string | null;
+  title: string;
   description: string | null;
   happenedOn: CalendarDate;
   /** 代表画像を配る経路の URL。無ければ null（FR-028） */
@@ -31,7 +31,7 @@ export type LifeEventSummary = Pick<LifeEvent, 'id' | 'uid' | 'slug' | 'title' |
 
 /** 保存する内容 */
 export type LifeEventContent = {
-  title: string | null;
+  title: string;
   description: string | null;
   happenedOn: CalendarDate;
 };
@@ -42,7 +42,7 @@ export type LifeEventContent = {
  */
 export type VisitorLifeEvent = {
   slug: string;
-  title: string | null;
+  title: string;
   description: string | null;
   happenedOn: CalendarDate;
   /** 代表画像を配る経路の URL。無ければ null */
@@ -63,23 +63,24 @@ export type LifeEventFormResult = ActionResult<LifeEventField, LifeEventFieldErr
 
 export const LIFE_EVENT_UID_FIELD = 'lifeEventUid';
 
-/** フォームの値を保存する内容に読み替える。起きた日は必須（FR-025） */
+/** フォームの値を保存する内容に読み替える。題（FR-024）と起きた日（FR-025）は必須 */
 export const parseLifeEventContent = (
   values: LifeEventFormValues,
 ):
   | { ok: true; content: LifeEventContent }
   | { ok: false; errors: Partial<Record<LifeEventField, LifeEventFieldError>> } => {
+  const errors: Partial<Record<LifeEventField, LifeEventFieldError>> = {};
+  const title = values.title.trim();
+  if (title === '') errors.title = 'missing';
   const happenedOn = parseCalendarDate(values.happenedOn.trim());
   if (happenedOn === null) {
-    return {
-      ok: false,
-      errors: { happenedOn: values.happenedOn.trim() === '' ? 'missing' : 'invalid' },
-    };
+    errors.happenedOn = values.happenedOn.trim() === '' ? 'missing' : 'invalid';
   }
+  if (happenedOn === null || errors.title) return { ok: false, errors };
   return {
     ok: true,
     content: {
-      title: emptyToNull(values.title)?.trim() ?? null,
+      title,
       description: emptyToNull(normalizeNewlines(values.description)),
       happenedOn,
     },
