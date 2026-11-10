@@ -50,7 +50,7 @@
 | 原則・制約 | 判定 | 根拠 |
 |---|---|---|
 | I. Protected Values | 通る | 書き込みの Server Action は先頭でオーナーを確かめ、オーナーでない呼び出しが `activity`・`fetch_result` を変えないことを結合で確かめる（[contracts/dash.md](./contracts/dash.md)）。取得元の認証情報は secret に置き、保管するデータと応答に出さない（R15） |
-| II. Stop on Missing Input | 条件付きで通る | 外への要求の上限の値は research.md の R8 にある。値はオーナーの承認待ち（U13）で、承認まで取得の入口を作らない。connpass はキーが欠ければ要求を出さない。日付の無い外部の activity は保存しない（FR-011）。URL を指名する取得元は、その取得元のホストの URL にだけ要求を出す（R10）。画像は 1 枚 10 MB まで、1 つの life event に 1 枚まで（R12） |
+| II. Stop on Missing Input | 条件付きで通る | 外への要求の上限の値は research.md の R8 にあり、本番の値は src/features/activity/domain/limits.ts に置く。待ち時間と応答の大きさは 2026-11-10 にオーナーが承認した。消えた URL を確かめる本数と消す件数は issue #280 で決める。connpass はキーが欠ければ要求を出さない。日付の無い外部の activity は保存しない（FR-011）。URL を指名する取得元は、その取得元のホストの URL にだけ要求を出す（R10）。画像は 1 枚 10 MB まで、1 つの life event に 1 枚まで（R12） |
 | III. Verified Scope | 通る | 要件と検査の対応は下の表。未決が止める要件は、解けるまで範囲に入れない |
 | IV. Partial Availability | 通る | 取得元ごとに `Promise.allSettled` で並べ、取得元ごとに `batch()` で書く（R4）。失敗した取得元の activity は前回の値で残る（FR-014）。life event のページの取得元は D1 の 1 つ |
 | V. Accessible Controls | 通る | 入力はネイティブの要素と `<form>`。削除の確認は別のページ（001 と同じ）。E2E でキーボードだけの操作を確かめる |
@@ -123,7 +123,7 @@
 |---|---|---|---|---|
 | U11 | 登録していないサイトの題の取り方と、取得元が題を返さない URL を指名したときの扱い（spec の未決） | オーナー | (a) 手で入力する (b) OG メタから取る。推奨 (a)（R10） | 登録していないサイトの登録（T053）と、題を取れないときの扱い（T050 の分岐） |
 | U12 | オーナーが登録する日付の持ち方 | オーナー | (a) その日の UTC の 00:00 を `published_at` に入れる (b) 暦の日付の列を足す。推奨 (a)（R10） | URL を指名する・手で入力する登録の保存（T050〜T053）と、共有担当への migration の依頼 |
-| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の数（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | research.md の R8 の表 | 本番の上限の値（T018）と取得の入口（T040）。ユースケースは上限を引数で受け取るので止めない |
+| U13 | 外への要求の上限の値、Cron の実行の間隔、1 回の実行の要求の総数と取得元への配り方、1 回の実行で扱う取得元の数（constitution II、Workers Free の CPU 10 ms と subrequest 50 本） | オーナー | 2026-11-10 にオーナーが、1 日 7 回の起動で取得元を 1 つずつ、1 つの取得元への要求は 10 本までと決めた（[起動の回数](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6764855303)、[要求の本数](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6765032920)）。待ち時間 10 秒と応答の大きさ 1 MB も同じ日にオーナーが承認した。消えた URL を確かめる本数と消す件数は issue #280 | なし |
 
 依存（未決ではない）: `activity.uid` と取得元の行を足す共有担当の migration（data-model.md の「要る migration の変更」）。D1 を使う検査（workerd・結合・E2E）のうち、uid と取得元の行を使うものは、その migration が epic に入ってから回す。tasks.md は「止める依存: 共有担当の migration」と書く。
 

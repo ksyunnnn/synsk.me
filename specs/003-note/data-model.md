@@ -21,7 +21,7 @@
 | `note` | note | 書く | FR-001〜FR-004、FR-010〜FR-016、FR-024・FR-025、FR-034 |
 | `note_revision` | 版 | 足すだけ（書き換えない） | FR-005〜FR-009、FR-012、FR-020・FR-021 |
 | `media`（`note_id` を持つ行） | 画像 | 書く | FR-023〜FR-026 |
-| `link_preview` | 参照先の情報 | 書く（取得は U9 が解けてから） | FR-027〜FR-030 |
+| `link_preview` | 参照先の情報 | 書く（見た目の確認を開いたときに、行の無い URL を取って書く。research.md の R13） | FR-027〜FR-030 |
 | `syndication` | 転載先 | 書く | FR-031・FR-032 |
 
 `media` の `project_id`・`career_id`・`activity_id` の行は 001・004 が持つ。003 は読まず、書かない。

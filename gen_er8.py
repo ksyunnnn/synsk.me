@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 2030
-H = 1780
+H = 1800
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -75,8 +75,9 @@ def rules_note(x, y):
         "activity_feed: 職歴・実績・note は published の行だけを出す",
         "activity_feed: 秘匿化した行は *_masked の列だけに値を持ち、title・organization_name・description・url・画像を持たない",
         "activity_feed: name_masked の無い組織を指す秘匿化した行は出さない。並べるキーは (sort_at, 種類, item_number)",
-        "activity_feed: note は公開中で削除していないものを、公開した版の題と説明文で出す。sort_at は note.created_at",
-        "activity_feed: 外部の activity と life event は activity の行を出す。sort_at は activity.sort_at。url は外部の activity だけ",
+        "activity_feed: note は公開中で削除していないものを、公開した版の題と説明文で出す",
+        "activity_feed: 外部の activity と life event は activity の行を出す。url は外部の activity だけ",
+        "activity_feed: sort_at は note.created_at・activity.published_at を Asia/Tokyo の時刻にした値か、年月日。元の日時は created_at・published_at",
         "activity_feed: 公開中で削除していない note の syndication.url と URL が一致する外部の activity は出さない（転載の重なり）",
         "CHECK の値: *.status は draft・published。resume.audience は limited・public（既定は limited）。project.kind は application・talk・event・other",
         "CHECK の値: activity_source.kind は article・embed・life_event・other。note.card_image は generated・media・site",
@@ -170,6 +171,7 @@ feed = [
     ("is_masked", "integer"), ("title", "text · 空可"), ("title_masked", "text · 空可"), ("organization_name", "text · 空可"), ("organization_name_masked", "text · 空可"), ("role", "text · 空可"),
     ("project_kind", "text · 空可"), ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"),
     ("description", "text · 空可"), ("source", "text · 空可"), ("source_kind", "text · 空可"), ("url", "text · 空可"),
+    ("created_at", "text · 空可"), ("published_at", "text · 空可"),
 ]
 resume = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("slug", "text · unique"), ("title", "text"), ("audience", "text · CHECK · 変更不可"), ("status", "text · CHECK"),

@@ -25,6 +25,7 @@ import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
+import { fetchLinkPreviews as fetchSharedLinkPreviews } from '@/shared/server/link-preview-fetch';
 import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
 
 /**
@@ -96,12 +97,28 @@ export const getNoteForEdit = async (uid: string): Promise<Note | null> => {
   return id === null ? null : getNoteForEditUseCase(notes, id);
 };
 
-/** 見た目の確認で描く形（REQUIREMENTS.md の FR-13）。オーナーでなければ 403。無い uid なら null */
+/**
+ * 参照先の題と画像の URL を取り、取れた URL だけを返す（research.md の R13）。取れなかった URL は
+ * 書かないため、次に見た目の確認を開いたときに取り直す。上限は共有の部品の本番の値
+ */
+const fetchLinkPreviews = async (urls: string[]) =>
+  (await fetchSharedLinkPreviews(urls)).flatMap((result) =>
+    result.status === 'fetched'
+      ? [{ url: result.url, title: result.title, imageUrl: result.imageUrl }]
+      : [],
+  );
+
+/**
+ * 見た目の確認で描く形（REQUIREMENTS.md の FR-13）。オーナーでなければ 403。無い uid なら null。
+ * 参照先の情報を持たない URL は、描く前に取る（U9 の決定）
+ */
 export const getNotePreview = async (uid: string): Promise<NotePreview | null> => {
   await requireAuthor();
   const { notes } = await createNoteDeps();
   const id = await findIdByUid(notes, uid);
-  return id === null ? null : getNotePreviewUseCase(notes, id);
+  return id === null
+    ? null
+    : getNotePreviewUseCase({ notes, fetchLinkPreviews }, id, new Date().toISOString());
 };
 
 /**
