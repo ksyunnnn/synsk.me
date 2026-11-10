@@ -1,12 +1,12 @@
 -- note を作り直し、代表画像の出どころから、題を入れて自動で作る画像（generated）を外す。既定を
--- サイト共通の画像（site）にする。書き方の決まりは 0003 の冒頭にある。
+-- note 用のサイト共通の画像（site）にする。書き方の決まりは 0003 の冒頭にある。
 --
--- 003 の spec は、代表画像の出どころを note の画像とサイト共通の画像の 2 つとする（FR-024。
--- 2026-11-10 にオーナーが決めた。https://github.com/ksyunnnn/synsk.me/issues/219 の U8 の報告）。
+-- 003 の spec は、代表画像の出どころを note の画像と note 用のサイト共通の 400×400 の画像の
+-- 2 つとする（FR-024。2026-11-10 にオーナーが決めた。https://github.com/ksyunnnn/synsk.me/issues/219 の U8 の報告）。
 --
 -- 既にある generated の行は site に変える。generated は画像を作らず、OGP に画像を出していなかった。
--- site は、サイト共通の画像を出す。どちらもオーナーが上げた画像を指さないため、card_media_id は
--- NULL のまま変わらない
+-- site は note 用のサイト共通の画像を指し、オーナーが用意するまで OGP に画像を出さない。どちらも
+-- オーナーが上げた画像を指さないため、card_media_id は NULL のまま変わらない
 --
 -- SQLite は ALTER TABLE で CHECK と DEFAULT を変えられないため、表を作り直す。作り直し方は
 -- 0012・0021 と同じで、行・uid・sqlite_sequence を保ち、指している表（note_revision・media・
@@ -50,8 +50,8 @@ CREATE TABLE note (
     deleted_at IS NULL
     OR strftime('%Y-%m-%dT%H:%M:%fZ', deleted_at) IS deleted_at
   ),
-  -- 代表画像の出どころ。media は note に上げた画像、site はサイト共通の画像（docs/CRAWLING.md）。
-  -- 作ったときは site
+  -- 代表画像の出どころ。media は note に上げた画像、site は note 用のサイト共通の画像
+  -- （docs/CRAWLING.md）。作ったときは site
   card_image TEXT NOT NULL DEFAULT 'site' CHECK (card_image IN ('media', 'site')),
   -- 上げた代表画像。この note が持つ media だけを指す（下の複合の外部キー）
   card_media_id INTEGER,

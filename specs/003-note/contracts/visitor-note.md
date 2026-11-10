@@ -26,7 +26,7 @@ Repository の実装は `note.status = 'published' AND note.deleted_at IS NULL` 
 | `summary` | `<meta name="description">` と OGP の説明。`description` があればそれ。空なら、`note.is_first_paragraph_as_description` が 1 の note は公開した版の本文の最初の段落の文字列、0 の note は空（FR-034、research.md の R11・R19） |
 | `body` | 公開した版の `note_revision.body`。共有担当の Markdown の部品で描き、生の HTML を通さない（research.md の R11） |
 | `publishedAt` | `note.published_at`（初めて公開した日時、FR-013） |
-| `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`site` はサイト共通の画像 |
+| `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`site` は note 用のサイト共通の 400×400 の画像で、オーナーが用意するまで出さない |
 | `media` | 公開した版の本文が指す画像のうち、その note の `media` の行にある `storage_key` の並び。画像の `src` はこの並びにある値だけから作る（research.md の R11・R12） |
 | `linkPreviews` | 公開した版の本文の URL が指す `link_preview` の `url`・`title`・`image_url`。カードにするのは行に URL だけを書いた行（research.md の R11）。題を持つ URL は題・ホスト名・画像を添えたカードで、行が無いか題が NULL の URL は URL の文字列のリンクで出す（R13） |
 

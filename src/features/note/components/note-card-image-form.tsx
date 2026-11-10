@@ -11,7 +11,7 @@ import {
 
 /**
  * 代表画像の出どころを選ぶフォーム（FR-024・FR-025、specs/003-note/contracts/dash.md）。
- * サイト共通の画像・その note の画像から 1 つを選ぶ。選べる画像はその note の画像だけ
+ * note 用のサイト共通の画像・その note の画像から 1 つを選ぶ。選べる画像はその note の画像だけ
  */
 
 type Action = (
@@ -46,7 +46,7 @@ export const NoteCardImageForm = ({ action, noteUid, current, mediaStorageKeys }
   const currentValue = toCardImageValue(current);
 
   const options: { value: string; label: string }[] = [
-    { value: 'site', label: 'サイト共通の画像' },
+    { value: 'site', label: 'note 用のサイト共通の画像' },
     ...mediaStorageKeys.map((storageKey) => ({
       value: toCardImageValue({ kind: 'media', storageKey }),
       label: `画像 ${storageKey}`,

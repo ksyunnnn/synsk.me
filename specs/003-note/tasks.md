@@ -173,11 +173,11 @@ description: "note の実装タスク"
 ### Tests for User Story 5
 
 - [X] T034 [P] [US5] D1 の実装（代表画像の既定が `site`、`site` に戻せる、別の note の画像を代表画像に選べない）を tests/workers/note-repository.test.ts に足す。画像の行は tests/support/note-rows.ts で入れる（FR-024・FR-025、User Story 5 の 3）
-- [X] T035 [P] [US5] 代表画像を `site` にした note の OGP にサイト共通の画像が出ること、JWT のない `changeNoteCardImage` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-024・FR-033）
+- [X] T035 [P] [US5] 代表画像を `site` にした note の OGP に画像のタグが出ないこと、JWT のない `changeNoteCardImage` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-024・FR-033）
 
 ### Implementation for User Story 5
 
-- [X] T036 [US5] 代表画像の出どころの変更（`site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` に `site` のときのサイト共通の画像を足す（research.md の R12）
+- [X] T036 [US5] 代表画像の出どころの変更（`site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` が `site` のときに画像のタグを出さないようにする（research.md の R12）
 - [X] T037 [US5] 代表画像の出どころから `generated` を外し（migration 0024）、note のページで `twitter:card` を `summary` にする。`media` の note は `og:image` と `twitter:image` に原本の経路を出し、`site` の note は画像のタグを出さない。タグと、原本の経路が縮めないことを tests/integration/notes.test.ts で、トップの `summary_large_image` を tests/integration/routes.test.ts で、行の変換を tests/workers/migration-0024-rows.test.ts で確かめる（U8 の決定、research.md の R12）
 - [X] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚。JPEG・PNG・WebP・GIF・10 MB までの検査は media-storage.ts が持ち、その検査で確かめる）と、代表画像に note の画像を選ぶ入力を作る。media-storage.ts が拒んだ画像を項目の誤りで返すことを tests/unit/note-usecases.test.ts で、別の note の画像を代表画像に選べないことを tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12、constitution の Test Layering）
 - [X] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.tsを作り、src/proxy.ts の matcher に `/notes/:slug/media/:key` を足す（proxy は D1 を読まない。research.md の R9）。公開で削除していない note の、公開した版の本文が指す画像（T006 が DTO に詰めた `storageKey` の並び）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）

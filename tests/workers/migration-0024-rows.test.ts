@@ -73,6 +73,12 @@ beforeAll(async () => {
 
 describe('migration 0024 を行のある D1 に当てる', () => {
   it('generated の行は site に変わり、ほかの列と行は uid を含めて変わらない', async () => {
+    // 0024 を当てる前に generated の行があることを確かめる。無ければ変換を試していない
+    expect((before.note ?? []).map((row) => row.card_image)).toEqual([
+      'generated',
+      'site',
+      'media',
+    ]);
     const expected = (before.note ?? []).map((row) =>
       row.card_image === 'generated' ? { ...row, card_image: 'site' } : row,
     );

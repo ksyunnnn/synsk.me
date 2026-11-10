@@ -92,7 +92,7 @@ const errorIncludes = (error: unknown, text: string) =>
 
 const toCardImage = (cardImage: NoteCardImage, storageKey: string | null): VisitorNoteCardImage => {
   if (cardImage === 'media' && storageKey !== null) return { kind: 'media', storageKey };
-  // 外部キーと CHECK が media の行を持たない `media` を許さない。読めなければサイト共通の画像に倒す
+  // 外部キーと CHECK が media の行を持たない `media` を許さない。読めなければ note 用のサイト共通の画像に倒す
   return { kind: 'site' };
 };
 

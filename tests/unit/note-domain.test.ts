@@ -31,7 +31,7 @@ describe('値の並び', () => {
     expect(NOTE_STATUSES).toEqual(['draft', 'published']);
   });
 
-  it('代表画像の出どころは、その note の画像とサイト共通の画像の 2 つ（FR-024）', () => {
+  it('代表画像の出どころは、その note の画像と note 用のサイト共通の画像の 2 つ（FR-024）', () => {
     expect(NOTE_CARD_IMAGES).toEqual(['media', 'site']);
   });
 });

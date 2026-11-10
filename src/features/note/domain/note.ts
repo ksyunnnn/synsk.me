@@ -25,7 +25,7 @@ export const NOTE_STATUS_LABELS: Record<NoteStatus, string> = {
 
 /**
  * 代表画像の出どころ（FR-024）。`note.card_image` の CHECK と同じ値。`media` はその note の画像、
- * `site` はサイト共通の画像
+ * `site` は note 用のサイト共通の画像
  */
 export const NOTE_CARD_IMAGES = ['media', 'site'] as const;
 export type NoteCardImage = (typeof NOTE_CARD_IMAGES)[number];
