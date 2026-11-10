@@ -11,6 +11,7 @@
 - Constitution Check
 - 再利用する既存の部品
 - 要件と検査の対応
+- 参照先への取得の上限
 - 未決
 - Project Structure
 - Complexity Tracking
@@ -48,12 +49,12 @@
 | 原則・制約 | 判定 | 根拠 |
 |---|---|---|
 | I. Protected Values | 通る | 訪問者向けの取り出しは、公開で削除していない note の公開した版だけを読む（R7、[contracts/visitor-note.md](./contracts/visitor-note.md)）。画像は公開で削除していない note の、公開した版の本文と代表画像だけを出し、公開していない画像は `no-store`（R12）。書き込みの Server Action は先頭でオーナーを確かめ、オーナーでない呼び出しが何も書かないことを結合で確かめる（[contracts/dash.md](./contracts/dash.md)） |
-| II. Stop on Missing Input | 条件付きで通る | 公開は題が空なら止める（FR-011）。画像の追加は 1 回の操作で 1 枚、1 枚 10 MB まで、形式は JPEG・PNG・WebP・GIF（R12）。参照先への取得（U9）と自動で作る代表画像（U8）は、量と回数の上限の値が決まるまで作らない |
+| II. Stop on Missing Input | 条件付きで通る | 公開は題が空なら止める（FR-011）。画像の追加は 1 回の操作で 1 枚、1 枚 10 MB まで、形式は JPEG・PNG・WebP・GIF（R12）。参照先への取得は、1 回に取る URL の数・リダイレクトの段・時間・大きさに上限をかけ、内部のアドレスへ要求を出さない（下の「参照先への取得の上限」）。自動で作る代表画像（U8）は、量と回数の上限の値が決まるまで作らない |
 | III. Verified Scope | 通る | 要件と検査の対応は下の表。U が止める要件は、解けるまで範囲に入れない |
 | IV. Partial Availability | 通る | ページの取得元は D1 の 1 つ。URL カードの参照先の情報が無い URL も note を出す（spec の Edge Cases、R13）。画面は NFR-02 の状態で成立する |
 | V. Accessible Controls | 通る | 入力はネイティブの要素と `<form>`。E2E でキーボードだけの操作とスマートフォンの端末の設定を確かめる（R16） |
 | VI. Measure Before Optimizing | 通る | キャッシュ・索引の追加・版をまとめる仕組みを含めない。版の大きさを測る SQL を quickstart.md に置く（R17） |
-| VII. Boundary Translation | 通る | D1 の行は Repository の実装の中で domain の型に詰め替える。参照先から取った HTML は取得のモジュールの中で題と画像の URL に詰め替える（R13、U9 が解けてから） |
+| VII. Boundary Translation | 通る | D1 の行は Repository の実装の中で domain の型に詰め替える。参照先から取った HTML は取得のモジュール（`src/shared/server/link-preview-fetch.ts`）の中で題と画像の URL に詰め替える（R13） |
 | VIII. Portable Core | 通る | D1 は `src/features/note/server/d1-note-repository.ts`、R2 は共有担当の `src/shared/server/media-storage.ts`、env は `src/shared/server/env.ts` だけで使う |
 | IX. Simplicity | 通る | `shared/` に新しく置くものは無い（共有担当が置くものは、001・003・004 を 2 つ以上の使い手として共有担当が挙げる）。Repository のインタフェースは、単体の検査で渡す作り物の実装が 2 つ目の使い手（ADR-0026 のルール 2） |
 | Test Layering | 通る | 同じことを 2 つの段階で確かめない（下の表の「段階」） |
@@ -81,6 +82,7 @@
 | slug の形の検査 | `src/shared/domain/slug.ts`（`isSlug`。共有担当、PR #222） | 識別子の検査（R8）。`newSlug` は使わない |
 | 画像の保存と配信の共通部分 | `src/shared/server/media-storage.ts`（共有担当、PR #225） | note の画像の追加と配信。配る応答は `respondWithMedia`（R12） |
 | Markdown を読む部品と描く部品 | `src/shared/` の Markdown の部品（共有担当。ファイル名は共有担当の PR で確かめる） | 本文の表示、本文が指す画像と URL の読み出し、説明文が空のときの冒頭（R11） |
+| 参照先の題と画像の取得 | `src/shared/server/link-preview-fetch.ts`（`fetchLinkPreviews`。003 が作り、004 の issue #281 も使う） | 見た目の確認の画面で、参照先の情報を持たない URL を取る（R13） |
 
 形の手本（同じ形で書く。import はしない）:
 
@@ -122,8 +124,9 @@
 | FR-022・SC-006 | スマートフォンの端末の設定で作成・保存・公開 | E |
 | FR-023・FR-025 の画像・FR-026・User Story 5 の 1・3〜5 | 公開した版の本文が指す画像の id を読む（コードの中の印を拾わない） | 単（本文の読み方）・W（追加と代表画像）・結（配る経路の 200・404 と `no-store`） |
 | FR-024・User Story 5 の 2 | 代表画像を選ばなければ `generated`。`site` を選ぶとサイト共通の画像が OGP に出る | W（既定）・結（`site`）。`generated` の画像は U8 |
-| FR-027 | 行に URL だけを書いた行を見分け、文の中の URL を見分けない | 単。カードの表示は U9 が解けてから |
-| FR-028・SC-005・User Story 6 の 2 | 表示のたびに参照先へ取りに行かない | 結（`fetch` を数える。カードの表示は U9） |
+| FR-027 | 行に URL だけを書いた行を見分け、文の中の URL を見分けない。題を持つ URL はカードで、持たない URL はリンクで出す | 単（見分けとカード）・結（訪問者と見た目の確認の応答） |
+| FR-028・SC-005・User Story 6 の 2 | 表示のたびに参照先へ取りに行かない。訪問者の表示の前後で `link_preview` の行の数が変わらない | 結 |
+| U9 の決定 | 見た目の確認が、参照先の情報を持たない URL だけを取って書き、取れない URL は書かずにリンクで出す。取得の部品が上限と内部のアドレスの拒否を守る | 単（ユースケースと取得の部品）・W（workerd の `Response`・文字コード・中止の合図）・結（見た目の確認の応答） |
 | FR-029・FR-030・User Story 6 の 3 | 参照先の情報は URL ごとに 1 つで、取り直すと同じ行が変わる。画像は URL だけ | W |
 | FR-031・FR-032・User Story 7 | 転載先を 2 つ記録でき、同じ URL を別の note に記録できない | W・E |
 | FR-033 | オーナーでない呼び出しが何も書かない | 結 |
@@ -132,6 +135,20 @@
 | REQUIREMENTS.md の FR-13 | 見た目の確認の画面が最も新しい版を訪問者向けの部品で出す | 結 |
 | REQUIREMENTS.md の FR-14 | 書きかけの保持（FR-018 と同じ検査） | E |
 | ADR-0051 | 管理画面のリンク・303 の行き先・隠しフィールドに数字だけの識別子が無い | 結 |
+
+## 参照先への取得の上限
+
+constitution II と `docs/SOFTWARE_DESIGN.md` の原則 2 が求める上限の値（research.md の R13）。値は `src/shared/server/link-preview-fetch.ts` の `LINK_PREVIEW_LIMITS` が持ち、`tests/unit/link-preview-fetch.test.ts` が確かめる。2026-11-10 に PM が承認した。
+
+| 項目 | 値 | 根拠 |
+|---|---|---|
+| 1 回の見た目の確認で取る URL の数 | 5。超えた分は次に開いたときに取る | Workers Free の 1 回の呼び出しの subrequest は 50 で、リダイレクトの各段も数える。同時に応答を待てる接続は 6（[Workers の Limits](https://developers.cloudflare.com/workers/platform/limits/)）。5 件を並べて取る |
+| 1 つの URL で辿るリダイレクト | 2 段。外への要求は 1 回の見た目の確認で最大 15 | 同上 |
+| 1 つの URL の待ち時間 | 3 秒（リダイレクトと本文の読み込みを含む） | オーナーが画面の表示を待つため秒の単位に抑える。並べて取るため、画面の待ちは最大でおよそ 3 秒 |
+| 1 本の応答から読む大きさ | 512 KiB。`</head>` まで読んだら残りを読まない | Workers Free の CPU 時間は 1 回の要求で 10 ms（同上）。読む値は `<head>` の中にある（[The Open Graph protocol](https://ogp.me/)） |
+| 読む応答 | 2xx の `text/html` と `application/xhtml+xml`。ほかの形式は題も画像も無い取得にする | 同上 |
+| 読む値 | 題は `og:title`・`twitter:title`・`<title>` の順、画像は `og:image`・`twitter:image` の順。題は 200 文字で切る。画像の URL はページの URL で絶対にし、http か https で 2,048 文字までだけを持つ | The Open Graph protocol。題の長さは note の題（FR-005）と揃える |
+| 要求を出さない URL | http・https 以外、既定でないポート、資格情報つき、ホストが IP の文字列、点の無い名前、`localhost`・`.localhost`・`.local`・`.internal`・`.home.arpa`・`.invalid`・`.test`。リダイレクトは自動で辿らず、行き先ごとに同じ検査を通す | [OWASP SSRF Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Server_Side_Request_Forgery_Prevention_Cheat_Sheet.html) の Case 2。名前を引いた後のアドレスは Workers で確かめられないため、`wrangler.jsonc` の `global_fetch_strictly_public`（要求を公開のインターネットから出したものとして送る、[Compatibility flags](https://developers.cloudflare.com/workers/configuration/compatibility-flags/)）に任せる |
 
 ## 未決
 
@@ -147,7 +164,7 @@
 | U6 | 公開の操作でも、保存と同じく編集を始めたときの版と比べるか | オーナー | 無し。決まるまで比べず、その時点の最も新しい版を公開する（FR-011） |
 | U7 | 保存を止めたあと、オーナーが内容を合わせる手順。前の版の書きかけの見せ方は決定済み（2026-11-10、オーナーから任されて Claude が決めた）: 開き直した編集の画面で知らせ、戻す・捨てるを選ばせる。戻す範囲も決定済み（2026-11-10、同じ）: 書きかけで変えた項目だけを戻す（research.md の R10） | オーナー | 無し。決まるまで、知らせて入力を残し、開き直したら前の版の書きかけを知らせる（FR-020） |
 | U8 | 題を入れて自動で作る代表画像の作り方と使い回し方（`docs/CRAWLING.md` の「取得の負荷」） | オーナー | 自動で作る画像の生成と OGP への出力 |
-| U9 | 参照先の情報を取る時機と取り直す時機、本文から消えた URL の情報、取れなかった URL の見せ方、カードの画像の出し方 | オーナー | 参照先への取得とカードの表示。`link_preview` の読み書きは止めない |
+| U9 | 決定済み（2026-11-10、オーナー）。参照先の情報は、見た目の確認の画面（`/dash/notes/{uid}/preview`、保存した最も新しい版）を開いたときに、持たない URL だけを取る。定期実行で取り直さず、書きかけを即時に描くプレビューは作らない。取れなかった URL は URL の文字列のリンクで出す（2026-11-10、オーナー）。カードの画像の出し方は 2026-11-10 に PM が承認した。本文から消えた URL の行は消さずに残す（2026-11-10、オーナー。行は複数の note が共有し（FR-029）、完全に消す処理も残す（FR-017・R6）。量は測ってから決める（原則 6・9））。spec.md の Clarifications と research.md の R13 | — | 無し |
 | U10 | 削除した note の URL を訪問者が開いたときの応答 | オーナー | 無し。決まるまで無い識別子と同じ 404 |
 | U11 | 転載先の URL を訪問者に見せるか | オーナー | 無し。決まるまで DTO に入れない |
 | U12 | 公開の操作のあと、訪問者に見えるまでの時機とキャッシュの扱い | オーナー | 無し。キャッシュを使わず、次の要求から見える |
@@ -201,7 +218,7 @@ src/
         │                 add-note-syndication.ts・remove-note-syndication.ts・add-note-media.ts・get-visitor-note-media.ts・
         │                 get-visitor-note.ts・get-note-for-edit.ts・list-notes.ts・list-note-revisions.ts
         ├── components/   note-form.tsx・note-status-form.tsx・note-card-image-form.tsx・
-        │                 note-syndication-form.tsx・note-revision-list.tsx・visitor-note.tsx
+        │                 note-syndication-form.tsx・note-revision-list.tsx・visitor-note.tsx・link-card.tsx
         └── server/       d1-note-repository.ts・queries.ts・actions.ts
 
 tests/

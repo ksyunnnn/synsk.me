@@ -1,4 +1,5 @@
 import type { NotePreview, VisitorNote } from '@/features/note/domain/note';
+import { LinkCard } from '@/features/note/components/link-card';
 import { MarkdownBody } from '@/shared/components/markdown-body';
 
 /**
@@ -6,8 +7,8 @@ import { MarkdownBody } from '@/shared/components/markdown-body';
  * 描画する。本文は共有担当の Markdown の部品で描き、生の HTML を要素にしない（research.md の R11）。
  *
  * 画像の `src` は、DTO の `media`（その note の画像で、公開した版の本文が指すもの）にある置き場の
- * キーだけから作る。ほかのキーの画像は出さない。URL だけの段落は、URL カードの出し方が決まるまで
- * 文字列の段落で出す（plan.md の U9）
+ * キーだけから作る。ほかのキーの画像は出さない。URL だけの段落は、DTO の `linkPreviews` が題を
+ * 持てば URL カードで、持たなければ URL の文字列のリンクで出す（plan.md の U9、`link-card.tsx`）
  */
 
 /** 初めて公開した日を、日本の暦の日付で出す */
@@ -33,6 +34,7 @@ export const VisitorNoteView = ({
   mediaBase?: string;
 }) => {
   const visibleMedia = new Set(note.media);
+  const previews = new Map(note.linkPreviews.map((preview) => [preview.url, preview]));
   return (
     <article className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
@@ -52,6 +54,7 @@ export const VisitorNoteView = ({
           mediaSrc={(storageKey) =>
             visibleMedia.has(storageKey) ? `${mediaBase}/${storageKey}` : null
           }
+          renderUrlLine={(url) => <LinkCard url={url} preview={previews.get(url)} />}
         />
       </div>
     </article>
