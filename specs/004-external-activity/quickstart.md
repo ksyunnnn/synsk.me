@@ -32,6 +32,9 @@ Preview は全体が Access の後ろにあり、D1 は本番と分けた `synsk
 
 Preview では Cron Triggers の `scheduled` を起こせない。手元の D1 に migration を当て（README.md の「開発」）、`npm run preview` を起動し、`scheduled` を HTTP で起こす（[Cron Triggers](https://developers.cloudflare.com/workers/configuration/cron-triggers/) の「Test Cron Triggers locally」）。実在の取得元へ要求を出す。
 
-1. `curl "http://localhost:8787/cdn-cgi/local/scheduled"` で取得を走らせる。`fetch_result` に取得元ごとの行があり、Zenn の記事が `activity` に入る
-2. `fetch_result` の `ETag`・`Last-Modified` の列を NULL にしてから、もう一度走らせる。行が増えない（FR-008。値を残すと 304 になり、同じ項目の判定を通らない）
-3. 値を残したまま、もう一度走らせる。304 を返した取得元の `activity` が変わらず、`fetch_result` が成功になる
+1 回の起動は、最後に取り直した日時の古い取得元を 1 つだけ取り直す（research.md の R9）。`fetch_result` が空なら Zenn を選ぶ。Zenn をもう一度選ばせるには、`UPDATE fetch_result SET fetched_at = '2000-01-01T00:00:00.000Z' WHERE source = 'zenn'` で Zenn の日時を最も古くする。
+
+1. `curl "http://localhost:8787/cdn-cgi/local/scheduled"` で取得を走らせる。`fetch_result` に Zenn の行だけがあり、Zenn の記事が `activity` に入る
+2. `fetch_result` の `ETag`・`Last-Modified` の列を NULL にし、Zenn の日時を最も古くしてから、もう一度走らせる。行が増えない（FR-008。値を残すと 304 になり、同じ項目の判定を通らない）
+3. 値を残したまま、Zenn の日時を最も古くして、もう一度走らせる。304 を返した Zenn の `activity` が変わらず、`fetch_result` が成功になる
+4. 予定の時刻を UTC の 0 時にして走らせる（`time` に UTC の 0 時のミリ秒を渡す）。消し損ねた画像の突き合わせも走り、R2 の `sweep-orphaned-media/cursor` が書かれるか消える。ほかの時刻では突き合わせない

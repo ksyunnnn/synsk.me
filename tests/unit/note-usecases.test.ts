@@ -4,6 +4,7 @@ import { addNoteSyndication } from '@/features/note/application/add-note-syndica
 import { changeNoteCardImage } from '@/features/note/application/change-note-card-image';
 import { createNote } from '@/features/note/application/create-note';
 import { deleteNote } from '@/features/note/application/delete-note';
+import { getNotePreview } from '@/features/note/application/get-note-preview';
 import { getPreviewNoteMedia } from '@/features/note/application/get-preview-note-media';
 import { getVisitorNoteMedia } from '@/features/note/application/get-visitor-note-media';
 import { publishNote } from '@/features/note/application/publish-note';
@@ -586,5 +587,80 @@ describe('getPreviewNoteMedia（REQUIREMENTS.md の FR-13）', () => {
 
   it('無い note は hidden', async () => {
     expect(await getPreviewNoteMedia(fakeNotes(), OWNER, 1, BODY_KEY)).toBe('hidden');
+  });
+});
+
+describe('getNotePreview（U9、research.md の R13）', () => {
+  const A = 'https://example.com/a';
+  const B = 'https://example.com/b';
+  const C = 'https://example.com/c';
+  const preview = (body: string, linkPreviews: NotePreview['linkPreviews'] = []): NotePreview => ({
+    slug: 'sample-note',
+    title: '作り物の題',
+    description: null,
+    summary: null,
+    body,
+    publishedAt: null,
+    cardImage: { kind: 'generated' },
+    media: [],
+    linkPreviews,
+  });
+
+  it('参照先の情報が無い URL だけを取り、取れたものを書いて、本文の順で返す', async () => {
+    const known = { url: B, title: '持っている題', imageUrl: null };
+    const notes = fakeNotes(note(), {
+      findPreview: vi.fn(async () => preview(`${A}\n\n${B}\n\n${C}`, [known])),
+    });
+    const fetchLinkPreviews = vi.fn(async (urls: string[]) =>
+      urls
+        .filter((url) => url === A)
+        .map((url) => ({ url, title: '取った題', imageUrl: `${url}.png` })),
+    );
+
+    const result = await getNotePreview({ notes, fetchLinkPreviews }, 1, NOW);
+
+    expect(fetchLinkPreviews).toHaveBeenCalledWith([A, C]);
+    expect(notes.saveLinkPreview).toHaveBeenCalledTimes(1);
+    expect(notes.saveLinkPreview).toHaveBeenCalledWith({
+      url: A,
+      title: '取った題',
+      imageUrl: `${A}.png`,
+      fetchedAt: NOW,
+    });
+    expect(result?.linkPreviews).toEqual([
+      { url: A, title: '取った題', imageUrl: `${A}.png` },
+      known,
+    ]);
+  });
+
+  it('すべての URL の情報を持っていれば取りに行かない', async () => {
+    const notes = fakeNotes(note(), {
+      findPreview: vi.fn(async () => preview(A, [{ url: A, title: '題', imageUrl: null }])),
+    });
+    const fetchLinkPreviews = vi.fn(async () => []);
+    await getNotePreview({ notes, fetchLinkPreviews }, 1, NOW);
+    expect(fetchLinkPreviews).not.toHaveBeenCalled();
+  });
+
+  it('書けなかった情報があっても、見た目の確認を返す（原則 4）', async () => {
+    const notes = fakeNotes(note(), {
+      findPreview: vi.fn(async () => preview(A)),
+      saveLinkPreview: vi.fn(async () => {
+        throw new Error('D1 の作り物の失敗');
+      }),
+    });
+    const fetched = { url: A, title: '取った題', imageUrl: null };
+    const result = await getNotePreview(
+      { notes, fetchLinkPreviews: vi.fn(async () => [fetched]) },
+      1,
+      NOW,
+    );
+    expect(result?.linkPreviews).toEqual([fetched]);
+  });
+
+  it('無い note は取りに行かずに null', async () => {
+    const fetchLinkPreviews = vi.fn(async () => []);
+    expect(await getNotePreview({ notes: fakeNotes(), fetchLinkPreviews }, 1, NOW)).toBeNull();
+    expect(fetchLinkPreviews).not.toHaveBeenCalled();
   });
 });

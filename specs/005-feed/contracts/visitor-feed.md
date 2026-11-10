@@ -15,7 +15,7 @@
 
 ## DTO `FeedItem`
 
-Repository の実装はビュー `activity_feed`（data-model.md）から読み、種類ごとに次の項目だけを詰める。画面・`<title>`・OGP・RSC の応答は、この形の値だけを使う。どの種類にも `item_number`・`uid`・`updated_at` を入れない。`created_at` は note の作成日（並びの日付）としてだけ入れる（research.md の R6）。並びの日付の項目（`createdAt`・`publishedAt`・`happenedOn`）は、ビューの `sort_at` から詰める。下の表の「元の列」は、ビューの列がどの表の列から来るかを示す
+Repository の実装はビュー `activity_feed`（data-model.md）から読み、種類ごとに次の項目だけを詰める。画面・`<title>`・OGP・RSC の応答は、この形の値だけを使う。どの種類にも `item_number`・`uid`・`updated_at` を入れない。`created_at` は note の作成日（並びの日付）としてだけ入れる（research.md の R6）。並びの日付の項目のうち、日時（`createdAt`・`publishedAt`）はビューの元の UTC の値の列から、暦の日付（`happenedOn`）は `sort_at` から詰める。ビューの `sort_at` は、日時を Asia/Tokyo の時刻にした並びの値で、時点ではない（data-model.md）。下の表の「元の列」は、ビューの列がどの表の列から来るかを示す
 
 ### 職歴（`type: 'career'`）
 
@@ -49,7 +49,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `type` | `'note'` |
 | `title` | 公開した版の `note_revision.title` |
 | `description` | 公開した版の `note_revision.description`（空あり） |
-| `createdAt` | `sort_at`（元は `note.created_at`） |
+| `createdAt` | `created_at`（元は `note.created_at`） |
 
 最も新しい版・転載先・代表画像を持たない（FR-006）。
 
@@ -60,7 +60,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `type` | `'external_activity'` |
 | `title` | `activity.title` |
 | `url` | `activity.url`。画面は取得元の URL へ直接リンクする（FR-020） |
-| `publishedAt` | `sort_at`（元は `activity.published_at`） |
+| `publishedAt` | `published_at`（元は `activity.published_at`） |
 | `source` | `activity.source` |
 | `sourceKind` | `activity_source.kind`（`article`・`embed`・`other`） |
 

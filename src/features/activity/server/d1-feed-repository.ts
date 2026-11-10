@@ -13,7 +13,7 @@ import { isProjectKind } from '@/shared/domain/project-kind';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
- * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018）だけを読み、表を
+ * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018・0020〜0022）だけを読み、表を
  * 読まない（ADR-0046）。サイトに載せる行だけを出す決まりと秘匿化の決まりはビューが持つ。
  * この実装は、種類ごとに出す項目を列挙して `FeedItem` に詰める（constitution の Allowlist
  * Visibility、specs/005-feed/research.md の R4）。行の型はこのファイルの中だけに置く
@@ -21,7 +21,9 @@ import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
  * ビューから読む列。`item_number` は並べる SQL の中だけで使い、読まない（research.md の R6）。
- * `sort_at` は note の作成日・外部の activity の公開日・life event の起きた日として読む
+ * `sort_at` は note と外部の activity では Asia/Tokyo の時刻にした並びの値で、時点ではない
+ * （migrations/0022）。並べる SQL の中だけで使い、life event の起きた日（暦の日付）としてだけ読む。
+ * note の作成日と外部の activity の公開日は、元の UTC の値の `created_at`・`published_at` から読む
  * （contracts/visitor-feed.md）
  */
 type FeedRow = {
@@ -40,11 +42,13 @@ type FeedRow = {
   source: string | null;
   source_kind: string | null;
   url: string | null;
+  created_at: string | null;
+  published_at: string | null;
 };
 
 const COLUMNS = `item_type, is_masked, title, title_masked, organization_name,
   organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description, source,
-  source_kind, url`;
+  source_kind, url, created_at, published_at`;
 
 const periodOf = (row: FeedRow): Period | null =>
   row.started_on === null
@@ -84,22 +88,23 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
     case 'project':
       return toCareerOrProjectItem(row, row.item_type);
     case 'note':
-      if (row.title === null) return null;
+      if (row.title === null || row.created_at === null) return null;
       return {
         type: 'note',
         title: row.title,
         description: row.description,
-        createdAt: row.sort_at,
+        createdAt: row.created_at,
       };
     case 'external_activity':
       // 画面は URL を `<a href>` にする。取得元の応答の URL を http か https に限る
       // （constitution の Allowlist Visibility）。ほかの scheme の行は詰めない
       if (row.url === null || !isWebUrl(row.url) || row.source === null) return null;
+      if (row.published_at === null) return null;
       return {
         type: 'external_activity',
         title: row.title,
         url: row.url,
-        publishedAt: row.sort_at,
+        publishedAt: row.published_at,
         source: row.source,
         // 分類は CHECK が絞る。読めない値は `other` と同じ扱いにする
         sourceKind:

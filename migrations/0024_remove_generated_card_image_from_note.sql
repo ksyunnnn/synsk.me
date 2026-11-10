@@ -136,7 +136,7 @@ BEGIN
   SELECT RAISE(ABORT, 'note_uid_fixed');
 END;
 
--- 0021 と同じビュー。列と腕の意味は 0013・0016・0017・0018 の注釈のとおり
+-- 0022 と同じビュー。列と腕の意味は 0013・0016・0017・0018・0022 の注釈のとおり
 CREATE VIEW activity_feed AS
 SELECT
   'career' AS item_type,
@@ -154,7 +154,9 @@ SELECT
   CAST(NULL AS TEXT) AS description,
   CAST(NULL AS TEXT) AS source,
   CAST(NULL AS TEXT) AS source_kind,
-  CAST(NULL AS TEXT) AS url
+  CAST(NULL AS TEXT) AS url,
+  CAST(NULL AS TEXT) AS created_at,
+  CAST(NULL AS TEXT) AS published_at
 FROM career AS c
 JOIN organization AS o ON o.id = c.organization_id
 WHERE c.status = 'published' AND (c.is_masked = 0 OR o.name_masked IS NOT NULL)
@@ -175,7 +177,9 @@ SELECT
   CAST(NULL AS TEXT) AS description,
   CAST(NULL AS TEXT) AS source,
   CAST(NULL AS TEXT) AS source_kind,
-  CAST(NULL AS TEXT) AS url
+  CAST(NULL AS TEXT) AS url,
+  CAST(NULL AS TEXT) AS created_at,
+  CAST(NULL AS TEXT) AS published_at
 FROM project AS p
 JOIN organization AS o ON o.id = p.organization_id
 WHERE p.status = 'published' AND (p.is_masked = 0 OR o.name_masked IS NOT NULL)
@@ -183,7 +187,7 @@ UNION ALL
 SELECT
   'note' AS item_type,
   n.id AS item_number,
-  n.created_at AS sort_at,
+  CAST(strftime('%Y-%m-%dT%H:%M:%f', n.created_at, '+9 hours') AS TEXT) AS sort_at,
   CAST(0 AS INTEGER) AS is_masked,
   r.title AS title,
   CAST(NULL AS TEXT) AS title_masked,
@@ -196,7 +200,9 @@ SELECT
   r.description AS description,
   CAST(NULL AS TEXT) AS source,
   CAST(NULL AS TEXT) AS source_kind,
-  CAST(NULL AS TEXT) AS url
+  CAST(NULL AS TEXT) AS url,
+  n.created_at AS created_at,
+  CAST(NULL AS TEXT) AS published_at
 FROM note AS n
 JOIN note_revision AS r ON r.id = n.published_revision_id AND r.note_id = n.id
 WHERE n.status = 'published' AND n.deleted_at IS NULL
@@ -204,7 +210,7 @@ UNION ALL
 SELECT
   'external_activity' AS item_type,
   a.id AS item_number,
-  a.sort_at AS sort_at,
+  CAST(strftime('%Y-%m-%dT%H:%M:%f', a.published_at, '+9 hours') AS TEXT) AS sort_at,
   CAST(0 AS INTEGER) AS is_masked,
   a.title AS title,
   CAST(NULL AS TEXT) AS title_masked,
@@ -217,7 +223,9 @@ SELECT
   CAST(NULL AS TEXT) AS description,
   a.source AS source,
   s.kind AS source_kind,
-  a.url AS url
+  a.url AS url,
+  CAST(NULL AS TEXT) AS created_at,
+  a.published_at AS published_at
 FROM activity AS a
 JOIN activity_source AS s ON s.source = a.source
 WHERE a.source <> 'life_event'
@@ -244,7 +252,9 @@ SELECT
   l.description AS description,
   l.source AS source,
   ls.kind AS source_kind,
-  CAST(NULL AS TEXT) AS url
+  CAST(NULL AS TEXT) AS url,
+  CAST(NULL AS TEXT) AS created_at,
+  CAST(NULL AS TEXT) AS published_at
 FROM activity AS l
 JOIN activity_source AS ls ON ls.source = l.source
 WHERE l.source = 'life_event';
