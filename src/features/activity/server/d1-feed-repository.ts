@@ -13,7 +13,7 @@ import { isProjectKind } from '@/shared/domain/project-kind';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
- * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018・0022）だけを読み、表を
+ * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018・0020〜0022）だけを読み、表を
  * 読まない（ADR-0046）。サイトに載せる行だけを出す決まりと秘匿化の決まりはビューが持つ。
  * この実装は、種類ごとに出す項目を列挙して `FeedItem` に詰める（constitution の Allowlist
  * Visibility、specs/005-feed/research.md の R4）。行の型はこのファイルの中だけに置く

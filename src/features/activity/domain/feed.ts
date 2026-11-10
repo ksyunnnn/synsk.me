@@ -101,7 +101,10 @@ export type LifeEventFeedItem = {
 export type FeedItem =
   CareerFeedItem | ProjectFeedItem | NoteFeedItem | ExternalActivityFeedItem | LifeEventFeedItem;
 
-/** 日時を出すときの時刻帯。並びの日の境目（plan.md の U3）とは別に、表示だけに使う */
+/**
+ * 日時を出すときの時刻帯。並びの日の境目（migrations/0022 の `'+9 hours'`）と同じ時刻帯にする
+ * （specs/005-feed/spec.md の FR-022）。片方を変えるときは、もう片方も変える
+ */
 const DISPLAY_TIME_ZONE = 'Asia/Tokyo';
 
 /**

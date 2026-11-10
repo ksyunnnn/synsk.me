@@ -109,7 +109,7 @@ description: "一覧の実装タスク"
 ### Implementation
 
 - [x] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
-- [x] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す
+- [x] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す。作成日は T042 で `created_at` の列から詰めるようにした（data-model.md の M5）
 - [x] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
 
 **Checkpoint**: 職歴・実績・note の一覧
@@ -147,7 +147,7 @@ description: "一覧の実装タスク"
 ### Implementation
 
 - [x] T044 [US1] `FEED_ITEM_TYPES` と `FeedItem` に外部の activity と life event を足す（src/features/activity/domain/feed.ts）
-- [x] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す
+- [x] T045 [US1] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに外部の activity と life event の列（`title`・`description`・`url`・`source`・`source_kind`・`sort_at`）を足す。外部の activity の公開日は T042 で `published_at` の列から詰めるようにした（data-model.md の M5）
 - [x] T046 [US1] src/features/activity/components/feed.tsx に外部の activity と life event の行を足す。外部の activity は `<a>` で取得元の URL へリンクする（`src/shared/components/text-link.tsx` は管理画面の移動のための `next/link` なので使わない）。分類ごとに見せ方を分けられる形にし、埋め込みの見せ方は取得元で決める（FR-019）。代表の画像は出さない（plan.md の U5）
 
 **Checkpoint**: 5 つの種類の一覧（quickstart.md の 6 の前半）

@@ -59,7 +59,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - 決めたこと:
   - ビューは並びの値 `sort_at` を文字列で持つ。職歴と実績は `started_on`（暦の日付）、life event は `activity.sort_at`（0004 の生成列。暦の日付）を使う。note は `note.created_at`、外部の activity は `activity.published_at` を、Asia/Tokyo の時刻（`strftime('%Y-%m-%dT%H:%M:%f', <列>, '+9 hours')`）にして使う（FR-007・FR-009）
-  - 日の境目は Asia/Tokyo の 0 時にする（plan.md の U3。2026-11-10 にオーナーが決めた。issue #219 のコメント「005-feed U3「時点を Asia/Tokyo に換算する場所」をオーナーが決めた」）。換算はビューの定義に置く（migrations/0022、data-model.md の M5）。暦の日付は換算せず、文字列の比べ方で同じ日の日時より前に並ぶ（0004 の `sort_at` の注釈）。オーナーが入れた日付をその日の UTC の 00:00 の `published_at` に入れると（004 の plan.md の U12 の推奨 (a)）、Asia/Tokyo の 9 時になり、同じ日の life event より新しい位置に並ぶ（FR-011）
+  - 日の境目は Asia/Tokyo の 0 時にする（plan.md の U3。2026-11-10 にオーナーが決めた。issue #219 のコメント「005-feed U3「時点を Asia/Tokyo に換算する場所」をオーナーが決めた」）。換算はビューの定義に置く（migrations/0022、data-model.md の M5）。暦の日付は換算せず、文字列の比べ方で同じ日の日時より小さいので、新しい順の一覧では同じ日の日時より古い位置に並ぶ（0004 の `sort_at` の注釈）。オーナーが入れた日付をその日の UTC の 00:00 の `published_at` に入れると（004 の plan.md の U12 の推奨 (a)）、Asia/Tokyo の 9 時になり、同じ日の life event より新しい位置に並ぶ（FR-011）
   - 換算した `sort_at` は時点ではないので、並べる SQL の中だけで使う。note の作成日と外部の activity の公開日は、ビューの `created_at`・`published_at`（元の UTC の値）から詰める（contracts/visitor-feed.md）
   - 換算した `sort_at` は `CAST(... AS TEXT)` で腕の列の型を揃える。式のままだと、ビューの外の条件が腕の中へ下りない（R3）
   - Repository の実装は `ORDER BY sort_at DESC, <種類の順>, item_number DESC` で読む。種類の順は `src/features/activity/domain/feed.ts` の 1 つの `as const` の配列に置き、SQL の `CASE` をその配列から作る。同じデータを読むたびに同じ順になる（FR-010）

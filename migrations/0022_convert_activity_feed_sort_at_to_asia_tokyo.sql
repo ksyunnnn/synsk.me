@@ -10,9 +10,10 @@
 -- 変わらない
 --
 -- 暦の日付（職歴・実績の started_on、life event の happened_on）は換算しない。0004 の sort_at の
--- 注釈のとおり、暦の日付は同じ日の日時より前に並ぶ。外部の activity は published_at が日時の
--- ときだけ換算する。外部の activity の行は happened_on を持たない（0004 の CHECK）ので、
--- published_at は NULL にならない。CASE は、日付だけの値を換算しないことを式に残すために置く
+-- 注釈のとおり、暦の日付は文字列の比べ方で同じ日の日時より小さく、新しい順の一覧では同じ日の
+-- 日時より古い位置に並ぶ。外部の activity の行は happened_on を持たず（0004 の CHECK）、
+-- published_at は日時の形に限る（0020 の CHECK）ので、外部の activity の sort_at は常に
+-- published_at の日時で、そのまま換算する
 --
 -- 換算した sort_at は時点ではない。並べる SQL の中だけで使う。note の作成日と外部の activity の
 -- 公開日は、元の UTC の値を created_at・published_at の列で出す（005 の data-model.md の M5）。
@@ -97,10 +98,7 @@ UNION ALL
 SELECT
   'external_activity' AS item_type,
   a.id AS item_number,
-  CAST(CASE
-    WHEN a.published_at IS NULL THEN a.sort_at
-    ELSE strftime('%Y-%m-%dT%H:%M:%f', a.published_at, '+9 hours')
-  END AS TEXT) AS sort_at,
+  CAST(strftime('%Y-%m-%dT%H:%M:%f', a.published_at, '+9 hours') AS TEXT) AS sort_at,
   CAST(0 AS INTEGER) AS is_masked,
   a.title AS title,
   CAST(NULL AS TEXT) AS title_masked,

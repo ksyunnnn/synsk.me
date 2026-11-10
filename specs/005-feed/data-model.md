@@ -34,7 +34,7 @@
 |---|---|---|
 | `item_type` | 種類。`career`・`project`・`note`・`external_activity`・`life_event` | M1 |
 | `item_number` | 種類ごとの元の行の主キー。並べる SQL の中だけで使い、DTO に入れない。外部キーではないので `_id` を付けない | M1 |
-| `sort_at` | 並びの日付。暦の日付（`YYYY-MM-DD`）か、日時を Asia/Tokyo の時刻にした文字列（`YYYY-MM-DDTHH:MM:SS.sss`。末尾に `Z` を付けない）。時点ではないので、並べる SQL の中だけで使う。暦の日付は同じ日の日時より前に並ぶ（`activity.sort_at` と同じ並び方） | M1（日時の換算は M5） |
+| `sort_at` | 並びの日付。暦の日付（`YYYY-MM-DD`）か、日時を Asia/Tokyo の時刻にした文字列（`YYYY-MM-DDTHH:MM:SS.sss`。末尾に `Z` を付けない）。時点ではないので、並べる SQL の中だけで使う。暦の日付は文字列の比べ方で同じ日の日時より小さく、新しい順の一覧では同じ日の日時より古い位置に並ぶ（`activity.sort_at` と同じ並び方、FR-011） | M1（日時の換算は M5） |
 | `is_masked` | 秘匿化した職歴・実績なら 1。ほかは 0 | M1 |
 | `title` | 秘匿化しない実績・note・外部の activity・life event の題。秘匿化した実績と職歴は `NULL` | M1 |
 | `title_masked` | 秘匿化した実績の `project.title_masked`。ほかの行は `NULL` | M1 |
