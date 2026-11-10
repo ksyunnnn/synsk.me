@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { routes } from '@/shared/routes';
 
 // `forbidden()` が呼ばれたときの表示。オーナーでない要求を `src/proxy.ts` が
 // `/dash/forbidden` へ rewrite し、そこで呼ぶ。
@@ -8,7 +9,7 @@ const Forbidden = () => (
   <main>
     <h1>このページを開く権限がありません</h1>
     <p>
-      <Link href="/">トップページへ戻る</Link>
+      <Link href={routes.home}>トップページへ戻る</Link>
     </p>
   </main>
 );

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { NotePreview, VisitorNote } from '@/features/note/domain/note';
 import { LinkCard } from '@/features/note/components/link-card';
 import { MarkdownBody } from '@/shared/components/markdown-body';
+import { routes } from '@/shared/routes';
 
 /**
  * 訪問者に見せる note（specs/003-note/contracts/visitor-note.md）。受け取った DTO の値だけを
@@ -29,7 +30,7 @@ const formatPublishedOn = (publishedAt: string) =>
  */
 export const VisitorNoteView = ({
   note,
-  mediaBase = `/notes/${encodeURIComponent(note.slug)}/media`,
+  mediaBase = routes.noteMedia(encodeURIComponent(note.slug)),
   renderUrlLineAction,
 }: {
   note: VisitorNote | NotePreview;

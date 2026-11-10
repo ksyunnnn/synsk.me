@@ -6,6 +6,7 @@ import { isVisibleToVisitors } from '@/features/note/domain/note';
 import { revertNote } from '@/features/note/server/actions';
 import { getNoteRevision } from '@/features/note/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -26,7 +27,7 @@ const Page = async ({ params }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href={`/dash/notes/${note.uid}/revisions`}>版の一覧へ戻る</TextLink>
+        <TextLink href={routes.dash.notes.revisions(note.uid)}>版の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">過去の版</h1>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">

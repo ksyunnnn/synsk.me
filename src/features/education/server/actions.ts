@@ -17,6 +17,7 @@ import { createEducationRepository } from '@/features/education/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
+import { routes } from '@/shared/routes';
 
 /**
  * 学歴のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
@@ -32,7 +33,7 @@ export const registerEducation = async (
     await getCurrentAuthor(),
     readValues(formData, EDUCATION_FIELDS),
   );
-  if (outcome.status === 'registered') redirect('/dash/educations?saved=1');
+  if (outcome.status === 'registered') redirect(`${routes.dash.educations.list}?saved=1`);
   return outcome;
 };
 
@@ -44,15 +45,15 @@ export const editEducation = async (
   if (!author) return { status: 'forbidden' };
   const educations = await createEducationRepository();
   const id = await findIdByUid(educations, readString(formData, EDUCATION_UID_FIELD));
-  if (id === null) redirect('/dash/educations');
+  if (id === null) redirect(routes.dash.educations.list);
   const outcome = await editEducationUseCase(
     educations,
     author,
     id,
     readValues(formData, EDUCATION_FIELDS),
   );
-  if (outcome.status === 'saved') redirect('/dash/educations?saved=1');
-  if (outcome.status === 'not-found') redirect('/dash/educations');
+  if (outcome.status === 'saved') redirect(`${routes.dash.educations.list}?saved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.educations.list);
   return outcome;
 };
 
@@ -64,8 +65,8 @@ export const deleteEducation = async (
   if (!author) return { status: 'forbidden' };
   const educations = await createEducationRepository();
   const id = await findIdByUid(educations, readString(formData, EDUCATION_UID_FIELD));
-  if (id === null) redirect('/dash/educations');
+  if (id === null) redirect(routes.dash.educations.list);
   const outcome = await deleteEducationUseCase(educations, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
-  redirect('/dash/educations?deleted=1');
+  redirect(`${routes.dash.educations.list}?deleted=1`);
 };

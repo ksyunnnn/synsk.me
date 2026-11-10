@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { requireAuthor } from '@/shared/server/author';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -14,15 +15,15 @@ export const metadata: Metadata = { title: '管理画面 | synsk.me' };
  * specs/004-external-activity/contracts/dash.md
  */
 const SECTIONS = [
-  { href: '/dash/careers', label: '職歴' },
-  { href: '/dash/projects', label: '実績' },
-  { href: '/dash/educations', label: '学歴' },
-  { href: '/dash/skills', label: 'スキル' },
-  { href: '/dash/organizations', label: '組織' },
-  { href: '/dash/resumes', label: '職務経歴書' },
-  { href: '/dash/notes', label: 'note' },
-  { href: '/dash/life-events', label: 'life event' },
-  { href: '/dash/activities', label: '外部の activity' },
+  { href: routes.dash.careers.list, label: '職歴' },
+  { href: routes.dash.projects.list, label: '実績' },
+  { href: routes.dash.educations.list, label: '学歴' },
+  { href: routes.dash.skills.list, label: 'スキル' },
+  { href: routes.dash.organizations.list, label: '組織' },
+  { href: routes.dash.resumes.list, label: '職務経歴書' },
+  { href: routes.dash.notes.list, label: 'note' },
+  { href: routes.dash.lifeEvents.list, label: 'life event' },
+  { href: routes.dash.activities.list, label: '外部の activity' },
 ] as const;
 
 const Page = async () => {

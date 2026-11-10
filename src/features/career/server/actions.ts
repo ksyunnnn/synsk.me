@@ -18,6 +18,7 @@ import { MEDIA_FILE_FIELD, type MediaFormResult } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
+import { routes } from '@/shared/routes';
 
 /**
  * 職歴のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
@@ -34,7 +35,7 @@ export const registerCareer = async (
     await getCurrentAuthor(),
     readValues(formData, CAREER_FIELDS),
   );
-  if (outcome.status === 'registered') redirect(`/dash/careers/${outcome.uid}?saved=1`);
+  if (outcome.status === 'registered') redirect(`${routes.dash.careers.row(outcome.uid)}?saved=1`);
   return outcome;
 };
 
@@ -48,14 +49,14 @@ export const editCareer = async (
   const deps = await createCareerDeps();
   const uid = readString(formData, CAREER_UID_FIELD);
   const id = await findIdByUid(deps.careers, uid);
-  if (id === null) redirect('/dash/careers');
+  if (id === null) redirect(routes.dash.careers.list);
 
   const outcome = await editCareerUseCase(deps, author, id, readValues(formData, CAREER_FIELDS), {
     openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
     now: new Date().toISOString(),
   });
-  if (outcome.status === 'saved') redirect(`/dash/careers/${uid}?saved=1`);
-  if (outcome.status === 'not-found') redirect('/dash/careers');
+  if (outcome.status === 'saved') redirect(`${routes.dash.careers.row(uid)}?saved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.careers.list);
   return outcome;
 };
 
@@ -68,10 +69,10 @@ export const deleteCareer = async (
   if (!author) return { status: 'forbidden' };
   const deps = await createCareerDeps();
   const id = await findIdByUid(deps.careers, readString(formData, CAREER_UID_FIELD));
-  if (id === null) redirect('/dash/careers');
+  if (id === null) redirect(routes.dash.careers.list);
   const outcome = await deleteCareerUseCase(deps, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
-  redirect('/dash/careers?deleted=1');
+  redirect(`${routes.dash.careers.list}?deleted=1`);
 };
 
 /** 本文の画像を 1 枚足し、同じ画面へ移る（FR-027） */
@@ -84,7 +85,7 @@ export const addCareerMedia = async (
   const deps = await createCareerDeps();
   const uid = readString(formData, CAREER_UID_FIELD);
   const id = await findIdByUid(deps.careers, uid);
-  if (id === null) redirect('/dash/careers');
+  if (id === null) redirect(routes.dash.careers.list);
 
   const file = formData.get(MEDIA_FILE_FIELD);
   const outcome = await addCareerMediaUseCase(
@@ -93,8 +94,8 @@ export const addCareerMedia = async (
     id,
     file instanceof Blob && file.size > 0 ? file : null,
   );
-  if (outcome.status === 'added') redirect(`/dash/careers/${uid}?mediaAdded=1`);
-  if (outcome.status === 'not-found') redirect('/dash/careers');
+  if (outcome.status === 'added') redirect(`${routes.dash.careers.row(uid)}?mediaAdded=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.careers.list);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
 };

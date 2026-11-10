@@ -7,6 +7,7 @@ import {
   type ResumeSources,
 } from '@/features/resume/domain/resume';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 /**
  * 作ったあとに職歴・実績・学歴を足す画面の中身（specs/002-resume/contracts/dash.md の
@@ -38,7 +39,7 @@ export const ResumeAddRows = ({
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href={`/dash/resumes/${resume.uid}`}>設定の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.resumes.row(resume.uid)}>設定の画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">{label}を足す</h1>
       <p className="text-sm text-muted-foreground">

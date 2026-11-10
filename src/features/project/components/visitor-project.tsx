@@ -2,6 +2,7 @@ import type { VisitorProject } from '@/features/project/domain/project';
 import { MarkdownBody } from '@/shared/components/markdown-body';
 import { PeriodText } from '@/shared/components/period-text';
 import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { routes } from '@/shared/routes';
 
 /**
  * 訪問者に見せる実績（specs/001-career-and-project/contracts/visitor-project.md）。
@@ -14,7 +15,7 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 /** 実績の画像を配る経路 */
 export const projectMediaPath = (slug: string, storageKey: string) =>
-  `/projects/${slug}/media/${storageKey}`;
+  routes.projectMedia(slug, storageKey);
 
 export const VisitorProjectView = ({ project }: { project: VisitorProject }) => (
   <article className="flex flex-col gap-6">

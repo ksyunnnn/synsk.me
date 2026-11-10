@@ -1,5 +1,6 @@
 import type { NoteRevisionSummary } from '@/features/note/domain/note';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 /**
  * note の版の一覧（FR-008、specs/003-note/contracts/dash.md）。保存した日時の新しい順に並べ、
@@ -29,7 +30,7 @@ export const NoteRevisionList = ({
   <ol className="flex flex-col gap-3">
     {revisions.map((revision) => (
       <li key={revision.uid} className="flex flex-col">
-        <TextLink href={`/dash/notes/${noteUid}/revisions/${revision.uid}`}>
+        <TextLink href={routes.dash.notes.revision(noteUid, revision.uid)}>
           <time dateTime={revision.createdAt}>{formatSavedAt(revision.createdAt)}</time>
         </TextLink>
         <span className="text-sm text-muted-foreground">

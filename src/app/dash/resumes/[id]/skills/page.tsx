@@ -6,6 +6,7 @@ import { editResumeSkillOverrides } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 import { toYearsAndMonths } from '@/shared/domain/period';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -31,7 +32,7 @@ const Page = async ({ params }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href={`/dash/resumes/${resume.uid}`}>設定の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.resumes.row(resume.uid)}>設定の画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">経験年数の上書きを直す</h1>
       <p className="text-sm text-muted-foreground">

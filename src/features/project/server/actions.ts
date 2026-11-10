@@ -30,6 +30,7 @@ import {
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readStrings } from '@/shared/server/form-data';
+import { routes } from '@/shared/routes';
 
 /**
  * 実績のフォームが呼ぶ Server Action。`page.tsx` が読み込み、フォームの部品に props で渡す
@@ -59,7 +60,7 @@ export const registerProject = async (
     await getCurrentAuthor(),
     readValues(formData),
   );
-  if (outcome.status === 'registered') redirect(`/dash/projects/${outcome.uid}?saved=1`);
+  if (outcome.status === 'registered') redirect(`${routes.dash.projects.row(outcome.uid)}?saved=1`);
   return outcome;
 };
 
@@ -73,14 +74,14 @@ export const editProject = async (
   const deps = await createProjectDeps();
   const uid = readString(formData, PROJECT_UID_FIELD);
   const id = await findIdByUid(deps.projects, uid);
-  if (id === null) redirect('/dash/projects');
+  if (id === null) redirect(routes.dash.projects.list);
 
   const outcome = await editProjectUseCase(deps, author, id, readValues(formData), {
     openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
     now: new Date().toISOString(),
   });
-  if (outcome.status === 'saved') redirect(`/dash/projects/${uid}?saved=1`);
-  if (outcome.status === 'not-found') redirect('/dash/projects');
+  if (outcome.status === 'saved') redirect(`${routes.dash.projects.row(uid)}?saved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
   return outcome;
 };
 
@@ -93,11 +94,11 @@ export const deleteProject = async (
   if (!author) return { status: 'forbidden' };
   const deps = await createProjectDeps();
   const id = await findIdByUid(deps.projects, readString(formData, PROJECT_UID_FIELD));
-  if (id === null) redirect('/dash/projects');
+  if (id === null) redirect(routes.dash.projects.list);
 
   const outcome = await deleteProjectUseCase(deps, author, id);
   if (outcome.status === 'forbidden') return outcome;
-  redirect('/dash/projects?deleted=1');
+  redirect(`${routes.dash.projects.list}?deleted=1`);
 };
 
 /** 画像を 1 枚足し、同じ画面へ移る（FR-027）。代表画像にもする指定があれば、代表画像にする（FR-028） */
@@ -110,7 +111,7 @@ export const addProjectMedia = async (
   const deps = await createProjectDeps();
   const uid = readString(formData, PROJECT_UID_FIELD);
   const id = await findIdByUid(deps.projects, uid);
-  if (id === null) redirect('/dash/projects');
+  if (id === null) redirect(routes.dash.projects.list);
 
   const file = formData.get(MEDIA_FILE_FIELD);
   const outcome = await addProjectMediaUseCase(
@@ -120,8 +121,8 @@ export const addProjectMedia = async (
     file instanceof Blob && file.size > 0 ? file : null,
     { asCardImage: readString(formData, AS_CARD_IMAGE_FIELD) === '1' },
   );
-  if (outcome.status === 'added') redirect(`/dash/projects/${uid}?mediaAdded=1`);
-  if (outcome.status === 'not-found') redirect('/dash/projects');
+  if (outcome.status === 'added') redirect(`${routes.dash.projects.row(uid)}?mediaAdded=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
 };
@@ -136,15 +137,15 @@ export const changeProjectCardImage = async (
   const deps = await createProjectDeps();
   const uid = readString(formData, PROJECT_UID_FIELD);
   const id = await findIdByUid(deps.projects, uid);
-  if (id === null) redirect('/dash/projects');
+  if (id === null) redirect(routes.dash.projects.list);
 
   const value = readString(formData, CARD_IMAGE_FIELD);
   const storageKey = value === NO_CARD_IMAGE ? null : parseMediaStorageKey(value);
   if (value !== NO_CARD_IMAGE && storageKey === null)
     return { status: 'invalid', errors: { [CARD_IMAGE_FIELD]: 'invalid' }, values: {} };
   const outcome = await changeProjectCardImageUseCase(deps.projects, author, id, storageKey);
-  if (outcome.status === 'changed') redirect(`/dash/projects/${uid}?cardImageChanged=1`);
-  if (outcome.status === 'not-found') redirect('/dash/projects');
+  if (outcome.status === 'changed') redirect(`${routes.dash.projects.row(uid)}?cardImageChanged=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [CARD_IMAGE_FIELD]: outcome.error }, values: {} };
 };

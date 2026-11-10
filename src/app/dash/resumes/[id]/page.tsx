@@ -12,6 +12,7 @@ import {
 } from '@/features/resume/server/actions';
 import { getResumeForEdit, limitedResumeUrl } from '@/features/resume/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -36,7 +37,7 @@ const Page = async ({ params, searchParams }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-8">
       <p>
-        <TextLink href="/dash/resumes">職務経歴書の一覧へ戻る</TextLink>
+        <TextLink href={routes.dash.resumes.list}>職務経歴書の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">{resume.title}</h1>
       {saved === '1' && <p role="status">保存しました</p>}
@@ -74,13 +75,13 @@ const Page = async ({ params, searchParams }: Props) => {
         {...common}
       />
       <p>
-        <TextLink href={`/dash/resumes/${resume.uid}/preview`}>
+        <TextLink href={routes.dash.resumes.preview(resume.uid)}>
           訪問者に見せたときの見た目を見る
         </TextLink>
       </p>
       <ResumeOverview resume={resume} now={now} />
       <p>
-        <TextLink href={`/dash/resumes/${resume.uid}/delete`}>この職務経歴書を削除する</TextLink>
+        <TextLink href={routes.dash.resumes.delete(resume.uid)}>この職務経歴書を削除する</TextLink>
       </p>
     </main>
   );

@@ -5,6 +5,7 @@ import { deleteLifeEvent } from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
 import { DeleteForm } from '@/shared/components/delete-form';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -35,7 +36,7 @@ const Page = async ({ params }: Props) => {
         }}
       />
       <p>
-        <TextLink href={`/dash/life-events/${lifeEvent.uid}`}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.lifeEvents.row(lifeEvent.uid)}>編集の画面へ戻る</TextLink>
       </p>
     </main>
   );

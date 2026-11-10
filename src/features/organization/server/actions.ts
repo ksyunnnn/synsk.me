@@ -15,6 +15,7 @@ import { findIdByUid } from '@/shared/domain/uid';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString } from '@/shared/server/form-data';
+import { routes } from '@/shared/routes';
 
 /**
  * 組織のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
@@ -33,14 +34,14 @@ export const editOrganization = async (
   const organizations = await createOrganizationRepository();
   const uid = readString(formData, ORGANIZATION_UID_FIELD);
   const id = await findIdByUid(organizations, uid);
-  if (id === null) redirect('/dash/organizations');
+  if (id === null) redirect(routes.dash.organizations.list);
 
   const outcome = await editOrganizationUseCase(organizations, author, id, {
     name: readString(formData, 'name'),
     nameMasked: readString(formData, 'nameMasked'),
   });
-  if (outcome.status === 'saved') redirect(`/dash/organizations/${uid}?saved=1`);
-  if (outcome.status === 'not-found') redirect('/dash/organizations');
+  if (outcome.status === 'saved') redirect(`${routes.dash.organizations.row(uid)}?saved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.organizations.list);
   return outcome;
 };
 
@@ -55,11 +56,11 @@ export const deleteOrganization = async (
   if (!author) return { status: 'forbidden' };
   const organizations = await createOrganizationRepository();
   const id = await findIdByUid(organizations, readString(formData, ORGANIZATION_UID_FIELD));
-  if (id === null) redirect('/dash/organizations');
+  if (id === null) redirect(routes.dash.organizations.list);
 
   const outcome = await deleteOrganizationUseCase(organizations, author, id);
   if (outcome.status === 'deleted' || outcome.status === 'not-found') {
-    redirect('/dash/organizations?deleted=1');
+    redirect(`${routes.dash.organizations.list}?deleted=1`);
   }
   return outcome;
 };

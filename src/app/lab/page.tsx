@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 import { getExperiments } from './_lab/registry';
+import { routes } from '@/shared/routes';
 
 export const metadata: Metadata = {
   title: 'lab | synsk.me',
@@ -21,7 +22,10 @@ const Page = () => {
               key={name}
               className="flex items-baseline justify-between gap-4 border-b border-border pb-4 last:border-b-0"
             >
-              <Link href={`/lab/${name}`} className="font-semibold underline underline-offset-4">
+              <Link
+                href={routes.labPage(name)}
+                className="font-semibold underline underline-offset-4"
+              >
                 {name}
               </Link>
               <span className="text-sm text-muted-foreground tabular-nums">

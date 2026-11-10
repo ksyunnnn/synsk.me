@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { formatExpires, isExpired } from '@/features/resume/domain/resume';
 import { listResumes } from '@/features/resume/server/queries';
 import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -20,12 +21,12 @@ const Page = async ({ searchParams }: Props) => {
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <TextLink href="/dash">管理画面へ戻る</TextLink>
+        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">職務経歴書</h1>
       {deleted === '1' && <p role="status">職務経歴書を削除しました</p>}
       <p>
-        <TextLink href="/dash/resumes/new">職務経歴書を作る</TextLink>
+        <TextLink href={routes.dash.resumes.new}>職務経歴書を作る</TextLink>
       </p>
       {resumes.length === 0 ? (
         <p>作った職務経歴書はありません</p>
@@ -33,7 +34,7 @@ const Page = async ({ searchParams }: Props) => {
         <ul className="flex flex-col gap-3">
           {resumes.map((resume) => (
             <li key={resume.id} className="flex flex-col">
-              <TextLink href={`/dash/resumes/${resume.uid}`}>{resume.title}</TextLink>
+              <TextLink href={routes.dash.resumes.row(resume.uid)}>{resume.title}</TextLink>
               <span className="text-sm text-muted-foreground">
                 {resume.audience === 'limited' ? '限定公開用' : '公開用'}・
                 {resume.status === 'draft' ? '非公開' : '公開中'}

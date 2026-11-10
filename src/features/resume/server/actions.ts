@@ -60,6 +60,7 @@ import {
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readStrings, readValues } from '@/shared/server/form-data';
+import { routes } from '@/shared/routes';
 
 /**
  * 職務経歴書の管理画面のフォームが呼ぶ Server Action（specs/002-resume/contracts/dash.md）。
@@ -76,7 +77,7 @@ const readResume = async (formData: FormData) => {
   const resumes = await createResumeRepository();
   const uid = readString(formData, RESUME_UID_FIELD);
   const id = await findIdByUid(resumes, uid);
-  if (id === null) redirect('/dash/resumes');
+  if (id === null) redirect(routes.dash.resumes.list);
   return { resumes, id, uid };
 };
 
@@ -98,7 +99,7 @@ export const createResume = async (
     educationIds: readStrings(formData, SELECTION_FIELDS.educationIds),
   });
   if (outcome.status !== 'created') return outcome;
-  if (outcome.audience !== 'limited') redirect(`/dash/resumes/${outcome.uid}?saved=1`);
+  if (outcome.audience !== 'limited') redirect(`${routes.dash.resumes.row(outcome.uid)}?saved=1`);
   return {
     status: 'created',
     uid: outcome.uid,
@@ -110,8 +111,8 @@ export const createResume = async (
 
 /** 書き込みの結果を画面に返す形にする。保存したら設定の画面へ移す */
 const finish = <V, E>({ uid }: ResumeTarget, outcome: EditOutcome<V, E>) => {
-  if (outcome.status === 'saved') redirect(`/dash/resumes/${uid}?saved=1`);
-  if (outcome.status === 'not-found') redirect(`/dash/resumes/${uid}`);
+  if (outcome.status === 'saved') redirect(`${routes.dash.resumes.row(uid)}?saved=1`);
+  if (outcome.status === 'not-found') redirect(routes.dash.resumes.row(uid));
   return outcome;
 };
 
@@ -166,7 +167,7 @@ export const changeResumeStatus = async (
 ): Promise<ResumeStatusResult> => {
   const result = await writeStatus(formData);
   if (result.status === 'changed') {
-    redirect(`/dash/resumes/${readString(formData, RESUME_UID_FIELD)}?saved=1`);
+    redirect(`${routes.dash.resumes.row(readString(formData, RESUME_UID_FIELD))}?saved=1`);
   }
   return result;
 };
@@ -191,7 +192,7 @@ export const regenerateResumeUrl = async (
   if (!author) return { status: 'forbidden' };
   const { resumes, ...target } = await readResume(formData);
   const outcome = await regenerateResumeUrlUseCase(resumes, author, target.id, readTimes(formData));
-  if (outcome.status === 'saved') redirect(`/dash/resumes/${target.uid}?regenerated=1`);
+  if (outcome.status === 'saved') redirect(`${routes.dash.resumes.row(target.uid)}?regenerated=1`);
   return finish(target, outcome);
 };
 
@@ -204,7 +205,7 @@ const readTarget = async (formData: FormData, kind: 'careers' | 'projects' | 'ed
     kind,
     readString(formData, ROW_UID_FIELD),
   );
-  if (rowId === null) redirect(`/dash/resumes/${resume.uid}`);
+  if (rowId === null) redirect(routes.dash.resumes.row(resume.uid));
   return { resumes, resume, row: { id: resume.id, rowId } };
 };
 
@@ -222,7 +223,7 @@ export const addResumeRows = async (
   if (!author) return { status: 'forbidden' };
   const { resumes, ...target } = await readResume(formData);
   const kind = readString(formData, ROW_KIND_FIELD);
-  if (!isResumeRowKind(kind)) redirect(`/dash/resumes/${target.uid}`);
+  if (!isResumeRowKind(kind)) redirect(routes.dash.resumes.row(target.uid));
   return finish(
     target,
     await addResumeRowsUseCase(
@@ -344,5 +345,5 @@ export const deleteResume = async (
   const { resumes, id } = await readResume(formData);
   const outcome = await deleteResumeUseCase(resumes, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
-  redirect('/dash/resumes?deleted=1');
+  redirect(`${routes.dash.resumes.list}?deleted=1`);
 };

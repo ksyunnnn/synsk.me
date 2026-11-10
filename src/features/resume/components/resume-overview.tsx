@@ -3,6 +3,7 @@ import { listResumeSkills } from '@/features/resume/domain/resume-skills';
 import { TextLink } from '@/shared/components/text-link';
 import { formatPeriod, toYearsAndMonths } from '@/shared/domain/period';
 import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { routes } from '@/shared/routes';
 
 /**
  * 設定の画面の中身。写した職歴・実績・学歴・スキルの一覧と、各行の編集へのリンク、職歴・実績・
@@ -18,19 +19,19 @@ const formatMonths = (months: number) => {
 export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Date }) => {
   const skills = listResumeSkills(resume.projects, resume.skillOverrides, now);
   const overridden = new Set(resume.skillOverrides.map((o) => o.skillName));
-  const base = `/dash/resumes/${resume.uid}`;
+  const r = routes.dash.resumes;
 
   return (
     <div className="flex flex-col gap-8">
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-bold">職歴（{resume.careers.length} 件）</h2>
         <p>
-          <TextLink href={`${base}/careers/new`}>職歴を足す</TextLink>
+          <TextLink href={r.entryNew(resume.uid, 'careers')}>職歴を足す</TextLink>
         </p>
         <ul className="flex flex-col gap-2">
           {resume.careers.map((career) => (
             <li key={career.id} className="flex flex-col">
-              <TextLink href={`${base}/careers/${career.uid}`}>
+              <TextLink href={r.entry(resume.uid, 'careers', career.uid)}>
                 {career.organizationName}・{career.role}
               </TextLink>
               <span className="text-sm text-muted-foreground">{formatPeriod(career.period)}</span>
@@ -41,12 +42,14 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-bold">実績（{resume.projects.length} 件）</h2>
         <p>
-          <TextLink href={`${base}/projects/new`}>実績を足す</TextLink>
+          <TextLink href={r.entryNew(resume.uid, 'projects')}>実績を足す</TextLink>
         </p>
         <ul className="flex flex-col gap-2">
           {resume.projects.map((project) => (
             <li key={project.id} className="flex flex-col">
-              <TextLink href={`${base}/projects/${project.uid}`}>{project.title}</TextLink>
+              <TextLink href={r.entry(resume.uid, 'projects', project.uid)}>
+                {project.title}
+              </TextLink>
               <span className="text-sm text-muted-foreground">
                 {PROJECT_KIND_LABELS[project.kind]}・{project.organizationName}・
                 {formatPeriod(project.period)}
@@ -58,12 +61,14 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
       <section className="flex flex-col gap-3">
         <h2 className="text-xl font-bold">学歴（{resume.educations.length} 件）</h2>
         <p>
-          <TextLink href={`${base}/educations/new`}>学歴を足す</TextLink>
+          <TextLink href={r.entryNew(resume.uid, 'educations')}>学歴を足す</TextLink>
         </p>
         <ul className="flex flex-col gap-2">
           {resume.educations.map((education) => (
             <li key={education.id} className="flex flex-col">
-              <TextLink href={`${base}/educations/${education.uid}`}>{education.school}</TextLink>
+              <TextLink href={r.entry(resume.uid, 'educations', education.uid)}>
+                {education.school}
+              </TextLink>
               <span className="text-sm text-muted-foreground">
                 {formatPeriod(education.period)}
               </span>
@@ -84,7 +89,7 @@ export const ResumeOverview = ({ resume, now }: { resume: ResumeForEdit; now: Da
           ))}
         </ul>
         <p>
-          <TextLink href={`${base}/skills`}>経験年数の上書きを直す</TextLink>
+          <TextLink href={r.skills(resume.uid)}>経験年数の上書きを直す</TextLink>
         </p>
       </section>
     </div>

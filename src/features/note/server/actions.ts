@@ -39,6 +39,7 @@ import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
 import { fetchLinkPreview } from '@/shared/server/link-preview-fetch';
+import { routes } from '@/shared/routes';
 
 /**
  * note のフォームが呼ぶ Server Action（specs/003-note/contracts/dash.md）。`page.tsx` が読み込み、
@@ -49,8 +50,8 @@ import { fetchLinkPreview } from '@/shared/server/link-preview-fetch';
  * note は uid と開いた版の uid を隠しフィールドで送る。無い・削除した note は一覧へ移す
  */
 
-const LIST = '/dash/notes';
-const editPath = (uid: string) => `/dash/notes/${uid}`;
+const LIST = routes.dash.notes.list;
+const editPath = (uid: string) => routes.dash.notes.row(uid);
 
 /** フォームの uid が指す note の id。無い uid なら null。オーナーの確認の後に呼ぶ */
 const resolveNote = async (formData: FormData) => {
