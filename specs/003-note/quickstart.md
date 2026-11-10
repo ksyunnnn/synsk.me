@@ -35,6 +35,7 @@ Preview は全体が Access の後ろにある（README.md の「開発」）。
 11. 下書きに戻す・削除する・元に戻すのそれぞれの後に `/notes/sample-note` の状態が変わる
 12. 転載先の URL を 2 つ記録できる。同じ URL を別の note に記録すると拒まれる
 13. スマートフォンで 3〜5 を行える
+14. 本文に、OGP を持つ記事の URL だけの行を書いて保存し、見た目の確認を開くと、題と画像を添えたカードで出る。引けない名前の URL（例: `https://sample.invalid/a`）の行は URL の文字列のリンクで出る
 
 ## 版の大きさを測る（research.md の R17）
 
@@ -43,4 +44,13 @@ Preview か本番の D1 に対して、`wrangler d1 execute` で次の SQL を�
 ```sql
 SELECT note_id, count(*) AS revisions, sum(length(body)) AS body_chars
 FROM note_revision GROUP BY note_id ORDER BY body_chars DESC;
+```
+
+## 参照先の情報の行を測る（research.md の R13）
+
+本文から消えた URL の行も `link_preview` に残す。同じく次の SQL を流す。返るのは行の数と、題と画像の URL の文字数の合計。行を消す仕組みは、この値が閾値を割ってから決める。
+
+```sql
+SELECT count(*) AS rows, sum(length(coalesce(title, '')) + length(coalesce(image_url, ''))) AS chars
+FROM link_preview;
 ```

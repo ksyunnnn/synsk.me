@@ -4,6 +4,7 @@ import { encodeActionCall, encodeForm, readActionFields } from './support/form';
 import { readRows } from './support/send';
 import {
   deleteNoteRow,
+  insertLinkPreview,
   insertNote,
   insertNoteMedia,
   insertNoteRevision,
@@ -280,10 +281,40 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
     }
   });
 
+  it('URL だけの段落は、参照先の情報を持てばカードで、持たなければリンクで出し、表示では取りに行かない（FR-027・FR-028・SC-005）', async () => {
+    await insertLinkPreview(ctx.db, {
+      url: 'https://example.com/integration-visitor-known',
+      title: '訪問者のカードの題',
+      imageUrl: 'https://example.com/integration-visitor-known.png',
+    });
+    // 取りに行けば取れる名前の URL。表示で取れば `link_preview` に行が増える
+    const unknown = 'https://example.com/integration-visitor-unknown';
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-visitor-links',
+      body: `https://example.com/integration-visitor-known\n\n${unknown}`,
+    });
+    await publishNoteRow(ctx.db, note.id);
+    const countRows = async () =>
+      ctx.db.prepare('SELECT count(*) AS n FROM link_preview').first('n');
+    const before = await countRows();
+
+    const html = await (await ctx.server.fetch('/notes/integration-visitor-links')).text();
+
+    expect(html).toContain('訪問者のカードの題');
+    expect(html).toContain('src="https://example.com/integration-visitor-known.png"');
+    expect(html).toContain(`<p><a href="${unknown}">${unknown}</a></p>`);
+    expect(await countRows()).toBe(before);
+  });
+
   it('説明文が空なら、本文の最初の段落が説明に出る', async () => {
     const html = await (await ctx.server.fetch('/notes/integration-no-description')).text();
     expect(html).toMatch(/<meta name="description" content="本文の最初の段落"/);
     expect(html).toMatch(/<meta property="og:description" content="本文の最初の段落"/);
+    expect(html).toMatch(/<meta name="twitter:title" content="説明文の無い題"/);
+    expect(html).toMatch(/<meta name="twitter:description" content="本文の最初の段落"/);
+    // twitter を書き直しても、root layout のカードの種類と作者は残す
+    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
+    expect(html).toMatch(/<meta name="twitter:creator" content="@ksyunnnn"/);
   });
 
   it('公開し直すと直した本文が出て、初めて公開した日時が変わらない（SC-004）', async () => {
@@ -628,6 +659,44 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
   });
 });
 
+describe('説明文が空のときの説明（FR-034・FR-033）', () => {
+  const FIELD = 'isFirstParagraphAsDescription';
+
+  it('本文の最初の段落を使わないにすると、説明文の空な note の説明が出ない', async () => {
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-no-first-paragraph',
+      title: '最初の段落を使わない題',
+      body: '説明に出さない最初の段落',
+    });
+    await publishNoteRow(ctx.db, note.id);
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${note.uid}`,
+      marker: `name="${FIELD}"`,
+      values: { noteUid: note.uid, [FIELD]: '0' },
+      asAuthor: true,
+    });
+    expect(res.status).toBe(303);
+    const html = await (await ctx.server.fetch('/notes/integration-no-first-paragraph')).text();
+    expect(html).toContain('説明に出さない最初の段落');
+    expect(html).not.toMatch(/<meta name="description"/);
+    expect(html).not.toMatch(/<meta property="og:description"/);
+    expect(html).not.toMatch(/<meta name="twitter:description"/);
+  });
+
+  it('JWT のない changeNoteFirstParagraphAsDescription は D1 を変えない', async () => {
+    const before = await readNoteTables();
+    const res = await submitFormWith({
+      formPath: `/dash/notes/${draft.uid}`,
+      marker: `name="${FIELD}"`,
+      values: { noteUid: draft.uid, [FIELD]: '0' },
+      asAuthor: false,
+      to: '/',
+    });
+    await res.arrayBuffer();
+    expect(await readNoteTables()).toEqual(before);
+  });
+});
+
 describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
   it('下書きの note でも、最も新しい版を訪問者向けの部品で出す', async () => {
     const note = await insertNote(ctx.db, {
@@ -647,6 +716,34 @@ describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
     expect(html).toContain('<strong>新しい</strong>');
     expect(html).toContain('公開していません');
     expect(html).not.toContain('見た目の確認の古い題');
+  });
+
+  it('参照先の情報を持つ URL はカードで、取れない URL はリンクで出し、取れない URL を書かない（U9）', async () => {
+    await insertLinkPreview(ctx.db, {
+      url: 'https://example.com/integration-preview-known',
+      title: '見た目の確認のカードの題',
+      imageUrl: 'https://example.com/integration-preview-known.png',
+    });
+    // `.invalid` は公開のインターネットで引けない名前（RFC 6761）。取得の部品は要求を出さずに失敗にする
+    const unfetched = 'https://integration-preview.invalid/a';
+    const note = await insertNote(ctx.db, {
+      slug: 'integration-preview-links',
+      body: `https://example.com/integration-preview-known\n\n${unfetched}`,
+    });
+    const res = await ctx.server.fetch(`/dash/notes/${note.uid}/preview`, {
+      headers: await authorHeaders(),
+    });
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('見た目の確認のカードの題');
+    expect(html).toContain('src="https://example.com/integration-preview-known.png"');
+    expect(html).toContain(`<p><a href="${unfetched}">${unfetched}</a></p>`);
+    expect(
+      await ctx.db
+        .prepare('SELECT count(*) AS n FROM link_preview WHERE url = ?')
+        .bind(unfetched)
+        .first('n'),
+    ).toBe(0);
   });
 
   it('オーナーの JWT がなければ 403 で、中身を返さない', async () => {

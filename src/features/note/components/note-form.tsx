@@ -128,7 +128,7 @@ export const NoteForm = ({ action, initialValues, note }: Props) => {
       <TextareaField
         name="description"
         label="説明文"
-        hint="空にすると、本文の最初の段落を説明に使います"
+        hint="空にすると、「説明文が空のとき」で選んだ説明を出します"
         rows={3}
         defaultValue={values.description}
         error={errorOf('description')}

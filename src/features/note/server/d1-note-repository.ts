@@ -1,15 +1,16 @@
 import 'server-only';
 
-import type {
-  Note,
-  NoteCardImage,
-  NotePreview,
-  NoteRevisionSummary,
-  NoteStatus,
-  NoteSummary,
-  VisitorLinkPreview,
-  VisitorNote,
-  VisitorNoteCardImage,
+import {
+  summaryOf,
+  type Note,
+  type NoteCardImage,
+  type NotePreview,
+  type NoteRevisionSummary,
+  type NoteStatus,
+  type NoteSummary,
+  type VisitorLinkPreview,
+  type VisitorNote,
+  type VisitorNoteCardImage,
 } from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
 import { readMarkdown } from '@/shared/domain/markdown';
@@ -29,6 +30,7 @@ type NoteRow = {
   deleted_at: string | null;
   card_image: NoteCardImage;
   card_media_storage_key: string | null;
+  is_first_paragraph_as_description: 0 | 1;
   published_revision_uid: string | null;
 };
 
@@ -50,6 +52,7 @@ type VisitorRow = {
   published_at: string;
   card_image: NoteCardImage;
   card_media_storage_key: string | null;
+  is_first_paragraph_as_description: 0 | 1;
 };
 
 /** 見た目の確認で読む行。一度も公開していない note は初めて公開した日時を持たない */
@@ -152,7 +155,10 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       slug: row.slug,
       title: row.title,
       description: row.description,
-      summary: row.description ?? firstParagraph,
+      summary: summaryOf(
+        { description: row.description, firstParagraph },
+        row.is_first_paragraph_as_description === 1,
+      ),
       body: row.body,
       publishedAt: row.published_at,
       cardImage: toCardImage(row.card_image, row.card_media_storage_key),
@@ -166,7 +172,8 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       const row = await db
         .prepare(
           `SELECT n.id, n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
-             m.storage_key AS card_media_storage_key ${VISITOR_FROM}`,
+             m.storage_key AS card_media_storage_key, n.is_first_paragraph_as_description
+           ${VISITOR_FROM}`,
         )
         .bind(slug)
         .first<VisitorRow>();
@@ -180,7 +187,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
       const row = await db
         .prepare(
           `SELECT n.id, n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
-             m.storage_key AS card_media_storage_key
+             m.storage_key AS card_media_storage_key, n.is_first_paragraph_as_description
            FROM note n
            JOIN note_revision r
              ON r.id = (SELECT max(id) FROM note_revision WHERE note_id = n.id)
@@ -202,7 +209,8 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         db
           .prepare(
             `SELECT n.id, n.uid, n.slug, n.status, n.published_at, n.deleted_at, n.card_image,
-               m.storage_key AS card_media_storage_key, pr.uid AS published_revision_uid
+               m.storage_key AS card_media_storage_key, n.is_first_paragraph_as_description,
+               pr.uid AS published_revision_uid
              FROM note n
              LEFT JOIN media m ON m.id = n.card_media_id AND m.note_id = n.id
              LEFT JOIN note_revision pr ON pr.id = n.published_revision_id AND pr.note_id = n.id
@@ -230,6 +238,7 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
         deletedAt: row.deleted_at,
         cardImage: row.card_image,
         cardMediaStorageKey: row.card_media_storage_key,
+        isFirstParagraphAsDescription: row.is_first_paragraph_as_description === 1,
         latestRevision: toRevision(latest),
         publishedRevisionUid: row.published_revision_uid,
         mediaStorageKeys: (mediaResult.results as { storage_key: string }[]).map(
@@ -487,6 +496,16 @@ export const createD1NoteRepository = (db: D1Database): NoteRepository => {
               .run();
       if (result.meta.changes > 0) return { ok: true };
       return { ok: false, reason: (await isMissing(id)) ? 'not-found' : 'media-not-owned' };
+    },
+
+    changeFirstParagraphAsDescription: async (id, isFirstParagraphAsDescription) => {
+      const result = await db
+        .prepare(
+          'UPDATE note SET is_first_paragraph_as_description = ? WHERE id = ? AND deleted_at IS NULL',
+        )
+        .bind(isFirstParagraphAsDescription ? 1 : 0, id)
+        .run();
+      return { ok: result.meta.changes > 0 };
     },
 
     addMedia: async (id, storageKey) => {

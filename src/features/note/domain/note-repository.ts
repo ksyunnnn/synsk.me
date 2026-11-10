@@ -128,6 +128,14 @@ export type NoteRepository = {
     cardImage: VisitorNoteCardImage,
   ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
   /**
+   * 説明文が空のときに本文の最初の段落を説明に使うかを書く（FR-034、research.md の R19）。版は
+   * 足さない。無いか削除した note なら何も書かず `ok: false`
+   */
+  changeFirstParagraphAsDescription: (
+    id: NoteId,
+    isFirstParagraphAsDescription: boolean,
+  ) => Promise<{ ok: boolean }>;
+  /**
    * 置き場に置いた画像を、その note の画像として記録する（FR-023、research.md の R12）。無いか
    * 削除した note なら `ok: false`
    */
