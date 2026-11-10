@@ -34,7 +34,7 @@ const SEAM = 1;
 
 // 画面に出す言葉。出典は PR の本文にある
 const COPY = {
-  tagline: '写真が帯ごとに少し遅れて現れ、最後に揃う動画をつくる。',
+  tagline: '写真が端から現れながら、何度か少しずれては元の位置に戻る動画をつくる。',
   choose: '写真を選択',
   chooseHint: '動画の縦横比は写真と同じになる',
   change: '写真を置き換える',
@@ -47,7 +47,7 @@ const COPY = {
   topToBottom: '上から下',
   duration: '長さ',
   amount: 'ずれの大きさ',
-  strips: '帯の数',
+  strips: 'ずれの回数',
   reset: 'リセット',
   adjust: '調整',
   close: '閉じる',
@@ -583,7 +583,7 @@ export const DelayExporter = () => {
           <Slider
             label={COPY.strips}
             value={count}
-            display={`${count}`}
+            display={`${count} 回`}
             min={1}
             max={60}
             step={1}
