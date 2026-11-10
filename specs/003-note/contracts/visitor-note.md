@@ -25,7 +25,7 @@ Repository の実装は `note.status = 'published' AND note.deleted_at IS NULL` 
 | `description` | 公開した版の `note_revision.description`（空あり） |
 | `body` | 公開した版の `note_revision.body`。共有担当の Markdown の部品で描き、生の HTML を通さない（research.md の R11） |
 | `publishedAt` | `note.published_at`（初めて公開した日時、FR-013） |
-| `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`generated` の画像は plan.md の U8、`media` の画像は `/notes/{slug}/media/{key}`。`site` はサイト共通の画像 |
+| `cardImage` | `note.card_image` と、`media` のときは `note.card_media_id` の画像。`site` はサイト共通の画像 |
 | `media` | 公開した版の本文が指す画像のうち、その note の `media` の行にある `storage_key` の並び。画像の `src` はこの並びにある値だけから作る（research.md の R11・R12） |
 | `linkPreviews` | 公開した版の本文の URL が指す `link_preview` の `url`・`title`・`image_url`。カードにするのは行に URL だけを書いた行（research.md の R11）。出し方は U9 が解けてから |
 
@@ -33,7 +33,14 @@ DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開�
 
 ## OGP
 
-`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `description`。`description` が空なら、本文の最初の段落の文字列を出す（research.md の R11）。画像は `cardImage`。
+`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `description`。`description` が空なら、本文の最初の段落の文字列を出す（research.md の R11）。`twitter:card` は `summary`。画像は `cardImage` から作る 400×400 の正方形で、`og:image`（`og:image:width`・`og:image:height` つき）と `twitter:image` に 1 つずつ出す（research.md の R12）。
+
+| `cardImage` | 画像の URL |
+|---|---|
+| `media` | `/notes/{slug}/card/{key}`。代表画像を 400×400 に縮めたもの。公開で削除していない note の代表画像のときだけ 200、ほかは 404 と `no-store` |
+| `site` | `/note-card-site.png` |
+
+代表画像の原本は `/notes/{slug}/media/{key}` が縮めずに返す。
 
 ## 検査
 

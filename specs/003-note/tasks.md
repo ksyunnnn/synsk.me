@@ -166,19 +166,19 @@ description: "note の実装タスク"
 
 ## Phase 7: User Story 5 - 本文に画像を置き、代表画像を選ぶ (Priority: P2)
 
-**Goal**: 本文に画像を置き、代表画像を自動で作る画像・note の画像・サイト共通の画像から選ぶ
+**Goal**: 本文に画像を置き、代表画像を note の画像・サイト共通の画像から選ぶ
 
 **Independent Test**: 本文に画像を 1 枚置いて公開し、訪問者に画像が出る。代表画像をその画像にし、OGP にその画像が出る
 
 ### Tests for User Story 5
 
-- [X] T034 [P] [US5] D1 の実装（代表画像の既定が `generated`、`site` に変えられる、別の note の画像を代表画像に選べない）を tests/workers/note-repository.test.ts に足す。画像の行は tests/support/note-rows.ts で入れる（FR-024・FR-025、User Story 5 の 3）
+- [X] T034 [P] [US5] D1 の実装（代表画像の既定が `site`、`site` に戻せる、別の note の画像を代表画像に選べない）を tests/workers/note-repository.test.ts に足す。画像の行は tests/support/note-rows.ts で入れる（FR-024・FR-025、User Story 5 の 3）
 - [X] T035 [P] [US5] 代表画像を `site` にした note の OGP にサイト共通の画像が出ること、JWT のない `changeNoteCardImage` が D1 を変えないことを tests/integration/notes.test.ts に足す（FR-024・FR-033）
 
 ### Implementation for User Story 5
 
-- [X] T036 [US5] 代表画像の出どころの変更（`generated` と `site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` に `site` のときのサイト共通の画像を足す（research.md の R12）
-- [ ] T037 [US5] 題を入れて自動で作る代表画像を作り、一度作ったものを使い回す（`docs/CRAWLING.md` の「取得の負荷」）。**止める未決: U8**
+- [X] T036 [US5] 代表画像の出どころの変更（`site`）を Repository・ユースケース change-note-card-image.ts・Server Action `changeNoteCardImage`・src/features/note/components/note-card-image-form.tsx に作り、src/app/notes/[slug]/page.tsx の `generateMetadata` に `site` のときのサイト共通の画像を足す（research.md の R12）
+- [X] T037 [US5] 代表画像の出どころから `generated` を外し（migration 0024）、note のページで `twitter:card` を `summary`、`og:image` と `twitter:image` を 400×400 の正方形にする。`media` は src/app/notes/[slug]/card/[key]/route.ts が代表画像を縮めて返し、`site` は src/app/note-card-site.png/route.tsx が返す。タグと正方形の大きさ、原本の経路が縮めないことを tests/integration/notes.test.ts と tests/integration/routes.test.ts で、行の変換を tests/workers/migration-0024-rows.test.ts で確かめる（U8 の決定、research.md の R12）
 - [X] T038 [US5] 画像の追加（ユースケース add-note-media.ts、Server Action `addNoteMedia`。共有担当の src/shared/server/media-storage.ts で R2 に置き、持ち主が note の `media` を足す。1 回の操作で 1 枚。JPEG・PNG・WebP・GIF・10 MB までの検査は media-storage.ts が持ち、その検査で確かめる）と、代表画像に note の画像を選ぶ入力を作る。media-storage.ts が拒んだ画像を項目の誤りで返すことを tests/unit/note-usecases.test.ts で、別の note の画像を代表画像に選べないことを tests/workers/note-repository.test.ts で確かめる（FR-023・FR-025、research.md の R12、constitution の Test Layering）
 - [X] T039 [US5] note の画像を配る経路 src/app/notes/[slug]/media/[key]/route.ts と、ユースケース get-visitor-note-media.tsを作り、src/proxy.ts の matcher に `/notes/:slug/media/:key` を足す（proxy は D1 を読まない。research.md の R9）。公開で削除していない note の、公開した版の本文が指す画像（T006 が DTO に詰めた `storageKey` の並び）と代表画像だけを、R2 の原本のまま返す。下書き・削除した note の画像、公開した後に保存した版にだけ置いた画像、別の note の画像が 404 で `no-store` を持つことを tests/integration/notes.test.ts で確かめる（FR-026・SC-001、User Story 5 の 1・4・5）
 - [X] T040 [US5] src/features/note/components/visitor-note.tsx で、共有担当の Markdown を描く部品に、画像の `src` を `/notes/{slug}/media/{storageKey}` にする関数を渡す。DTO の `media` に無い `storageKey` の画像を出さないことと、`<figure>`・`<img alt title>`・`<figcaption>` で出ることを tests/integration/notes.test.ts で確かめる（research.md の R11）
@@ -247,7 +247,7 @@ description: "note の実装タスク"
 - US2: US1 に依存（公開した note を使う）
 - US3: US1 に依存（保存した版を使う）。US2 と並べられる
 - US4: US1 に依存（保存の画面）。T033 は共有担当の書きかけの保持の部品を待つ
-- US5: US1 に依存。T037 だけが U8 を待つ
+- US5: US1 に依存
 - US6: US1 に依存。T041・T042 は U9 を待たない
 - US7: US1 に依存。US2〜US6 と並べられる
 
@@ -255,9 +255,8 @@ description: "note の実装タスク"
 
 | 未決 | 止めるタスク |
 |---|---|
-| U8 | T037 |
 | U9 | T043・T044 |
-| U1〜U7・U10〜U14 | 無し |
+| U1〜U8・U10〜U14 | 無し |
 
 ### Within Each User Story
 
