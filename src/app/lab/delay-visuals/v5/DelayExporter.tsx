@@ -196,7 +196,8 @@ export const DelayExporter = () => {
   const [exportState, setExportState] = useState<ExportState>({ kind: 'idle' });
   const [canShare, setCanShare] = useState(false);
   // プレビューに補助線を重ねるか。書き出す動画には効かない
-  const [guides, setGuides] = useState(true);
+  // 既定では出さない。必要な人が「補助線」で出す。リセットの対象ではない
+  const [guides, setGuides] = useState(false);
   // 調整のシートを開いているか。必要な人だけが開く
   const [adjustOpen, setAdjustOpen] = useState(false);
   const adjustButtonRef = useRef<HTMLButtonElement>(null);
