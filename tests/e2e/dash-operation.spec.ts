@@ -8,6 +8,7 @@ import {
   setResumeVisible,
   submitAndWait,
   textbox,
+  visit,
 } from './support/dash';
 import { typeBeforeHydration } from './support/hydration';
 import { createNote, uniqueNoteSlug, waitForHydration } from './support/note';
@@ -283,6 +284,30 @@ test.describe('戻る道', () => {
       await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
       await expect(visitor).toHaveURL('/top-draft');
     }
+    await visitor.close();
+  });
+});
+
+test.describe('404 の画面', () => {
+  test('無いページを開くと、日本語の説明とトップへ戻るリンクが出る', async ({ browser }) => {
+    const visitor = await openVisitor(browser);
+    for (const path of [
+      `/projects/e2e-no-such-${crypto.randomUUID().slice(0, 8)}`,
+      `/notes/e2e-no-such-${crypto.randomUUID().slice(0, 8)}`,
+    ]) {
+      expect(await visit(visitor, path)).toBe(404);
+      await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('ページが見つかりません');
+      await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
+      await expect(visitor).toHaveURL('/top-draft');
+    }
+    await visitor.close();
+  });
+
+  test('オーナーでない人が管理画面を開くと、トップへ戻るリンクが出る', async ({ browser }) => {
+    const visitor = await openVisitor(browser);
+    expect(await visit(visitor, '/dash')).toBe(403);
+    await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
+    await expect(visitor).toHaveURL('/top-draft');
     await visitor.close();
   });
 });
