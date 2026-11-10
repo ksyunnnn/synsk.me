@@ -716,7 +716,7 @@ describe('refetchLinkPreview（User Story 6 の 3、FR-029、2026-11-10 のオ�
     summary: null,
     body,
     publishedAt: null,
-    cardImage: { kind: 'generated' },
+    cardImage: { kind: 'site' },
     media: [],
     linkPreviews: [{ url: A, title: '前に取った題', imageUrl: null }],
   });

@@ -361,13 +361,13 @@ describe('fetchLinkPreview', () => {
   // Content-Type に charset が無ければ、先頭 1024 バイトの meta の宣言で読む
   const SHIFT_JIS_NIHON = [0x93, 0xfa, 0x96, 0x7b];
   const bytesOf = (...parts: (string | number[])[]) =>
-    new Uint8Array(
+    Uint8Array.from(
       parts.flatMap((part) =>
         typeof part === 'string' ? [...new TextEncoder().encode(part)] : part,
       ),
     );
   const bytesPage =
-    (bytes: Uint8Array, contentType = 'text/html'): LinkPreviewFetcher =>
+    (bytes: Uint8Array<ArrayBuffer>, contentType = 'text/html'): LinkPreviewFetcher =>
     async () =>
       new Response(bytes, { status: 200, headers: { 'Content-Type': contentType } });
 

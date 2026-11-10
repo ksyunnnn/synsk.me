@@ -44,6 +44,8 @@ const project = (overrides: Partial<Project> = {}): Project => ({
   description: null,
   url: null,
   skillIds: [],
+  mediaStorageKeys: [],
+  cardMediaKey: null,
   updatedAt: OPENED_AT,
   ...overrides,
 });
@@ -118,7 +120,7 @@ describe('オーナーでない呼び出しを拒む（FR-040）', () => {
   });
 
   it('削除は何も書かない', async () => {
-    expect(await deleteProject(projects, null, 1)).toEqual({ status: 'forbidden' });
+    expect(await deleteProject(deps, null, 1)).toEqual({ status: 'forbidden' });
     expect(projects.delete).not.toHaveBeenCalled();
   });
 });
