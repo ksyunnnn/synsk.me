@@ -10,12 +10,19 @@
 
 ## Contents
 
+- Clarifications
 - Terms
 - User Scenarios & Testing（User Story 1〜4、Edge Cases）
 - Requirements（並べるもの・並びの日付と順・秘匿化・重なりの除外・種類とリンク）
 - Key Entities
 - Success Criteria
 - Assumptions
+
+## Clarifications
+
+### Session 2026-11-10
+
+- Q: 日時（note の作成日・外部の activity の公開日）がどの日に当たるかを、どの時刻帯で決めるか？ → A: 作者の時刻帯 Asia/Tokyo で決める。並べ順と表示の両方に効く。暦の日付（life event の起きた日・実績と職歴の始まりの日）は換算しない（2026-11-10、オーナー。方針は [issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6761262936)、換算する場所は [issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6761595417)）
 
 ## Terms
 
@@ -130,6 +137,7 @@
 - **FR-009**: 職歴と実績の終わりの日は、並びに使わない
 - **FR-010**: 一覧は、並びの日付の新しい順に並べる。並びの日付が同じ activity は、種類と、種類ごとの activity の番号で順を決め、同じデータを読むたびに同じ順で並べる
 - **FR-011**: 外部の activity の公開日と life event の起きた日が同じ日のとき、起きた日は、その日の公開日時より古いものとして並べる
+- **FR-022**: 日時（note の作成日・外部の activity の公開日）がどの日に当たるかは、Asia/Tokyo の日付で決める。並べ順と表示の両方に適用する。暦の日付（life event の起きた日・実績と職歴の始まりの日）は換算せず、同じ日の日時より古いものとして並べる（FR-011 を種類をまたいで広げたもの）
 
 **秘匿化**
 
@@ -191,7 +199,6 @@
 **決定が無く、この spec では決めない**
 
 - 並びの日付が同じとき、どの種類を先に並べるか
-- 種類をまたいで、暦の日付（life event・実績・職歴）と日時（外部の activity の公開日・note の作成日）が同じ日のときの順と、日の境目をどの時刻帯で決めるか
 - 一覧から note と実績の個別のページへリンクするか
 - 一覧に note・実績・life event の代表画像を出すか。外部の activity の代表の画像の出し方
 - 転載先の URL と外部の activity の URL が一致するとみなす条件（末尾のスラッシュ・問い合わせの部分の違いなど）
