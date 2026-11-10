@@ -5,7 +5,7 @@ import type { Metadata } from 'next';
 import { DelayExporter } from './DelayExporter';
 
 export const metadata: Metadata = {
-  title: 'delay-visuals',
+  title: 'delay visuals',
 };
 
 // 細かいざらつきを重ねる。色は持たず、下の地の色を暗くするだけ

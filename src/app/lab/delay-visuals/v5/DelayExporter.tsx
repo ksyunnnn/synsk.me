@@ -12,6 +12,8 @@ import {
   SlidersHorizontal,
 } from '@phosphor-icons/react';
 
+import { sourceSans } from '@/lib/fonts';
+
 import {
   drawFrame,
   exportVideo,
@@ -392,7 +394,13 @@ export const DelayExporter = () => {
         {/* 画面の上に留める帯。左にアプリの名前、右に書き出しの操作だけを置く。書き出しの段階に応じて、同じ場所で中身が入れ替わる */}
         <div className="sticky top-0 z-10 -mx-4 px-4 pt-[max(0.5rem,env(safe-area-inset-top))]">
           <div className="flex h-14 items-center justify-between gap-3 rounded-full bg-background/70 pr-1.5 pl-5 backdrop-blur-xl">
-            <h1 className="truncate text-base">delay-visuals</h1>
+            {/* アプリの名前。大文字は CSS で見せるだけで、文字は小文字の 2 語のまま（読み上げで 1 文字ずつにならないように）。
+                書体と字間は design/foundations.pen の「ラベル、ナビゲーション 0.08–0.1em · uppercase」 */}
+            <h1
+              className={`${sourceSans.className} truncate text-sm font-normal tracking-[0.1em] uppercase`}
+            >
+              delay visuals
+            </h1>
             <div className="flex shrink-0 items-center gap-2">{outputActions}</div>
           </div>
           {outputMessage && (
