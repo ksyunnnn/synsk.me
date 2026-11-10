@@ -153,12 +153,16 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
   - 画像の記録は `media` に持ち、持ち主の列は `note_id`。R2 への読み書き・形式と大きさの検査は共有担当の `src/shared/server/media-storage.ts` が持つ。003 は、note の画像を足す操作と、note の画像を訪問者に出してよいかの確かめを持つ（FR-023・FR-026）
   - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は `media.storage_key`（UUID、PR #225）で、本文の画像の印と同じ値（R11）。主キーは URL に出さない（ADR-0048）。見せてよいかは `route.ts` が確かめ、結果を共有担当の `respondWithMedia` に渡して応答を作る（R9）
   - 量の上限（constitution II）: 1 枚 10 MB、1 回の操作で 1 枚
-  - 代表画像の出どころは `note.card_image`（`generated`・`media`・`site`）。既定は `generated`（FR-024）。`media` を選べるのは、その note の画像だけ（複合の外部キー、FR-025）
+  - 代表画像の出どころは `note.card_image`（`media`・`site`）。既定は `site`（FR-024）。`media` を選べるのは、その note の画像だけ（複合の外部キー、FR-025）。`generated` は migration 0024 が CHECK から外し、既にある `generated` の行を `site` に変える
   - 訪問者に出してよい画像は、note が公開で削除していないときの、公開した版の本文が指す画像と、代表画像だけ（FR-026）。この確かめは画像を配る経路の中で、Repository が取り出すときに行う。公開した版の本文が指す画像の `storageKey` は、共有担当の Markdown の部品で読む（R11）。その note の `media` の行に無い `storageKey` は出さない
 - 未決:
   - U14: 本文から消した画像のデータを残すか、画像の置き場と保管するデータのずれの扱い（spec の「決定が無く」）。決まるまで、本文から消した画像も `media` と R2 に残す。訪問者には公開した版の本文が指す画像だけを出すため、残しても出ない
-  - U8: 題を入れて自動で作る画像の作り方と使い回し方。`docs/CRAWLING.md` の「取得の負荷」は、カード画像を一度作ったら使い回し、取得のたびには作らないとする。作り方と使い回し方を決めるまで、自動で作る画像を出さない
-- U8 で止めないもの: `card_image` の `generated` と `site` の選択の保存と、`site` のときにサイト共通の画像を OGP に出すこと
+- 共有したときの画像（U8 の決定。2026-11-10、オーナー。[issue #219 の U8 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766846712)）:
+  - note のページの `generateMetadata` は、`twitter:card` を `summary` にする。サイト全体の `src/app/layout.tsx` の `summary_large_image` と、サイト共通の 1200×630 の画像 `src/app/opengraph-image.tsx` は変えない
+  - `media`: `og:image` と `twitter:image` は、代表画像の原本の経路 `/notes/{slug}/media/{key}` を 1 つだけ指す。縮めない（オーナーが選んだ画像の大きさに従う）
+  - `site`: note 用のサイト共通の 400×400 の画像を使う。画像はオーナーが用意する（#294）。用意するまでは、`og:image` と `twitter:image` を出さない。`openGraph.images` と `twitter.images` に空の並びを渡し、サイト共通の 1200×630 の画像を引き継がない。仮の画像は置かない（索引されるのを避けるため）
+  - 大きさの根拠（note 用のサイト共通の 400×400 の画像）: X の Summary Card は 1:1 で最小 144×144、Facebook は最小 200×200（https://developers.facebook.com/docs/sharing/webmasters/images/ ）、LinkedIn は幅 401 px 未満を小さい画像で出す（https://www.linkedin.com/help/linkedin/answer/a521928 ）。400×400 はこの 3 つを満たす
+- 退けた案（U8）: 題を入れた画像を自動で作る（Workers で描く・Cloudflare Images で文字を重ねる・ブラウザで描いて R2 に置く・Browser Rendering・Cloudinary）。オーナーが機能を作らないと決めた。`media` の画像を共有したときだけ 400×400 に縮める。オーナーが選んだ画像は縮めないと決めた
 - 理由: 004 の spec の FR-030 は画像の仕組みを 003 が持つとするが、issue #219 の進め方の宣言（2026-11-09）が画像の保存と配信を共有担当に割り当てた。003 の plan は共有担当の部品を使う
 
 ## R13 URL カード

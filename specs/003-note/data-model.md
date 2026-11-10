@@ -43,7 +43,7 @@
 | 公開する版は同じ note の、題が空でない版 | トリガ `note_published_revision_valid`、複合の外部キー | FR-011 |
 | 公開の note は公開した版を持つ | `note` の CHECK | FR-011・FR-012 |
 | 初めて公開した日時を変えない | トリガ `note_published_at_fixed` | FR-013 |
-| 代表画像の出どころは 3 つのどれか、既定は自動で作る画像 | `note.card_image` の CHECK と DEFAULT | FR-024 |
+| 代表画像の出どころはその note の画像か note 用のサイト共通の 400×400 の画像、既定は note 用のサイト共通の 400×400 の画像 | `note.card_image` の CHECK と DEFAULT（migration 0024） | FR-024 |
 | 説明文が空のときに本文の最初の段落を使うかは 0 か 1、既定は 1 | `note.is_first_paragraph_as_description` の CHECK と DEFAULT（`migrations/0023`） | FR-034 |
 | 代表画像の画像はその note の画像だけ | `note` の複合の外部キー `(id, card_media_id)` | FR-025 |
 | 画像の持ち主は 1 つだけ | `media` の CHECK | spec の Key Entities |
@@ -96,7 +96,7 @@
 
 - `NoteId`（主キー。URL とフォームに出さない）、`Uid`（`src/shared/domain/uid.ts`）
 - `NoteStatus`: `as const` の配列 `['draft', 'published']`。`note.status` の CHECK と同じ値を 1 か所に置く（001 の research.md の R3）
-- `NoteCardImage`: `as const` の配列 `['generated', 'media', 'site']`
+- `NoteCardImage`: `as const` の配列 `['media', 'site']`
 - `NoteRevisionContent`: 題・説明文（空なら null）・本文
 - `NoteRevision`: uid・`NoteRevisionContent`・保存した日時
 - `Note`（オーナーが編集する形）: uid・識別子・状態・一度でも公開したか・初めて公開した日時・削除した日時・代表画像の出どころ・説明文が空のときに本文の最初の段落を説明に使うか・最も新しい版・転載先の URL の並び

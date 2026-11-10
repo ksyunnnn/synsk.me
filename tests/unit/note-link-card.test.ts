@@ -16,7 +16,7 @@ const note = (body: string, linkPreviews: VisitorNote['linkPreviews']): VisitorN
   summary: null,
   body,
   publishedAt: '2026-11-05T00:00:00.000Z',
-  cardImage: { kind: 'generated' },
+  cardImage: { kind: 'site' },
   media: [],
   linkPreviews,
 });

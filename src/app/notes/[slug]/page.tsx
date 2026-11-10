@@ -14,8 +14,9 @@ type Props = { params: Promise<{ slug: string }> };
 // メタデータは訪問者向けの DTO の題と説明だけから作る（contracts/visitor-note.md の OGP）。
 // 説明は、説明文が空なら、本文の最初の段落を使う note だけが段落を使う（FR-034）。説明が無ければ
 // 説明のタグを出さない。twitter は書かないと root layout のサイトの題と説明を引き継ぐため、
-// note の題と説明で書き直す。書くと root layout の twitter を丸ごと置き換えるため、カードの種類は
-// root layout と同じ値を書き、作者は root layout の値を引き継ぐ
+// note の題と説明で書き直す。書くと root layout の twitter を丸ごと置き換えるため、作者は root
+// layout の値を引き継ぐ。共有したときは、小さい画像の隣に文字が並ぶカードにするため、カードの
+// 種類は `summary` にする（plan.md の U8）。サイト全体の `summary_large_image` は変えない
 export const generateMetadata = async (
   { params }: Props,
   parent: ResolvingMetadata,
@@ -32,28 +33,28 @@ export const generateMetadata = async (
       title: note.title,
       description,
       type: 'article',
-      ...(images ? { images } : {}),
+      images,
     },
     twitter: {
-      card: 'summary_large_image',
+      card: 'summary',
       creator,
       title: note.title,
       description,
+      images,
     },
   };
 };
 
 /**
- * 代表画像の URL（research.md の R12）。`site` はサイト共通の画像（`src/app/opengraph-image.tsx`）、
- * `media` はその note の画像の配る経路。題を入れて自動で作る画像は作り方が決まるまで出さない
- * （plan.md の U8）
+ * 代表画像の URL（research.md の R12）。`media` はその note の画像の配る経路で、縮めずに原本を
+ * 出す。`site` の note 用のサイト共通の画像はオーナーが用意するまで出さず、画像の無いカードにする
+ * （plan.md の U8）。空の並びを渡し、サイト共通の 1200×630 の画像（`src/app/opengraph-image.tsx`）
+ * を引き継がない
  */
-const cardImageUrl = ({ slug, cardImage }: VisitorNote): string | null => {
-  if (cardImage.kind === 'site') return '/opengraph-image';
-  if (cardImage.kind === 'media')
-    return `/notes/${encodeURIComponent(slug)}/media/${cardImage.storageKey}`;
-  return null;
-};
+const cardImageUrl = ({ slug, cardImage }: VisitorNote): string[] =>
+  cardImage.kind === 'media'
+    ? [`/notes/${encodeURIComponent(slug)}/media/${cardImage.storageKey}`]
+    : [];
 
 const Page = async ({ params }: Props) => {
   // 訪問者に見せない識別子は `src/proxy.ts` が描画の前に 404 の画面へ移す。読み出しの間に

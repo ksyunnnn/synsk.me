@@ -99,7 +99,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 | Qiita | 一覧を取る | 記事 | REST `/api/v2/users/ksyunnnn/items` | ID | 真（`total-count` まで頁を辿ったとき） | `created_at` |
 | dev.to | 一覧を取る | 記事 | REST `/api/articles?username=ksyunnnn` | ID | 真（空の頁まで辿ったとき） | `published_at` |
 | Medium | 一覧を取る | 記事 | RSS `https://medium.com/feed/@ksyunnnn` | ID（guid） | 偽（10 件固定） | `pubDate` |
-| GitHub | 一覧を取る | その他 | REST `/users/ksyunnnn/repos` | ID | 真（`per_page` 未満の頁まで辿ったとき） | `pushed_at`。null なら `created_at` |
+| GitHub | 一覧を取る | その他 | REST `/users/ksyunnnn/repos` | ID | 真（`per_page` 未満の頁まで辿ったとき） | `created_at`（2026-11-10 にオーナーが決めた。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6761262936)） |
 | Speaker Deck | 一覧を取る | 埋め込み | RSS `https://speakerdeck.com/ksyunnnn.rss` | URL（guid が URL と同じ） | 偽（全件を返すかを検証記録が確かめていない） | `pubDate` |
 | connpass | 一覧を取る | その他 | REST v2 `/users/ksyunnnn/attended_events/` | ID | 真（`results_available` まで辿ったとき） | `started_at` |
 | Spotify | URL を指名する | 埋め込み | oEmbed | URL | — | 返さない |
@@ -111,7 +111,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - Qiita の 1 頁は 20 件にする。項目が本文の全文を持ち、`per_page=100` の頁は 941 KB だった（2026-11-09、77 件を実測）。R8 の 1 本の応答の大きさの上限（1 MB）の内側に収めるため
 - 頁を辿る取得元（Qiita・dev.to・GitHub・connpass）で、R8 の要求の数の上限に当たって辿るのを止めたときは、`isComplete` を偽にする。上限で止めた一覧に無い activity を消す候補にしないため（FR-018・FR-020）
-- 注意（検証記録から）: dev.to は User-Agent が空だと 403 を返し、Workers の `fetch` は既定の User-Agent を付けない。CodeSandbox は無い ID でもサイト既定の OG を 200 で返すので、`og:title` が既定値なら「取れない」とする。GitHub の `pushed_at` は null がありうる。Medium の `link` は問い合わせの部分を除いて使う。connpass は API キーが必須で、要求は 5 秒に 1 回まで
+- 注意（検証記録から）: dev.to は User-Agent が空だと 403 を返し、Workers の `fetch` は既定の User-Agent を付けない。CodeSandbox は無い ID でもサイト既定の OG を 200 で返すので、`og:title` が既定値なら「取れない」とする。GitHub の `pushed_at` は null がありうる（公開日に使わない）。Medium の `link` は問い合わせの部分を除いて使う。connpass は API キーが必須で、要求は 5 秒に 1 回まで
 - URL を指名する取得元の応答の実測（2026-11-09、`curl` で作り物の URL を指名した）: Spotify と YouTube の oEmbed は無い項目で 404。CodeSandbox の `/embed/<id>` は無い ID でも 200 で、`og:title` は `CodeSandbox`。取得元ごとの処理は、項目が無いことを表す 4xx（400・401・404・410）と、題を読めない応答（CodeSandbox は `og:title` が `CodeSandbox`）を「取れない」（null）にし、ほかの 4xx（bot の challenge の 403、429 など）・5xx・上限を超えたとき・リダイレクトで別のホストへ移ったときは失敗にする
 - X の oEmbed は題の項目を持たない（検証記録の「フィールド」）。題の扱いは U11「取得元が題を返さない URL を指名したときの扱い」が決まってから作る
 - issue #177「CodePen と CodeSandbox を手で登録できるようにする」は CodeSandbox を手で入力するとするが、spec の Assumptions と ADR-0052 は URL を指名するとする。spec に従う（2026-11-09、PM の回答）

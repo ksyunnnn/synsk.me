@@ -60,6 +60,11 @@ describe('訪問者が到達する経路', () => {
     expect(image?.startsWith(`${origin}/opengraph-image`)).toBe(true);
   });
 
+  it('/ の twitter:card は大きい画像のカード（サイト全体の設定。note のページだけが summary）', async () => {
+    const html = await (await server.fetch('/')).text();
+    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
+  });
+
   it('存在しない経路は 404 を返す', async () => {
     const res = await server.fetch('/__nonexistent');
     expect(res.status).toBe(404);
