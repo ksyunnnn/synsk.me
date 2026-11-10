@@ -1,4 +1,4 @@
-import type { Nodes, Paragraph, PhrasingContent, Root } from 'mdast';
+import type { Emphasis, Nodes, Paragraph, PhrasingContent, Root } from 'mdast';
 import { fromMarkdown } from 'mdast-util-from-markdown';
 import { toString } from 'mdast-util-to-string';
 import { parseMediaStorageKey, type MediaStorageKey } from '@/shared/domain/media';
@@ -12,9 +12,14 @@ import { isWebUrl } from '@/shared/domain/web-url';
  * 本文は構文木にしてから読む。正規表現で読むと、コードの中に書いた印まで拾う。画像だけの段落と
  * URL だけの段落の見分けは `paragraphKindOf` の 1 か所が持ち、読む側（`readMarkdown`）と描く側
  * （`remarkMarkParagraphs`）が同じ構文木の段落で使う
+ *
+ * 画像の印は `![代替テキスト](media:<storageKey> "ホバーで出す文")` と書く。題の欄（`"…"`）は
+ * ホバーで出す文（`title` の属性）にする。キャプションは Zenn の書き方に揃え、画像の行のすぐ下に
+ * 空行を挟まずに強調だけの行（`*キャプション*`）を書く。題の欄とキャプションは、どちらか片方でも
+ * 両方でも書ける
  */
 
-/** 画像の印の URL の欄の始まり。`![代替テキスト](media:<storageKey> "キャプション")` */
+/** 画像の印の URL の欄の始まり */
 export const MEDIA_URL_PREFIX = 'media:';
 
 /** 画像の印の URL から置き場のキーを読む。印でないか、キーの形が違えば null */
@@ -55,20 +60,42 @@ const imageUrlOf = (node: Nodes, definitions: Map<string, string>): string | und
 
 const isBlank = (child: PhrasingContent) => child.type === 'text' && child.value.trim() === '';
 
-/** 中身が画像の印 1 つだけの段落（`<figure>` にする）か、URL だけの段落（URL カードにする） */
-export type ParagraphKind = { kind: 'media'; key: MediaStorageKey } | { kind: 'url'; url: string };
+/** 前と後ろの空白だけの文字列を除いた段落の中身 */
+const trimBlank = (children: PhrasingContent[]): PhrasingContent[] => {
+  let start = 0;
+  let end = children.length;
+  while (start < end && isBlank(children[start])) start++;
+  while (end > start && isBlank(children[end - 1])) end--;
+  return children.slice(start, end);
+};
+
+/** 行を分ける要素。空白だけで改行を含む文字列（ふつうの改行）か、強制改行 */
+const isLineBreak = (child: PhrasingContent) =>
+  child.type === 'break' || (isBlank(child) && child.type === 'text' && child.value.includes('\n'));
+
+/**
+ * 中身が画像の印 1 つだけの段落か、画像の印の次の行が強調だけの段落（`<figure>` にする。強調を
+ * キャプションにする）か、URL だけの段落（URL カードにする）
+ */
+export type ParagraphKind =
+  | { kind: 'media'; key: MediaStorageKey; image: PhrasingContent; caption: Emphasis | null }
+  | { kind: 'url'; url: string };
 
 /** 段落を見分ける。どちらでもなければ null。リストと引用の中の段落も同じに見分ける（R11） */
 export const paragraphKindOf = (
   paragraph: Paragraph,
   definitions: Map<string, string>,
 ): ParagraphKind | null => {
-  const content = paragraph.children.filter((child) => !isBlank(child));
-  const [child] = content;
-  if (content.length !== 1) return null;
-  const imageUrl = imageUrlOf(child, definitions);
+  const content = trimBlank(paragraph.children);
+  const [child, lineBreak, caption] = content;
+  const imageUrl = child === undefined ? undefined : imageUrlOf(child, definitions);
   const key = imageUrl === undefined ? null : mediaKeyOf(imageUrl);
-  if (key !== null) return { kind: 'media', key };
+  if (key !== null && content.length === 1)
+    return { kind: 'media', key, image: child, caption: null };
+  // キャプションは画像の行のすぐ下の行。空行を挟めば別の段落になり、キャプションにしない
+  if (key !== null && content.length === 3 && isLineBreak(lineBreak) && caption.type === 'emphasis')
+    return { kind: 'media', key, image: child, caption };
+  if (content.length !== 1) return null;
   // autolink（`<https://…>`）は link の子になるため、ここで文字列 1 つにならない（R11）
   const url =
     paragraph.children.length === 1 && child.type === 'text' ? urlLineOf(child.value) : null;
@@ -80,8 +107,12 @@ export const MARKED_PARAGRAPH_TAG = 'div';
 export const MARKED_MEDIA_PROPERTY = 'dataMarkdownMedia';
 export const MARKED_URL_PROPERTY = 'dataMarkdownUrl';
 
+/** 描く側がキャプションの強調に付ける要素の名前 */
+const CAPTION_TAG = 'figcaption';
+
 /**
  * react-markdown に渡す remark の plugin。見分けた段落を `<p>` でなく印の付いた要素にする。
+ * 画像だけの段落の中身は、画像とキャプションだけにし、キャプションの強調を `<figcaption>` にする。
  * remark-rehype は詰めたリスト（項目の間に空行の無いリスト）の `<p>` を外すため、描く側で
  * `<p>` を見分けると、リストの中の段落を読む側と違えて見分ける
  */
@@ -91,6 +122,10 @@ export const remarkMarkParagraphs = () => (tree: Root) => {
     if (node.type !== 'paragraph') return;
     const kind = paragraphKindOf(node, definitions);
     if (kind === null) return;
+    if (kind.kind === 'media') {
+      if (kind.caption !== null) kind.caption.data = { ...kind.caption.data, hName: CAPTION_TAG };
+      node.children = kind.caption === null ? [kind.image] : [kind.image, kind.caption];
+    }
     node.data = {
       ...node.data,
       hName: MARKED_PARAGRAPH_TAG,
@@ -109,7 +144,8 @@ export type MarkdownSummary = {
   urlLines: string[];
   /**
    * 文書の順で最初の、文字列を持つ段落の文字列。リストと引用の中の段落を含む。改行は空白にし、
-   * 画像の代替テキストは含めない。無ければ null。説明文が空のときの説明に使う（R11）
+   * 画像の代替テキストは含めない。画像だけの段落（キャプションを含む）は除く。無ければ null。
+   * 説明文が空のときの説明に使う（R11）
    */
   firstParagraph: string | null;
 };
@@ -130,7 +166,7 @@ export const readMarkdown = (body: string): MarkdownSummary => {
     if (node.type !== 'paragraph') return;
     const kind = paragraphKindOf(node, definitions);
     if (kind?.kind === 'url') urlLines.add(kind.url);
-    if (firstParagraph === null) {
+    if (firstParagraph === null && kind?.kind !== 'media') {
       const content = toString(node, { includeImageAlt: false }).replace(/\s+/g, ' ').trim();
       if (content !== '') firstParagraph = content;
     }

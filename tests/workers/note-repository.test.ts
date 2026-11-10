@@ -321,7 +321,7 @@ describe('findVisitorBySlug の本文の読み出し（T006、research.md の R1
     const missing = crypto.randomUUID();
     await insertNoteRevision(env.DB, note.id, {
       body: [
-        `![自分の画像](media:${own.storageKey} "キャプション")`,
+        `![自分の画像](media:${own.storageKey} "ホバーの文")\n*キャプション*`,
         `![別の note の画像](media:${foreign.storageKey})`,
         `![無い画像](media:${missing})`,
       ].join('\n\n'),

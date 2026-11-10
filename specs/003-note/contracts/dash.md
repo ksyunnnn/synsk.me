@@ -26,7 +26,7 @@
 | `/dash/notes/{uid}/preview` | 最も新しい版を訪問者に見せたときの見た目。訪問者向けと同じ部品で描く。状態と削除に関わらず出す | REQUIREMENTS.md の FR-13 |
 | `/dash/notes/{uid}/delete` | 削除の確認 | FR-016 |
 
-画像の追加は編集の画面に置き、足した画像を本文に貼る印（`![代替テキスト](media:<storageKey> "キャプション")`。`storageKey` は `media.storage_key`。主キーは出さない）を示す。代表画像の出どころの入力は、`generated`・`site`・その note の画像から選ぶ。 <!-- check-ignore: 本文の画像の記法の例 -->
+画像の追加は編集の画面に置き、足した画像を本文に貼る印（1 行目が `![代替テキスト](media:<storageKey> "ホバーで出す文")`、2 行目が `*キャプション*`。`storageKey` は `media.storage_key`。主キーは出さない。題の欄と 2 行目は省ける。research.md の R11）を示す。代表画像の出どころの入力は、`generated`・`site`・その note の画像から選ぶ。 <!-- check-ignore: 本文の画像の記法の例 -->
 
 ## Server Action
 

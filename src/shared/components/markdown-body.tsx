@@ -1,4 +1,4 @@
-import type { Element, ElementContent } from 'hast';
+import type { ElementContent } from 'hast';
 import type { ReactNode } from 'react';
 import Markdown, { defaultUrlTransform, type Components, type UrlTransform } from 'react-markdown';
 import type { MediaStorageKey } from '@/shared/domain/media';
@@ -18,7 +18,8 @@ import {
  * - HTML の文字列を作って差し込まない。React の要素として描く（docs/SOFTWARE_DESIGN.md の原則 1）
  * - 本文に書いた生の HTML は、要素にせず文字列で出す（react-markdown の既定。`rehype-raw` を足さない）
  * - 画像は `media:<storageKey>` の印だけを出す。ほかの URL の画像は読みに行かず、代替テキストを
- *   文字列で出す。画像だけの段落は `<figure>` にし、印の題の欄をキャプションにする
+ *   文字列で出す。印の題の欄は `title` の属性（ホバーで出す文）にする。画像だけの段落は `<figure>` に
+ *   し、画像のすぐ下の行の強調だけの行を `<figcaption>` にする
  * - URL だけの段落は `renderUrlLine` で描く。渡さなければ文字列の段落で出す
  *
  * Server Component からも Client Component からも使える。関数の引数を受けるため、Server
@@ -53,29 +54,15 @@ const isBlank = (child: ElementContent) => child.type === 'text' && child.value.
 const markedMediaKeyOf = (node: ElementContent | undefined): MediaStorageKey | null =>
   node?.type === 'element' ? (asString(node.properties[MARKED_MEDIA_PROPERTY]) ?? null) : null;
 
-const imageOf = (node: Element | undefined): Element | undefined =>
-  node?.children.find(
-    (child): child is Element => child.type === 'element' && child.tagName === 'img',
-  );
-
 export const MarkdownBody = ({ body, mediaSrc, renderUrlLine }: Props) => {
   const components: Components = {
     // 印を付けた段落。生の HTML は文字列で出るため、ほかに div の要素は出ない
     div: ({ node, children }) => {
       const key = markedMediaKeyOf(node);
       if (key !== null) {
-        const src = mediaSrc(key);
-        if (src === null) return null;
-        const image = imageOf(node);
-        const caption = asString(image?.properties.title);
-        return (
-          <figure>
-            {/* 画像は R2 の原本を変換せずに返す（U5 の決定）。next/image の変換を通さない */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={src} alt={asString(image?.properties.alt) ?? ''} />
-            {caption && <figcaption>{caption}</figcaption>}
-          </figure>
-        );
+        if (mediaSrc(key) === null) return null;
+        // 中身は画像（下の img が描く）と、あればキャプションの figcaption だけ（remarkMarkParagraphs）
+        return <figure>{children}</figure>;
       }
       const url = asString(node?.properties[MARKED_URL_PROPERTY]);
       if (url !== undefined && renderUrlLine) return renderUrlLine(url);
@@ -88,15 +75,15 @@ export const MarkdownBody = ({ body, mediaSrc, renderUrlLine }: Props) => {
       if (key !== null && mediaSrc(key) === null) return null;
       return <li>{children}</li>;
     },
-    // 文の中に置いた画像。キャプションを持たない
-    img: ({ src, alt }) => {
+    // 画像。文の中に置いた画像はキャプションを持たない
+    img: ({ src, alt, title }) => {
       const key = mediaKeyOf(asString(src) ?? '');
       if (key === null) return <>{alt}</>;
       const resolved = mediaSrc(key);
       if (resolved === null) return null;
       // 画像は R2 の原本を変換せずに返す（U5 の決定）。next/image の変換を通さない
       // eslint-disable-next-line @next/next/no-img-element
-      return <img src={resolved} alt={alt ?? ''} />;
+      return <img src={resolved} alt={alt ?? ''} title={title} />;
     },
   };
 

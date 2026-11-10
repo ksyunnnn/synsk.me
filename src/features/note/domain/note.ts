@@ -171,9 +171,12 @@ export const MEDIA_FILE_FIELD = 'mediaFile';
 
 export type MediaFormResult = ActionResult<typeof MEDIA_FILE_FIELD, MediaRejection>;
 
-/** 本文に貼る画像の印（research.md の R11）。代替テキストとキャプションはオーナーが書き換える */
+/**
+ * 本文に貼る画像の印（research.md の R11）。1 行目の題の欄はホバーで出す文、2 行目はキャプション。
+ * オーナーが書き換え、要らなければ題の欄も 2 行目も消せる
+ */
 export const mediaMarkOf = (storageKey: MediaStorageKey) =>
-  `![代替テキスト](media:${storageKey} "キャプション")`;
+  `![代替テキスト](media:${storageKey} "ホバーで出す文")\n*キャプション*`;
 
 /** 転載先の URL の入力の名前（FR-031）。外すフォームも同じ名前で URL を送る（research.md の R14） */
 export const SYNDICATION_URL_FIELD = 'syndicationUrl';
