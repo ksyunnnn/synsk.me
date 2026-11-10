@@ -19,6 +19,7 @@ import {
   UnsupportedError,
   type Direction,
 } from './encode';
+import { drawGuides } from './guides';
 
 // 再生位置のスライダーの段数。再生中は段に丸めず、経過時間からなめらかに位置を出す
 const STEPS = 2000;
@@ -35,6 +36,7 @@ const COPY = {
   play: '再生',
   pause: '一時停止',
   position: '再生位置',
+  guides: '補助線',
   direction: '方向',
   rightToLeft: '右から左',
   topToBottom: '上から下',
@@ -183,6 +185,8 @@ export const DelayExporter = () => {
   const [count, setCount] = useState(DEFAULTS.count);
   const [exportState, setExportState] = useState<ExportState>({ kind: 'idle' });
   const [canShare, setCanShare] = useState(false);
+  // プレビューに補助線を重ねるか。書き出す動画には効かない
+  const [guides, setGuides] = useState(true);
 
   const running = exportState.kind === 'running';
   const exportedUrl = exportState.kind === 'done' ? exportState.result.url : null;
@@ -221,8 +225,10 @@ export const DelayExporter = () => {
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx || !picked) return;
     const { width, height, source } = picked;
-    drawFrame(ctx, source, direction, { width, height, t: step / STEPS, seam, shift, count });
-  }, [picked, direction, step, seam, shift, count]);
+    const frame = { width, height, t: step / STEPS, seam, shift, count };
+    drawFrame(ctx, source, direction, frame);
+    if (guides) drawGuides(ctx, direction, frame);
+  }, [picked, direction, step, seam, shift, count, guides]);
 
   // 書き出した後に写真や設定を変えたら、書き出した動画は今の設定と合わなくなる。書き出す前に戻す
   const edit =
@@ -467,16 +473,28 @@ export const DelayExporter = () => {
             {clock((step / STEPS) * seconds)} / {clock(seconds)}
           </span>
         </div>
-        {/* 入力の写真に効く操作なので、書き出しの操作から離し、プレビューのそばに置く */}
         {picked && (
-          <button
-            type="button"
-            disabled={running}
-            onClick={() => inputRef.current?.click()}
-            className={`h-11 w-fit text-sm underline underline-offset-4 disabled:opacity-50 active:opacity-70 ${focusRing}`}
-          >
-            {COPY.change}
-          </button>
+          <div className="flex items-center justify-between gap-4">
+            {/* 入力の写真に効く操作なので、書き出しの操作から離し、プレビューのそばに置く */}
+            <button
+              type="button"
+              disabled={running}
+              onClick={() => inputRef.current?.click()}
+              className={`h-11 w-fit text-sm underline underline-offset-4 disabled:opacity-50 active:opacity-70 ${focusRing}`}
+            >
+              {COPY.change}
+            </button>
+            <label className="flex h-11 cursor-pointer items-center gap-2 text-sm has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring">
+              <input
+                type="checkbox"
+                role="switch"
+                checked={guides}
+                onChange={(event) => setGuides(event.target.checked)}
+                className="size-4 accent-foreground outline-none"
+              />
+              {COPY.guides}
+            </label>
+          </div>
         )}
       </section>
 
