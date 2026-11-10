@@ -45,8 +45,11 @@ const Page = async ({ params }: Props) => {
       ) : (
         note.deletedAt === null && (
           <>
+            {/* 下書きの note は訪問者に見せる版を持たないため、訪問者についての説明は公開のときだけ出す。
+                版の一覧の公開した版の印と同じ条件にする（note-revision-list.tsx） */}
             <p>
-              戻すと、この版の題・説明文・本文が新しい版として保存されます。訪問者には、公開し直すまで今の公開した版を見せます
+              戻すと、この版の題・説明文・本文が新しい版として保存されます。
+              {note.status === 'published' && '訪問者には、公開し直すまで今の公開した版を見せます'}
             </p>
             <NoteRevertForm
               action={revertNote}

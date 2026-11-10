@@ -84,7 +84,8 @@ export type NoteRepository = {
    * note なら何も書かず `ok: false`
    */
   restore: (id: NoteId) => Promise<{ ok: boolean }>;
-  /** 版の一覧。保存した日時の新しい順（FR-008）。最も新しい版と公開した版に印を付ける */
+  /** 版の一覧。保存した日時の新しい順（FR-008）。最も新しい版と公開した版を示す。公開した版は、
+   * 下書きに戻した note でも示す（FR-014）。画面に印を出すかは画面が決める */
   listRevisions: (id: NoteId) => Promise<NoteRevisionSummary[]>;
   /** その note の 1 つの版を、保存したときのまま返す（FR-008）。別の note の版なら null */
   findRevision: (id: NoteId, revisionUid: Uid) => Promise<NoteRevision | null>;
