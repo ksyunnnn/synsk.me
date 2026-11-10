@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type MouseEvent } from 'react';
+import { SavedNotice } from '@/shared/components/saved-notice';
 
 /**
  * 保存操作をしていない入力を、ブラウザの `localStorage` に持つフォーム（specs/003-note/spec.md の
@@ -652,7 +653,8 @@ export const DraftSavedNotice = ({
     if (isSentFrom(sent, keys.split('\n'))) remove(sent);
     remove(SENT_KEY);
   }, [keys, version]);
-  return <p role="status">保存しました</p>;
+  // `?saved=1` は書きかけを消す合図を兼ね、戻る・再読み込みで読み直すので、URL から外さない
+  return <SavedNotice>保存しました</SavedNotice>;
 };
 
 /** 送った書きかけの名前が、挙げた `storageKey` のどれかの書きかけか。名前は更新日時を含みうる */

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { formatExpires, isExpired } from '@/features/resume/domain/resume';
 import { listResumes } from '@/features/resume/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -24,7 +25,7 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">職務経歴書</h1>
-      {deleted === '1' && <p role="status">職務経歴書を削除しました</p>}
+      {deleted === '1' && <SavedNotice flags={['deleted']}>職務経歴書を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.resumes.new}>職務経歴書を作る</TextLink>
       </p>

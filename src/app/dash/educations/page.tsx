@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listEducations } from '@/features/education/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { formatPeriod } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
@@ -23,8 +24,8 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">学歴</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
-      {deleted === '1' && <p role="status">学歴を削除しました</p>}
+      {saved === '1' && <SavedNotice flags={['saved']}>保存しました</SavedNotice>}
+      {deleted === '1' && <SavedNotice flags={['deleted']}>学歴を削除しました</SavedNotice>}
       <p>学歴は、職務経歴書を通してだけ訪問者に出ます。</p>
       <p>
         <TextLink href={routes.dash.educations.new}>学歴を登録する</TextLink>

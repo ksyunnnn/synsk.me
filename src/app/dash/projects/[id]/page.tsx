@@ -15,6 +15,7 @@ import {
 } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
 import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { routes } from '@/shared/routes';
@@ -56,11 +57,15 @@ const Page = async ({ params, searchParams }: Props) => {
       </p>
       <h1 className="text-2xl font-bold">実績を編集する</h1>
       {notice && (
-        <p role="status" className="text-sm">
+        <SavedNotice key={project.updatedAt} flags={[notice]} className="text-sm">
           {NOTICES[notice]}
-        </p>
+        </SavedNotice>
       )}
-      {flags.saved === '1' && <p role="status">保存しました</p>}
+      {flags.saved === '1' && (
+        <SavedNotice key={project.updatedAt} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
       <p>
         <TextLink href={routes.project(project.slug)}>訪問者に見せるページを開く</TextLink>
       </p>

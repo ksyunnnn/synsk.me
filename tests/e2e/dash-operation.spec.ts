@@ -160,3 +160,40 @@ test.describe('失敗の位置', () => {
     await expect(page.getByRole('alert')).toBeFocused();
   });
 });
+
+test.describe('保存の知らせ', () => {
+  test('保存すると知らせへフォーカスが移り、次の保存に失敗すると知らせが消え、再読み込みでも出ない', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E 保存の知らせの組織',
+      organizationNameMasked: 'E2E 保存の知らせの秘匿化した組織名',
+      title: uniqueTitle('保存の知らせ'),
+    });
+    await page.goto(editUrl);
+    await waitForHydration(page.locator('main form').first());
+    await textbox(page, '題').fill(uniqueTitle('保存の知らせの書き換えた題'));
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    const notice = page.getByRole('status');
+    await expect(notice).toHaveText('保存しました');
+    await expect(notice).toBeFocused();
+    await expect(page).toHaveURL(editUrl);
+
+    // 続けて保存しても、知らせが出てフォーカスが移る
+    await waitForHydration(page.locator('main form').first());
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(page).toHaveURL(editUrl);
+    await expect(page.getByRole('status')).toBeFocused();
+
+    await waitForHydration(page.locator('main form').first());
+    await textbox(page, '題').fill('');
+    await page.getByRole('button', { name: '保存する', exact: true }).click();
+    await expect(page.getByRole('alert')).toHaveText('入力を確かめてください');
+    await expect(page.getByRole('status')).toHaveCount(0);
+
+    await page.reload();
+    await expect(page.getByRole('status')).toHaveCount(0);
+  });
+});

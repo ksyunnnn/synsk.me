@@ -4,6 +4,7 @@ import { LinkPreviewRefetchForm } from '@/features/note/components/link-preview-
 import { VisitorNoteView } from '@/features/note/components/visitor-note';
 import { refetchLinkPreview } from '@/features/note/server/actions';
 import { getNotePreview } from '@/features/note/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -38,7 +39,11 @@ const Page = async ({ params, searchParams }: Props) => {
       <p role="note" className="rounded-md border border-input px-4 py-2 text-sm">
         最も新しい版を、訪問者に見せたときの見た目で出しています
       </p>
-      {refetched === '1' && <p role="status">参照先の情報を取り直しました</p>}
+      {refetched === '1' && (
+        <SavedNotice key={JSON.stringify(note.linkPreviews)} flags={['refetched']}>
+          参照先の情報を取り直しました
+        </SavedNotice>
+      )}
       <VisitorNoteView
         note={note}
         mediaBase={routes.dash.notes.previewMedia(id)}

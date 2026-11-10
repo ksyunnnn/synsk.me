@@ -12,6 +12,7 @@ import {
 } from '@/features/resume/server/actions';
 import { getResumeForEdit, limitedResumeUrl } from '@/features/resume/server/queries';
 import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -41,8 +42,16 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.resumes.list}>職務経歴書の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">{resume.title}</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
-      {regenerated === '1' && <p role="status">URL を出し直しました</p>}
+      {saved === '1' && (
+        <SavedNotice key={resume.updatedAt} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
+      {regenerated === '1' && (
+        <SavedNotice key={resume.updatedAt} flags={['regenerated']}>
+          URL を出し直しました
+        </SavedNotice>
+      )}
       <p className="text-sm text-muted-foreground">
         {isLimited ? '限定公開用' : '公開用'}
         {isLimited &&

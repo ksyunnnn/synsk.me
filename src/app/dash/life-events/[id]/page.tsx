@@ -10,6 +10,7 @@ import {
 } from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
 import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -42,7 +43,11 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.lifeEvents.list}>life event の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">life event を編集する</h1>
-      {saved === '1' && <p role="status">保存しました</p>}
+      {saved === '1' && (
+        <SavedNotice key={valuesVersion} flags={['saved']}>
+          保存しました
+        </SavedNotice>
+      )}
       <p>
         <TextLink href={routes.lifeEvent(lifeEvent.slug)}>訪問者のページを開く</TextLink>
       </p>
@@ -56,8 +61,16 @@ const Page = async ({ params, searchParams }: Props) => {
         />
       </FormSection>
       <FormSection>
-        {imageSaved === '1' && <p role="status">代表画像を登録しました</p>}
-        {imageRemoved === '1' && <p role="status">代表画像を外しました</p>}
+        {imageSaved === '1' && (
+          <SavedNotice key={lifeEvent.cardImageUrl ?? ''} flags={['imageSaved']}>
+            代表画像を登録しました
+          </SavedNotice>
+        )}
+        {imageRemoved === '1' && (
+          <SavedNotice key={lifeEvent.cardImageUrl ?? ''} flags={['imageRemoved']}>
+            代表画像を外しました
+          </SavedNotice>
+        )}
         <LifeEventImageForm
           uid={lifeEvent.uid}
           cardImageUrl={lifeEvent.cardImageUrl}

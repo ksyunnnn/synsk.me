@@ -27,6 +27,7 @@ import {
 } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
 import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -64,6 +65,17 @@ const Page = async ({ params, searchParams }: Props) => {
   const notice = (Object.keys(NOTICES) as (keyof typeof NOTICES)[]).find(
     (key) => flags[key] === '1',
   );
+  // 知らせを置き直す値。知らせを出す操作は、どれもこのどれかを変える
+  const noticeVersion = JSON.stringify([
+    note.status,
+    note.deletedAt,
+    note.latestRevision.uid,
+    note.syndicationUrls,
+    note.mediaStorageKeys,
+    note.cardImage,
+    note.cardMediaStorageKey,
+    note.isFirstParagraphAsDescription,
+  ]);
 
   if (note.deletedAt !== null) {
     // 削除した note は、中身を読み取りだけで出し、「元に戻す」だけを置く（contracts/dash.md）
@@ -102,7 +114,7 @@ const Page = async ({ params, searchParams }: Props) => {
       {flags.saved === '1' && (
         <NoteSavedNotice noteUid={note.uid} revisionUid={note.latestRevision.uid} />
       )}
-      {notice && <p role="status">{NOTICES[notice]}</p>}
+      {notice && <SavedNotice key={noticeVersion}>{NOTICES[notice]}</SavedNotice>}
       {isVisibleToVisitors(note) && (
         <p>
           <TextLink href={routes.note(note.slug)}>訪問者に見せるページを開く</TextLink>

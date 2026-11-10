@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listLifeEvents } from '@/features/activity/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -22,7 +23,7 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">life event</h1>
-      {deleted === '1' && <p role="status">life event を削除しました</p>}
+      {deleted === '1' && <SavedNotice flags={['deleted']}>life event を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.lifeEvents.new}>life event を作る</TextLink>
       </p>

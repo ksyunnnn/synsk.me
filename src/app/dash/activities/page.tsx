@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { OWNED_SOURCE_LABELS } from '@/features/activity/domain/external-activity';
 import { listExternalActivities } from '@/features/activity/server/queries';
+import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -31,8 +32,10 @@ const Page = async ({ searchParams }: Props) => {
       <h1 className="text-2xl font-bold">外部の activity</h1>
       <p>URL を指名して、または手で入力して登録した activity です。</p>
       {/* 登録に成功すると、この画面へ移る */}
-      {saved === '1' && <p role="status">保存しました</p>}
-      {deleted === '1' && <p role="status">外部の activity を削除しました</p>}
+      {saved === '1' && <SavedNotice flags={['saved']}>保存しました</SavedNotice>}
+      {deleted === '1' && (
+        <SavedNotice flags={['deleted']}>外部の activity を削除しました</SavedNotice>
+      )}
       <p>
         <TextLink href={routes.dash.activities.new}>外部の activity を登録する</TextLink>
       </p>
