@@ -461,7 +461,7 @@ describe('addNoteMedia（FR-023・FR-033、research.md の R12）', () => {
     expect(notes.addMedia).not.toHaveBeenCalled();
   });
 
-  it.each(['empty', 'too-large', 'unsupported-type'] as const)(
+  it.each(['empty', 'too-large', 'unsupported-type', 'storage-full'] as const)(
     'media-storage.ts が %s で拒んだ画像を項目の誤りで返し、記録しない',
     async (reason) => {
       const notes = fakeNotes();
@@ -497,7 +497,7 @@ describe('addNoteMedia（FR-023・FR-033、research.md の R12）', () => {
       status: 'added',
       storageKey: KEY,
     });
-    expect(notes.addMedia).toHaveBeenCalledWith(1, KEY);
+    expect(notes.addMedia).toHaveBeenCalledWith(1, KEY, 3);
   });
 
   it('記録の前に note が消えていたら、置いた画像を消す', async () => {

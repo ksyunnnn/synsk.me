@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import {
   fillProject,
+  organizationInput,
   openVisitor,
   readProjectPath,
   registerProject,
@@ -166,9 +167,7 @@ test('入力の誤りは項目ごとに示して保存せず、入力が残る',
     page.getByText('関連 URL は http か https で始まる URL にしてください'),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/dash\/projects\/new$/);
-  await expect(page.getByRole('textbox', { name: '組織名', exact: true })).toHaveValue(
-    'E2E 実績の組織 誤り',
-  );
+  await expect(organizationInput(page)).toHaveValue('E2E 実績の組織 誤り');
 });
 
 test('同じ実績を 2 つのタブで開くと、後から保存した側は止まり、入力が残る', async ({
@@ -212,7 +211,7 @@ test('オーナーはキーボードだけで実績を登録・編集・削除�
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/dash\/projects\/new$/);
 
-  await tabTo(page, page.getByRole('textbox', { name: '組織名', exact: true }));
+  await tabTo(page, organizationInput(page));
   await page.keyboard.type('E2E 実績の組織 キーボード');
   // 秘匿化する実績の新しい組織は、秘匿化した組織名が要る
   await tabTo(page, page.getByRole('textbox', { name: '秘匿化した組織名', exact: true }));

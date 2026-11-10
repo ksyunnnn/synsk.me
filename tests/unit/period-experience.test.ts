@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   countExperienceMonths,
+  periodsOverlap,
+  projectsOfCareer,
+  skillsOfCareer,
   toYearsAndMonths,
   type CalendarDate,
   type Period,
@@ -10,7 +13,8 @@ import {
  * 経験年数の数え方（specs/001-career-and-project/spec.md の FR-033・SC-004）。月を単位に、
  * 両端の月を含めて数え、重なる月は 1 回だけ数える。終わりの日が空なら日本時間の今月まで。
  * 上書きの月数を使うことは、スキルのユースケースの検査が持つ。
- * 職歴の実績とスキル（FR-017・FR-035）は、端の扱いが決まってから確かめる（plan.md の U6 の残り）。
+ * 職歴の実績とスキル（FR-017・FR-035）は、同じ組織で期間が重なる実績から求める。終わりの日も期間に
+ * 含め、端の日だけ接する組も重なるとする（plan.md の U6 の残り、2026-11-10 のオーナーの決定）。
  */
 
 const period = (startedOn: string, endedOn: string | null): Period => ({
@@ -98,5 +102,83 @@ describe('toYearsAndMonths', () => {
     [0, { years: 0, months: 0 }],
   ])('%i か月は %j', (months, expected) => {
     expect(toYearsAndMonths(months)).toEqual(expected);
+  });
+});
+
+describe('periodsOverlap（FR-017。終わりの日も期間に含める）', () => {
+  it('一部が重なれば重なる', () => {
+    expect(
+      periodsOverlap(period('2020-01-01', '2020-06-30'), period('2020-04-01', '2020-09-30')),
+    ).toBe(true);
+  });
+
+  it('端の日だけ接する組も重なる。前後を入れ替えても同じ', () => {
+    const career = period('2020-01-01', '2020-03-31');
+    const project = period('2020-03-31', '2020-05-31');
+    expect(periodsOverlap(career, project)).toBe(true);
+    expect(periodsOverlap(project, career)).toBe(true);
+  });
+
+  it('1 日でも離れれば重ならない', () => {
+    expect(
+      periodsOverlap(period('2020-01-01', '2020-03-30'), period('2020-03-31', '2020-05-31')),
+    ).toBe(false);
+    expect(
+      periodsOverlap(period('2020-03-31', '2020-05-31'), period('2020-01-01', '2020-03-30')),
+    ).toBe(false);
+  });
+
+  it('終わりの日が空なら続いている。後に始まる期間と重なり、前に終わった期間とは重ならない', () => {
+    const ongoing = period('2022-04-01', null);
+    expect(periodsOverlap(ongoing, period('2030-01-01', '2030-01-01'))).toBe(true);
+    expect(periodsOverlap(ongoing, period('2022-03-31', '2022-04-01'))).toBe(true);
+    expect(periodsOverlap(ongoing, period('2021-01-01', '2022-03-31'))).toBe(false);
+    expect(periodsOverlap(ongoing, period('2023-01-01', null))).toBe(true);
+  });
+});
+
+describe('職歴の実績とスキル（FR-017・FR-035）', () => {
+  const career = { organizationId: 1, period: period('2020-04-01', '2022-03-31') };
+  const project = (
+    name: string,
+    organizationId: number,
+    p: Period,
+    skills: string[],
+    status: 'draft' | 'published' = 'published',
+  ) => ({ name, organizationId, period: p, skills, status });
+
+  const projects = [
+    project('同じ組織で重なる', 1, period('2021-01-01', '2021-06-30'), ['TypeScript', 'React']),
+    project('同じ組織で端の日だけ接する', 1, period('2022-03-31', null), ['Go']),
+    project('同じ組織で重ならない', 1, period('2022-04-01', null), ['Rust']),
+    project('別の組織で重なる', 2, period('2021-01-01', '2021-06-30'), ['PHP']),
+    project('サイトに載せない', 1, period('2020-05-01', '2020-06-30'), ['React', 'Swift'], 'draft'),
+  ];
+
+  it('職歴の実績は、同じ組織で期間が重なる実績。サイトに載せない実績も含める', () => {
+    expect(projectsOfCareer(career, projects).map((p) => p.name)).toEqual([
+      '同じ組織で重なる',
+      '同じ組織で端の日だけ接する',
+      'サイトに載せない',
+    ]);
+  });
+
+  it('オーナー向けのスキルは、職歴の実績のスキルを重ねずに合わせる', () => {
+    expect(skillsOfCareer(career, projects, 'owner')).toEqual([
+      'TypeScript',
+      'React',
+      'Go',
+      'Swift',
+    ]);
+  });
+
+  it('訪問者向けのスキルは、サイトに載せる実績だけから求める', () => {
+    expect(skillsOfCareer(career, projects, 'visitor')).toEqual(['TypeScript', 'React', 'Go']);
+  });
+
+  it('つながる実績が無ければ空', () => {
+    expect(skillsOfCareer({ organizationId: 3, period: career.period }, projects, 'owner')).toEqual(
+      [],
+    );
   });
 });

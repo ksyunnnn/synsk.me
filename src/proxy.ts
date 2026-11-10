@@ -33,10 +33,12 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  */
 
 export const config = {
-  // `/notes/:slug/media/:key` は経路を dynamic に固定するために入れる（ADR-0040 の Consequences）。
-  // 見せてよいかは route.ts が確かめ、proxy は D1 を読まない（specs/003-note/research.md の R9）
+  // `/notes/:slug/media/:key` と `/projects/:slug/media/:key` は経路を dynamic に固定するために
+  // 入れる（ADR-0040 の Consequences）。見せてよいかは route.ts が確かめ、proxy は D1 を読まない
+  // （specs/003-note/research.md の R9）
   matcher: [
     '/projects/:slug',
+    '/projects/:slug/media/:key',
     '/life-events/:slug',
     '/resume/:path*',
     '/notes/:slug',
@@ -92,7 +94,7 @@ const decide = async (request: NextRequest): Promise<string | null> => {
 
   if (segments[0] === 'projects') {
     const slug = segments[1];
-    if (!isRead || !slug) return null;
+    if (!isRead || !slug || segments.length !== 2) return null;
     return (await hasProjectSlug(slug)) ? null : projectPageMissing(slug);
   }
 

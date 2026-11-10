@@ -39,11 +39,11 @@ export const registerLifeEventImage = async (
 
   const saved = await storage.save(file);
   if (!saved.ok) return { status: 'rejected', reason: saved.reason };
-  const { storageKey } = saved.media;
+  const { storageKey, size } = saved.media;
 
   let result;
   try {
-    result = await lifeEvents.replaceCardImage(id, storageKey);
+    result = await lifeEvents.replaceCardImage(id, storageKey, size);
   } catch (error) {
     await removeFromStorage(storage, [storageKey]);
     throw error;

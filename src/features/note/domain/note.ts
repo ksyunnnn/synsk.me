@@ -1,10 +1,6 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
-import {
-  parseMediaStorageKey,
-  type MediaRejection,
-  type MediaStorageKey,
-} from '@/shared/domain/media';
+import { parseMediaStorageKey, type MediaStorageKey } from '@/shared/domain/media';
 import { isSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
 import { normalizeNewlines } from '@/shared/domain/newlines';
@@ -194,16 +190,12 @@ export const summaryOf = (
   content.description ?? (isFirstParagraphAsDescription ? content.firstParagraph : null);
 
 /** 画像のファイルの入力の名前（FR-023）。1 回の操作で 1 枚（research.md の R12） */
-export const MEDIA_FILE_FIELD = 'mediaFile';
+export { MEDIA_FILE_FIELD } from '@/shared/domain/media';
 
-export type MediaFormResult = ActionResult<typeof MEDIA_FILE_FIELD, MediaRejection>;
+export type { MediaFormResult } from '@/shared/domain/media';
 
-/**
- * 本文に貼る画像の印（research.md の R11）。1 行目の題の欄はホバーで出す文、2 行目はキャプション。
- * オーナーが書き換え、要らなければ題の欄も 2 行目も消せる
- */
-export const mediaMarkOf = (storageKey: MediaStorageKey) =>
-  `![代替テキスト](media:${storageKey} "ホバーで出す文")\n*キャプション*`;
+/** 本文に貼る画像の印（research.md の R11）。決まりは共有の Markdown の決まりが持つ */
+export { mediaMarkOf } from '@/shared/domain/markdown';
 
 /** 転載先の URL の入力の名前（FR-031）。外すフォームも同じ名前で URL を送る（research.md の R14） */
 export const SYNDICATION_URL_FIELD = 'syndicationUrl';

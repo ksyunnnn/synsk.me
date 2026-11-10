@@ -31,10 +31,10 @@ export const addNoteMedia = async (
   const saved = await media.save(file);
   if (!saved.ok) return { status: 'invalid', error: saved.reason };
 
-  const { storageKey } = saved.media;
+  const { storageKey, size } = saved.media;
   let recorded: boolean;
   try {
-    recorded = (await notes.addMedia(id, storageKey)).ok;
+    recorded = (await notes.addMedia(id, storageKey, size)).ok;
   } catch (error) {
     await media.remove([storageKey]);
     throw error;

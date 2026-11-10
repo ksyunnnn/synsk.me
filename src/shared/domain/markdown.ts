@@ -22,6 +22,14 @@ import { isWebUrl } from '@/shared/domain/web-url';
 /** 画像の印の URL の欄の始まり */
 export const MEDIA_URL_PREFIX = 'media:';
 
+/**
+ * 本文に貼る画像の印（specs/003-note/research.md の R11）。1 行目の題の欄はホバーで出す文、2 行目は
+ * キャプション。オーナーが書き換え、要らなければ題の欄も 2 行目も消せる。使い手は note・実績・職歴の
+ * 画像の一覧
+ */
+export const mediaMarkOf = (storageKey: MediaStorageKey) =>
+  `![代替テキスト](${MEDIA_URL_PREFIX}${storageKey} "ホバーで出す文")\n*キャプション*`;
+
 /** 画像の印の URL から置き場のキーを読む。印でないか、キーの形が違えば null */
 export const mediaKeyOf = (url: string): MediaStorageKey | null =>
   url.startsWith(MEDIA_URL_PREFIX)

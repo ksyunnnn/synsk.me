@@ -84,6 +84,30 @@ export const InputField = ({ name, label, hint, error, className, ...props }: In
   );
 };
 
+type SuggestingInputFieldProps = Omit<InputFieldProps, 'list'> & {
+  /** 選択肢。入力の欄に出し、選ばずに自由に書くこともできる */
+  options: readonly string[];
+};
+
+/**
+ * 選択肢を出す文字の入力。ネイティブの `<datalist>` を使い、選択肢の表示とキーボードでの選び方は
+ * ブラウザが持つ（specs/001-career-and-project/plan.md の U3 の決定。headless のライブラリを
+ * 足さない）。使い手は職歴・実績の組織名（FR-002）
+ */
+export const SuggestingInputField = ({ options, ...props }: SuggestingInputFieldProps) => {
+  const listId = `${useId()}-options`;
+  return (
+    <>
+      <InputField {...props} list={listId} />
+      <datalist id={listId}>
+        {options.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
+    </>
+  );
+};
+
 type TextareaFieldProps = ControlProps & Omit<ComponentPropsWithoutRef<'textarea'>, 'name' | 'id'>;
 
 export const TextareaField = ({

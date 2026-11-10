@@ -731,12 +731,12 @@ describe('代表画像と画像（FR-023〜FR-025、User Story 5 の 3）', () =
   it('画像をその note の画像として記録し、削除した note には記録しない', async () => {
     const note = await insertNote(env.DB);
     const key = crypto.randomUUID();
-    expect(await notes.addMedia(note.id, key)).toEqual({ ok: true });
+    expect(await notes.addMedia(note.id, key, 64)).toEqual({ ok: true });
     expect((await notes.findForEdit(note.id))?.mediaStorageKeys).toEqual([key]);
 
     const deleted = await insertNote(env.DB);
     await deleteNoteRow(env.DB, deleted.id);
-    expect(await notes.addMedia(deleted.id, crypto.randomUUID())).toEqual({ ok: false });
+    expect(await notes.addMedia(deleted.id, crypto.randomUUID(), 64)).toEqual({ ok: false });
   });
 });
 

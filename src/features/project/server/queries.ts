@@ -4,11 +4,14 @@ import { cache } from 'react';
 import type { ProjectDeps } from '@/features/project/application/deps';
 import { getProjectForEdit as getProjectForEditUseCase } from '@/features/project/application/get-project-for-edit';
 import { getVisitorProject as getVisitorProjectUseCase } from '@/features/project/application/get-visitor-project';
+import { visitorProjectMediaAccess } from '@/features/project/application/project-media';
 import { listProjects as listProjectsUseCase } from '@/features/project/application/list-projects';
 import type { Project, ProjectSummary, VisitorProject } from '@/features/project/domain/project';
 import { createD1ProjectRepository } from '@/features/project/server/d1-project-repository';
 import { requireAuthor } from '@/shared/server/author';
+import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
+import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
@@ -22,7 +25,25 @@ export const createProjectDeps = async (): Promise<ProjectDeps> => {
   return {
     projects: createD1ProjectRepository(DB),
     organizations: createD1OrganizationRepository(DB),
+    media: await createMediaStorage(),
   };
+};
+
+/**
+ * 実績の画像を訪問者に配る（FR-030）。`/projects/{slug}/media/{key}` の `route.ts` が呼び、見せて
+ * よいかを確かめた結果を共有の `respondWithMedia` に渡す。形の違うキーは D1 を読まずに 404 にする
+ */
+export const respondWithProjectMedia = async (
+  slug: string,
+  key: string,
+  ifNoneMatch: string | null,
+): Promise<Response> => {
+  const { projects, media } = await createProjectDeps();
+  const access =
+    parseMediaStorageKey(key) === null
+      ? 'hidden'
+      : visitorProjectMediaAccess(await projects.findVisitorBySlug(slug), key);
+  return respondWithMedia(media, key, access, ifNoneMatch);
 };
 
 /**

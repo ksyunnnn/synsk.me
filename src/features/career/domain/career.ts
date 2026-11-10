@@ -1,3 +1,4 @@
+import type { MediaStorageKey } from '@/shared/domain/media';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
@@ -28,6 +29,8 @@ export type Career = {
   period: Period;
   description: string | null;
   url: string | null;
+  /** この職歴の画像の置き場のキー。足した順（FR-027） */
+  mediaStorageKeys: MediaStorageKey[];
   /** 更新日時。編集の画面を開いたときの値を、楽観ロックに使う（research.md の R7） */
   updatedAt: string;
 };

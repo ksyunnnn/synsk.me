@@ -8,6 +8,7 @@ import {
   registerProject,
   registerSkill,
   saveEdit,
+  organizationInput,
   submitAndWait,
   textbox,
 } from './support/dash';
@@ -61,7 +62,7 @@ test('職歴の登録の画面で、保存せずに再読み込みしても入�
   );
   await page.reload();
 
-  await expect(textbox(page, '組織名')).toHaveValue('E2E 書きかけの組織');
+  await expect(organizationInput(page)).toHaveValue('E2E 書きかけの組織');
   await expect(textbox(page, '肩書')).toHaveValue(role);
   await expect(textbox(page, '始まりの日')).toHaveValue('2020-04-01');
   await expect(textbox(page, '本文')).toHaveValue('1 行目\n2 行目');
@@ -191,7 +192,7 @@ test('前の更新日時の書きかけを戻すと、書きかけで変えた�
   await page.goto(editUrl);
   const other = await context.newPage();
   await other.goto(editUrl);
-  await textbox(other, '組織名').fill('E2E 先に保存した組織名');
+  await organizationInput(other).fill('E2E 先に保存した組織名');
   await chooseSiteOptions(other, { onSite: false });
   await saveEdit(other);
   await other.close();
@@ -205,7 +206,7 @@ test('前の更新日時の書きかけを戻すと、書きかけで変えた�
   await expect(notice).toContainText('書きかけで変えた項目を戻しました');
   await expect(textbox(page, '肩書')).toHaveValue('E2E 書きかけで変えた肩書');
   // 書きかけで触っていない項目は、先に保存した値のまま（specs/001-career-and-project/spec.md の FR-042）
-  await expect(textbox(page, '組織名')).toHaveValue('E2E 先に保存した組織名');
+  await expect(organizationInput(page)).toHaveValue('E2E 先に保存した組織名');
   await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
   await expect(textbox(page, '秘匿化した組織名')).toHaveValue(
     'E2E 部分の書きかけの秘匿化した組織名',
@@ -225,7 +226,7 @@ test('保存が先の保存とぶつかって拒まれた後に開き直して�
   await page.goto(editUrl);
   const other = await context.newPage();
   await other.goto(editUrl);
-  await textbox(other, '組織名').fill('E2E ぶつかる前に先に保存した組織名');
+  await organizationInput(other).fill('E2E ぶつかる前に先に保存した組織名');
   await saveEdit(other);
   await other.close();
   await fillUntilDrafted(page, 'career', () =>
@@ -240,7 +241,7 @@ test('保存が先の保存とぶつかって拒まれた後に開き直して�
   await notice.getByRole('button', { name: '書きかけを戻す' }).click();
   await expect(notice).toContainText('書きかけで変えた項目を戻しました');
   await expect(textbox(page, '肩書')).toHaveValue('E2E ぶつかって拒まれた肩書');
-  await expect(textbox(page, '組織名')).toHaveValue('E2E ぶつかる前に先に保存した組織名');
+  await expect(organizationInput(page)).toHaveValue('E2E ぶつかる前に先に保存した組織名');
 });
 
 test('書いた画面が開いたときの値を持たない形式の前の版の書きかけは、戻すとすべての項目が入る', async ({
@@ -256,7 +257,7 @@ test('書いた画面が開いたときの値を持たない形式の前の版�
   await page.goto(editUrl);
   const other = await context.newPage();
   await other.goto(editUrl);
-  await textbox(other, '組織名').fill('E2E 古い形式の後に先に保存した組織名');
+  await organizationInput(other).fill('E2E 古い形式の後に先に保存した組織名');
   await saveEdit(other);
   await other.close();
   await fillUntilDrafted(page, 'career', () =>
@@ -278,7 +279,7 @@ test('書いた画面が開いたときの値を持たない形式の前の版�
   await expect(notice).not.toContainText('書きかけで変えた項目');
   await expect(textbox(page, '肩書')).toHaveValue('E2E 古い形式の書きかけの肩書');
   // 変えた項目が分からないので、書きかけを書いた版の組織名も入る
-  await expect(textbox(page, '組織名')).toHaveValue('E2E 古い形式の書きかけの組織');
+  await expect(organizationInput(page)).toHaveValue('E2E 古い形式の書きかけの組織');
 });
 
 test('前の更新日時の書きかけが、書いた画面が開いたときの値から何も変えていなければ、知らせない', async ({
@@ -294,7 +295,7 @@ test('前の更新日時の書きかけが、書いた画面が開いたとき�
   await page.goto(editUrl);
   const other = await context.newPage();
   await other.goto(editUrl);
-  await textbox(other, '組織名').fill('E2E 変えない書きかけの後に先に保存した組織名');
+  await organizationInput(other).fill('E2E 変えない書きかけの後に先に保存した組織名');
   await saveEdit(other);
   await other.close();
   // 打ってから元に戻す。書きかけは、開いたときと同じ値を持つ
@@ -304,7 +305,7 @@ test('前の更新日時の書きかけが、書いた画面が開いたとき�
   });
   await page.reload();
 
-  await expect(textbox(page, '組織名')).toHaveValue('E2E 変えない書きかけの後に先に保存した組織名');
+  await expect(organizationInput(page)).toHaveValue('E2E 変えない書きかけの後に先に保存した組織名');
   await expect(page.getByRole('region', { name: '前の版の書きかけ' })).toHaveCount(0);
 });
 
@@ -446,10 +447,12 @@ const fillAndSave = async (page: Page, scope: string, fill: () => Promise<void>)
   await fillUntilDrafted(page, scope, fill);
   // 編集の画面のフォームは、保存した行の更新日時ごとに置き直される。置き直される前に次の入力を
   // 入れると、置き直しで消える。送る前のフォームに印を付け、印の無いフォームに替わるまで待つ。
-  // 前の画面が隠れて DOM に残ることがあるため、見えているフォームだけを調べる
+  // 前の画面が隠れて DOM に残ることがあるため、見えているフォームだけを調べる。編集の入力の
+  // フォームは画面の最初のフォームで、後に画像のフォームが続く
   await page
     .locator('main form')
     .filter({ visible: true })
+    .first()
     .evaluate((form) => form.setAttribute('data-e2e-stale', ''));
   await submitAndWait(page, '保存する');
   await expect(page.locator('main form[data-e2e-stale]').filter({ visible: true })).toHaveCount(0);
