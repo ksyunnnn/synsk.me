@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
+import { useEffect, useRef, useState, type ComponentPropsWithoutRef, type MouseEvent } from 'react';
 
 /**
  * 保存操作をしていない入力を、ブラウザの `localStorage` に持つフォーム（docs/REQUIREMENTS.md の
@@ -17,7 +17,12 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
  * - `version` は、編集の画面が開いたときの行の更新日時で、持つ名前に含める。別の画面で先に
  *   保存された後に開き直すと名前が変わり、前の更新日時の書きかけは消さずに残し、自動では戻さない。
  *   戻すと、触っていない項目まで古い値で先の保存を上書きする（specs/001-career-and-project/spec.md
- *   の FR-042）。残した書きかけをオーナーにどう見せるかは決まっていない
+ *   の FR-042）
+ * - 前の版の書きかけ（同じ `storageKey` で、`version` が違う名前の書きかけ）があれば、フォームの
+ *   上に、モーダルでない知らせを出す。オーナーは「書きかけを戻す」で入力に戻すか、「書きかけを
+ *   捨てる」で消す。どちらも、その画面で次に入力するまでは「取り消す」で前の状態に戻せるので、
+ *   確認を求めない（下の `StaleDraftNotice`）。書きかけは書いた日時を持ち、新しいものから
+ *   1 件ずつ知らせる。日時を持たない形式で書いた書きかけは、日時を持つものの後に、名前の順で回す
  *
  * 使い手は 001 の実績・職歴・学歴・組織・スキルの入力。003 の note の入力も使う（R16）。
  * JavaScript なしでは何もせず、ふつうのフォームとして送る。JavaScript が動く前に打った入力は、
@@ -70,19 +75,76 @@ const isReopened = () => {
 const toStorageKey = (storageKey: string, version: string | undefined) =>
   `${STORAGE_PREFIX}${storageKey}${version === undefined ? '' : `@${version}`}`;
 
-/** 持っている書きかけを読む。形が違えば null */
-const parseDraft = (stored: string | null): DraftValues | null => {
+/**
+ * 持っている書きかけ。`writtenAt` は書いた日時（端末の時計の ISO 8601 の文字列）。日時を持たない
+ * 形式（値だけを持つ）で書いた書きかけは `writtenAt` を持たない
+ */
+type StoredDraft = { values: DraftValues; writtenAt?: string };
+
+const isDraftValues = (values: unknown): values is DraftValues =>
+  typeof values === 'object' &&
+  values !== null &&
+  !Array.isArray(values) &&
+  Object.values(values).every(
+    (list) => Array.isArray(list) && list.every((v) => typeof v === 'string'),
+  );
+
+/**
+ * 持っている書きかけを読む。日時を持つ形式（`{ writtenAt, values }`）と、日時を持たない形式
+ * （値だけ）の両方を読む。形が違えば null
+ */
+const parseDraft = (stored: string | null): StoredDraft | null => {
   if (stored === null) return null;
   try {
-    const values: unknown = JSON.parse(stored);
-    if (typeof values !== 'object' || values === null || Array.isArray(values)) return null;
-    const entries = Object.values(values);
-    return entries.every((list) => Array.isArray(list) && list.every((v) => typeof v === 'string'))
-      ? (values as DraftValues)
-      : null;
+    const parsed: unknown = JSON.parse(stored);
+    if (typeof parsed !== 'object' || parsed === null) return null;
+    const { writtenAt, values } = parsed as { writtenAt?: unknown; values?: unknown };
+    // 日時を持たない形式では、項目の値が配列なので、`writtenAt` が文字列にならない
+    if (typeof writtenAt === 'string' && isDraftValues(values)) return { values, writtenAt };
+    return isDraftValues(parsed) ? { values: parsed } : null;
   } catch {
     return null;
   }
+};
+
+/** 前の版の書きかけ。`stored` は持っている文字列のまま。取り消しで書き戻す */
+type StaleDraft = { key: string; stored: string; values: DraftValues };
+
+/**
+ * 同じ `storageKey` の、`version` が違う書きかけ。書いた日時の新しいものから並べ、日時を持たない
+ * ものは後に名前の順で並べる。
+ *
+ * 保存の知らせの画面（`?saved=1`）では、送って保存の成功を待っている書きかけ（`SENT_KEY`）を
+ * 挙げない。編集の画面で保存すると、新しい版で開き直したその画面で、送った前の版の書きかけを
+ * `DraftSavedNotice` が消す。どちらの部品が先に動くかは、画面の中で置いた順で変わる。消される前の
+ * 書きかけを知らせないようにする。ほかの画面では挙げる。送信が応答を返さずに失敗した後に、別の
+ * 画面で先に保存されると、送った書きかけは前の版の書きかけになり、保存されていないため
+ */
+const findStaleDrafts = (storageKey: string, currentKey: string): StaleDraft[] => {
+  const prefix = `${toStorageKey(storageKey, undefined)}@`;
+  const sent = new URLSearchParams(window.location.search).has('saved') ? read(SENT_KEY) : null;
+  const found: (StaleDraft & { writtenAt?: string })[] = [];
+  try {
+    for (let i = 0; i < window.localStorage.length; i++) {
+      const key = window.localStorage.key(i);
+      if (key === null || key === currentKey || key === sent || !key.startsWith(prefix)) continue;
+      const stored = read(key);
+      const draft = parseDraft(stored);
+      if (stored === null || draft === null) continue;
+      found.push({ key, stored, ...draft });
+    }
+  } catch {
+    return [];
+  }
+  return found
+    .sort((a, b) => {
+      if (a.writtenAt !== undefined && b.writtenAt !== undefined)
+        return a.writtenAt < b.writtenAt ? 1 : a.writtenAt > b.writtenAt ? -1 : 0;
+      if (a.writtenAt !== undefined) return -1;
+      if (b.writtenAt !== undefined) return 1;
+      return a.key < b.key ? -1 : a.key > b.key ? 1 : 0;
+    })
+    .map(({ key, stored, values }) => ({ key, stored, values }));
 };
 
 /**
@@ -166,9 +228,15 @@ const read = (key: string): string | null => {
   }
 };
 
+/** 文字列はそのまま書く。書きかけの値は、書いた日時と一緒に書く（`StoredDraft`） */
 const write = (key: string, value: DraftValues | string) => {
   try {
-    window.localStorage.setItem(key, typeof value === 'string' ? value : JSON.stringify(value));
+    window.localStorage.setItem(
+      key,
+      typeof value === 'string'
+        ? value
+        : JSON.stringify({ writtenAt: new Date().toISOString(), values: value }),
+    );
   } catch {
     // 保存先が使えない（容量の超過、使わせない設定）ときは持たない。入力と送信は続けられる
   }
@@ -235,17 +303,40 @@ export const DraftRetainingForm = ({
   /** 送信した値。失敗の結果が来たら持ち直す */
   const submittedRef = useRef<DraftValues | null>(null);
   const key = toStorageKey(storageKey, version);
+  /** 知らせている前の版の書きかけ。`undefined` は、まだ探していないこと */
+  const [stale, setStale] = useState<StaleDraft | null | undefined>(undefined);
+  /** 知らせている書きかけに行った操作。取り消すときに使う */
+  const [outcome, setOutcome] = useState<StaleOutcome | null>(null);
+  /** 操作の後に入力したら、取り消しを出すのをやめる。入力の処理から読む */
+  const outcomeRef = useRef<StaleOutcome | null>(null);
+  const settle = (next: StaleOutcome | null) => {
+    outcomeRef.current = next;
+    setOutcome(next);
+  };
 
   useEffect(() => {
     const form = formRef.current;
     if (!form) return;
+    // 版を持つ画面だけが、前の版の書きかけを持ちうる
+    setStale(version === undefined ? null : (findStaleDrafts(storageKey, key)[0] ?? null));
+    outcomeRef.current = null;
+    setOutcome(null);
     // 開き直したので、前の送信の成功を待つのをやめる。残った書きかけは、この画面で戻す
     if (read(SENT_KEY) === key) {
       remove(SENT_KEY);
       remove(SENT_BEFORE_HYDRATION_KEY);
     }
-    const draft = parseDraft(read(key));
-    const save = () => write(key, toValues(form));
+    const draft = parseDraft(read(key))?.values;
+    const save = () => {
+      write(key, toValues(form));
+      // 戻す・捨てるの後に入力したら、その操作を確かめたものとし、知らせを閉じる。取り消すと、
+      // 操作の後に打った入力まで消えるため
+      if (outcomeRef.current) {
+        outcomeRef.current = null;
+        setOutcome(null);
+        setStale(null);
+      }
+    };
     hydratedKeys.add(key);
     const typed = typedBeforeHydration.get(key);
     typedBeforeHydration.delete(key);
@@ -274,7 +365,7 @@ export const DraftRetainingForm = ({
       form.removeEventListener('change', save);
       form.removeEventListener('submit', send);
     };
-  }, [key]);
+  }, [key, storageKey, version]);
 
   useEffect(() => {
     const submitted = submittedRef.current;
@@ -286,10 +377,137 @@ export const DraftRetainingForm = ({
     write(key, submitted);
   }, [result, key]);
 
+  /** 前の版の書きかけを入力に戻し、この版の書きかけにする */
+  const restore = () => {
+    const form = formRef.current;
+    if (!form || !stale) return;
+    const previous = { stored: read(key), values: toValues(form) };
+    applyValues(form, stale.values);
+    write(key, toValues(form));
+    remove(stale.key);
+    settle({ kind: 'restored', previous });
+  };
+
+  /** 前の版の書きかけを消す */
+  const discard = () => {
+    if (!stale) return;
+    remove(stale.key);
+    settle({ kind: 'discarded' });
+  };
+
+  /** 戻す・捨てるの前の入力と書きかけに戻す */
+  const undo = () => {
+    const form = formRef.current;
+    if (!form || !stale || !outcome) return;
+    if (outcome.kind === 'restored') {
+      applyValues(form, outcome.previous.values);
+      if (outcome.previous.stored === null) remove(key);
+      else write(key, outcome.previous.stored);
+    }
+    write(stale.key, stale.stored);
+    settle(null);
+  };
+
   return (
-    <form ref={formRef} action={action} {...props} {...{ [DRAFT_KEY_ATTRIBUTE]: key }}>
+    <form
+      ref={formRef}
+      action={action}
+      {...props}
+      {...{ [DRAFT_KEY_ATTRIBUTE]: key }}
+      // 前の版の書きかけを探し終えた印。知らせが出ないことを確かめるテストが待つ
+      {...(stale !== undefined && { 'data-draft-stale-checked': '' })}
+    >
+      {stale && (
+        <StaleDraftNotice
+          outcome={outcome?.kind ?? null}
+          onRestore={restore}
+          onDiscard={discard}
+          onUndo={undo}
+        />
+      )}
       {children}
     </form>
+  );
+};
+
+/** 前の版の書きかけに行った操作。戻したときは、戻す前の入力と、この版の書きかけを持つ */
+type StaleOutcome =
+  | { kind: 'restored'; previous: { stored: string | null; values: DraftValues } }
+  | { kind: 'discarded' };
+
+const STALE_BUTTON_CLASS =
+  'rounded-md border border-border px-3 py-1.5 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+
+/**
+ * 前の版の書きかけの知らせ。フォームの上に置き、モーダルにしない。開いた画面に出す知らせは、
+ * 作業を止めず、その内容の近くに置く（HIG の Alerts と Feedback）。戻す・捨てるは取り消せるので、
+ * 確認を求めず、操作の結果と「取り消す」を出す（HIG の Alerts、Undo and redo）
+ */
+const StaleDraftNotice = ({
+  outcome,
+  onRestore,
+  onDiscard,
+  onUndo,
+}: {
+  outcome: StaleOutcome['kind'] | null;
+  onRestore: () => void;
+  onDiscard: () => void;
+  onUndo: () => void;
+}) => {
+  const buttonsRef = useRef<HTMLDivElement>(null);
+  /** 押したボタンは入れ替わって消え、焦点を失う。入れ替わった先の最初のボタンへ移すか */
+  const refocusRef = useRef(false);
+  /** 押したボタンが焦点を持っていたら、入れ替わった先のボタンへ焦点を移す */
+  const press = (event: MouseEvent<HTMLButtonElement>, handler: () => void) => {
+    refocusRef.current = event.currentTarget === document.activeElement;
+    handler();
+  };
+  useEffect(() => {
+    if (!refocusRef.current) return;
+    refocusRef.current = false;
+    buttonsRef.current?.querySelector('button')?.focus();
+  }, [outcome]);
+  return (
+    <section
+      aria-label="前の版の書きかけ"
+      className="flex flex-col gap-3 rounded-md border border-border p-4"
+    >
+      <p aria-live="polite" className="text-sm">
+        {outcome === 'restored'
+          ? '書きかけを戻しました。'
+          : outcome === 'discarded'
+            ? '書きかけを捨てました。'
+            : 'この画面を開く前の版から書いた書きかけが、この端末に残っています。'}
+      </p>
+      <div ref={buttonsRef} className="flex flex-wrap gap-2">
+        {outcome === null ? (
+          <>
+            <button
+              type="button"
+              className={STALE_BUTTON_CLASS}
+              onClick={(event) => press(event, onRestore)}
+            >
+              書きかけを戻す
+            </button>
+            <button
+              type="button"
+              className={STALE_BUTTON_CLASS}
+              onClick={(event) => press(event, onDiscard)}
+            >
+              書きかけを捨てる
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={STALE_BUTTON_CLASS}
+            onClick={(event) => press(event, onUndo)}
+          >
+            取り消す
+          </button>
+        )}
+      </div>
+    </section>
   );
 };
 
