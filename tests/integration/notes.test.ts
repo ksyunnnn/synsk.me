@@ -286,6 +286,9 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
     expect(html).toMatch(/<meta property="og:description" content="本文の最初の段落"/);
     expect(html).toMatch(/<meta name="twitter:title" content="説明文の無い題"/);
     expect(html).toMatch(/<meta name="twitter:description" content="本文の最初の段落"/);
+    // twitter を書き直しても、root layout のカードの種類と作者は残す
+    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
+    expect(html).toMatch(/<meta name="twitter:creator" content="@ksyunnnn"/);
   });
 
   it('公開し直すと直した本文が出て、初めて公開した日時が変わらない（SC-004）', async () => {
@@ -589,7 +592,6 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
         `<meta property="og:image" content="[^"]*/notes/integration-card-media/media/${key}"`,
       ),
     );
-    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
   });
 
   it('代表画像を site にすると、サイト共通の画像が OGP に出る（FR-024）', async () => {
@@ -607,7 +609,6 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
     await publishNoteRow(ctx.db, note.id);
     const html = await (await ctx.server.fetch('/notes/integration-card-site')).text();
     expect(html).toMatch(/<meta property="og:image" content="[^"]*\/opengraph-image"/);
-    expect(html).toMatch(/<meta name="twitter:card" content="summary"/);
   });
 
   it('JWT のない changeNoteCardImage・addNoteMedia は D1 を変えない（FR-033）', async () => {

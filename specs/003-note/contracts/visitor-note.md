@@ -34,7 +34,7 @@ DTO が持たないもの: `note.uid`・`note.id`・最も新しい版と公開�
 
 ## OGP
 
-`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `summary`。`<meta name="description">`・`og:description`・`twitter:description` に同じ値を出し、`summary` が空なら 3 つとも出さない（FR-034）。`twitter:title` も `title` にする。書かないと root layout のサイトの題と説明を引き継ぐため。画像は `cardImage`。`twitter:card` は、`cardImage` が `media` なら `summary_large_image`、ほかは `summary`。
+`docs/CRAWLING.md` の「リンクが貼られたときの見え方」に従う。題は `title`、説明は `summary`。`<meta name="description">`・`og:description`・`twitter:description` に同じ値を出し、`summary` が空なら 3 つとも出さない（FR-034）。`twitter:title` も `title` にする。書かないと root layout のサイトの題と説明を引き継ぐため。画像は `cardImage`。`twitter` を書くと root layout の `twitter` を丸ごと置き換えるため、`twitter:card` は root layout と同じ `summary_large_image` を書き、`twitter:creator` は root layout の値を引き継ぐ。
 
 ## 検査
 

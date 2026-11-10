@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, ResolvingMetadata } from 'next';
 import { notFound } from 'next/navigation';
 import { VisitorNoteView } from '@/features/note/components/visitor-note';
 import type { VisitorNote } from '@/features/note/domain/note';
@@ -14,12 +14,17 @@ type Props = { params: Promise<{ slug: string }> };
 // メタデータは訪問者向けの DTO の題と説明だけから作る（contracts/visitor-note.md の OGP）。
 // 説明は、説明文が空なら、本文の最初の段落を使う note だけが段落を使う（FR-034）。説明が無ければ
 // 説明のタグを出さない。twitter は書かないと root layout のサイトの題と説明を引き継ぐため、
-// note の題と説明で書き直す
-export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
+// note の題と説明で書き直す。書くと root layout の twitter を丸ごと置き換えるため、カードの種類は
+// root layout と同じ値を書き、作者は root layout の値を引き継ぐ
+export const generateMetadata = async (
+  { params }: Props,
+  parent: ResolvingMetadata,
+): Promise<Metadata> => {
   const note = await getVisitorNote((await params).slug);
   if (!note) notFound();
   const description = note.summary ?? undefined;
   const images = cardImageUrl(note);
+  const creator = (await parent).twitter?.creator ?? undefined;
   return {
     title: `${note.title} | synsk.me`,
     description,
@@ -30,8 +35,8 @@ export const generateMetadata = async ({ params }: Props): Promise<Metadata> => 
       ...(images ? { images } : {}),
     },
     twitter: {
-      // note の画像は 1200×630、サイト共通の画像は正方形（docs/CRAWLING.md）
-      card: note.cardImage.kind === 'media' ? 'summary_large_image' : 'summary',
+      card: 'summary_large_image',
+      creator,
       title: note.title,
       description,
     },
