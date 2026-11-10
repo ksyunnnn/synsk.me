@@ -10,7 +10,7 @@ import { insertNote, insertNoteMedia } from '../support/note-rows';
  * 確かめる
  */
 
-const storage = createR2MediaSweepStorage(env.NOTE_IMAGES);
+const storage = createR2MediaSweepStorage(env.MEDIA);
 const deps = { storage, references: createD1MediaReferences(env.DB) };
 
 /** 置いてから猶予を過ぎた時刻 */
@@ -18,11 +18,11 @@ const afterGrace = () => new Date(Date.now() + ORPHAN_GRACE_MS + 60_000);
 
 const putImage = async () => {
   const key = crypto.randomUUID();
-  await env.NOTE_IMAGES.put(key, new Uint8Array([1]));
+  await env.MEDIA.put(key, new Uint8Array([1]));
   return key;
 };
 
-const keysInBucket = async () => (await env.NOTE_IMAGES.list()).objects.map((o) => o.key);
+const keysInBucket = async () => (await env.MEDIA.list()).objects.map((o) => o.key);
 
 beforeAll(async () => {
   await applyD1Migrations(env.DB, env.TEST_MIGRATIONS);
@@ -30,7 +30,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   const keys = await keysInBucket();
-  if (keys.length > 0) await env.NOTE_IMAGES.delete(keys);
+  if (keys.length > 0) await env.MEDIA.delete(keys);
 });
 
 describe('sweepOrphanedMedia', () => {

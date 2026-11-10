@@ -180,12 +180,12 @@ describe('オーナーの JWT がない書き込み（FR-031、constitution I）
       // 編集の画面の 2 つ目のフォームが、画像の登録
       const imageForm = [...html.matchAll(/<form\b[\s\S]*?<\/form>/g)][1]?.[0] ?? '';
       const fields = readActionFields(imageForm);
-      const { NOTE_IMAGES } = await ctx.server.getWorker<{ NOTE_IMAGES: R2Bucket }>().getEnv();
+      const { MEDIA } = await ctx.server.getWorker<Pick<Cloudflare.Env, 'MEDIA'>>().getEnv();
       const readMedia = async () =>
         (await ctx.db.prepare('SELECT * FROM media ORDER BY id').all()).results;
       const before = {
         media: await readMedia(),
-        objects: (await NOTE_IMAGES.list()).objects.length,
+        objects: (await MEDIA.list()).objects.length,
       };
 
       // 形式の正しい PNG を送る。ファイルが無いと、オーナーの判定が無くても空として拒まれる
@@ -210,7 +210,7 @@ describe('オーナーの JWT がない書き込み（FR-031、constitution I）
       await res.arrayBuffer();
 
       expect(await readMedia()).toEqual(before.media);
-      expect((await NOTE_IMAGES.list()).objects.length).toBe(before.objects);
+      expect((await MEDIA.list()).objects.length).toBe(before.objects);
     });
 
     it('対照: オーナーの JWT があれば、同じ形の作成が書く', async () => {
@@ -237,9 +237,9 @@ describe('/life-events/{slug}/media/{storage_key}', () => {
   const PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
 
   beforeAll(async () => {
-    const { NOTE_IMAGES } = await ctx.server.getWorker<{ NOTE_IMAGES: R2Bucket }>().getEnv();
+    const { MEDIA } = await ctx.server.getWorker<Pick<Cloudflare.Env, 'MEDIA'>>().getEnv();
     for (const key of [CARD_KEY, OTHER_KEY]) {
-      await NOTE_IMAGES.put(key, PNG, { httpMetadata: { contentType: 'image/png' } });
+      await MEDIA.put(key, PNG, { httpMetadata: { contentType: 'image/png' } });
     }
     const other = await ctx.db
       .prepare(
