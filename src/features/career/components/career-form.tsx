@@ -12,6 +12,7 @@ import {
 import { InputField, SuggestingInputField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { FormActions } from '@/shared/components/form-actions';
 
 /**
  * 職歴を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -139,14 +140,14 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
         autoComplete="off"
         error={errorOf('url')}
       />
-      <div>
+      <FormActions>
         <button
           type="submit"
           className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           {career ? '保存する' : '登録する'}
         </button>
-      </div>
+      </FormActions>
     </form>
   );
 };

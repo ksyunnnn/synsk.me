@@ -11,6 +11,7 @@ import {
 } from '@/features/activity/domain/external-activity';
 import { OWNED_SOURCES, type OwnedSourceName } from '@/features/activity/domain/sources';
 import { InputField, SelectField } from '@/shared/components/field';
+import { FormActions } from '@/shared/components/form-actions';
 
 /**
  * URL を指名した・手で入力した外部の activity を登録する・書き換えるフォーム
@@ -132,14 +133,14 @@ export const ExternalActivityForm = ({ action, initialValues, editing }: Props) 
         defaultValue={values.publishedOn}
         error={errorOf('publishedOn')}
       />
-      <div>
+      <FormActions>
         <button
           type="submit"
           className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           {editing ? '保存する' : '登録する'}
         </button>
-      </div>
+      </FormActions>
     </form>
   );
 };

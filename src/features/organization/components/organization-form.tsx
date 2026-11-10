@@ -9,6 +9,7 @@ import {
 } from '@/features/organization/application/edit-organization';
 import type { ActionResult } from '@/shared/domain/action-result';
 import { InputField } from '@/shared/components/field';
+import { FormActions } from '@/shared/components/form-actions';
 
 /**
  * 組織名と秘匿化した組織名を直すフォーム。Server Action は props で受け取り、`server/` を
@@ -83,14 +84,14 @@ export const OrganizationForm = ({
         autoComplete="off"
         error={errorOf('nameMasked')}
       />
-      <div>
+      <FormActions>
         <button
           type="submit"
           className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           保存する
         </button>
-      </div>
+      </FormActions>
     </form>
   );
 };

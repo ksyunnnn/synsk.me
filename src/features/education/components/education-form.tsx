@@ -9,6 +9,7 @@ import {
   type EducationFormValues,
 } from '@/features/education/domain/education';
 import { InputField, TextareaField } from '@/shared/components/field';
+import { FormActions } from '@/shared/components/form-actions';
 
 /**
  * 学歴を登録する・編集するフォーム。Server Action は props で受け取り、`server/` を読み込まない
@@ -91,14 +92,14 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
         error={errorOf('endedOn')}
       />
       <TextareaField name="remarks" label="備考" rows={4} defaultValue={values.remarks} />
-      <div>
+      <FormActions>
         <button
           type="submit"
           className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           {educationUid === undefined ? '登録する' : '保存する'}
         </button>
-      </div>
+      </FormActions>
     </form>
   );
 };
