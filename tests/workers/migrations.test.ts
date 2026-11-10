@@ -823,7 +823,7 @@ describe('migration 0016 の activity_feed の note の腕', () => {
     expect(rows[0]).toEqual({
       item_type: 'note',
       item_number: published,
-      sort_at: '2026-01-02T03:04:05.000Z',
+      sort_at: '2026-01-02T12:04:05.000',
       is_masked: 0,
       title: 'migration-0016-published の公開した題',
       title_masked: null,
@@ -837,6 +837,8 @@ describe('migration 0016 の activity_feed の note の腕', () => {
       source: null,
       source_kind: null,
       url: null,
+      created_at: '2026-01-02T03:04:05.000Z',
+      published_at: null,
     });
   });
 
@@ -907,7 +909,11 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
 
   it('source・source_kind・url の列を、0016 までの列の後に持つ', async () => {
     const names = (await columnsOf('activity_feed')).map((c) => c.name);
-    expect(names.slice(M1_COLUMNS.length + 1)).toEqual(['source', 'source_kind', 'url']);
+    expect(names.slice(M1_COLUMNS.length + 1, M1_COLUMNS.length + 4)).toEqual([
+      'source',
+      'source_kind',
+      'url',
+    ]);
   });
 
   it('外部の activity を、題・取得元・分類・URL で出す。説明と画像は出さない', async () => {
@@ -915,7 +921,7 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
     expect(row).toEqual({
       item_type: 'external_activity',
       item_number: external,
-      sort_at: '2026-01-05T00:00:00.000Z',
+      sort_at: '2026-01-05T09:00:00.000',
       is_masked: 0,
       title: '0017 の記事',
       title_masked: null,
@@ -929,6 +935,8 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
       source: 'zenn',
       source_kind: 'article',
       url: 'https://zenn.dev/fake/articles/migration-0017',
+      created_at: null,
+      published_at: '2026-01-05T00:00:00.000Z',
     });
     expect(Object.values(row ?? {})).not.toContain('https://example.com/0017.png');
   });
@@ -952,6 +960,8 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
       source: 'life_event',
       source_kind: 'life_event',
       url: null,
+      created_at: null,
+      published_at: null,
     });
   });
 
@@ -1132,5 +1142,17 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
       ]),
     );
     expect(details.filter((detail) => detail.startsWith('SCAN'))).toEqual([]);
+  });
+});
+
+/**
+ * 一覧のビュー activity_feed が、note と外部の activity の日時を Asia/Tokyo の時刻にして並べ、元の
+ * 日時を別の列で出すこと（specs/005-feed/data-model.md の「一覧のビュー」の M5、plan.md の U3）。
+ * 換算した値と元の値は、0016・0017 の腕の検査が確かめる
+ */
+describe('migration 0022 の activity_feed の Asia/Tokyo の並びの値', () => {
+  it('created_at・published_at の列を、0017 までの列の後に持つ', async () => {
+    const names = (await columnsOf('activity_feed')).map((c) => c.name);
+    expect(names.slice(M1_COLUMNS.length + 4)).toEqual(['created_at', 'published_at']);
   });
 });
