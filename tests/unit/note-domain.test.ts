@@ -4,6 +4,7 @@ import {
   NOTE_STATUSES,
   checkPublishable,
   checkSlugChange,
+  isVisibleToVisitors,
   parseNoteInput,
   toNoteFormValues,
   type NoteFormValues,
@@ -123,4 +124,21 @@ describe('toNoteFormValues', () => {
       }),
     ).toEqual({ slug: 'sample-note', title: '新しい題', description: '', body: '新しい本文' });
   });
+});
+
+describe('isVisibleToVisitors（FR-014〜FR-016）', () => {
+  it('公開で削除していない note は訪問者に見える', () => {
+    expect(isVisibleToVisitors({ status: 'published', deletedAt: null })).toBe(true);
+  });
+
+  it('下書きの note は訪問者に見えない', () => {
+    expect(isVisibleToVisitors({ status: 'draft', deletedAt: null })).toBe(false);
+  });
+
+  it.each(['published', 'draft'] as const)(
+    '削除した note は、状態が「%s」のままでも訪問者に見えない',
+    (status) => {
+      expect(isVisibleToVisitors({ status, deletedAt: '2026-11-10T00:00:00.000Z' })).toBe(false);
+    },
+  );
 });

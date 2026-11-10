@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NoteRevisionList } from '@/features/note/components/note-revision-list';
+import { isVisibleToVisitors } from '@/features/note/domain/note';
 import { listNoteRevisions } from '@/features/note/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 
@@ -25,7 +26,11 @@ const Page = async ({ params }: Props) => {
       </p>
       <h1 className="text-2xl font-bold">版の一覧</h1>
       <p>{note.latestRevision.title || '（題なし）'}</p>
-      <NoteRevisionList noteUid={note.uid} noteStatus={note.status} revisions={revisions} />
+      <NoteRevisionList
+        noteUid={note.uid}
+        isNoteVisibleToVisitors={isVisibleToVisitors(note)}
+        revisions={revisions}
+      />
     </main>
   );
 };
