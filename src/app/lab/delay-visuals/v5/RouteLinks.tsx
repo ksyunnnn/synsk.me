@@ -23,15 +23,22 @@ export const LabBackLink = () => {
   );
 };
 
-// 作った人のサイトへのクレジット。画面のいちばん下に、目立たせずに置く
+// 作った人のクレジット。画面のいちばん下に、目立たせずに置く。外部へのリンクは、職務経歴書の外部リンク
+// （src/features/resume/components/visitor-resume.tsx）と同じく、同じタブで開き rel="noopener noreferrer" を付ける
+const TWITTER_URL = 'http://twitter.com/ksyunnnn';
+
 export const Credit = () => {
   if (isLab(usePathname())) return null;
   return (
     <footer className="pt-24 pb-8 text-xs text-muted-foreground">
       つくった人{' '}
-      <Link href="/" className={`underline underline-offset-4 ${focusRing}`}>
-        synsk.me
-      </Link>
+      <a
+        href={TWITTER_URL}
+        rel="noopener noreferrer"
+        className={`underline underline-offset-4 ${focusRing}`}
+      >
+        @ksyunnnn
+      </a>
     </footer>
   );
 };
