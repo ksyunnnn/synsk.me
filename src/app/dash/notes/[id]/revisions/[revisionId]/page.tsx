@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { NoteRevertForm } from '@/features/note/components/note-revert-form';
 import { formatSavedAt } from '@/features/note/components/note-revision-list';
+import { isVisibleToVisitors } from '@/features/note/domain/note';
 import { revertNote } from '@/features/note/server/actions';
 import { getNoteRevision } from '@/features/note/server/queries';
 import { TextLink } from '@/shared/components/text-link';
@@ -45,11 +46,11 @@ const Page = async ({ params }: Props) => {
       ) : (
         note.deletedAt === null && (
           <>
-            {/* 下書きの note は訪問者に見せる版を持たないため、訪問者についての説明は公開のときだけ出す。
-                版の一覧の公開した版の印と同じ条件にする（note-revision-list.tsx） */}
+            {/* 訪問者に見えない note では訪問者についての説明を出さない。版の一覧の公開した版の印と
+                同じ `isVisibleToVisitors` で決める（note-revision-list.tsx） */}
             <p>
               戻すと、この版の題・説明文・本文が新しい版として保存されます。
-              {note.status === 'published' && '訪問者には、公開し直すまで今の公開した版を見せます'}
+              {isVisibleToVisitors(note) && '訪問者には、公開し直すまで今の公開した版を見せます'}
             </p>
             <NoteRevertForm
               action={revertNote}

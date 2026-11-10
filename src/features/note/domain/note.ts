@@ -105,6 +105,14 @@ export type NoteRevisionSummary = {
 export const hasBeenPublished = (note: Pick<Note, 'publishedAt'>): boolean =>
   note.publishedAt !== null;
 
+/**
+ * 今、訪問者に見える note か。公開で、削除していない note だけが見える（FR-014〜FR-016）。
+ * 削除しても状態は公開のまま残るため、状態だけでは決めない。オーナーの画面の言葉を選ぶための値で、
+ * 訪問者に出す値の選別は Repository の実装が持つ
+ */
+export const isVisibleToVisitors = (note: Pick<Note, 'status' | 'deletedAt'>): boolean =>
+  note.status === 'published' && note.deletedAt === null;
+
 /** 入力の項目の名前。フォームの値の名前と同じ */
 export const NOTE_FIELDS = ['slug', 'title', 'description', 'body'] as const;
 export type NoteField = (typeof NOTE_FIELDS)[number];

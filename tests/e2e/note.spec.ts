@@ -291,6 +291,41 @@ test('版の一覧は、公開の note でだけ公開した版に印を付け�
   await expect(page.getByRole('list')).not.toContainText('・公開した版');
 });
 
+test('削除した公開の note の版の一覧と過去の版の画面は、訪問者に見せている版と読める言葉を出さない（FR-016）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const slug = uniqueSlug('deleted-mark');
+  const editUrl = await createNote(page, {
+    slug,
+    title: `E2E の削除した note の印の題 ${slug}`,
+    body: 'E2E の 1 つ目の版の本文',
+  });
+  await openNoteEditor(page, editUrl);
+  await textbox(page, '本文').fill('E2E の 2 つ目の版の本文');
+  await saveEdit(page);
+  await expect(textbox(page, '本文')).toHaveValue('E2E の 2 つ目の版の本文');
+  await submitAndWait(page, '最も新しい版を公開する');
+  await expect(page.getByRole('heading', { name: '状態: 公開' })).toBeVisible();
+
+  await page.goto(`${editUrl}/delete`);
+  await waitForHydration(page.getByRole('button', { name: '削除する' }));
+  await submitAndWait(page, '削除する');
+  await expect(page.getByRole('status')).toHaveText('note を削除しました');
+
+  // 削除しても状態は公開のまま（FR-016）だが、訪問者には見えないため、公開した版の印を出さない
+  await page.goto(`${editUrl}/revisions`);
+  await expect(page.getByRole('list')).toContainText('・最も新しい版');
+  await expect(page.getByRole('list')).not.toContainText('・公開した版');
+
+  // 版の一覧は新しい順。最後のリンクが 1 つ目の版
+  await page.getByRole('list').getByRole('link').last().click();
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('過去の版');
+  await expect(page.getByText('E2E の 1 つ目の版の本文')).toBeVisible();
+  await expect(page.getByText('訪問者には、公開し直すまで今の公開した版を見せます')).toHaveCount(0);
+});
+
 test('過去の版の画面は、公開の note でだけ、戻しても訪問者には今の公開した版を見せると知らせる（FR-009・FR-014）', async ({
   page,
   context,

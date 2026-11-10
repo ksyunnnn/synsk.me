@@ -10,6 +10,7 @@ import { NoteSyndicationForm } from '@/features/note/components/note-syndication
 import {
   NOTE_STATUS_LABELS,
   hasBeenPublished,
+  isVisibleToVisitors,
   toNoteFormValues,
 } from '@/features/note/domain/note';
 import {
@@ -97,7 +98,7 @@ const Page = async ({ params, searchParams }: Props) => {
         <NoteSavedNotice noteUid={note.uid} revisionUid={note.latestRevision.uid} />
       )}
       {notice && <p role="status">{NOTICES[notice]}</p>}
-      {note.status === 'published' && (
+      {isVisibleToVisitors(note) && (
         <p>
           <TextLink href={`/notes/${note.slug}`}>訪問者に見せるページを開く</TextLink>
         </p>
