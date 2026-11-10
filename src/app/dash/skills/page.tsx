@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { listSkills } from '@/features/skill/server/queries';
 import { TextLink } from '@/shared/components/text-link';
 import { toYearsAndMonths } from '@/shared/domain/period';
-import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -30,11 +29,7 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">スキル</h1>
-      {saved === '1' && (
-        <DraftSavedNotice
-          storageKeys={['skill:new', ...skills.map((skill) => `skill:${skill.uid}`)]}
-        />
-      )}
+      {saved === '1' && <p role="status">保存しました</p>}
       {deleted === '1' && <p role="status">スキルを削除しました</p>}
       <p>
         <TextLink href={routes.dash.skills.new}>スキルを登録する</TextLink>

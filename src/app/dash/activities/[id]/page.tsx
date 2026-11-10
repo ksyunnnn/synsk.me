@@ -7,7 +7,6 @@ import {
 } from '@/features/activity/domain/external-activity';
 import { editExternalActivity } from '@/features/activity/server/actions';
 import { getExternalActivityForEdit } from '@/features/activity/server/queries';
-import { DraftSavedNotice } from '@/shared/components/draft-retention';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -36,13 +35,7 @@ const Page = async ({ params, searchParams }: Props) => {
         <TextLink href={routes.dash.activities.list}>外部の activity の一覧へ戻る</TextLink>
       </p>
       <h1 className="text-2xl font-bold">外部の activity を編集する</h1>
-      {/* 続けて保存すると同じ `?saved=1` の画面へ移る。保存した値が変わるたびに送った書きかけを消し直す */}
-      {saved === '1' && (
-        <DraftSavedNotice
-          storageKeys={[`external-activity:${activity.uid}`]}
-          version={valuesVersion}
-        />
-      )}
+      {saved === '1' && <p role="status">保存しました</p>}
       <p>
         <TextLink href={activity.url}>取得元のページを開く</TextLink>
       </p>

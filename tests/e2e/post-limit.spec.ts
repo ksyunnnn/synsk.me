@@ -2,6 +2,7 @@ import { expect, test, type Request } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import { MEDIA_MAX_BYTES } from '../../src/shared/domain/media';
 import { textbox } from './support/dash';
+import { waitForHydration } from './support/note';
 
 /**
  * ブラウザのフォームの送信と Server Action の呼び出しが、`Content-Length` を付けること。
@@ -18,15 +19,9 @@ test('JavaScript が動いた後の Server Action の呼び出しは Content-Len
 }) => {
   await actAsAuthor(context);
   await page.goto('/dash/skills/new');
-  const name = `E2E-Length-${crypto.randomUUID()}`;
-  await expect
-    .poll(async () => {
-      await textbox(page, '名前').fill(name);
-      return page.evaluate(() =>
-        Object.keys(window.localStorage).some((key) => key.startsWith('synsk:draft:skill:')),
-      );
-    })
-    .toBe(true);
+  // JavaScript が動いた後に送る。動く前の送信は、ふつうのフォームの送信になる
+  await waitForHydration(page.locator('main form').first());
+  await textbox(page, '名前').fill(`E2E-Length-${crypto.randomUUID()}`);
   const [request] = await Promise.all([
     page.waitForRequest((req) => req.method() === 'POST'),
     page.getByRole('button', { name: '登録する' }).click(),

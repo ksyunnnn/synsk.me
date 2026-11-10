@@ -8,14 +8,12 @@ import {
   type LifeEventFormResult,
   type LifeEventFormValues,
 } from '@/features/activity/domain/life-event';
-import { DraftRetainingForm } from '@/shared/components/draft-retention';
 import { InputField, TextareaField } from '@/shared/components/field';
 
 /**
  * life event を作る・書き換えるフォーム（specs/004-external-activity/contracts/dash.md）。
  * Server Action は props で受け取り、`server/` を読み込まない（ADR-0026 の依存の向き 3）。
- * リンク先の入力を持たない（FR-024）。保存していない入力は `DraftRetainingForm` が持つ
- * （REQUIREMENTS.md の FR-14）。
+ * リンク先の入力を持たない（FR-024）。保存していない入力は持たない（contracts/dash.md）。
  *
  * 入力の決まり（題と起きた日は必須。FR-024・FR-025）はサーバで確かめ、誤りを文言で返す。
  * `required` を付けない。実績のフォーム（src/features/project/components/project-form.tsx）と同じで、
@@ -59,12 +57,7 @@ export const LifeEventForm = ({ action, initialValues, uid }: Props) => {
   };
 
   return (
-    <DraftRetainingForm
-      action={formAction}
-      storageKey={`life-event:${uid ?? 'new'}`}
-      result={result}
-      className="flex flex-col gap-6"
-    >
+    <form action={formAction} className="flex flex-col gap-6">
       {uid && <input type="hidden" name={LIFE_EVENT_UID_FIELD} value={uid} />}
       {result && result.status !== 'saved' && (
         <p role="alert" className="text-destructive">
@@ -112,6 +105,6 @@ export const LifeEventForm = ({ action, initialValues, uid }: Props) => {
           {uid ? '保存する' : '作る'}
         </button>
       </div>
-    </DraftRetainingForm>
+    </form>
   );
 };

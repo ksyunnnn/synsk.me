@@ -52,7 +52,7 @@
 | VI. Measure Before Optimizing | 通る | キャッシュ・索引の追加・非正規化を含めない（R12） |
 | VII. Boundary Translation | 通る | JWT の中身は `src/shared/server/author.ts` の中で `Author` に詰め替える。D1 の行は Repository の実装の中で domain の型に詰め替える（R3） |
 | VIII. Portable Core | 通る | D1 は各機能の `server/*-repository.ts` と `src/shared/server/organization-repository.ts`・`src/shared/server/media-usage.ts`、R2 は `src/shared/server/media-storage.ts`、`cloudflare:workers` の env は `src/shared/server/env.ts` だけで使う |
-| IX. Simplicity | 通る | `shared/` に置くものは 2 つ目の使い手を名前で挙げた（R4・R9・R10・R14・R16）。Repository のインタフェースは、単体の検査で D1 の代わりに渡す作り物の実装が 2 つ目の使い手（ADR-0026 のルール 2） |
+| IX. Simplicity | 通る | `shared/` に置くものは 2 つ目の使い手を名前で挙げた（R4・R9・R10・R14）。Repository のインタフェースは、単体の検査で D1 の代わりに渡す作り物の実装が 2 つ目の使い手（ADR-0026 のルール 2） |
 | Test Layering | 通る | 同じことを 2 つの段階で確かめない（下の表の「段階」） |
 | Display Speed | 通る | 実績のページは NFR-03〜NFR-07 の対象。判定はフィールドの計測で、CI では判定しない（ADR-0019） |
 | Cacheability | 通る | `'use cache'`・`revalidate`・`dynamic` を書かない。404 と 403 は `src/proxy.ts` が決め、`tests/unit/proxy.test.ts` が確かめる |
@@ -158,7 +158,7 @@ src/
     ├── server/author.ts             Access の JWT の検証（001 の各管理画面・002・003）
     ├── server/organization-repository.ts
     ├── server/media-storage.ts      R2 の原本の読み書き（U5）
-    └── components/                  headless の上の部品（U3）、入力中の内容の保持（R16）
+    └── components/                  headless の上の部品（U3）
 
 tests/
 ├── unit/          proxy・author・各機能の domain と application・period
