@@ -25,8 +25,7 @@ export const createActivityDeps = async (): Promise<ActivityDeps> => {
 
 /**
  * 定期実行の入口（worker/scheduled.ts）が呼ぶ。一覧を取る取得元から、本番の上限
- * （src/features/activity/domain/limits.ts）で次の取得元を取り直す。取り直しの処理を持たない取得元
- * （GitHub）も候補に入れ、選ばれた回は取得の結果に失敗と理由を書く。処理ができれば、そのまま回る
+ * （src/features/activity/domain/limits.ts）で次の取得元を取り直す
  */
 export const refreshNextSourcesNow = async (now: string): Promise<RefreshOutcome[]> =>
   refreshNextSources(

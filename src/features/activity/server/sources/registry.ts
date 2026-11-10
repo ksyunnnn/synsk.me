@@ -5,6 +5,7 @@ import { isListSourceName, type ListSourceName } from '@/features/activity/domai
 import { fetchListing as fetchConnpass } from '@/features/activity/server/sources/connpass';
 import { fetchListing as fetchDevto } from '@/features/activity/server/sources/devto';
 import type { Fetcher } from '@/features/activity/server/sources/fetch-with-limits';
+import { fetchListing as fetchGitHub } from '@/features/activity/server/sources/github';
 import { fetchListing as fetchMedium } from '@/features/activity/server/sources/medium';
 import { fetchListing as fetchQiita } from '@/features/activity/server/sources/qiita';
 import {
@@ -29,12 +30,12 @@ type ListingOf = (
 ) => ReturnType<Listing>;
 
 export const createSourceRegistry = (fetcher: Fetcher, env: SourceCredentialEnv) => {
-  /** GitHub は公開日の扱いの答え（plan.md の未決）を待つので、まだ処理を持たない */
-  const listings: Partial<Record<ListSourceName, ListingOf>> = {
+  const listings: Record<ListSourceName, ListingOf> = {
     zenn: (limits, previous) => fetchZenn(fetcher, limits, previous),
     qiita: (limits, previous) => fetchQiita(fetcher, limits, env.QIITA_ACCESS_TOKEN, previous),
     devto: (limits) => fetchDevto(fetcher, limits),
     medium: (limits, previous) => fetchMedium(fetcher, limits, previous),
+    github: (limits, previous) => fetchGitHub(fetcher, limits, env.GITHUB_TOKEN, previous),
     speakerdeck: (limits, previous) => fetchSpeakerDeck(fetcher, limits, previous),
     connpass: (limits) => fetchConnpass(fetcher, limits, env.CONNPASS_API_KEY),
   };
@@ -50,13 +51,7 @@ export const createSourceRegistry = (fetcher: Fetcher, env: SourceCredentialEnv)
     fetchListing: ((source, limits, previous = null) => {
       const listing = listingOf(source);
       if (!listing) {
-        return Promise.reject(
-          new Error(
-            source === 'github'
-              ? 'GitHub の取得の処理はまだ無い（公開日の扱いの答えを待つ）'
-              : `一覧を取る取得元でない: ${source}`,
-          ),
-        );
+        return Promise.reject(new Error(`一覧を取る取得元でない: ${source}`));
       }
       return listing(limits, previous);
     }) satisfies Listing,

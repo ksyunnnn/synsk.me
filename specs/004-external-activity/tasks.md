@@ -93,7 +93,7 @@ description: "外部 activity の取得の実装タスク"
 - [x] T032 [P] [US1] dev.to（REST、ID、User-Agent を必ず付ける）。src/features/activity/server/sources/devto.ts（#170「dev.to を取り込む」）
 - [x] T033 [P] [US1] Medium（RSS、guid が ID、`link` の問い合わせの部分を除く、10 件固定で `isComplete` は偽、画像は `content:encoded` の先頭の `<img>`）。src/features/activity/server/sources/medium.ts（#171「Medium を取り込む」）
 - [x] T034 [P] [US1] Speaker Deck（RSS、guid が URL、`isComplete` は偽）。src/features/activity/server/sources/speakerdeck.ts（#172「Speaker Deck を取り込む」）
-- [ ] T035 [P] [US1] GitHub（REST、ID、`pushed_at` が null なら `created_at`、`GITHUB_TOKEN` が欠ければ未認証）。src/features/activity/server/sources/github.ts（#173「GitHub を取り込む」）
+- [x] T035 [P] [US1] GitHub（REST、ID、公開日は `created_at`、`per_page` 未満の頁まで辿ったら `isComplete` は真、1 頁で取り切ったら `ETag` を持つ、`GITHUB_TOKEN` が欠ければ未認証）。src/features/activity/server/sources/github.ts（#173「GitHub を取り込む」）
 - [x] T036 [P] [US1] connpass（REST v2、ID、`CONNPASS_API_KEY` が欠ければ要求を出さず失敗、要求は 5 秒に 1 回まで）。src/features/activity/server/sources/connpass.ts（#174「connpass を取り込む」）
 
 ### 取得の入口
