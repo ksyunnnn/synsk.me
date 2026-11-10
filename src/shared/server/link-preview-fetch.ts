@@ -74,7 +74,7 @@ type Options = { fetcher?: LinkPreviewFetcher; limits?: LinkPreviewLimits };
 export const isFetchableUrl = (url: URL): boolean => {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return false;
   if (url.username !== '' || url.password !== '' || url.port !== '') return false;
-  const host = url.hostname.replace(/\.$/, '').toLowerCase();
+  const host = url.hostname.replace(/\.+$/, '').toLowerCase();
   if (host.startsWith('[') || /^\d+\.\d+\.\d+\.\d+$/.test(host)) return false;
   if (!host.includes('.')) return false;
   // 内部の名前: RFC 6761（localhost）、RFC 6762（local）、RFC 8375（home.arpa）、ICANN が内部の用途に
@@ -161,37 +161,84 @@ export const readLinkPreview = (html: string, pageUrl: string): LinkPreview => {
   };
 };
 
-/** Content-Type の charset。読めない名前なら UTF-8 */
-const decoderOf = (contentType: string): TextDecoder => {
-  const charset = /charset\s*=\s*"?([^";\s]+)/i.exec(contentType)?.[1];
+/** 名前の文字コードの読み手。読めない名前なら null */
+const decoderFor = (label: string | undefined): TextDecoder | null => {
+  if (label === undefined) return null;
   try {
-    return new TextDecoder(charset ?? 'utf-8');
+    return new TextDecoder(label);
   } catch {
-    return new TextDecoder('utf-8');
+    return null;
   }
 };
 
-/** 本文を上限の大きさまで読む。`</head>` まで読んだら残りを読まない */
+/** 先頭の meta の宣言を探す大きさ（バイト）。HTML の文字コードの判定の前読みと同じ */
+const PRESCAN_BYTES = 1024;
+
+/**
+ * 本文の文字コードを決める。BOM、Content-Type の charset、先頭 1024 バイトの meta の宣言
+ * （`<meta charset>` と `<meta http-equiv="Content-Type">`）、UTF-8 の順で、最初に読める名前を使う
+ * （HTML Standard の「Determining the character encoding」の簡略。https://html.spec.whatwg.org/multipage/parsing.html#determining-the-character-encoding ）
+ */
+const decoderOf = (bytes: Uint8Array, contentType: string): TextDecoder => {
+  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) return new TextDecoder('utf-8');
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder('utf-16be');
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder('utf-16le');
+  const header = decoderFor(/charset\s*=\s*"?([^";\s]+)/i.exec(contentType)?.[1]);
+  if (header !== null) return header;
+  // ASCII と同じ並びの文字コードの宣言だけを探すため、1 バイトを 1 文字に読む
+  const prescan = new TextDecoder('latin1').decode(bytes.subarray(0, PRESCAN_BYTES));
+  const declared = /<meta\b[^>]*?charset\s*=\s*["']?\s*([^"'\s;>/]+)/i.exec(prescan)?.[1];
+  const meta = decoderFor(declared);
+  // meta で UTF-16 と宣言したページは、ASCII の並びで書けているため UTF-8 で読む（同じ節）
+  if (meta !== null && !meta.encoding.startsWith('utf-16')) return meta;
+  return new TextDecoder('utf-8');
+};
+
+const HEAD_END = [...'</head>'].map((char) => char.charCodeAt(0));
+const HEAD_END_UPPER = [...'</HEAD>'].map((char) => char.charCodeAt(0));
+
+/** `from` から後ろで `</head>` が終わる位置。ASCII の大文字小文字を区別しない。無ければ -1 */
+const headEndOf = (bytes: Uint8Array, from: number): number => {
+  for (let start = Math.max(0, from); start + HEAD_END.length <= bytes.length; start++) {
+    let index = 0;
+    while (
+      index < HEAD_END.length &&
+      (bytes[start + index] === HEAD_END[index] || bytes[start + index] === HEAD_END_UPPER[index])
+    )
+      index++;
+    if (index === HEAD_END.length) return start + index;
+  }
+  return -1;
+};
+
+/**
+ * 本文を上限の大きさまで読む。`</head>` まで読んだら残りを読まない。バイトのまま貯めてから
+ * 文字コードを決めて読む（meta の宣言は本文の中にあるため）
+ */
 const readHead = async (response: Response, maxBytes: number): Promise<string> => {
   if (!response.body) return '';
-  const decoder = decoderOf(response.headers.get('Content-Type') ?? '');
   const reader = response.body.getReader();
-  let text = '';
+  const buffer = new Uint8Array(maxBytes);
   let size = 0;
   try {
     while (size < maxBytes) {
       const { done, value } = await reader.read();
       if (done) break;
       const chunk = value.subarray(0, maxBytes - size);
+      buffer.set(chunk, size);
+      const searchFrom = size - (HEAD_END.length - 1);
       size += chunk.byteLength;
-      const searchFrom = Math.max(0, text.length - '</head>'.length);
-      text += decoder.decode(chunk, { stream: true });
-      if (text.toLowerCase().includes('</head>', searchFrom)) break;
+      const headEnd = headEndOf(buffer.subarray(0, size), searchFrom);
+      if (headEnd !== -1) {
+        size = headEnd;
+        break;
+      }
     }
   } finally {
     await reader.cancel().catch(() => {});
   }
-  return text;
+  const bytes = buffer.subarray(0, size);
+  return decoderOf(bytes, response.headers.get('Content-Type') ?? '').decode(bytes);
 };
 
 const isRedirect = (status: number) => [301, 302, 303, 307, 308].includes(status);

@@ -39,6 +39,22 @@ describe('fetchLinkPreview（workerd）', () => {
     ).toMatchObject({ status: 'fetched', title: '日本' });
   });
 
+  it('Content-Type に charset が無ければ、meta の宣言の Shift_JIS で題を読む', async () => {
+    const encoder = new TextEncoder();
+    const fetcher: LinkPreviewFetcher = async () =>
+      new Response(
+        new Uint8Array([
+          ...encoder.encode('<html><head><meta charset="Shift_JIS"><title>'),
+          ...SHIFT_JIS,
+          ...encoder.encode('</title></head></html>'),
+        ]),
+        { status: 200, headers: { 'Content-Type': 'text/html' } },
+      );
+    expect(
+      await fetchLinkPreview('https://example.com/a', { fetcher, limits: LIMITS }),
+    ).toMatchObject({ status: 'fetched', title: '日本' });
+  });
+
   it('リダイレクトの応答を辿り、行き先の題を読む', async () => {
     const fetcher: LinkPreviewFetcher = async (url) =>
       url === 'https://example.com/a'

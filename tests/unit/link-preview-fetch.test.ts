@@ -127,6 +127,10 @@ describe('isFetchableUrl', () => {
     'http://0x7f.1/a',
     'http://[::1]/a',
     'http://[::ffff:127.0.0.1]/a',
+    // 末尾の点が 2 つ以上あると、URL の解析は IPv4 に揃えず、点 1 つを除いても内部の名前の形に合わない
+    'http://localhost../a',
+    'http://app.localhost../a',
+    'http://127.0.0.1../a',
   ])('%s を拒む', (url) => expect(isFetchableUrl(new URL(url))).toBe(false));
 });
 
@@ -333,6 +337,82 @@ describe('fetchLinkPreview', () => {
     ).toMatchObject({
       title: 'é',
     });
+  });
+
+  // HTML の文字コードの判定（https://html.spec.whatwg.org/multipage/parsing.html#determining-the-character-encoding）。
+  // Content-Type に charset が無ければ、先頭 1024 バイトの meta の宣言で読む
+  const SHIFT_JIS_NIHON = [0x93, 0xfa, 0x96, 0x7b];
+  const bytesOf = (...parts: (string | number[])[]) =>
+    new Uint8Array(
+      parts.flatMap((part) =>
+        typeof part === 'string' ? [...new TextEncoder().encode(part)] : part,
+      ),
+    );
+  const bytesPage =
+    (bytes: Uint8Array, contentType = 'text/html'): LinkPreviewFetcher =>
+    async () =>
+      new Response(bytes, { status: 200, headers: { 'Content-Type': contentType } });
+
+  it.each([
+    ['<meta charset="Shift_JIS">', '<meta charset="Shift_JIS">'],
+    [
+      '<meta http-equiv="Content-Type" content="text/html; charset=shift_jis">',
+      '<meta http-equiv="Content-Type" content="text/html; charset=shift_jis">',
+    ],
+  ])('Content-Type に charset が無ければ %s で読む', async (_, declaration) => {
+    const fetcher = bytesPage(
+      bytesOf(`<html><head>${declaration}<title>`, SHIFT_JIS_NIHON, '</title></head>'),
+    );
+    expect(
+      await fetchLinkPreview('https://example.com/a', { fetcher, limits: LIMITS }),
+    ).toMatchObject({ title: '日本' });
+  });
+
+  it('Content-Type の charset は meta の宣言より先に使う', async () => {
+    const fetcher = bytesPage(
+      bytesOf('<head><meta charset="utf-8"><title>', SHIFT_JIS_NIHON, '</title></head>'),
+      'text/html; charset=Shift_JIS',
+    );
+    expect(
+      await fetchLinkPreview('https://example.com/a', { fetcher, limits: LIMITS }),
+    ).toMatchObject({ title: '日本' });
+  });
+
+  it('BOM は Content-Type の charset より先に使う', async () => {
+    const fetcher = bytesPage(
+      bytesOf([0xef, 0xbb, 0xbf], '<head><title>日本</title></head>'),
+      'text/html; charset=Shift_JIS',
+    );
+    expect(
+      await fetchLinkPreview('https://example.com/a', { fetcher, limits: LIMITS }),
+    ).toMatchObject({ title: '日本' });
+  });
+
+  it('</head> の大文字小文字とチャンクの境目に関わらず、そこで読むのを止める', async () => {
+    let pulled = 0;
+    const encoder = new TextEncoder();
+    const chunks = [
+      '<html><head><title>題</title></HE',
+      'AD><body>',
+      'x'.repeat(100),
+      'y'.repeat(100),
+    ];
+    const fetcher: LinkPreviewFetcher = async () =>
+      new Response(
+        new ReadableStream({
+          pull: (controller) => {
+            const chunk = chunks[pulled];
+            pulled += 1;
+            if (chunk === undefined) controller.close();
+            else controller.enqueue(encoder.encode(chunk));
+          },
+        }),
+        { status: 200, headers: { 'Content-Type': 'text/html' } },
+      );
+    expect(
+      await fetchLinkPreview('https://example.com/a', { fetcher, limits: LIMITS }),
+    ).toMatchObject({ title: '題' });
+    expect(pulled).toBeLessThan(chunks.length);
   });
 });
 
