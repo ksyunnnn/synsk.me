@@ -36,6 +36,7 @@ export const Credit = () => {
         href={TWITTER_URL}
         rel="noopener noreferrer"
         className={`underline underline-offset-4 ${focusRing}`}
+        target="_blank"
       >
         @ksyunnnn
       </a>
