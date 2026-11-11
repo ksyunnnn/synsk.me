@@ -43,7 +43,11 @@ export const respondWithProjectMedia = async (
     parseMediaStorageKey(key) === null
       ? 'hidden'
       : visitorProjectMediaAccess(await projects.findVisitorBySlug(slug), key);
-  return respondWithMedia(media, key, access, ifNoneMatch);
+  const response = await respondWithMedia(media, key, access, ifNoneMatch);
+  // 実績の画像は検索エンジンに載せない。画像には meta タグを置けないため、応答のヘッダで伝える
+  // （https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag）
+  response.headers.set('X-Robots-Tag', 'noindex');
+  return response;
 };
 
 /**
