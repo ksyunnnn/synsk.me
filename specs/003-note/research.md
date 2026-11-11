@@ -174,6 +174,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 決めたこと（取得の上限と見せ方は 2026-11-10 に PM が承認した）:
   - 取る時機: 見た目の確認の画面（`/dash/notes/{uid}/preview`）を描く前に、最も新しい版の URL だけの段落のうち `link_preview` に行の無い URL を取り、取れたものを書いてから描く（`src/features/note/application/get-note-preview.ts`）。訪問者の表示では取らない（FR-028）。保存と公開は取得を待たない
   - 取れなかった URL: 行を書かず、次に見た目の確認を開いたときに取り直す。取れたが題の無いページ（HTML でない応答を含む）は、題を NULL で書き、取り直さない
+  - 取り直す（2026-11-10、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6767411954)）: 見た目の確認の「取り直す」を押したときだけ、その URL を 1 つ取り直す（`src/features/note/application/refetch-link-preview.ts`）。定期実行では取り直さない。取得の上限と内部のアドレスの拒否は見た目の確認を開いたときと同じ。オーナーだけが使える（FR-033）。最も新しい版の本文の URL だけの段落に無い URL には要求を出さない。取れなかったら行を書き換えず、理由をカードの下に出す。取れたが題の無いページは、前の行に題があっても題を NULL で書き換える。根拠は、上の「取れなかった URL」の決まり（取れたが題の無いページは題を NULL で書く）を、初めて取るときと取り直すときで同じにすること
   - 見せ方: 題を持つ URL は、題・ホスト名・画像を添えたカードのリンクで出す。行が無いか題が NULL の URL は、URL の文字列のリンクで出す（`src/features/note/components/link-card.tsx`。原則 4）。訪問者と見た目の確認は同じ部品で描く
   - 本文から消えた URL の行: `link_preview` から消さずに残す（2026-11-10、PM が承認）。行は URL ごとに 1 つで複数の note が共有する（FR-029）ため、消すにはすべての note のすべての版の本文を読むことになる。完全に消す処理も `link_preview` を残す（FR-017、R6）。量は quickstart.md の SQL で測ってから決める（原則 6・9）
   - カードの画像: 参照先の画像の URL のまま `<img>` で出し、画像を保管しない（FR-030）。`loading="lazy"` と `referrerpolicy="no-referrer"` を付け、参照元のページの URL を画像のサーバへ送らない
