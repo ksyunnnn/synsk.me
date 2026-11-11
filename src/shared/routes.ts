@@ -1,3 +1,5 @@
+import type { ProjectKind } from '@/shared/domain/project-kind';
+
 /**
  * 画面の経路。`src/app/` のページの経路を 1 か所で持ち、リンク・`redirect()`・`src/proxy.ts` の
  * rewrite の行き先はここから取る。静的な経路は定数、識別子を含む経路は関数にする。
@@ -58,7 +60,7 @@ export const routes = {
     projects: {
       ...projects,
       /** 一覧を種類で絞った経路。null ならすべての種類 */
-      listByKind: (kind: string | null) =>
+      listByKind: (kind: ProjectKind | null) =>
         kind === null ? projects.list : `${projects.list}?kind=${kind}`,
       /** 一覧が描く画像を、オーナーにだけ返す経路（issue #330） */
       media: (uid: string, key: string) => `${projects.row(uid)}/media/${key}`,

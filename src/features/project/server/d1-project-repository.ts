@@ -299,10 +299,9 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       ]);
       const keysByProject = new Map<number, string[]>();
       for (const row of media.results as { project_id: number; storage_key: string }[]) {
-        keysByProject.set(row.project_id, [
-          ...(keysByProject.get(row.project_id) ?? []),
-          row.storage_key,
-        ]);
+        const keys = keysByProject.get(row.project_id) ?? [];
+        keys.push(row.storage_key);
+        keysByProject.set(row.project_id, keys);
       }
       const rows = projects.results as ProjectListRow[];
       return rows.map((row): ProjectSummary => ({
