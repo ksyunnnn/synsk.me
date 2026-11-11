@@ -133,10 +133,12 @@
 
 /*
  * 印刷（職務経歴書の「PDF で保存」。specs/002-resume/research.md の R11）。画面だけに出す要素は
- * Tailwind の `print:hidden` で隠す。用紙の余白を決める
+ * Tailwind の `print:hidden` で隠す。用紙は A4 縦（厚生労働省・ハローワーク『職務経歴書の作り方』）。
+ * 左の余白は綴じるために広くとる（同書）。余白の値は同書に無く、ここで選んだ
  */
 @media print {
   @page {
-    margin: 15mm;
+    size: A4;
+    margin: 15mm 15mm 15mm 25mm;
   }
 }

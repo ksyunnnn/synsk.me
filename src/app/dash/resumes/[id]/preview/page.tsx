@@ -23,11 +23,11 @@ const Page = async ({ params }: Props) => {
   if (!resume) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12 flex flex-col gap-8 print:max-w-none print:p-0">
-      <p className="print:hidden">
-        <TextLink href={`/dash/resumes/${id}`}>設定の画面へ戻る</TextLink>
-      </p>
-      <VisitorResumeView resume={resume} />
+    <main>
+      <VisitorResumeView
+        resume={resume}
+        toolbarStart={<TextLink href={`/dash/resumes/${id}`}>設定の画面へ戻る</TextLink>}
+      />
     </main>
   );
 };
