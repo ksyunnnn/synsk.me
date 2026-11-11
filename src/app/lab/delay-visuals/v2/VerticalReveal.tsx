@@ -6,6 +6,8 @@
 // 写真を複数渡すと canvas を横に並べ、再生・コマ・設定を共有して同時に動かす
 import { useEffect, useRef, useState } from 'react';
 
+import { drawVertical } from '../_reveal/draw';
+
 const WIDTH = 400;
 const HEIGHT = 900;
 // コマのスライダーの段数。再生中は段に丸めず、経過時間からなめらかに位置を出す
@@ -47,29 +49,12 @@ const draw = (
   image: HTMLCanvasElement,
   { t, seam, shift, count, guides }: Settings,
 ) => {
-  const scale = image.width / WIDTH;
-  // いちばん上の内側の境目。seam は v1 と同じく「動かない側の反対からの割合」
-  const seamY = HEIGHT * (1 - seam);
-  const revealY = HEIGHT * t;
-  const gap = (HEIGHT - seamY) / count;
-  const maxShift = HEIGHT * shift;
-
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
-  // いちばん上の境目より上: そのまま
-  ctx.drawImage(image, 0, 0, image.width, seamY * scale, 0, 0, WIDTH, seamY);
-  // その下の帯: u は表示の境目がその帯の上端から何帯ぶん進んだか。u = 0 で上に最大ずれ、u = 1 で揃う
-  for (let k = 1; k <= count; k++) {
-    const top = seamY + (k - 1) * gap;
-    const u = (revealY - top) / gap;
-    const offset = u >= 1 ? 0 : maxShift * (1 - Math.max(0, u));
-    ctx.drawImage(image, 0, (top + offset) * scale, image.width, gap * scale, 0, top, WIDTH, gap);
-  }
-  // 表示の境目より下: 境目の行を下端まで引き伸ばす
-  if (revealY < HEIGHT) {
-    const row = Math.max(0, Math.floor(revealY));
-    ctx.drawImage(ctx.canvas, 0, row, WIDTH, 1, 0, row, WIDTH, HEIGHT - row);
-  }
+  drawVertical(ctx, image, { width: WIDTH, height: HEIGHT, t, seam, shift, count });
   if (guides) {
+    // いちばん上の内側の境目から下端まで、等しい間隔で線を引く
+    const seamY = HEIGHT * (1 - seam);
+    const revealY = HEIGHT * t;
+    const gap = (HEIGHT - seamY) / count;
     ctx.setLineDash([6, 6]);
     ctx.lineWidth = 2;
     ctx.strokeStyle = '#3e63dd';
