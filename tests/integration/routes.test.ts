@@ -48,6 +48,23 @@ describe('訪問者が到達する経路', () => {
     expect(html).toMatch(/<title>[^<]+<\/title>/);
   });
 
+  /**
+   * リンクが貼られたときのカードの画像（docs/CRAWLING.md）。クローラは絶対 URL で読む。
+   * ビルドに SITE_ORIGIN を渡さないときは、本番の origin を指す（next.config.js）。渡したビルドで
+   * 回すときは、その値を指すことを確かめる
+   */
+  it('/ の og:image が本番の origin の絶対 URL を指す', async () => {
+    const html = await (await server.fetch('/')).text();
+    const image = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1];
+    const origin = process.env.SITE_ORIGIN || 'https://synsk.me';
+    expect(image?.startsWith(`${origin}/opengraph-image`)).toBe(true);
+  });
+
+  it('/ の twitter:card は大きい画像のカード（サイト全体の設定。note のページだけが summary）', async () => {
+    const html = await (await server.fetch('/')).text();
+    expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
+  });
+
   it('存在しない経路は 404 を返す', async () => {
     const res = await server.fetch('/__nonexistent');
     expect(res.status).toBe(404);

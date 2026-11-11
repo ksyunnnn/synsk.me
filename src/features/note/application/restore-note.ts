@@ -1,22 +1,19 @@
-import type { NoteId, RestoreAs } from '@/features/note/domain/note';
+import type { NoteId } from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
+import type { Author } from '@/shared/domain/author';
 
 export type RestoreNoteOutcome =
-  | { ok: true }
-  /** 削除した note が存在しない（別の画面で戻された）か、公開したことのない note を公開で戻そうとした */
-  | { ok: false; reason: 'not-found' }
-  /** データベースに届かないなどで、戻せなかった */
-  | { ok: false; reason: 'failed' };
+  { status: 'restored' } | { status: 'forbidden' } | { status: 'not-found' };
 
-/** 削除した note を、`as` の状態（下書きか公開か）で戻す */
+/**
+ * 削除した note を元に戻す（FR-016・SC-007）。状態・版・識別子は削除の前のまま残っている。
+ * オーナーでなければ何も書かない（FR-033）
+ */
 export const restoreNote = async (
   notes: NoteRepository,
+  author: Author | null,
   id: NoteId,
-  as: RestoreAs,
 ): Promise<RestoreNoteOutcome> => {
-  try {
-    return await notes.restore(id, as);
-  } catch {
-    return { ok: false, reason: 'failed' };
-  }
+  if (!author) return { status: 'forbidden' };
+  return (await notes.restore(id)).ok ? { status: 'restored' } : { status: 'not-found' };
 };

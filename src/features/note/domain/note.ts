@@ -1,258 +1,338 @@
+import type { ActionResult } from '@/shared/domain/action-result';
+import { emptyToNull } from '@/shared/domain/empty-to-null';
+import { parseMediaStorageKey, type MediaStorageKey } from '@/shared/domain/media';
+import { isSlug } from '@/shared/domain/slug';
+import type { Uid } from '@/shared/domain/uid';
+import { normalizeNewlines } from '@/shared/domain/newlines';
+
 /**
- * note の規則と、画面に渡す形。
- *
- * 規則の正本は specs/005-note-write-and-read/data-model.md にある。同じ規則を
- * `migrations/` の制約も持つ。ここで先に確かめるのは、
- * どの項目の何が合わないかを作り手に返すため。
+ * note の型と決まり（specs/003-note/spec.md の FR-002・FR-003・FR-005・FR-010・FR-011、
+ * data-model.md の「domain の型」と「アプリケーションが守る決まり」）
  */
 
-export const SLUG_MAX_LENGTH = 100;
-export const TITLE_MAX_LENGTH = 200;
-export const BODY_MAX_LENGTH = 100_000;
+/** note の状態（FR-010）。`note.status` の CHECK と同じ値を、ここ 1 か所に置く */
+export const NOTE_STATUSES = ['draft', 'published'] as const;
+export type NoteStatus = (typeof NOTE_STATUSES)[number];
 
-const SLUG_PATTERN = /^[a-z0-9-]+$/;
+export const NOTE_STATUS_LABELS: Record<NoteStatus, string> = {
+  draft: '下書き',
+  published: '公開',
+};
 
+/**
+ * 代表画像の出どころ（FR-024）。`note.card_image` の CHECK と同じ値。`media` はその note の画像、
+ * `site` は note 用のサイト共通の画像
+ */
+export const NOTE_CARD_IMAGES = ['media', 'site'] as const;
+export type NoteCardImage = (typeof NOTE_CARD_IMAGES)[number];
+
+export const isNoteCardImage = (value: string): value is NoteCardImage =>
+  (NOTE_CARD_IMAGES as readonly string[]).includes(value);
+
+/** 主キー。URL とフォームに出さない（ADR-0051） */
 export type NoteId = number;
+export type NoteRevisionId = number;
 
-/** URL やフォームから受け取った文字列を note の id にする。正の整数でなければ null */
-export const parseNoteId = (value: string): NoteId | null => {
-  if (!/^[1-9][0-9]*$/.test(value)) return null;
-  const id = Number(value);
-  return Number.isSafeInteger(id) ? id : null;
-};
+/** 題と本文の長さの上限（FR-005、`note_revision.title`・`body` の CHECK） */
+export const NOTE_TITLE_MAX_LENGTH = 200;
+export const NOTE_BODY_MAX_LENGTH = 100_000;
 
-/** 下書きか公開か */
-export type NoteStatus = 'draft' | 'published';
+/** SQLite の `length()` と同じく、文字（コードポイント）の数で数える */
+const lengthOf = (value: string) => [...value].length;
 
-/** 削除した note を、下書きと公開のどちらで戻すか */
-export type RestoreAs = NoteStatus;
-
-/** フォームから受け取った文字列を `RestoreAs` にする。どちらでもなければ null */
-export const parseRestoreAs = (value: string): RestoreAs | null =>
-  value === 'draft' || value === 'published' ? value : null;
-
-/** 作り手が入力する値 */
-export type NoteContent = {
-  slug: string;
+/** 版の中身 */
+export type NoteRevisionContent = {
   title: string;
+  /** 空なら null（FR-005） */
+  description: string | null;
   body: string;
 };
 
-export type NoteContentErrors = {
-  slug?: 'missing' | 'invalid';
-  title?: 'missing' | 'too-long';
-  body?: 'too-long';
+export type NoteRevision = NoteRevisionContent & {
+  uid: Uid;
+  /** 保存した日時 */
+  createdAt: string;
 };
 
-export type NoteContentValidation =
-  { ok: true; content: NoteContent } | { ok: false; errors: NoteContentErrors };
-
-/**
- * 文字数をコードポイントで数える。SQLite の `length()` と同じ数え方。
- * `value.length`（UTF-16 のコード単位）は絵文字1文字を2と数え、データベースの
- * 制約と食い違う
- */
-const countCharacters = (value: string): number => [...value].length;
-
-const toValidation = (content: NoteContent, errors: NoteContentErrors): NoteContentValidation =>
-  Object.keys(errors).length === 0 ? { ok: true, content } : { ok: false, errors };
-
-const collectDraftErrors = ({ slug, title, body }: NoteContent): NoteContentErrors => {
-  const errors: NoteContentErrors = {};
-  if (slug === '') {
-    errors.slug = 'missing';
-  } else if (countCharacters(slug) > SLUG_MAX_LENGTH || !SLUG_PATTERN.test(slug)) {
-    errors.slug = 'invalid';
-  }
-  if (countCharacters(title) > TITLE_MAX_LENGTH) errors.title = 'too-long';
-  if (countCharacters(body) > BODY_MAX_LENGTH) errors.body = 'too-long';
-  return errors;
-};
-
-/** 保存できる入力か。題と本文は空でよい */
-export const validateDraft = (content: NoteContent): NoteContentValidation =>
-  toValidation(content, collectDraftErrors(content));
-
-/** 公開できる入力か。保存の規則に加え、題が空でないこと */
-export const validatePublication = (content: NoteContent): NoteContentValidation => {
-  const errors = collectDraftErrors(content);
-  if (content.title === '') errors.title = 'missing';
-  return toValidation(content, errors);
-};
-
-const PUBLISHED_DATE_FORMAT = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Tokyo',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-});
-
-/** `2026-09-16T15:30:00.000Z` の形の日時を、日本時間の日付 `2026-09-17` にする */
-export const toPublishedDate = (isoDateTime: string): string => {
-  const parts = PUBLISHED_DATE_FORMAT.formatToParts(new Date(isoDateTime));
-  const part = (type: Intl.DateTimeFormatPartTypes) =>
-    parts.find((p) => p.type === type)?.value ?? '';
-  return `${part('year')}-${part('month')}-${part('day')}`;
-};
-
-// ---------------------------------------------------------------------------
-// 取り出した note。Repository が返す
-// ---------------------------------------------------------------------------
-
-/** 訪問者に見せている note。題と本文は最後に公開した版のもの */
-export type PublishedNote = {
+/** オーナーが編集する note */
+export type Note = {
+  id: NoteId;
+  uid: Uid;
   slug: string;
-  title: string;
-  body: string;
-  /** 初めて公開した日時（UTC、`Date.prototype.toISOString()` の形） */
-  publishedAt: string;
+  status: NoteStatus;
+  /** 初めて公開した日時。持てば一度でも公開した note（FR-003・FR-013） */
+  publishedAt: string | null;
+  /** 削除した日時。持てば削除した note（FR-016） */
+  deletedAt: string | null;
+  cardImage: NoteCardImage;
+  /** 代表画像に選んだ note の画像。`cardImage` が `media` のときだけ持つ */
+  cardMediaStorageKey: MediaStorageKey | null;
+  /** 説明文が空のときに、本文の最初の段落を説明に使うか（FR-034）。版でなく note が持つ */
+  isFirstParagraphAsDescription: boolean;
+  /** 最も新しい版。編集はここから始まる（FR-007） */
+  latestRevision: NoteRevision;
+  /** 公開した版の uid。一度も公開していなければ null */
+  publishedRevisionUid: Uid | null;
+  /** その note の画像の置き場のキー。足した順 */
+  mediaStorageKeys: MediaStorageKey[];
+  /** 転載先の URL。記録した順（FR-031） */
+  syndicationUrls: string[];
 };
 
-/** 作り手の一覧の1件 */
+/** オーナーの一覧の 1 行 */
 export type NoteSummary = {
-  id: NoteId;
+  uid: Uid;
   slug: string;
-  /** 最新の版の題 */
+  /** 最も新しい版の題 */
   title: string;
   status: NoteStatus;
-  /** 公開済みで、最新の版の題か本文が、公開している版と異なる */
-  hasUnpublishedChanges: boolean;
+  isDeleted: boolean;
+  createdAt: string;
 };
 
-/** 作り手が編集する note。題と本文は最新の版のもの */
-export type EditableNote = {
-  id: NoteId;
-  slug: string;
+/** 版の一覧の 1 行（FR-008） */
+export type NoteRevisionSummary = {
+  uid: Uid;
   title: string;
-  body: string;
-  status: NoteStatus;
-  /** 公開したことがあり、slug を変えられない */
-  slugFixed: boolean;
+  createdAt: string;
+  isLatest: boolean;
+  isPublished: boolean;
 };
 
-/** 削除した note の1件 */
-export type DeletedNote = {
-  id: NoteId;
-  slug: string;
-  /** 最新の版の題 */
-  title: string;
-  /** 削除する前の状態 */
-  status: NoteStatus;
-  /** 公開したことがある。公開で戻せるのは、公開したことのある note だけ */
-  hasBeenPublished: boolean;
-};
+/** 一度でも公開した note か。`published_at` を持つことで表す（data-model.md の「状態の移り変わり」） */
+export const hasBeenPublished = (note: Pick<Note, 'publishedAt'>): boolean =>
+  note.publishedAt !== null;
 
-// ---------------------------------------------------------------------------
-// 画面に渡す形（DTO、ADR-0028）。出す項目を列挙して詰める
-// ---------------------------------------------------------------------------
+/**
+ * 今、訪問者に見える note か。公開で、削除していない note だけが見える（FR-014〜FR-016）。
+ * 削除しても状態は公開のまま残るため、状態だけでは決めない。オーナーの画面の言葉を選ぶための値で、
+ * 訪問者に出す値の選別は Repository の実装が持つ
+ */
+export const isVisibleToVisitors = (note: Pick<Note, 'status' | 'deletedAt'>): boolean =>
+  note.status === 'published' && note.deletedAt === null;
 
-export type PublishedNoteDto = {
-  slug: string;
-  title: string;
-  body: string;
-  /** 公開日。日本時間の `YYYY-MM-DD` */
-  publishedOn: string;
-};
+/** 入力の項目の名前。フォームの値の名前と同じ */
+export const NOTE_FIELDS = ['slug', 'title', 'description', 'body'] as const;
+export type NoteField = (typeof NOTE_FIELDS)[number];
 
-export type NoteSummaryDto = {
-  id: NoteId;
-  slug: string;
-  title: string;
-  status: NoteStatus;
-  hasUnpublishedChanges: boolean;
-};
+/** 編集の画面のフォームが、入力の項目とは別に送る値 */
+export const NOTE_UID_FIELD = 'noteUid';
+/** 開いたときの最も新しい版の uid（research.md の R4） */
+export const OPENED_REVISION_UID_FIELD = 'openedRevisionUid';
+/** 戻す版の uid（FR-009） */
+export const REVISION_UID_FIELD = 'revisionUid';
 
-export type EditableNoteDto = {
-  id: NoteId;
-  slug: string;
-  title: string;
-  body: string;
-  status: NoteStatus;
-  slugFixed: boolean;
-};
-
-export type DeletedNoteDto = {
-  id: NoteId;
-  slug: string;
-  title: string;
-  status: NoteStatus;
-  hasBeenPublished: boolean;
-};
-
-export const toPublishedNoteDto = (note: PublishedNote): PublishedNoteDto => ({
-  slug: note.slug,
-  title: note.title,
-  body: note.body,
-  publishedOn: toPublishedDate(note.publishedAt),
-});
-
-export const toNoteSummaryDto = (note: NoteSummary): NoteSummaryDto => ({
-  id: note.id,
-  slug: note.slug,
-  title: note.title,
-  status: note.status,
-  hasUnpublishedChanges: note.hasUnpublishedChanges,
-});
-
-export const toEditableNoteDto = (note: EditableNote): EditableNoteDto => ({
-  id: note.id,
-  slug: note.slug,
-  title: note.title,
-  body: note.body,
-  status: note.status,
-  slugFixed: note.slugFixed,
-});
-
-export const toDeletedNoteDto = (note: DeletedNote): DeletedNoteDto => ({
-  id: note.id,
-  slug: note.slug,
-  title: note.title,
-  status: note.status,
-  hasBeenPublished: note.hasBeenPublished,
-});
-
-/** 作る・編集のフォームに返す、操作の結果。入力の誤りは `errors` が持つ */
-export type NoteFormResult =
-  | 'saved'
-  | 'published'
+export type NoteFieldError =
+  | 'missing'
+  | 'invalid'
+  | 'too-long'
   | 'slug-taken'
-  | 'slug-fixed'
-  | 'not-found'
-  | 'save-failed'
-  | 'publish-failed'
-  | 'forbidden';
+  /** 一度でも公開した note の識別子を変えようとした（FR-003） */
+  | 'slug-locked';
 
-/** 作る・編集のフォームの状態。入力した値を持ち、誤りや失敗のときも画面に残す */
-export type NoteFormState = {
-  values: NoteContent;
-  errors: NoteContentErrors;
-  result: NoteFormResult | null;
+export type NoteFormValues = Record<NoteField, string>;
+export type NoteFieldErrors = Partial<Record<NoteField, NoteFieldError>>;
+export type NoteFormResult = ActionResult<NoteField, NoteFieldError>;
+
+/** 過去の版に戻すフォームの結果。戻せたときは Server Action が編集の画面へ移す */
+export type RevertNoteResult = { status: 'forbidden' } | { status: 'conflict' };
+
+/**
+ * 代表画像の入力の名前（FR-024・FR-025）。値は `site`、その note の画像なら
+ * `media:<storageKey>`。1 つのラジオボタンの並びで送る
+ */
+export const CARD_IMAGE_FIELD = 'cardImage';
+
+const CARD_MEDIA_PREFIX = 'media:';
+
+/** 代表画像の入力の値 */
+export const toCardImageValue = (cardImage: VisitorNoteCardImage): string =>
+  cardImage.kind === 'media' ? `${CARD_MEDIA_PREFIX}${cardImage.storageKey}` : cardImage.kind;
+
+/** 代表画像の入力を読む。読めなければ null */
+export const parseCardImageChoice = (value: string): VisitorNoteCardImage | null => {
+  if (value.startsWith(CARD_MEDIA_PREFIX)) {
+    const storageKey = parseMediaStorageKey(value.slice(CARD_MEDIA_PREFIX.length));
+    return storageKey === null ? null : { kind: 'media', storageKey };
+  }
+  return value === 'site' ? { kind: 'site' } : null;
 };
 
-/** 操作の前のフォームの状態。値を省くと空の入力 */
-export const toNoteFormState = (
-  { slug, title, body }: NoteContent = { slug: '', title: '', body: '' },
-): NoteFormState => ({ values: { slug, title, body }, errors: {}, result: null });
+/** 代表画像の誤り。`media-not-owned` は、その note の画像でない（FR-025） */
+export type CardImageFormResult = ActionResult<
+  typeof CARD_IMAGE_FIELD,
+  'invalid' | 'media-not-owned'
+>;
 
 /**
- * 編集・削除・戻すフォームで、note の id を送る入力の名前。`id` にしない。
- * `name="id"` の入力を持つフォームでは `form.id` がその入力を返し、JavaScript ありの
- * 送信で、React が押したボタンの name と value を足す入力に誤った `form` 属性が付いて
- * 送られなくなる（`react-dom` の `createFormDataWithSubmitter`）
+ * 説明文が空のときに本文の最初の段落を説明に使うかの入力の名前（FR-034）。値は `1`（使う）か
+ * `0`（何も出さない）。1 つのラジオボタンの並びで送る
  */
-export const NOTE_ID_FIELD = 'noteId';
+export const FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD = 'isFirstParagraphAsDescription';
 
-/** 削除の確認のフォームの状態。削除できたときは一覧の画面へ移るため、状態を持たない */
-export type DeleteNoteFormState = { result: 'delete-failed' | 'forbidden' | null };
+/** 本文の最初の段落を説明に使うかの入力を読む。`1` と `0` のほかは読めず null */
+export const parseFirstParagraphAsDescription = (value: string): boolean | null =>
+  value === '1' ? true : value === '0' ? false : null;
 
-export const INITIAL_DELETE_NOTE_FORM_STATE: DeleteNoteFormState = { result: null };
+export type FirstParagraphAsDescriptionFormResult = ActionResult<
+  typeof FIRST_PARAGRAPH_AS_DESCRIPTION_FIELD,
+  'invalid'
+>;
 
 /**
- * 戻す確認のフォームで、下書きと公開のどちらで戻すかを送るボタンの名前。値は `RestoreAs`
+ * `<meta name="description">` と OGP の説明（FR-034、research.md の R11・R19）。説明文があれば
+ * 説明文。空なら、本文の最初の段落を使う note だけが段落を使い、使わない note は null
  */
-export const RESTORE_AS_FIELD = 'restoreAs';
+export const summaryOf = (
+  content: { description: string | null; firstParagraph: string | null },
+  isFirstParagraphAsDescription: boolean,
+): string | null =>
+  content.description ?? (isFirstParagraphAsDescription ? content.firstParagraph : null);
 
-/** 戻す確認のフォームの状態。戻せたときは一覧の画面へ移るため、状態を持たない */
-export type RestoreNoteFormState = { result: 'restore-failed' | 'forbidden' | null };
+/** 画像のファイルの入力の名前（FR-023）。1 回の操作で 1 枚（research.md の R12） */
+export { MEDIA_FILE_FIELD } from '@/shared/domain/media';
 
-export const INITIAL_RESTORE_NOTE_FORM_STATE: RestoreNoteFormState = { result: null };
+export type { MediaFormResult } from '@/shared/domain/media';
+
+/** 本文に貼る画像の印（research.md の R11）。決まりは共有の Markdown の決まりが持つ */
+export { mediaMarkOf } from '@/shared/domain/markdown';
+
+/** 転載先の URL の入力の名前（FR-031）。外すフォームも同じ名前で URL を送る（research.md の R14） */
+export const SYNDICATION_URL_FIELD = 'syndicationUrl';
+
+/** 転載先の URL の誤り。`taken` は同じ URL がどれかの note に記録済み（FR-032） */
+export type SyndicationFieldError = 'missing' | 'invalid' | 'taken';
+
+export type SyndicationFormResult = ActionResult<
+  typeof SYNDICATION_URL_FIELD,
+  SyndicationFieldError
+>;
+
+/** 取り直す URL カードの入力の名前（User Story 6 の 3、FR-029）。URL だけの段落の URL を送る */
+export const LINK_PREVIEW_URL_FIELD = 'linkPreviewUrl';
+
+/**
+ * 参照先の情報を取れなかった理由。値は src/shared/server/link-preview-fetch.ts の
+ * `LinkPreviewFailure` と同じ。画面に理由を出すため、domain の言葉として持つ
+ */
+export type LinkPreviewFetchFailure =
+  'blocked' | 'http' | 'network' | 'timeout' | 'too-many-redirects';
+
+/** 取り直せなかった理由。`not-in-body` は、最も新しい版の本文に URL だけの段落として無い URL */
+export type LinkPreviewRefetchError = 'not-in-body' | LinkPreviewFetchFailure;
+
+export type LinkPreviewRefetchFormResult = ActionResult<
+  typeof LINK_PREVIEW_URL_FIELD,
+  LinkPreviewRefetchError
+>;
+
+/** 保存する内容 */
+export type NoteInput = NoteRevisionContent & { slug: string };
+
+/**
+ * フォームの値を保存する内容に読み替える。題は前後の空白を除き、空でもよい（下書きは題が空でも
+ * 保存できる。公開は `checkPublishable` が止める）。説明文が空なら null（FR-005）
+ */
+export const parseNoteInput = (
+  values: NoteFormValues,
+): { ok: true; input: NoteInput } | { ok: false; errors: NoteFieldErrors } => {
+  const errors: NoteFieldErrors = {};
+
+  if (values.slug === '') errors.slug = 'missing';
+  else if (!isSlug(values.slug)) errors.slug = 'invalid';
+
+  const title = values.title.trim();
+  if (lengthOf(title) > NOTE_TITLE_MAX_LENGTH) errors.title = 'too-long';
+
+  const body = normalizeNewlines(values.body);
+  if (lengthOf(body) > NOTE_BODY_MAX_LENGTH) errors.body = 'too-long';
+
+  if (Object.keys(errors).length > 0) return { ok: false, errors };
+  return {
+    ok: true,
+    input: {
+      slug: values.slug,
+      title,
+      description: emptyToNull(normalizeNewlines(values.description)),
+      body,
+    },
+  };
+};
+
+/**
+ * 識別子の書き換えを確かめる（FR-003）。一度でも公開した note は、今の識別子と違う識別子を拒む。
+ * トリガ `note_slug_fixed_after_publication` を最後の守りに残す
+ */
+export const checkSlugChange = (
+  note: Pick<Note, 'slug' | 'publishedAt'>,
+  requestedSlug: string,
+): NoteFieldError | null =>
+  hasBeenPublished(note) && requestedSlug !== note.slug ? 'slug-locked' : null;
+
+/**
+ * 版を公開できるか（FR-011）。題が空か空白だけの版は公開しない。トリガ
+ * `note_published_revision_valid` を最後の守りに残す
+ */
+export const checkPublishable = (revision: Pick<NoteRevisionContent, 'title'>): NoteFieldErrors =>
+  revision.title.trim() === '' ? { title: 'missing' } : {};
+
+/** フォームの初めの値。作成の画面は空、編集の画面は最も新しい版（FR-007） */
+export const toNoteFormValues = (note?: Pick<Note, 'slug' | 'latestRevision'>): NoteFormValues =>
+  note
+    ? {
+        slug: note.slug,
+        title: note.latestRevision.title,
+        description: note.latestRevision.description ?? '',
+        body: note.latestRevision.body,
+      }
+    : { slug: '', title: '', description: '', body: '' };
+
+/*
+ * 訪問者向けの DTO（contracts/visitor-note.md）。Repository の実装が、公開で削除していない
+ * note の公開した版だけを読んで詰める。画面・`<title>`・OGP はこの値だけを使う
+ */
+
+/** 代表画像。`site` の note のカードに出す画像は plan.md の U8 */
+export type VisitorNoteCardImage =
+  { kind: 'site' } | { kind: 'media'; storageKey: MediaStorageKey };
+
+/**
+ * URL だけの段落が指す参照先の情報（FR-029・FR-030）。題があればカードで、無ければリンクで出す
+ * （research.md の R13、`src/features/note/components/link-card.tsx`）
+ */
+export type VisitorLinkPreview = {
+  url: string;
+  title: string | null;
+  imageUrl: string | null;
+};
+
+export type VisitorNote = {
+  slug: string;
+  title: string;
+  /** 公開した版の説明文。空なら null */
+  description: string | null;
+  /**
+   * `<meta name="description">` と OGP の説明。説明文が空なら、本文の最初の段落を使う note は
+   * その段落の文字列で、使わない note と、どちらも無い note は null（`summaryOf`、FR-034、
+   * research.md の R11）。最初の段落に書いた生の HTML の文字は除かずに文字のまま
+   * 残す（2026-11-09、PM。本文の表示と揃える）
+   */
+  summary: string | null;
+  body: string;
+  /** 初めて公開した日時（FR-013） */
+  publishedAt: string;
+  cardImage: VisitorNoteCardImage;
+  /**
+   * 公開した版の本文が指す画像のうち、その note の画像の置き場のキー。現れた順。画像の `src` は
+   * この並びにある値だけから作る（research.md の R11・R12）
+   */
+  media: MediaStorageKey[];
+  /** 公開した版の URL だけの段落が指す参照先の情報。取ったことのある URL だけ */
+  linkPreviews: VisitorLinkPreview[];
+};
+
+/**
+ * 見た目の確認（`/dash/notes/{uid}/preview`、research.md の R15）で描く形。訪問者向けと同じ形を、
+ * 最も新しい版から詰める。一度も公開していない note は初めて公開した日時を持たない
+ */
+export type NotePreview = Omit<VisitorNote, 'publishedAt'> & { publishedAt: string | null };

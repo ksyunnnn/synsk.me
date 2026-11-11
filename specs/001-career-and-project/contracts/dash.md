@@ -1,0 +1,43 @@
+# Contract: 管理画面と書き込みの操作
+
+## 共通
+
+- `/dash` と `/dash/*` の GET は、`src/proxy.ts` がオーナーを確かめ、オーナーでなければ `/dash/forbidden` へ rewrite する（403）。応答に `Cache-Control: no-store, must-revalidate` を付ける（NFR-09）
+- ページは描画の前に、Server Action は書き込みの前に、`src/shared/server/author.ts` でオーナーを確かめる（ADR-0036）。オーナーでなければ何も書かず、403 の結果を返す
+- 書き込みはすべて `<form action={Server Action}>` で送り、JavaScript なしでも保存できる
+- 失敗の結果は、項目ごとの理由と、送られた入力の値を返す。画面は入力を消さずに理由を示す
+- 編集の画面を持つ行は uid で開く（`/dash/<コレクション>/{uid}`）。主キー（id）は URL にもフォームの隠しフィールドにも出さない（ADR-0048、research.md の R17）。uid の行が無ければ `src/proxy.ts` が `/dash/<コレクション>/{uid}/missing` へ rewrite する（404）
+
+## 画面
+
+| 経路 | 中身 | 要件 |
+|---|---|---|
+| `/dash` | 職歴・実績・学歴・スキル・組織への入口 | — |
+| `/dash/projects`、`/dash/projects/new`、`/dash/projects/{uid}`、`/dash/projects/{uid}/delete` | 実績の一覧・登録・編集・削除の確認。一覧と入力にサイトに載せるかを出す | FR-011〜FR-018、FR-032、FR-042、FR-044 |
+| `/dash/careers`、`/dash/careers/new`、`/dash/careers/{uid}`、`/dash/careers/{uid}/delete` | 職歴の一覧・登録・編集・削除の確認。一覧と入力にサイトに載せるかを出す | FR-007〜FR-010、FR-042、FR-044 |
+| `/dash/educations`、`/dash/educations/new`、`/dash/educations/{uid}`、`/dash/educations/{uid}/delete` | 学歴 | FR-036 |
+| `/dash/skills`、`/dash/skills/new`、`/dash/skills/{uid}`、`/dash/skills/{uid}/delete` | スキルと経験年数（求めた値と上書き） | FR-031・FR-033・FR-034 |
+| `/dash/organizations`、`/dash/organizations/{uid}`、`/dash/organizations/{uid}/delete` | 組織名・秘匿化した組織名の編集と削除。登録は職歴・実績の入力の中で行う | FR-001・FR-004・FR-006 |
+
+削除の確認を別のページにするのは、ダイアログの部品（headless のライブラリ、plan.md の U3）に頼らず、JavaScript なしでも確かめてから消せるようにするため。
+
+## Server Action
+
+| 名前 | 入力 | 成功 | 失敗の理由 |
+|---|---|---|---|
+| `registerProject` | 組織名・種類・題・秘匿化した題・秘匿化するか・サイトに載せるか・期間・本文・関連 URL・スキルの id | 編集の画面へ 303 | オーナーでない／項目の不備／秘匿化した組織名の無い組織で秘匿化 |
+| `editProject` | 上に加えて uid・識別子・開いたときの更新日時 | 同じ画面へ 303 | 上に加えて、識別子の重複／秘匿化した実績の識別子の書き換え／先に書き換えられていた |
+| `deleteProject` | uid | 一覧へ 303 | オーナーでない／無い |
+| `registerCareer`・`editCareer`・`deleteCareer` | 組織名・肩書・期間・本文・関連 URL・秘匿化するか・サイトに載せるか（編集は uid と開いたときの更新日時） | 同上 | 同上（識別子を除く） |
+| `registerEducation`・`editEducation`・`deleteEducation` | 学校・学部・期間・備考 | 同上 | オーナーでない／項目の不備 |
+| `registerSkill`・`editSkill`・`deleteSkill` | 名前・上書きの年と月 | 同上 | オーナーでない／大文字と小文字だけ違う名前の重複 |
+| `editOrganization`・`deleteOrganization` | 組織名・秘匿化した組織名 | 同上 | オーナーでない／名前の重複／秘匿化した職歴・実績が指すのに秘匿化した組織名を空にした／職歴・実績が指している／個人の組織の削除 |
+
+画像の追加と代表画像の選択の操作は、tasks.md の T075 で足す。
+
+## 検査
+
+- 結合: JWT のない `/dash/*` の GET が 403 で、`no-store` を持つ
+- 結合: 管理画面のリンク・redirect 先・隠しフィールドに主キー（数字だけの id）が出ない（R17）
+- 結合: JWT のない各 Server Action の呼び出しが 403 の結果を返し、D1 の行が変わらない（constitution I）
+- E2E: オーナーとして、実績と職歴を登録・編集・削除できる。キーボードだけで操作できる（constitution V）

@@ -1,0 +1,44 @@
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { ResumeCareerForm } from '@/features/resume/components/resume-row-forms';
+import { toResumeCareerFormValues } from '@/features/resume/domain/resume-forms';
+import { editResumeCareer } from '@/features/resume/server/actions';
+import { getResumeForEdit } from '@/features/resume/server/queries';
+import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
+
+// 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
+export const instant = false;
+
+export const metadata: Metadata = { title: '写した職歴を直す | synsk.me' };
+
+type Props = { params: Promise<{ id: string; rowId: string }> };
+
+const Page = async ({ params }: Props) => {
+  const { id, rowId } = await params;
+  // オーナーでなければ、読む前に 403 になる
+  const resume = await getResumeForEdit(id);
+  const career = resume?.careers.find((row) => row.uid === rowId);
+  if (!resume || !career) notFound();
+
+  return (
+    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
+      <p>
+        <TextLink href={routes.dash.resumes.row(resume.uid)}>設定の画面へ戻る</TextLink>
+      </p>
+      <h1 className="text-2xl font-bold">写した職歴を直す</h1>
+      <p className="text-sm text-muted-foreground">
+        直した値はこの職務経歴書にだけ効きます。元の職歴は変わりません
+      </p>
+      <ResumeCareerForm
+        key={resume.updatedAt}
+        action={editResumeCareer}
+        initialValues={toResumeCareerFormValues(career)}
+        target={{ resumeUid: resume.uid, rowUid: career.uid, updatedAt: resume.updatedAt }}
+      />
+    </main>
+  );
+};
+
+export default Page;

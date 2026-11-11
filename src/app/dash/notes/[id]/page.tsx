@@ -1,39 +1,195 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { NoteCardImageForm } from '@/features/note/components/note-card-image-form';
+import { NoteFirstParagraphAsDescriptionForm } from '@/features/note/components/note-first-paragraph-as-description-form';
 import { NoteForm } from '@/features/note/components/note-form';
-import { toNoteFormState } from '@/features/note/domain/note';
-import { editNoteAction } from '@/features/note/server/actions';
+import { NoteMediaForm } from '@/features/note/components/note-media-form';
+import { NoteRestoreForm } from '@/features/note/components/note-restore-form';
+import { NoteSavedNotice } from '@/features/note/components/note-saved-notice';
+import { NoteStatusForm } from '@/features/note/components/note-status-form';
+import { NoteSyndicationForm } from '@/features/note/components/note-syndication-form';
+import {
+  NOTE_STATUS_LABELS,
+  hasBeenPublished,
+  isVisibleToVisitors,
+  toNoteFormValues,
+} from '@/features/note/domain/note';
+import {
+  addNoteMedia,
+  addNoteSyndication,
+  changeNoteCardImage,
+  changeNoteFirstParagraphAsDescription,
+  publishNote,
+  removeNoteSyndication,
+  restoreNote,
+  saveNote,
+  unpublishNote,
+} from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
+import { FormSection } from '@/shared/components/form-section';
+import { SavedNotice } from '@/shared/components/saved-notice';
+import { TextLink } from '@/shared/components/text-link';
+import { routes } from '@/shared/routes';
 
-// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
+// 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 
 export const metadata: Metadata = { title: 'note を編集する | synsk.me' };
 
-type Props = { params: Promise<{ id: string }> };
+type Flag = string | string[] | undefined;
 
-const Page = async ({ params }: Props) => {
-  // 作り手でなければ、note を読む前に 403 になる
+type Props = {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Partial<Record<'saved' | keyof typeof NOTICES, Flag>>>;
+};
+
+/** 操作の後に移った画面で出す知らせ。保存の知らせは書きかけを消す `NoteSavedNotice` が出す */
+const NOTICES = {
+  published: '公開しました',
+  unpublished: '下書きに戻しました',
+  restored: '元に戻しました',
+  reverted: '過去の版の中身を、新しい版として保存しました',
+  syndicated: '転載先を記録しました',
+  unsyndicated: '転載先を外しました',
+  mediaAdded: '画像を足しました',
+  cardImageChanged: '代表画像を変えました',
+  firstParagraphChanged: '説明文が空のときの説明を変えました',
+} as const;
+
+const Page = async ({ params, searchParams }: Props) => {
+  // オーナーでなければ、note を読む前に 403 になる
   const note = await getNoteForEdit((await params).id);
   if (!note) notFound();
+  const flags = await searchParams;
+  const notice = (Object.keys(NOTICES) as (keyof typeof NOTICES)[]).find(
+    (key) => flags[key] === '1',
+  );
+  // 知らせを置き直す値。知らせを出す操作は、どれもこのどれかを変える
+  const noticeVersion = JSON.stringify([
+    note.status,
+    note.deletedAt,
+    note.latestRevision.uid,
+    note.syndicationUrls,
+    note.mediaStorageKeys,
+    note.cardImage,
+    note.cardMediaStorageKey,
+    note.isFirstParagraphAsDescription,
+  ]);
+
+  if (note.deletedAt !== null) {
+    // 削除した note は、中身を読み取りだけで出し、「元に戻す」だけを置く（contracts/dash.md）
+    const { latestRevision } = note;
+    return (
+      <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
+        <p>
+          <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
+        </p>
+        <h1 className="text-2xl font-bold">削除した note</h1>
+        <p>
+          この note は削除済みです。訪問者には見えません。元に戻すと、削除の前の状態（
+          {NOTE_STATUS_LABELS[note.status]}）と版に戻ります
+        </p>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+          <dt className="font-bold">識別子</dt>
+          <dd>{note.slug}</dd>
+          <dt className="font-bold">題</dt>
+          <dd>{latestRevision.title || '（題なし）'}</dd>
+          <dt className="font-bold">説明文</dt>
+          <dd>{latestRevision.description ?? ''}</dd>
+          <dt className="font-bold">本文</dt>
+          <dd className="whitespace-pre-wrap">{latestRevision.body}</dd>
+        </dl>
+        <NoteRestoreForm action={restoreNote} noteUid={note.uid} />
+      </main>
+    );
+  }
 
   return (
-    <main>
+    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <Link href="/dash">note の一覧へ戻る</Link>
+        <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
       </p>
-      <h1>note を編集する</h1>
-      <p>状態: {note.status === 'published' ? '公開' : '下書き'}</p>
-      <NoteForm
-        action={editNoteAction}
-        initialState={toNoteFormState(note)}
-        note={{ id: note.id, status: note.status, slugFixed: note.slugFixed }}
-      />
-      <p>
-        <Link href={`/dash/notes/${note.id}/delete`}>この note を削除する</Link>
-      </p>
+      <h1 className="text-2xl font-bold">note を編集する</h1>
+      {flags.saved === '1' && (
+        <NoteSavedNotice noteUid={note.uid} revisionUid={note.latestRevision.uid} />
+      )}
+      {notice && <SavedNotice key={noticeVersion}>{NOTICES[notice]}</SavedNotice>}
+      {isVisibleToVisitors(note) && (
+        <p>
+          <TextLink href={routes.note(note.slug)}>訪問者に見せるページを開く</TextLink>
+        </p>
+      )}
+      <FormSection>
+        <NoteStatusForm
+          noteUid={note.uid}
+          status={note.status}
+          publishAction={publishNote}
+          unpublishAction={unpublishNote}
+        />
+      </FormSection>
+      <FormSection title="内容" id="note-content">
+        {/* 保存のたびに最も新しい版が変わる。入力の初めの値と比べる版を、保存した版で描き直す（FR-021） */}
+        <NoteForm
+          key={note.latestRevision.uid}
+          action={saveNote}
+          initialValues={toNoteFormValues(note)}
+          note={{
+            uid: note.uid,
+            openedRevisionUid: note.latestRevision.uid,
+            hasBeenPublished: hasBeenPublished(note),
+          }}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteFirstParagraphAsDescriptionForm
+          action={changeNoteFirstParagraphAsDescription}
+          noteUid={note.uid}
+          current={note.isFirstParagraphAsDescription}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteSyndicationForm
+          noteUid={note.uid}
+          urls={note.syndicationUrls}
+          addAction={addNoteSyndication}
+          removeAction={removeNoteSyndication}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteMediaForm
+          action={addNoteMedia}
+          noteUid={note.uid}
+          mediaStorageKeys={note.mediaStorageKeys}
+        />
+      </FormSection>
+      <FormSection>
+        <NoteCardImageForm
+          action={changeNoteCardImage}
+          noteUid={note.uid}
+          current={
+            note.cardImage === 'media' && note.cardMediaStorageKey !== null
+              ? { kind: 'media', storageKey: note.cardMediaStorageKey }
+              : { kind: 'site' }
+          }
+          mediaStorageKeys={note.mediaStorageKeys}
+        />
+      </FormSection>
+      <FormSection>
+        <ul className="flex flex-col gap-2">
+          <li>
+            <TextLink href={routes.dash.notes.revisions(note.uid)}>版の一覧</TextLink>
+          </li>
+          <li>
+            <TextLink href={routes.dash.notes.preview(note.uid)}>
+              最も新しい版を、訪問者に見せたときの見た目で確かめる
+            </TextLink>
+          </li>
+          <li>
+            <TextLink href={routes.dash.notes.delete(note.uid)}>この note を削除する</TextLink>
+          </li>
+        </ul>
+      </FormSection>
     </main>
   );
 };

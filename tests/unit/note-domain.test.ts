@@ -1,206 +1,181 @@
 import { describe, expect, it } from 'vitest';
 import {
-  parseNoteId,
-  parseRestoreAs,
-  toNoteSummaryDto,
-  toEditableNoteDto,
-  toPublishedDate,
-  toPublishedNoteDto,
-  validateDraft,
-  validatePublication,
+  NOTE_CARD_IMAGES,
+  NOTE_STATUSES,
+  checkPublishable,
+  parseCardImageChoice,
+  checkSlugChange,
+  isVisibleToVisitors,
+  parseFirstParagraphAsDescription,
+  parseNoteInput,
+  summaryOf,
+  toNoteFormValues,
+  type NoteFormValues,
 } from '@/features/note/domain/note';
 
 /**
- * note の規則（specs/005-note-write-and-read/data-model.md）。
- *
- * 同じ規則はデータベースの制約も持つ。境界の値がデータベースと食い違わないことは
- * `tests/workers/d1-note-repository.test.ts` が確かめる。
+ * note の domain の決まり（specs/003-note/spec.md の FR-002・FR-003・FR-005・FR-010・FR-011）。
+ * 識別子の形そのものは tests/unit/slug.test.ts が持つ
  */
 
-const valid = { slug: 'hello-world-1', title: '題', body: '本文' };
+const values = (overrides: Partial<NoteFormValues> = {}): NoteFormValues => ({
+  slug: 'sample-note',
+  title: '作り物の題',
+  description: '',
+  body: '作り物の本文',
+  ...overrides,
+});
 
-describe('保存できる入力', () => {
-  it('規則に合う入力は通る', () => {
-    expect(validateDraft(valid)).toEqual({ ok: true, content: valid });
+describe('値の並び', () => {
+  it('状態は下書きと公開（FR-010）', () => {
+    expect(NOTE_STATUSES).toEqual(['draft', 'published']);
   });
 
-  it('題と本文は空でよい', () => {
-    expect(validateDraft({ ...valid, title: '', body: '' }).ok).toBe(true);
-  });
-
-  describe('slug', () => {
-    it('空なら足りない', () => {
-      expect(validateDraft({ ...valid, slug: '' })).toEqual({
-        ok: false,
-        errors: { slug: 'missing' },
-      });
-    });
-
-    it('100文字は通り、101文字は使えない', () => {
-      expect(validateDraft({ ...valid, slug: 'a'.repeat(100) }).ok).toBe(true);
-      expect(validateDraft({ ...valid, slug: 'a'.repeat(101) })).toEqual({
-        ok: false,
-        errors: { slug: 'invalid' },
-      });
-    });
-
-    it.each(['Hello', 'hello_world', 'hello world', 'ハロー', 'note😀', 'é'])(
-      '%s は使えない',
-      (slug) => {
-        expect(validateDraft({ ...valid, slug })).toEqual({
-          ok: false,
-          errors: { slug: 'invalid' },
-        });
-      },
-    );
-  });
-
-  describe('題', () => {
-    it('200文字は通り、201文字は長すぎる', () => {
-      expect(validateDraft({ ...valid, title: 'あ'.repeat(200) }).ok).toBe(true);
-      expect(validateDraft({ ...valid, title: 'あ'.repeat(201) })).toEqual({
-        ok: false,
-        errors: { title: 'too-long' },
-      });
-    });
-
-    it('絵文字を1文字と数える', () => {
-      // '😀' は UTF-16 では2つのコード単位。`length` で数えると 400 になる
-      expect(validateDraft({ ...valid, title: '😀'.repeat(200) }).ok).toBe(true);
-      expect(validateDraft({ ...valid, title: '😀'.repeat(201) }).ok).toBe(false);
-    });
-  });
-
-  describe('本文', () => {
-    it('100,000文字は通り、100,001文字は長すぎる', () => {
-      expect(validateDraft({ ...valid, body: 'a'.repeat(100_000) }).ok).toBe(true);
-      expect(validateDraft({ ...valid, body: 'a'.repeat(100_001) })).toEqual({
-        ok: false,
-        errors: { body: 'too-long' },
-      });
-    });
-
-    it('絵文字を1文字と数える', () => {
-      expect(validateDraft({ ...valid, body: '😀'.repeat(100_000) }).ok).toBe(true);
-      expect(validateDraft({ ...valid, body: '😀'.repeat(100_001) }).ok).toBe(false);
-    });
-  });
-
-  it('誤りを項目ごとにすべて返す', () => {
-    expect(validateDraft({ slug: '', title: 'あ'.repeat(201), body: 'a'.repeat(100_001) })).toEqual(
-      { ok: false, errors: { slug: 'missing', title: 'too-long', body: 'too-long' } },
-    );
+  it('代表画像の出どころは、その note の画像と note 用のサイト共通の画像の 2 つ（FR-024）', () => {
+    expect(NOTE_CARD_IMAGES).toEqual(['media', 'site']);
   });
 });
 
-describe('公開できる入力', () => {
-  it('規則に合い、題がある入力は通る', () => {
-    expect(validatePublication(valid)).toEqual({ ok: true, content: valid });
+describe('parseCardImageChoice（FR-024）', () => {
+  it('site と、その note の画像の値を読む', () => {
+    expect(parseCardImageChoice('site')).toEqual({ kind: 'site' });
+    expect(parseCardImageChoice('media:00000000-0000-4000-8000-000000000000')).toEqual({
+      kind: 'media',
+      storageKey: '00000000-0000-4000-8000-000000000000',
+    });
   });
 
-  it('題が空なら足りない', () => {
-    expect(validatePublication({ ...valid, title: '' })).toEqual({
+  it('自動で作る画像（generated）は選べない', () => {
+    expect(parseCardImageChoice('generated')).toBeNull();
+  });
+});
+
+describe('parseNoteInput', () => {
+  it('題の前後の空白を除き、説明文の空を null にし、本文の改行を揃える', () => {
+    expect(
+      parseNoteInput(values({ title: '  作り物の題 ', description: ' ', body: '1行目\r\n2行目' })),
+    ).toEqual({
+      ok: true,
+      input: { slug: 'sample-note', title: '作り物の題', description: null, body: '1行目\n2行目' },
+    });
+  });
+
+  it('題が空でも保存できる（公開は checkPublishable が止める）', () => {
+    expect(parseNoteInput(values({ title: '' })).ok).toBe(true);
+  });
+
+  it('200 文字の題を通し、201 文字の題を拒む（FR-005）', () => {
+    expect(parseNoteInput(values({ title: 'あ'.repeat(200) })).ok).toBe(true);
+    expect(parseNoteInput(values({ title: 'あ'.repeat(201) }))).toEqual({
       ok: false,
-      errors: { title: 'missing' },
+      errors: { title: 'too-long' },
     });
   });
 
-  it('保存の規則にも従う', () => {
-    expect(validatePublication({ ...valid, slug: 'A', body: 'a'.repeat(100_001) })).toEqual({
+  it('題の長さは SQLite と同じく文字の数で数える', () => {
+    expect(parseNoteInput(values({ title: '😀'.repeat(200) })).ok).toBe(true);
+  });
+
+  it('100,000 文字の本文を通し、100,001 文字の本文を拒む（FR-005）', () => {
+    expect(parseNoteInput(values({ body: 'a'.repeat(100_000) })).ok).toBe(true);
+    expect(parseNoteInput(values({ body: 'a'.repeat(100_001) }))).toEqual({
       ok: false,
-      errors: { slug: 'invalid', body: 'too-long' },
+      errors: { body: 'too-long' },
     });
+  });
+
+  it.each([
+    ['空', '', 'missing'],
+    ['101 文字', 'a'.repeat(101), 'invalid'],
+    ['大文字', 'Sample-Note', 'invalid'],
+    ['空白', 'sample note', 'invalid'],
+  ])('識別子が%sなら拒む（FR-002）', (_label, slug, error) => {
+    expect(parseNoteInput(values({ slug }))).toEqual({ ok: false, errors: { slug: error } });
   });
 });
 
-describe('公開日', () => {
-  it('日本時間の日付にする', () => {
-    expect(toPublishedDate('2026-09-16T15:30:00.000Z')).toBe('2026-09-17');
+describe('checkSlugChange（FR-003）', () => {
+  it('一度も公開していない note の識別子は変えられる', () => {
+    expect(checkSlugChange({ slug: 'before', publishedAt: null }, 'after')).toBeNull();
   });
 
-  it('日本時間で日付が変わる直前は前の日のまま', () => {
-    expect(toPublishedDate('2026-09-16T14:59:59.999Z')).toBe('2026-09-16');
-  });
-});
-
-describe('画面に渡す形', () => {
-  // 取り出した値に、画面へ出さない値が混ざっていても落とす。出す項目を列挙する
-  // 許可リスト方式（constitution の Allowlist Visibility）
-  it('公開済みの note は、公開している値と公開日だけを持つ', () => {
-    const note = {
-      slug: 'a',
-      title: '題',
-      body: '本文',
-      publishedAt: '2026-09-16T15:30:00.000Z',
-      draftTitle: '下書きの題',
-    };
-    expect(toPublishedNoteDto(note)).toEqual({
-      slug: 'a',
-      title: '題',
-      body: '本文',
-      publishedOn: '2026-09-17',
-    });
+  it('公開したことのある note の識別子の書き換えを拒む', () => {
+    expect(
+      checkSlugChange({ slug: 'before', publishedAt: '2026-11-01T00:00:00.000Z' }, 'after'),
+    ).toBe('slug-locked');
   });
 
-  it('一覧の1件は、slug・題・状態・公開し直していない書き換えの有無と id だけを持つ', () => {
-    const summary = {
-      id: 1,
-      slug: 'a',
-      title: '題',
-      status: 'published' as const,
-      hasUnpublishedChanges: true,
-      body: '本文',
-    };
-    expect(toNoteSummaryDto(summary)).toEqual({
-      id: 1,
-      slug: 'a',
-      title: '題',
-      status: 'published',
-      hasUnpublishedChanges: true,
-    });
-  });
-
-  it('編集する note は、最新の版の値と状態と slug を変えられるかだけを持つ', () => {
-    const note = {
-      id: 1,
-      slug: 'a',
-      title: '題',
-      body: '本文',
-      status: 'draft' as const,
-      slugFixed: true,
-      publishedAt: '2026-09-16T15:30:00.000Z',
-    };
-    expect(toEditableNoteDto(note)).toEqual({
-      id: 1,
-      slug: 'a',
-      title: '題',
-      body: '本文',
-      status: 'draft',
-      slugFixed: true,
-    });
+  it('公開したことのある note でも、同じ識別子なら通す', () => {
+    expect(
+      checkSlugChange({ slug: 'before', publishedAt: '2026-11-01T00:00:00.000Z' }, 'before'),
+    ).toBeNull();
   });
 });
 
-describe('note の id', () => {
-  it('正の整数の文字列を id にする', () => {
-    expect(parseNoteId('1')).toBe(1);
-    expect(parseNoteId('9007199254740991')).toBe(9007199254740991);
+describe('checkPublishable（FR-011）', () => {
+  it.each(['', '   '])('題が「%s」の版を公開しない', (title) => {
+    expect(checkPublishable({ title })).toEqual({ title: 'missing' });
   });
 
-  it.each(['', '0', '-1', '01', '1.5', '1e3', 'abc', ' 1', '9007199254740992'])(
-    '%j は id でない',
-    (value) => {
-      expect(parseNoteId(value)).toBeNull();
+  it('題があれば公開できる', () => {
+    expect(checkPublishable({ title: '作り物の題' })).toEqual({});
+  });
+});
+
+describe('toNoteFormValues', () => {
+  it('作成の画面は空', () => {
+    expect(toNoteFormValues()).toEqual({ slug: '', title: '', description: '', body: '' });
+  });
+
+  it('編集の画面は最も新しい版から始まる（FR-007）', () => {
+    expect(
+      toNoteFormValues({
+        slug: 'sample-note',
+        latestRevision: {
+          uid: '0'.repeat(32),
+          title: '新しい題',
+          description: null,
+          body: '新しい本文',
+          createdAt: '2026-11-01T00:00:00.000Z',
+        },
+      }),
+    ).toEqual({ slug: 'sample-note', title: '新しい題', description: '', body: '新しい本文' });
+  });
+});
+
+describe('isVisibleToVisitors（FR-014〜FR-016）', () => {
+  it('公開で削除していない note は訪問者に見える', () => {
+    expect(isVisibleToVisitors({ status: 'published', deletedAt: null })).toBe(true);
+  });
+
+  it('下書きの note は訪問者に見えない', () => {
+    expect(isVisibleToVisitors({ status: 'draft', deletedAt: null })).toBe(false);
+  });
+
+  it.each(['published', 'draft'] as const)(
+    '削除した note は、状態が「%s」のままでも訪問者に見えない',
+    (status) => {
+      expect(isVisibleToVisitors({ status, deletedAt: '2026-11-10T00:00:00.000Z' })).toBe(false);
     },
   );
 });
 
-describe('戻すときの状態', () => {
-  it.each(['draft', 'published'] as const)('%s を受け付ける', (value) => {
-    expect(parseRestoreAs(value)).toBe(value);
+describe('説明文が空のときの説明（FR-034）', () => {
+  it('入力の 1 は本文の最初の段落を使い、0 は使わず、ほかの値は読めない', () => {
+    expect(parseFirstParagraphAsDescription('1')).toBe(true);
+    expect(parseFirstParagraphAsDescription('0')).toBe(false);
+    expect(parseFirstParagraphAsDescription('')).toBeNull();
+    expect(parseFirstParagraphAsDescription('true')).toBeNull();
   });
 
-  it.each(['', 'Draft', 'deleted'])('%j は受け付けない', (value) => {
-    expect(parseRestoreAs(value)).toBeNull();
+  it('説明文があれば、設定にかかわらず説明文を使う', () => {
+    expect(summaryOf({ description: '説明文', firstParagraph: '段落' }, true)).toBe('説明文');
+    expect(summaryOf({ description: '説明文', firstParagraph: '段落' }, false)).toBe('説明文');
+  });
+
+  it('説明文が空なら、本文の最初の段落を使う設定のときだけ段落を使う', () => {
+    expect(summaryOf({ description: null, firstParagraph: '段落' }, true)).toBe('段落');
+    expect(summaryOf({ description: null, firstParagraph: '段落' }, false)).toBeNull();
+    expect(summaryOf({ description: null, firstParagraph: null }, true)).toBeNull();
   });
 });

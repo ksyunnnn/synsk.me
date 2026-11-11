@@ -12,18 +12,27 @@
 - 言語: TypeScript
 - フレームワーク: Next.js 16（App Router）。Cloudflare Workers 上では [vinext](https://vinext.dev/) を介して動く
 - スタイル: Tailwind CSS
-- 配信: Cloudflare Workers
+- 配信: Cloudflare Workers（Workers Free。2026-11-10 にダッシュボードの「Workers のプラン」で確認）
 - サブドメインのサイトが読み込む部品: Web Components
 
 設定は `wrangler.jsonc`（Worker）と `vite.config.ts`（ビルド）が持つ。採用の理由は [docs/decisions/](./docs/decisions/) にある。
 
 ## 開発
 
+Node.js 24 を使う（`.nvmrc`）。`package.json` の `engines` は 22 以上を求める。依存はワークスペースの直下で入れる。
+
+```bash
+npm i # 依存を入れる
+cp ../../private/.dev.vars .dev.vars   # 手元の設定値を写す
+cp ../../private/.env.local .env.local # 手元の環境変数を写す
+```
+
+`.dev.vars` と `.env.local` の原本は、リポジトリの外の `synsk.me/private/` に置く。`synsk.me/private/` は git で手元だけに管理し、リモートを持たない。値を変えるときは原本を直し、各ワークスペースへ写し直す。
+
 ```bash
 npm run dev        # 開発サーバー（http://localhost:3000）
 npm run build      # プロダクションビルド（出力は dist/）
 npm run lint       # リンター
-npm run start      # ビルド出力をローカルで起動
 npm run preview    # ビルドして Workers ランタイムでローカル起動
 npm run deploy     # ビルド済みの dist をデプロイし、配信を検査する
 npm run preview:branch # ビルド済みの dist から、ブランチの Preview を作る
@@ -38,6 +47,15 @@ open -a Pen design/<file>.pen                    # 開く
 npm install -g @pen.dev/cli                      # 保存に使う。初回は pen login で認証する
 pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() がファイルへ書き込む
 ```
+
+手元の D1 はワークスペース（`desk-NN`）ごとに別で、`npm run dev` か `wrangler d1 … --local` を初めて実行したときに `.wrangler/state` の下に作られる。表を作って seed を入れるには、ワークスペースの直下で次を実行する。
+
+```bash
+npx wrangler d1 migrations apply synsk-me --local                            # 手元の D1 に表を作る
+npx wrangler d1 execute synsk-me --local --file ../../private/seed-local.sql # seed を入れる
+```
+
+seed は実名を含むため、リポジトリに入れず `synsk.me/private/seed-local.sql` に置く。
 
 ## データベース
 
@@ -60,12 +78,14 @@ npm run test:integration # 結合。ビルドしてから本番出力を workerd
 npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 ```
 
+E2E の前に `npx playwright install chromium` でブラウザを入れる。
+
 段階ごとの割り当てと時間の上限は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
 
 | 段階 | 回すもの | Tolerable | Goal |
 |---|---|---|---|
 | 手元 watch | `npm run test:watch` | 10 秒 | 1 秒 |
-| コミット前 | `npm test` `npm run test:workers` `npx tsc --noEmit` `npm run lint` `npm run format:check` | 60 秒 | 30 秒 |
+| コミット前 | `npm test` `npm run test:workers` `npm run cf-typegen` `npm run build` `npx tsc --noEmit` `npx tsc --noEmit -p tests/tsconfig.json` `npm run lint` `npm run format:check`（この順。型検査は `cf-typegen` と `build` が生成する型を読む） | 60 秒 | 30 秒 |
 | PR の CI | 上記と結合・E2E。CI はビルドを 1 回に抑えるため `test:integration:only` と `test:e2e:only` を呼ぶ | 10 分 | 5 分 |
 
 設定は 4 つに分かれる。単体と workerd は vinext を読み込まない。vinext は公開の `next/*` を自前の shim に置き換えるため、読み込まない設定では `next/*` が `next` パッケージの実体へ解決される。
@@ -108,7 +128,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 
 ## 配信の検査
 
-`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものと、作り手の画面を守る Access の設定と、note の応答がキャッシュに載らないことである。
+`npm run deploy` はデプロイの後に `scripts/verify-deploy.mjs` を実行する。**通らなければデプロイが失敗として扱われる。** 検査するのは、過去に実際に壊れたものと、オーナーの画面を守る Access の設定と、note の応答がキャッシュに載らないことである。
 
 | 検査 | 落ちたときに疑うもの |
 | --- | --- |
@@ -117,6 +137,7 @@ npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 | `/archive-banner.js` が帯の定義を 200 で返す | `public/archive-banner.js` の削除や改名。過去の版のサイトが外から読み込んでいる |
 | `/` の 2 回目が `cf-cache-status: HIT` を返す | ページの `'use cache'` と `cacheLife()` |
 | HTML に GTM のタグが入る | `next.config.js` の `env`、`WORKERS_CI_BRANCH` |
+| `/` の `og:image` が `https://synsk.me` の絶対 URL を指す | `next.config.js` の `SITE_ORIGIN`、`src/app/layout.tsx` の `metadataBase` |
 | HTML が 8 KB、クライアント JS が 200 KB 以内（gzip） | 依存の増加、フォントの読み込み |
 | 認証なしの `/dash` と `/dash/notes/new` が Access のログイン（`*.cloudflareaccess.com`）へ移される | Access のアプリケーションの対象の経路 |
 | プレビュー配信では、認証なしの `/` も Access のログインへ移される | プレビュー全体を対象にする Access のアプリケーション |
@@ -156,11 +177,13 @@ Cloudflare の資格情報の名前は `synsk.me - <呼び出し元>: <用途> (
 名前と権限は `.env.example` のコメントが持つ。手元に置かない
 `synsk.me - Workers Builds: deploy (production)` は、Workers Builds が `main` をデプロイするときに使う。
 
-ビルドのときに決まる変数が2つある。どちらも `.env.local` には書かない。
+ビルドのときに決まる変数が3つある。どれも `.env.local` には書かない。
 
 **`WORKERS_CI_BRANCH`** は、Workers Builds が渡すブランチ名。`next.config.js` がこれを
 見て、`main` なら本番、それ以外はプレビューと判定し、結果を `NEXT_PUBLIC_DEPLOY_ENV`
 として画面へ渡す。
+
+**`SITE_ORIGIN`** は、カードの画像などの絶対 URL の origin（`src/app/layout.tsx` の `metadataBase`）。`next.config.js` が決める。Workers Builds のビルド（本番とプレビュー）は `https://synsk.me` にする。プレビューの URL はビルドに渡る値から作れないため、プレビューのカードの画像の URL も本番の origin を指す。手元のビルドは、渡せばその値、渡さないか空なら `https://synsk.me` にする。origin 以外（パスなど）を渡すとビルドが止まる。
 
 **`NEXT_PUBLIC_GA_MEASUREMENT_ID`** は、訪問者の数を Google アナリティクスで測るための
 Google タグ マネージャーのコンテナ ID。値は `.env`（git が追跡する）にある。画面に
@@ -169,13 +192,14 @@ Google タグ マネージャーのコンテナ ID。値は `.env`（git が追�
 
 ## Worker の secret
 
-`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、作り手であることを確かめられないとして拒む。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
+`ACCESS_` で始まる 3 つは、`/dash` の画面と書き込みの操作が、Cloudflare Access の JWT を検証するのに使う。どれかが欠けると、オーナーであることを確かめられないとして拒む。`npm run dev` のときだけ、JWT を検証せずにオーナーとして扱い、3 つが欠けていても拒まない。分岐は `npm run build` で消えるため、`npm run preview` では検証する（[ADR-0049](./docs/decisions/0049-verify-access-jwt-except-dev.md)）。本番の値は `npx wrangler secret put <変数>` で Worker に置く。このコマンドは新しい版を作ってすぐにデプロイする。ブランチの Preview の値は `npx wrangler preview base-config secret put <変数>` で Preview の base config に置く。base config の変更は、その後に作られる Preview にだけ効く。手元の値はリポジトリ直下の `.dev.vars` に置く。雛形は `.dev.vars.example`。
 
 | 変数 | 用途 |
 |------|------|
 | `ACCESS_ISSUER` | Access の team domain（`https://<team-name>.cloudflareaccess.com`）。公開鍵を `<ACCESS_ISSUER>/cdn-cgi/access/certs` から取る |
 | `ACCESS_AUD` | Access のアプリケーションの AUD タグ。カンマで区切って複数並べられる。本番には `synsk.me dash`、Preview には `synsk.me preview` の AUD を置く |
-| `ACCESS_OWNER_EMAIL` | 作り手として認めるメールアドレス |
+| `ACCESS_OWNER_EMAIL` | オーナーとして認めるメールアドレス |
+| `RESUME_EMAIL` | 職務経歴書のプロフィールに出すメールアドレス。空か無ければ出さない |
 
 ## Workers Builds のビルド構成
 

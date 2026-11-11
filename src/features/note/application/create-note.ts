@@ -1,35 +1,32 @@
 import {
-  validateDraft,
-  type NoteContent,
-  type NoteContentErrors,
-  type NoteId,
+  parseNoteInput,
+  type NoteFieldErrors,
+  type NoteFormValues,
 } from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
+import type { Author } from '@/shared/domain/author';
+import type { Uid } from '@/shared/domain/uid';
 
 export type CreateNoteOutcome =
-  | { ok: true; id: NoteId }
-  /** 入力が規則に合わない */
-  | { ok: false; reason: 'invalid'; errors: NoteContentErrors }
-  /** slug が他の note と重なる */
-  | { ok: false; reason: 'slug-taken' }
-  /** データベースに届かないなどで、保存できなかった */
-  | { ok: false; reason: 'failed' };
+  | { status: 'created'; uid: Uid }
+  | { status: 'forbidden' }
+  | { status: 'invalid'; errors: NoteFieldErrors; values: NoteFormValues };
 
 /**
- * 下書きの note を作る。入力が規則に合わなければ書き込まない。
- * `createdAt` を最初の版を作った日時にする
+ * note を作る（FR-001・FR-002・FR-005）。オーナーでなければ何も書かない（FR-033）。
+ * 入力を確かめてから書く（docs/SOFTWARE_DESIGN.md の「読む → 計算 → 書く」）
  */
 export const createNote = async (
   notes: NoteRepository,
-  content: NoteContent,
-  createdAt: string,
+  author: Author | null,
+  values: NoteFormValues,
 ): Promise<CreateNoteOutcome> => {
-  const validation = validateDraft(content);
-  if (!validation.ok) return { ok: false, reason: 'invalid', errors: validation.errors };
+  if (!author) return { status: 'forbidden' };
 
-  try {
-    return await notes.create(validation.content, createdAt);
-  } catch {
-    return { ok: false, reason: 'failed' };
-  }
+  const parsed = parseNoteInput(values);
+  if (!parsed.ok) return { status: 'invalid', errors: parsed.errors, values };
+
+  const result = await notes.create(parsed.input);
+  if (result.ok) return { status: 'created', uid: result.uid };
+  return { status: 'invalid', errors: { slug: 'slug-taken' }, values };
 };

@@ -1,335 +1,561 @@
 import 'server-only';
 
-import type {
-  DeletedNote,
-  EditableNote,
-  NoteContent,
-  NoteId,
-  NoteStatus,
-  NoteSummary,
-  PublishedNote,
+import {
+  summaryOf,
+  type Note,
+  type NoteCardImage,
+  type NotePreview,
+  type NoteRevisionSummary,
+  type NoteStatus,
+  type NoteSummary,
+  type VisitorLinkPreview,
+  type VisitorNote,
+  type VisitorNoteCardImage,
 } from '@/features/note/domain/note';
-import type {
-  CreateNoteResult,
-  DeleteNoteResult,
-  NoteRepository,
-  RestoreNoteResult,
-  UpdateNoteResult,
-} from '@/features/note/domain/note-repository';
+import type { NoteRepository } from '@/features/note/domain/note-repository';
+import { readMarkdown } from '@/shared/domain/markdown';
 
 /**
- * `NoteRepository` の D1 の実装。D1 の API はこのファイルの中だけで使う（ADR-0035）。
- *
- * 表の形は `migrations/` にある。題と本文は `note_revision` に版として足し、
- * `note.published_revision_id` が最後に公開した版を指す。削除した note は
- * `note.deleted_at` に日時を持つ。戻す操作と削除した note の取り出しのほかは、
- * どの文も `deleted_at IS NULL` で絞る。
+ * `NoteRepository` の D1 の実装。行の型はこのファイルの中だけに置き、domain の型に詰め替える
+ * （specs/001-career-and-project/research.md の R3）。列・CHECK・トリガの正本は migrations/ に
+ * ある。複数の文は 1 つの `batch()`（1 つのトランザクション）で送る
  */
 
-/**
- * D1 が制約の違反を伝える文言。D1 は違反の種類をエラーの型で分けず、
- * `D1_ERROR: UNIQUE constraint failed: note.slug: SQLITE_CONSTRAINT` のような
- * 文言で返す。トリガの `RAISE` は、渡した文言がそのまま入る
- */
-const SLUG_TAKEN_MESSAGE = 'UNIQUE constraint failed: note.slug';
-const SLUG_FIXED_MESSAGE = 'note_slug_fixed_after_publication';
-
-/** 制約の違反の種類。制約の違反でなければ null */
-const toConstraintViolation = (error: unknown): 'slug-fixed' | 'slug-taken' | null => {
-  const message = error instanceof Error ? error.message : '';
-  if (message.includes(SLUG_FIXED_MESSAGE)) return 'slug-fixed';
-  if (message.includes(SLUG_TAKEN_MESSAGE)) return 'slug-taken';
-  return null;
+type NoteRow = {
+  id: number;
+  uid: string;
+  slug: string;
+  status: NoteStatus;
+  published_at: string | null;
+  deleted_at: string | null;
+  card_image: NoteCardImage;
+  card_media_storage_key: string | null;
+  is_first_paragraph_as_description: 0 | 1;
+  published_revision_uid: string | null;
 };
 
-const toUpdateFailure = (error: unknown): UpdateNoteResult => {
-  const reason = toConstraintViolation(error);
-  if (reason === null) throw error;
-  return { ok: false, reason };
+type RevisionRow = {
+  uid: string;
+  title: string;
+  description: string | null;
+  body: string;
+  created_at: string;
 };
 
-/**
- * `note` の行の、最新の版の id を求める式。作り手が書き換えている内容は最新の版で、
- * 保存・公開・一覧のどれもこの式で最新の版を決める
- */
-const LATEST_REVISION_ID = '(SELECT max(id) FROM note_revision WHERE note_id = note.id)';
-
-/** note ごとの最新の版を、`latest` の名前で結ぶ */
-const JOIN_LATEST_REVISION = `JOIN note_revision AS latest ON latest.id = ${LATEST_REVISION_ID}`;
-
-type PublishedNoteRow = {
+type VisitorRow = {
+  /** 画像と参照先の情報を引くためだけに読む。DTO に入れない */
+  id: number;
   slug: string;
   title: string;
+  description: string | null;
   body: string;
   published_at: string;
+  card_image: NoteCardImage;
+  card_media_storage_key: string | null;
+  is_first_paragraph_as_description: 0 | 1;
 };
 
-type EditableNoteRow = {
-  id: number;
-  slug: string;
-  title: string;
-  body: string;
-  status: NoteStatus;
-  slug_fixed: 0 | 1;
-};
+/** 見た目の確認で読む行。一度も公開していない note は初めて公開した日時を持たない */
+type PreviewRow = Omit<VisitorRow, 'published_at'> & { published_at: string | null };
 
-type DeletedNoteRow = {
-  id: number;
-  slug: string;
-  title: string;
-  status: NoteStatus;
-  has_been_published: 0 | 1;
-};
-
-const toDeletedNote = (row: DeletedNoteRow): DeletedNote => ({
-  id: row.id,
-  slug: row.slug,
+const toRevision = (row: RevisionRow) => ({
+  uid: row.uid,
   title: row.title,
-  status: row.status,
-  hasBeenPublished: row.has_been_published === 1,
+  description: row.description,
+  body: row.body,
+  createdAt: row.created_at,
 });
 
-type NoteSummaryRow = {
-  id: number;
-  slug: string;
-  title: string;
-  status: NoteStatus;
-  has_unpublished_changes: 0 | 1;
+/**
+ * 訪問者に見せてよい note の条件（FR-012・FR-015・FR-016）。公開で削除していない note だけを
+ * 読み、公開した版をつなぐ
+ */
+const VISITOR_FROM = `
+  FROM note n
+  JOIN note_revision r ON r.id = n.published_revision_id AND r.note_id = n.id
+  LEFT JOIN media m ON m.id = n.card_media_id AND m.note_id = n.id
+  WHERE n.slug = ? AND n.status = 'published' AND n.deleted_at IS NULL`;
+
+/** 最も新しい版の uid。版は書き換えず消さないため、id の最も大きい版が最も新しい（R4） */
+const LATEST_REVISION_UID =
+  '(SELECT uid FROM note_revision WHERE note_id = ? ORDER BY id DESC LIMIT 1)';
+
+/**
+ * 書いてよい条件（research.md の R4）。最も新しい版が開いたときの版と同じで、note を削除して
+ * いない。バインドする値は note の id・開いた版の uid・note の id の順
+ */
+const WRITABLE = `${LATEST_REVISION_UID} = ?
+  AND EXISTS (SELECT 1 FROM note WHERE id = ? AND deleted_at IS NULL)`;
+
+const errorIncludes = (error: unknown, text: string) =>
+  error instanceof Error && error.message.includes(text);
+
+const toCardImage = (cardImage: NoteCardImage, storageKey: string | null): VisitorNoteCardImage => {
+  if (cardImage === 'media' && storageKey !== null) return { kind: 'media', storageKey };
+  // 外部キーと CHECK が media の行を持たない `media` を許さない。読めなければ note 用のサイト共通の画像に倒す
+  return { kind: 'site' };
+};
+
+type LinkPreviewRow = { url: string; title: string | null; image_url: string | null };
+
+/** 読んだ参照先の情報を、渡した URL の順に並べる。取ったことのない URL は外す */
+const toLinkPreviews = (urls: string[], rows: LinkPreviewRow[]): VisitorLinkPreview[] => {
+  const byUrl = new Map(
+    rows.map((row) => [row.url, { url: row.url, title: row.title, imageUrl: row.image_url }]),
+  );
+  return urls.flatMap((url) => byUrl.get(url) ?? []);
 };
 
 export const createD1NoteRepository = (db: D1Database): NoteRepository => {
-  const updateSlug = (id: NoteId, slug: string) =>
-    db.prepare('UPDATE note SET slug = ? WHERE id = ? AND deleted_at IS NULL').bind(slug, id);
+  /** 無いか削除した note か */
+  const isMissing = async (id: number) =>
+    (await db
+      .prepare('SELECT 1 AS found FROM note WHERE id = ? AND deleted_at IS NULL')
+      .bind(id)
+      .first()) === null;
 
-  /** 題と本文を版として足す。最新の版と同じなら足さない */
-  const appendRevision = (id: NoteId, { title, body }: NoteContent, createdAt: string) =>
+  /**
+   * 本文が指す画像と参照先の情報を読む（research.md の R11）。本文は共有担当の Markdown の部品で
+   * 構文木にして読む。画像はその note の `media` の行にあるキーだけを、本文に現れた順で返す
+   */
+  const readBodyReferences = async (noteId: number, body: string) => {
+    const { mediaKeys, urlLines, firstParagraph } = readMarkdown(body);
+    const [mediaResult, previewResult] = await db.batch<{ storage_key: string } | LinkPreviewRow>([
+      db
+        .prepare(
+          `SELECT storage_key FROM media
+           WHERE note_id = ? AND storage_key IN (SELECT value FROM json_each(?))`,
+        )
+        .bind(noteId, JSON.stringify(mediaKeys)),
+      linkPreviewsOf(urlLines),
+    ]);
+    const owned = new Set(
+      (mediaResult.results as { storage_key: string }[]).map((r) => r.storage_key),
+    );
+    return {
+      media: mediaKeys.filter((key) => owned.has(key)),
+      linkPreviews: toLinkPreviews(urlLines, previewResult.results as LinkPreviewRow[]),
+      firstParagraph,
+    };
+  };
+
+  /** 参照先の情報を URL の並びで読む文。URL ごとに 1 行（`link_preview.url` の UNIQUE） */
+  const linkPreviewsOf = (urls: string[]) =>
     db
       .prepare(
-        `INSERT INTO note_revision (note_id, title, body, created_at)
-         SELECT note.id, ?, ?, ? FROM note
-         WHERE note.id = ? AND note.deleted_at IS NULL
-           AND NOT EXISTS (
-             SELECT 1 FROM note_revision AS latest
-             WHERE latest.id = ${LATEST_REVISION_ID}
-               AND latest.title = ? AND latest.body = ?
-           )`,
+        `SELECT url, title, image_url FROM link_preview
+         WHERE url IN (SELECT value FROM json_each(?))`,
       )
-      .bind(title, body, createdAt, id, title, body);
+      .bind(JSON.stringify(urls));
+
+  /** 版の行を訪問者向けの形に詰める。公開した版（訪問者）と最も新しい版（見た目の確認）が使う */
+  const toNotePreview = async (row: PreviewRow): Promise<NotePreview> => {
+    const { media, linkPreviews, firstParagraph } = await readBodyReferences(row.id, row.body);
+    return {
+      slug: row.slug,
+      title: row.title,
+      description: row.description,
+      summary: summaryOf(
+        { description: row.description, firstParagraph },
+        row.is_first_paragraph_as_description === 1,
+      ),
+      body: row.body,
+      publishedAt: row.published_at,
+      cardImage: toCardImage(row.card_image, row.card_media_storage_key),
+      media,
+      linkPreviews,
+    };
+  };
 
   return {
-    async create({ slug, title, body }, createdAt): Promise<CreateNoteResult> {
-      // note と最初の版を1つの batch にする。D1 は batch を1つのトランザクションとして
-      // 行い、途中の文が失敗すると全体を巻き戻す。SQL の BEGIN は受け付けない
+    findVisitorBySlug: async (slug) => {
+      const row = await db
+        .prepare(
+          `SELECT n.id, n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
+             m.storage_key AS card_media_storage_key, n.is_first_paragraph_as_description
+           ${VISITOR_FROM}`,
+        )
+        .bind(slug)
+        .first<VisitorRow>();
+      if (!row) return null;
+      const dto: VisitorNote = { ...(await toNotePreview(row)), publishedAt: row.published_at };
+      return dto;
+    },
+
+    findPreview: async (id) => {
+      // 最も新しい版を、状態と削除に関わらず読む（research.md の R15）。オーナーだけが呼ぶ
+      const row = await db
+        .prepare(
+          `SELECT n.id, n.slug, r.title, r.description, r.body, n.published_at, n.card_image,
+             m.storage_key AS card_media_storage_key, n.is_first_paragraph_as_description
+           FROM note n
+           JOIN note_revision r
+             ON r.id = (SELECT max(id) FROM note_revision WHERE note_id = n.id)
+           LEFT JOIN media m ON m.id = n.card_media_id AND m.note_id = n.id
+           WHERE n.id = ?`,
+        )
+        .bind(id)
+        .first<PreviewRow>();
+      return row ? toNotePreview(row) : null;
+    },
+
+    hasVisitorSlug: async (slug) =>
+      (await db.prepare(`SELECT 1 AS found ${VISITOR_FROM}`).bind(slug).first()) !== null,
+
+    findForEdit: async (id) => {
+      const [noteResult, latestResult, mediaResult, syndicationResult] = await db.batch<
+        NoteRow | RevisionRow | { storage_key: string } | { url: string }
+      >([
+        db
+          .prepare(
+            `SELECT n.id, n.uid, n.slug, n.status, n.published_at, n.deleted_at, n.card_image,
+               m.storage_key AS card_media_storage_key, n.is_first_paragraph_as_description,
+               pr.uid AS published_revision_uid
+             FROM note n
+             LEFT JOIN media m ON m.id = n.card_media_id AND m.note_id = n.id
+             LEFT JOIN note_revision pr ON pr.id = n.published_revision_id AND pr.note_id = n.id
+             WHERE n.id = ?`,
+          )
+          .bind(id),
+        db
+          .prepare(
+            `SELECT uid, title, description, body, created_at FROM note_revision
+             WHERE note_id = ? ORDER BY id DESC LIMIT 1`,
+          )
+          .bind(id),
+        db.prepare('SELECT storage_key FROM media WHERE note_id = ? ORDER BY id').bind(id),
+        db.prepare('SELECT url FROM syndication WHERE note_id = ? ORDER BY id').bind(id),
+      ]);
+      const row = noteResult.results[0] as NoteRow | undefined;
+      const latest = latestResult.results[0] as RevisionRow | undefined;
+      if (!row || !latest) return null;
+      const note: Note = {
+        id: row.id,
+        uid: row.uid,
+        slug: row.slug,
+        status: row.status,
+        publishedAt: row.published_at,
+        deletedAt: row.deleted_at,
+        cardImage: row.card_image,
+        cardMediaStorageKey: row.card_media_storage_key,
+        isFirstParagraphAsDescription: row.is_first_paragraph_as_description === 1,
+        latestRevision: toRevision(latest),
+        publishedRevisionUid: row.published_revision_uid,
+        mediaStorageKeys: (mediaResult.results as { storage_key: string }[]).map(
+          (r) => r.storage_key,
+        ),
+        syndicationUrls: (syndicationResult.results as { url: string }[]).map((r) => r.url),
+      };
+      return note;
+    },
+
+    findIdByUid: async (uid) =>
+      (await db.prepare('SELECT id FROM note WHERE uid = ?').bind(uid).first<{ id: number }>())
+        ?.id ?? null,
+
+    list: async () => {
+      const { results } = await db
+        .prepare(
+          `SELECT n.uid, n.slug, n.status, n.deleted_at, n.created_at,
+             (SELECT title FROM note_revision WHERE note_id = n.id ORDER BY id DESC LIMIT 1) AS title
+           FROM note n ORDER BY n.created_at DESC, n.id DESC`,
+        )
+        .all<{
+          uid: string;
+          slug: string;
+          status: NoteStatus;
+          deleted_at: string | null;
+          created_at: string;
+          title: string | null;
+        }>();
+      return results.map((row): NoteSummary => ({
+        uid: row.uid,
+        slug: row.slug,
+        title: row.title ?? '',
+        status: row.status,
+        isDeleted: row.deleted_at !== null,
+        createdAt: row.created_at,
+      }));
+    },
+
+    create: async (input) => {
       try {
-        const [created] = await db.batch<{ id: number }>([
-          db.prepare('INSERT INTO note (slug) VALUES (?) RETURNING id').bind(slug),
+        const [noteResult] = await db.batch<{ id: number; uid: string }>([
+          db.prepare('INSERT INTO note (slug) VALUES (?) RETURNING id, uid').bind(input.slug),
           db
             .prepare(
-              `INSERT INTO note_revision (note_id, title, body, created_at)
+              `INSERT INTO note_revision (note_id, title, description, body)
                SELECT id, ?, ?, ? FROM note WHERE slug = ?`,
             )
-            .bind(title, body, createdAt, slug),
+            .bind(input.title, input.description, input.body, input.slug),
         ]);
-        const row = created.results[0];
-        if (!row) throw new Error('INSERT が id を返さなかった');
-        return { ok: true, id: row.id };
+        const row = noteResult?.results[0];
+        if (!row) throw new Error('note の行を作れなかった');
+        return { ok: true, id: row.id, uid: row.uid };
       } catch (error) {
-        // 作るときに起きうる違反は slug の重複だけ。公開後の slug の固定は note がまだないため起きない
-        if (toConstraintViolation(error) === 'slug-taken')
+        if (errorIncludes(error, 'UNIQUE constraint failed: note.slug')) {
           return { ok: false, reason: 'slug-taken' };
+        }
         throw error;
       }
     },
 
-    async save(id, content, savedAt): Promise<UpdateNoteResult> {
+    save: async (id, input, openedRevisionUid) => {
+      const guard = [id, openedRevisionUid, id];
+      // 識別子の書き換えを、版の追加より前に置く。どちらも同じ条件で、条件に合わなければどちらも
+      // 書かない。重複は UNIQUE が、公開した note の書き換えはトリガが拒み、batch() 全体が戻る
+      const statements = [
+        db
+          .prepare(`UPDATE note SET slug = ? WHERE id = ? AND slug <> ? AND ${WRITABLE}`)
+          .bind(input.slug, id, input.slug, ...guard),
+        db
+          .prepare(
+            `INSERT INTO note_revision (note_id, title, description, body)
+             SELECT ?, ?, ?, ? WHERE ${WRITABLE}`,
+          )
+          .bind(id, input.title, input.description, input.body, ...guard),
+      ];
+      let inserted: number;
       try {
-        const [updated] = await db.batch([
-          updateSlug(id, content.slug),
-          appendRevision(id, content, savedAt),
-        ]);
-        return updated.meta.changes === 0 ? { ok: false, reason: 'not-found' } : { ok: true };
+        const results = await db.batch(statements);
+        inserted = results[1]?.meta.changes ?? 0;
       } catch (error) {
-        return toUpdateFailure(error);
+        if (errorIncludes(error, 'UNIQUE constraint failed: note.slug')) {
+          return { ok: false, reason: 'slug-taken' };
+        }
+        if (errorIncludes(error, 'note_slug_fixed_after_publication')) {
+          return { ok: false, reason: 'slug-locked' };
+        }
+        throw error;
+      }
+      if (inserted > 0) return { ok: true };
+      return { ok: false, reason: (await isMissing(id)) ? 'not-found' : 'conflict' };
+    },
+
+    publish: async (id, now) => {
+      try {
+        const result = await db
+          .prepare(
+            `UPDATE note SET status = 'published',
+               published_revision_id = (SELECT max(id) FROM note_revision WHERE note_id = ?1),
+               published_at = COALESCE(published_at, ?2)
+             WHERE id = ?1 AND deleted_at IS NULL`,
+          )
+          .bind(id, now)
+          .run();
+        return result.meta.changes > 0 ? { ok: true } : { ok: false, reason: 'not-found' };
+      } catch (error) {
+        // 題が空の版はトリガ note_published_revision_valid が拒む（FR-011）
+        if (errorIncludes(error, 'note_published_revision_invalid')) {
+          return { ok: false, reason: 'untitled' };
+        }
+        throw error;
       }
     },
 
-    async publish(id, content, publishedAt): Promise<UpdateNoteResult> {
-      try {
-        const [updated] = await db.batch([
-          updateSlug(id, content.slug),
-          appendRevision(id, content, publishedAt),
-          // 公開する版は、直前の文で足した版か、入力と同じ最新の版。初めて公開した
-          // 日時は空のときだけ入れ、公開し直すときは変えない
-          db
-            .prepare(
-              `UPDATE note SET
-                 status = 'published',
-                 published_revision_id = ${LATEST_REVISION_ID},
-                 published_at = coalesce(published_at, ?)
-               WHERE id = ? AND deleted_at IS NULL`,
-            )
-            .bind(publishedAt, id),
-        ]);
-        return updated.meta.changes === 0 ? { ok: false, reason: 'not-found' } : { ok: true };
-      } catch (error) {
-        return toUpdateFailure(error);
-      }
-    },
-
-    async delete(id, deletedAt): Promise<DeleteNoteResult> {
-      // 行を消さない。版も、最後に公開した版も残し、戻せるようにする
-      const { meta } = await db
-        .prepare('UPDATE note SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL')
-        .bind(deletedAt, id)
-        .run();
-      return meta.changes === 0 ? { ok: false, reason: 'not-found' } : { ok: true };
-    },
-
-    async restore(id, as): Promise<RestoreNoteResult> {
-      // 公開で戻せるのは、公開したことのある note だけ。下書きで戻しても、最後に
-      // 公開した版と初めて公開した日時は消さない
-      const statement =
-        as === 'published'
-          ? db.prepare(
-              `UPDATE note SET deleted_at = NULL, status = 'published'
-               WHERE id = ? AND deleted_at IS NOT NULL AND published_revision_id IS NOT NULL`,
-            )
-          : db.prepare(
-              `UPDATE note SET deleted_at = NULL, status = 'draft'
-               WHERE id = ? AND deleted_at IS NOT NULL`,
-            );
-      const { meta } = await statement.bind(id).run();
-      return meta.changes === 0 ? { ok: false, reason: 'not-found' } : { ok: true };
-    },
-
-    async findPublishedBySlug(slug): Promise<PublishedNote | null> {
-      // 訪問者に返す題と本文は、公開した版だけから取る。最新の版（書き換えている
-      // 内容）を SELECT しない（ADR-0029）
-      const row = await db
+    unpublish: async (id) => {
+      const result = await db
         .prepare(
-          `SELECT note.slug, published.title, published.body, note.published_at
-           FROM note
-           JOIN note_revision AS published ON published.id = note.published_revision_id
-           WHERE note.slug = ? AND note.status = 'published' AND note.deleted_at IS NULL`,
-        )
-        .bind(slug)
-        .first<PublishedNoteRow>();
-      if (!row) return null;
-      return {
-        slug: row.slug,
-        title: row.title,
-        body: row.body,
-        publishedAt: row.published_at,
-      };
-    },
-
-    async findForEdit(id): Promise<EditableNote | null> {
-      const row = await db
-        .prepare(
-          `SELECT note.id, note.slug, latest.title, latest.body, note.status,
-                  note.published_at IS NOT NULL AS slug_fixed
-           FROM note
-           ${JOIN_LATEST_REVISION}
-           WHERE note.id = ? AND note.deleted_at IS NULL`,
+          "UPDATE note SET status = 'draft' WHERE id = ? AND status = 'published' AND deleted_at IS NULL",
         )
         .bind(id)
-        .first<EditableNoteRow>();
-      if (!row) return null;
-      return {
-        id: row.id,
-        slug: row.slug,
-        title: row.title,
-        body: row.body,
-        status: row.status,
-        slugFixed: row.slug_fixed === 1,
-      };
+        .run();
+      return { ok: result.meta.changes > 0 };
     },
 
-    async listForAuthor(): Promise<NoteSummary[]> {
-      // 新しく作った note を先に並べる
+    delete: async (id, now) => {
+      const result = await db
+        .prepare('UPDATE note SET deleted_at = ? WHERE id = ? AND deleted_at IS NULL')
+        .bind(now, id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    restore: async (id) => {
+      const result = await db
+        .prepare('UPDATE note SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL')
+        .bind(id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    listRevisions: async (id) => {
       const { results } = await db
         .prepare(
-          `SELECT note.id, note.slug, latest.title, note.status,
-                  (note.status = 'published'
-                    AND (latest.title <> published.title
-                      OR latest.body <> published.body)) AS has_unpublished_changes
-           FROM note
-           ${JOIN_LATEST_REVISION}
-           LEFT JOIN note_revision AS published ON published.id = note.published_revision_id
-           WHERE note.deleted_at IS NULL
-           ORDER BY note.id DESC`,
+          `SELECT r.uid, r.title, r.created_at,
+             r.id = (SELECT max(id) FROM note_revision WHERE note_id = r.note_id) AS is_latest,
+             r.id IS (SELECT published_revision_id FROM note WHERE id = r.note_id) AS is_published
+           FROM note_revision r WHERE r.note_id = ? ORDER BY r.id DESC`,
         )
-        .all<NoteSummaryRow>();
-      return results.map((row) => ({
-        id: row.id,
-        slug: row.slug,
+        .bind(id)
+        .all<{
+          uid: string;
+          title: string;
+          created_at: string;
+          is_latest: 0 | 1;
+          is_published: 0 | 1;
+        }>();
+      return results.map((row): NoteRevisionSummary => ({
+        uid: row.uid,
         title: row.title,
-        status: row.status,
-        hasUnpublishedChanges: row.has_unpublished_changes === 1,
+        createdAt: row.created_at,
+        isLatest: row.is_latest === 1,
+        isPublished: row.is_published === 1,
       }));
     },
 
-    async findDeleted(id): Promise<DeletedNote | null> {
+    findRevision: async (id, revisionUid) => {
       const row = await db
         .prepare(
-          `SELECT note.id, note.slug, latest.title, note.status,
-                  note.published_at IS NOT NULL AS has_been_published
-           FROM note
-           ${JOIN_LATEST_REVISION}
-           WHERE note.id = ? AND note.deleted_at IS NOT NULL`,
+          `SELECT uid, title, description, body, created_at FROM note_revision
+           WHERE note_id = ? AND uid = ?`,
         )
-        .bind(id)
-        .first<DeletedNoteRow>();
-      return row && toDeletedNote(row);
+        .bind(id, revisionUid)
+        .first<RevisionRow>();
+      return row ? toRevision(row) : null;
     },
 
-    async listDeletedForAuthor(): Promise<DeletedNote[]> {
-      // 後から削除した note を先に並べる
-      const { results } = await db
+    revert: async (id, revisionUid, openedRevisionUid) => {
+      // 戻す版の中身を、保存と同じ条件で新しい版として写す。版は書き換えない（FR-006・FR-009）
+      const result = await db
         .prepare(
-          `SELECT note.id, note.slug, latest.title, note.status,
-                  note.published_at IS NOT NULL AS has_been_published
-           FROM note
-           ${JOIN_LATEST_REVISION}
-           WHERE note.deleted_at IS NOT NULL
-           ORDER BY note.deleted_at DESC, note.id DESC`,
+          `INSERT INTO note_revision (note_id, title, description, body)
+           SELECT note_id, title, description, body FROM note_revision
+           WHERE note_id = ? AND uid = ? AND ${WRITABLE}`,
         )
-        .all<DeletedNoteRow>();
-      return results.map(toDeletedNote);
-    },
-
-    // 有無だけを確かめる。FROM・JOIN・WHERE は対応する取り出しと同じにし、
-    // 「ある」の判定を取り出しと一致させる
-    async hasPublished(slug): Promise<boolean> {
-      const row = await db
-        .prepare(
-          `SELECT 1 FROM note
-           JOIN note_revision AS published ON published.id = note.published_revision_id
-           WHERE note.slug = ? AND note.status = 'published' AND note.deleted_at IS NULL`,
-        )
-        .bind(slug)
+        .bind(id, revisionUid, id, openedRevisionUid, id)
+        .run();
+      if (result.meta.changes > 0) return { ok: true };
+      if (await isMissing(id)) return { ok: false, reason: 'not-found' };
+      const revision = await db
+        .prepare('SELECT 1 AS found FROM note_revision WHERE note_id = ? AND uid = ?')
+        .bind(id, revisionUid)
         .first();
-      return row !== null;
+      return { ok: false, reason: revision === null ? 'revision-not-found' : 'conflict' };
     },
 
-    async hasEditable(id): Promise<boolean> {
+    findMissingRevision: async (uid, revisionUid) => {
       const row = await db
         .prepare(
-          `SELECT 1 FROM note ${JOIN_LATEST_REVISION} WHERE note.id = ? AND note.deleted_at IS NULL`,
+          `SELECT EXISTS (SELECT 1 FROM note_revision r WHERE r.note_id = n.id AND r.uid = ?)
+             AS has_revision
+           FROM note n WHERE n.uid = ?`,
         )
-        .bind(id)
-        .first();
-      return row !== null;
+        .bind(revisionUid, uid)
+        .first<{ has_revision: 0 | 1 }>();
+      if (!row) return 'note';
+      return row.has_revision === 1 ? null : 'revision';
     },
 
-    async hasDeleted(id): Promise<boolean> {
-      const row = await db
+    addSyndication: async (id, url) => {
+      try {
+        const result = await db
+          .prepare(
+            `INSERT INTO syndication (note_id, url)
+             SELECT id, ? FROM note WHERE id = ? AND deleted_at IS NULL`,
+          )
+          .bind(url, id)
+          .run();
+        return result.meta.changes > 0 ? { ok: true } : { ok: false, reason: 'not-found' };
+      } catch (error) {
+        if (errorIncludes(error, 'UNIQUE constraint failed: syndication.url')) {
+          return { ok: false, reason: 'url-taken' };
+        }
+        throw error;
+      }
+    },
+
+    removeSyndication: async (id, url) => {
+      const result = await db
         .prepare(
-          `SELECT 1 FROM note ${JOIN_LATEST_REVISION} WHERE note.id = ? AND note.deleted_at IS NOT NULL`,
+          `DELETE FROM syndication WHERE note_id = ? AND url = ?
+             AND EXISTS (SELECT 1 FROM note WHERE note.id = syndication.note_id AND deleted_at IS NULL)`,
         )
-        .bind(id)
-        .first();
-      return row !== null;
+        .bind(id, url)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    changeCardImage: async (id, cardImage) => {
+      const result =
+        cardImage.kind === 'media'
+          ? await db
+              .prepare(
+                `UPDATE note SET card_image = 'media',
+                   card_media_id = (SELECT id FROM media WHERE note_id = ?1 AND storage_key = ?2)
+                 WHERE id = ?1 AND deleted_at IS NULL
+                   AND EXISTS (SELECT 1 FROM media WHERE note_id = ?1 AND storage_key = ?2)`,
+              )
+              .bind(id, cardImage.storageKey)
+              .run()
+          : await db
+              .prepare(
+                'UPDATE note SET card_image = ?, card_media_id = NULL WHERE id = ? AND deleted_at IS NULL',
+              )
+              .bind(cardImage.kind, id)
+              .run();
+      if (result.meta.changes > 0) return { ok: true };
+      return { ok: false, reason: (await isMissing(id)) ? 'not-found' : 'media-not-owned' };
+    },
+
+    changeFirstParagraphAsDescription: async (id, isFirstParagraphAsDescription) => {
+      const result = await db
+        .prepare(
+          'UPDATE note SET is_first_paragraph_as_description = ? WHERE id = ? AND deleted_at IS NULL',
+        )
+        .bind(isFirstParagraphAsDescription ? 1 : 0, id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    addMedia: async (id, storageKey, size) => {
+      const result = await db
+        .prepare(
+          `INSERT INTO media (note_id, storage_key, size)
+           SELECT id, ?, ? FROM note WHERE id = ? AND deleted_at IS NULL`,
+        )
+        .bind(storageKey, size, id)
+        .run();
+      return { ok: result.meta.changes > 0 };
+    },
+
+    purge: async (id) => {
+      // note から版と画像を指す外部キーの検査はトランザクションの終わりに送られる（migrations/0005
+      // の冒頭）ため、指す先を空にせずにこの順で消せる。公開したことのある note の
+      // published_revision_id は CHECK とトリガが空にさせない（research.md の R6）。消す画像の
+      // キーは、同じ batch() の最初の文で読む
+      const [mediaResult, , , , noteResult] = await db.batch<{ storage_key: string }>([
+        db.prepare('SELECT storage_key FROM media WHERE note_id = ? ORDER BY id').bind(id),
+        db.prepare('DELETE FROM media WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM syndication WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
+        db.prepare('DELETE FROM note WHERE id = ?').bind(id),
+      ]);
+      if ((noteResult?.meta.changes ?? 0) === 0) return { ok: false };
+      return {
+        ok: true,
+        storageKeys: (mediaResult?.results ?? []).map((row) => row.storage_key),
+      };
+    },
+
+    findLinkPreviews: async (urls) => {
+      const { results } = await linkPreviewsOf(urls).all<LinkPreviewRow>();
+      return toLinkPreviews(urls, results);
+    },
+
+    saveLinkPreview: async ({ url, title, imageUrl, fetchedAt }) => {
+      // URL ごとに 1 行。取り直すと同じ行を書き換え、その URL を書いたすべての note が読む（FR-029）。
+      // 訪問者向けの取り出しは本文の URL を `URL` の形に揃えて引くため、同じ形で書く。遅れて
+      // 終わった前の取得では、後の取得の中身を書き換えない
+      await db
+        .prepare(
+          `INSERT INTO link_preview (url, title, image_url, fetched_at) VALUES (?, ?, ?, ?)
+           ON CONFLICT (url) DO UPDATE SET
+             title = excluded.title, image_url = excluded.image_url, fetched_at = excluded.fetched_at
+           WHERE excluded.fetched_at >= link_preview.fetched_at`,
+        )
+        .bind(new URL(url).href, title, imageUrl, fetchedAt)
+        .run();
     },
   };
 };

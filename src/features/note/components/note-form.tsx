@@ -1,153 +1,154 @@
 'use client';
 
-import Link from 'next/link';
 import { useActionState } from 'react';
 import {
-  NOTE_ID_FIELD,
-  type NoteContentErrors,
+  NOTE_BODY_MAX_LENGTH,
+  NOTE_TITLE_MAX_LENGTH,
+  NOTE_UID_FIELD,
+  OPENED_REVISION_UID_FIELD,
+  type NoteField,
+  type NoteFieldError,
   type NoteFormResult,
-  type NoteFormState,
-  type NoteId,
-  type NoteStatus,
+  type NoteFormValues,
 } from '@/features/note/domain/note';
+import { DraftRetainingForm } from '@/shared/components/draft-retention';
+import { InputField, TextareaField } from '@/shared/components/field';
+import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
- * note を作る・編集するフォーム。
+ * note を作る・保存するフォーム（specs/003-note/contracts/dash.md）。
  *
- * Server Action は props で受け取る。このファイルは `server/` を読み込まない
- * （ADR-0026 の依存の向き 3）。`useActionState` に渡した Server Action は、
- * JavaScript なしでもフォームの送信で動き、入力した値と結果を返す。
+ * Server Action は props で受け取る。このファイルは `server/` を読み込まない（ADR-0026 の依存の
+ * 向き 3）。`useActionState` に渡した Server Action は、JavaScript なしでもフォームの送信で動く。
+ * 失敗の結果は送られた値を持ち、入力を消さずに理由を示す。
  *
- * 入力の規則はサーバで確かめ、誤りを文言で返す。`required` や `maxLength` を付けない。
- * ブラウザが送信を止めると、どの項目の何が合わないかを同じ形で伝えられないため。
+ * 書きかけは `DraftRetainingForm` がその端末に持つ（FR-018・FR-019、research.md の R10）。
+ * 編集の画面は、開いたときの最も新しい版の uid を `version` に渡す。
+ *
+ * 入力の決まりはサーバで確かめ、誤りを文言で返す。`required` と `maxLength` を付けない。
+ * ブラウザが送信を止めると、どの項目の何が合わないかを同じ形で伝えられないため
  */
 
-type NoteFormAction = (state: NoteFormState, formData: FormData) => Promise<NoteFormState>;
+type NoteFormAction = (state: NoteFormResult | null, formData: FormData) => Promise<NoteFormResult>;
 
 type Props = {
   action: NoteFormAction;
-  initialState: NoteFormState;
+  initialValues: NoteFormValues;
   /**
-   * 編集する note。持たなければ作るフォームで、「作る」のボタンを置く。持てば編集の
-   * フォームで、「保存する」と「公開する」のボタンを置き、押したボタンを `intent` で送る。
-   * `slugFixed` は、公開したことがあり slug を変えられないこと
+   * 編集する note。持てば編集のフォームで、uid と開いた版の uid を送る。一度でも公開した note は
+   * 識別子を読み取りだけで出す（FR-003）
    */
-  note?: { id: NoteId; status: NoteStatus; slugFixed: boolean };
+  note?: { uid: string; openedRevisionUid: string; hasBeenPublished: boolean };
 };
 
-const ERROR_MESSAGES: {
-  [Field in keyof NoteContentErrors]-?: Record<NonNullable<NoteContentErrors[Field]>, string>;
-} = {
+const ERROR_MESSAGES: Record<NoteField, Partial<Record<NoteFieldError, string>>> = {
   slug: {
-    missing: 'slug を入力してください',
-    invalid: 'slug は小文字の英字・数字・ハイフンで、100文字までにしてください',
+    missing: '識別子を入力してください',
+    invalid: '識別子は英小文字・数字・ハイフンで、100 文字までにしてください',
+    'slug-taken': 'この識別子はほかの note が使っています。削除した note の識別子も使えません',
+    'slug-locked': '一度でも公開した note の識別子は変えられません',
   },
   title: {
     missing: '公開するには題を入力してください',
-    'too-long': '題は200文字までにしてください',
+    'too-long': `題は ${NOTE_TITLE_MAX_LENGTH} 文字までにしてください`,
   },
+  description: {},
   body: {
-    'too-long': '本文は100,000文字までにしてください',
+    'too-long': `本文は ${NOTE_BODY_MAX_LENGTH.toLocaleString('ja-JP')} 文字までにしてください`,
   },
 };
 
-const RESULT_MESSAGES: Record<NoteFormResult, string> = {
-  saved: '保存しました',
-  published: '公開しました',
-  'slug-taken': 'この slug は他の note が使っています。削除した note の slug も使えません',
-  'slug-fixed': '公開した note の slug は変えられません',
-  'not-found': 'この note は存在しません',
-  'save-failed': '保存に失敗しました。もう一度試してください',
-  'publish-failed': '公開に失敗しました。もう一度試してください',
-  forbidden: '作り手であることを確かめられませんでした。ログインし直してから入力し直してください',
-};
+const RESULT_MESSAGES = {
+  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
+  invalid: '入力を確かめてください',
+  conflict:
+    'この note は、開いた後に別の画面で保存されていました。保存していません。入力した内容は残っています。別の画面で保存した内容を確かめてから入力し直してください',
+} as const;
 
-/** 操作がうまくいったことを伝える結果。ほかは誤りや失敗として伝える */
-const SUCCEEDED: ReadonlySet<NoteFormResult> = new Set(['saved', 'published']);
-
-export const NoteForm = ({ action, initialState, note }: Props) => {
-  const [{ values, errors, result }, formAction] = useActionState(action, initialState);
-  const published = note?.status === 'published';
-  const slugFixed = note?.slugFixed ?? false;
-  const slugError = errors.slug && ERROR_MESSAGES.slug[errors.slug];
-  // 公開した note の slug を変えられないことを、入力の説明として読み上げにも伝える
-  const slugDescription =
-    [slugError && 'note-slug-error', slugFixed && 'note-slug-fixed'].filter(Boolean).join(' ') ||
-    undefined;
-  const titleError = errors.title && ERROR_MESSAGES.title[errors.title];
-  const bodyError = errors.body && ERROR_MESSAGES.body[errors.body];
+export const NoteForm = ({ action, initialValues, note }: Props) => {
+  const [result, formAction] = useActionState(action, null);
+  const values: NoteFormValues =
+    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
+  const errors = result?.status === 'invalid' ? result.errors : {};
+  const errorOf = (field: NoteField) => {
+    const reason = errors[field];
+    return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
+  };
 
   return (
-    <form action={formAction}>
-      {note && <input type="hidden" name={NOTE_ID_FIELD} value={note.id} />}
+    <DraftRetainingForm
+      action={formAction}
+      storageKey={`note:${note?.uid ?? 'new'}`}
+      version={note?.openedRevisionUid}
+      result={result}
+      className="flex flex-col gap-6"
+    >
+      {note && (
+        <>
+          <input type="hidden" name={NOTE_UID_FIELD} value={note.uid} />
+          <input type="hidden" name={OPENED_REVISION_UID_FIELD} value={note.openedRevisionUid} />
+        </>
+      )}
 
-      {result !== null && SUCCEEDED.has(result) && (
-        <p role="status">
-          {RESULT_MESSAGES[result]}
-          {result === 'published' && (
-            <>
-              {' '}
-              <Link href={`/notes/${values.slug}`}>公開した note を開く</Link>
-            </>
-          )}
+      {result && result.status !== 'saved' && (
+        <p role="alert" className="text-destructive">
+          {RESULT_MESSAGES[result.status]}
         </p>
       )}
-      {result !== null && !SUCCEEDED.has(result) && <p role="alert">{RESULT_MESSAGES[result]}</p>}
 
-      <div>
-        <label htmlFor="note-slug">slug</label>
-        <input
-          id="note-slug"
-          name="slug"
-          defaultValue={values.slug}
-          readOnly={slugFixed}
-          autoComplete="off"
-          aria-invalid={slugError ? true : undefined}
-          aria-describedby={slugDescription}
-        />
-        {slugFixed && <p id="note-slug-fixed">公開した note の slug は変えられません</p>}
-        {slugError && <p id="note-slug-error">{slugError}</p>}
-      </div>
-
-      <div>
-        <label htmlFor="note-title">題</label>
-        <input
-          id="note-title"
-          name="title"
-          defaultValue={values.title}
-          autoComplete="off"
-          aria-invalid={titleError ? true : undefined}
-          aria-describedby={titleError ? 'note-title-error' : undefined}
-        />
-        {titleError && <p id="note-title-error">{titleError}</p>}
-      </div>
-
-      <div>
-        <label htmlFor="note-body">本文</label>
-        <textarea
-          id="note-body"
-          name="body"
-          defaultValue={values.body}
-          aria-invalid={bodyError ? true : undefined}
-          aria-describedby={bodyError ? 'note-body-error' : undefined}
-        />
-        {bodyError && <p id="note-body-error">{bodyError}</p>}
-      </div>
-
-      {note ? (
-        <>
-          {/* 入力の中で Enter を押したときに送られる、先頭のボタンを「保存する」にする。
-              公開は訪問者に見える操作のため、押したことが明らかなときだけ行う */}
-          <button type="submit" name="intent" value="save">
-            保存する
-          </button>
-          <button type="submit" name="intent" value="publish">
-            {published ? '公開し直す' : '公開する'}
-          </button>
-        </>
+      {note?.hasBeenPublished ? (
+        // 入力の欄にしない。欄にすると、公開する前に書きかけた識別子が欄と書きかけに残り、
+        // 読み取りだけの欄から直せないまま送られる。送る値は隠しフィールドで、書きかけに持たない
+        <div className="flex flex-col gap-1">
+          <p className="font-bold">識別子</p>
+          <p className="text-sm text-muted-foreground">
+            一度でも公開した note の識別子は変えられません
+          </p>
+          <p>{initialValues.slug}</p>
+          <input type="hidden" name="slug" value={initialValues.slug} />
+          {errorOf('slug') && <p className="text-sm text-destructive">{errorOf('slug')}</p>}
+        </div>
       ) : (
-        <button type="submit">作る</button>
+        <InputField
+          name="slug"
+          label="識別子"
+          hint="URL に出ます。英小文字・数字・ハイフンで、100 文字まで。公開した後は変えられません"
+          defaultValue={values.slug}
+          autoComplete="off"
+          error={errorOf('slug')}
+        />
       )}
-    </form>
+      <InputField
+        name="title"
+        label="題"
+        hint="下書きは題が空でも保存できます。公開するには題が要ります"
+        defaultValue={values.title}
+        autoComplete="off"
+        error={errorOf('title')}
+      />
+      <TextareaField
+        name="description"
+        label="説明文"
+        hint="空にすると、「説明文が空のとき」で選んだ説明を出します"
+        rows={3}
+        defaultValue={values.description}
+        error={errorOf('description')}
+      />
+      <TextareaField
+        name="body"
+        label="本文"
+        hint="Markdown で書きます。HTML は要素になりません"
+        rows={16}
+        defaultValue={values.body}
+        error={errorOf('body')}
+      />
+
+      <FormActions>
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+          {note ? '保存する' : '作る'}
+        </SubmitButton>
+      </FormActions>
+    </DraftRetainingForm>
   );
 };

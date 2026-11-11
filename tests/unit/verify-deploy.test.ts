@@ -183,7 +183,7 @@ describe('absentNotePath', () => {
     );
   });
 
-  it('slug に使えない文字を除く。作り手が作りうる slug の形で確かめるため', () => {
+  it('slug に使えない文字を除く。オーナーが作りうる slug の形で確かめるため', () => {
     const path = absentNotePath('1788800000000-A.b_c');
     expect(path).toBe('/notes/verify-deploy-absent-1788800000000-bc');
     expect(path.slice('/notes/'.length)).toMatch(/^[a-z0-9-]+$/);

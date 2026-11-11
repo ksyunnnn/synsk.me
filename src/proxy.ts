@@ -1,10 +1,23 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import {
-  hasDeletedNote,
-  hasEditableNote,
-  hasPublishedNote,
-  isAuthorRequest,
-} from '@/features/note/server/queries';
+  hasExternalActivityUid,
+  hasLifeEventSlug,
+  hasLifeEventUid,
+} from '@/features/activity/server/queries';
+import { hasCareerUid } from '@/features/career/server/queries';
+import { hasEducationUid } from '@/features/education/server/queries';
+import { findMissingNoteRevision, hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
+import { hasOrganizationUid } from '@/features/organization/server/queries';
+import { hasProjectSlug, hasProjectUid } from '@/features/project/server/queries';
+import {
+  findMissingResumeRow,
+  hasResumeUid,
+  hasVisitorResume,
+} from '@/features/resume/server/queries';
+import { isResumeRowKind } from '@/features/resume/domain/resume';
+import { hasSkillUid } from '@/features/skill/server/queries';
+import { routes } from '@/shared/routes';
+import { getAuthorFromHeaders } from '@/shared/server/author';
 
 /**
  * データを読んでから決まる 404 と 403 を、描画の前に決める。
@@ -14,44 +27,116 @@ import {
  * 「The HTTP contract」）。公式は、描画の前に proxy で確かめる形を示す
  * （https://nextjs.org/docs/app/api-reference/file-conventions/loading#status-codes）。
  *
- * ページと Server Action の作り手の確認は残す。公式は、作り手の確認を proxy だけに
+ * ページと Server Action のオーナーの確認は残す。公式は、オーナーの確認を proxy だけに
  * 頼らないよう求める（https://nextjs.org/docs/app/api-reference/file-conventions/proxy
  * の「Always verify authentication and authorization inside each Server Function」）。
  *
- * D1 から読み出せないときは判定せずにページへ通す。ページが 500 の画面を返す。
+ * D1 や設定値を読み出せないときは判定せずにページへ通す。ページがオーナーを確かめる。
  */
 
-export const config = { matcher: ['/notes/:slug', '/dash', '/dash/:path*'] };
-
-/** 404 と 403 の画面。`notFound()` か `forbidden()` を呼ぶだけのページ */
-const notePageMissing = (slug: string) => `/notes/${slug}/missing`;
-const dashNoteMissing = (id: string) => `/dash/notes/${id}/missing`;
-const DASH_FORBIDDEN = '/dash/forbidden';
-
-const rewrite = (request: NextRequest, path: string) =>
-  NextResponse.rewrite(new URL(path, request.url));
-
-const decide = async (request: NextRequest): Promise<string | null> => {
-  const segments = request.nextUrl.pathname.split('/').filter(Boolean);
-  // 書き込みの操作は、Server Action が作り手と note を確かめて結果を返す
-  const isRead = request.method === 'GET' || request.method === 'HEAD';
-
-  if (segments[0] === 'notes') {
-    const slug = segments[1];
-    if (!isRead || !slug) return null;
-    return (await hasPublishedNote(slug)) ? null : notePageMissing(slug);
-  }
-
-  if (!(await isAuthorRequest(request.headers))) return DASH_FORBIDDEN;
-
-  const [, section, id, action] = segments;
-  if (!isRead || section !== 'notes' || !id || id === 'new') return null;
-  const exists = action === 'restore' ? await hasDeletedNote(id) : await hasEditableNote(id);
-  return exists ? null : dashNoteMissing(id);
+export const config = {
+  // `/notes/:slug/media/:key` と `/projects/:slug/media/:key` は経路を dynamic に固定するために
+  // 入れる（ADR-0040 の Consequences）。見せてよいかは route.ts が確かめ、proxy は D1 を読まない
+  // （specs/003-note/research.md の R9）
+  matcher: [
+    '/projects/:slug',
+    '/projects/:slug/media/:key',
+    '/life-events/:slug',
+    '/resume/:path*',
+    '/notes/:slug',
+    '/notes/:slug/media/:key',
+    '/dash',
+    '/dash/:path*',
+  ],
 };
 
 /**
- * 作り手の経路の応答を、どのキャッシュにも残さない（docs/REQUIREMENTS.md の NFR-09）。
+ * 管理画面のうち、uid で開く行の画面。uid の行が無ければ `/dash/<コレクション>/{uid}/missing`
+ * へ rewrite する（specs/001-career-and-project/contracts/dash.md の共通）。主キーは URL に
+ * 出さない（ADR-0048）
+ */
+const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
+  projects: hasProjectUid,
+  organizations: hasOrganizationUid,
+  skills: hasSkillUid,
+  careers: hasCareerUid,
+  educations: hasEducationUid,
+  resumes: hasResumeUid,
+  'life-events': hasLifeEventUid,
+  activities: hasExternalActivityUid,
+  notes: hasNoteUid,
+};
+
+/**
+ * 職務経歴書の経路（`/resume/{slug}` と、その下の `/resume/{slug}/missing`）か。限定公開用か
+ * 公開用かは D1 を読むまで分からないため、識別子を含む経路のすべてに限定公開用のヘッダを付ける
+ * （specs/002-resume/research.md の R7）。公開用は tasks.md の Phase 7（US5）で足す
+ */
+const isResumeSlugPath = (segments: string[]) => segments[0] === 'resume' && segments.length >= 2;
+
+const decide = async (request: NextRequest): Promise<string | null> => {
+  const segments = request.nextUrl.pathname.split('/').filter(Boolean);
+  // 書き込みの操作は、Server Action がオーナーと行を確かめて結果を返す
+  const isRead = request.method === 'GET' || request.method === 'HEAD';
+
+  if (segments[0] === 'projects') {
+    const slug = segments[1];
+    if (!isRead || !slug || segments.length !== 2) return null;
+    return (await hasProjectSlug(slug)) ? null : routes.projectMissing(slug);
+  }
+
+  if (segments[0] === 'life-events') {
+    const slug = segments[1];
+    if (!isRead || !slug) return null;
+    return (await hasLifeEventSlug(slug)) ? null : routes.lifeEventMissing(slug);
+  }
+
+  if (segments[0] === 'resume') {
+    // 公開用は tasks.md の Phase 7（US5）で足すまで中身を返さず、404 になる
+    const [, slug] = segments;
+    if (!isRead || segments.length !== 2) return null;
+    return (await hasVisitorResume(slug)) ? null : routes.resumeMissing(slug);
+  }
+
+  if (segments[0] === 'notes') {
+    // 下書き・下書きに戻した・削除した note は、無い識別子と同じ 404（specs/003-note/plan.md の U10）
+    const slug = segments[1];
+    if (!isRead || !slug || segments.length !== 2) return null;
+    return (await hasNoteSlug(slug)) ? null : routes.noteMissing(slug);
+  }
+
+  if (!(await getAuthorFromHeaders(request.headers))) return routes.dash.forbidden;
+
+  const [, collection, uid, action, rowUid, rowAction] = segments;
+  const exists = collection === undefined ? undefined : DASH_ROW_EXISTS[collection];
+  if (!isRead || !exists || !uid || uid === 'new' || action === 'missing') return null;
+  // 職務経歴書に属する写した行の画面（`/dash/resumes/{uid}/<種類>/{rowUid}`）。行が無いか、その
+  // 職務経歴書に属さなければ `/dash/resumes/{uid}/<種類>/{rowUid}/missing` へ rewrite する
+  // （specs/002-resume/contracts/dash.md の共通）。`/dash/resumes/{uid}/<種類>/new` は足す画面で、
+  // 行の有無を見ない
+  if (
+    collection === 'resumes' &&
+    isResumeRowKind(action) &&
+    rowUid &&
+    rowUid !== 'new' &&
+    rowAction !== 'missing'
+  ) {
+    // 職務経歴書と行の有無を 1 回で確かめる。職務経歴書の id を D1 から 2 回引かない
+    const missing = await findMissingResumeRow(uid, action, rowUid);
+    if (missing === 'resume') return routes.dash.resumes.missing(uid);
+    return missing === 'row' ? routes.dash.resumes.entryMissing(uid, action, rowUid) : null;
+  }
+  if (collection === 'notes' && action === 'revisions' && rowUid && rowAction !== 'missing') {
+    // note の過去の版の画面（specs/003-note/contracts/dash.md）。note と版の有無を 1 回で確かめる
+    const missing = await findMissingNoteRevision(uid, rowUid);
+    if (missing === 'note') return routes.dash.notes.missing(uid);
+    return missing === 'revision' ? routes.dash.notes.revisionMissing(uid, rowUid) : null;
+  }
+  return (await exists(uid)) ? null : routes.dash.rowMissing(collection, uid);
+};
+
+/**
+ * オーナーの経路の応答を、どのキャッシュにも残さない（docs/REQUIREMENTS.md の NFR-09）。
  * 画面は vinext が `no-store` を付けるが、JavaScript なしの操作の結果の 303 には何も
  * 付けない。vinext は proxy の応答ヘッダを 303 に写す
  * （`vinext/dist/server/app-server-action-execution.js` の `mergeMiddlewareResponseHeaders`）
@@ -65,13 +150,29 @@ const respond = async (request: NextRequest) => {
   } catch {
     return NextResponse.next();
   }
-  return path ? rewrite(request, path) : NextResponse.next();
+  return path ? NextResponse.rewrite(new URL(path, request.url)) : NextResponse.next();
 };
+
+/**
+ * 限定公開用の職務経歴書の応答のヘッダ（specs/002-resume/research.md の R7）。中身を返すか
+ * どうかに関わらず、D1 を読む前に決め、200・404・判定できないときのすべてに付ける
+ */
+const LIMITED_RESUME_HEADERS = {
+  'Cache-Control': NO_STORE,
+  'X-Robots-Tag': 'noindex',
+  'Referrer-Policy': 'no-referrer',
+} as const;
 
 export const proxy = async (request: NextRequest) => {
   const response = await respond(request);
-  if (request.nextUrl.pathname.split('/')[1] === 'dash') {
+  const segments = request.nextUrl.pathname.split('/').filter(Boolean);
+  if (segments[0] === 'dash') {
     response.headers.set('Cache-Control', NO_STORE);
+  }
+  if (isResumeSlugPath(segments)) {
+    for (const [name, value] of Object.entries(LIMITED_RESUME_HEADERS)) {
+      response.headers.set(name, value);
+    }
   }
   return response;
 };

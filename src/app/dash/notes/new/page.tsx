@@ -1,27 +1,28 @@
-import Link from 'next/link';
 import type { Metadata } from 'next';
 import { NoteForm } from '@/features/note/components/note-form';
-import { toNoteFormState } from '@/features/note/domain/note';
-import { createNoteAction } from '@/features/note/server/actions';
-import { requireAuthor } from '@/features/note/server/queries';
+import { toNoteFormValues } from '@/features/note/domain/note';
+import { createNote } from '@/features/note/server/actions';
+import { TextLink } from '@/shared/components/text-link';
+import { requireAuthor } from '@/shared/server/author';
+import { routes } from '@/shared/routes';
 
-// 要求時のデータ（作り手の確認と D1）を `<Suspense>` の外で読み、描画を終えてから
-// 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
+// 要求時のデータ（オーナーの確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
+// （https://nextjs.org/docs/messages/blocking-prerender-dynamic）
 export const instant = false;
 
-export const metadata: Metadata = { title: '新しい note | synsk.me' };
+export const metadata: Metadata = { title: 'note を作る | synsk.me' };
 
 const Page = async () => {
-  // 作り手でなければ、ここで 403 になる
   await requireAuthor();
 
   return (
-    <main>
+    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
       <p>
-        <Link href="/dash">note の一覧へ戻る</Link>
+        <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
       </p>
-      <h1>新しい note</h1>
-      <NoteForm action={createNoteAction} initialState={toNoteFormState()} />
+      <h1 className="text-2xl font-bold">note を作る</h1>
+      <p>作った note は下書きです。公開するまで訪問者には見えません</p>
+      <NoteForm action={createNote} initialValues={toNoteFormValues()} />
     </main>
   );
 };

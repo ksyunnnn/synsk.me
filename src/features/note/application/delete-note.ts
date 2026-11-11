@@ -1,22 +1,20 @@
 import type { NoteId } from '@/features/note/domain/note';
 import type { NoteRepository } from '@/features/note/domain/note-repository';
+import type { Author } from '@/shared/domain/author';
 
 export type DeleteNoteOutcome =
-  | { ok: true }
-  /** note が存在しないか、すでに削除されている */
-  | { ok: false; reason: 'not-found' }
-  /** データベースに届かないなどで、削除できなかった */
-  | { ok: false; reason: 'failed' };
+  { status: 'deleted' } | { status: 'forbidden' } | { status: 'not-found' };
 
-/** note を削除する。データは残り、`restoreNote` で戻せる。`deletedAt` を削除した日時にする */
+/**
+ * note に削除済みの印を付ける（FR-016）。データは残し、元に戻せる。オーナーでなければ何も
+ * 書かない（FR-033）
+ */
 export const deleteNote = async (
   notes: NoteRepository,
+  author: Author | null,
   id: NoteId,
-  deletedAt: string,
+  now: string,
 ): Promise<DeleteNoteOutcome> => {
-  try {
-    return await notes.delete(id, deletedAt);
-  } catch {
-    return { ok: false, reason: 'failed' };
-  }
+  if (!author) return { status: 'forbidden' };
+  return (await notes.delete(id, now)).ok ? { status: 'deleted' } : { status: 'not-found' };
 };

@@ -1,76 +1,51 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { textbox } from './dash';
 
 /**
- * note の E2E が使う道具。
- *
- * E2E のテストは同じローカルの D1 を並行して使う。slug はテストごとに重ならない
- * ものにする。
+ * E2E でオーナーが note の管理画面で行う操作。テストは同じ手元の D1 を並行して使うため、識別子は
+ * テストごとに重ならない値にする
  */
 
-/** テストごとに重ならない slug */
-export const uniqueSlug = (label: string) =>
-  `${label}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+/** ほかのテストと重ならない識別子 */
+export const uniqueNoteSlug = (label: string) => `e2e-${label}-${crypto.randomUUID().slice(0, 8)}`;
 
-/** 作る画面・編集の画面の入力 */
-export const noteFields = (page: Page) => ({
-  slug: page.getByLabel('slug'),
-  title: page.getByLabel('題'),
-  body: page.getByLabel('本文'),
-});
+/**
+ * 入力の要素を React が hydration し終えるまで待つ。react-dom 19.3.1 は hydration のときに
+ * `<textarea>` の値をサーバが描いた初めの値に戻す（`prepareToHydrateHostInstance` が
+ * `initTextarea` を呼び、`element.value = textContent` とする）。そのため hydration の前に打った
+ * 文字は消え、その後の保存は初めの値を送る。hydration は、値を戻す同じ処理の中で要素に
+ * `__reactFiber$` で始まるキーを付けるため、このキーが付いた後に打った文字は残る
+ */
+export const waitForHydration = (target: Locator) =>
+  expect
+    .poll(() =>
+      target.evaluate((element) =>
+        Object.keys(element).some((key) => key.startsWith('__reactFiber$')),
+      ),
+    )
+    .toBe(true);
 
-/** 新しい note の画面で入力して「作る」を押す */
+/** 編集の画面を開き、本文の入力が hydration し終えるまで待つ */
+export const openNoteEditor = async (page: Page, editUrl: string) => {
+  await page.goto(editUrl);
+  await waitForHydration(textbox(page, '本文'));
+};
+
+/**
+ * note を作り、編集の画面に移ったことを確かめる。編集の画面の本文の入力が hydration し終える
+ * まで待ってから、編集の画面の URL を返す
+ */
 export const createNote = async (
   page: Page,
-  values: { slug: string; title: string; body: string },
+  { slug, title, body = 'E2E の本文' }: { slug: string; title: string; body?: string },
 ) => {
   await page.goto('/dash/notes/new');
-  const fields = noteFields(page);
-  await fields.slug.fill(values.slug);
-  await fields.title.fill(values.title);
-  await fields.body.fill(values.body);
+  await waitForHydration(textbox(page, '本文'));
+  await textbox(page, '識別子').fill(slug);
+  await textbox(page, '題').fill(title);
+  await textbox(page, '本文').fill(body);
   await page.getByRole('button', { name: '作る' }).click();
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await waitForHydration(textbox(page, '本文'));
+  return page.url().replace(/\?.*$/, '');
 };
-
-/**
- * 新しい note を作って公開し、編集の画面の URL を返す。題は空にしない。
- * 作る画面から編集の画面へ移り、「公開する」を押す
- */
-export const createPublishedNote = async (
-  page: Page,
-  values: { slug: string; title: string; body: string },
-) => {
-  await createNote(page, values);
-  await expect(page).toHaveURL(/\/dash\/notes\/\d+$/);
-  await page.getByRole('button', { name: '公開する' }).click();
-  await expect(page.getByText('公開しました')).toBeVisible();
-  return page.url();
-};
-
-/** `/dash` の note の一覧のうち、slug の note の行 */
-export const noteListItem = (page: Page, slug: string) =>
-  page.getByRole('list', { name: 'note の一覧', exact: true }).getByRole('listitem').filter({
-    hasText: slug,
-  });
-
-/** `/dash` の削除した note の一覧のうち、slug の note の行 */
-export const deletedNoteListItem = (page: Page, slug: string) =>
-  page
-    .getByRole('list', { name: '削除した note の一覧', exact: true })
-    .getByRole('listitem')
-    .filter({ hasText: slug });
-
-/**
- * Tab キーだけで、要素にフォーカスを移す。マウスもフォーカスを移す API も使わない。
- * 届かなければ、キーボードで操作できないとして失敗する
- */
-export const tabTo = async (page: Page, target: Locator, maxPresses = 40) => {
-  for (let i = 0; i < maxPresses; i++) {
-    await page.keyboard.press('Tab');
-    if (await target.evaluate((element) => element === document.activeElement)) return;
-  }
-  throw new Error(`Tab キーを ${maxPresses} 回押しても要素にフォーカスが届かない`);
-};
-
-/** 横にはみ出さず、横に送らなくても操作できる幅に収まっている */
-export const fitsViewportWidth = (page: Page) =>
-  page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);

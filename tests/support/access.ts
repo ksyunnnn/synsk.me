@@ -3,7 +3,7 @@ import type { AddressInfo } from 'node:net';
 import { SignJWT, exportJWK, generateKeyPair, importJWK, type JWK } from 'jose';
 
 /**
- * Cloudflare Access の代わりに、テストが作り手の JWT を作るための道具。
+ * Cloudflare Access の代わりに、テストがオーナーの JWT を作るための道具。
  * 結合テストと E2E が使う。
  *
  * 本番のコードに試験用の分岐を持たせない。設定値 `ACCESS_ISSUER` を、ここで
@@ -12,7 +12,7 @@ import { SignJWT, exportJWK, generateKeyPair, importJWK, type JWK } from 'jose';
 
 /** テストで使う Access のアプリケーションの AUD タグ */
 export const TEST_ACCESS_AUD = 'synsk-me-test-aud';
-/** テストで作り手として認めるメールアドレス */
+/** テストでオーナーとして認めるメールアドレス */
 export const TEST_OWNER_EMAIL = 'owner@synsk.test';
 
 /** Access が公開鍵を配る経路 */
@@ -77,7 +77,7 @@ export type AccessJwtClaims = {
   expiresAt?: number;
 };
 
-/** Access が `Cf-Access-Jwt-Assertion` に入れる形の JWT を作る。既定は作り手のもの */
+/** Access が `Cf-Access-Jwt-Assertion` に入れる形の JWT を作る。既定はオーナーのもの */
 export const signAccessJwt = async (
   privateJwk: JWK,
   {

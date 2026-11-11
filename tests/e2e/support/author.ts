@@ -9,7 +9,7 @@ import {
 } from '../../support/access.ts';
 
 /**
- * E2E で作り手として操作するための道具。
+ * E2E でオーナーとして操作するための道具。
  *
  * Playwright の webServer が起動する順に次を行う（playwright.config.ts）。
  * 1. `access-server.ts` がテスト用の鍵の組を作って `ACCESS_KEYS_PATH` に書き、
@@ -26,8 +26,33 @@ import {
  * そのため、このファイルからの import は拡張子まで書く。
  */
 
-/** 公開鍵のサーバのポート。`wrangler dev` の 8788 と別にする */
-export const ACCESS_SERVER_PORT = 8789;
+/**
+ * `wrangler dev` のポート。環境変数 `E2E_PORT` で変えられ、既定は 8788。CI は指定しない。
+ * 同じ機械の別の worktree で同時に E2E を回すときに、worktree ごとに 10 ずつ離した値を渡す
+ * （例: 8800・8810）。その値から 3 つのポートを使う（`wrangler dev`・公開鍵のサーバ・devtools）。
+ * 手元の D1（`D1_PERSIST_DIR`）は worktree の中の相対パスなので、worktree ごとに分かれる
+ */
+const readPort = (value: string | undefined) => {
+  if (value === undefined || value === '') return 8788;
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1024 || port > 65533)
+    throw new Error(`E2E_PORT は 1024〜65533 の整数にする: ${value}`);
+  return port;
+};
+export const WORKER_PORT = readPort(process.env.E2E_PORT);
+export const WORKER_ORIGIN = `http://127.0.0.1:${WORKER_PORT}`;
+
+/** 公開鍵のサーバのポート。`wrangler dev` のポートの次にする */
+export const ACCESS_SERVER_PORT = WORKER_PORT + 1;
+
+/**
+ * `wrangler dev` の devtools のポート。既定の 9229 は worktree の間で重なるため、`E2E_PORT` を
+ * 指定したときだけ、その 2 つ先にする。指定しないとき（CI）は wrangler の既定のまま
+ */
+export const INSPECTOR_PORT_ARGS =
+  process.env.E2E_PORT === undefined || process.env.E2E_PORT === ''
+    ? ''
+    : ` --inspector-port ${WORKER_PORT + 2}`;
 export const ACCESS_ISSUER = `http://127.0.0.1:${ACCESS_SERVER_PORT}`;
 export const ACCESS_CERTS_URL = `${ACCESS_ISSUER}${ACCESS_CERTS_PATH}`;
 
@@ -47,8 +72,8 @@ const readKeys = async (): Promise<AccessTestKeys> =>
   JSON.parse(await readFile(ACCESS_KEYS_PATH, 'utf8')) as AccessTestKeys;
 
 /**
- * ブラウザのこの context から送るすべての要求に、作り手の JWT を付ける。
- * Cloudflare Access がログインした作り手の要求に付けるのと同じヘッダを使う
+ * ブラウザのこの context から送るすべての要求に、オーナーの JWT を付ける。
+ * Cloudflare Access がログインしたオーナーの要求に付けるのと同じヘッダを使う
  */
 export const actAsAuthor = async (context: BrowserContext) => {
   const token = await signAccessJwt((await readKeys()).privateJwk, { issuer: ACCESS_ISSUER });

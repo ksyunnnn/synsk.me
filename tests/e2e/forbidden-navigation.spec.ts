@@ -6,16 +6,16 @@ import { actAsAuthor } from './support/author';
  * （ADR-0042）。`src/app/forbidden.tsx` がないと、画面全体が消える。
  */
 
-test('作り手でなくなった後にリンクで移ると、開く権限がないことが出る', async ({
+test('オーナーでなくなった後にリンクで移ると、開く権限がないことが出る', async ({
   page,
   context,
 }) => {
   await actAsAuthor(context);
   await page.goto('/dash');
-  await expect(page.getByRole('link', { name: '新しい note を作る' })).toBeVisible();
+  await expect(page.getByRole('link', { name: '実績' })).toBeVisible();
 
   await context.setExtraHTTPHeaders({});
-  await page.getByRole('link', { name: '新しい note を作る' }).click();
+  await page.getByRole('link', { name: '実績' }).click();
 
   await expect(
     page.getByRole('heading', { name: 'このページを開く権限がありません' }),

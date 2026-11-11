@@ -19,4 +19,11 @@
       "migrations_dir": "../migrations",
     },
   ],
+  // 画像の置き場（src/shared/server/media-storage.ts）。名前は wrangler.jsonc と同じ
+  "r2_buckets": [
+    {
+      "binding": "MEDIA",
+      "bucket_name": "synsk-me-images-test",
+    },
+  ],
 }
