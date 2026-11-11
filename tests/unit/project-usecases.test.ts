@@ -5,6 +5,7 @@ import { editProject } from '@/features/project/application/edit-project';
 import {
   addProjectMedia,
   changeProjectCardImage,
+  ownerProjectMediaAccess,
   visitorProjectMediaAccess,
 } from '@/features/project/application/project-media';
 import { registerProject } from '@/features/project/application/register-project';
@@ -333,5 +334,22 @@ describe('visitorProjectMediaAccess（FR-030）', () => {
     };
     expect(visitorProjectMediaAccess(masked, MEDIA_KEY)).toBe('hidden');
     expect(visitorProjectMediaAccess(null, MEDIA_KEY)).toBe('hidden');
+  });
+});
+
+describe('ownerProjectMediaAccess（issue #330）', () => {
+  it('オーナーには、その実績の画像を、キャッシュに残さない形で返す', () => {
+    expect(ownerProjectMediaAccess(OWNER, { mediaStorageKeys: [MEDIA_KEY] }, MEDIA_KEY)).toBe(
+      'restricted',
+    );
+  });
+
+  it('オーナーでないとき・ほかの実績の画像・無い実績では返さない', () => {
+    const other = '33333333-3333-4333-8333-333333333333';
+    expect(ownerProjectMediaAccess(null, { mediaStorageKeys: [MEDIA_KEY] }, MEDIA_KEY)).toBe(
+      'hidden',
+    );
+    expect(ownerProjectMediaAccess(OWNER, { mediaStorageKeys: [MEDIA_KEY] }, other)).toBe('hidden');
+    expect(ownerProjectMediaAccess(OWNER, null, MEDIA_KEY)).toBe('hidden');
   });
 });

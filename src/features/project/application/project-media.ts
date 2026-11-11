@@ -1,4 +1,4 @@
-import type { ProjectId, VisitorProject } from '@/features/project/domain/project';
+import type { Project, ProjectId, VisitorProject } from '@/features/project/domain/project';
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
 import type { Author } from '@/shared/domain/author';
 import type {
@@ -91,3 +91,17 @@ export const visitorProjectMediaAccess = (
     ? 'public'
     : 'hidden';
 };
+
+/**
+ * 実績の画像をオーナーに見せてよいか（issue #330）。管理画面の一覧が、サイトに載せない実績と
+ * 秘匿化した実績の画像も描くために使う。オーナーで、その実績の画像なら `restricted`（どの
+ * キャッシュにも残さない。docs/REQUIREMENTS.md の NFR-09）。ほかは `hidden`
+ */
+export const ownerProjectMediaAccess = (
+  author: Author | null,
+  project: Pick<Project, 'mediaStorageKeys'> | null,
+  storageKey: MediaStorageKey,
+): MediaAccess =>
+  author !== null && project !== null && project.mediaStorageKeys.includes(storageKey)
+    ? 'restricted'
+    : 'hidden';

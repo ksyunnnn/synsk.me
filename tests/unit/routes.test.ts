@@ -58,6 +58,12 @@ describe('管理画面の経路', () => {
     expect(paths.missing('u1')).toBe(`/dash/${collection}/u1/missing`);
   });
 
+  it('実績の一覧を種類で絞る経路と、オーナーの画像の経路（issue #330）', () => {
+    expect(routes.dash.projects.listByKind(null)).toBe('/dash/projects');
+    expect(routes.dash.projects.listByKind('talk')).toBe('/dash/projects?kind=talk');
+    expect(routes.dash.projects.media('u1', 'k')).toBe('/dash/projects/u1/media/k');
+  });
+
   it('コレクションの名前から行が無いときの経路を作る', () => {
     expect(routes.dash.rowMissing('skills', 'u1')).toBe('/dash/skills/u1/missing');
   });

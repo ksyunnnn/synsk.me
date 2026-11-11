@@ -46,6 +46,22 @@ type ProjectRow = {
   updated_at: string;
 };
 
+/** オーナーの一覧の列 */
+type ProjectListRow = Pick<
+  ProjectRow,
+  | 'id'
+  | 'uid'
+  | 'slug'
+  | 'kind'
+  | 'title'
+  | 'is_masked'
+  | 'status'
+  | 'started_on'
+  | 'ended_on'
+  | 'description'
+  | 'card_storage_key'
+> & { organization_name: string };
+
 /** 秘匿化しない実績の訪問者向けの列 */
 type UnmaskedVisitorRow = {
   slug: string;
@@ -257,31 +273,39 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       return results;
     },
 
-    list: async () => {
-      const { results } = await db
-        .prepare(
-          `SELECT p.id, p.uid, p.slug, p.kind, p.title, p.is_masked, p.status, p.started_on, p.ended_on,
-             o.name AS organization_name
-           FROM project p JOIN organization o ON o.id = p.organization_id
-           ORDER BY p.started_on DESC, p.id DESC`,
-        )
-        .all<
-          Pick<
-            ProjectRow,
-            | 'id'
-            | 'uid'
-            | 'slug'
-            | 'kind'
-            | 'title'
-            | 'is_masked'
-            | 'status'
-            | 'started_on'
-            | 'ended_on'
-          > & {
-            organization_name: string;
-          }
-        >();
-      return results.map((row): ProjectSummary => ({
+    list: async (filter) => {
+      // 種類で絞るときは、実績と画像の両方を同じ条件で読む。`?` に NULL を渡すと絞らない
+      const kind = filter?.kind ?? null;
+      const [projects, media] = await db.batch<
+        ProjectListRow | { project_id: number; storage_key: string }
+      >([
+        db
+          .prepare(
+            `SELECT p.id, p.uid, p.slug, p.kind, p.title, p.is_masked, p.status, p.started_on,
+               p.ended_on, p.description, cm.storage_key AS card_storage_key,
+               o.name AS organization_name
+             FROM project p JOIN organization o ON o.id = p.organization_id ${CARD_MEDIA_JOIN}
+             WHERE ?1 IS NULL OR p.kind = ?1
+             ORDER BY p.started_on DESC, p.id DESC`,
+          )
+          .bind(kind),
+        db
+          .prepare(
+            `SELECT m.project_id, m.storage_key FROM media m JOIN project p ON p.id = m.project_id
+             WHERE ?1 IS NULL OR p.kind = ?1
+             ORDER BY m.id`,
+          )
+          .bind(kind),
+      ]);
+      const keysByProject = new Map<number, string[]>();
+      for (const row of media.results as { project_id: number; storage_key: string }[]) {
+        keysByProject.set(row.project_id, [
+          ...(keysByProject.get(row.project_id) ?? []),
+          row.storage_key,
+        ]);
+      }
+      const rows = projects.results as ProjectListRow[];
+      return rows.map((row): ProjectSummary => ({
         id: row.id,
         uid: row.uid,
         slug: row.slug,
@@ -290,6 +314,9 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         isMasked: row.is_masked === 1,
         status: row.status,
         period: toPeriod(row),
+        description: row.description,
+        mediaStorageKeys: keysByProject.get(row.id) ?? [],
+        cardMediaKey: row.card_storage_key,
         organizationName: row.organization_name,
       }));
     },
