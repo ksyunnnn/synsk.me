@@ -842,6 +842,8 @@ describe('migration 0016 の activity_feed の note の腕', () => {
       created_at: '2026-01-02T03:04:05.000Z',
       published_at: null,
       slug: 'migration-0016-published',
+      card_storage_key: null,
+      image_url: null,
     });
   });
 
@@ -919,7 +921,7 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
     ]);
   });
 
-  it('外部の activity を、題・取得元・分類・URL で出す。説明と画像は出さない', async () => {
+  it('外部の activity を、題・取得元・分類・URL で出す。説明は出さない。画像の URL は 0027 が足す', async () => {
     const row = (await activityRows()).find((r) => r.item_number === external);
     expect(row).toEqual({
       item_type: 'external_activity',
@@ -941,8 +943,9 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
       created_at: null,
       published_at: '2026-01-05T00:00:00.000Z',
       slug: null,
+      card_storage_key: null,
+      image_url: 'https://example.com/0017.png',
     });
-    expect(Object.values(row ?? {})).not.toContain('https://example.com/0017.png');
   });
 
   it('life event を、題・説明・起きた日で出す。URL は出さない', async () => {
@@ -967,6 +970,8 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
       created_at: null,
       published_at: null,
       slug: 'migration-0017',
+      card_storage_key: null,
+      image_url: null,
     });
   });
 
@@ -1253,7 +1258,7 @@ describe('migration 0026 の activity_feed の識別子', () => {
 
   it('slug の列を、0022 までの列の後に持つ', async () => {
     const names = (await columnsOf('activity_feed')).map((c) => c.name);
-    expect(names.slice(M1_COLUMNS.length + 6)).toEqual(['slug']);
+    expect(names[M1_COLUMNS.length + 6]).toBe('slug');
   });
 
   it('実績は、秘匿化するかに関わらず識別子を出す（001 の spec の Edge Cases: 秘匿化した実績も個別のページを持つ）', async () => {
@@ -1269,5 +1274,172 @@ describe('migration 0026 の activity_feed の識別子', () => {
   it('個別のページを持たない職歴と外部の activity は、識別子を NULL にする', async () => {
     expect(await slugOf('career', ids.careers[0])).toBeNull();
     expect(await slugOf('external_activity', activityIds[0])).toBeNull();
+  });
+});
+
+/**
+ * 一覧のビュー activity_feed が、代表画像の列を出すこと（specs/005-feed/data-model.md の M7、
+ * plan.md の U5 の決定）。note・実績・life event は代表画像の置き場のキー `card_storage_key`、
+ * 外部の activity は取得元が返した画像の URL `image_url` を出す。秘匿化した実績と職歴は、どちらも
+ * NULL にする（spec の FR-013）
+ */
+describe('migration 0027 の activity_feed の代表画像', () => {
+  const KEY = {
+    project: '0027aaaa-0000-4000-8000-000000000001',
+    maskedProject: '0027aaaa-0000-4000-8000-000000000002',
+    maskedBody: '0027aaaa-0000-4000-8000-000000000003',
+    note: '0027aaaa-0000-4000-8000-000000000004',
+    siteNote: '0027aaaa-0000-4000-8000-000000000005',
+    lifeEvent: '0027aaaa-0000-4000-8000-000000000006',
+  };
+  const IMAGE_URL = 'https://example.com/migration-0027.png';
+  const ids = { organizations: [] as number[], careers: [] as number[], projects: [] as number[] };
+  const activityIds: number[] = [];
+  const noteIds: number[] = [];
+
+  type Row = { card_storage_key: string | null; image_url: string | null };
+
+  const imagesOf = async (itemType: string, itemNumber: number) => {
+    const row = await env.DB.prepare(
+      'SELECT card_storage_key, image_url FROM activity_feed WHERE item_type = ? AND item_number = ?',
+    )
+      .bind(itemType, itemNumber)
+      .first<Row>();
+    if (!row) throw new Error(`${itemType} の ${itemNumber} がビューに無い`);
+    return row;
+  };
+
+  const insertMedia = (owner: string, ownerId: number, storageKey: string) =>
+    insertId(`INSERT INTO media (${owner}, storage_key) VALUES (?, ?)`, ownerId, storageKey);
+
+  const insertPublishedNote = async (slug: string) => {
+    const noteId = await insertId('INSERT INTO note (slug) VALUES (?)', slug);
+    noteIds.push(noteId);
+    const revisionId = await insertId(
+      "INSERT INTO note_revision (note_id, title, body) VALUES (?, '0027 の note', '本文')",
+      noteId,
+    );
+    await env.DB.prepare(
+      "UPDATE note SET status = 'published', published_revision_id = ?, published_at = '2026-01-01T00:00:00.000Z' WHERE id = ?",
+    )
+      .bind(revisionId, noteId)
+      .run();
+    return noteId;
+  };
+
+  beforeAll(async () => {
+    const organization = await insertId(
+      'INSERT INTO organization (name, name_masked) VALUES (?, ?)',
+      '0027 の実名の組織',
+      '0027 の伏せた組織',
+    );
+    ids.organizations.push(organization);
+    ids.careers.push(
+      await insertId(
+        "INSERT INTO career (organization_id, role, started_on, is_masked, status) VALUES (?, '0027 の職歴', '2026-01-01', 0, 'published')",
+        organization,
+      ),
+    );
+    for (const [slug, isMasked, key] of [
+      ['migration-0027-project', 0, KEY.project],
+      ['0027aaaaaaaaaaaaaaaaaaaaaaaaaaaa', 1, KEY.maskedProject],
+    ] as const) {
+      const projectId = await insertId(
+        "INSERT INTO project (organization_id, kind, slug, title, title_masked, started_on, is_masked, status) VALUES (?, 'application', ?, '0027 の実際の題', '0027 の伏せた題', '2026-01-01', ?, 'published')",
+        organization,
+        slug,
+        isMasked,
+      );
+      ids.projects.push(projectId);
+      const mediaId = await insertMedia('project_id', projectId, key);
+      await env.DB.prepare('UPDATE project SET card_media_id = ? WHERE id = ?')
+        .bind(mediaId, projectId)
+        .run();
+    }
+    // 秘匿化した実績の本文の画像。代表画像でない画像もビューに出ない
+    await insertMedia('project_id', ids.projects[1], KEY.maskedBody);
+
+    const note = await insertPublishedNote('migration-0027-note');
+    const noteMedia = await insertMedia('note_id', note, KEY.note);
+    await env.DB.prepare("UPDATE note SET card_image = 'media', card_media_id = ? WHERE id = ?")
+      .bind(noteMedia, note)
+      .run();
+    // サイト共通の画像を選んだ note。上げた画像を持っていても代表画像のキーを出さない
+    const siteNote = await insertPublishedNote('migration-0027-site-note');
+    await insertMedia('note_id', siteNote, KEY.siteNote);
+
+    activityIds.push(
+      await insertId(
+        "INSERT INTO activity (source, external_id, url, title, published_at, image_url) VALUES ('zenn', 'migration-0027', 'https://zenn.dev/fake/articles/migration-0027', '0027 の記事', '2026-01-01T00:00:00.000Z', ?)",
+        IMAGE_URL,
+      ),
+      await insertId(
+        "INSERT INTO activity (source, title, happened_on, slug) VALUES ('life_event', '0027 の出来事', '2026-01-01', 'migration-0027-life-event')",
+      ),
+    );
+    const lifeEventMedia = await insertMedia('activity_id', activityIds[1], KEY.lifeEvent);
+    await env.DB.prepare('UPDATE activity SET card_media_id = ? WHERE id = ?')
+      .bind(lifeEventMedia, activityIds[1])
+      .run();
+  });
+
+  // card_media_id の外部キーは検査をトランザクションの終わりに送るので、1 回の batch で media と
+  // 持ち主を消せる
+  afterAll(async () => {
+    await env.DB.batch([
+      env.DB.prepare("DELETE FROM media WHERE storage_key LIKE '0027aaaa-%'"),
+      ...ids.careers.map((id) => env.DB.prepare('DELETE FROM career WHERE id = ?').bind(id)),
+      ...ids.projects.map((id) => env.DB.prepare('DELETE FROM project WHERE id = ?').bind(id)),
+      ...ids.organizations.map((id) =>
+        env.DB.prepare('DELETE FROM organization WHERE id = ?').bind(id),
+      ),
+      ...noteIds.map((id) =>
+        env.DB.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
+      ),
+      ...noteIds.map((id) => env.DB.prepare('DELETE FROM note WHERE id = ?').bind(id)),
+      ...activityIds.map((id) => env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(id)),
+    ]);
+  });
+
+  it('card_storage_key と image_url の列を、slug の後に持つ', async () => {
+    const names = (await columnsOf('activity_feed')).map((c) => c.name);
+    expect(names.slice(names.indexOf('slug') + 1)).toEqual(['card_storage_key', 'image_url']);
+  });
+
+  it('秘匿化しない実績・note・life event は、代表画像の置き場のキーを出す', async () => {
+    expect(await imagesOf('project', ids.projects[0])).toEqual({
+      card_storage_key: KEY.project,
+      image_url: null,
+    });
+    expect(await imagesOf('note', noteIds[0])).toEqual({
+      card_storage_key: KEY.note,
+      image_url: null,
+    });
+    expect(await imagesOf('life_event', activityIds[1])).toEqual({
+      card_storage_key: KEY.lifeEvent,
+      image_url: null,
+    });
+  });
+
+  it('秘匿化した実績は、代表画像と本文の画像を持っていても画像の列を NULL にする（FR-013）', async () => {
+    expect(await imagesOf('project', ids.projects[1])).toEqual({
+      card_storage_key: null,
+      image_url: null,
+    });
+  });
+
+  it('サイト共通の画像を選んだ note は、代表画像のキーを NULL にする（ADR-0053）', async () => {
+    expect(await imagesOf('note', noteIds[1])).toEqual({ card_storage_key: null, image_url: null });
+  });
+
+  it('外部の activity は取得元が返した画像の URL を出し、職歴はどちらも NULL にする', async () => {
+    expect(await imagesOf('external_activity', activityIds[0])).toEqual({
+      card_storage_key: null,
+      image_url: IMAGE_URL,
+    });
+    expect(await imagesOf('career', ids.careers[0])).toEqual({
+      card_storage_key: null,
+      image_url: null,
+    });
   });
 });

@@ -23,6 +23,26 @@ import { routes } from '@/shared/routes';
  * 持たないのでリンクしない
  */
 
+/**
+ * 代表画像（plan.md の U5）。見せ方は仮のもので、デザインを決めるときに直す。画像は R2 の原本か
+ * 取得元の画像を変換せずに出す。next/image の変換を通さない。大きさを箱で決め、読み込んだ後に
+ * 要素の位置をずらさない（design/guidelines.md の Loading）。中身の説明は隣の題が持つので、
+ * 読み上げさせない。取得元の画像のサーバへは、一覧のページの URL を送らない
+ */
+const FeedImage = ({ src, isExternal = false }: { src: string; isExternal?: boolean }) => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img
+    src={src}
+    alt=""
+    width={128}
+    height={128}
+    loading="lazy"
+    decoding="async"
+    referrerPolicy={isExternal ? 'no-referrer' : undefined}
+    className="aspect-square w-32 rounded-md object-cover"
+  />
+);
+
 const MaskedBody = () => <p>非公開</p>;
 
 const titleLinkClassName =
@@ -62,6 +82,7 @@ const CareerRow = ({ item }: { item: CareerFeedItem }) => (
 
 const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
   <article className="flex flex-col gap-1">
+    {item.imageUrl && <FeedImage src={item.imageUrl} />}
     <p className="text-sm text-muted-foreground">{PROJECT_KIND_LABELS[item.projectKind]}</p>
     {/* 秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases） */}
     <TitleLink href={routes.project(item.slug)}>{item.title}</TitleLink>
@@ -79,6 +100,7 @@ const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
  */
 const NoteRow = ({ item }: { item: NoteFeedItem }) => (
   <article className="flex flex-col gap-1">
+    {item.imageUrl && <FeedImage src={item.imageUrl} />}
     <p className="text-sm text-muted-foreground">note</p>
     <TitleLink href={routes.note(item.slug)}>{item.title}</TitleLink>
     {item.description && <p>{item.description}</p>}
@@ -97,10 +119,11 @@ const SOURCE_KIND_LABELS: Record<ExternalActivitySourceKind, string> = {
 /**
  * 外部の activity。取得元の URL へ直接リンクする（FR-020）。見せ方は分類で分ける（FR-019）。埋め込みの
  * 見せ方は取得元で決めることになるが、決まるまで（plan.md の U7）は取得元の名前を添えたリンクで
- * 出す。代表の画像は出さない（plan.md の U5）
+ * 出す
  */
 const ExternalActivityRow = ({ item }: { item: ExternalActivityFeedItem }) => (
   <article className="flex flex-col gap-1">
+    {item.imageUrl && <FeedImage src={item.imageUrl} isExternal />}
     <p className="text-sm text-muted-foreground">
       {SOURCE_KIND_LABELS[item.sourceKind]}・{item.source}
     </p>
@@ -116,6 +139,7 @@ const ExternalActivityRow = ({ item }: { item: ExternalActivityFeedItem }) => (
 /** life event。題は個別のページへリンクする（plan.md の U4） */
 const LifeEventRow = ({ item }: { item: LifeEventFeedItem }) => (
   <article className="flex flex-col gap-1">
+    {item.imageUrl && <FeedImage src={item.imageUrl} />}
     <p className="text-sm text-muted-foreground">life event</p>
     <TitleLink href={routes.lifeEvent(item.slug)}>{item.title}</TitleLink>
     {item.description && <p>{item.description}</p>}

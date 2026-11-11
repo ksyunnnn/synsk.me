@@ -34,6 +34,8 @@ const row = (overrides: Partial<FeedRow>): FeedRow => ({
   created_at: null,
   published_at: null,
   slug: null,
+  card_storage_key: null,
+  image_url: null,
   ...overrides,
 });
 
@@ -108,6 +110,7 @@ describe('toFeedItem', () => {
       projectKind: 'talk',
       period: { startedOn: '2021-04-01', endedOn: null },
       slug: 'fake-contract-work',
+      imageUrl: null,
     });
   });
 
@@ -131,6 +134,7 @@ describe('toFeedItem', () => {
       period: { startedOn: '2021-04-01', endedOn: null },
       // 秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）。識別子は uid の形
       slug: '0123456789abcdef0123456789abcdef',
+      imageUrl: null,
     });
   });
 
@@ -214,6 +218,7 @@ describe('toFeedItem の note（FR-006）', () => {
       description: '作り物の説明文',
       createdAt: '2020-01-15T09:00:00.000Z',
       slug: 'fake-note',
+      imageUrl: null,
     });
   });
 
@@ -255,6 +260,7 @@ describe('toFeedItem の外部の activity（FR-018・FR-019）', () => {
       publishedAt: '2024-05-01T12:00:00.000Z',
       source: 'zenn',
       sourceKind: 'article',
+      imageUrl: null,
     });
   });
 
@@ -309,6 +315,7 @@ describe('toFeedItem の life event（FR-018・FR-019）', () => {
       source: 'life_event',
       sourceKind: 'life_event',
       slug: 'fake-life-event',
+      imageUrl: null,
     });
   });
 
@@ -322,6 +329,111 @@ describe('toFeedItem の life event（FR-018・FR-019）', () => {
 
   it('識別子の欠けた行は詰めない（個別のページへのリンクを作れない）', () => {
     expect(toFeedItem(lifeEventRow({ slug: null }))).toBeNull();
+  });
+});
+
+/**
+ * 代表画像（plan.md の U5 の決定）。note・実績・life event はそれぞれの画像を配る経路の URL、外部の
+ * activity は取得元が返した画像の URL を持つ。秘匿化した実績は画像を持たない（FR-013）
+ */
+describe('toFeedItem の代表画像（U5）', () => {
+  const KEY = '0f0e0d0c-0b0a-4908-8706-050403020100';
+
+  it('秘匿化しない実績は、実績の画像を配る経路の URL を持つ', () => {
+    expect(
+      toFeedItem(
+        row({
+          title: '作り物の題',
+          organization_name: '作り物株式会社',
+          project_kind: 'application',
+          slug: 'fake-project',
+          card_storage_key: KEY,
+        }),
+      ),
+    ).toMatchObject({ imageUrl: `/projects/fake-project/media/${KEY}` });
+  });
+
+  it('秘匿化した実績は、ビューの行に画像のキーがあっても画像を持たない（FR-013）', () => {
+    const item = toFeedItem(
+      row({
+        is_masked: 1,
+        title_masked: '業務システムの開発',
+        organization_name_masked: 'ある会社',
+        project_kind: 'application',
+        slug: '0123456789abcdef0123456789abcdef',
+        card_storage_key: KEY,
+      }),
+    );
+    expect(item).toMatchObject({ imageUrl: null });
+    expect(JSON.stringify(item)).not.toContain(KEY);
+  });
+
+  it('note は、note の画像を配る経路の URL を持ち、識別子を符号化する', () => {
+    expect(
+      toFeedItem(
+        row({
+          item_type: 'note',
+          title: '作り物の note の題',
+          created_at: '2020-01-15T09:00:00.000Z',
+          started_on: null,
+          slug: '作り物',
+          card_storage_key: KEY,
+        }),
+      ),
+    ).toMatchObject({ imageUrl: `/notes/${encodeURIComponent('作り物')}/media/${KEY}` });
+  });
+
+  it('life event は、life event の画像を配る経路の URL を持つ', () => {
+    expect(
+      toFeedItem(
+        row({
+          item_type: 'life_event',
+          title: '作り物の出来事',
+          sort_at: '2020-04-01',
+          started_on: null,
+          slug: 'fake-life-event',
+          card_storage_key: KEY,
+        }),
+      ),
+    ).toMatchObject({ imageUrl: `/life-events/fake-life-event/media/${KEY}` });
+  });
+
+  const activityRow = (imageUrl: string | null) =>
+    row({
+      item_type: 'external_activity',
+      title: '作り物の記事',
+      published_at: '2024-05-01T12:00:00.000Z',
+      source: 'zenn',
+      source_kind: 'article',
+      url: 'https://example.com/fake-article',
+      started_on: null,
+      image_url: imageUrl,
+    });
+
+  it('外部の activity は、取得元が返した画像の URL を持つ', () => {
+    expect(toFeedItem(activityRow('https://example.com/fake-image.png'))).toMatchObject({
+      imageUrl: 'https://example.com/fake-image.png',
+    });
+  });
+
+  it('外部の activity の画像の URL が http か https でなければ、画像を持たずに詰める', () => {
+    expect(toFeedItem(activityRow('javascript:alert(1)'))).toMatchObject({ imageUrl: null });
+    expect(toFeedItem(activityRow('data:image/png;base64,AAAA'))).toMatchObject({
+      imageUrl: null,
+    });
+  });
+
+  it('職歴は、ビューの行に画像の列があっても画像を持たない', () => {
+    const item = toFeedItem(
+      row({
+        item_type: 'career',
+        organization_name: '作り物株式会社',
+        role: '作り物の肩書',
+        card_storage_key: KEY,
+        image_url: 'https://example.com/fake-image.png',
+      }),
+    );
+    expect(item).not.toHaveProperty('imageUrl');
   });
 });
 

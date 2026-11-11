@@ -204,6 +204,7 @@ describe('秘匿化', () => {
         period: { startedOn: '2020-04-01', endedOn: null },
         // 秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）。識別子は uid の形
         slug: '0123456789abcdef0123456789abcdef',
+        imageUrl: null,
       },
       {
         type: 'career',
@@ -343,6 +344,7 @@ describe('note（tasks.md の T021）', () => {
         description: '公開の noteの説明文',
         createdAt: '2024-01-04T00:00:00.000Z',
         slug: 'published-note',
+        imageUrl: null,
       },
     ]);
   });
@@ -530,9 +532,10 @@ describe('外部の activity と life event（tasks.md の T041）', () => {
         publishedAt: '2023-01-01T00:00:00.000Z',
         source: 'speakerdeck',
         sourceKind: 'embed',
+        // 取得元が返した画像の URL を出す（plan.md の U5 の決定）
+        imageUrl: 'https://example.com/fake-slide.png',
       },
     ]);
-    expect(JSON.stringify(items)).not.toContain('fake-slide.png');
   });
 
   it('保存した life event はすべて、起きた日と説明を持って並ぶ（FR-003）', async () => {
@@ -549,6 +552,7 @@ describe('外部の activity と life event（tasks.md の T041）', () => {
         source: 'life_event',
         sourceKind: 'life_event',
         slug: 'third-life-event',
+        imageUrl: null,
       },
       expect.objectContaining({ title: '2 つ目の出来事', happenedOn: '2020-04-01' }),
       expect.objectContaining({

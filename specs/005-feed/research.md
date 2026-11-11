@@ -18,7 +18,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R1 スキーマの前提
 
-- 決めたこと: `migrations/0001`〜`0012` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たない。ビューの migration は M6 を除き共有担当が書く（data-model.md の「要る migration の変更」）
+- 決めたこと: `migrations/0001`〜`0012` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たない。ビューの migration は M6・M7 を除き共有担当が書く（data-model.md の「要る migration の変更」）
 - 既にあるもの: 職歴と実績と組織（0011）、syndication（0005）、note・note_revision・activity（0012 が作り直した）、activity_source（0007。004 の取得元の行は 0012 が入れる）。activity は並びの値 `sort_at`（`coalesce(published_at, happened_on)` の生成列）と索引 `activity_sort_at` を持つ（0004・0012）
 - 理由: migration は共有担当だけが変える（issue #219 の 2026-11-09 の宣言）。一覧は元のデータを読み、写して持たない（spec の Assumptions、ADR-0046）
 - 退けた案: 一覧のために値を写す表を持つ（ADR-0046 が退けた）
@@ -48,7 +48,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 - 決めたこと:
   - サイトに載せる行だけを腕が読む（`status = 'published'`）。学歴の腕を持たない（FR-001・FR-004）
-  - 秘匿化した職歴・実績の腕は、`title_masked` に `project.title_masked`、`organization_name_masked` に `organization.name_masked` を出し、`title`・`organization_name` を `NULL` にする。`description`・`url`・`card_media_id` と画像は列に出さない（FR-012・FR-013）。秘匿化しない行は `title`・`organization_name` に実際の値を出し、`_masked` の列を `NULL` にする（FR-014）。実際の値と秘匿化した値を同じ列に混ぜない（`docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」。2026-11-09 に PM が決めた）
+  - 秘匿化した職歴・実績の腕は、`title_masked` に `project.title_masked`、`organization_name_masked` に `organization.name_masked` を出し、`title`・`organization_name` を `NULL` にする。`description`・`url`・`card_media_id` を列に出さず、代表画像の列 `card_storage_key` を `NULL` にする。本文の画像は、どの行でも列に出さない（FR-012・FR-013）。秘匿化しない行は `title`・`organization_name` に実際の値を出し、`_masked` の列を `NULL` にする（FR-014）。実際の値と秘匿化した値を同じ列に混ぜない（`docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」。2026-11-09 に PM が決めた）
   - 秘匿化した職歴・実績が、秘匿化した組織名の無い組織を指すときは、その行を出さない。001 の research.md の R5（2026-11-04 のオーナーの決定。DB のトリガを足さないため、取り出すときにも条件にする）と同じ条件で、実績のページの `VISITOR_VISIBLE`（`src/features/project/server/d1-project-repository.ts`）と揃える
   - 本文は、秘匿化した行では伏せた見た目で出す。001 の spec の FR-021（本文の場所に「非公開」と出す）に従い、画面が `isMasked` を見て決まった文字を出す。本文の中身も、本文が空かどうかも DTO に入れない（001 の contracts/visitor-project.md と同じ）
   - Repository の実装も、種類ごとに出す項目を列挙して DTO に詰める（constitution の Allowlist Visibility）。ビューと Repository の 2 段で、出してよい値だけが画面に渡る
@@ -72,9 +72,10 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R6 訪問者向けの DTO
 
-- 決めたこと: 一覧の 1 件の形 `FeedItem` は、種類で分けた型にし、[contracts/visitor-feed.md](./contracts/visitor-feed.md) が項目を列挙する。並べる値は、spec が UI を考えるときに決めるとするため、spec の受け入れの場面が求める最小の値にする（種類・題・組織名・肩書・実績の種類・期間・note の説明文・取得元と分類・取得元の URL・並びの日付）と、個別のページを持つ実績・note・life event の識別子（plan.md の U4 の決定）。使ったスキル・代表画像・秘匿化しない行の本文は、決まるまで入れない（plan.md の U5・U7）
+- 決めたこと: 一覧の 1 件の形 `FeedItem` は、種類で分けた型にし、[contracts/visitor-feed.md](./contracts/visitor-feed.md) が項目を列挙する。並べる値は、spec が UI を考えるときに決めるとするため、spec の受け入れの場面が求める最小の値にする（種類・題・組織名・肩書・実績の種類・期間・note の説明文・取得元と分類・取得元の URL・並びの日付）と、個別のページを持つ実績・note・life event の識別子（plan.md の U4 の決定）と、代表画像の URL（plan.md の U5 の決定）。使ったスキル・秘匿化しない行の本文は、決まるまで入れない（plan.md の U7）
 - 主キー（`item_number`）は DTO に入れない。並べる SQL の中だけで使う。React の key は並びの位置で付ける。ADR-0048 が主キーを外に出さないとし、RSC の応答には key も含まれるため
 - 理由: constitution の Allowlist Visibility、設計原則 9（見せ方が決まっていない値を先に持たない）
+- 代表画像の URL（plan.md の U5 の決定）: 実績・note・life event は、ビューが出す置き場のキーから、Repository の実装が `src/shared/routes.ts` の各機能の画像の経路（`projectMedia`・`noteMedia`・`lifeEventMedia`）で URL を作る。経路は識別子 `slug` と置き場のキーで作り、主キーを含めない（ADR-0048）。配る経路は 001・003・004 が持ち、見せてよいかをそこで確かめる。外部の activity は取得元が返した画像の URL を、取得元の URL と同じく http か https に限って出す。ほかの scheme の画像は、行を残して画像だけ出さない
 - 退けた案: ビューの全列を DTO に通す。見せ方が決まる前に、出す値が増える
 
 ## R7 重なりの除外

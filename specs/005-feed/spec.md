@@ -27,6 +27,7 @@
 ### Session 2026-11-11
 
 - Q: 一覧から note と実績の個別のページへリンクするか？ → A: a。一覧の各行が個別のページへリンクする（2026-11-11、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）
+- Q: 一覧に note・実績・life event の代表画像を出すか？外部の activity の代表の画像をどう出すか？ → A: いま持っている画像を一覧に出す。見せ方は仮のものでよく、デザインは後で決める。秘匿化した実績・職歴の画像は FR-013 のとおり出さない（2026-11-11、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6785283114)）
 
 ## Terms
 
@@ -161,6 +162,7 @@
 - **FR-019**: 外部の activity と life event は、取得元とその分類を持つ。分類は取得元ごとに決まる（004 の spec の FR-001・FR-002）。分類が埋め込みの activity は、どの埋め込みで見せるかを取得元で決める
 - **FR-020**: 外部の activity は、取得元の URL へ直接リンクする。外部の activity は synsk.me の上に個別の URL を持たない（[ADR-0016](../../docs/decisions/0016-url-conventions.md)）
 - **FR-021**: 秘匿化しない職歴・実績の組織名は、組織の組織名を直すと、一覧でも直した組織名になる（001 の spec の FR-004）
+- **FR-023**: 代表画像を持つ秘匿化しない実績・note・life event は、一覧でその代表画像を出す。外部の activity は、取得元が返した画像を出す。職歴は画像を持たない。秘匿化した実績の画像は出さない（FR-013）。見せ方は UI を考えるときに決める
 
 ### Key Entities *(include if feature involves data)*
 
@@ -203,6 +205,5 @@
 **決定が無く、この spec では決めない**
 
 - 並びの日付が同じとき、どの種類を先に並べるか
-- 一覧に note・実績・life event の代表画像を出すか。外部の activity の代表の画像の出し方
 - 転載先の URL と外部の activity の URL が一致するとみなす条件（末尾のスラッシュ・問い合わせの部分の違いなど）
 - 一覧を見せる画面の名前と URL
