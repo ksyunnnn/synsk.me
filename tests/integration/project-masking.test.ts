@@ -193,6 +193,8 @@ describe('実績の本文と画像（FR-021・FR-023・FR-027・FR-028・FR-030�
   const DRAFT_SLUG = 'fake-media-draft';
   const RAW_HTML = '<script>alert("作り物")</script>';
   const MASKED_BODY = '隠す作り物の画像つきの本文';
+  /** 外の URL の画像。作り物の URL で、表示では取りに行かない */
+  const EXTERNAL_IMAGE_URL = 'https://example.com/fake-project-external.png';
 
   const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
 
@@ -315,9 +317,42 @@ describe('実績の本文と画像（FR-021・FR-023・FR-027・FR-028・FR-030�
     await expectHidden(await fetchMedia(DRAFT_SLUG, bodyKey));
   });
 
+  it.each([
+    ['HTML', AS_HTML],
+    ['RSC', AS_RSC],
+  ])(
+    '秘匿化しない実績の本文の外の URL の画像を img で出し、すぐ下の行をキャプションにする。置き場の画像も並べて出す（%s）',
+    async (_, as) => {
+      const key = await upload(openId);
+      await setBody(
+        openId,
+        [
+          `![作り物の外の図](${EXTERNAL_IMAGE_URL})\n*作り物の外のキャプション*`,
+          `![作り物の置き場の図](media:${key})`,
+        ].join('\n\n'),
+      );
+      const { status, text } = await fetchVisitor(OPEN_SLUG, as);
+      expect(status).toBe(200);
+      expect(text).toContain(EXTERNAL_IMAGE_URL);
+      expect(text).toContain('作り物の外のキャプション');
+      expect(text).toContain(`/projects/${OPEN_SLUG}/media/${key}`);
+      if (as === AS_HTML) {
+        expect(text).toContain(
+          `<figure><img src="${EXTERNAL_IMAGE_URL}" alt="作り物の外の図" loading="lazy" decoding="async" referrerPolicy="no-referrer"/><figcaption>作り物の外のキャプション</figcaption></figure>`,
+        );
+        expect(text).toContain(
+          `<figure><img src="/projects/${OPEN_SLUG}/media/${key}" alt="作り物の置き場の図"/></figure>`,
+        );
+      }
+    },
+  );
+
   it('秘匿化した実績の画像は、本文が指し代表画像でも 404 で、本文も画像のキーも応答に含めない', async () => {
     const key = await upload(maskedMediaId, { asCardImage: '1' });
-    await setBody(maskedMediaId, `${MASKED_BODY}\n\n![隠す図](media:${key})`);
+    await setBody(
+      maskedMediaId,
+      `${MASKED_BODY}\n\n![隠す図](media:${key})\n\n![隠す外の図](${EXTERNAL_IMAGE_URL})`,
+    );
 
     await expectHidden(await fetchMedia(MASKED_MEDIA_SLUG, key));
     for (const as of [AS_HTML, AS_RSC]) {
@@ -325,6 +360,7 @@ describe('実績の本文と画像（FR-021・FR-023・FR-027・FR-028・FR-030�
       expect(status).toBe(200);
       expect(text).not.toContain(MASKED_BODY);
       expect(text).not.toContain(key);
+      expect(text).not.toContain(EXTERNAL_IMAGE_URL);
     }
   });
 

@@ -326,6 +326,28 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
     expect(html).toContain('dateTime="2026-11-01T00:00:00.000Z"');
   });
 
+  it.each([AS_HTML, AS_RSC])(
+    '本文の外の URL の画像を img で出し、すぐ下の行をキャプションにする（%o）',
+    async ({ headers, query }) => {
+      const url = 'https://example.com/integration-external.png';
+      const slug = `integration-external-image${query === '' ? '-html' : '-rsc'}`;
+      const note = await insertNote(ctx.db, {
+        slug,
+        body: `![外の画像の代替テキスト](${url} "外の画像のホバーの文")\n*外の画像のキャプション*`,
+      });
+      await publishNoteRow(ctx.db, note.id);
+      const res = await ctx.server.fetch(`/notes/${slug}${query}`, { headers });
+      expect(res.status).toBe(200);
+      const text = await res.text();
+      expect(text).toContain(url);
+      expect(text).toContain('外の画像のキャプション');
+      if (query === '')
+        expect(text).toContain(
+          `<figure><img src="${url}" alt="外の画像の代替テキスト" title="外の画像のホバーの文" loading="lazy" decoding="async" referrerPolicy="no-referrer"/><figcaption>外の画像のキャプション</figcaption></figure>`,
+        );
+    },
+  );
+
   it('画像の印は figure・img alt・title・figcaption で出し、その note の画像に無い印は出さない（T040）', async () => {
     const html = await (await ctx.server.fetch('/notes/integration-media')).text();
     expect(html).toMatch(
