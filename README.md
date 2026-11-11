@@ -57,6 +57,19 @@ npx wrangler d1 execute synsk-me --local --file ../../private/seed-local.sql # s
 
 seed は実名を含むため、リポジトリに入れず `synsk.me/private/seed-local.sql` に置く。
 
+手元の D1 の中身は `sqlite3` で見る。
+
+```bash
+sqlite3 -header -column $(ls .wrangler/state/v3/d1/miniflare-D1DatabaseObject/*.sqlite | grep -v metadata)
+```
+
+```
+.prompt "sqlite> " "   ...> "  -- 行頭の表示を短くする
+.tables                        -- 表の一覧
+.mode line                     -- 1 行を縦に並べる
+.quit                          -- 終える
+```
+
 ## データベース
 
 Cloudflare D1 のデータベース `synsk-me`（binding `DB`）。スキーマはリポジトリ直下の `migrations/` の SQL が持つ。
