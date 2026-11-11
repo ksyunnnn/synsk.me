@@ -124,6 +124,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 - 決めたこと: 本文は `career.description`・`project.description` に文字列で持つ。画像の記録は `media` に持ち、持ち主の列は職歴か実績のどちらか 1 つ（migration 0005）。代表画像は `project.card_media_id` で、その実績の画像だけを指す（複合の外部キー）。秘匿化した職歴・実績の画像は配らない（FR-030）
 - 決定（2026-11-09、オーナー。plan.md の U4）: 本文は Markdown で書き、生の HTML を通さない。本文の中の画像は media の id で指し、キャプションを添える
+- 決定（2026-11-11、オーナー）: 本文の画像の URL の欄に http か https の外の URL を書いた画像も、秘匿化していない表示で画像として出す。秘匿化した職歴・実績は本文を出さないため、外の URL も応答に含めない（[ADR-0054](../../docs/decisions/0054-external-images-in-markdown-body.md)）
 - 決定（2026-11-09、オーナーから任された Claude。plan.md の U5）: R2 に原本を置き、Worker が見せてよいかを確かめてから、変換せずに返す。公開していない画像の応答には `Cache-Control: no-store` を付ける。形式は JPEG・PNG・WebP・GIF で、SVG は受けない。大きさは 1 枚 10 MB まで
 - 配る URL（この plan の案）: 実績の画像は `/projects/[slug]/media/[id]` で `project` の Repository が確かめて配る。職歴の画像は、職歴を訪問者に出す 005・002 が配る。決めるのは tasks.md の T076
 - 未決: 画像の追加の回数の上限の値。constitution II は費用のかかる処理に量と回数の上限の値を求め、U5 は大きさだけを決めた。止める範囲は画像の追加（FR-027・FR-028）

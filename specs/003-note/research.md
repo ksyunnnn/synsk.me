@@ -128,15 +128,16 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 決定（2026-11-09、PM）: 画像を指す識別子は `media.storage_key`（共有担当の `src/shared/server/media-storage.ts` が作る UUID の `storageKey`、PR #225）で、主キーではない。ADR-0051 が主キーを管理画面のフォームに出さないとするため。U4 の決定の記録の「media の id」は、この識別子を指す
 - 決定（2026-11-10、オーナー）: 画像のキャプションは Zenn の書き方に揃える。画像のすぐ下の行に `*` で挟んだ文を書くと、キャプションになる（[Zenn の Markdown 記法一覧](https://zenn.dev/zenn/articles/markdown-guide) の「キャプションをつける」）。画像の印の題の欄（`"…"`）はキャプションにせず、`<img>` の `title` の属性（ホバーで出す文）にする。オーナーは、ホバーで出す文だけ・キャプションだけ・両方のどれも書ける。画像の URL の欄（`media:<storageKey>`）は変えない
 - 決定（2026-11-10、PM）: 「すぐ下の行」は、画像の行に空行を挟まずに続く行とする。Zenn のガイドの例が、画像の行と `*キャプション*` の行の間に空行を置かないため。CommonMark ではこの 2 行は同じ段落になる。行の分け方はふつうの改行でも強制改行（行末の空白 2 つか `\`）でもよい。空行を挟んだ `*…*` は別の段落の斜体で、画像と同じ行の `*…*` は文の中の斜体のまま。`_…_` もキャプションにする。CommonMark で `*…*` と同じ強調になり構文木が 2 つを区別しないため、区別する処理を足さない（SOFTWARE_DESIGN の原則 9「単純さ over 先回りの構造」）
+- 決定（2026-11-11、オーナー）: 画像の URL の欄に http か https の外の URL を書いた画像も、訪問者に画像で出す。キャプションと題の欄の扱いは `media:<storageKey>` の画像と同じ。決定と理由は [ADR-0054](../../docs/decisions/0054-external-images-in-markdown-body.md)
 - 決定（2026-11-09、PM）: Markdown を読む部品と描く部品は共有担当が `src/shared/` に作り、003 は使う。使い手は 001 の職歴・実績の本文（001 の T077）と 003 の note の本文の 2 つ（constitution IX）。package（`react-markdown`・`mdast-util-from-markdown`）も共有担当が足す。ファイル名は共有担当の PR で確かめる
 - 003 が共有担当の部品に求めること（下の決めたことを満たすため）:
   - 本文を構文木にして、画像の印の `storageKey` の並び、行に URL だけを書いた行の URL の並び、最初の段落の文字列を返す関数。正規表現で読むと、コードの中に書いた印まで拾い、表示しない画像を訪問者に出す
   - 描く部品が、画像の `src` を作る関数（note は `/notes/{slug}/media/{storageKey}`）と、行に URL だけを書いた行を描く部品（note は URL カード、R13）を受け取れること
-  - `urlTransform` が `img` の `media:` だけをそのまま通し、ほかを `defaultUrlTransform` に任せること。既定のままだと `media:<storageKey>` が空の文字列になる（react-markdown 10.1.0 の `lib/index.js` の `safeProtocol` と `defaultUrlTransform`、2026-11-09 に確かめた）
+  - `urlTransform` が `img` の `media:` だけをそのまま通し、ほかを `defaultUrlTransform` に任せること（http と https の URL は既定が通す）。既定のままだと `media:<storageKey>` が空の文字列になる（react-markdown 10.1.0 の `lib/index.js` の `safeProtocol` と `defaultUrlTransform`、2026-11-09 に確かめた）
 - 決めたこと:
   - 本文は `note_revision.body` に文字列で持つ（100,000 文字まで、FR-005）。入力は `<textarea>`
   - 生の HTML を通さない: `dangerouslySetInnerHTML` を使わず、`rehype-raw` を足さない
-  - 画像の印: `![代替テキスト](media:<storageKey> "ホバーで出す文")` と、そのすぐ下の行の `*キャプション*`。題の欄とキャプションの行はどちらも省ける。印だけの段落（キャプションの行を含む）は、訪問者に `<figure>` の中の `<img alt title>` と `<figcaption>` で出す。文の中の画像は `<img alt title>` だけで出す。画像の URL は R12 の配る経路から作る <!-- check-ignore: 本文の画像の記法の例 -->
+  - 画像の印: `![代替テキスト](media:<storageKey> "ホバーで出す文")` と、そのすぐ下の行の `*キャプション*`。題の欄とキャプションの行はどちらも省ける。印だけの段落（キャプションの行を含む）は、訪問者に `<figure>` の中の `<img alt title>` と `<figcaption>` で出す。文の中の画像は `<img alt title>` だけで出す。画像の URL は R12 の配る経路から作る。http か https の外の URL の画像も同じ形で出し、`src` は書いた URL のままにする（ADR-0054） <!-- check-ignore: 本文の画像の記法の例 -->
   - カードにする行: 段落の中身が `http` か `https` の URL の文字列 1 つだけの行。行の中に文と並べて書いた URL はカードにしない。GFM を使わないため、`<https://…>` の autolink かリンクの記法で書いた URL だけがリンクになり、そのまま書いた URL は文字列で出る（CommonMark の Autolinks）。カードにする行は R13 の見せ方で出す
   - `<https://…>` の autolink だけの段落はカードにせず、リンクで出す。カードにせずに URL を書く手段として残す（2026-11-09、PM）
   - リストと引用の中の段落も、カードにする行と画像の印の見分けの対象に含める。項目の間に空行の無いリストの項目も段落として扱う（2026-11-09、PM）
