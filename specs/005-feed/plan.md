@@ -138,7 +138,7 @@ issue #219 のコメント「spec どうしの重複・干渉・矛盾・依存�
 |---|---|
 | 干渉: `src/features/career/server` に、001 の残りのタスクと 005 の訪問者向けの取り出しが手を入れる | 005 は `src/features/career/` を変えない。職歴の訪問者向けの取り出し（001 の data-model.md、research.md の R15）は、ビューの職歴の腕と `src/features/activity/server/d1-feed-repository.ts` が持つ |
 | 干渉: ER 図の `gen_er8.py`・`er-options.html` を 003・004・005 が直すと衝突する | 005 は変えない。ビューを載せるかは共有担当が決める |
-| 干渉: migration の番号 | 005 は migration を書かない。ビューは共有担当が M1〜M5 として書く |
+| 干渉: migration の番号 | ビューの M1〜M5 は共有担当が書く。M6（migrations/0026）は U4 の決定を満たすため 005 が書き、PM が承認した（data-model.md の「要る migration の変更」） |
 | 依存: 005 → 001・003・004 | Walking Skeleton（Phase 3）は 001 の表とビューの M1 だけを待つ。note・外部の activity・life event の腕は 003・004 のコードを待たず、表（0004・0005）に作り物の行を入れて確かめる。003・004 が列の意味を変えないことは「一覧の読み口の置き場」の表 |
 | spec が ADR-0044 を指す | ADR-0044 は ADR-0046 に置き換わった。ADR-0046 は一覧の決定（ビュー、秘匿化をビューに書く、並べるキー）を変えずに引き継ぐ。この plan は ADR-0046 を根拠にする |
 | 画像・書きかけの保持・slug・uid | 005 は画像を配らず、入力も管理画面も持たないため、どれも使わない |

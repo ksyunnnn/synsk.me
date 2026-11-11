@@ -1,6 +1,6 @@
 # Data Model: 一覧
 
-表・列・型・CHECK の正本は `migrations/` にある。005 は表を持たず、001・003・004 の表を、共有担当が書く一覧のビュー `activity_feed` で読む（research.md の R1・R2、ADR-0046）。この文書は、ビューに要る列と腕の条件を spec の要件に対応させる。SQL の全文は migration が持つ。
+表・列・型・CHECK の正本は `migrations/` にある。005 は表を持たず、001・003・004 の表を、一覧のビュー `activity_feed` で読む（research.md の R1・R2、ADR-0046）。この文書は、ビューに要る列と腕の条件を spec の要件に対応させる。SQL の全文は migration が持つ。
 
 ## Contents
 
@@ -70,7 +70,7 @@
 
 ## 要る migration の変更
 
-005 は migration を書かない。共有担当に渡す変更は次のとおり。番号とファイル名は共有担当が付ける。
+M1〜M5 は共有担当が書いた。M6（migrations/0026）は、2026-11-11 の U4 の決定（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）を満たすため、005 が書き、PM が承認した。変更は次のとおり。
 
 | migration | 変更 | 待つ段階（tasks.md） |
 |---|---|---|

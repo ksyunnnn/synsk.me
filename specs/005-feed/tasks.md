@@ -244,7 +244,7 @@ Phase 3（職歴と実績）→ Phase 4（note）→ Phase 5（ページ送り�
 ## Notes
 
 - 機能どうしは import しない（ADR-0026）。一覧は `src/features/project`・`career`・`note` を import せず、ビューだけを読む
-- 005 は migration と ER 図を変えない。要る変更は PM に伝える
+- 005 は ER 図を変えない。migration は PM の承認を得て書く。migrations/0026（ビューの `slug`）は、2026-11-11 の U4 の決定（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）を満たすため 005 が書いた
 - 004 と同じ `src/features/activity/` に置くので、ファイル名に一覧の名前を付けて分ける
 - コミットはタスクか論理のまとまりごと
 

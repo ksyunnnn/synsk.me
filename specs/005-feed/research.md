@@ -18,7 +18,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R1 スキーマの前提
 
-- 決めたこと: `migrations/0001`〜`0012` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たず、migration を書かない
+- 決めたこと: `migrations/0001`〜`0012` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たない。ビューの migration は M6 を除き共有担当が書く（data-model.md の「要る migration の変更」）
 - 既にあるもの: 職歴と実績と組織（0011）、syndication（0005）、note・note_revision・activity（0012 が作り直した）、activity_source（0007。004 の取得元の行は 0012 が入れる）。activity は並びの値 `sort_at`（`coalesce(published_at, happened_on)` の生成列）と索引 `activity_sort_at` を持つ（0004・0012）
 - 理由: migration は共有担当だけが変える（issue #219 の 2026-11-09 の宣言）。一覧は元のデータを読み、写して持たない（spec の Assumptions、ADR-0046）
 - 退けた案: 一覧のために値を写す表を持つ（ADR-0046 が退けた）
