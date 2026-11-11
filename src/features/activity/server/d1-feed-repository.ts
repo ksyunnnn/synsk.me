@@ -11,9 +11,10 @@ import type { FeedRepository } from '@/features/activity/domain/feed-repository'
 import type { CalendarDate, Period } from '@/shared/domain/period';
 import { isProjectKind } from '@/shared/domain/project-kind';
 import { isWebUrl } from '@/shared/domain/web-url';
+import { routes } from '@/shared/routes';
 
 /**
- * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018・0020〜0022・0026）だけを読み、表を
+ * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018・0020〜0022・0026・0027）だけを読み、表を
  * 読まない（ADR-0046）。サイトに載せる行だけを出す決まりと秘匿化の決まりはビューが持つ。
  * この実装は、種類ごとに出す項目を列挙して `FeedItem` に詰める（constitution の Allowlist
  * Visibility、specs/005-feed/research.md の R4）。行の型はこのファイルの中だけに置く
@@ -46,11 +47,18 @@ type FeedRow = {
   published_at: string | null;
   /** 実績・note・life event の個別のページの識別子。職歴と外部の activity は NULL（migrations/0026） */
   slug: string | null;
+  /**
+   * 実績・note・life event の代表画像の置き場のキー（`media.storage_key`）。秘匿化した実績と職歴と
+   * 外部の activity は NULL（migrations/0027）
+   */
+  card_storage_key: string | null;
+  /** 外部の activity の取得元が返した画像の URL。ほかの種類は NULL（migrations/0027） */
+  image_url: string | null;
 };
 
 const COLUMNS = `item_type, is_masked, title, title_masked, organization_name,
   organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description, source,
-  source_kind, url, created_at, published_at, slug`;
+  source_kind, url, created_at, published_at, slug, card_storage_key, image_url`;
 
 const periodOf = (row: FeedRow): Period | null =>
   row.started_on === null
@@ -77,6 +85,11 @@ const toCareerOrProjectItem = (row: FeedRow, type: 'career' | 'project'): FeedIt
   // 種類は CHECK が 4 値に絞る。読めない値は `other` と同じ扱いにする
   const projectKind =
     row.project_kind !== null && isProjectKind(row.project_kind) ? row.project_kind : 'other';
+  // 秘匿化した実績は画像を持たない（FR-013）。ビューも NULL にするが、ここでも詰めない
+  const imageUrl =
+    !isMasked && row.card_storage_key !== null
+      ? routes.projectMedia(row.slug, row.card_storage_key)
+      : null;
   return {
     type: 'project',
     isMasked,
@@ -85,6 +98,7 @@ const toCareerOrProjectItem = (row: FeedRow, type: 'career' | 'project'): FeedIt
     projectKind,
     period,
     slug: row.slug,
+    imageUrl,
   };
 };
 
@@ -106,6 +120,11 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
         description: row.description,
         createdAt: row.created_at,
         slug: row.slug,
+        // note の識別子は符号化して経路に埋める（src/app/notes/[slug]/page.tsx と同じ）
+        imageUrl:
+          row.card_storage_key === null
+            ? null
+            : `${routes.noteMedia(encodeURIComponent(row.slug))}/${row.card_storage_key}`,
       };
     case 'external_activity':
       // 画面は URL を `<a href>` にする。取得元の応答の URL を http か https に限る
@@ -123,6 +142,9 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
           row.source_kind !== null && isExternalActivitySourceKind(row.source_kind)
             ? row.source_kind
             : 'other',
+        // 画面は画像の URL を `<img src>` にする。URL と同じく http か https に限り、ほかの scheme の
+        // 画像は行を残して出さない
+        imageUrl: row.image_url !== null && isWebUrl(row.image_url) ? row.image_url : null,
       };
     case 'life_event':
       // 題は空でない（004 の FR-024、migrations/0021 の CHECK）。欠けた行は note と同じく詰めない
@@ -135,6 +157,10 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
         source: 'life_event',
         sourceKind: 'life_event',
         slug: row.slug,
+        imageUrl:
+          row.card_storage_key === null
+            ? null
+            : routes.lifeEventMedia(row.slug, row.card_storage_key),
       };
   }
 };

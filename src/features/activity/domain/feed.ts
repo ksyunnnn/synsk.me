@@ -5,7 +5,8 @@ import type { ProjectKind } from '@/shared/domain/project-kind';
  * 一覧の 1 件の形（specs/005-feed/contracts/visitor-feed.md、research.md の R5・R6）。
  * 画面・`<title>`・RSC の応答は、この形の値だけを使う。どの種類にも主キー（ビューの
  * `item_number`）を入れない（ADR-0048）。個別のページを持つ種類（実績・note・life event）は、
- * 個別のページの URL に出す識別子 `slug` を持つ（plan.md の U4）
+ * 個別のページの URL に出す識別子 `slug` を持つ（plan.md の U4）。職歴でない種類は代表画像の URL
+ * `imageUrl` を持つ（plan.md の U5）。見せ方は仮のもので、デザインを決めるときに直す
  */
 
 /**
@@ -37,8 +38,8 @@ export type CareerFeedItem = {
 };
 
 /**
- * 実績。秘匿化した実績の題と組織名は秘匿化した値。本文・関連 URL・画像を持たない
- * （FR-012・FR-013）。秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）
+ * 実績。秘匿化した実績の題と組織名は秘匿化した値。本文と関連 URL を持たない。秘匿化した実績は
+ * 画像も持たない（FR-012・FR-013）。秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）
  */
 export type ProjectFeedItem = {
   type: 'project';
@@ -49,10 +50,12 @@ export type ProjectFeedItem = {
   period: Period;
   /** 個別のページの識別子。秘匿化した実績では uid で、実際の題や組織名を含まない（001 の FR-013） */
   slug: string;
+  /** 代表画像を配る経路の URL。無ければ null。秘匿化した実績は常に null（FR-013） */
+  imageUrl: string | null;
 };
 
 /**
- * note。題と説明文は公開した版のもの。最も新しい版・転載先・代表画像を持たない（FR-006）
+ * note。題と説明文は公開した版のもの。最も新しい版・転載先を持たない（FR-006）
  */
 export type NoteFeedItem = {
   type: 'note';
@@ -63,6 +66,8 @@ export type NoteFeedItem = {
   createdAt: string;
   /** 個別のページの識別子 */
   slug: string;
+  /** note に上げて代表画像に選んだ画像を配る経路の URL。無ければ null（ADR-0053） */
+  imageUrl: string | null;
 };
 
 /**
@@ -75,10 +80,7 @@ export type ExternalActivitySourceKind = (typeof EXTERNAL_ACTIVITY_SOURCE_KINDS)
 export const isExternalActivitySourceKind = (value: string): value is ExternalActivitySourceKind =>
   (EXTERNAL_ACTIVITY_SOURCE_KINDS as readonly string[]).includes(value);
 
-/**
- * 外部の activity。画面は取得元の URL へ直接リンクする（FR-020）。代表の画像を持たない
- * （plan.md の U5）
- */
+/** 外部の activity。画面は取得元の URL へ直接リンクする（FR-020） */
 export type ExternalActivityFeedItem = {
   type: 'external_activity';
   /** 取得元が題を返さなかった行は null */
@@ -89,9 +91,11 @@ export type ExternalActivityFeedItem = {
   /** 取得元の名前（`activity.source`）。埋め込みの見せ方は取得元で決める（FR-019） */
   source: string;
   sourceKind: ExternalActivitySourceKind;
+  /** 取得元が返した画像の URL（http か https）。無ければ null。synsk.me は配らない */
+  imageUrl: string | null;
 };
 
-/** life event。代表画像を持たない（plan.md の U5） */
+/** life event */
 export type LifeEventFeedItem = {
   type: 'life_event';
   /** 空でない（004 の FR-024） */
@@ -103,6 +107,8 @@ export type LifeEventFeedItem = {
   sourceKind: 'life_event';
   /** 個別のページの識別子 */
   slug: string;
+  /** 代表画像を配る経路の URL。無ければ null */
+  imageUrl: string | null;
 };
 
 export type FeedItem =

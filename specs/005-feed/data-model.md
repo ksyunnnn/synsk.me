@@ -22,6 +22,7 @@
 | `activity`・`activity_source`（`source <> 'life_event'`） | 外部の activity | 書かない | FR-002・FR-007・FR-019・FR-020 |
 | `activity`・`activity_source`（`source = 'life_event'`） | life event | 書かない | FR-003・FR-007・FR-019 |
 | `syndication` | 転載先 | 書かない | FR-016・FR-017 |
+| `media` | 実績・note・life event の代表画像 | 書かない | FR-013、plan.md の U5 |
 | `education` | 学歴 | 読まない | FR-001 |
 
 ## 一覧のビュー
@@ -49,6 +50,8 @@
 | `created_at` | note の作成日時（`note.created_at`。UTC の時点）。ほかの行は `NULL` | M5 |
 | `published_at` | 外部の activity の公開日時（`activity.published_at`。UTC の時点）。ほかの行は `NULL` | M5 |
 | `slug` | 個別のページの識別子。実績は `project.slug`（秘匿化した実績を含む）、note は `note.slug`、life event は `activity.slug`。職歴と外部の activity は `NULL`（plan.md の U4） | M6 |
+| `card_storage_key` | 代表画像の置き場のキー（`media.storage_key`）。秘匿化しない実績は `project.card_media_id`、note は `card_image = 'media'` のときの `note.card_media_id`、life event は `activity.card_media_id` が指す画像で、その行が持つ media だけを読む。秘匿化した実績・職歴・外部の activity は `NULL`（plan.md の U5） | M7 |
+| `image_url` | 外部の activity の取得元が返した画像の URL（`activity.image_url`）。ほかの行は `NULL`（plan.md の U5） | M7 |
 
 列の名前は `docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」に従う。種類は `kind` と呼ばない。`project.kind`（実績の種類）と `activity_source.kind`（分類）が別の意味で使っているため。
 
@@ -61,7 +64,7 @@
 | 腕 | 読む行 | `sort_at` | 秘匿化 | migration |
 |---|---|---|---|---|
 | 職歴 | `career.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `career.started_on` | `is_masked = 1` なら `organization_name` は `NULL`、`organization_name_masked` は `name_masked`。`description`・`url` は出さない | M1 |
-| 実績 | `project.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `project.started_on` | `is_masked = 1` なら `title`・`organization_name` は `NULL`、`title_masked`・`organization_name_masked` に秘匿化した値。`description`・`url`・`card_media_id` は出さない | M1 |
+| 実績 | `project.status = 'published'` で、`is_masked = 0` か、組織が `name_masked` を持つ | `project.started_on` | `is_masked = 1` なら `title`・`organization_name`・`card_storage_key` は `NULL`、`title_masked`・`organization_name_masked` に秘匿化した値。`description`・`url`・`card_media_id` は出さない | M1（代表画像は M7） |
 | note | `note.status = 'published' AND note.deleted_at IS NULL`。題と説明文は `note.published_revision_id` の版 | `note.created_at` を Asia/Tokyo の時刻にした値 | — | M2（換算は M5） |
 | 外部の activity | `activity.source <> 'life_event'` で、公開で削除していない note の `syndication.url` と `activity.url` が一致しない | `activity.published_at` を Asia/Tokyo の時刻にした値 | — | M3（除外は M4、換算は M5） |
 | life event | `activity.source = 'life_event'` のすべて | `activity.sort_at` | — | M3 |
@@ -70,7 +73,7 @@
 
 ## 要る migration の変更
 
-M1〜M5 は共有担当が書いた。M6（migrations/0026）は、2026-11-11 の U4 の決定（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）を満たすため、005 が書き、PM が承認した。変更は次のとおり。
+M1〜M5 は共有担当が書いた。M6（migrations/0026）は 2026-11-11 の U4 の決定（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）、M7（migrations/0027）は 2026-11-11 の U5 の決定（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6785283114)）を満たすため、005 が書き、PM が承認した。変更は次のとおり。
 
 | migration | 変更 | 待つ段階（tasks.md） |
 |---|---|---|
@@ -80,6 +83,7 @@ M1〜M5 は共有担当が書いた。M6（migrations/0026）は、2026-11-11 �
 | M4 | ビューを作り直し、外部の activity の腕に転載先と一致する行の除外を足す | Phase 7（重なりの除外） |
 | M5 | ビューを作り直し、note と外部の activity の `sort_at` を Asia/Tokyo の時刻にし、`created_at`・`published_at` を足す（plan.md の U3 の決定、research.md の R5）。migrations/0022 | Phase 6 の T042 |
 | M6 | ビューを作り直し、`slug` を足す（plan.md の U4 の決定）。migrations/0026 | Phase 9 の T066 |
+| M7 | ビューを作り直し、`card_storage_key`・`image_url` を足す（plan.md の U5 の決定）。migrations/0027 | Phase 9 の T067 |
 
 ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有担当が決める。
 
@@ -91,7 +95,7 @@ ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有
 |---|---|---|
 | `item_type` が `FEED_ITEM_TYPES` にある行だけを読む。腕を足す migration が、その種類を詰める実装より先に入っても、一覧は詰められる種類だけで成り立つ | NFR-02 | `src/features/activity/server/d1-feed-repository.ts` の `WHERE` |
 | 並べる順は `sort_at` の新しい順、種類の順、`item_number` の大きい順 | FR-010 | `src/features/activity/server/d1-feed-repository.ts` の `ORDER BY`。種類の順は `src/features/activity/domain/feed.ts` の配列（research.md の R5） |
-| 種類ごとに出す項目を列挙して DTO に詰める。職歴・実績の題と組織名は、`is_masked` が 1 なら `_masked` の列から、0 なら実際の値の列から詰める。`item_number` を詰めない | FR-012・FR-013・FR-015 | `src/features/activity/server/d1-feed-repository.ts`（contracts/visitor-feed.md） |
+| 種類ごとに出す項目を列挙して DTO に詰める。職歴・実績の題と組織名は、`is_masked` が 1 なら `_masked` の列から、0 なら実際の値の列から詰める。秘匿化した実績は、`card_storage_key` に値があっても画像を詰めない。`item_number` を詰めない | FR-012・FR-013・FR-015 | `src/features/activity/server/d1-feed-repository.ts`（contracts/visitor-feed.md） |
 | 秘匿化した職歴・実績の本文は、伏せた見た目で出す | FR-013 | `src/features/activity/components/feed.tsx` が `isMasked` を見て決まった文字を出す |
 | ページ送りは番号のページで区切る | spec の Assumptions | `src/features/activity/server/d1-feed-repository.ts`。件数は測ってから決める（research.md の R8） |
 

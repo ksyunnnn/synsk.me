@@ -11,6 +11,7 @@ import {
   deleteNoteRow,
   deleteNoteRows,
   insertNote,
+  insertNoteMedia,
   insertNoteRevision,
   publishNoteRow,
 } from '../support/note-rows';
@@ -28,6 +29,8 @@ import { deleteActivityRows, insertActivity } from '../support/activity-rows';
  * - 実績・note・life event の行は個別のページへリンクし、職歴は個別のページを持たないのでリンク
  *   しない（plan.md の U4 の決定）。秘匿化した実績も個別のページを持つのでリンクする（001 の spec の
  *   Edge Cases）
+ * - 代表画像を持つ実績・note・life event・外部の activity は、その画像を出す。秘匿化した実績は、代表
+ *   画像と本文の画像を持っていても、画像も画像の URL も出さない（plan.md の U5 の決定、FR-013）
  *
  * 値はすべて作り物で、ほかの値と重ならない
  */
@@ -43,6 +46,9 @@ const HIDDEN = {
   careerUrl: 'https://hidden.example.com/feed-career',
   projectUrl: 'https://hidden.example.com/feed-project',
   storageKey: 'feed-hidden-media-key.png',
+  bodyStorageKey: '0005feed-0000-4000-8000-00000000b0d7',
+  /** 秘匿化した実績の画像を配る経路の前半。どの画像のキーでも出さない */
+  mediaPath: '/projects/feedaaaaaaaaaaaaaaaaaaaaaaaaaaaa/media',
 };
 
 /** 秘匿化した行が出す値 */
@@ -77,6 +83,14 @@ const SLUG = {
   maskedProject: 'feedaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
   unmaskedProject: 'feed-unmasked-project',
   note: 'feed-published-note',
+};
+
+/** 代表画像。置き場のキーは UUID の形（src/shared/domain/media.ts） */
+const IMAGE = {
+  projectKey: '0005feed-0000-4000-8000-000000000001',
+  noteKey: '0005feed-0000-4000-8000-000000000002',
+  lifeEventKey: '0005feed-0000-4000-8000-000000000003',
+  externalUrl: 'https://example.com/feed-zenn-1.png',
 };
 
 /**
@@ -118,6 +132,12 @@ const detailHrefs = (text: string) =>
     ),
   ].map((match) => match[1]);
 
+/** 応答の中の、画像の `src`。HTML の `<img>` の属性と、RSC の `"img"` の要素の props の両方から読む */
+const imageSrcs = (text: string) =>
+  [...text.matchAll(/(?:<img[^>]*? src=|\["\$","img",null,\{"src":)"([^"]*)"/g)].map(
+    (match) => match[1],
+  );
+
 beforeAll(async () => {
   ctx = await startTestServer({
     seed: async (db) => {
@@ -153,12 +173,17 @@ beforeAll(async () => {
         .prepare('UPDATE project SET card_media_id = ? WHERE id = ?')
         .bind(media?.id, maskedProject)
         .run();
+      // 本文の画像。代表画像でない画像も一覧に出さない
+      await db
+        .prepare('INSERT INTO media (project_id, storage_key) VALUES (?, ?)')
+        .bind(maskedProject, HIDDEN.bodyStorageKey)
+        .run();
 
       unmaskedOrgId = await insertOrganization(db, {
         name: UNMASKED.organizationName,
         nameMasked: '個人',
       });
-      await insertProject(db, {
+      const unmaskedProject = await insertProject(db, {
         organizationId: unmaskedOrgId,
         slug: SLUG.unmaskedProject,
         title: UNMASKED.title,
@@ -166,6 +191,14 @@ beforeAll(async () => {
         isMasked: false,
         status: 'published',
       });
+      const projectMedia = await db
+        .prepare('INSERT INTO media (project_id, storage_key) VALUES (?, ?) RETURNING id')
+        .bind(unmaskedProject, IMAGE.projectKey)
+        .first<{ id: number }>();
+      await db
+        .prepare('UPDATE project SET card_media_id = ? WHERE id = ?')
+        .bind(projectMedia?.id, unmaskedProject)
+        .run();
 
       await insertCareer(db, {
         organizationId: unmaskedOrgId,
@@ -189,6 +222,11 @@ beforeAll(async () => {
 
       const published = await insertNote(db, { slug: SLUG.note, title: NOTE.published });
       await publishNoteRow(db, published.id);
+      const noteMedia = await insertNoteMedia(db, published.id, IMAGE.noteKey);
+      await db
+        .prepare("UPDATE note SET card_image = 'media', card_media_id = ? WHERE id = ?")
+        .bind(noteMedia.id, published.id)
+        .run();
       await insertNoteRevision(db, published.id, { title: NOTE.laterRevision });
       await insertNote(db, { title: NOTE.draft });
       const deleted = await insertNote(db, { title: NOTE.deleted });
@@ -201,15 +239,25 @@ beforeAll(async () => {
         url: EXTERNAL.url,
         title: EXTERNAL.title,
         publishedAt: '2026-10-01T00:00:00.000Z',
+        imageUrl: IMAGE.externalUrl,
       });
 
       for (let n = 1; n <= FILLER_COUNT; n++) {
-        await insertActivity(db, {
+        const lifeEvent = await insertActivity(db, {
           source: 'life_event',
           title: FILLER_TITLE(n),
           happenedOn: `2000-01-${String(n).padStart(2, '0')}`,
           slug: `feed-filler-${n}`,
         });
+        if (n !== FILLER_COUNT) continue;
+        const lifeEventMedia = await db
+          .prepare('INSERT INTO media (activity_id, storage_key) VALUES (?, ?) RETURNING id')
+          .bind(lifeEvent, IMAGE.lifeEventKey)
+          .first<{ id: number }>();
+        await db
+          .prepare('UPDATE activity SET card_media_id = ? WHERE id = ?')
+          .bind(lifeEventMedia?.id, lifeEvent)
+          .run();
       }
     },
   });
@@ -232,6 +280,27 @@ describe.each([
     for (const [name, value] of Object.entries(HIDDEN)) {
       expect(text, `${name} が応答に含まれる`).not.toContain(value);
     }
+  });
+
+  it('代表画像を持つ実績・note・life event は画像を配る経路、外部の activity は取得元の画像の URL を出す（U5）', async () => {
+    const { text } = await fetchFeed(as);
+    expect(imageSrcs(text).toSorted()).toEqual(
+      [
+        `/projects/${SLUG.unmaskedProject}/media/${IMAGE.projectKey}`,
+        `/notes/${SLUG.note}/media/${IMAGE.noteKey}`,
+        `/life-events/feed-filler-${FILLER_COUNT}/media/${IMAGE.lifeEventKey}`,
+        IMAGE.externalUrl,
+      ].toSorted(),
+    );
+    // 取得元の画像のサーバへ、一覧のページの URL を送らない
+    expect(text).toMatch(/"?referrer[Pp]olicy"?[=:]"no-referrer"/);
+  });
+
+  it('秘匿化した実績の代表画像と本文の画像は、画像も画像の URL も出さない（FR-013・SC-001）', async () => {
+    const { text } = await fetchFeed(as);
+    expect(text).not.toContain(HIDDEN.mediaPath);
+    expect(text).not.toContain(HIDDEN.bodyStorageKey);
+    expect(imageSrcs(text).filter((src) => src.includes(SLUG.maskedProject))).toEqual([]);
   });
 
   it('秘匿化しない実績は実際の題と実際の組織名で並ぶ（FR-014）', async () => {

@@ -29,7 +29,7 @@
 
 **Primary Dependencies**: vinext 1.2（Next.js 16.4.2 の App Router・Server Components）、React 19.3、Tailwind CSS 4。新しい package を足さない
 
-**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0012` と、共有担当のビュー `activity_feed` の migration（M1〜M5、[data-model.md](./data-model.md)）。005 は書き込まない
+**Storage**: Cloudflare D1（binding `DB`）。スキーマは `migrations/0001`〜`0012` と、ビュー `activity_feed` の migration（M1〜M7、[data-model.md](./data-model.md)）。M1〜M5 は共有担当、M6・M7 は 005 が書いた。005 は表に書き込まない
 
 **Testing**: Vitest 4.1.11（単体）、`@cloudflare/vitest-plugin`（workerd と D1）、`createTestHarness()`（本番ビルドに対する結合）。ADR-0019 の 4 段階。一覧はオーナーの操作を持たないため E2E を足さない
 
@@ -83,7 +83,7 @@
 | 001-career-and-project | 無し。`src/features/project`・`career` を変えない |
 | 003-note | 無し。ビューが読む列（`note.status`・`note.deleted_at`・`note.published_revision_id`・`note.created_at`、`note_revision.title`・`description`、`syndication.url`）の意味を変えない（003 の research.md の R3） |
 | 004-external-activity | 無し。取得元で消えた activity の行を消す（004 の research.md の R6）。`activity.sort_at` の意味を変えない |
-| 共有 | ビューの migration M1〜M5（data-model.md の「要る migration の変更」） |
+| 共有 | ビューの migration M1〜M5（data-model.md の「要る migration の変更」）。M6・M7 は 005 が書いた |
 | 005-feed | `src/features/activity/` の一覧のファイル（`domain/feed.ts`・`domain/feed-repository.ts`・`application/list-feed.ts`・`server/d1-feed-repository.ts`・`server/feed-queries.ts`・`components/feed.tsx`）と一覧の画面。004 のファイルとは名前で分ける |
 
 ## 要件と検査の対応
@@ -101,7 +101,8 @@
 | FR-008 | 公開・公開し直し・下書きから公開に戻しても並びの位置が変わらない | W |
 | FR-010・SC-004 | 並びの日付が同じ組を含めて決まった順で、2 回続けて読んだ順が同じ | W |
 | FR-011 | 同じ日の life event が外部の activity より古い位置に並ぶ。日の境目は Asia/Tokyo の 0 時 | W |
-| FR-012・FR-013・SC-001 | 秘匿化した職歴・実績が出してよい値だけで並び、HTML と RSC の応答に実際の題・実際の組織名・本文の中身・関連 URL・画像が無い | 単（詰め替え）・結（応答） |
+| FR-012・FR-013・SC-001 | 秘匿化した職歴・実績が出してよい値だけで並び、HTML と RSC の応答に実際の題・実際の組織名・本文の中身・関連 URL・画像（代表画像と本文の画像）と画像の URL が無い | 単（詰め替え）・W（ビュー）・結（応答） |
+| FR-023 | 代表画像を持つ実績・note・life event は各機能の画像の経路、外部の activity は取得元の画像の URL を出す | 単（詰め替え）・W（ビュー）・結（応答） |
 | FR-013 の伏せた見た目 | 秘匿化した行の本文の場所に「非公開」が出る | 結 |
 | FR-014 | 秘匿化しない実績・職歴が実際の題と組織名で並ぶ | 結 |
 | FR-015 | ビューが値を外し、画面は DTO だけを受け取る | 構成が持つ（R2・R4）。検査は FR-012〜FR-013 と同じ |
@@ -119,11 +120,12 @@ U3（暦の日付と日時が同じ日のときの順と、日の境目の時刻
 
 U4（一覧から note・実績・life event の個別のページへリンクするか）は決まっていて、表に載せない。2026-11-11 にオーナーが決めた（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）: 一覧の行は個別のページへリンクする。リンクするのは個別のページを持つ実績・note・life event で、秘匿化した実績も個別のページを持つのでリンクする（001 の spec の Edge Cases）。職歴は個別のページを持たないのでリンクせず、外部の activity は取得元へリンクする（FR-020）。ビューが識別子 `slug` を出し、DTO が持つ（data-model.md の M6、contracts/visitor-feed.md）。
 
+U5（一覧に代表画像を出すか、外部の activity の代表の画像の出し方）は決まっていて、表に載せない。2026-11-11 にオーナーが決めた（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6785283114)）: いま持っている画像を一覧に出す。見せ方は仮のものでよく、デザインは後で決める。出すのは、実績の代表画像（001）、note の代表画像（003。note に上げて選んだ画像だけ。ADR-0053）、life event の代表画像（004）、外部の activity の取得元が返した画像（`activity.image_url`）。職歴は画像を持たない。秘匿化した実績は、代表画像も本文の画像も、画像の URL も応答に含めない（FR-013・SC-001）。画像の URL は `src/shared/routes.ts` の各機能の画像の経路で作り、主キーを含めない（ADR-0048）。ビューが代表画像の列を出し、DTO が `imageUrl` を持つ（data-model.md の M7、contracts/visitor-feed.md）。
+
 | ID | 未決 | 決める人 | 止める範囲 |
 |---|---|---|---|
 | U1 | 一覧を見せる画面の名前と URL（spec の「決定が無く」）。PM が推奨 `/` をオーナーに聞いている | オーナー | 一覧の画面（`src/app/` の `page.tsx`）と結合の検査。Repository・DTO・並べる計算は止めない |
 | U2 | 並びの日付が同じとき、どの種類を先に並べるか（spec の「決定が無く」）。仮の順（note・外部の activity・life event・実績・職歴）で作る（2026-11-09、PM の回答） | オーナー | 無し。決まれば `FEED_ITEM_TYPES` の配列を直す |
-| U5 | 一覧に代表画像を出すか、外部の activity の代表の画像の出し方（spec の「決定が無く」、issue #186「URL カードの画像の出し方を決める」） | オーナー | 無し。決まるまで画像を DTO に入れない |
 | U6 | 転載先の URL と外部の activity の URL が一致するとみなす条件（spec の「決定が無く」） | オーナー | 無し。決まるまで文字列の完全一致（research.md の R7） |
 | U7 | 一覧の activity に並べる値（使ったスキル、秘匿化しない行の本文、実績の期間の見せ方、職歴の終わりの日を出すか。spec の Assumptions は UI を考えるときに決めるとする） | オーナー（デザイン） | 無し。決まるまで contracts/visitor-feed.md の最小の値 |
 | U8 | 1 ページの件数。仮の値の 20 で作る（2026-11-09、PM の回答）。読み取り行数は件数で変わらない（research.md の R8） | オーナー（デザイン） | 無し。決まれば `src/features/activity/domain/feed.ts` の定数を直す |
@@ -138,10 +140,10 @@ issue #219 のコメント「spec どうしの重複・干渉・矛盾・依存�
 |---|---|
 | 干渉: `src/features/career/server` に、001 の残りのタスクと 005 の訪問者向けの取り出しが手を入れる | 005 は `src/features/career/` を変えない。職歴の訪問者向けの取り出し（001 の data-model.md、research.md の R15）は、ビューの職歴の腕と `src/features/activity/server/d1-feed-repository.ts` が持つ |
 | 干渉: ER 図の `gen_er8.py`・`er-options.html` を 003・004・005 が直すと衝突する | 005 は変えない。ビューを載せるかは共有担当が決める |
-| 干渉: migration の番号 | ビューの M1〜M5 は共有担当が書く。M6（migrations/0026）は U4 の決定を満たすため 005 が書き、PM が承認した（data-model.md の「要る migration の変更」） |
+| 干渉: migration の番号 | ビューの M1〜M5 は共有担当が書く。M6（migrations/0026）は U4 の決定、M7（migrations/0027）は U5 の決定を満たすため 005 が書き、PM が承認した（data-model.md の「要る migration の変更」） |
 | 依存: 005 → 001・003・004 | Walking Skeleton（Phase 3）は 001 の表とビューの M1 だけを待つ。note・外部の activity・life event の腕は 003・004 のコードを待たず、表（0004・0005）に作り物の行を入れて確かめる。003・004 が列の意味を変えないことは「一覧の読み口の置き場」の表 |
 | spec が ADR-0044 を指す | ADR-0044 は ADR-0046 に置き換わった。ADR-0046 は一覧の決定（ビュー、秘匿化をビューに書く、並べるキー）を変えずに引き継ぐ。この plan は ADR-0046 を根拠にする |
-| 画像・書きかけの保持・slug・uid | 005 は画像を配らず、入力も管理画面も持たないため、どれも使わない |
+| 画像・書きかけの保持・slug・uid | 005 は画像を配らない。一覧の画像は 001・003・004 の画像の経路を指す（U5）。入力も管理画面も持たないため、書きかけの保持と uid は使わない |
 
 ## Project Structure
 
