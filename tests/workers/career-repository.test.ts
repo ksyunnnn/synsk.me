@@ -225,7 +225,7 @@ describe('delete', () => {
       .bind(resume?.id, id)
       .run();
 
-    expect(await careers.delete(id)).toEqual({ ok: true });
+    expect(await careers.delete(id)).toEqual({ ok: true, storageKeys: [] });
     expect(await careers.findForEdit(id)).toBeNull();
     expect(await env.DB.prepare('SELECT career_id, role FROM resume_career').first()).toEqual({
       career_id: null,
@@ -235,5 +235,23 @@ describe('delete', () => {
 
   it('無い id なら ok: false', async () => {
     expect(await careers.delete(999)).toEqual({ ok: false });
+  });
+
+  it('画像を大きさとともに記録し、削除のときに行を消してキーを返す（FR-027）', async () => {
+    const id = await register();
+    const key = crypto.randomUUID();
+    expect(await careers.addMedia(id, { storageKey: key, size: 64 })).toEqual({ ok: true });
+    expect((await careers.findForEdit(id))?.mediaStorageKeys).toEqual([key]);
+    expect(
+      await env.DB.prepare('SELECT size FROM media WHERE storage_key = ?').bind(key).first(),
+    ).toEqual({ size: 64 });
+    expect(await careers.addMedia(999, { storageKey: crypto.randomUUID(), size: 64 })).toEqual({
+      ok: false,
+    });
+
+    expect(await careers.delete(id)).toEqual({ ok: true, storageKeys: [key] });
+    expect(
+      await env.DB.prepare('SELECT 1 FROM media WHERE storage_key = ?').bind(key).first(),
+    ).toBeNull();
   });
 });

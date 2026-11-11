@@ -1,13 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CareerDeps } from '@/features/career/application/deps';
+import { addCareerMedia } from '@/features/career/application/add-career-media';
+import { deleteCareer } from '@/features/career/application/delete-career';
 import { editCareer } from '@/features/career/application/edit-career';
 import type { CareerFormValues } from '@/features/career/domain/career';
 import type { CareerRepository } from '@/features/career/domain/career-repository';
 import type { Author } from '@/shared/domain/author';
+import type { MediaStorage } from '@/shared/domain/media';
 import type { Organization } from '@/shared/domain/organization';
 
 /**
- * 職歴の編集のユースケース（FR-007・FR-040・FR-042）。Repository は作り物の実装を渡す
+ * 職歴の編集・削除・画像の追加のユースケース（FR-007・FR-027・FR-040・FR-042）。Repository は作り物の実装を渡す
  * （docs/SOFTWARE_DESIGN.md の Dependency Injection）。D1 の上での動きは
  * tests/workers/career-repository.test.ts が持つ。
  */
@@ -37,12 +40,25 @@ const fakeCareers = () =>
     list: vi.fn(),
     register: vi.fn(),
     edit: vi.fn(async () => ({ ok: true as const })),
-    delete: vi.fn(),
+    delete: vi.fn<CareerRepository['delete']>(async () => ({ ok: true, storageKeys: [] })),
+    addMedia: vi.fn<CareerRepository['addMedia']>(async () => ({ ok: true })),
   }) satisfies CareerRepository;
+
+const MEDIA_KEY = '11111111-1111-4111-8111-111111111111';
+
+const fakeMedia = () => ({
+  save: vi.fn<MediaStorage['save']>(async () => ({
+    ok: true,
+    media: { storageKey: MEDIA_KEY, type: 'image/png', size: 3 },
+  })),
+  read: vi.fn(),
+  remove: vi.fn(async () => {}),
+});
 
 let careers: ReturnType<typeof fakeCareers>;
 let organization: Organization | null;
 let deps: CareerDeps;
+let media: ReturnType<typeof fakeMedia>;
 
 beforeEach(() => {
   careers = fakeCareers();
@@ -53,7 +69,8 @@ beforeEach(() => {
     nameMasked: 'ある会社',
     updatedAt: OPENED_AT,
   };
-  deps = { careers, organizations: { findByName: vi.fn(async () => organization) } };
+  media = fakeMedia();
+  deps = { careers, organizations: { findByName: vi.fn(async () => organization) }, media };
 });
 
 describe('editCareer', () => {
@@ -93,5 +110,52 @@ describe('editCareer', () => {
       values: sent,
     });
     expect(careers.edit).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteCareer', () => {
+  it('職歴を消し、その職歴の画像を置き場から消す', async () => {
+    careers.delete.mockResolvedValue({ ok: true, storageKeys: [MEDIA_KEY] });
+    expect(await deleteCareer(deps, OWNER, 1)).toEqual({ status: 'deleted' });
+    expect(media.remove).toHaveBeenCalledWith([MEDIA_KEY]);
+  });
+
+  it('無い職歴なら not-found。オーナーでなければ何も消さない', async () => {
+    careers.delete.mockResolvedValue({ ok: false });
+    expect(await deleteCareer(deps, OWNER, 9)).toEqual({ status: 'not-found' });
+    expect(await deleteCareer(deps, null, 9)).toEqual({ status: 'forbidden' });
+    expect(careers.delete).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('addCareerMedia（FR-027）', () => {
+  const file = new Blob([new Uint8Array([1, 2, 3])]);
+
+  it('置き場に置いてから、大きさとともに記録する', async () => {
+    expect(await addCareerMedia(deps, OWNER, 1, file)).toEqual({
+      status: 'added',
+      storageKey: MEDIA_KEY,
+    });
+    expect(careers.addMedia).toHaveBeenCalledWith(1, { storageKey: MEDIA_KEY, size: 3 });
+  });
+
+  it('置き場の総量の上限を超える画像は記録しない', async () => {
+    media.save.mockResolvedValue({ ok: false, reason: 'storage-full' });
+    expect(await addCareerMedia(deps, OWNER, 1, file)).toEqual({
+      status: 'invalid',
+      error: 'storage-full',
+    });
+    expect(careers.addMedia).not.toHaveBeenCalled();
+  });
+
+  it('記録の前に職歴が消えていたら、置いた画像を消して not-found', async () => {
+    careers.addMedia.mockResolvedValue({ ok: false });
+    expect(await addCareerMedia(deps, OWNER, 1, file)).toEqual({ status: 'not-found' });
+    expect(media.remove).toHaveBeenCalledWith([MEDIA_KEY]);
+  });
+
+  it('オーナーでなければ置き場を触らない', async () => {
+    expect(await addCareerMedia(deps, null, 1, file)).toEqual({ status: 'forbidden' });
+    expect(media.save).not.toHaveBeenCalled();
   });
 });

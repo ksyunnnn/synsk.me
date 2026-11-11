@@ -14,6 +14,7 @@ import {
   insertResumeEducation,
   insertResumeProject,
 } from '../support/resume-rows';
+import { insertNote, insertNoteRevision, publishNoteRow } from '../support/note-rows';
 
 /**
  * 管理画面の URL に主キーが出ないこと（ADR-0048 の「主キーは URL に出さない」、
@@ -67,6 +68,9 @@ beforeAll(async () => {
       await insertResumeCareer(db, { resumeId: resume.id, careerId });
       await insertResumeProject(db, { resumeId: resume.id, projectId, skills: ['Go'] });
       await insertResumeEducation(db, { resumeId: resume.id, educationId });
+      const note = await insertNote(db, { slug: 'dash-url-note' });
+      await insertNoteRevision(db, note.id, { title: '主キーを確かめる作り物の note' });
+      await publishNoteRow(db, note.id);
     },
   });
 }, 60_000);
@@ -114,6 +118,10 @@ describe('管理画面のリンクと隠しフィールドに主キーが出な�
       /^\/dash\/resumes\/[0-9a-f]{32}\/careers\/[0-9a-f]{32}$/,
       /^\/dash\/resumes\/[0-9a-f]{32}\/projects\/[0-9a-f]{32}$/,
       /^\/dash\/resumes\/[0-9a-f]{32}\/educations\/[0-9a-f]{32}$/,
+      /^\/dash\/notes\/[0-9a-f]{32}$/,
+      /^\/dash\/notes\/[0-9a-f]{32}\/delete$/,
+      /^\/dash\/notes\/[0-9a-f]{32}\/preview$/,
+      /^\/dash\/notes\/[0-9a-f]{32}\/revisions\/[0-9a-f]{32}$/,
     ]) {
       expect(
         [...visited].some((path) => pattern.test(path)),
@@ -145,6 +153,26 @@ describe('保存の後の redirect 先に主キーが出ない', () => {
     const location = res.headers.get('location') ?? '';
     expect(new URL(location, 'https://synsk.test').pathname).toMatch(
       /^\/dash\/careers\/[0-9a-f]{32}$/,
+    );
+    expect(digitSegmentsOf(location)).toEqual([]);
+  });
+
+  it('note を作ると、uid の編集の画面へ移る（specs/003-note/tasks.md の T052）', async () => {
+    const res = await sendForm(ctx, {
+      how: 'submit',
+      formPath: '/dash/notes/new',
+      asAuthor: true,
+      values: {
+        slug: 'dash-url-created-note',
+        title: 'redirect 先を確かめる作り物の題',
+        description: '',
+        body: '作り物の本文',
+      },
+    });
+    expect(res.status).toBe(303);
+    const location = res.headers.get('location') ?? '';
+    expect(new URL(location, 'https://synsk.test').pathname).toMatch(
+      /^\/dash\/notes\/[0-9a-f]{32}$/,
     );
     expect(digitSegmentsOf(location)).toEqual([]);
   });

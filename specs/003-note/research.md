@@ -1,0 +1,233 @@
+# Research: note
+
+plan.md の Technical Context の不明点と、使う道具の決め方を置く。各項目は「決めたこと・理由・退けた案」の順に書く。決められないものは「未決」として理由と止める範囲を書く。未決の一覧は plan.md の「未決」が持つ。
+
+## Contents
+
+- R1 スキーマの前提
+- R2 001・002 の部品を使う
+- R3 機能の切り方
+- R4 版の保存と同時編集
+- R5 公開・下書きに戻す・削除・元に戻す
+- R6 完全に消す
+- R7 訪問者への取り出し
+- R8 識別子
+- R9 キャッシュと 404・403
+- R10 書きかけの保持
+- R11 本文の書式
+- R12 画像と代表画像
+- R13 URL カード
+- R14 転載先
+- R15 公開前の見た目の確認
+- R16 スマートフォンからの操作
+- R17 版が増えたときの扱い
+- R18 ほかの spec との重なり（issue #219 の調査）
+- R19 説明文が空のときの説明
+
+---
+
+## R1 スキーマの前提
+
+- 決めたこと: `migrations/0001`〜`0011` に、共有担当が足す migration（note と note_revision の uid）を当てたスキーマを前提にする。D1 を使う検査（workerd・結合・E2E）は、このスキーマを当てた D1 で回す。003 は migration を書かない
+- 使う表: `note`・`note_revision`・`media`（持ち主が note の行）・`syndication`・`link_preview`。いずれも `migrations/0005_rebuild_note_and_create_media.sql` が作る
+- 共有担当の migration で足すもの: `note.uid` と `note_revision.uid`。形は 0011 と同じ（16 バイトの乱数の 16 進表記の 32 文字を DB の DEFAULT が入れ、NOT NULL・UNIQUE・形の CHECK、書き換えを拒むトリガ）。ADR-0051 は、管理画面で 1 行ずつ開くすべての表に uid を持たせ、主キーを URL にもフォームにも出さないとする。note は `/dash/notes/{uid}` で、過去の版は `/dash/notes/{uid}/revisions/{revisionUid}` で開く。同時編集の比べる版（R4）も隠しフィールドで版の uid を送る
+- 理由: 0005 のスキーマが、識別子の形と重複（FR-002）、公開した note の識別子の固定（FR-003）、版を書き換えないこと（FR-006）、題が空の版を公開しないこと（FR-011）、初めて公開した日時の固定（FR-013）、代表画像がその note の画像だけを指すこと（FR-025）、転載先の重複（FR-032）、参照先の情報を URL ごとに 1 つ持つこと（FR-029）を CHECK・UNIQUE・トリガで持つ
+- 退けた案: 主キーを管理画面の URL と隠しフィールドに出す。ADR-0051 に反する
+
+## R2 001・002 の部品を使う
+
+- 決めたこと: オーナーの判定・env・Server Action の結果の型・フォームの値の読み方・入力の部品・uid の引き方・proxy の形を、001・002 のものをそのまま使う。一覧は plan.md の「再利用する既存の部品」が持つ
+- 共有担当が作るものを使う: 書きかけの保持の部品（001 の T072、`src/shared/components/draft-retention.tsx`）、slug の形の検査（`src/shared/domain/slug.ts` の `isSlug`、PR #222）、画像の保存と配信の共通部分（`src/shared/server/media-storage.ts`）。003 はこれらを作らない
+- 理由: 001・002 と同じ形にすると、同じ検査の道具（`tests/support/access.ts`・`tests/integration/support/`）と同じ読み方で確かめられる。issue #219 の調査の報告（spec どうしの重複）が、書きかけの保持と slug の形を 2 つ以上の spec が使うと挙げた
+- 退けた案: note の中に同じ部品をもう 1 つ作る。issue #219 の調査が挙げた重複を増やす
+
+## R3 機能の切り方
+
+- 決めたこと: `src/features/note/` に `domain/`・`application/`・`components/`・`server/` を置く。版・画像・転載先・参照先の情報も note の中に置く
+- 理由: ADR-0027 が `note/` を挙げる。版・転載先は note に属し、参照先の情報は note の本文からだけ指される（spec の Key Entities）。機能どうしは import しない（ADR-0026）
+- 一覧（005）は note を `activity_feed` のビューで読み、`src/features/note/` を import しない（005 の spec の FR-015、ADR-0044）。003 は、ビューが読む列（`note.status`・`note.deleted_at`・`note.published_revision_id`・`note.created_at`、`note_revision.title`・`note_revision.description`、`syndication.url`）の意味を変えない
+- 退けた案: 参照先の情報を `src/shared/` に置く。使い手が note だけで、constitution IX の 2 つ目の使い道が無い
+
+## R4 版の保存と同時編集
+
+- 決めたこと（FR-005〜FR-009、FR-020・FR-021）:
+  - 作成は、`note` の行と 1 つ目の版を 1 回の `batch()` で入れる。どの note も 1 つ以上の版を持つ
+  - 編集の画面は、開いたときの最も新しい版の uid を隠しフィールドで持つ。保存は `INSERT INTO note_revision (note_id, title, description, body) SELECT ?, ?, ?, ? WHERE (SELECT uid FROM note_revision WHERE note_id = ? ORDER BY id DESC LIMIT 1) = ?開いたときの版の uid` に、`AND EXISTS (SELECT 1 FROM note WHERE id = ? AND deleted_at IS NULL)` を足して行う。`meta.changes` が 0 なら、Repository が note を読み直し、無いか削除していれば `not-found`、そうでなければ `conflict` を返す。`conflict` は保存を止め、送られた内容をフォームに戻して知らせる。`not-found` は 001 の `editProject` と同じく一覧へ 303 で移す（contracts/dash.md）
+  - 同じ保存で識別子を変えるとき（FR-003）は、同じ `batch()` の版の INSERT より前に、同じ条件を付けた `UPDATE note SET slug = ?` を置く。条件に合わなければどちらも書かない。識別子の重複は UNIQUE が拒み、`batch()` 全体が戻る
+  - 保存に成功したら編集の画面へ 303 で移り、画面は最も新しい版（保存した版）を読み直して隠しフィールドに置く（FR-021）
+  - 過去の版に戻す（FR-009）は、戻す版の題・説明文・本文を、上と同じ条件の INSERT で新しい版として足す。公開した版は変えない
+- 決定（2026-11-09、オーナー）: 比べる値は最も新しい版で、001 の FR-042・002 の FR-038 が使う `updated_at` に揃えない。根拠は spec の FR-020・FR-021 と Assumptions の「同時編集で比べるのは版だけで、そのための値を足さない」。`note.updated_at` は公開・下書きに戻す・削除・識別子・代表画像・転載先でも変わるため、`updated_at` で比べると FR-020 が止めない操作でも保存が止まる
+- 001・002 と揃えるもの: 止めたときの結果（`src/shared/domain/action-result.ts` の `conflict`、送られた値を返す）、画面が入力を消さずに知らせること、隠しフィールドで開いたときの値を送る形
+- 理由: `batch()` は 1 つのトランザクションで、1 文が失敗すると全体を戻す（001 の research.md の R2）。版の uid は書き換わらず、版は消えない（R6 の完全に消すときを除く）ため、比べた値が同じなら同じ版を指す。001 の R7 の限界（同じミリ秒の 2 つの保存を見分けられない）は起きない
+- 退けた案: `note.updated_at` で比べる（上の決定）。版の連番の列を足す（Assumptions が値を足さないとする）
+
+## R5 公開・下書きに戻す・削除・元に戻す
+
+- 決めたこと:
+  - 公開（FR-011・FR-013）: `UPDATE note SET status = 'published', published_revision_id = (最も新しい版の id), published_at = COALESCE(published_at, ?今の日時) WHERE id = ? AND deleted_at IS NULL`。題が空の版はアプリケーションが先に止めて項目で知らせ、トリガ `note_published_revision_valid` を最後の守りに残す
+  - 下書きに戻す（FR-014）: `status = 'draft'` だけを書く。`published_revision_id` と `published_at` は残す
+  - 削除（FR-016）: `deleted_at` に今の日時を書く。`status` は変えない
+  - 元に戻す（FR-016・SC-007）: `deleted_at` を NULL にする。`status`・版・識別子は削除の前のまま残っているため、削除前の状態に戻る
+  - 公開・下書きに戻す・削除・元に戻すは、開いたときの版と比べない。公開の操作でも比べるかは未決（U6）で、決まるまでは FR-011 のとおり、その時点の最も新しい版を公開する
+- 理由: 0005 の CHECK とトリガが、公開した note の識別子・公開した版・初めて公開した日時を守る。削除は行を消さないため、元に戻すときに識別子が重ならない（spec の Edge Cases）
+- 退けた案: 削除で `status` を別の値にする。元に戻すときに削除前の状態が分からなくなる
+
+## R6 完全に消す
+
+- 決めたこと: Repository に完全に消す処理を置き、1 回の `batch()` で `media`（持ち主が note）・`syndication`・`note_revision`・`note` の順に消す（FR-017、`docs/REQUIREMENTS.md` の FR-11）。`link_preview` は消さない。管理画面からこの処理を呼ぶ画面は作らない（spec の Assumptions）
+- 指す先を空にしてから消す手順は取らない。公開したことのある note で `published_revision_id` を空にすると、CHECK `(published_revision_id IS NULL) = (published_at IS NULL)` に当たり、`published_at` はトリガが変えさせない。note から版と画像を指す外部キーの検査はトランザクションの終わりに送られる（0005 の冒頭の注釈）ため、この順で消せる。公開した note・代表画像を持つ note で消せることを workerd の検査で確かめる
+- R2 の画像の実体は、D1 の削除が成功した後に `src/shared/server/media-storage.ts` で消す。R2 の削除に失敗しても、持ち主の行が無いため画像は訪問者に出ない（001 の research.md の R8 と同じ）
+- 理由: 一部だけが残る状態にしない（FR-017）。`batch()` は 1 文が失敗すると全体を戻す
+- 退けた案: CASCADE（表を作り直す migration で子の行が黙って消える。0003 の冒頭）
+
+## R7 訪問者への取り出し
+
+- 決めたこと: 訪問者向けの取り出しは、Repository の実装の中で `note.status = 'published' AND note.deleted_at IS NULL` を条件にし、`note.published_revision_id` の版だけを読む。出す項目は [contracts/visitor-note.md](./contracts/visitor-note.md) の DTO に列挙する（FR-012・FR-015・FR-016・SC-001）。最も新しい版は読まない
+- ページの `<title>` と OGP の説明にも同じ DTO の値を使う。説明文が空のときの説明は R19、冒頭の抜き出し方は R11
+- 訪問者の URL は `/notes/{slug}`（FR-004）。ADR-0048 が「URL は resourceful routing に従い、コレクション名と識別子で表す」とし、Consequences に `/notes` を切れば一覧に辿り着けるとする。spec はこの形を未決とするため、オーナーに確かめる（U2）
+- 削除した note の URL は、無い識別子と同じ 404 にする。中身を応答に含めない（FR-016）。別の応答にするかは未決（U10）
+- 理由: ADR-0029（取り出すときに確かめる）、ADR-0028（DTO）、constitution の Allowlist Visibility
+- 退けた案: 全列を読んで画面で外す（ADR-0029 が退けた）
+
+## R8 識別子
+
+- 決めたこと: 識別子の形（1〜100 文字の英小文字・数字・ハイフン、FR-002）は、共有担当の `src/shared/domain/slug.ts` の `isSlug` を使う。重複（削除した note を含む）は `note.slug` の UNIQUE が拒み、アプリケーションは項目の誤りとして知らせる。一度でも公開した note（`published_at` を持つ）の識別子の書き換えは、アプリケーションが先に拒み、トリガ `note_slug_fixed_after_publication` を最後の守りに残す（FR-003）
+- 識別子はオーナーが入れる。題から候補を示すかは未決（U3）で、決まるまで候補を示さない
+- 001 の R6 と 002 の uid（`crypto.randomUUID()` の 36 文字、`slug.ts` の `newSlug`）は使わない。note の識別子の既定を uid にする要件は無い
+- 理由: issue #219 の調査が、001・002・003・004 が同じ slug の形を定めるとし、共有担当がまとめる（R2）
+
+## R9 キャッシュと 404・403
+
+- 決めたこと: `/notes/[slug]` と `/dash/notes/*` は `'use cache'` を使わない。データを読んでから決まる 404（識別子の公開の note が無い、管理画面の uid の note・版が無い）と 403（オーナーでない `/dash`）は `src/proxy.ts` が描画の前に決め、`notFound()` か `forbidden()` を呼ぶだけのページへ rewrite する。`export const revalidate` と `export const dynamic` は書かない
+- `src/proxy.ts` の matcher に `/notes/:slug` と `/notes/:slug/media/:key`（R12）を足し、`DASH_ROW_EXISTS` に `notes` を足す。過去の版の画面（`/dash/notes/{uid}/revisions/{revisionUid}`）は、002 の写した行と同じく、note と版の有無を 1 回で確かめる
+- 画像の経路（`/notes/{slug}/media/{key}`）は matcher に入れて dynamic に固定する（ADR-0040 の Consequences）が、proxy は D1 を読まない。見せてよいかは `route.ts` が 1 回だけ確かめ、見せなければ自分で 404 と `Cache-Control: no-store` を返す。ADR-0040 が proxy で 404 を決める理由は、描画をストリーミングすると状態コードが保てないことで、`route.ts` は描画せずに `Response` を返すため当たらない。proxy でも確かめると、画像 1 枚ごとに公開した版の本文（100,000 文字まで）を 2 回読んで構文木にする。proxy は判定に失敗すると素通しにする（`respond` の `catch`）ため、`route.ts` の確かめは省けない
+- 理由: constitution の Cacheability（ADR-0040）。キャッシュを使わないため、公開・下書きに戻す・削除の直後の要求から新しい状態で出る。公開の操作のあと見えるまでの時機とキャッシュの扱いは未決（U12）で、計測値が閾値を割るまでキャッシュを足さない（constitution VI）
+- `src/proxy.ts` は 001・002 の作業者も直すため、003 の変更は既にある分岐を変えずに足す
+- 退けた案: `/notes/[slug]` を `'use cache'` にし、公開のたびに無効化する（計測値が無い）
+
+## R10 書きかけの保持
+
+- 決めたこと: 編集の画面は、共有担当の `src/shared/components/draft-retention.tsx` の `DraftRetainingForm` を使い、書きかけの内容をその端末の `localStorage` に持つ。`storageKey` は `note:<note の uid>`、`version` は開いたときの最も新しい版の uid、`result` は Server Action の結果を渡す。部品は送信で消し、`saved` 以外の結果（`conflict` を含む）で送った値を持ち直す（FR-018・FR-019、User Story 4、spec の Edge Cases）
+- `version` に版の uid を渡す理由: 渡さないと、別の画面で先に保存された後に開き直したとき、古い版から書いた書きかけが最も新しい版の中身の上に戻り、触っていない項目まで古い値で保存する（FR-020 が防ぐ上書き）。渡すと、前の版の書きかけは消さずに残し、自動では戻さない
+- 前の版の書きかけの見せ方（2026-11-10、オーナーから任されて Claude が決めた。並びは PM が決めた）: 開き直した編集の画面は最も新しい版を出し、フォームの上にモーダルでない知らせを置く。オーナーは「書きかけを戻す」で入力に戻すか、「書きかけを捨てる」で消す。どちらも、次に入力するまでは「取り消す」で前の状態に戻せるので、確認を求めない。書きかけは書いた日時を持ち、新しいものから 1 件ずつ知らせる。日時を持たない形式の書きかけは、日時を持つものの後に名前の順で回す
+- 見せ方の理由: 開いた画面に出す知らせは作業を止めず、その内容の近くに置く（[HIG の Alerts](https://developer.apple.com/design/human-interface-guidelines/alerts) の「Avoid showing an alert when your app starts」「Avoid using an alert merely to provide information」、[HIG の Feedback](https://developer.apple.com/design/human-interface-guidelines/feedback) の「Consider integrating status feedback into your interface」）。取り消せる操作には確認を出さない（HIG の Alerts の「Avoid displaying alerts for common, undoable actions」、[HIG の Undo and redo](https://developer.apple.com/design/human-interface-guidelines/undo-and-redo) の「Show the results of an undo or redo」）。新しいものから知らせるのは、名前の順はオーナーにとって意味のない並びだから（PRINCIPLES の「たどり着きたい情報 over 演出」）。書きかけを消すのはオーナーが捨てたときだけ（spec の Edge Cases）
+- 「書きかけを戻す」で戻す範囲（2026-11-10、オーナーから任されて Claude が決めた）: 書きかけで変えた項目だけを戻し、ほかの項目は開いた版の値のまま残す。書きかけは、書いた画面が開いたときの入力の値（`base`）を一緒に持ち、書きかけの値が `base` と違う項目を「変えた項目」とする。書きかけと先の保存の両方で変えた項目は、書きかけの値を入れる。いくつでも選べる項目（実績のスキルのチェックボックス）は、値ごとに比べ、書きかけで足した値と外した値だけを当てる。先に保存した画面が同じ項目で足した値は残す。`base` から何も変えていない書きかけは、戻しても何も変わらないので知らせない。戻した後の知らせは「書きかけで変えた項目を戻しました。」。`base` を持たない形式で書いた書きかけは、変えた項目が分からないので、すべての項目を戻し、知らせは「書きかけを戻しました。」
+- 戻す範囲の理由:
+  - すべてを戻すと、先に保存した項目まで前の版の値に戻り、そのまま保存すると先の保存を上書きする。FR-020 と 001 の FR-042 が防ぐ上書きを、オーナーの操作から起こす（SOFTWARE_DESIGN の原則 1「守る over 手軽さ」）。[HIG の Feedback](https://developer.apple.com/design/human-interface-guidelines/feedback) は「Warn people when they initiate a task that can cause data loss that’s unexpected and irreversible.」とし、警告を足すより、予期しない消失を起こさない方を取る
+  - オーナーが戻したいのは、自分が書いた変更である。[HIG の Undo and redo](https://developer.apple.com/design/human-interface-guidelines/undo-and-redo) の「Help people predict the results of undo and redo as much as possible.」「Show the results of an undo or redo.」に合わせ、戻した結果を知らせの文で「変えた項目」と示す
+  - 変えた項目は端末が書きかけと `base` から求められるので、オーナーに選ばせない（[HIG の Entering data](https://developer.apple.com/design/human-interface-guidelines/entering-data) の「Don’t ask people to enter information that you can gather automatically」）。知らせは文 1 行とボタンのまま増やさない（PRINCIPLES の「余白 over 密度」）
+  - `base` は、画面が開いたときの入力の初めの値（`defaultValue`・`defaultChecked`・`defaultSelected`）から、画面が動き始めた時点で 1 回だけ作る。保存が拒まれたフォームは送った値を初めの値に描き直すので、書くたびに作ると、拒まれた後の書きかけが何も変えていないものになる。部品の中だけで閉じ、Server Action・D1・各フォームを変えない（SOFTWARE_DESIGN の原則 9「単純さ over 先回りの構造」）。001 の職歴・実績の版は更新日時で、前の版の値を D1 に持たないため、D1 から読む形では 001 で成り立たない
+- 退けた案（戻す範囲）: すべての項目を戻す（上の上書き）。違う項目を並べてオーナーに選ばせる（端末が求められる情報を聞き、知らせが密になる）。前の版の値を D1 の版から読んで比べる（note は版の行を持つが、001 は持たない）
+- D1 には書かない。別の端末は D1 の最も新しい版を読むため、書きかけの内容は出ない（FR-019）
+- 理由: spec の FR-018
+- 退けた案: 書きかけの内容を D1 に自動で保存する（FR-018 が保管するデータに書かないとする）
+
+## R11 本文の書式
+
+- 決定（2026-11-09、オーナー。plan.md の U4）: 本文は Markdown で書き、生の HTML を通さない。画像は `media` を指す識別子で指し、キャプションを添える。URL カードは、行に URL だけを書いた行から作る
+- 決定（2026-11-09、PM）: 画像を指す識別子は `media.storage_key`（共有担当の `src/shared/server/media-storage.ts` が作る UUID の `storageKey`、PR #225）で、主キーではない。ADR-0051 が主キーを管理画面のフォームに出さないとするため。U4 の決定の記録の「media の id」は、この識別子を指す
+- 決定（2026-11-10、オーナー）: 画像のキャプションは Zenn の書き方に揃える。画像のすぐ下の行に `*` で挟んだ文を書くと、キャプションになる（[Zenn の Markdown 記法一覧](https://zenn.dev/zenn/articles/markdown-guide) の「キャプションをつける」）。画像の印の題の欄（`"…"`）はキャプションにせず、`<img>` の `title` の属性（ホバーで出す文）にする。オーナーは、ホバーで出す文だけ・キャプションだけ・両方のどれも書ける。画像の URL の欄（`media:<storageKey>`）は変えない
+- 決定（2026-11-10、PM）: 「すぐ下の行」は、画像の行に空行を挟まずに続く行とする。Zenn のガイドの例が、画像の行と `*キャプション*` の行の間に空行を置かないため。CommonMark ではこの 2 行は同じ段落になる。行の分け方はふつうの改行でも強制改行（行末の空白 2 つか `\`）でもよい。空行を挟んだ `*…*` は別の段落の斜体で、画像と同じ行の `*…*` は文の中の斜体のまま。`_…_` もキャプションにする。CommonMark で `*…*` と同じ強調になり構文木が 2 つを区別しないため、区別する処理を足さない（SOFTWARE_DESIGN の原則 9「単純さ over 先回りの構造」）
+- 決定（2026-11-11、オーナー）: 画像の URL の欄に http か https の外の URL を書いた画像も、訪問者に画像で出す。キャプションと題の欄の扱いは `media:<storageKey>` の画像と同じ。決定と理由は [ADR-0054](../../docs/decisions/0054-external-images-in-markdown-body.md)
+- 決定（2026-11-09、PM）: Markdown を読む部品と描く部品は共有担当が `src/shared/` に作り、003 は使う。使い手は 001 の職歴・実績の本文（001 の T077）と 003 の note の本文の 2 つ（constitution IX）。package（`react-markdown`・`mdast-util-from-markdown`）も共有担当が足す。ファイル名は共有担当の PR で確かめる
+- 003 が共有担当の部品に求めること（下の決めたことを満たすため）:
+  - 本文を構文木にして、画像の印の `storageKey` の並び、行に URL だけを書いた行の URL の並び、最初の段落の文字列を返す関数。正規表現で読むと、コードの中に書いた印まで拾い、表示しない画像を訪問者に出す
+  - 描く部品が、画像の `src` を作る関数（note は `/notes/{slug}/media/{storageKey}`）と、行に URL だけを書いた行を描く部品（note は URL カード、R13）を受け取れること
+  - `urlTransform` が `img` の `media:` だけをそのまま通し、ほかを `defaultUrlTransform` に任せること（http と https の URL は既定が通す）。既定のままだと `media:<storageKey>` が空の文字列になる（react-markdown 10.1.0 の `lib/index.js` の `safeProtocol` と `defaultUrlTransform`、2026-11-09 に確かめた）
+- 決めたこと:
+  - 本文は `note_revision.body` に文字列で持つ（100,000 文字まで、FR-005）。入力は `<textarea>`
+  - 生の HTML を通さない: `dangerouslySetInnerHTML` を使わず、`rehype-raw` を足さない
+  - 画像の印: `![代替テキスト](media:<storageKey> "ホバーで出す文")` と、そのすぐ下の行の `*キャプション*`。題の欄とキャプションの行はどちらも省ける。印だけの段落（キャプションの行を含む）は、訪問者に `<figure>` の中の `<img alt title>` と `<figcaption>` で出す。文の中の画像は `<img alt title>` だけで出す。画像の URL は R12 の配る経路から作る。http か https の外の URL の画像も同じ形で出し、`src` は書いた URL のままにする（ADR-0054） <!-- check-ignore: 本文の画像の記法の例 -->
+  - カードにする行: 段落の中身が `http` か `https` の URL の文字列 1 つだけの行。行の中に文と並べて書いた URL はカードにしない。GFM を使わないため、`<https://…>` の autolink かリンクの記法で書いた URL だけがリンクになり、そのまま書いた URL は文字列で出る（CommonMark の Autolinks）。カードにする行は R13 の見せ方で出す
+  - `<https://…>` の autolink だけの段落はカードにせず、リンクで出す。カードにせずに URL を書く手段として残す（2026-11-09、PM）
+  - リストと引用の中の段落も、カードにする行と画像の印の見分けの対象に含める。項目の間に空行の無いリストの項目も段落として扱う（2026-11-09、PM）
+  - 説明文が空のときの説明: 本文の最初の段落の文字列（改行は空白にする）。使うかは note ごとに選ぶ（R19）。画像の印だけの段落は、キャプションの行を含めて最初の段落に数えない
+  - 書式は CommonMark だけを使う
+- 理由: 原則 1（守る over 手軽さ）。HTML の文字列を作って差し込む形（`marked` など）は、出力をもう一度無害にする処理が要る
+- 退けた案: `marked`・`markdown-it`（HTML の文字列を返し、`dangerouslySetInnerHTML` と無害化の package が要る）。正規表現で画像の印と URL を拾う（上の理由）。note の中に Markdown の部品を作る（001 の T077 と同じものを 2 つ作る）。題の欄をキャプションにする（2026-11-10、オーナー。キャプションは Zenn の書き方に揃え、題の欄はホバーで出す文にする）
+- plan で決めたこと（オーナーの決定の外）: 画像の印の URL の欄を `media:<storageKey>` にすること、カードにする行の見分け方、説明の抜き出し方。001 と同じ書き方にするため、共有担当の部品の決まりに合わせる
+
+## R12 画像と代表画像
+
+- 決定（2026-11-09。オーナーから任されて Claude が決めた。plan.md の U5、[issue #219 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6732716576)）: R2 に原本を置き、Worker が持ち主ごとに見せてよいかを確かめてから、変換せずに返す。公開していない画像の応答には `Cache-Control: no-store` を付ける。形式は JPEG・PNG・WebP・GIF で、SVG は受けない。1 枚 10 MB まで
+- 決めたこと:
+  - 画像の記録は `media` に持ち、持ち主の列は `note_id`。R2 への読み書き・形式と大きさの検査は共有担当の `src/shared/server/media-storage.ts` が持つ。003 は、note の画像を足す操作と、note の画像を訪問者に出してよいかの確かめを持つ（FR-023・FR-026）
+  - 配る経路は `/notes/{slug}/media/{key}`。`{key}` は `media.storage_key`（UUID、PR #225）で、本文の画像の印と同じ値（R11）。主キーは URL に出さない（ADR-0048）。見せてよいかは `route.ts` が確かめ、結果を共有担当の `respondWithMedia` に渡して応答を作る（R9）
+  - 量の上限（constitution II）: 1 枚 10 MB、1 回の操作で 1 枚
+  - 代表画像の出どころは `note.card_image`（`media`・`site`）。既定は `site`（FR-024）。`media` を選べるのは、その note の画像だけ（複合の外部キー、FR-025）。`generated` は migration 0024 が CHECK から外し、既にある `generated` の行を `site` に変える
+  - 訪問者に出してよい画像は、note が公開で削除していないときの、公開した版の本文が指す画像と、代表画像だけ（FR-026）。この確かめは画像を配る経路の中で、Repository が取り出すときに行う。公開した版の本文が指す画像の `storageKey` は、共有担当の Markdown の部品で読む（R11）。その note の `media` の行に無い `storageKey` は出さない
+- 未決:
+  - U14: 本文から消した画像のデータを残すか、画像の置き場と保管するデータのずれの扱い（spec の「決定が無く」）。決まるまで、本文から消した画像も `media` と R2 に残す。訪問者には公開した版の本文が指す画像だけを出すため、残しても出ない
+- 共有したときの画像（U8 の決定。2026-11-10、オーナー。[issue #219 の U8 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766846712)）:
+  - note のページの `generateMetadata` は、`twitter:card` を `summary` にする。サイト全体の `src/app/layout.tsx` の `summary_large_image` と、サイト共通の 1200×630 の画像 `src/app/opengraph-image.tsx` は変えない
+  - `media`: `og:image` と `twitter:image` は、代表画像の原本の経路 `/notes/{slug}/media/{key}` を 1 つだけ指す。縮めない（オーナーが選んだ画像の大きさに従う）
+  - `site`: note 用のサイト共通の 400×400 の画像を使う。画像はオーナーが用意する（#294）。用意するまでは、`og:image` と `twitter:image` を出さない。`openGraph.images` と `twitter.images` に空の並びを渡し、サイト共通の 1200×630 の画像を引き継がない。仮の画像は置かない（索引されるのを避けるため）
+  - 大きさの根拠（note 用のサイト共通の 400×400 の画像）: X の Summary Card は 1:1 で最小 144×144、Facebook は最小 200×200（https://developers.facebook.com/docs/sharing/webmasters/images/ ）、LinkedIn は幅 401 px 未満を小さい画像で出す（https://www.linkedin.com/help/linkedin/answer/a521928 ）。400×400 はこの 3 つを満たす
+- 退けた案（U8）: 題を入れた画像を自動で作る（Workers で描く・Cloudflare Images で文字を重ねる・ブラウザで描いて R2 に置く・Browser Rendering・Cloudinary）。オーナーが機能を作らないと決めた。`media` の画像を共有したときだけ 400×400 に縮める。オーナーが選んだ画像は縮めないと決めた
+- 理由: 004 の spec の FR-030 は画像の仕組みを 003 が持つとするが、issue #219 の進め方の宣言（2026-11-09）が画像の保存と配信を共有担当に割り当てた。003 の plan は共有担当の部品を使う
+
+## R13 URL カード
+
+- 決めたこと: カードにするのは、行に URL だけを書いた行（R11）。参照先の情報は `link_preview` に URL ごとに 1 つ持ち、版には URL だけを残す（FR-029）。画像は URL だけを持つ（FR-030）。訪問者の表示は `link_preview` を読むだけで、参照先へ取りに行かない（FR-028・SC-005）。参照先の情報が取れない URL を書いた note も保存でき、公開できる（spec の Edge Cases）。保存・公開は参照先の取得の成否を待たない
+- 参照先への取得は、取得した HTML を境目で synsk.me の形（題・画像の URL）に詰め替え、外の形を持ち込まない（docs/SOFTWARE_DESIGN.md の Anti-Corruption Layer）。外への取得は constitution II の対象で、1 回の保存で取りに行く URL の数・1 回の取得の時間と大きさの上限を、作る前に plan に書く
+- 決定（2026-11-10、オーナー。plan.md の U9、[issue #219 の報告](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766542397)）: 参照先の情報は、公開する前にオーナーだけが見る画面でカードに題と画像が出ているようにする。定期実行で取り直さない。オーナーの理由は、Zenn が記事のプレビューでカードを出すこと。オーナーだけが見る画面は見た目の確認（R15）で足り、書きかけを即時に描くプレビューは作らない（2026-11-10、オーナー）
+- 決めたこと（取得の上限と見せ方は 2026-11-10 に PM が承認した）:
+  - 取る時機: 見た目の確認の画面（`/dash/notes/{uid}/preview`）を描く前に、最も新しい版の URL だけの段落のうち `link_preview` に行の無い URL を取り、取れたものを書いてから描く（`src/features/note/application/get-note-preview.ts`）。訪問者の表示では取らない（FR-028）。保存と公開は取得を待たない
+  - 取れなかった URL: 行を書かず、次に見た目の確認を開いたときに取り直す。取れたが題の無いページ（HTML でない応答を含む）は、題を NULL で書き、取り直さない
+  - 取り直す（2026-11-10、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6767411954)）: 見た目の確認の「取り直す」を押したときだけ、その URL を 1 つ取り直す（`src/features/note/application/refetch-link-preview.ts`）。定期実行では取り直さない。取得の上限と内部のアドレスの拒否は見た目の確認を開いたときと同じ。オーナーだけが使える（FR-033）。最も新しい版の本文の URL だけの段落に無い URL には要求を出さない。取れなかったら行を書き換えず、理由をカードの下に出す。取れたが題の無いページは、前の行に題があっても題を NULL で書き換える。根拠は、上の「取れなかった URL」の決まり（取れたが題の無いページは題を NULL で書く）を、初めて取るときと取り直すときで同じにすること
+  - 見せ方: 題を持つ URL は、題・ホスト名・画像を添えたカードのリンクで出す。行が無いか題が NULL の URL は、URL の文字列のリンクで出す（`src/features/note/components/link-card.tsx`。原則 4）。訪問者と見た目の確認は同じ部品で描く
+  - 本文から消えた URL の行: `link_preview` から消さずに残す（2026-11-10、PM が承認）。行は URL ごとに 1 つで複数の note が共有する（FR-029）ため、消すにはすべての note のすべての版の本文を読むことになる。完全に消す処理も `link_preview` を残す（FR-017、R6）。量は quickstart.md の SQL で測ってから決める（原則 6・9）
+  - カードの画像: 参照先の画像の URL のまま `<img>` で出し、画像を保管しない（FR-030）。`loading="lazy"` と `referrerpolicy="no-referrer"` を付け、参照元のページの URL を画像のサーバへ送らない
+  - 取得の部品: `src/shared/server/link-preview-fetch.ts`。004 の「URL から題を取ってフォームの初期値に入れる」（issue #281）も使うため `src/shared/` に置く（ADR-0026 の依存の向き 1）。取った HTML はこの部品の中で題と画像の URL に詰め替える。失敗を投げず、URL ごとに取れたか、取れなかった理由を返す（SOFTWARE_DESIGN の「失敗の表し方」）。上限の値と要求を出さない URL は plan.md の「参照先への取得の上限」
+  - ユースケースは取得の部品を直接 import せず、関数（`LinkPreviewSource`）で受け取る（ADR-0026 の依存の向き 5、Dependency Injection）。組み立て用の関数（`src/features/note/server/queries.ts`）が取得の部品の結果を `VisitorLinkPreview` に詰めて渡す
+- 退けた案: 版の本文に参照先の題を書き込む（FR-029 が版の外に持つとする）。保存した後に取る・定期実行で取り直す（2026-11-10、オーナー）。表示のたびに取る（FR-028）
+
+## R14 転載先
+
+- 決めたこと: 転載先は `syndication` に持つ。オーナーは編集の画面で URL を足し、外す（FR-031）。同じ URL は、同じ note にも別の note にも記録できない（`syndication.url` の UNIQUE、FR-032）。URL は `src/shared/domain/web-url.ts` の `isWebUrl` で http か https に限る
+- 外すフォームは、主キーでなく URL を送って行を指す。`syndication.url` は UNIQUE のため 1 行に決まる。uid を足さない（ADR-0051 の主キーを出さない決まりを満たす）
+- 訪問者には出さない。出すかは未決（U11）で、許可リスト方式（constitution）により、決まるまで DTO に入れない
+- 理由: ADR-0006 の重複エントリの除外は、一覧（005）が `syndication.url` で外部の activity を除く。003 は記録までを持つ
+
+## R15 公開前の見た目の確認
+
+- 決めたこと: `/dash/notes/{uid}/preview` で、最も新しい版を訪問者向けと同じ部品で描く。状態と削除に関わらず出す（`docs/REQUIREMENTS.md` の FR-13）。DTO は訪問者向けと同じ形を、最も新しい版から詰める
+- 理由: 002 の `/dash/resumes/{uid}/preview` と同じ形
+
+## R16 スマートフォンからの操作
+
+- 決めたこと: 管理画面はネイティブの要素と `<form>` で作り、Playwright のスマートフォンの端末の設定（画面の幅と触れる操作）で、作成・保存・公開を E2E で確かめる（FR-022・SC-006、constitution V）
+- 理由: constitution V は、キーボードだけ・読み上げ・スマートフォンのそれぞれで同じ操作ができることを求める
+
+## R17 版が増えたときの扱い
+
+- 決めたこと: 版を消す・まとめる仕組みを作らない。データの大きさを測る SQL を quickstart.md に置き、閾値を割ってから決める（spec の Assumptions、constitution VI）
+- 測る値: note ごとの版の数と、`note_revision` の `length(body)` の合計
+
+## R18 ほかの spec との重なり（issue #219 の調査）
+
+issue #219 の報告「spec どうしの重複・干渉・矛盾・依存を調べた」のうち、003 に関わる指摘と、この plan での扱い。
+
+| 指摘 | 扱い |
+|---|---|
+| 画像の保存と配信の持ち主が決まっていない | 共通部分は共有担当が作り、note 固有の確かめは 003 が持つ（R12） |
+| 書きかけの保持（001 の T072 と 003 の FR-018） | 共有担当の部品を使う（R10） |
+| 同時編集の止め方（001・002 は updated_at、003 は版） | 版で比べる。2026-11-09 にオーナーが決めた（R4） |
+| slug の形が 4 つの spec で同じ | 共有担当の検査を使う（R8） |
+| migration の番号（003 と 004 の並行） | 003 は migration を書かない。共有担当が書く（R1） |
+| media の表に 001・003・004 が書き込む | 003 は持ち主が note の行だけを書く。保存の部品は共有担当（R12） |
+| ER 図のファイルを 003・004・005 が直す | 003 は直さない。要る変更は PM に伝えた（下の 2 行） |
+| ADR-0051 の uid が note に無い | 共有担当の migration で `note.uid`・`note_revision.uid` を足す（R1） |
+| ER 図の note_revision の説明「保存と公開のたびに 1 行」 | FR-006・FR-011 と 0005 は保存のたびに 1 行。ER 図の修正を共有担当に渡した |
+| 0005 の注釈が旧名 `specs/005-note-write-and-read` を指す | 注釈の修正の扱いを共有担当に渡した。003 の要件番号との対応は data-model.md が持つ |
+| 「uid」の意味の食い違い（36 文字と 32 文字） | 003 の uid は管理画面の URL の 32 文字だけ。識別子（slug）に uid を使わない（R8） |
+| 本文の書式（U4）を 001 の職歴・実績の本文（001 の T077）と 003 が使う | Markdown を読む部品と描く部品は共有担当が `src/shared/` に作る（2026-11-09、PM。R11） |
+| 004 の research.md が、題の取り方の案 (b) で 003 の URL カードの取得を使うとする | 参照先への取得は `src/shared/server/link-preview-fetch.ts` に置き、004 の issue #281 が同じ部品を使う（R13） |
+| 依存 003 → 001、004 → 003（画像）、005 → 003 | 001・002 の部品を使う（R2）。005 が読む列の意味を変えない（R3）。004 とは画像の部品を共有担当経由で共有する |
+
+## R19 説明文が空のときの説明
+
+- 決定（2026-11-10、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6766542397)）: note ごとに、本文の最初の段落を説明に使うか、説明を出さないかを選ぶ。既定は使う（FR-034）。前例は Jekyll の excerpt（既定で最初の段落、https://jekyllrb.com/docs/posts/ ）
+- 決めたこと: 選んだ値は `note.is_first_paragraph_as_description`（0 か 1、既定 1）に持つ（`migrations/0023`）。名前は SOFTWARE_DESIGN の「列の名前を意味ごとに1つにする」の `is_` に従う。編集の画面に、保存のフォームとは別のフォームを置き、ラジオボタン 2 つ（`1`・`0`）で選ぶ。代表画像のフォームと同じく、選び直すとすぐ書き、版を足さない。訪問者の説明は `summaryOf` が決め、`<meta name="description">`・`og:description`・`twitter:description` に同じ値を出す。説明が無ければ 3 つとも出さない
+- 理由: 選ぶ値は note の見せ方の設定で、版の中身（題・説明文・本文）ではない。代表画像の出どころ（`note.card_image`）と同じ置き場にする。版は書き換えない（FR-006）ため、版に持つと選び直すたびに版を足し、同時編集の比べ方（R4）にも当たる。note に持つので、選び直すと公開し直さずに訪問者の説明が変わる。代表画像と同じ扱い
+- 退けた案: 版（`note_revision`）に持つ（上の理由）。保存のフォームに入れて `saveNote` で書く（版を足す操作と、版の外の設定を 1 つの操作に混ぜる）。一覧（`activity_feed`）の説明にも当てる（一覧の note の行は説明文だけを出し、本文の最初の段落を使っていない。005 の data-model.md）

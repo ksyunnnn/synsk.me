@@ -4,16 +4,22 @@ import { useActionState } from 'react';
 import {
   OPENED_UPDATED_AT_FIELD,
   PROJECT_UID_FIELD,
-  PROJECT_KINDS,
-  PROJECT_KIND_LABELS,
   type ProjectField,
   type ProjectFieldError,
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
-import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import {
+  InputField,
+  SuggestingInputField,
+  SelectField,
+  TextareaField,
+} from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -25,7 +31,7 @@ import { SiteStatusField } from '@/shared/components/site-status-field';
  * 入力の決まりはサーバで確かめ、誤りを文言で返す。`required` を付けない。ブラウザが送信を
  * 止めると、どの項目の何が合わないかを同じ形で伝えられないため。
  *
- * 組織名は、選択肢を出す部品が決まるまでネイティブの文字の入力にする（plan.md の U3）。
+ * 組織名は、登録した組織の名前を選択肢に出す、ネイティブの `<datalist>` の入力にする（plan.md の U3）。
  */
 
 type ProjectFormAction = (
@@ -36,6 +42,8 @@ type ProjectFormAction = (
 type Props = {
   action: ProjectFormAction;
   initialValues: ProjectFormValues;
+  /** 組織名の選択肢。登録した組織の名前（FR-002） */
+  organizationNames: string[];
   /** つなげるスキルの選択肢（FR-032） */
   skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
@@ -79,7 +87,13 @@ const RESULT_MESSAGES = {
     'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
 
-export const ProjectForm = ({ action, initialValues, skillOptions, project }: Props) => {
+export const ProjectForm = ({
+  action,
+  initialValues,
+  organizationNames,
+  skillOptions,
+  project,
+}: Props) => {
   const [result, formAction] = useActionState(action, null);
   const values: ProjectFormValues =
     result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
@@ -113,9 +127,11 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
         description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
       />
 
-      <InputField
+      <SuggestingInputField
         name="organizationName"
         label="組織名"
+        hint="登録した組織から選ぶか、新しい組織名を入力します"
+        options={organizationNames}
         defaultValue={values.organizationName}
         autoComplete="off"
         error={errorOf('organizationName')}
@@ -220,14 +236,11 @@ export const ProjectForm = ({ action, initialValues, skillOptions, project }: Pr
         {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
       </fieldset>
 
-      <div>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+      <FormActions>
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {project ? '保存する' : '登録する'}
-        </button>
-      </div>
+        </SubmitButton>
+      </FormActions>
     </form>
   );
 };

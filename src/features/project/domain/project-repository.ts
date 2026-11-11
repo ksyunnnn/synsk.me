@@ -1,3 +1,4 @@
+import type { MediaStorageKey } from '@/shared/domain/media';
 import type { Uid } from '@/shared/domain/uid';
 import type {
   Project,
@@ -49,8 +50,28 @@ export type ProjectRepository = {
     content: ProjectContent & { slug: string },
     times: { openedUpdatedAt: string; now: string },
   ) => Promise<{ ok: true } | { ok: false; reason: ProjectWriteFailure | 'not-found' }>;
-  /** 物理削除する（research.md の R8）。無い id なら `ok: false` */
-  delete: (id: ProjectId) => Promise<{ ok: boolean }>;
+  /**
+   * 物理削除する（research.md の R8）。画像の行も消し、消した画像の置き場のキーを返す。置き場の
+   * 実体はユースケースが消す。無い id なら `ok: false`
+   */
+  delete: (id: ProjectId) => Promise<{ ok: true; storageKeys: MediaStorageKey[] } | { ok: false }>;
+  /**
+   * 置き場に置いた画像を、その実績の画像として記録する（FR-027）。`asCardImage` なら、同じ
+   * トランザクションで代表画像にする（FR-028）。無い id なら `ok: false`
+   */
+  addMedia: (
+    id: ProjectId,
+    media: { storageKey: MediaStorageKey; size: number },
+    options: { asCardImage: boolean },
+  ) => Promise<{ ok: boolean }>;
+  /**
+   * 代表画像を選ぶ（FR-028）。null なら外す。選べるのはその実績の画像だけで、ほかのキーなら
+   * `media-not-owned`。無い id なら `not-found`
+   */
+  changeCardImage: (
+    id: ProjectId,
+    storageKey: MediaStorageKey | null,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
   /** 識別子の実績があるか。`findVisitorBySlug` が null を返さない識別子と一致する */
   hasSlug: (slug: string) => Promise<boolean>;
   /** 実績の入力でつなげるスキルの選択肢。名前の順（FR-032） */

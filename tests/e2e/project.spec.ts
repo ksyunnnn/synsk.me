@@ -2,11 +2,14 @@ import { expect, test } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import {
   fillProject,
+  organizationInput,
   openVisitor,
   readProjectPath,
   registerProject,
   registerSkill,
   saveEdit,
+  tabTo,
+  typeDate,
   visit,
 } from './support/dash';
 
@@ -164,9 +167,7 @@ test('入力の誤りは項目ごとに示して保存せず、入力が残る',
     page.getByText('関連 URL は http か https で始まる URL にしてください'),
   ).toBeVisible();
   await expect(page).toHaveURL(/\/dash\/projects\/new$/);
-  await expect(page.getByRole('textbox', { name: '組織名', exact: true })).toHaveValue(
-    'E2E 実績の組織 誤り',
-  );
+  await expect(organizationInput(page)).toHaveValue('E2E 実績の組織 誤り');
 });
 
 test('同じ実績を 2 つのタブで開くと、後から保存した側は止まり、入力が残る', async ({
@@ -196,4 +197,65 @@ test('同じ実績を 2 つのタブで開くと、後から保存した側は�
   await expect(other.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
     '先に保存した実績の題',
   );
+});
+
+test('オーナーはキーボードだけで実績を登録・編集・削除できる（constitution V）', async ({
+  page,
+  context,
+  browser,
+}) => {
+  await actAsAuthor(context);
+  await page.goto('/dash/projects');
+
+  await tabTo(page, page.getByRole('link', { name: '実績を登録する' }));
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/dash\/projects\/new$/);
+
+  await tabTo(page, organizationInput(page));
+  await page.keyboard.type('E2E 実績の組織 キーボード');
+  // 秘匿化する実績の新しい組織は、秘匿化した組織名が要る
+  await tabTo(page, page.getByRole('textbox', { name: '秘匿化した組織名', exact: true }));
+  await page.keyboard.type('E2E 実績の秘匿化した組織 キーボード');
+  await tabTo(page, page.getByRole('textbox', { name: '題', exact: true }));
+  await page.keyboard.type('E2E 実績の題 キーボード');
+  await tabTo(page, page.getByRole('textbox', { name: '秘匿化した題', exact: true }));
+  await page.keyboard.type('E2E 実績の秘匿化した題 キーボード');
+  const startedOn = page.getByRole('textbox', { name: '始まりの日', exact: true });
+  await tabTo(page, startedOn);
+  await typeDate(page, startedOn, '2021-04-01');
+  await tabTo(page, page.getByRole('button', { name: '登録する' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+
+  // ラジオボタンは、組の中で選ばれたものに Tab で入り、矢印のキーで選び直す
+  await tabTo(page, page.getByRole('radio', { name: 'サイトに載せない', exact: true }));
+  await page.keyboard.press('ArrowDown');
+  await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
+  await tabTo(page, page.getByRole('textbox', { name: '題', exact: true }));
+  await page.keyboard.press('ControlOrMeta+A');
+  await page.keyboard.type('E2E 実績の直した題 キーボード');
+  await tabTo(page, page.getByRole('button', { name: '保存する' }));
+  // 登録の後の「保存しました」が画面に残っているため、送った Server Action の応答を待つ
+  await Promise.all([
+    page.waitForResponse((res) => res.request().method() === 'POST'),
+    page.keyboard.press('Enter'),
+  ]);
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect(page.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
+    'E2E 実績の直した題 キーボード',
+  );
+  const path = await readProjectPath(page);
+
+  const visitor = await openVisitor(browser);
+  expect(await visit(visitor, path)).toBe(200);
+
+  await tabTo(page, page.getByRole('link', { name: 'この実績を削除する' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('実績を削除する');
+  await tabTo(page, page.getByRole('button', { name: '削除する' }));
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('status')).toHaveText('実績を削除しました');
+  await expect(page.getByRole('link', { name: 'E2E 実績の直した題 キーボード' })).toHaveCount(0);
+  expect(await visit(visitor, path)).toBe(404);
+  await visitor.close();
 });

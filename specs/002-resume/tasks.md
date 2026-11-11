@@ -49,7 +49,6 @@ description: "職務経歴書の実装タスク"
 | `src/proxy.ts` の `/projects/:slug` | T034 | T013・T031（同じファイルを直すため、001 の T034 の後に足す） |
 | `tests/support/career-and-project-rows.ts` | T021（済み） | 写し元の行を入れる検査 |
 | `src/shared/domain/period.ts` の経験年数の計算 | T061（001 の U6） | T047 |
-| `src/shared/components/draft-retention.tsx` | T072 | T061 |
 | 写し元の行を消すときに `resume_*` の `*_id` を NULL にする処理 | T032（実績）・T065（職歴）・T069（学歴） | T042・T043（元を消しても残ることの検査） |
 
 ---
@@ -191,7 +190,6 @@ description: "職務経歴書の実装タスク"
 - [X] T058 [US4] 管理画面のページを src/app/dash/resumes/[id]/careers/[rowId]/page.tsx・projects/[rowId]/page.tsx・educations/[rowId]/page.tsx（それぞれ missing/page.tsx も）・[id]/skills/page.tsx・[id]/delete/page.tsx に作る
 - [X] T059 [US4] 訪問者に見せたときの見た目の画面を src/app/dash/resumes/[id]/preview/page.tsx に作る。訪問者向けと同じ DTO と visitor-resume.tsx で描き、状態・期限に関わらず出す（REQUIREMENTS.md の FR-13）
 - [X] T060 [P] [US4] オーナーとして見た目の画面が非公開の職務経歴書でも出ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-13）
-- [ ] T061 [US4] 写した行の編集の画面に、入力中の内容を保持する部品（src/shared/components/draft-retention.tsx）を使い、保存せずに再読み込みしても入力が残ることを tests/e2e/resume-edit.spec.ts に足す（REQUIREMENTS.md の FR-14）。001 の T072 の後に行う
 
 **Checkpoint**: User Story 1〜4 が単独で動く
 

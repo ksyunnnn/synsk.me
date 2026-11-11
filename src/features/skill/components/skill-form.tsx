@@ -9,6 +9,8 @@ import {
   type SkillFormValues,
 } from '@/features/skill/domain/skill';
 import { InputField } from '@/shared/components/field';
+import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * スキルを登録する・編集するフォーム。上書きの経験年数は年と月で入れる（FR-034）。
@@ -85,14 +87,11 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
           />
         </div>
       </fieldset>
-      <div>
-        <button
-          type="submit"
-          className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+      <FormActions>
+        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {skillUid === undefined ? '登録する' : '保存する'}
-        </button>
-      </div>
+        </SubmitButton>
+      </FormActions>
     </form>
   );
 };

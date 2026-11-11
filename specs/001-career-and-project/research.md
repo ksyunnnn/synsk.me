@@ -17,9 +17,9 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - R11 管理画面の部品（headless のライブラリが未決）
 - R12 キャッシュと 404・403
 - R13 経験年数と期間の重なり
-- R14 本文と画像（書式・上限・配る経路が未決）
+- R14 本文と画像
 - R15 職歴を訪問者に出す場所
-- R16 編集中の内容の保持（REQUIREMENTS.md の FR-14）
+- R16 編集中の内容の保持
 - R17 管理画面の URL の識別子
 
 ---
@@ -120,15 +120,16 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 未決（オーナーに確かめる）: 職歴と実績の期間が端の日だけ接するとき、重なるとみなすか（FR-017・FR-035）。上の決定は経験年数の数え方で、この判定を含まない
 - 止める範囲: 職歴の実績と職歴のスキルの求め方
 
-## R14 本文と画像（書式・上限・配る経路が未決）
+## R14 本文と画像
 
 - 決めたこと: 本文は `career.description`・`project.description` に文字列で持つ。画像の記録は `media` に持ち、持ち主の列は職歴か実績のどちらか 1 つ（migration 0005）。代表画像は `project.card_media_id` で、その実績の画像だけを指す（複合の外部キー）。秘匿化した職歴・実績の画像は配らない（FR-030）
-- 未決（オーナーに確かめる）:
-  1. 本文の書式（spec の「決定が無く、この spec では決めない」）。止める範囲は、本文の表示と、本文の中に画像とキャプションを置く入力（FR-027）
-  2. 画像の形式と大きさの上限。constitution II は費用のかかる処理に量と回数の上限の値を求める。003 の spec も未決とする。止める範囲は画像の追加（FR-027・FR-028）
-  3. 画像を配る経路（URL と、持ち主ごとの確かめを置く場所）。spec は「画像を収める場所と、画像を配る仕組みは note の spec と共有する」とする。この plan の案は、実績の画像を `/projects/[slug]/media/[id]` で `project` の Repository が確かめて配ること。職歴の画像は、職歴を訪問者に出す 005・002 が配る。止める範囲は画像の配信
+- 決定（2026-11-09、オーナー。plan.md の U4）: 本文は Markdown で書き、生の HTML を通さない。本文の中の画像は media の id で指し、キャプションを添える
+- 決定（2026-11-11、オーナー）: 本文の画像の URL の欄に http か https の外の URL を書いた画像も、秘匿化していない表示で画像として出す。秘匿化した職歴・実績は本文を出さないため、外の URL も応答に含めない（[ADR-0054](../../docs/decisions/0054-external-images-in-markdown-body.md)）
+- 決定（2026-11-09、オーナーから任された Claude。plan.md の U5）: R2 に原本を置き、Worker が見せてよいかを確かめてから、変換せずに返す。公開していない画像の応答には `Cache-Control: no-store` を付ける。形式は JPEG・PNG・WebP・GIF で、SVG は受けない。大きさは 1 枚 10 MB まで
+- 配る URL（この plan の案）: 実績の画像は `/projects/[slug]/media/[id]` で `project` の Repository が確かめて配る。職歴の画像は、職歴を訪問者に出す 005・002 が配る。決めるのは tasks.md の T076
+- 未決: 画像の追加の回数の上限の値。constitution II は費用のかかる処理に量と回数の上限の値を求め、U5 は大きさだけを決めた。止める範囲は画像の追加（FR-027・FR-028）
 - 決定（2026-11-04、オーナー。spec の FR-021）: 伏せた見た目の本文の形は、本文の場所に「非公開」と出し、問い合わせの場所への導線を置く。導線は問い合わせの場所のページ（別の spec）ができてから足す
-- 置き場: R2 は `wrangler.jsonc` の binding `NOTE_IMAGES`（バケット `synsk-me-images`）。読み書きは `src/shared/server/media-storage.ts` に閉じ込める（constitution VIII）。使い手は `project`・`career`・003 の note
+- 置き場: R2 は `wrangler.jsonc` の binding `MEDIA`（バケット `synsk-me-images`）。読み書きは `src/shared/server/media-storage.ts` に閉じ込める（constitution VIII）。使い手は `project`・`career`・003 の note・004 の life event
 
 ## R15 職歴を訪問者に出す場所
 
@@ -136,10 +137,10 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 - 理由: spec の Assumptions（一覧の spec が職歴と実績を一覧に並べる）、ADR-0044（一覧はビューで読み、秘匿化の決まりはビューの中に書く）。constitution III により、001 の中で検査を対応させられない訪問者側の職歴の要件（FR-009・FR-020、FR-021・FR-022・FR-030 の職歴の部分、User Story 2 の 3）は 001 の範囲から外し、005 で確かめる
 - 決定（2026-11-04、オーナー）: 職歴は一覧（005）の中で見せるだけで、職歴の一覧のページ（`/career` など）は持たない
 
-## R16 編集中の内容の保持（REQUIREMENTS.md の FR-14）
+## R16 編集中の内容の保持
 
-- 決めたこと: 001 の入力の画面（職歴・実績・学歴・組織・スキル）は、入力中の内容をブラウザの `localStorage` に持ち、保存に成功したら消す。D1 には書かない。持つ処理は `src/shared/components/` の 1 つの部品にまとめ、5 つの画面と 003 の note の画面が使う
-- 理由: spec の Assumptions が FR-14 を REQUIREMENTS.md の持ち物として挙げる。自動保存の内容は DB に書かない
+- 決めたこと: 001 の入力の画面（職歴・実績・学歴・組織・スキル）は、保存していない入力を持たない。再読み込みすると、D1 に保存した値を出す
+- 理由: 保存していない入力を端末に残すことは note だけの要件で、003 の spec の FR-018 が持つ（2026-11-11、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6772355317)）
 
 ## R17 管理画面の URL の識別子
 

@@ -10,9 +10,6 @@
 ## FR-13: 公開されたときの見た目を、公開前に確認できる
 根拠: [ADR-0014](./decisions/0014-authoring-and-datastore.md)
 
-## FR-14: 保存操作をせずに編集内容が保持される
-根拠: [ADR-0014](./decisions/0014-authoring-and-datastore.md)
-
 ## NFR-01: 永続化したデータ全体を復元できる
 根拠: なし
 

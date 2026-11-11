@@ -1,6 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import {
+  hasExternalActivityUid,
+  hasLifeEventSlug,
+  hasLifeEventUid,
+} from '@/features/activity/server/queries';
 import { hasCareerUid } from '@/features/career/server/queries';
 import { hasEducationUid } from '@/features/education/server/queries';
+import { findMissingNoteRevision, hasNoteSlug, hasNoteUid } from '@/features/note/server/queries';
 import { hasOrganizationUid } from '@/features/organization/server/queries';
 import { hasProjectSlug, hasProjectUid } from '@/features/project/server/queries';
 import {
@@ -8,7 +14,9 @@ import {
   hasResumeUid,
   hasVisitorResume,
 } from '@/features/resume/server/queries';
+import { isResumeRowKind } from '@/features/resume/domain/resume';
 import { hasSkillUid } from '@/features/skill/server/queries';
+import { routes } from '@/shared/routes';
 import { getAuthorFromHeaders } from '@/shared/server/author';
 
 /**
@@ -27,13 +35,20 @@ import { getAuthorFromHeaders } from '@/shared/server/author';
  */
 
 export const config = {
-  matcher: ['/projects/:slug', '/resume/:path*', '/dash', '/dash/:path*'],
+  // `/notes/:slug/media/:key` と `/projects/:slug/media/:key` は経路を dynamic に固定するために
+  // 入れる（ADR-0040 の Consequences）。見せてよいかは route.ts が確かめ、proxy は D1 を読まない
+  // （specs/003-note/research.md の R9）
+  matcher: [
+    '/projects/:slug',
+    '/projects/:slug/media/:key',
+    '/life-events/:slug',
+    '/resume/:path*',
+    '/notes/:slug',
+    '/notes/:slug/media/:key',
+    '/dash',
+    '/dash/:path*',
+  ],
 };
-
-/** 404 と 403 の画面。`notFound()` か `forbidden()` を呼ぶだけのページ */
-const projectPageMissing = (slug: string) => `/projects/${slug}/missing`;
-const resumePageMissing = (slug: string) => `/resume/${slug}/missing`;
-const DASH_FORBIDDEN = '/dash/forbidden';
 
 /**
  * 管理画面のうち、uid で開く行の画面。uid の行が無ければ `/dash/<コレクション>/{uid}/missing`
@@ -47,15 +62,10 @@ const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
   careers: hasCareerUid,
   educations: hasEducationUid,
   resumes: hasResumeUid,
+  'life-events': hasLifeEventUid,
+  activities: hasExternalActivityUid,
+  notes: hasNoteUid,
 };
-
-/**
- * 職務経歴書に属する写した行の画面（`/dash/resumes/{uid}/<種類>/{rowUid}`）。行が無いか、その
- * 職務経歴書に属さなければ `/dash/resumes/{uid}/<種類>/{rowUid}/missing` へ rewrite する
- * （specs/002-resume/contracts/dash.md の共通）。`/dash/resumes/{uid}/<種類>/new` は足す画面で、
- * 行の有無を見ない
- */
-const RESUME_ROW_KINDS = new Set(['careers', 'projects', 'educations']);
 
 /**
  * 職務経歴書の経路（`/resume/{slug}` と、その下の `/resume/{slug}/missing`）か。限定公開用か
@@ -71,35 +81,58 @@ const decide = async (request: NextRequest): Promise<string | null> => {
 
   if (segments[0] === 'projects') {
     const slug = segments[1];
+    if (!isRead || !slug || segments.length !== 2) return null;
+    return (await hasProjectSlug(slug)) ? null : routes.projectMissing(slug);
+  }
+
+  if (segments[0] === 'life-events') {
+    const slug = segments[1];
     if (!isRead || !slug) return null;
-    return (await hasProjectSlug(slug)) ? null : projectPageMissing(slug);
+    return (await hasLifeEventSlug(slug)) ? null : routes.lifeEventMissing(slug);
   }
 
   if (segments[0] === 'resume') {
     // 公開用は tasks.md の Phase 7（US5）で足すまで中身を返さず、404 になる
     const [, slug] = segments;
     if (!isRead || segments.length !== 2) return null;
-    return (await hasVisitorResume(slug)) ? null : resumePageMissing(slug);
+    return (await hasVisitorResume(slug)) ? null : routes.resumeMissing(slug);
   }
 
-  if (!(await getAuthorFromHeaders(request.headers))) return DASH_FORBIDDEN;
+  if (segments[0] === 'notes') {
+    // 下書き・下書きに戻した・削除した note は、無い識別子と同じ 404（specs/003-note/plan.md の U10）
+    const slug = segments[1];
+    if (!isRead || !slug || segments.length !== 2) return null;
+    return (await hasNoteSlug(slug)) ? null : routes.noteMissing(slug);
+  }
+
+  if (!(await getAuthorFromHeaders(request.headers))) return routes.dash.forbidden;
 
   const [, collection, uid, action, rowUid, rowAction] = segments;
   const exists = collection === undefined ? undefined : DASH_ROW_EXISTS[collection];
   if (!isRead || !exists || !uid || uid === 'new' || action === 'missing') return null;
+  // 職務経歴書に属する写した行の画面（`/dash/resumes/{uid}/<種類>/{rowUid}`）。行が無いか、その
+  // 職務経歴書に属さなければ `/dash/resumes/{uid}/<種類>/{rowUid}/missing` へ rewrite する
+  // （specs/002-resume/contracts/dash.md の共通）。`/dash/resumes/{uid}/<種類>/new` は足す画面で、
+  // 行の有無を見ない
   if (
     collection === 'resumes' &&
-    RESUME_ROW_KINDS.has(action) &&
+    isResumeRowKind(action) &&
     rowUid &&
     rowUid !== 'new' &&
     rowAction !== 'missing'
   ) {
     // 職務経歴書と行の有無を 1 回で確かめる。職務経歴書の id を D1 から 2 回引かない
     const missing = await findMissingResumeRow(uid, action, rowUid);
-    if (missing === 'resume') return `/dash/resumes/${uid}/missing`;
-    return missing === 'row' ? `/dash/resumes/${uid}/${action}/${rowUid}/missing` : null;
+    if (missing === 'resume') return routes.dash.resumes.missing(uid);
+    return missing === 'row' ? routes.dash.resumes.entryMissing(uid, action, rowUid) : null;
   }
-  return (await exists(uid)) ? null : `/dash/${collection}/${uid}/missing`;
+  if (collection === 'notes' && action === 'revisions' && rowUid && rowAction !== 'missing') {
+    // note の過去の版の画面（specs/003-note/contracts/dash.md）。note と版の有無を 1 回で確かめる
+    const missing = await findMissingNoteRevision(uid, rowUid);
+    if (missing === 'note') return routes.dash.notes.missing(uid);
+    return missing === 'revision' ? routes.dash.notes.revisionMissing(uid, rowUid) : null;
+  }
+  return (await exists(uid)) ? null : routes.dash.rowMissing(collection, uid);
 };
 
 /**

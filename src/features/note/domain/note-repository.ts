@@ -1,0 +1,160 @@
+import type { Uid } from '@/shared/domain/uid';
+import type {
+  Note,
+  NoteId,
+  NoteInput,
+  NotePreview,
+  NoteRevision,
+  NoteRevisionSummary,
+  NoteSummary,
+  VisitorNote,
+  VisitorLinkPreview,
+  VisitorNoteCardImage,
+} from '@/features/note/domain/note';
+import type { MediaStorageKey } from '@/shared/domain/media';
+
+/**
+ * note の取り出し方と保存の仕方（docs/SOFTWARE_DESIGN.md の Repository）。
+ * D1 の実装は src/features/note/server/d1-note-repository.ts にある。
+ * 単体の検査は、作り物の実装を渡してユースケースを確かめる
+ */
+
+/** 書けなかった理由 */
+export type NoteWriteFailure =
+  /** 識別子がほかの note と重なる。削除した note も含む（FR-002） */
+  | 'slug-taken'
+  /** 一度でも公開した note の識別子を変えようとした（FR-003） */
+  | 'slug-locked'
+  /** 開いた後に、別の画面で先に版が足されていた（FR-020） */
+  | 'conflict'
+  /** note が無いか、削除した */
+  | 'not-found';
+
+export type NoteRepository = {
+  /**
+   * 訪問者に見せる note。公開で削除していない note の、公開した版だけを詰める（research.md の R7）。
+   * それ以外の識別子なら null
+   */
+  findVisitorBySlug: (slug: string) => Promise<VisitorNote | null>;
+  /** 訪問者に見せる note がある識別子か。`findVisitorBySlug` が null を返さない識別子と一致する */
+  hasVisitorSlug: (slug: string) => Promise<boolean>;
+  /**
+   * 見た目の確認で描く形（research.md の R15）。最も新しい版を、状態と削除に関わらず詰める。
+   * オーナーだけが使う。無い id なら null
+   */
+  findPreview: (id: NoteId) => Promise<NotePreview | null>;
+  /** オーナーが編集する note。削除した note も返す。無い id なら null */
+  findForEdit: (id: NoteId) => Promise<Note | null>;
+  /** 管理画面の URL とフォームの uid が指す note の id。削除した note も返す。無ければ null */
+  findIdByUid: (uid: Uid) => Promise<NoteId | null>;
+  /** オーナーの一覧。削除した note も含め、作った日時の新しい順 */
+  list: () => Promise<NoteSummary[]>;
+  /** note と 1 つ目の版を作る（FR-001）。作った note は下書き */
+  create: (
+    input: NoteInput,
+  ) => Promise<{ ok: true; id: NoteId; uid: Uid } | { ok: false; reason: 'slug-taken' }>;
+  /**
+   * 版を 1 つ足す（FR-006）。その note の最も新しい版の uid が `openedRevisionUid` と同じときだけ
+   * 書く（FR-020、research.md の R4）。識別子が違えば、同じトランザクションで書き換える
+   */
+  save: (
+    id: NoteId,
+    input: NoteInput,
+    openedRevisionUid: Uid,
+  ) => Promise<{ ok: true } | { ok: false; reason: NoteWriteFailure }>;
+  /**
+   * 最も新しい版を公開した版にする（FR-011・FR-013）。初めて公開した日時は空のときだけ `now` を
+   * 入れる。最も新しい版の題が空なら `untitled`
+   */
+  publish: (
+    id: NoteId,
+    now: string,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'untitled' }>;
+  /**
+   * 下書きに戻す（FR-014）。状態だけを書き、公開した版と初めて公開した日時は残す。無いか削除した
+   * note か、公開でない note なら何も書かず `ok: false`
+   */
+  unpublish: (id: NoteId) => Promise<{ ok: boolean }>;
+  /**
+   * 削除済みの印を付ける（FR-016）。状態と版は変えない。無い id か削除済みの note なら何も書かず
+   * `ok: false`
+   */
+  delete: (id: NoteId, now: string) => Promise<{ ok: boolean }>;
+  /** 削除済みの印を外す（FR-016・SC-007）。状態・版・識別子は削除の前のまま。無い id か削除していない
+   * note なら何も書かず `ok: false`
+   */
+  restore: (id: NoteId) => Promise<{ ok: boolean }>;
+  /** 版の一覧。保存した日時の新しい順（FR-008）。最も新しい版と公開した版を示す。公開した版は、
+   * 下書きに戻した note でも示す（FR-014）。画面に印を出すかは画面が決める */
+  listRevisions: (id: NoteId) => Promise<NoteRevisionSummary[]>;
+  /** その note の 1 つの版を、保存したときのまま返す（FR-008）。別の note の版なら null */
+  findRevision: (id: NoteId, revisionUid: Uid) => Promise<NoteRevision | null>;
+  /**
+   * 戻す版の題・説明文・本文を、新しい版として足す（FR-009）。保存と同じく、最も新しい版の uid が
+   * `openedRevisionUid` と同じときだけ書く（research.md の R4）。公開した版は変えない。戻す版が
+   * その note に無ければ `revision-not-found`
+   */
+  revert: (
+    id: NoteId,
+    revisionUid: Uid,
+    openedRevisionUid: Uid,
+  ) => Promise<
+    { ok: true } | { ok: false; reason: 'conflict' | 'not-found' | 'revision-not-found' }
+  >;
+  /**
+   * 過去の版の画面の有無（`src/proxy.ts`）。note が無ければ `note`、版がその note に無ければ
+   * `revision`、どちらもあれば null。note と版を 1 回の問い合わせで確かめる
+   */
+  findMissingRevision: (uid: Uid, revisionUid: Uid) => Promise<'note' | 'revision' | null>;
+  /**
+   * 転載先の URL を記録する（FR-031）。同じ URL がどの note にも記録済みなら `url-taken`（FR-032、
+   * `syndication.url` の UNIQUE）。無いか削除した note なら `not-found`
+   */
+  addSyndication: (
+    id: NoteId,
+    url: string,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'url-taken' | 'not-found' }>;
+  /**
+   * その note の転載先の URL を外す（research.md の R14）。その note に無い URL か、削除した note
+   * なら何も書かず `ok: false`
+   */
+  removeSyndication: (id: NoteId, url: string) => Promise<{ ok: boolean }>;
+  /**
+   * 代表画像の出どころを変える（FR-024・FR-025）。`media` は、その note の画像の置き場のキーだけを
+   * 選べる（`note` の複合の外部キー）。別の note の画像なら `media-not-owned`
+   */
+  changeCardImage: (
+    id: NoteId,
+    cardImage: VisitorNoteCardImage,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
+  /**
+   * 説明文が空のときに本文の最初の段落を説明に使うかを書く（FR-034、research.md の R19）。版は
+   * 足さない。無いか削除した note なら何も書かず `ok: false`
+   */
+  changeFirstParagraphAsDescription: (
+    id: NoteId,
+    isFirstParagraphAsDescription: boolean,
+  ) => Promise<{ ok: boolean }>;
+  /**
+   * 置き場に置いた画像を、その note の画像として記録する（FR-023、research.md の R12）。無いか
+   * 削除した note なら `ok: false`
+   */
+  addMedia: (id: NoteId, storageKey: MediaStorageKey, size: number) => Promise<{ ok: boolean }>;
+  /**
+   * note を完全に消す（FR-017、research.md の R6）。画像の記録・転載先・版・note を 1 つの
+   * トランザクションで消し、参照先の情報は残す。消した画像の置き場のキーを返す。置き場の実体は
+   * 呼び手が消す。無い id なら `ok: false`
+   */
+  purge: (id: NoteId) => Promise<{ ok: true; storageKeys: MediaStorageKey[] } | { ok: false }>;
+  /**
+   * 参照先の情報を URL の並びで読む（FR-028・FR-029）。取ったことのない URL は返さない。並びは
+   * 渡した順
+   */
+  findLinkPreviews: (urls: string[]) => Promise<VisitorLinkPreview[]>;
+  /**
+   * 参照先の情報を URL ごとに書く（FR-029・FR-030）。同じ URL の行があれば、その行を取り直した
+   * 中身に書き換える。持っている行より前に取った中身では書き換えない。URL は本文の読み方
+   * （`src/shared/domain/markdown.ts` の `urlLineOf`）と同じ `URL` の形に揃えて持つ。画像は URL だけを持つ
+   */
+  saveLinkPreview: (preview: VisitorLinkPreview & { fetchedAt: string }) => Promise<void>;
+};

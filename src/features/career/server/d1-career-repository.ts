@@ -38,7 +38,7 @@ const toPeriod = (row: { started_on: string; ended_on: string | null }) => ({
   endedOn: row.ended_on as CalendarDate | null,
 });
 
-const toCareer = (row: CareerRow): Career => ({
+const toCareer = (row: CareerRow, mediaStorageKeys: string[]): Career => ({
   id: row.id,
   uid: row.uid,
   organization: {
@@ -52,6 +52,7 @@ const toCareer = (row: CareerRow): Career => ({
   period: toPeriod(row),
   description: row.description,
   url: row.url,
+  mediaStorageKeys,
   updatedAt: row.updated_at,
 });
 
@@ -83,16 +84,20 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
 
   return {
     findForEdit: async (id) => {
-      const row = await db
-        .prepare(
-          `SELECT c.id, c.uid, c.organization_id, o.name AS organization_name,
-             o.name_masked AS organization_name_masked, c.role, c.is_masked, c.status, c.started_on,
-             c.ended_on, c.description, c.url, c.updated_at
-           FROM career c JOIN organization o ON o.id = c.organization_id WHERE c.id = ?`,
-        )
-        .bind(id)
-        .first<CareerRow>();
-      return row ? toCareer(row) : null;
+      const [career, media] = await db.batch<CareerRow | { storage_key: string }>([
+        db
+          .prepare(
+            `SELECT c.id, c.uid, c.organization_id, o.name AS organization_name,
+               o.name_masked AS organization_name_masked, c.role, c.is_masked, c.status, c.started_on,
+               c.ended_on, c.description, c.url, c.updated_at
+             FROM career c JOIN organization o ON o.id = c.organization_id WHERE c.id = ?`,
+          )
+          .bind(id),
+        db.prepare('SELECT storage_key FROM media WHERE career_id = ? ORDER BY id').bind(id),
+      ]);
+      const row = career.results[0] as CareerRow | undefined;
+      const keys = (media.results as { storage_key: string }[]).map((r) => r.storage_key);
+      return row ? toCareer(row, keys) : null;
     },
 
     list: async () => {
@@ -177,14 +182,26 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
     },
 
     delete: async (id) => {
-      // 写した職務経歴書の行は残し、指す id を空にする（research.md の R8）。
-      // R2 の画像は、画像を扱うまで無い（plan.md の U5）
-      const results = await db.batch([
+      // 写した職務経歴書の行は残し、指す id を空にする（research.md の R8）。消す画像のキーは、
+      // 同じ batch() の最初の文で読む
+      const [media, ...results] = await db.batch<{ storage_key: string }>([
+        db.prepare('SELECT storage_key FROM media WHERE career_id = ? ORDER BY id').bind(id),
         db.prepare('UPDATE resume_career SET career_id = NULL WHERE career_id = ?').bind(id),
         db.prepare('DELETE FROM media WHERE career_id = ?').bind(id),
         db.prepare('DELETE FROM career WHERE id = ?').bind(id),
       ]);
-      return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
+      if ((results.at(-1)?.meta.changes ?? 0) === 0) return { ok: false };
+      return { ok: true, storageKeys: (media?.results ?? []).map((row) => row.storage_key) };
+    },
+
+    addMedia: async (id, { storageKey, size }) => {
+      const result = await db
+        .prepare(
+          'INSERT INTO media (career_id, storage_key, size) SELECT id, ?, ? FROM career WHERE id = ?',
+        )
+        .bind(storageKey, size, id)
+        .run();
+      return { ok: result.meta.changes > 0 };
     },
 
     findIdByUid: async (uid) =>

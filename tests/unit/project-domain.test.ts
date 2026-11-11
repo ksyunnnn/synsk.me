@@ -1,17 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PROJECT_KINDS,
-  isProjectSlug,
-  newProjectSlug,
   parseProjectContent,
   parseProjectId,
   toProjectFormValues,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
+import { PROJECT_KINDS } from '@/shared/domain/project-kind';
 
 /**
  * 実績の domain の決まり（specs/001-career-and-project/spec.md の FR-011〜FR-013・FR-015・
- * FR-038・FR-039・FR-044）。秘匿化の決まりは tests/unit/project-masking.test.ts が持つ。
+ * FR-038・FR-039・FR-044）。秘匿化の決まりは tests/unit/project-masking.test.ts が、識別子の形と
+ * 既定値は tests/unit/slug.test.ts が持つ。
  */
 
 const values = (overrides: Partial<ProjectFormValues> = {}): ProjectFormValues => ({
@@ -22,26 +21,6 @@ const values = (overrides: Partial<ProjectFormValues> = {}): ProjectFormValues =
   titleMasked: '業務システムの開発',
   startedOn: '2021-04-01',
   ...overrides,
-});
-
-describe('識別子（FR-013）', () => {
-  it('登録の識別子は uid で、識別子の形を満たす', () => {
-    const slug = newProjectSlug();
-    expect(slug).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
-    expect(isProjectSlug(slug)).toBe(true);
-  });
-
-  it('呼ぶたびに別の識別子になる', () => {
-    expect(newProjectSlug()).not.toBe(newProjectSlug());
-  });
-
-  it.each(['a', 'my-app-2', 'a'.repeat(100)])('%s を識別子として通す', (slug) => {
-    expect(isProjectSlug(slug)).toBe(true);
-  });
-
-  it.each(['', 'A', 'my_app', 'my app', 'あ', 'a'.repeat(101)])('%j を識別子として拒む', (slug) => {
-    expect(isProjectSlug(slug)).toBe(false);
-  });
 });
 
 describe('種類（FR-012）', () => {

@@ -19,6 +19,8 @@ import {
   SELECTION_FIELDS,
   type AddResumeRowsError,
 } from '@/features/resume/domain/resume-forms';
+import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 作ったあとに、元の職歴・実績・学歴から選んで足すフォーム（specs/002-resume/contracts/dash.md の
@@ -73,11 +75,9 @@ export const ResumeAddRowsForm = ({
         emptyText="足せるものはありません"
       />
       {options.length > 0 && (
-        <div>
-          <button type="submit" className={BUTTON}>
-            足す
-          </button>
-        </div>
+        <FormActions>
+          <SubmitButton className={BUTTON}>足す</SubmitButton>
+        </FormActions>
       )}
     </form>
   );

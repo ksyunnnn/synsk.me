@@ -41,7 +41,6 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 | Server Action の結果の型 | `src/shared/domain/action-result.ts` | 管理画面の Server Action | 済み（001 の T023） |
 | 404 と 403 の判定 | `src/proxy.ts` | `/resume/*` と `/dash/resumes/*` を足す | 済み（001 の T005）。`/projects/:slug` は 001 の T034 が足す |
 | 管理画面の入口 | `src/app/dash/page.tsx` | 職務経歴書の一覧へのリンクを足す | 済み（001 の T014） |
-| 入力中の内容の保持 | `src/shared/components/draft-retention.tsx` | 写した行の編集の画面（REQUIREMENTS.md の FR-14） | 001 の T072 |
 | 作り物の行を入れる道具 | `tests/support/career-and-project-rows.ts` | 写し元の行 | 済み（001 の T021） |
 
 - 002 が使わないもの: 個人の組織の定数（`src/shared/domain/organization.ts` の `PERSONAL_ORGANIZATION_ID`）。001 の research.md の R9 は 002 を使い手に挙げるが、002 の spec に個人の組織を見分ける要件は無い

@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { VisitorResumeView } from '@/features/resume/components/visitor-resume';
 import { getVisitorLimitedResume } from '@/features/resume/server/queries';
+import { BackToTopLink } from '@/shared/components/back-to-top-link';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）。キャッシュしない
@@ -32,7 +33,7 @@ const Page = async ({ params }: Props) => {
 
   return (
     <main>
-      <VisitorResumeView resume={resume} />
+      <VisitorResumeView resume={resume} toolbarStart={<BackToTopLink />} />
     </main>
   );
 };

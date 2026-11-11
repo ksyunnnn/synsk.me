@@ -129,6 +129,13 @@
   body {
     @apply bg-background text-foreground;
   }
+  /*
+   * 画面の下端に留めた送信のボタンの行（`src/shared/components/form-actions.tsx`）が、
+   * フォーカスを移した入力を隠さないよう、行の高さの分だけ下の余白を取る（WCAG 2.2 SC 2.4.11）
+   */
+  html:has([data-form-actions]) {
+    scroll-padding-bottom: 5rem;
+  }
 }
 
 /*

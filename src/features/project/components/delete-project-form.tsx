@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { PROJECT_UID_FIELD } from '@/features/project/domain/project';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 実績を削除する確認のフォーム。確認はダイアログにせず、このフォームを置いた画面で行う
@@ -31,12 +32,9 @@ export const DeleteProjectForm = ({
         </p>
       )}
       <div>
-        <button
-          type="submit"
-          className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
+        <SubmitButton className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           削除する
-        </button>
+        </SubmitButton>
       </div>
     </form>
   );

@@ -1,47 +1,25 @@
 import type { ActionResult } from '@/shared/domain/action-result';
+import type { MediaStorageKey } from '@/shared/domain/media';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
 import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
+import { isSlug, newSlug } from '@/shared/domain/slug';
 import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
+import { PROJECT_KINDS, isProjectKind, type ProjectKind } from '@/shared/domain/project-kind';
+import { normalizeNewlines } from '@/shared/domain/newlines';
 
 /**
  * 実績の型と決まり（specs/001-career-and-project/spec.md の FR-011〜FR-019・FR-026・FR-044、
  * data-model.md の「アプリケーションが守る決まり」）。
  */
 
-/**
- * 実績の種類（FR-012）。`project.kind` の CHECK と同じ値を、ここ 1 か所に置く
- * （research.md の R3）。順は入力の選択肢の順
- */
-export const PROJECT_KINDS = ['application', 'talk', 'event', 'other'] as const;
-export type ProjectKind = (typeof PROJECT_KINDS)[number];
-
-export const PROJECT_KIND_LABELS: Record<ProjectKind, string> = {
-  application: 'アプリ',
-  talk: '登壇',
-  event: 'イベント',
-  other: 'その他',
-};
-
-const isProjectKind = (value: string): value is ProjectKind =>
-  (PROJECT_KINDS as readonly string[]).includes(value);
-
 export type ProjectId = number;
 
 /** 文字列の id を読む。正の整数でなければ null。使い手はスキルの id の読み取り */
 export const parseProjectId = (value: string): ProjectId | null =>
   /^[1-9]\d{0,15}$/.test(value) ? Number(value) : null;
-
-/** 実績の識別子の形（FR-013、`project.slug` の CHECK）。1〜100 文字の英小文字・数字・ハイフン */
-export const isProjectSlug = (value: string): boolean => /^[a-z0-9-]{1,100}$/.test(value);
-
-/**
- * 新しい識別子（FR-013、research.md の R6）。題や組織名から推測できない uid で、
- * 36 文字の英小文字（16 進）・数字・ハイフンのため `isProjectSlug` を満たす
- */
-export const newProjectSlug = (): string => crypto.randomUUID();
 
 /** オーナーが編集する実績 */
 export type Project = {
@@ -61,6 +39,10 @@ export type Project = {
   url: string | null;
   /** つないだスキルの id（FR-032） */
   skillIds: number[];
+  /** この実績の画像の置き場のキー。足した順（FR-027） */
+  mediaStorageKeys: MediaStorageKey[];
+  /** 代表画像の置き場のキー。無ければ null（FR-028） */
+  cardMediaKey: MediaStorageKey | null;
   /** 更新日時。編集の画面を開いたときの値を、楽観ロックに使う（research.md の R7） */
   updatedAt: string;
 };
@@ -113,6 +95,21 @@ export type ProjectField = (typeof PROJECT_FIELDS)[number];
 
 /** 編集の画面のフォームが、入力の項目とは別に送る値 */
 export const PROJECT_UID_FIELD = 'projectUid';
+
+/**
+ * 代表画像を選ぶ入力の名前（FR-028）。値はその実績の画像の置き場のキーか、代表画像を外す `none`
+ */
+export const CARD_IMAGE_FIELD = 'cardImage';
+export const NO_CARD_IMAGE = 'none';
+
+/** 画像を足すフォームが、足した画像を代表画像にもするときに送る値（FR-028 の「本文とは別に登録」） */
+export const AS_CARD_IMAGE_FIELD = 'asCardImage';
+
+/** 代表画像を選ぶ Server Action の結果。`media-not-owned` はその実績の画像でないキー */
+export type CardImageFormResult = ActionResult<
+  typeof CARD_IMAGE_FIELD,
+  'invalid' | 'media-not-owned'
+>;
 export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 export type ProjectFieldError =
@@ -177,7 +174,7 @@ export const parseProjectContent = (
       isMasked: values.isMasked !== IS_MASKED_VALUES.unmasked,
       status: parseSiteStatus(values.status),
       period: period.period,
-      description: emptyToNull(values.description.replace(/\r\n?/g, '\n')),
+      description: emptyToNull(normalizeNewlines(values.description)),
       url: url?.trim() ?? null,
       skillIds: [...new Set(skillIds as number[])],
     },
@@ -186,7 +183,7 @@ export const parseProjectContent = (
 
 /**
  * 編集で保存する識別子を決める（FR-013）。
- * - 秘匿化しない実績を秘匿化に切り替えたら、新しい uid
+ * - 秘匿化しない実績を秘匿化に切り替えたら、新しい uid（research.md の R6）
  * - 秘匿化した実績は、送られた識別子が今の識別子と違えば拒む。秘匿化を外すときも、
  *   その保存では識別子を変えない（data-model.md の「状態の切り替え」）
  * - 秘匿化しない実績は、送られた識別子の形を確かめて使う
@@ -200,9 +197,9 @@ export const decideProjectSlug = (
       ? { ok: true, slug: current.slug }
       : { ok: false, error: 'masked-slug-locked' };
   }
-  if (next.isMasked) return { ok: true, slug: newProjectSlug() };
+  if (next.isMasked) return { ok: true, slug: newSlug() };
   if (next.requestedSlug === '') return { ok: false, error: 'missing' };
-  return isProjectSlug(next.requestedSlug)
+  return isSlug(next.requestedSlug)
     ? { ok: true, slug: next.requestedSlug }
     : { ok: false, error: 'invalid' };
 };
@@ -246,7 +243,7 @@ export const toProjectFormValues = (project?: Project): ProjectFormValues =>
  * 出してよい列だけを読んで詰める。画面・`<title>`・OGP はこの値だけを使う
  */
 
-/** 秘匿化しない実績。代表画像は配る経路が決まるまで持たない（plan.md の U5） */
+/** 秘匿化しない実績 */
 export type UnmaskedVisitorProject = {
   isMasked: false;
   slug: string;
@@ -255,9 +252,16 @@ export type UnmaskedVisitorProject = {
   organizationName: string;
   period: Period;
   skills: string[];
-  /** 表示は本文の書式が決まってから（plan.md の U4） */
+  /** 本文の Markdown（FR-023、plan.md の U4） */
   body: string | null;
   url: string | null;
+  /**
+   * 訪問者に出してよい画像の置き場のキー。本文が指す、この実績の画像だけ（FR-030）。本文の画像は
+   * このキーだけを `/projects/{slug}/media/{key}` で出す
+   */
+  media: MediaStorageKey[];
+  /** 代表画像の置き場のキー。無ければ null（FR-028・FR-030） */
+  cardImageKey: MediaStorageKey | null;
 };
 
 /** 秘匿化した実績。本文・関連 URL・画像を持たない（FR-021・FR-022・FR-026・FR-030） */

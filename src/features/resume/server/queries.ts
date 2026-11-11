@@ -22,6 +22,7 @@ import { createD1ResumeRepository } from '@/features/resume/server/d1-resume-rep
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
+import { routes } from '@/shared/routes';
 
 /**
  * 職務経歴書の画面・Server Action・`src/proxy.ts` が呼ぶ組み立て用の関数（ADR-0030）。
@@ -77,7 +78,7 @@ export const getResumeForEdit = async (uid: string): Promise<ResumeForEdit | nul
 export const limitedResumeUrl = async (slug: string): Promise<string> => {
   const host = (await headers()).get('host') ?? 'synsk.me';
   const scheme = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host) ? 'http' : 'https';
-  return `${scheme}://${host}/resume/${slug}`;
+  return `${scheme}://${host}${routes.resume(slug)}`;
 };
 
 /** 訪問者に見せたときの見た目。オーナーでなければ 403。無い uid なら null */

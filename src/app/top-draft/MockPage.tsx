@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { routes } from '@/shared/routes';
 
 // トップの下書きから飛ぶ先のモック。マージすると本番で開けるため、検索結果に出さない
 export const mockMetadata = (title: string): Metadata => ({
@@ -18,7 +19,7 @@ export const MockPage = ({ title, note }: { title: string; note?: string }) => (
     <div className="grid min-h-[240px] place-items-center rounded-xl border-[1.5px] border-dashed border-muted-foreground text-sm text-muted-foreground">
       中身は未定
     </div>
-    <Link href="/top-draft" className="w-fit font-normal underline underline-offset-4">
+    <Link href={routes.top} className="w-fit font-normal underline underline-offset-4">
       ← トップの下書きへ戻る
     </Link>
   </main>

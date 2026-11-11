@@ -8,6 +8,7 @@ import { createD1CareerRepository } from '@/features/career/server/d1-career-rep
 import { requireAuthor } from '@/shared/server/author';
 import { findIdByUid } from '@/shared/domain/uid';
 import { readEnv } from '@/shared/server/env';
+import { createMediaStorage } from '@/shared/server/media-storage';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
 /** 職歴の画面・Server Action・`src/proxy.ts` が呼ぶ組み立て用の関数（ADR-0030） */
@@ -17,6 +18,7 @@ export const createCareerDeps = async (): Promise<CareerDeps> => {
   return {
     careers: createD1CareerRepository(DB),
     organizations: createD1OrganizationRepository(DB),
+    media: await createMediaStorage(),
   };
 };
 

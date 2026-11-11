@@ -1,3 +1,4 @@
+import { routes } from '@/shared/routes';
 /// <reference types="vite/client" />
 // デザインの実験の一覧。実験は lab/{name}/v{n}/ に置き、各バージョンのフォルダに meta.ts を置く。
 // meta.ts は `export const meta: VersionMeta = { summary: '…' }` の形で、前のバージョンとの違いを一文で書く。
@@ -16,7 +17,7 @@ const collect = () => {
   for (const [path, meta] of Object.entries(metas)) {
     const [, name, version] = path.split('/');
     const versions = experiments.get(name) ?? [];
-    versions.push({ version, href: `/lab/${name}/${version}`, summary: meta.summary });
+    versions.push({ version, href: routes.labPage(name, version), summary: meta.summary });
     experiments.set(name, versions);
   }
   for (const versions of experiments.values()) {

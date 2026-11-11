@@ -3,7 +3,6 @@
 import { useActionState, type ReactNode } from 'react';
 import type { EditOutcome } from '@/features/resume/application/edit-outcome';
 import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
-import { RESUME_PROJECT_KINDS, RESUME_PROJECT_KIND_LABELS } from '@/features/resume/domain/resume';
 import {
   OPENED_UPDATED_AT_FIELD,
   OVERRIDE_MONTHS_FIELD,
@@ -18,6 +17,9 @@ import {
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { FormActions } from '@/shared/components/form-actions';
+import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
@@ -89,14 +91,11 @@ const Frame = ({
       </p>
     )}
     {children}
-    <div>
-      <button
-        type="submit"
-        className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      >
+    <FormActions>
+      <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
         保存する
-      </button>
-    </div>
+      </SubmitButton>
+    </FormActions>
   </form>
 );
 
@@ -202,9 +201,9 @@ export const ResumeProjectForm = ({
         defaultValue={values.kind}
         error={errorText(errors, 'kind')}
       >
-        {RESUME_PROJECT_KINDS.map((kind) => (
+        {PROJECT_KINDS.map((kind) => (
           <option key={kind} value={kind}>
-            {RESUME_PROJECT_KIND_LABELS[kind]}
+            {PROJECT_KIND_LABELS[kind]}
           </option>
         ))}
       </SelectField>
