@@ -183,6 +183,7 @@ describe('秘匿化', () => {
     await insertProject(env.DB, {
       organizationId,
       kind: 'talk',
+      slug: '0123456789abcdef0123456789abcdef',
       title: REAL.title,
       titleMasked: '業務システムの開発',
       startedOn: '2020-04-01',
@@ -201,6 +202,8 @@ describe('秘匿化', () => {
         organizationName: 'ある会社',
         projectKind: 'talk',
         period: { startedOn: '2020-04-01', endedOn: null },
+        // 秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）。識別子は uid の形
+        slug: '0123456789abcdef0123456789abcdef',
       },
       {
         type: 'career',
@@ -300,8 +303,12 @@ describe('詰められない種類', () => {
 
 describe('note（tasks.md の T021）', () => {
   /** note を作り、作成日を決まった日時にする。作成日は公開の操作で変わらない列（0012） */
-  const insertNoteCreatedAt = async (createdAt: string, title = '作り物の note の題') => {
-    const note = await insertNote(env.DB, { title, description: `${title}の説明文` });
+  const insertNoteCreatedAt = async (
+    createdAt: string,
+    title = '作り物の note の題',
+    slug?: string,
+  ) => {
+    const note = await insertNote(env.DB, { slug, title, description: `${title}の説明文` });
     await env.DB.prepare('UPDATE note SET created_at = ? WHERE id = ?')
       .bind(createdAt, note.id)
       .run();
@@ -322,7 +329,11 @@ describe('note（tasks.md の T021）', () => {
     );
     await publishNoteRow(env.DB, unpublished.id);
     await unpublish(unpublished.id);
-    const published = await insertNoteCreatedAt('2024-01-04T00:00:00.000Z', '公開の note');
+    const published = await insertNoteCreatedAt(
+      '2024-01-04T00:00:00.000Z',
+      '公開の note',
+      'published-note',
+    );
     await publishNoteRow(env.DB, published.id);
 
     expect(await firstPage()).toStrictEqual([
@@ -331,6 +342,7 @@ describe('note（tasks.md の T021）', () => {
         title: '公開の note',
         description: '公開の noteの説明文',
         createdAt: '2024-01-04T00:00:00.000Z',
+        slug: 'published-note',
       },
     ]);
   });
@@ -446,12 +458,13 @@ describe('外部の activity と life event（tasks.md の T041）', () => {
     title: string,
     happenedOn: string,
     description: string | null = null,
+    slug = `life-${crypto.randomUUID()}`,
   ) => {
     const id = await insertActivity(env.DB, {
       source: 'life_event',
       title,
       happenedOn,
-      slug: `life-${crypto.randomUUID()}`,
+      slug,
     });
     await env.DB.prepare('UPDATE activity SET description = ? WHERE id = ?')
       .bind(description, id)
@@ -525,7 +538,7 @@ describe('外部の activity と life event（tasks.md の T041）', () => {
   it('保存した life event はすべて、起きた日と説明を持って並ぶ（FR-003）', async () => {
     await insertLifeEvent('1 つ目の出来事', '2019-04-01', '作り物の説明');
     await insertLifeEvent('2 つ目の出来事', '2020-04-01');
-    await insertLifeEvent('3 つ目の出来事', '2021-04-01');
+    await insertLifeEvent('3 つ目の出来事', '2021-04-01', null, 'third-life-event');
 
     expect(await firstPage()).toStrictEqual([
       {
@@ -535,6 +548,7 @@ describe('外部の activity と life event（tasks.md の T041）', () => {
         happenedOn: '2021-04-01',
         source: 'life_event',
         sourceKind: 'life_event',
+        slug: 'third-life-event',
       },
       expect.objectContaining({ title: '2 つ目の出来事', happenedOn: '2020-04-01' }),
       expect.objectContaining({

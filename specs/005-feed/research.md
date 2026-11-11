@@ -18,7 +18,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R1 スキーマの前提
 
-- 決めたこと: `migrations/0001`〜`0012` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たず、migration を書かない
+- 決めたこと: `migrations/0001`〜`0012` を当てたスキーマに、共有担当が書く一覧のビュー `activity_feed` の migration を足したものを前提にする。005 は自分の表を持たない。ビューの migration は M6 を除き共有担当が書く（data-model.md の「要る migration の変更」）
 - 既にあるもの: 職歴と実績と組織（0011）、syndication（0005）、note・note_revision・activity（0012 が作り直した）、activity_source（0007。004 の取得元の行は 0012 が入れる）。activity は並びの値 `sort_at`（`coalesce(published_at, happened_on)` の生成列）と索引 `activity_sort_at` を持つ（0004・0012）
 - 理由: migration は共有担当だけが変える（issue #219 の 2026-11-09 の宣言）。一覧は元のデータを読み、写して持たない（spec の Assumptions、ADR-0046）
 - 退けた案: 一覧のために値を写す表を持つ（ADR-0046 が退けた）
@@ -72,7 +72,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R6 訪問者向けの DTO
 
-- 決めたこと: 一覧の 1 件の形 `FeedItem` は、種類で分けた型にし、[contracts/visitor-feed.md](./contracts/visitor-feed.md) が項目を列挙する。並べる値は、spec が UI を考えるときに決めるとするため、spec の受け入れの場面が求める最小の値にする（種類・題・組織名・肩書・実績の種類・期間・note の説明文・取得元と分類・取得元の URL・並びの日付）。使ったスキル・代表画像・個別のページへのリンク・秘匿化しない行の本文は、決まるまで入れない（plan.md の U4・U5・U7）
+- 決めたこと: 一覧の 1 件の形 `FeedItem` は、種類で分けた型にし、[contracts/visitor-feed.md](./contracts/visitor-feed.md) が項目を列挙する。並べる値は、spec が UI を考えるときに決めるとするため、spec の受け入れの場面が求める最小の値にする（種類・題・組織名・肩書・実績の種類・期間・note の説明文・取得元と分類・取得元の URL・並びの日付）と、個別のページを持つ実績・note・life event の識別子（plan.md の U4 の決定）。使ったスキル・代表画像・秘匿化しない行の本文は、決まるまで入れない（plan.md の U5・U7）
 - 主キー（`item_number`）は DTO に入れない。並べる SQL の中だけで使う。React の key は並びの位置で付ける。ADR-0048 が主キーを外に出さないとし、RSC の応答には key も含まれるため
 - 理由: constitution の Allowlist Visibility、設計原則 9（見せ方が決まっていない値を先に持たない）
 - 退けた案: ビューの全列を DTO に通す。見せ方が決まる前に、出す値が増える

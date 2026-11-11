@@ -1,6 +1,6 @@
 # Data Model: 一覧
 
-表・列・型・CHECK の正本は `migrations/` にある。005 は表を持たず、001・003・004 の表を、共有担当が書く一覧のビュー `activity_feed` で読む（research.md の R1・R2、ADR-0046）。この文書は、ビューに要る列と腕の条件を spec の要件に対応させる。SQL の全文は migration が持つ。
+表・列・型・CHECK の正本は `migrations/` にある。005 は表を持たず、001・003・004 の表を、一覧のビュー `activity_feed` で読む（research.md の R1・R2、ADR-0046）。この文書は、ビューに要る列と腕の条件を spec の要件に対応させる。SQL の全文は migration が持つ。
 
 ## Contents
 
@@ -48,6 +48,7 @@
 | `url` | 外部の activity の取得元の URL | M3 |
 | `created_at` | note の作成日時（`note.created_at`。UTC の時点）。ほかの行は `NULL` | M5 |
 | `published_at` | 外部の activity の公開日時（`activity.published_at`。UTC の時点）。ほかの行は `NULL` | M5 |
+| `slug` | 個別のページの識別子。実績は `project.slug`（秘匿化した実績を含む）、note は `note.slug`、life event は `activity.slug`。職歴と外部の activity は `NULL`（plan.md の U4） | M6 |
 
 列の名前は `docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」に従う。種類は `kind` と呼ばない。`project.kind`（実績の種類）と `activity_source.kind`（分類）が別の意味で使っているため。
 
@@ -69,7 +70,7 @@
 
 ## 要る migration の変更
 
-005 は migration を書かない。共有担当に渡す変更は次のとおり。番号とファイル名は共有担当が付ける。
+M1〜M5 は共有担当が書いた。M6（migrations/0026）は、2026-11-11 の U4 の決定（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）を満たすため、005 が書き、PM が承認した。変更は次のとおり。
 
 | migration | 変更 | 待つ段階（tasks.md） |
 |---|---|---|
@@ -78,6 +79,7 @@
 | M3 | ビューを作り直し、外部の activity と life event の腕と、`source`・`source_kind`・`url` を足す | Phase 6（外部の activity と life event） |
 | M4 | ビューを作り直し、外部の activity の腕に転載先と一致する行の除外を足す | Phase 7（重なりの除外） |
 | M5 | ビューを作り直し、note と外部の activity の `sort_at` を Asia/Tokyo の時刻にし、`created_at`・`published_at` を足す（plan.md の U3 の決定、research.md の R5）。migrations/0022 | Phase 6 の T042 |
+| M6 | ビューを作り直し、`slug` を足す（plan.md の U4 の決定）。migrations/0026 | Phase 9 の T066 |
 
 ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有担当が決める。
 

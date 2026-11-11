@@ -110,7 +110,7 @@ description: "一覧の実装タスク"
 
 - [x] T023 [US3] `FEED_ITEM_TYPES` と `FeedItem` に note を足す（src/features/activity/domain/feed.ts）
 - [x] T024 [US3] src/features/activity/server/d1-feed-repository.ts の SELECT と詰め替えに note の列（`title`・`description`・`sort_at`）を足す。作成日は T042 で `created_at` の列から詰めるようにした（data-model.md の M5）
-- [x] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは付けない（plan.md の U4）
+- [x] T025 [US3] src/features/activity/components/feed.tsx に note の行を足す。個別のページへのリンクは T066 が足す（plan.md の U4）
 
 **Checkpoint**: 職歴・実績・note の一覧
 
@@ -174,7 +174,7 @@ description: "一覧の実装タスク"
 
 - [ ] T060 ブランチの Preview で quickstart.md の手順を行う
 - [ ] T061 `bash .claude/skills/auditing-docs-convention/scripts/check.sh` の出力が空であることを確かめる
-- [ ] T062 U2・U4〜U7 が決まったら、`FEED_ITEM_TYPES`・DTO・部品を直すタスクを足す
+- [ ] T062 U2・U5〜U7 が決まったら、`FEED_ITEM_TYPES`・DTO・部品を直すタスクを足す。U4 のタスクは T066
 
 ---
 
@@ -244,7 +244,7 @@ Phase 3（職歴と実績）→ Phase 4（note）→ Phase 5（ページ送り�
 ## Notes
 
 - 機能どうしは import しない（ADR-0026）。一覧は `src/features/project`・`career`・`note` を import せず、ビューだけを読む
-- 005 は migration と ER 図を変えない。要る変更は PM に伝える
+- 005 は ER 図を変えない。migration は PM の承認を得て書く。migrations/0026（ビューの `slug`）は、2026-11-11 の U4 の決定（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）を満たすため 005 が書いた
 - 004 と同じ `src/features/activity/` に置くので、ファイル名に一覧の名前を付けて分ける
 - コミットはタスクか論理のまとまりごと
 
@@ -255,3 +255,4 @@ Phase 3（職歴と実績）→ Phase 4（note）→ Phase 5（ページ送り�
 - [x] T063 一覧の画面を、開発中の `/` の置き場 src/app/top-draft/page.tsx で src/features/activity/ の一覧の取り出しにつなぎ、作り物の mock-data.json の代わりに D1 の行を出す。T016 の書き方（`export const instant = false`、`loading.tsx` を置かない、`'use cache'`・`revalidate`・`dynamic` を書かない。research.md の R9）に従う。T016 の続き per FR-001・US1 (missing)
 - [x] T064 src/features/activity/components/feed.tsx に次のページへのリンクを足し、一覧の画面が `page` の問い合わせの値を読む。読み方と最後のページの先は T033 のとおり。T033 の続き per FR-010・ADR-0048 (missing)
 - [x] T065 T063 の画面の HTML と RSC の応答を tests/integration/feed.test.ts で確かめる。T012（秘匿化・サイトに載せない職歴と実績）・T022（下書き・削除した note と公開した後の版）・T033（リンクに主キーを含めない）・T043（外部の activity の取得元へのリンク）の内容を含める per SC-001・SC-002・FR-004〜FR-006・FR-013・FR-020 (missing)
+- [x] T066 一覧の行から個別のページへリンクする（plan.md の U4 の決定）。ビューに `slug` を足し（data-model.md の M6、migrations/0026）、DTO の実績・note・life event に詰め、src/features/activity/components/feed.tsx が `src/shared/routes.ts` の経路でリンクする。秘匿化した実績もリンクし、職歴はリンクしない。tests/unit/feed.test.ts・tests/workers/migrations.test.ts・tests/workers/feed-repository.test.ts・tests/integration/feed.test.ts で確かめる

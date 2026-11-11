@@ -18,6 +18,7 @@ const ITEMS: FeedItem[] = [
     organizationName: '作り物株式会社',
     projectKind: 'application',
     period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
+    slug: 'fake-contract-work',
   },
   {
     type: 'career',

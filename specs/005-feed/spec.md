@@ -24,6 +24,10 @@
 
 - Q: 日時（note の作成日・外部の activity の公開日）がどの日に当たるかを、どの時刻帯で決めるか？ → A: 作者の時刻帯 Asia/Tokyo で決める。並べ順と表示の両方に効く。暦の日付（life event の起きた日・実績と職歴の始まりの日）は換算しない（2026-11-10、オーナー。方針は [issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6761262936)、換算する場所は [issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6761595417)）
 
+### Session 2026-11-11
+
+- Q: 一覧から note と実績の個別のページへリンクするか？ → A: a。一覧の各行が個別のページへリンクする（2026-11-11、オーナー。[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）
+
 ## Terms
 
 - **オーナー**、**訪問者**、**組織**、**職歴**、**実績**、**サイトに載せる**、**秘匿化**、**本文**: [001 の spec](../001-career-and-project/spec.md) の Terms と同じ意味で使う
@@ -199,7 +203,6 @@
 **決定が無く、この spec では決めない**
 
 - 並びの日付が同じとき、どの種類を先に並べるか
-- 一覧から note と実績の個別のページへリンクするか
 - 一覧に note・実績・life event の代表画像を出すか。外部の activity の代表の画像の出し方
 - 転載先の URL と外部の activity の URL が一致するとみなす条件（末尾のスラッシュ・問い合わせの部分の違いなど）
 - 一覧を見せる画面の名前と URL

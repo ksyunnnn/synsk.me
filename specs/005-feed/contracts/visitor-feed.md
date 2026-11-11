@@ -39,8 +39,9 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `organizationName` | 秘匿化しない行はビューの `organization_name`、秘匿化した行は `organization_name_masked` |
 | `projectKind` | `project.kind` |
 | `period` | `project.started_on`・`project.ended_on` |
+| `slug` | `project.slug`。個別のページ `/projects/{slug}` へのリンクに使う（plan.md の U4） |
 
-秘匿化した実績は、本文の中身・本文が空かどうか・関連 URL・代表画像・本文の画像を持たない（FR-012・FR-013）。
+秘匿化した実績も `slug` を持つ。個別のページを持ち、識別子は uid で、実際の題や組織名を含まない（001 の spec の Edge Cases・FR-013）。秘匿化した実績は、本文の中身・本文が空かどうか・関連 URL・代表画像・本文の画像を持たない（FR-012・FR-013）。
 
 ### note（`type: 'note'`、tasks.md の Phase 4 で足す）
 
@@ -50,6 +51,7 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `title` | 公開した版の `note_revision.title` |
 | `description` | 公開した版の `note_revision.description`（空あり） |
 | `createdAt` | `created_at`（元は `note.created_at`） |
+| `slug` | `note.slug`。個別のページ `/notes/{slug}` へのリンクに使う（plan.md の U4） |
 
 最も新しい版・転載先・代表画像を持たない（FR-006）。
 
@@ -76,8 +78,9 @@ Repository の実装はビュー `activity_feed`（data-model.md）から読み�
 | `happenedOn` | `sort_at`（元は `activity.happened_on`） |
 | `source` | `'life_event'` |
 | `sourceKind` | `'life_event'` |
+| `slug` | `activity.slug`。個別のページ `/life-events/{slug}` へのリンクに使う（plan.md の U4） |
 
-slug と代表画像を持たない。個別のページへのリンクは spec の未決（plan.md の U4）。
+代表画像を持たない。
 
 ## 検査
 

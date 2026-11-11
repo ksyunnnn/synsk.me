@@ -117,11 +117,12 @@
 
 U3（暦の日付と日時が同じ日のときの順と、日の境目の時刻帯）は決まっていて、表に載せない。2026-11-10 にオーナーが決めた（issue #219 のコメント「005-feed U3「時点を Asia/Tokyo に換算する場所」をオーナーが決めた」、spec の FR-022）: 日の境目を Asia/Tokyo の 0 時にし、ビューが note と外部の activity の日時を Asia/Tokyo の時刻にして並べる。暦の日付は換算せず、新しい順の一覧では同じ日の日時より古い位置に並ぶ（research.md の R5、data-model.md の M5）。
 
+U4（一覧から note・実績・life event の個別のページへリンクするか）は決まっていて、表に載せない。2026-11-11 にオーナーが決めた（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）: 一覧の行は個別のページへリンクする。リンクするのは個別のページを持つ実績・note・life event で、秘匿化した実績も個別のページを持つのでリンクする（001 の spec の Edge Cases）。職歴は個別のページを持たないのでリンクせず、外部の activity は取得元へリンクする（FR-020）。ビューが識別子 `slug` を出し、DTO が持つ（data-model.md の M6、contracts/visitor-feed.md）。
+
 | ID | 未決 | 決める人 | 止める範囲 |
 |---|---|---|---|
 | U1 | 一覧を見せる画面の名前と URL（spec の「決定が無く」）。PM が推奨 `/` をオーナーに聞いている | オーナー | 一覧の画面（`src/app/` の `page.tsx`）と結合の検査。Repository・DTO・並べる計算は止めない |
 | U2 | 並びの日付が同じとき、どの種類を先に並べるか（spec の「決定が無く」）。仮の順（note・外部の activity・life event・実績・職歴）で作る（2026-11-09、PM の回答） | オーナー | 無し。決まれば `FEED_ITEM_TYPES` の配列を直す |
-| U4 | 一覧から note・実績・life event の個別のページへリンクするか（spec の「決定が無く」） | オーナー | 無し。決まるまでリンクせず、slug を DTO に入れない |
 | U5 | 一覧に代表画像を出すか、外部の activity の代表の画像の出し方（spec の「決定が無く」、issue #186「URL カードの画像の出し方を決める」） | オーナー | 無し。決まるまで画像を DTO に入れない |
 | U6 | 転載先の URL と外部の activity の URL が一致するとみなす条件（spec の「決定が無く」） | オーナー | 無し。決まるまで文字列の完全一致（research.md の R7） |
 | U7 | 一覧の activity に並べる値（使ったスキル、秘匿化しない行の本文、実績の期間の見せ方、職歴の終わりの日を出すか。spec の Assumptions は UI を考えるときに決めるとする） | オーナー（デザイン） | 無し。決まるまで contracts/visitor-feed.md の最小の値 |
@@ -137,7 +138,7 @@ issue #219 のコメント「spec どうしの重複・干渉・矛盾・依存�
 |---|---|
 | 干渉: `src/features/career/server` に、001 の残りのタスクと 005 の訪問者向けの取り出しが手を入れる | 005 は `src/features/career/` を変えない。職歴の訪問者向けの取り出し（001 の data-model.md、research.md の R15）は、ビューの職歴の腕と `src/features/activity/server/d1-feed-repository.ts` が持つ |
 | 干渉: ER 図の `gen_er8.py`・`er-options.html` を 003・004・005 が直すと衝突する | 005 は変えない。ビューを載せるかは共有担当が決める |
-| 干渉: migration の番号 | 005 は migration を書かない。ビューは共有担当が M1〜M5 として書く |
+| 干渉: migration の番号 | ビューの M1〜M5 は共有担当が書く。M6（migrations/0026）は U4 の決定を満たすため 005 が書き、PM が承認した（data-model.md の「要る migration の変更」） |
 | 依存: 005 → 001・003・004 | Walking Skeleton（Phase 3）は 001 の表とビューの M1 だけを待つ。note・外部の activity・life event の腕は 003・004 のコードを待たず、表（0004・0005）に作り物の行を入れて確かめる。003・004 が列の意味を変えないことは「一覧の読み口の置き場」の表 |
 | spec が ADR-0044 を指す | ADR-0044 は ADR-0046 に置き換わった。ADR-0046 は一覧の決定（ビュー、秘匿化をビューに書く、並べるキー）を変えずに引き継ぐ。この plan は ADR-0046 を根拠にする |
 | 画像・書きかけの保持・slug・uid | 005 は画像を配らず、入力も管理画面も持たないため、どれも使わない |
