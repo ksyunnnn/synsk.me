@@ -68,8 +68,10 @@ const HEADING_PRINT = 'print:break-after-avoid';
 
 /** 右の列の節 */
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-4">
-    <h2 className={`text-xl font-semibold border-b pb-2 print:text-[13pt] ${HEADING_PRINT}`}>
+  <section className="flex flex-col gap-6 print:gap-4">
+    <h2
+      className={`text-xl font-semibold print:border-b print:pb-2 print:text-[13pt] ${HEADING_PRINT}`}
+    >
       {title}
     </h2>
     {children}
@@ -78,8 +80,10 @@ const Section = ({ title, children }: { title: string; children: ReactNode }) =>
 
 /** 左の列の節 */
 const SideSection = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-4">
-    <h2 className={`text-base font-semibold border-b pb-2 print:text-[11pt] ${HEADING_PRINT}`}>
+  <section className="flex flex-col gap-6 print:gap-4">
+    <h2
+      className={`text-base font-semibold print:border-b print:pb-2 print:text-[11pt] ${HEADING_PRINT}`}
+    >
       {title}
     </h2>
     {children}
@@ -104,9 +108,9 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
         </div>
       </div>
 
-      <article className="mx-auto grid max-w-5xl gap-12 px-6 pt-12 pb-24 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] print:max-w-none print:grid-cols-[50mm_minmax(0,1fr)] print:gap-[8mm] print:p-0 print:text-[10.5pt]">
-        <aside className="flex flex-col gap-12 print:gap-[8mm]">
-          <header className="flex flex-col gap-4">
+      <article className="mx-auto grid max-w-5xl gap-24 px-6 pt-12 pb-24 leading-[1.8] md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] print:max-w-none print:grid-cols-[50mm_minmax(0,1fr)] print:gap-[8mm] print:p-0 print:text-[10.5pt] print:leading-normal">
+        <aside className="flex flex-col gap-24 print:gap-[8mm]">
+          <header className="flex flex-col gap-6 print:gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element -- 写真は `public/` の 1 枚で、最適化の経路を通さない */}
             <img
               src={profile.photoSrc}
@@ -148,7 +152,7 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
 
           {resume.educations.length > 0 && (
             <SideSection title="学歴">
-              <ol className="flex flex-col gap-4 text-sm print:text-[10.5pt]">
+              <ol className="flex flex-col gap-6 text-sm print:gap-4 print:text-[10.5pt]">
                 {resume.educations.map((education, index) => (
                   <li key={index} className="flex flex-col gap-2 break-inside-avoid">
                     <h3 className="font-semibold">
@@ -166,12 +170,12 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
           )}
         </aside>
 
-        <div className="flex min-w-0 flex-col gap-12 print:gap-[8mm]">
+        <div className="flex min-w-0 flex-col gap-24 print:gap-[8mm]">
           <Body text={profile.introduction} />
 
           {resume.careers.length > 0 && (
             <Section title="職歴">
-              <ol className="flex flex-col gap-6">
+              <ol className="flex flex-col gap-12 print:gap-6">
                 {resume.careers.map((career, index) => (
                   <li key={index} className="flex flex-col gap-2 break-inside-avoid">
                     <h3 className="text-lg font-semibold print:text-[11pt]">
@@ -190,7 +194,7 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
 
           {resume.projects.length > 0 && (
             <Section title="実績">
-              <ol className="flex flex-col gap-6">
+              <ol className="flex flex-col gap-12 print:gap-6">
                 {resume.projects.map((project, index) => (
                   <li key={index} className="flex flex-col gap-2 break-inside-avoid">
                     <h3 className="text-lg font-semibold print:text-[11pt]">{project.title}</h3>
