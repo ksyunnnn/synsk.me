@@ -53,6 +53,7 @@ pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() が�
 ```bash
 npx wrangler d1 migrations apply synsk-me --local                            # 手元の D1 に表を作る
 npx wrangler d1 execute synsk-me --local --file ../../private/seed-local.sql # seed を入れる
+bash ../../private/upload-media-local.sh                                     # seed の本文が指す画像を手元の R2 に置く
 ```
 
 seed は実名を含むため、リポジトリに入れず `synsk.me/private/seed-local.sql` に置く。
