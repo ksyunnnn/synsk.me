@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import {
   type CareerFeedItem,
   type ExternalActivityFeedItem,
@@ -10,16 +11,42 @@ import {
 } from '@/features/activity/domain/feed';
 import { PeriodText } from '@/shared/components/period-text';
 import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { routes } from '@/shared/routes';
 
 /**
  * 訪問者に見せる一覧（specs/005-feed/contracts/visitor-feed.md）。受け取った DTO の値だけを
  * 描画する。秘匿化した職歴・実績の DTO は、本文・関連 URL・画像を持たない。秘匿化した行は、
  * 本文の場所に「非公開」と出す（001 の spec の FR-021）。
  *
- * 並べる値と見せ方は、UI を考えるときに決める（plan.md の U7）。ここでは契約の最小の値だけを出す
+ * 並べる値と見せ方は、UI を考えるときに決める（plan.md の U7）。ここでは契約の最小の値だけを出す。
+ * 実績・note・life event の題は個別のページへリンクする（plan.md の U4）。職歴は個別のページを
+ * 持たないのでリンクしない
  */
 
 const MaskedBody = () => <p>非公開</p>;
+
+const titleLinkClassName =
+  'underline underline-offset-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+
+/**
+ * 題を、個別のページか取得元へのリンクにする。`src/shared/components/text-link.tsx` は管理画面の
+ * 移動のための `next/link` なので使わず、ページ送りと同じく JavaScript なしでも移れる `<a>` で作る
+ */
+const TitleLink = ({
+  href,
+  rel,
+  children,
+}: {
+  href: string;
+  rel?: string;
+  children: ReactNode;
+}) => (
+  <h2 className="font-bold">
+    <a href={href} rel={rel} className={titleLinkClassName}>
+      {children}
+    </a>
+  </h2>
+);
 
 const CareerRow = ({ item }: { item: CareerFeedItem }) => (
   <article className="flex flex-col gap-1">
@@ -36,7 +63,8 @@ const CareerRow = ({ item }: { item: CareerFeedItem }) => (
 const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
   <article className="flex flex-col gap-1">
     <p className="text-sm text-muted-foreground">{PROJECT_KIND_LABELS[item.projectKind]}</p>
-    <h2 className="font-bold">{item.title}</h2>
+    {/* 秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases） */}
+    <TitleLink href={routes.project(item.slug)}>{item.title}</TitleLink>
     <p>{item.organizationName}</p>
     <p className="text-sm text-muted-foreground">
       <PeriodText period={item.period} />
@@ -46,13 +74,13 @@ const ProjectRow = ({ item }: { item: ProjectFeedItem }) => (
 );
 
 /**
- * note。個別のページへのリンクは付けない（plan.md の U4）。作成日時は日本時間の暦の日付で出す。
+ * note。題は個別のページへリンクする（plan.md の U4）。作成日時は日本時間の暦の日付で出す。
  * 並びの日の境目（plan.md の U3）とは別に決めた、表示だけの形
  */
 const NoteRow = ({ item }: { item: NoteFeedItem }) => (
   <article className="flex flex-col gap-1">
     <p className="text-sm text-muted-foreground">note</p>
-    <h2 className="font-bold">{item.title}</h2>
+    <TitleLink href={routes.note(item.slug)}>{item.title}</TitleLink>
     {item.description && <p>{item.description}</p>}
     <p className="text-sm text-muted-foreground">
       <time dateTime={item.createdAt}>{toTokyoCalendarDate(item.createdAt)}</time>
@@ -67,8 +95,7 @@ const SOURCE_KIND_LABELS: Record<ExternalActivitySourceKind, string> = {
 };
 
 /**
- * 外部の activity。取得元の URL へ `<a>` で直接リンクする（FR-020）。`src/shared/components/text-link.tsx`
- * は管理画面の移動のための `next/link` なので使わない。見せ方は分類で分ける（FR-019）。埋め込みの
+ * 外部の activity。取得元の URL へ直接リンクする（FR-020）。見せ方は分類で分ける（FR-019）。埋め込みの
  * 見せ方は取得元で決めることになるが、決まるまで（plan.md の U7）は取得元の名前を添えたリンクで
  * 出す。代表の画像は出さない（plan.md の U5）
  */
@@ -77,26 +104,20 @@ const ExternalActivityRow = ({ item }: { item: ExternalActivityFeedItem }) => (
     <p className="text-sm text-muted-foreground">
       {SOURCE_KIND_LABELS[item.sourceKind]}・{item.source}
     </p>
-    <h2 className="font-bold">
-      <a
-        href={item.url}
-        rel="noopener noreferrer"
-        className="underline underline-offset-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-      >
-        {item.title ?? item.url}
-      </a>
-    </h2>
+    <TitleLink href={item.url} rel="noopener noreferrer">
+      {item.title ?? item.url}
+    </TitleLink>
     <p className="text-sm text-muted-foreground">
       <time dateTime={item.publishedAt}>{toTokyoCalendarDate(item.publishedAt)}</time>
     </p>
   </article>
 );
 
-/** life event。個別のページへのリンクは付けない（plan.md の U4） */
+/** life event。題は個別のページへリンクする（plan.md の U4） */
 const LifeEventRow = ({ item }: { item: LifeEventFeedItem }) => (
   <article className="flex flex-col gap-1">
     <p className="text-sm text-muted-foreground">life event</p>
-    <h2 className="font-bold">{item.title}</h2>
+    <TitleLink href={routes.lifeEvent(item.slug)}>{item.title}</TitleLink>
     {item.description && <p>{item.description}</p>}
     <p className="text-sm text-muted-foreground">
       <time dateTime={item.happenedOn}>{item.happenedOn}</time>

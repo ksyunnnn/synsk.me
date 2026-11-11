@@ -48,6 +48,7 @@
 | `url` | 外部の activity の取得元の URL | M3 |
 | `created_at` | note の作成日時（`note.created_at`。UTC の時点）。ほかの行は `NULL` | M5 |
 | `published_at` | 外部の activity の公開日時（`activity.published_at`。UTC の時点）。ほかの行は `NULL` | M5 |
+| `slug` | 個別のページの識別子。実績は `project.slug`（秘匿化した実績を含む）、note は `note.slug`、life event は `activity.slug`。職歴と外部の activity は `NULL`（plan.md の U4） | M6 |
 
 列の名前は `docs/SOFTWARE_DESIGN.md` の「列の名前を意味ごとに1つにする」に従う。種類は `kind` と呼ばない。`project.kind`（実績の種類）と `activity_source.kind`（分類）が別の意味で使っているため。
 
@@ -78,6 +79,7 @@
 | M3 | ビューを作り直し、外部の activity と life event の腕と、`source`・`source_kind`・`url` を足す | Phase 6（外部の activity と life event） |
 | M4 | ビューを作り直し、外部の activity の腕に転載先と一致する行の除外を足す | Phase 7（重なりの除外） |
 | M5 | ビューを作り直し、note と外部の activity の `sort_at` を Asia/Tokyo の時刻にし、`created_at`・`published_at` を足す（plan.md の U3 の決定、research.md の R5）。migrations/0022 | Phase 6 の T042 |
+| M6 | ビューを作り直し、`slug` を足す（plan.md の U4 の決定）。migrations/0026 | Phase 9 の T066 |
 
 ER 図（`gen_er8.py`・`er-options.html`）にビューを載せるかは共有担当が決める。
 

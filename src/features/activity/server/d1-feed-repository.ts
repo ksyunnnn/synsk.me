@@ -13,7 +13,7 @@ import { isProjectKind } from '@/shared/domain/project-kind';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
- * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018・0020〜0022）だけを読み、表を
+ * `FeedRepository` の D1 の実装。ビュー activity_feed（migrations/0013・0016〜0018・0020〜0022・0026）だけを読み、表を
  * 読まない（ADR-0046）。サイトに載せる行だけを出す決まりと秘匿化の決まりはビューが持つ。
  * この実装は、種類ごとに出す項目を列挙して `FeedItem` に詰める（constitution の Allowlist
  * Visibility、specs/005-feed/research.md の R4）。行の型はこのファイルの中だけに置く
@@ -44,11 +44,13 @@ type FeedRow = {
   url: string | null;
   created_at: string | null;
   published_at: string | null;
+  /** 実績・note・life event の個別のページの識別子。職歴と外部の activity は NULL（migrations/0026） */
+  slug: string | null;
 };
 
 const COLUMNS = `item_type, is_masked, title, title_masked, organization_name,
   organization_name_masked, role, project_kind, started_on, ended_on, sort_at, description, source,
-  source_kind, url, created_at, published_at`;
+  source_kind, url, created_at, published_at, slug`;
 
 const periodOf = (row: FeedRow): Period | null =>
   row.started_on === null
@@ -70,11 +72,20 @@ const toCareerOrProjectItem = (row: FeedRow, type: 'career' | 'project'): FeedIt
     return { type: 'career', isMasked, organizationName, role: row.role, period };
   }
   const title = isMasked ? row.title_masked : row.title;
-  if (title === null) return null;
+  // 一覧の行は個別のページへリンクする（plan.md の U4）。識別子の欠けた行は詰めない
+  if (title === null || row.slug === null) return null;
   // 種類は CHECK が 4 値に絞る。読めない値は `other` と同じ扱いにする
   const projectKind =
     row.project_kind !== null && isProjectKind(row.project_kind) ? row.project_kind : 'other';
-  return { type: 'project', isMasked, title, organizationName, projectKind, period };
+  return {
+    type: 'project',
+    isMasked,
+    title,
+    organizationName,
+    projectKind,
+    period,
+    slug: row.slug,
+  };
 };
 
 /**
@@ -88,12 +99,13 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
     case 'project':
       return toCareerOrProjectItem(row, row.item_type);
     case 'note':
-      if (row.title === null || row.created_at === null) return null;
+      if (row.title === null || row.created_at === null || row.slug === null) return null;
       return {
         type: 'note',
         title: row.title,
         description: row.description,
         createdAt: row.created_at,
+        slug: row.slug,
       };
     case 'external_activity':
       // 画面は URL を `<a href>` にする。取得元の応答の URL を http か https に限る
@@ -114,7 +126,7 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
       };
     case 'life_event':
       // 題は空でない（004 の FR-024、migrations/0021 の CHECK）。欠けた行は note と同じく詰めない
-      if (row.title === null) return null;
+      if (row.title === null || row.slug === null) return null;
       return {
         type: 'life_event',
         title: row.title,
@@ -122,6 +134,7 @@ export const toFeedItem = (row: FeedRow): FeedItem | null => {
         happenedOn: row.sort_at as CalendarDate,
         source: 'life_event',
         sourceKind: 'life_event',
+        slug: row.slug,
       };
   }
 };

@@ -117,11 +117,12 @@
 
 U3（暦の日付と日時が同じ日のときの順と、日の境目の時刻帯）は決まっていて、表に載せない。2026-11-10 にオーナーが決めた（issue #219 のコメント「005-feed U3「時点を Asia/Tokyo に換算する場所」をオーナーが決めた」、spec の FR-022）: 日の境目を Asia/Tokyo の 0 時にし、ビューが note と外部の activity の日時を Asia/Tokyo の時刻にして並べる。暦の日付は換算せず、新しい順の一覧では同じ日の日時より古い位置に並ぶ（research.md の R5、data-model.md の M5）。
 
+U4（一覧から note・実績・life event の個別のページへリンクするか）は決まっていて、表に載せない。2026-11-11 にオーナーが決めた（[issue #219 のコメント](https://github.com/ksyunnnn/synsk.me/issues/219#issuecomment-6784129166)）: 一覧の行は個別のページへリンクする。リンクするのは個別のページを持つ実績・note・life event で、秘匿化した実績も個別のページを持つのでリンクする（001 の spec の Edge Cases）。職歴は個別のページを持たないのでリンクせず、外部の activity は取得元へリンクする（FR-020）。ビューが識別子 `slug` を出し、DTO が持つ（data-model.md の M6、contracts/visitor-feed.md）。
+
 | ID | 未決 | 決める人 | 止める範囲 |
 |---|---|---|---|
 | U1 | 一覧を見せる画面の名前と URL（spec の「決定が無く」）。PM が推奨 `/` をオーナーに聞いている | オーナー | 一覧の画面（`src/app/` の `page.tsx`）と結合の検査。Repository・DTO・並べる計算は止めない |
 | U2 | 並びの日付が同じとき、どの種類を先に並べるか（spec の「決定が無く」）。仮の順（note・外部の activity・life event・実績・職歴）で作る（2026-11-09、PM の回答） | オーナー | 無し。決まれば `FEED_ITEM_TYPES` の配列を直す |
-| U4 | 一覧から note・実績・life event の個別のページへリンクするか（spec の「決定が無く」） | オーナー | 無し。決まるまでリンクせず、slug を DTO に入れない |
 | U5 | 一覧に代表画像を出すか、外部の activity の代表の画像の出し方（spec の「決定が無く」、issue #186「URL カードの画像の出し方を決める」） | オーナー | 無し。決まるまで画像を DTO に入れない |
 | U6 | 転載先の URL と外部の activity の URL が一致するとみなす条件（spec の「決定が無く」） | オーナー | 無し。決まるまで文字列の完全一致（research.md の R7） |
 | U7 | 一覧の activity に並べる値（使ったスキル、秘匿化しない行の本文、実績の期間の見せ方、職歴の終わりの日を出すか。spec の Assumptions は UI を考えるときに決めるとする） | オーナー（デザイン） | 無し。決まるまで contracts/visitor-feed.md の最小の値 |

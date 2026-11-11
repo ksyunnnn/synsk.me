@@ -72,7 +72,7 @@ plan.md の Technical Context の不明点と、作り方の決め方を置く�
 
 ## R6 訪問者向けの DTO
 
-- 決めたこと: 一覧の 1 件の形 `FeedItem` は、種類で分けた型にし、[contracts/visitor-feed.md](./contracts/visitor-feed.md) が項目を列挙する。並べる値は、spec が UI を考えるときに決めるとするため、spec の受け入れの場面が求める最小の値にする（種類・題・組織名・肩書・実績の種類・期間・note の説明文・取得元と分類・取得元の URL・並びの日付）。使ったスキル・代表画像・個別のページへのリンク・秘匿化しない行の本文は、決まるまで入れない（plan.md の U4・U5・U7）
+- 決めたこと: 一覧の 1 件の形 `FeedItem` は、種類で分けた型にし、[contracts/visitor-feed.md](./contracts/visitor-feed.md) が項目を列挙する。並べる値は、spec が UI を考えるときに決めるとするため、spec の受け入れの場面が求める最小の値にする（種類・題・組織名・肩書・実績の種類・期間・note の説明文・取得元と分類・取得元の URL・並びの日付）と、個別のページを持つ実績・note・life event の識別子（plan.md の U4 の決定）。使ったスキル・代表画像・秘匿化しない行の本文は、決まるまで入れない（plan.md の U5・U7）
 - 主キー（`item_number`）は DTO に入れない。並べる SQL の中だけで使う。React の key は並びの位置で付ける。ADR-0048 が主キーを外に出さないとし、RSC の応答には key も含まれるため
 - 理由: constitution の Allowlist Visibility、設計原則 9（見せ方が決まっていない値を先に持たない）
 - 退けた案: ビューの全列を DTO に通す。見せ方が決まる前に、出す値が増える

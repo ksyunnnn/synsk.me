@@ -4,7 +4,8 @@ import type { ProjectKind } from '@/shared/domain/project-kind';
 /**
  * 一覧の 1 件の形（specs/005-feed/contracts/visitor-feed.md、research.md の R5・R6）。
  * 画面・`<title>`・RSC の応答は、この形の値だけを使う。どの種類にも主キー（ビューの
- * `item_number`）を入れない（ADR-0048）
+ * `item_number`）を入れない（ADR-0048）。個別のページを持つ種類（実績・note・life event）は、
+ * 個別のページの URL に出す識別子 `slug` を持つ（plan.md の U4）
  */
 
 /**
@@ -37,7 +38,7 @@ export type CareerFeedItem = {
 
 /**
  * 実績。秘匿化した実績の題と組織名は秘匿化した値。本文・関連 URL・画像を持たない
- * （FR-012・FR-013）
+ * （FR-012・FR-013）。秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）
  */
 export type ProjectFeedItem = {
   type: 'project';
@@ -46,6 +47,8 @@ export type ProjectFeedItem = {
   organizationName: string;
   projectKind: ProjectKind;
   period: Period;
+  /** 個別のページの識別子。秘匿化した実績では uid で、実際の題や組織名を含まない（001 の FR-013） */
+  slug: string;
 };
 
 /**
@@ -58,6 +61,8 @@ export type NoteFeedItem = {
   description: string | null;
   /** 作成日時。`YYYY-MM-DDTHH:MM:SS.sssZ`。並びの日付で、公開の操作で変わらない（FR-008） */
   createdAt: string;
+  /** 個別のページの識別子 */
+  slug: string;
 };
 
 /**
@@ -86,7 +91,7 @@ export type ExternalActivityFeedItem = {
   sourceKind: ExternalActivitySourceKind;
 };
 
-/** life event。slug と代表画像を持たない（plan.md の U4・U5） */
+/** life event。代表画像を持たない（plan.md の U5） */
 export type LifeEventFeedItem = {
   type: 'life_event';
   /** 空でない（004 の FR-024） */
@@ -96,6 +101,8 @@ export type LifeEventFeedItem = {
   happenedOn: CalendarDate;
   source: 'life_event';
   sourceKind: 'life_event';
+  /** 個別のページの識別子 */
+  slug: string;
 };
 
 export type FeedItem =
