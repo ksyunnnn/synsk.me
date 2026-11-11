@@ -35,6 +35,56 @@ describe('createSourceHttp', () => {
     await expect(http.get('https://example.com/feed')).rejects.toThrow(/別のホスト/);
   });
 
+  it('別のホストへのリダイレクトは、移った先へ要求を出さずに失敗にする（R10）', async () => {
+    const seen: string[] = [];
+    const http = createSourceHttp(async (url) => {
+      seen.push(url);
+      return new Response(null, {
+        status: 302,
+        headers: { Location: 'https://other.example/x' },
+      });
+    }, LIMITS);
+
+    await expect(http.get('https://example.com/feed', { 'X-API-Key': 'fake' })).rejects.toThrow(
+      /別のホスト/,
+    );
+    expect(seen).toEqual(['https://example.com/feed']);
+  });
+
+  it('同じホストへのリダイレクトは辿り、ヘッダを付け直して要求する', async () => {
+    const seen: { url: string; key: string | null }[] = [];
+    const http = createSourceHttp(async (url, init) => {
+      seen.push({ url, key: new Headers(init?.headers).get('X-API-Key') });
+      if (url.endsWith('/old')) {
+        return new Response(null, { status: 301, headers: { Location: '/new' } });
+      }
+      return new Response('移った先');
+    }, LIMITS);
+
+    const response = await http.get('https://example.com/old', { 'X-API-Key': 'fake' });
+
+    expect(response.text).toBe('移った先');
+    expect(seen).toEqual([
+      { url: 'https://example.com/old', key: 'fake' },
+      { url: 'https://example.com/new', key: 'fake' },
+    ]);
+  });
+
+  it('followRedirects が false なら辿らず、3xx を 2xx でない応答として扱う', async () => {
+    const seen: string[] = [];
+    const http = createSourceHttp(
+      async (url) => {
+        seen.push(url);
+        return new Response(null, { status: 301, headers: { Location: '/new' } });
+      },
+      LIMITS,
+      { followRedirects: false },
+    );
+
+    await expect(http.get('https://example.com/old')).rejects.toThrow(/HTTP 301/);
+    expect(seen).toEqual(['https://example.com/old']);
+  });
+
   it('要求の数が上限に達したら、要求を出さずに失敗する', async () => {
     let calls = 0;
     const http = createSourceHttp(async () => {

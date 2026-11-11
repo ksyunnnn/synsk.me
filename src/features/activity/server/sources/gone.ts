@@ -20,8 +20,7 @@ export const checkGoneByStatus = async (
   limits: FetchLimits,
 ): Promise<GoneCheck> => {
   try {
-    const noRedirect: Fetcher = (target, init) => fetcher(target, { ...init, redirect: 'manual' });
-    await createSourceHttp(noRedirect, limits).get(url);
+    await createSourceHttp(fetcher, limits, { followRedirects: false }).get(url);
     return 'present';
   } catch (error) {
     return error instanceof SourceHttpError && error.status === 404 ? 'gone' : 'unknown';

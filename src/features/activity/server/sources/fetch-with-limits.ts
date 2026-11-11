@@ -42,7 +42,21 @@ export type SourceHttp = {
   get: (url: string, headers?: Record<string, string>) => Promise<SourceResponse>;
 };
 
-export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceHttp => {
+/** 1 回の get で辿るリダイレクトの段の上限 */
+const MAX_REDIRECTS = 5;
+
+const isRedirect = (status: number) => [301, 302, 303, 307, 308].includes(status);
+
+export type SourceHttpOptions = {
+  /** false なら 3xx を辿らず、2xx でない応答として扱う */
+  followRedirects?: boolean;
+};
+
+export const createSourceHttp = (
+  fetcher: Fetcher,
+  limits: FetchLimits,
+  { followRedirects = true }: SourceHttpOptions = {},
+): SourceHttp => {
   let used = 0;
   return {
     get remaining() {
@@ -54,12 +68,30 @@ export const createSourceHttp = (fetcher: Fetcher, limits: FetchLimits): SourceH
       }
       used += 1;
       return withTimeout(limits.timeoutMs, async (signal) => {
-        const response = await fetcher(url, {
-          headers: { ...headers, 'User-Agent': USER_AGENT },
-          signal,
-        });
-        // リダイレクトで別のホストへ移ったら読まない。要求を出すのは、その取得元のホストだけ（research.md の R10）
-        if (response.redirected && new URL(response.url).host !== new URL(url).host) {
+        // リダイレクトは 1 段ずつ辿り、別のホストへは要求を出さない。要求を出すのは、その取得元の
+        // ホストだけ（research.md の R10）。fetch に辿らせると、取得元の API キーなどのヘッダが
+        // 移った先のホストへ届く
+        const origin = new URL(url).host;
+        let current = url;
+        let response: Response;
+        for (let hop = 0; ; hop += 1) {
+          response = await fetcher(current, {
+            headers: { ...headers, 'User-Agent': USER_AGENT },
+            redirect: 'manual',
+            signal,
+          });
+          const location = response.headers.get('Location');
+          if (!followRedirects || !isRedirect(response.status) || location === null) break;
+          await response.body?.cancel();
+          const next = new URL(location, current);
+          if (next.host !== origin) throw new Error(`取得元が別のホストへ移した: ${url}`);
+          if (hop >= MAX_REDIRECTS) {
+            throw new Error(`リダイレクトの段の上限（${MAX_REDIRECTS} 段）を超えた: ${url}`);
+          }
+          current = next.href;
+        }
+        // fetcher が redirect: 'manual' を守らずに辿った場合も、別のホストの応答は読まない
+        if (response.redirected && new URL(response.url).host !== origin) {
           await response.body?.cancel();
           throw new Error(`取得元が別のホストへ移した: ${url}`);
         }
