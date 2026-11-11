@@ -33,6 +33,7 @@
     "jose": "^6.2.12",
     "mdast-util-from-markdown": "^2.1.0",
     "mdast-util-to-string": "^4.0.0",
+    "mediabunny": "1.62.1",
     "next": "16.4.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",

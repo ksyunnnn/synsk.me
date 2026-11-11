@@ -32,9 +32,8 @@ const Page = async ({ params }: Props) => {
   if (!resume) notFound();
 
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12 flex flex-col gap-6 print:max-w-none print:p-0">
-      <BackToTopLink />
-      <VisitorResumeView resume={resume} />
+    <main>
+      <VisitorResumeView resume={resume} toolbarStart={<BackToTopLink />} />
     </main>
   );
 };
