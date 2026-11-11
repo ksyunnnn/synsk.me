@@ -7,6 +7,11 @@ const nextConfig = {
   // （https://nextjs.org/docs/app/api-reference/config/next-config-js/cacheComponents）
   cacheComponents: true,
 
+  // 短い URL でも開けるようにする。lab の外から lab のファイルを import しないため、ページを置かずに経路だけ写す
+  async rewrites() {
+    return [{ source: '/delay-visuals', destination: '/lab/delay-visuals/v5' }];
+  },
+
   env: {
     // WORKERS_CI_BRANCH は Cloudflare Workers Builds がビルド時に渡すブランチ名。
     // 手元のビルドでは未定義になり、preview に落ちる。

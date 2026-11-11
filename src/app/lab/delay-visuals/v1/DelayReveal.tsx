@@ -9,6 +9,8 @@
 //   catchup: 帯の置き方は repeat と同じ。表示の境目が帯に入るとき絵は右に最大ずれていて、次の青線に届くまでに左へ動いて揃う
 import { useEffect, useRef, useState } from 'react';
 
+import { drawHorizontal } from '../_reveal/draw';
+
 const DEFAULT_PHOTO = { url: 'https://picsum.photos/id/20/1800/600', top: 0 };
 const WIDTH = 900;
 const HEIGHT = 300;
@@ -80,103 +82,86 @@ export const DelayReveal = ({
     const revealX = WIDTH * (1 - t);
     const s = 1 + (stretch - 1) * t;
 
-    ctx.clearRect(0, 0, WIDTH, HEIGHT);
-    if (mode === 'stretch') {
-      // 内側の境目より左: 写真の [seamX - seamX / s, seamX] を [0, seamX] に引き伸ばす
-      const srcWidth = seamX / s;
+    if (mode === 'catchup') {
+      drawHorizontal(ctx, image, { width: WIDTH, height: HEIGHT, t, seam, shift, count });
+    } else {
+      ctx.clearRect(0, 0, WIDTH, HEIGHT);
+      if (mode === 'stretch') {
+        // 内側の境目より左: 写真の [seamX - seamX / s, seamX] を [0, seamX] に引き伸ばす
+        const srcWidth = seamX / s;
+        ctx.drawImage(
+          image,
+          (seamX - srcWidth) * scale,
+          0,
+          srcWidth * scale,
+          image.height,
+          0,
+          0,
+          seamX,
+          HEIGHT,
+        );
+      } else if (mode === 'repeat') {
+        // 左から k 番目の帯（右から数えて k 本目の境目の左）は、写真を step × k だけ左へずらす
+        const gap = seamX / count;
+        const stepShift = (WIDTH * shift * t) / count;
+        for (let k = 1; k <= count; k++) {
+          const right = seamX - (k - 1) * gap;
+          const left = seamX - k * gap;
+          ctx.drawImage(
+            image,
+            (left + stepShift * k) * scale,
+            0,
+            gap * scale,
+            image.height,
+            left,
+            0,
+            right - left,
+            HEIGHT,
+          );
+        }
+      } else if (mode === 'settle') {
+        // u は表示の境目がその帯の右端から何帯ぶん進んだか。0 と 1 でずれ 0、0.5 で最大
+        const gap = seamX / count;
+        const maxShift = WIDTH * shift;
+        for (let k = 1; k <= count; k++) {
+          const right = seamX - (k - 1) * gap;
+          const left = seamX - k * gap;
+          const u = (right - revealX) / gap;
+          const amount = u <= 0 || u >= 1 ? 0 : 1 - Math.abs(2 * u - 1);
+          ctx.drawImage(
+            image,
+            (left + maxShift * amount) * scale,
+            0,
+            gap * scale,
+            image.height,
+            left,
+            0,
+            right - left,
+            HEIGHT,
+          );
+        }
+      } else {
+        // 内側の境目より左: 2 枚目の写真を d だけ左へずらす。写真の [d, seamX + d] を [0, seamX] に出す
+        const d = WIDTH * shift * t;
+        ctx.drawImage(image, d * scale, 0, seamX * scale, image.height, 0, 0, seamX, HEIGHT);
+      }
+      // 内側の境目より右: そのまま
       ctx.drawImage(
         image,
-        (seamX - srcWidth) * scale,
+        seamX * scale,
         0,
-        srcWidth * scale,
+        (WIDTH - seamX) * scale,
         image.height,
-        0,
-        0,
         seamX,
+        0,
+        WIDTH - seamX,
         HEIGHT,
       );
-    } else if (mode === 'repeat') {
-      // 左から k 番目の帯（右から数えて k 本目の境目の左）は、写真を step × k だけ左へずらす
-      const gap = seamX / count;
-      const stepShift = (WIDTH * shift * t) / count;
-      for (let k = 1; k <= count; k++) {
-        const right = seamX - (k - 1) * gap;
-        const left = seamX - k * gap;
-        ctx.drawImage(
-          image,
-          (left + stepShift * k) * scale,
-          0,
-          gap * scale,
-          image.height,
-          left,
-          0,
-          right - left,
-          HEIGHT,
-        );
+      // 表示の境目より左: 境目の列を左端まで引き伸ばす
+      if (revealX > 0) {
+        const column = Math.min(WIDTH - 1, Math.floor(revealX));
+        ctx.drawImage(ctx.canvas, column, 0, 1, HEIGHT, 0, 0, column, HEIGHT);
       }
-    } else if (mode === 'catchup') {
-      // u は表示の境目がその帯の右端から何帯ぶん進んだか。u = 0 で右に最大ずれ、u = 1 で揃う
-      const gap = seamX / count;
-      const maxShift = WIDTH * shift;
-      for (let k = 1; k <= count; k++) {
-        const right = seamX - (k - 1) * gap;
-        const left = seamX - k * gap;
-        const u = (right - revealX) / gap;
-        const offset = u >= 1 ? 0 : maxShift * (1 - Math.max(0, u));
-        ctx.drawImage(
-          image,
-          (left - offset) * scale,
-          0,
-          gap * scale,
-          image.height,
-          left,
-          0,
-          right - left,
-          HEIGHT,
-        );
-      }
-    } else if (mode === 'settle') {
-      // u は表示の境目がその帯の右端から何帯ぶん進んだか。0 と 1 でずれ 0、0.5 で最大
-      const gap = seamX / count;
-      const maxShift = WIDTH * shift;
-      for (let k = 1; k <= count; k++) {
-        const right = seamX - (k - 1) * gap;
-        const left = seamX - k * gap;
-        const u = (right - revealX) / gap;
-        const amount = u <= 0 || u >= 1 ? 0 : 1 - Math.abs(2 * u - 1);
-        ctx.drawImage(
-          image,
-          (left + maxShift * amount) * scale,
-          0,
-          gap * scale,
-          image.height,
-          left,
-          0,
-          right - left,
-          HEIGHT,
-        );
-      }
-    } else {
-      // 内側の境目より左: 2 枚目の写真を d だけ左へずらす。写真の [d, seamX + d] を [0, seamX] に出す
-      const d = WIDTH * shift * t;
-      ctx.drawImage(image, d * scale, 0, seamX * scale, image.height, 0, 0, seamX, HEIGHT);
-    }
-    // 内側の境目より右: そのまま
-    ctx.drawImage(
-      image,
-      seamX * scale,
-      0,
-      (WIDTH - seamX) * scale,
-      image.height,
-      seamX,
-      0,
-      WIDTH - seamX,
-      HEIGHT,
-    );
-    // 表示の境目より左: 境目の列を左端まで引き伸ばす
-    if (revealX > 0) {
-      const column = Math.min(WIDTH - 1, Math.floor(revealX));
-      ctx.drawImage(ctx.canvas, column, 0, 1, HEIGHT, 0, 0, column, HEIGHT);
     }
     if (guides) {
       ctx.setLineDash([6, 6]);
