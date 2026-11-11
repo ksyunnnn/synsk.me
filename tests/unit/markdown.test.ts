@@ -77,6 +77,17 @@ describe('readMarkdown', () => {
     expect(readMarkdown(body).mediaKeys).toEqual([KEY_A]);
   });
 
+  it('外の URL の画像のすぐ下の行のキャプションも、最初の段落として読まない。画像の印のキーには含めない', () => {
+    const body = [
+      '![外の図](https://example.com/a.png)',
+      '*キャプション*',
+      '',
+      '本文の一行目',
+    ].join('\n');
+    expect(readMarkdown(body).firstParagraph).toBe('本文の一行目');
+    expect(readMarkdown(body).mediaKeys).toEqual([]);
+  });
+
   it('空行を挟んだ強調の行と、画像と同じ行の強調は、キャプションでなく段落として読む', () => {
     expect(readMarkdown(`![代替](media:${KEY_A})\n\n*斜体の段落*`).firstParagraph).toBe(
       '斜体の段落',
@@ -145,11 +156,42 @@ describe('MarkdownBody', () => {
     expect(render(`前 ![代替](media:${KEY_B}) 後`)).toBe('<p>前  後</p>');
   });
 
-  it('文の中の画像はキャプションを持たない img で出し、題の欄は title にする。ほかの URL の画像は代替テキストで出す', () => {
+  it('文の中の画像はキャプションを持たない img で出し、題の欄は title にする', () => {
     expect(render(`前 ![代替](media:${KEY_A} "ホバーの文") 後`)).toBe(
       `<p>前 <img src="/notes/n/media/${KEY_A}" alt="代替" title="ホバーの文"/> 後</p>`,
     );
-    expect(render('![外の画像](https://example.com/a.png)')).toBe('<p>外の画像</p>');
+  });
+
+  /** 外の URL の画像の属性。遅れて読み、参照元のページの URL を画像のサーバへ送らない */
+  const EXTERNAL = 'loading="lazy" decoding="async" referrerPolicy="no-referrer"';
+
+  it('http と https の外の URL の画像を img で出し、画像だけの段落は figure にしてキャプションを付ける', () => {
+    expect(render('![外の図](https://example.com/a.png "ホバーの文")\n*キャプション*')).toBe(
+      `<figure><img src="https://example.com/a.png" alt="外の図" title="ホバーの文" ${EXTERNAL}/><figcaption>キャプション</figcaption></figure>`,
+    );
+    expect(render('![](https://example.com/a.png)')).toBe(
+      `<figure><img src="https://example.com/a.png" alt="" ${EXTERNAL}/></figure>`,
+    );
+    expect(render('前 ![外](http://example.com/a.png) 後')).toBe(
+      `<p>前 <img src="http://example.com/a.png" alt="外" ${EXTERNAL}/> 後</p>`,
+    );
+    expect(render('![外][x]\n*キャプション*\n\n[x]: https://example.com/a.png')).toBe(
+      `<figure><img src="https://example.com/a.png" alt="外" ${EXTERNAL}/><figcaption>キャプション</figcaption></figure>`,
+    );
+  });
+
+  it('http と https でない URL と相対の URL の画像は、読みに行かず代替テキストで出し、キャプションにしない', () => {
+    for (const url of [
+      'javascript:alert(1)',
+      'data:image/png;base64,AAAA',
+      'ftp://example.com/a.png',
+      '/a.png',
+      'a.png',
+      '//example.com/a.png',
+    ]) {
+      expect(render(`![代替](${url})`)).toBe('<p>代替</p>');
+      expect(render(`![代替](${url})\n*キャプション*`)).toBe('<p>代替\n<em>キャプション</em></p>');
+    }
   });
 
   it('生の HTML を要素にせず、文字列で出す', () => {

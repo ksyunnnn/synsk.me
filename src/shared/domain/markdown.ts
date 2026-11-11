@@ -17,6 +17,10 @@ import { isWebUrl } from '@/shared/domain/web-url';
  * ホバーで出す文（`title` の属性）にする。キャプションは Zenn の書き方に揃え、画像の行のすぐ下に
  * 空行を挟まずに強調だけの行（`*キャプション*`）を書く。題の欄とキャプションは、どちらか片方でも
  * 両方でも書ける
+ *
+ * 画像の URL の欄には、`media:<storageKey>` のほかに http か https の外の URL も書ける（ADR-0054）。
+ * 外の URL の画像も同じ書き方でキャプションを付けられる。ほかの URL（`javascript:`・`data:`・相対の
+ * URL）の画像は画像にしない
  */
 
 /** 画像の印の URL の欄の始まり */
@@ -35,6 +39,17 @@ export const mediaKeyOf = (url: string): MediaStorageKey | null =>
   url.startsWith(MEDIA_URL_PREFIX)
     ? parseMediaStorageKey(url.slice(MEDIA_URL_PREFIX.length))
     : null;
+
+/** 本文の画像の出どころ。置き場の画像か、http か https の外の URL の画像（ADR-0054） */
+export type ImageSource =
+  { kind: 'media'; key: MediaStorageKey } | { kind: 'external'; url: string };
+
+/** 画像の URL の欄から出どころを読む。画像にしない URL なら null */
+export const imageSourceOf = (url: string): ImageSource | null => {
+  const key = mediaKeyOf(url);
+  if (key !== null) return { kind: 'media', key };
+  return isWebUrl(url) ? { kind: 'external', url } : null;
+};
 
 /**
  * 段落の中身の文字列が、http か https の URL 1 つだけなら、その URL を `URL` の形に揃えた値。
@@ -82,11 +97,11 @@ const isLineBreak = (child: PhrasingContent) =>
   child.type === 'break' || (isBlank(child) && child.type === 'text' && child.value.includes('\n'));
 
 /**
- * 中身が画像の印 1 つだけの段落か、画像の印の次の行が強調だけの段落（`<figure>` にする。強調を
- * キャプションにする）か、URL だけの段落（URL カードにする）
+ * 中身が画像 1 つだけの段落か、画像の次の行が強調だけの段落（`<figure>` にする。強調を
+ * キャプションにする）か、URL だけの段落（URL カードにする）。画像は置き場の画像の印か外の URL の画像
  */
 export type ParagraphKind =
-  | { kind: 'media'; key: MediaStorageKey; image: PhrasingContent; caption: Emphasis | null }
+  | { kind: 'image'; url: string; image: PhrasingContent; caption: Emphasis | null }
   | { kind: 'url'; url: string };
 
 /** 段落を見分ける。どちらでもなければ null。リストと引用の中の段落も同じに見分ける（R11） */
@@ -97,22 +112,23 @@ export const paragraphKindOf = (
   const content = trimBlank(paragraph.children);
   const [child, lineBreak, caption] = content;
   const imageUrl = child === undefined ? undefined : imageUrlOf(child, definitions);
-  const key = imageUrl === undefined ? null : mediaKeyOf(imageUrl);
-  if (key !== null && content.length === 1)
-    return { kind: 'media', key, image: child, caption: null };
+  const url = imageUrl !== undefined && imageSourceOf(imageUrl) !== null ? imageUrl : null;
+  if (url !== null && content.length === 1)
+    return { kind: 'image', url, image: child, caption: null };
   // キャプションは画像の行のすぐ下の行。空行を挟めば別の段落になり、キャプションにしない
-  if (key !== null && content.length === 3 && isLineBreak(lineBreak) && caption.type === 'emphasis')
-    return { kind: 'media', key, image: child, caption };
+  if (url !== null && content.length === 3 && isLineBreak(lineBreak) && caption.type === 'emphasis')
+    return { kind: 'image', url, image: child, caption };
   if (content.length !== 1) return null;
   // autolink（`<https://…>`）は link の子になるため、ここで文字列 1 つにならない（R11）
-  const url =
+  const line =
     paragraph.children.length === 1 && child.type === 'text' ? urlLineOf(child.value) : null;
-  return url === null ? null : { kind: 'url', url };
+  return line === null ? null : { kind: 'url', url: line };
 };
 
 /** 描く側が見分けた段落に付ける要素の名前と属性。生の HTML は文字列で出るため、この要素は作れない */
 export const MARKED_PARAGRAPH_TAG = 'div';
-export const MARKED_MEDIA_PROPERTY = 'dataMarkdownMedia';
+/** 画像だけの段落の印。値は画像の URL の欄（`media:<storageKey>` か外の URL） */
+export const MARKED_IMAGE_PROPERTY = 'dataMarkdownImage';
 export const MARKED_URL_PROPERTY = 'dataMarkdownUrl';
 
 /** 描く側がキャプションの強調に付ける要素の名前 */
@@ -130,7 +146,7 @@ export const remarkMarkParagraphs = () => (tree: Root) => {
     if (node.type !== 'paragraph') return;
     const kind = paragraphKindOf(node, definitions);
     if (kind === null) return;
-    if (kind.kind === 'media') {
+    if (kind.kind === 'image') {
       if (kind.caption !== null) kind.caption.data = { ...kind.caption.data, hName: CAPTION_TAG };
       node.children = kind.caption === null ? [kind.image] : [kind.image, kind.caption];
     }
@@ -138,8 +154,8 @@ export const remarkMarkParagraphs = () => (tree: Root) => {
       ...node.data,
       hName: MARKED_PARAGRAPH_TAG,
       hProperties:
-        kind.kind === 'media'
-          ? { [MARKED_MEDIA_PROPERTY]: kind.key }
+        kind.kind === 'image'
+          ? { [MARKED_IMAGE_PROPERTY]: kind.url }
           : { [MARKED_URL_PROPERTY]: kind.url },
     };
   });
@@ -174,7 +190,7 @@ export const readMarkdown = (body: string): MarkdownSummary => {
     if (node.type !== 'paragraph') return;
     const kind = paragraphKindOf(node, definitions);
     if (kind?.kind === 'url') urlLines.add(kind.url);
-    if (firstParagraph === null && kind?.kind !== 'media') {
+    if (firstParagraph === null && kind?.kind !== 'image') {
       const content = toString(node, { includeImageAlt: false }).replace(/\s+/g, ' ').trim();
       if (content !== '') firstParagraph = content;
     }
