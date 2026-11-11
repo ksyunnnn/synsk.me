@@ -25,6 +25,9 @@ import { deleteActivityRows, insertActivity } from '../support/activity-rows';
  * - 下書きと削除した note、公開した後に保存した版の題を含めない（SC-002、FR-005・FR-006）
  * - 外部の activity は取得元の URL へリンクする（FR-020）
  * - ページ送りは番号のページ（`?page=n`）の `<a>` で、リンクに主キーを含めない（FR-010、ADR-0048）
+ * - 実績・note・life event の行は個別のページへリンクし、職歴は個別のページを持たないのでリンク
+ *   しない（plan.md の U4 の決定）。秘匿化した実績も個別のページを持つのでリンクする（001 の spec の
+ *   Edge Cases）
  *
  * 値はすべて作り物で、ほかの値と重ならない
  */
@@ -69,6 +72,13 @@ const NOTE = {
 
 const EXTERNAL = { title: '一覧の外部の作り物の記事', url: 'https://example.com/feed-zenn-1' };
 
+/** 個別のページを持つ行の識別子。秘匿化した実績の識別子は uid の形（001 の spec の FR-013） */
+const SLUG = {
+  maskedProject: 'feedaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  unmaskedProject: 'feed-unmasked-project',
+  note: 'feed-published-note',
+};
+
 /**
  * ほかの項目より古い life event の件数。並ぶ項目は合わせて 30 件になり、1 ページ目にほかの 5 件と
  * 新しい 15 件（25〜11 番）、2 ページ目に残りの 10 件（10〜1 番）が並ぶ
@@ -100,6 +110,14 @@ const feedHrefs = (text: string) =>
     (match) => match[1],
   );
 
+/** 応答の中の、個別のページへのリンクの行き先。読み方は `feedHrefs` と同じ */
+const detailHrefs = (text: string) =>
+  [
+    ...text.matchAll(
+      /(?:<a href=|\["\$","a",null,\{"href":)"(\/(?:projects|notes|life-events)\/[^"]*)"/g,
+    ),
+  ].map((match) => match[1]);
+
 beforeAll(async () => {
   ctx = await startTestServer({
     seed: async (db) => {
@@ -118,6 +136,7 @@ beforeAll(async () => {
       });
       const maskedProject = await insertProject(db, {
         organizationId: hiddenOrg,
+        slug: SLUG.maskedProject,
         title: HIDDEN.projectTitle,
         titleMasked: SHOWN.projectTitle,
         startedOn: '2020-04-01',
@@ -141,6 +160,7 @@ beforeAll(async () => {
       });
       await insertProject(db, {
         organizationId: unmaskedOrgId,
+        slug: SLUG.unmaskedProject,
         title: UNMASKED.title,
         startedOn: '2021-04-01',
         isMasked: false,
@@ -167,7 +187,7 @@ beforeAll(async () => {
       });
       await insertEducation(db, { school: NOT_ON_SITE.school });
 
-      const published = await insertNote(db, { title: NOTE.published });
+      const published = await insertNote(db, { slug: SLUG.note, title: NOTE.published });
       await publishNoteRow(db, published.id);
       await insertNoteRevision(db, published.id, { title: NOTE.laterRevision });
       await insertNote(db, { title: NOTE.draft });
@@ -239,6 +259,22 @@ describe.each([
     const { text } = await fetchFeed(as);
     expect(text).toContain(EXTERNAL.title);
     expect(text).toMatch(new RegExp(`"?href"?[=:]"${EXTERNAL.url}"`));
+  });
+
+  it('実績・note・life event の行は個別のページへリンクし、秘匿化した実績もリンクする。職歴はリンクしない（U4）', async () => {
+    const { text } = await fetchFeed(as);
+    const fillers = Array.from(
+      { length: FILLER_COUNT - 10 },
+      (_, i) => `/life-events/feed-filler-${FILLER_COUNT - i}`,
+    );
+    expect(detailHrefs(text).toSorted()).toEqual(
+      [
+        `/projects/${SLUG.maskedProject}`,
+        `/projects/${SLUG.unmaskedProject}`,
+        `/notes/${SLUG.note}`,
+        ...fillers,
+      ].toSorted(),
+    );
   });
 
   it('1 ページ目は 20 件を並べ、次のページへのリンクを番号だけで持つ（FR-010・ADR-0048）', async () => {

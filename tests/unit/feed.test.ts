@@ -33,6 +33,7 @@ const row = (overrides: Partial<FeedRow>): FeedRow => ({
   url: null,
   created_at: null,
   published_at: null,
+  slug: null,
   ...overrides,
 });
 
@@ -96,6 +97,7 @@ describe('toFeedItem', () => {
           title: '作り物の受託開発',
           organization_name: '作り物株式会社',
           project_kind: 'talk',
+          slug: 'fake-contract-work',
         }),
       ),
     ).toStrictEqual({
@@ -105,6 +107,7 @@ describe('toFeedItem', () => {
       organizationName: '作り物株式会社',
       projectKind: 'talk',
       period: { startedOn: '2021-04-01', endedOn: null },
+      slug: 'fake-contract-work',
     });
   });
 
@@ -116,6 +119,7 @@ describe('toFeedItem', () => {
           title_masked: '業務システムの開発',
           organization_name_masked: 'ある会社',
           project_kind: 'application',
+          slug: '0123456789abcdef0123456789abcdef',
         }),
       ),
     ).toStrictEqual({
@@ -125,6 +129,8 @@ describe('toFeedItem', () => {
       organizationName: 'ある会社',
       projectKind: 'application',
       period: { startedOn: '2021-04-01', endedOn: null },
+      // 秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）。識別子は uid の形
+      slug: '0123456789abcdef0123456789abcdef',
     });
   });
 
@@ -147,7 +153,12 @@ describe('toFeedItem', () => {
   it('読めない実績の種類は、その他として詰める', () => {
     expect(
       toFeedItem(
-        row({ title: '作り物の題', organization_name: '作り物株式会社', project_kind: 'x' }),
+        row({
+          title: '作り物の題',
+          organization_name: '作り物株式会社',
+          project_kind: 'x',
+          slug: 'fake-project',
+        }),
       ),
     ).toMatchObject({ projectKind: 'other' });
   });
@@ -161,6 +172,24 @@ describe('toFeedItem', () => {
     ).toBeNull();
     expect(toFeedItem(row({ item_type: 'unknown_type', title: '作り物の題' }))).toBeNull();
   });
+
+  it('識別子の欠けた実績は詰めない（個別のページへのリンクを作れない）', () => {
+    expect(
+      toFeedItem(row({ title: '作り物の題', organization_name: '作り物株式会社', slug: null })),
+    ).toBeNull();
+  });
+
+  it('職歴は、ビューの行に識別子があっても識別子を持たない（個別のページが無い）', () => {
+    const item = toFeedItem(
+      row({
+        item_type: 'career',
+        organization_name: '作り物株式会社',
+        role: '作り物の肩書',
+        slug: 'fake-career',
+      }),
+    );
+    expect(item).not.toHaveProperty('slug');
+  });
 });
 
 describe('toFeedItem の note（FR-006）', () => {
@@ -173,16 +202,18 @@ describe('toFeedItem の note（FR-006）', () => {
       sort_at: '2020-01-15T18:00:00.000',
       created_at: '2020-01-15T09:00:00.000Z',
       started_on: null,
+      slug: 'fake-note',
       ...overrides,
     });
 
-  it('題・説明文・作成日だけを持つ', () => {
+  it('題・説明文・作成日・識別子だけを持つ', () => {
     const viewRow = { ...noteRow(), item_number: 3 };
     expect(toFeedItem(viewRow)).toStrictEqual({
       type: 'note',
       title: '作り物の note の題',
       description: '作り物の説明文',
       createdAt: '2020-01-15T09:00:00.000Z',
+      slug: 'fake-note',
     });
   });
 
@@ -193,6 +224,10 @@ describe('toFeedItem の note（FR-006）', () => {
   it('題か作成日の欠けた行は詰めない', () => {
     expect(toFeedItem(noteRow({ title: null }))).toBeNull();
     expect(toFeedItem(noteRow({ created_at: null }))).toBeNull();
+  });
+
+  it('識別子の欠けた行は詰めない（個別のページへのリンクを作れない）', () => {
+    expect(toFeedItem(noteRow({ slug: null }))).toBeNull();
   });
 });
 
@@ -211,7 +246,8 @@ describe('toFeedItem の外部の activity（FR-018・FR-019）', () => {
     });
 
   it('題・URL・公開日・取得元・分類だけを持つ', () => {
-    const viewRow = { ...activityRow(), item_number: 5 };
+    // 外部の activity は取得元へリンクし、個別のページを持たない。識別子を詰めない
+    const viewRow = { ...activityRow({ slug: 'fake-activity' }), item_number: 5 };
     expect(toFeedItem(viewRow)).toStrictEqual({
       type: 'external_activity',
       title: '作り物の記事',
@@ -259,10 +295,11 @@ describe('toFeedItem の life event（FR-018・FR-019）', () => {
       source: 'life_event',
       source_kind: 'life_event',
       started_on: null,
+      slug: 'fake-life-event',
       ...overrides,
     });
 
-  it('題・説明・起きた日・取得元・分類だけを持つ', () => {
+  it('題・説明・起きた日・取得元・分類・識別子だけを持つ', () => {
     const viewRow = { ...lifeEventRow(), item_number: 9 };
     expect(toFeedItem(viewRow)).toStrictEqual({
       type: 'life_event',
@@ -271,6 +308,7 @@ describe('toFeedItem の life event（FR-018・FR-019）', () => {
       happenedOn: '2020-04-01',
       source: 'life_event',
       sourceKind: 'life_event',
+      slug: 'fake-life-event',
     });
   });
 
@@ -280,6 +318,10 @@ describe('toFeedItem の life event（FR-018・FR-019）', () => {
 
   it('題の欠けた行は詰めない（004 の FR-024。行は migrations/0021 の CHECK が拒む）', () => {
     expect(toFeedItem(lifeEventRow({ title: null }))).toBeNull();
+  });
+
+  it('識別子の欠けた行は詰めない（個別のページへのリンクを作れない）', () => {
+    expect(toFeedItem(lifeEventRow({ slug: null }))).toBeNull();
   });
 });
 

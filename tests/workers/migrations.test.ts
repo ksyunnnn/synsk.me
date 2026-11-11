@@ -688,11 +688,13 @@ describe('migration 0013 の activity_feed', () => {
     expect(projectIds).not.toContain(ids.projects[3]);
   });
 
-  it('職歴と実績の腕は、0013 の後に足した列（説明・取得元・URL など）をどれも NULL にする', async () => {
+  it('職歴と実績の腕は、0013 の後に足した列（説明・取得元・URL など）をどれも NULL にする。実績の識別子は 0026 の検査が見る', async () => {
     const rows = await allColumnRows();
     expect(rows).toHaveLength(4);
     for (const row of rows) {
-      const added = Object.entries(row).filter(([name]) => !M1_COLUMNS.includes(name));
+      const added = Object.entries(row).filter(
+        ([name]) => !M1_COLUMNS.includes(name) && !(row.item_type === 'project' && name === 'slug'),
+      );
       expect(added.length).toBeGreaterThan(0);
       for (const [name, value] of added) expect([name, value]).toEqual([name, null]);
     }
@@ -839,6 +841,7 @@ describe('migration 0016 の activity_feed の note の腕', () => {
       url: null,
       created_at: '2026-01-02T03:04:05.000Z',
       published_at: null,
+      slug: 'migration-0016-published',
     });
   });
 
@@ -937,6 +940,7 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
       url: 'https://zenn.dev/fake/articles/migration-0017',
       created_at: null,
       published_at: '2026-01-05T00:00:00.000Z',
+      slug: null,
     });
     expect(Object.values(row ?? {})).not.toContain('https://example.com/0017.png');
   });
@@ -962,6 +966,7 @@ describe('migration 0017 の activity_feed の外部の activity と life event 
       url: null,
       created_at: null,
       published_at: null,
+      slug: 'migration-0017',
     });
   });
 
@@ -1153,6 +1158,116 @@ describe('migration 0018 の activity_feed の転載先の除外', () => {
 describe('migration 0022 の activity_feed の Asia/Tokyo の並びの値', () => {
   it('created_at・published_at の列を、0017 までの列の後に持つ', async () => {
     const names = (await columnsOf('activity_feed')).map((c) => c.name);
-    expect(names.slice(M1_COLUMNS.length + 4)).toEqual(['created_at', 'published_at']);
+    expect(names.slice(M1_COLUMNS.length + 4, M1_COLUMNS.length + 6)).toEqual([
+      'created_at',
+      'published_at',
+    ]);
+  });
+});
+
+/**
+ * 一覧のビュー activity_feed が、個別のページを持つ種類（実績・note・life event）の識別子を出すこと
+ * （specs/005-feed/data-model.md の「一覧のビュー」の M6、plan.md の U4 の決定）。職歴と外部の
+ * activity は個別のページを持たないので NULL にする
+ */
+describe('migration 0026 の activity_feed の識別子', () => {
+  const ids = { organizations: [] as number[], careers: [] as number[], projects: [] as number[] };
+  const activityIds: number[] = [];
+  const noteIds: number[] = [];
+
+  type Row = Record<string, unknown> & { item_type: string; item_number: number };
+
+  const slugOf = async (itemType: string, itemNumber: number) => {
+    const row = await env.DB.prepare(
+      'SELECT slug FROM activity_feed WHERE item_type = ? AND item_number = ?',
+    )
+      .bind(itemType, itemNumber)
+      .first<Pick<Row, 'slug'>>();
+    if (!row) throw new Error(`${itemType} の ${itemNumber} がビューに無い`);
+    return row.slug;
+  };
+
+  beforeAll(async () => {
+    const organization = await insertId(
+      'INSERT INTO organization (name, name_masked) VALUES (?, ?)',
+      '0026 の実名の組織',
+      '0026 の伏せた組織',
+    );
+    ids.organizations.push(organization);
+    ids.careers.push(
+      await insertId(
+        "INSERT INTO career (organization_id, role, started_on, is_masked, status) VALUES (?, '0026 の職歴', '2026-01-01', 0, 'published')",
+        organization,
+      ),
+    );
+    for (const [slug, isMasked] of [
+      ['migration-0026-project', 0],
+      ['0026aaaaaaaaaaaaaaaaaaaaaaaaaaaa', 1],
+    ] as const) {
+      ids.projects.push(
+        await insertId(
+          "INSERT INTO project (organization_id, kind, slug, title, title_masked, started_on, is_masked, status) VALUES (?, 'application', ?, '0026 の実際の題', '0026 の伏せた題', '2026-01-01', ?, 'published')",
+          organization,
+          slug,
+          isMasked,
+        ),
+      );
+    }
+    const noteId = await insertId("INSERT INTO note (slug) VALUES ('migration-0026-note')");
+    noteIds.push(noteId);
+    const revisionId = await insertId(
+      "INSERT INTO note_revision (note_id, title, body) VALUES (?, '0026 の note', '本文')",
+      noteId,
+    );
+    await env.DB.prepare(
+      "UPDATE note SET status = 'published', published_revision_id = ?, published_at = '2026-01-01T00:00:00.000Z' WHERE id = ?",
+    )
+      .bind(revisionId, noteId)
+      .run();
+    activityIds.push(
+      await insertId(
+        "INSERT INTO activity (source, external_id, url, title, published_at) VALUES ('zenn', 'migration-0026', 'https://zenn.dev/fake/articles/migration-0026', '0026 の記事', '2026-01-01T00:00:00.000Z')",
+      ),
+      await insertId(
+        "INSERT INTO activity (source, title, happened_on, slug) VALUES ('life_event', '0026 の出来事', '2026-01-01', 'migration-0026-life-event')",
+      ),
+    );
+  });
+
+  // note.published_revision_id の外部キーは検査をトランザクションの終わりに送るので、1 回の
+  // batch で版、note の順に消せる
+  afterAll(async () => {
+    await env.DB.batch([
+      ...ids.careers.map((id) => env.DB.prepare('DELETE FROM career WHERE id = ?').bind(id)),
+      ...ids.projects.map((id) => env.DB.prepare('DELETE FROM project WHERE id = ?').bind(id)),
+      ...ids.organizations.map((id) =>
+        env.DB.prepare('DELETE FROM organization WHERE id = ?').bind(id),
+      ),
+      ...noteIds.map((id) =>
+        env.DB.prepare('DELETE FROM note_revision WHERE note_id = ?').bind(id),
+      ),
+      ...noteIds.map((id) => env.DB.prepare('DELETE FROM note WHERE id = ?').bind(id)),
+      ...activityIds.map((id) => env.DB.prepare('DELETE FROM activity WHERE id = ?').bind(id)),
+    ]);
+  });
+
+  it('slug の列を、0022 までの列の後に持つ', async () => {
+    const names = (await columnsOf('activity_feed')).map((c) => c.name);
+    expect(names.slice(M1_COLUMNS.length + 6)).toEqual(['slug']);
+  });
+
+  it('実績は、秘匿化するかに関わらず識別子を出す（001 の spec の Edge Cases: 秘匿化した実績も個別のページを持つ）', async () => {
+    expect(await slugOf('project', ids.projects[0])).toBe('migration-0026-project');
+    expect(await slugOf('project', ids.projects[1])).toBe('0026aaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+  });
+
+  it('note と life event は識別子を出す', async () => {
+    expect(await slugOf('note', noteIds[0])).toBe('migration-0026-note');
+    expect(await slugOf('life_event', activityIds[1])).toBe('migration-0026-life-event');
+  });
+
+  it('個別のページを持たない職歴と外部の activity は、識別子を NULL にする', async () => {
+    expect(await slugOf('career', ids.careers[0])).toBeNull();
+    expect(await slugOf('external_activity', activityIds[0])).toBeNull();
   });
 });
