@@ -12,7 +12,7 @@
 - 言語: TypeScript
 - フレームワーク: Next.js 16（App Router）。Cloudflare Workers 上では [vinext](https://vinext.dev/) を介して動く
 - スタイル: Tailwind CSS
-- 配信: Cloudflare Workers
+- 配信: Cloudflare Workers（Workers Free。2026-11-10 にダッシュボードの「Workers のプラン」で確認）
 - サブドメインのサイトが読み込む部品: Web Components
 
 設定は `wrangler.jsonc`（Worker）と `vite.config.ts`（ビルド）が持つ。採用の理由は [docs/decisions/](./docs/decisions/) にある。
