@@ -24,6 +24,14 @@ import { routes } from '@/shared/routes';
  * オーナーでなければ、入力した値を返さない
  */
 
+/** フォームの uid が指す学歴の id。無い uid なら null。オーナーの確認の後に呼ぶ */
+const resolveEducation = async (formData: FormData) => {
+  const educations = await createEducationRepository();
+  const uid = readString(formData, EDUCATION_UID_FIELD);
+  const id = await findIdByUid(educations, uid);
+  return { educations, uid, id };
+};
+
 export const registerEducation = async (
   _state: EducationFormResult | null,
   formData: FormData,
@@ -43,8 +51,7 @@ export const editEducation = async (
 ): Promise<EducationFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const educations = await createEducationRepository();
-  const id = await findIdByUid(educations, readString(formData, EDUCATION_UID_FIELD));
+  const { educations, id } = await resolveEducation(formData);
   if (id === null) redirect(routes.dash.educations.list);
   const outcome = await editEducationUseCase(
     educations,
@@ -63,8 +70,7 @@ export const deleteEducation = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const educations = await createEducationRepository();
-  const id = await findIdByUid(educations, readString(formData, EDUCATION_UID_FIELD));
+  const { educations, id } = await resolveEducation(formData);
   if (id === null) redirect(routes.dash.educations.list);
   const outcome = await deleteEducationUseCase(educations, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };

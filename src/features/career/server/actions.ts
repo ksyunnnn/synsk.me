@@ -25,6 +25,14 @@ import { routes } from '@/shared/routes';
  * オーナーでなければ、入力した値を返さない
  */
 
+/** フォームの uid が指す職歴の id。無い uid なら null。オーナーの確認の後に呼ぶ */
+const resolveCareer = async (formData: FormData) => {
+  const deps = await createCareerDeps();
+  const uid = readString(formData, CAREER_UID_FIELD);
+  const id = await findIdByUid(deps.careers, uid);
+  return { deps, uid, id };
+};
+
 /** 職歴を登録し、編集の画面へ移る */
 export const registerCareer = async (
   _state: CareerFormResult | null,
@@ -46,9 +54,7 @@ export const editCareer = async (
 ): Promise<CareerFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const deps = await createCareerDeps();
-  const uid = readString(formData, CAREER_UID_FIELD);
-  const id = await findIdByUid(deps.careers, uid);
+  const { deps, uid, id } = await resolveCareer(formData);
   if (id === null) redirect(routes.dash.careers.list);
 
   const outcome = await editCareerUseCase(deps, author, id, readValues(formData, CAREER_FIELDS), {
@@ -67,8 +73,7 @@ export const deleteCareer = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const deps = await createCareerDeps();
-  const id = await findIdByUid(deps.careers, readString(formData, CAREER_UID_FIELD));
+  const { deps, id } = await resolveCareer(formData);
   if (id === null) redirect(routes.dash.careers.list);
   const outcome = await deleteCareerUseCase(deps, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };
@@ -82,9 +87,7 @@ export const addCareerMedia = async (
 ): Promise<MediaFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const deps = await createCareerDeps();
-  const uid = readString(formData, CAREER_UID_FIELD);
-  const id = await findIdByUid(deps.careers, uid);
+  const { deps, uid, id } = await resolveCareer(formData);
   if (id === null) redirect(routes.dash.careers.list);
 
   const file = formData.get(MEDIA_FILE_FIELD);
