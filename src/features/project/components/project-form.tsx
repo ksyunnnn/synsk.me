@@ -9,13 +9,9 @@ import {
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
-import {
-  InputField,
-  SuggestingInputField,
-  SelectField,
-  TextareaField,
-} from '@/shared/components/field';
+import { InputField, SelectField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
+import { OrganizationNameFields } from '@/shared/components/organization-name-fields';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
@@ -120,22 +116,11 @@ export const ProjectForm = ({
         description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
       />
 
-      <SuggestingInputField
-        name="organizationName"
-        label="組織名"
-        hint="登録した組織から選ぶか、新しい組織名を入力します"
-        options={organizationNames}
-        defaultValue={values.organizationName}
-        autoComplete="off"
-        error={errorOf('organizationName')}
-      />
-      <InputField
-        name="organizationNameMasked"
-        label="秘匿化した組織名"
-        hint="組織が秘匿化した組織名を持たないときだけ使います。持っている組織の値は変えません"
-        defaultValue={values.organizationNameMasked}
-        autoComplete="off"
-        error={errorOf('organizationNameMasked')}
+      <OrganizationNameFields
+        organizationNames={organizationNames}
+        organizationName={values.organizationName}
+        organizationNameMasked={values.organizationNameMasked}
+        errorOf={errorOf}
       />
       <SelectField name="kind" label="種類" defaultValue={values.kind} error={errorOf('kind')}>
         {PROJECT_KINDS.map((kind) => (
