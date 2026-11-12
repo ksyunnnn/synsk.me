@@ -7,6 +7,10 @@ import type { ProjectKind } from '@/shared/domain/project-kind';
  * data-model.md の「domain の型」）。行の型は Repository の実装の中だけに置き、ここへ詰め替える
  */
 
+/**
+ * 型の導出にだけ使う。export を外すと no-unused-vars が型だけの使用として報告する
+ * @public
+ */
 export const RESUME_AUDIENCES = ['limited', 'public'] as const;
 /** 限定公開用か公開用か。作った後に変えない（FR-004） */
 export type ResumeAudience = (typeof RESUME_AUDIENCES)[number];
