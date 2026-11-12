@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { fetchLinkPreview, type LinkPreviewFetcher } from '@/features/note/server/link-preview-fetch';
+import {
+  fetchLinkPreview,
+  type LinkPreviewFetcher,
+} from '@/features/note/server/link-preview-fetch';
 
 /**
  * 参照先の取得（src/features/note/server/link-preview-fetch.ts）が workerd の `Response`・`TextDecoder`・

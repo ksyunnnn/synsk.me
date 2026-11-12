@@ -197,12 +197,7 @@ export const removeLifeEventImage = async (
   const id = await findIdByUid(lifeEvents, uid);
   if (id === null) redirect(routes.dash.lifeEvents.list);
 
-  const outcome = await removeLifeEventImageUseCase(
-    lifeEvents,
-    media,
-    author,
-    id,
-  );
+  const outcome = await removeLifeEventImageUseCase(lifeEvents, media, author, id);
   if (outcome.status === 'saved') redirect(`${routes.dash.lifeEvents.row(uid)}?imageRemoved=1`);
   if (outcome.status === 'not-found') redirect(routes.dash.lifeEvents.list);
   return outcome;

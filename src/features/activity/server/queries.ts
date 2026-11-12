@@ -142,7 +142,5 @@ export const respondWithLifeEventImage = async (
   const { lifeEvents, media } = await createActivityDeps();
   const storageKey = parseMediaStorageKey(key);
   const isCard = storageKey !== null && (await lifeEvents.isCardImage(slug, storageKey));
-  return withNoindex(
-    await respondWithMedia(media, key, isCard ? 'public' : 'hidden', ifNoneMatch),
-  );
+  return withNoindex(await respondWithMedia(media, key, isCard ? 'public' : 'hidden', ifNoneMatch));
 };

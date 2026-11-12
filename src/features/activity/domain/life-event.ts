@@ -113,4 +113,5 @@ export const toLifeEventFormValues = (lifeEvent?: LifeEvent): LifeEventFormValue
  * 代表画像の操作の Server Action が返す結果。保存したら同じ画面へ移すので、画面に返すのは
  * 保存しなかったときだけ
  */
-export type LifeEventImageResult = { status: 'forbidden' } | { status: 'rejected'; reason: MediaRejection };
+export type LifeEventImageResult =
+  { status: 'forbidden' } | { status: 'rejected'; reason: MediaRejection };

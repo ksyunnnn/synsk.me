@@ -312,13 +312,7 @@ export const refetchLinkPreview = async (
   if (id === null) redirect(LIST);
 
   const url = readString(formData, LINK_PREVIEW_URL_FIELD);
-  const outcome = await refetchLinkPreviewUseCase(
-    deps,
-    author,
-    id,
-    url,
-    new Date().toISOString(),
-  );
+  const outcome = await refetchLinkPreviewUseCase(deps, author, id, url, new Date().toISOString());
   if (outcome.status === 'refetched') redirect(`${editPath(uid)}/preview?refetched=1`);
   if (outcome.status === 'not-found') redirect(LIST);
   if (outcome.status === 'forbidden') return outcome;
