@@ -5,14 +5,16 @@ import type { ProjectDeps } from '@/features/project/application/deps';
 import { getProjectForEdit as getProjectForEditUseCase } from '@/features/project/application/get-project-for-edit';
 import { getVisitorProject as getVisitorProjectUseCase } from '@/features/project/application/get-visitor-project';
 import {
-  ownerProjectMediaAccess,
-  visitorProjectMediaAccess,
-} from '@/features/project/application/project-media';
-import {
   listProjects as listProjectsUseCase,
   type ProjectList,
 } from '@/features/project/application/list-projects';
-import type { Project, ProjectListFilter, VisitorProject } from '@/features/project/domain/project';
+import {
+  ownerProjectMediaAccess,
+  visitorProjectMediaAccess,
+  type Project,
+  type ProjectListFilter,
+  type VisitorProject,
+} from '@/features/project/domain/project';
 import { createD1ProjectRepository } from '@/features/project/server/d1-project-repository';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { parseMediaStorageKey } from '@/shared/domain/media';

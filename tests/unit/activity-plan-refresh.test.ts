@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planRefresh } from '@/features/activity/application/plan-refresh';
+import { planRefresh } from '@/features/activity/domain/plan-refresh';
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
 import type { FetchedItem } from '@/features/activity/domain/fetched-item';
 

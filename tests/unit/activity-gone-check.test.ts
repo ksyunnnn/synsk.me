@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ActivityDeps } from '@/features/activity/application/deps';
-import { pickGoneChecks } from '@/features/activity/application/plan-removals';
+import { pickGoneChecks } from '@/features/activity/domain/plan-removals';
 import { refreshSources } from '@/features/activity/application/refresh-sources';
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
 import type { RefreshLimits } from '@/features/activity/domain/limits';

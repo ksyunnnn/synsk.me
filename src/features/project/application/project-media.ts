@@ -1,12 +1,7 @@
-import type { Project, ProjectId, VisitorProject } from '@/features/project/domain/project';
+import type { ProjectId } from '@/features/project/domain/project';
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
 import type { Author } from '@/shared/domain/author';
-import type {
-  MediaAccess,
-  MediaRejection,
-  MediaStorage,
-  MediaStorageKey,
-} from '@/shared/domain/media';
+import type { MediaRejection, MediaStorage, MediaStorageKey } from '@/shared/domain/media';
 
 /*
  * 実績の画像（specs/001-career-and-project/spec.md の FR-027・FR-028・FR-030）。形式と大きさと
@@ -76,32 +71,3 @@ export const changeProjectCardImage = async (
     ? { status: 'not-found' }
     : { status: 'invalid', error: 'media-not-owned' };
 };
-
-/**
- * 実績の画像を訪問者に見せてよいか（FR-030）。サイトに載せる、秘匿化しない実績の、本文が指す
- * その実績の画像と代表画像だけを `public` にする。秘匿化した実績・サイトに載せない実績の画像は
- * `hidden`
- */
-export const visitorProjectMediaAccess = (
-  project: VisitorProject | null,
-  storageKey: MediaStorageKey,
-): MediaAccess => {
-  if (!project || project.isMasked) return 'hidden';
-  return project.media.includes(storageKey) || project.cardImageKey === storageKey
-    ? 'public'
-    : 'hidden';
-};
-
-/**
- * 実績の画像をオーナーに見せてよいか（issue #330）。管理画面の一覧が、サイトに載せない実績と
- * 秘匿化した実績の画像も描くために使う。オーナーで、その実績の画像なら `restricted`（どの
- * キャッシュにも残さない。docs/REQUIREMENTS.md の NFR-09）。ほかは `hidden`
- */
-export const ownerProjectMediaAccess = (
-  author: Author | null,
-  project: Pick<Project, 'mediaStorageKeys'> | null,
-  storageKey: MediaStorageKey,
-): MediaAccess =>
-  author !== null && project !== null && project.mediaStorageKeys.includes(storageKey)
-    ? 'restricted'
-    : 'hidden';

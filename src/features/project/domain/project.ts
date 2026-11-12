@@ -1,5 +1,6 @@
 import type { ActionResult } from '@/shared/domain/action-result';
-import type { MediaStorageKey } from '@/shared/domain/media';
+import type { Author } from '@/shared/domain/author';
+import type { MediaAccess, MediaStorageKey } from '@/shared/domain/media';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
@@ -321,3 +322,32 @@ export type MaskedVisitorProject = {
 };
 
 export type VisitorProject = UnmaskedVisitorProject | MaskedVisitorProject;
+
+/**
+ * 実績の画像を訪問者に見せてよいか（FR-030）。サイトに載せる、秘匿化しない実績の、本文が指す
+ * その実績の画像と代表画像だけを `public` にする。秘匿化した実績・サイトに載せない実績の画像は
+ * `hidden`
+ */
+export const visitorProjectMediaAccess = (
+  project: VisitorProject | null,
+  storageKey: MediaStorageKey,
+): MediaAccess => {
+  if (!project || project.isMasked) return 'hidden';
+  return project.media.includes(storageKey) || project.cardImageKey === storageKey
+    ? 'public'
+    : 'hidden';
+};
+
+/**
+ * 実績の画像をオーナーに見せてよいか（issue #330）。管理画面の一覧が、サイトに載せない実績と
+ * 秘匿化した実績の画像も描くために使う。オーナーで、その実績の画像なら `restricted`（どの
+ * キャッシュにも残さない。docs/REQUIREMENTS.md の NFR-09）。ほかは `hidden`
+ */
+export const ownerProjectMediaAccess = (
+  author: Author | null,
+  project: Pick<Project, 'mediaStorageKeys'> | null,
+  storageKey: MediaStorageKey,
+): MediaAccess =>
+  author !== null && project !== null && project.mediaStorageKeys.includes(storageKey)
+    ? 'restricted'
+    : 'hidden';

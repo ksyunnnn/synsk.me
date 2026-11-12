@@ -1,5 +1,5 @@
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
-import { urlKey } from '@/features/activity/application/plan-refresh';
+import { urlKey } from '@/features/activity/domain/plan-refresh';
 import type { FetchedItem, SourceListing } from '@/features/activity/domain/fetched-item';
 
 /**

@@ -1,11 +1,11 @@
 import type { ActivityDeps } from '@/features/activity/application/deps';
-import { planRefresh } from '@/features/activity/application/plan-refresh';
+import { planRefresh } from '@/features/activity/domain/plan-refresh';
 import {
   GONE_STREAK_TO_REMOVE,
   listedWithGoneStreak,
   pickGoneChecks,
   planRemovals,
-} from '@/features/activity/application/plan-removals';
+} from '@/features/activity/domain/plan-removals';
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
 import type {
   GoneCheck,
