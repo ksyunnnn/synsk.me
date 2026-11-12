@@ -9,7 +9,7 @@
     "dev": "vinext dev",
     "build": "vinext build",
     "start": "vinext start",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "preview": "vinext build && wrangler dev --config dist/server/wrangler.json",
     "deploy": "vinext-cloudflare deploy --skip-build --config dist/server/wrangler.json --name synsk-me && npm run verify:deploy",
     "verify:deploy": "node scripts/verify-deploy.mjs",

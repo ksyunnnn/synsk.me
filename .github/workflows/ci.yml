@@ -39,6 +39,9 @@ jobs:
       - name: lint
         run: npm run lint
 
+      - name: knip
+        run: npm run knip
+
       - name: 整形
         run: npm run format:check
 

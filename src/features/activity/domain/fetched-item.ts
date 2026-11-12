@@ -4,11 +4,23 @@
  * （docs/SOFTWARE_DESIGN.md の Anti-Corruption Layer）
  */
 
-/** 一覧での分類。値は `activity_source.kind` の CHECK（migrations/0007）と同じ */
+/**
+ * 一覧での分類。値は `activity_source.kind` の CHECK（migrations/0007）と同じ。
+ * 型の導出にだけ使う。export を外すと no-unused-vars が型だけの使用として報告する
+ * @public
+ */
 export const SOURCE_KINDS = ['article', 'embed', 'life_event', 'other'] as const;
+/**
+ * data-model.md の「domain の型」が定める型。参照する箇所はない
+ * @public
+ */
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
-/** 取り込み方（ADR-0052 の 3 通り）。保管するデータに持たない（FR-004） */
+/**
+ * 取り込み方（ADR-0052 の 3 通り）。保管するデータに持たない（FR-004）。
+ * 型の導出にだけ使う。export を外すと no-unused-vars が型だけの使用として報告する
+ * @public
+ */
 export const INTAKE_MODES = ['list', 'url', 'manual'] as const;
 export type IntakeMode = (typeof INTAKE_MODES)[number];
 

@@ -194,16 +194,14 @@ const readTarget = async (formData: FormData, kind: 'careers' | 'projects' | 'ed
   return { resumes, resume, row: { id: resume.id, rowId } };
 };
 
-export type AddResumeRowsResult = AddResumeRowsOutcome;
-
 /**
  * 作ったあとに、元の職歴・実績・学歴から選んだ行を足し、設定の画面へ移す（FR-041）。
  * 選んだ id は種類ごとに作成と同じ名前（`SELECTION_FIELDS`）で送る
  */
 export const addResumeRows = async (
-  _state: AddResumeRowsResult | null,
+  _state: AddResumeRowsOutcome | null,
   formData: FormData,
-): Promise<AddResumeRowsResult> => {
+): Promise<AddResumeRowsOutcome> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, ...target } = await readResume(formData);
