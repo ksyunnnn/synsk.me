@@ -1,8 +1,6 @@
 import {
-  buildResumeContent,
-  countCopiedRows,
+  copyResumeRows,
   countSelected,
-  hasAllSources,
   MAX_COPIED_ROWS,
 } from '@/features/resume/domain/build-resume';
 import {
@@ -87,15 +85,18 @@ export const createResume = async (
 
   // 読む: 選んだ写し元。開いた後に消えた行があれば作らない
   const sources = await resumes.readSources(selection);
-  if (!hasAllSources(sources, selection)) {
-    return { status: 'invalid', errors: { selection: 'source-missing' }, values };
-  }
 
   // 計算: 写す行と識別子
-  const built = buildResumeContent(sources, selection, audience);
-  if (!built.ok) return { status: 'invalid', errors: { audience: built.reason }, values };
-  if (countCopiedRows(built.content) > MAX_COPIED_ROWS) {
-    return { status: 'invalid', errors: { selection: 'too-many' }, values };
+  const built = copyResumeRows(sources, selection, audience);
+  if (!built.ok) {
+    return {
+      status: 'invalid',
+      errors:
+        built.reason === 'public-not-supported'
+          ? { audience: built.reason }
+          : { selection: built.reason },
+      values,
+    };
   }
   // 題や提出先から推測できない uid（FR-012・FR-037・FR-039）。限定公開用の URL はこの値だけで
   // 開くため、推測できないことが読める人を絞る
