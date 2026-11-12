@@ -13,8 +13,8 @@ export type ProjectList = {
 };
 
 /**
- * オーナーの実績の一覧（issue #330）。種類と組織の両方を満たす実績だけを返す。
- * 実績を持つ組織に無い uid では、組織で絞らない
+ * オーナーの実績の一覧（issue #330）。種類・組織・サイトに載せるか・秘匿化するかの、どの条件も
+ * 満たす実績だけを返す。実績を持つ組織に無い uid では、組織で絞らない
  */
 export const listProjects = async (
   projects: ProjectRepository,
@@ -24,6 +24,6 @@ export const listProjects = async (
   const organizationUid = organizations.some((o) => o.uid === requested.organizationUid)
     ? requested.organizationUid
     : null;
-  const filter = { kind: requested.kind, organizationUid };
+  const filter = { ...requested, organizationUid };
   return { projects: await projects.list(filter), organizations, filter };
 };

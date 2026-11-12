@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Form from 'next/form';
 import {
   toProjectCardPreview,
   type ProjectListFilter,
@@ -7,12 +6,11 @@ import {
   type ProjectSummary,
 } from '@/features/project/domain/project';
 import { listProjects } from '@/features/project/server/queries';
-import { SelectField } from '@/shared/components/field';
-import { LinkPendingHint } from '@/shared/components/link-pending-hint';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
+import { cn } from '@/lib/utils';
 import { formatPeriod } from '@/shared/domain/period';
-import { SITE_STATUS_LABELS } from '@/shared/domain/site-status';
+import { SITE_STATUSES, SITE_STATUS_LABELS, type SiteStatus } from '@/shared/domain/site-status';
 import {
   PROJECT_KINDS,
   PROJECT_KIND_LABELS,
@@ -28,93 +26,151 @@ export const instant = false;
 
 export const metadata: Metadata = { title: '実績 | synsk.me' };
 
+type Param = string | string[] | undefined;
+
 type Props = {
   searchParams: Promise<{
-    deleted?: string | string[];
-    kind?: string | string[];
-    org?: string | string[];
+    deleted?: Param;
+    kind?: Param;
+    org?: Param;
+    status?: Param;
+    masked?: Param;
   }>;
 };
 
 /** `?kind=` の値。種類の値でなければ、すべての種類 */
-const parseKind = (value: string | string[] | undefined): ProjectKind | null =>
+const parseKind = (value: Param): ProjectKind | null =>
   typeof value === 'string' && isProjectKind(value) ? value : null;
 
 /** `?org=` の値。uid の形でなければ、すべての組織 */
-const parseOrganizationUid = (value: string | string[] | undefined): Uid | null =>
+const parseOrganizationUid = (value: Param): Uid | null =>
   typeof value === 'string' ? parseUid(value) : null;
 
-const FILTERS: { kind: ProjectKind | null; label: string }[] = [
-  { kind: null, label: 'すべて' },
-  ...PROJECT_KINDS.map((kind) => ({ kind, label: PROJECT_KIND_LABELS[kind] })),
-];
+/** `?status=` の値。サイトに載せるかの値でなければ、どちらも */
+const parseStatus = (value: Param): SiteStatus | null =>
+  SITE_STATUSES.find((status) => status === value) ?? null;
 
-/**
- * 種類で絞り込むリンク。選んでいるリンクは `aria-current` を持ち、下線を外して下に線を引く。
- * 太さは変えない。幅が変わり、隣のリンクの位置がずれるため（design/guidelines.md の Loading）。
- * 押してから移動が終わるまで、リンクの中の点が合図を出す。選んでいる組織は保つ
- */
-const KindFilter = ({ filter }: { filter: ProjectListFilter }) => (
-  <nav aria-label="種類で絞り込む">
-    <ul className="flex flex-wrap gap-x-4 gap-y-2">
-      {FILTERS.map(({ kind, label }) => (
-        <li key={kind ?? 'all'}>
-          <TextLink
-            href={routes.dash.projects.listBy({ ...filter, kind })}
-            aria-current={kind === filter.kind ? 'page' : undefined}
-            className="inline-flex items-center gap-2 border-b-2 border-transparent pb-1 aria-[current=page]:border-foreground aria-[current=page]:no-underline"
-          >
-            {label}
-            <LinkPendingHint />
-          </TextLink>
-        </li>
-      ))}
-    </ul>
-  </nav>
+/** `?masked=` の値。`true` か `false` でなければ、どちらも */
+const parseIsMasked = (value: Param): boolean | null =>
+  value === 'true' ? true : value === 'false' ? false : null;
+
+const MASKED_LABELS = { true: '秘匿化する', false: '秘匿化しない' } as const;
+
+/** 1 つの条件を radio で選ぶ。選んでいる値はブラウザ標準の checked で示し、見た目は付けない */
+const RadioGroup = ({
+  legend,
+  name,
+  current,
+  options,
+}: {
+  legend: string;
+  name: string;
+  current: string;
+  options: { value: string; label: string }[];
+}) => (
+  <fieldset>
+    <legend>{legend}</legend>
+    {[{ value: '', label: 'すべて' }, ...options].map(({ value, label }) => (
+      <label key={value} className="mr-4">
+        <input type="radio" name={name} value={value} defaultChecked={value === current} /> {label}
+      </label>
+    ))}
+  </fieldset>
 );
 
+/** 選んでいる条件の言葉。件数の横に出す */
+const describeFilter = (
+  filter: ProjectListFilter,
+  organizations: ProjectOrganizationOption[],
+): string[] =>
+  [
+    filter.kind && PROJECT_KIND_LABELS[filter.kind],
+    filter.organizationUid && organizations.find((o) => o.uid === filter.organizationUid)?.name,
+    filter.status && SITE_STATUS_LABELS[filter.status],
+    filter.isMasked !== null && MASKED_LABELS[`${filter.isMasked}`],
+  ].filter((text): text is string => typeof text === 'string');
+
 /**
- * 組織で絞り込む select（issue #330）。選んでから「絞り込む」で移る。選んだだけでは移らない
- * （WCAG 2.2 SC 3.2.2）。`next/form` は GET のフォームとして、JavaScript なしでも同じ URL へ移る
- * （https://nextjs.org/docs/app/api-reference/components/form）。選んでいる種類は隠した値で保つ。
- * 移った後に選んでいる組織を出し直すため、選んでいる組織ごとに作り直す
+ * 絞り込みの欄。HTML 標準の GET の form で、4 つの条件をまとめて選び、「絞り込む」で 1 回だけ移る。
+ * 選んだだけでは移らない（WCAG 2.2 SC 3.2.2）。部品の見た目は付けず、ブラウザ標準のままにする。
+ * 空の値（すべて）は、読む側が条件なしとして扱う
  */
-const OrganizationFilter = ({
-  organizations,
+const Filters = ({
   filter,
+  organizations,
 }: {
-  organizations: ProjectOrganizationOption[];
   filter: ProjectListFilter;
+  organizations: ProjectOrganizationOption[];
 }) => (
-  <Form
-    key={filter.organizationUid ?? 'all'}
-    action={routes.dash.projects.list}
-    className="flex flex-wrap items-end gap-2"
-  >
-    {filter.kind !== null && <input type="hidden" name="kind" value={filter.kind} />}
-    <div className="min-w-0 flex-1">
-      <SelectField name="org" label="組織で絞り込む" defaultValue={filter.organizationUid ?? ''}>
-        <option value="">すべての組織</option>
+  <form method="get" action={routes.dash.projects.list} className="flex flex-col gap-4">
+    <RadioGroup
+      legend="種類"
+      name="kind"
+      current={filter.kind ?? ''}
+      options={PROJECT_KINDS.map((kind) => ({ value: kind, label: PROJECT_KIND_LABELS[kind] }))}
+    />
+    <fieldset>
+      <legend>組織</legend>
+      {/* Tailwind の preflight が消した、ブラウザ標準の見た目に戻す */}
+      <select
+        name="org"
+        aria-label="組織"
+        className="[all:revert]"
+        defaultValue={filter.organizationUid ?? ''}
+      >
+        <option value="">すべて</option>
         {organizations.map(({ uid, name }) => (
           <option key={uid} value={uid}>
             {name}
           </option>
         ))}
-      </SelectField>
-    </div>
-    <button
-      type="submit"
-      className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-    >
-      絞り込む
-    </button>
-  </Form>
+      </select>
+    </fieldset>
+    <RadioGroup
+      legend="サイトに載せるか"
+      name="status"
+      current={filter.status ?? ''}
+      options={SITE_STATUSES.map((s) => ({ value: s, label: SITE_STATUS_LABELS[s] }))}
+    />
+    <RadioGroup
+      legend="秘匿化するか"
+      name="masked"
+      current={filter.isMasked === null ? '' : String(filter.isMasked)}
+      options={[
+        { value: 'true', label: MASKED_LABELS.true },
+        { value: 'false', label: MASKED_LABELS.false },
+      ]}
+    />
+    <p>
+      <button type="submit" className="[all:revert]">
+        絞り込む
+      </button>
+    </p>
+  </form>
+);
+
+/**
+ * サイトに載せるか・秘匿化するかの札。言葉で伝え、色だけに頼らない（WCAG 2.2 SC 1.4.1、
+ * https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html）。「載せる」「秘匿化する」は
+ * 塗った札、「載せない」「秘匿化しない」は点線の枠の札にし、形でも分ける
+ */
+const StateBadge = ({ on, children }: { on: boolean; children: string }) => (
+  <span
+    className={cn(
+      'rounded-sm border px-2 py-0.5 text-xs',
+      on
+        ? 'border-foreground bg-foreground text-background'
+        : 'border-dashed border-muted-foreground text-muted-foreground',
+    )}
+  >
+    {children}
+  </span>
 );
 
 const ProjectCard = ({ project }: { project: ProjectSummary }) => {
   const { excerpt, imageKey } = toProjectCardPreview(project);
   return (
-    <li className="flex flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground">
+    <li className="relative flex flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground">
       {/* 画像の枠の高さを先に決め、読み込みの後に要素の位置をずらさない（design/guidelines.md の
           Loading）。画像は飾りとして出し、中身の説明は題と本文が持つ */}
       <div className="aspect-video bg-muted">
@@ -129,30 +185,42 @@ const ProjectCard = ({ project }: { project: ProjectSummary }) => {
         )}
       </div>
       <div className="flex flex-col gap-2 p-4">
+        <p className="flex flex-wrap gap-2">
+          <StateBadge on={project.status === 'published'}>
+            {SITE_STATUS_LABELS[project.status]}
+          </StateBadge>
+          <StateBadge on={project.isMasked}>{MASKED_LABELS[`${project.isMasked}`]}</StateBadge>
+        </p>
         <p className="text-sm text-muted-foreground">
           {PROJECT_KIND_LABELS[project.kind]}・{formatPeriod(project.period)}
         </p>
+        {/* 題のリンクの ::after をカード全体に広げ、カードのどこを押しても開く。
+            リンクの名前は題だけのまま */}
         <h2 className="font-bold">
-          <TextLink href={routes.dash.projects.row(project.uid)}>{project.title}</TextLink>
+          <TextLink
+            href={routes.dash.projects.row(project.uid)}
+            className="after:absolute after:inset-0"
+          >
+            {project.title}
+          </TextLink>
         </h2>
         <p className="text-sm text-muted-foreground">{project.organizationName}</p>
         {excerpt && <p className="line-clamp-3 text-sm">{excerpt}</p>}
-        <p className="text-sm text-muted-foreground">
-          {SITE_STATUS_LABELS[project.status]}・{project.isMasked ? '秘匿化する' : '秘匿化しない'}
-        </p>
       </div>
     </li>
   );
 };
 
 const Page = async ({ searchParams }: Props) => {
-  const { deleted, kind, org } = await searchParams;
+  const { deleted, kind, org, status, masked } = await searchParams;
   // オーナーでなければ、読む前に 403 になる
   const { projects, organizations, filter } = await listProjects({
     kind: parseKind(kind),
     organizationUid: parseOrganizationUid(org),
+    status: parseStatus(status),
+    isMasked: parseIsMasked(masked),
   });
-  const isFiltered = filter.kind !== null || filter.organizationUid !== null;
+  const conditions = describeFilter(filter, organizations);
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
@@ -164,14 +232,19 @@ const Page = async ({ searchParams }: Props) => {
       <p>
         <TextLink href={routes.dash.projects.new}>実績を登録する</TextLink>
       </p>
-      <KindFilter filter={filter} />
-      <OrganizationFilter organizations={organizations} filter={filter} />
-      {/* 絞り込みを変えたとき、読み上げにも件数の変化を伝える */}
-      <p aria-live="polite" className="text-sm text-muted-foreground">
-        {projects.length} 件
-      </p>
+      <Filters filter={filter} organizations={organizations} />
+      {/* 絞り込みを変えたとき、読み上げにも件数の変化を伝える。選んでいる条件を並べ、まとめて外せる */}
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm text-muted-foreground">
+        <p aria-live="polite">{projects.length} 件</p>
+        {conditions.length > 0 && (
+          <>
+            <p>{conditions.join('・')}</p>
+            <TextLink href={routes.dash.projects.list}>条件を外す</TextLink>
+          </>
+        )}
+      </div>
       {projects.length === 0 ? (
-        <p>{isFiltered ? '条件に合う実績はありません' : '登録した実績はありません'}</p>
+        <p>{conditions.length > 0 ? '条件に合う実績はありません' : '登録した実績はありません'}</p>
       ) : (
         <ul className="grid gap-4 sm:grid-cols-2">
           {projects.map((project) => (

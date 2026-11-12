@@ -412,6 +412,24 @@ describe('一覧と有無', () => {
     expect(await titles({ organizationUid: 'f'.repeat(32) })).toEqual([]);
   });
 
+  it('サイトに載せるかと秘匿化するかを渡すと、どちらも満たす実績だけを返す（issue #330）', async () => {
+    const orgId = await insertOrganization(env.DB, { nameMasked: '作り物の秘匿化した組織' });
+    const rows = [
+      { title: '載せる・秘匿化する', status: 'published', isMasked: true },
+      { title: '載せる・秘匿化しない', status: 'published', isMasked: false },
+      { title: '載せない・秘匿化する', status: 'draft', isMasked: true },
+    ] as const;
+    for (const row of rows) await insertProject(env.DB, { organizationId: orgId, ...row });
+    const titles = async (filter: Parameters<typeof projects.list>[0]) =>
+      (await projects.list(filter)).map((p) => p.title).sort();
+    expect(await titles({ status: 'published' })).toEqual(
+      ['載せる・秘匿化する', '載せる・秘匿化しない'].sort(),
+    );
+    expect(await titles({ isMasked: false })).toEqual(['載せる・秘匿化しない']);
+    expect(await titles({ status: 'draft', isMasked: true })).toEqual(['載せない・秘匿化する']);
+    expect(await titles({ status: 'draft', isMasked: false })).toEqual([]);
+  });
+
   it('組織の選択肢は、実績を持つ組織だけを名前の順に返す（issue #330）', async () => {
     const b = await insertOrganization(env.DB, { name: '作り物 B' });
     const a = await insertOrganization(env.DB, { name: '作り物 A' });

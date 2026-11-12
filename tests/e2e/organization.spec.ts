@@ -47,7 +47,8 @@ test('組織名を直すと、その組織を指す職歴と実績の表示が�
   await page.goto('/dash/careers');
   await expect(page.getByRole('link', { name: /E2E 直した後の組織/ })).toBeVisible();
   await page.goto('/dash/projects');
-  await expect(page.getByText(/E2E 直した後の組織/)).toBeVisible();
+  // 組織で絞り込む select の選択肢にも組織名が出るため、カードの中で探す
+  await expect(page.getByRole('listitem').getByText(/E2E 直した後の組織/)).toBeVisible();
 
   const visitor = await openVisitor(browser);
   await visitor.goto(path);

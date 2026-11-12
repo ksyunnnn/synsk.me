@@ -363,17 +363,29 @@ describe('listProjects（issue #330）', () => {
     projects.listOrganizationOptions.mockResolvedValue([ORG]);
   });
 
-  it('実績を持つ組織の uid なら、種類と組織の両方で絞り、選択肢と一緒に返す', async () => {
-    const result = await listProjects(projects, { kind: 'talk', organizationUid: ORG.uid });
-    expect(projects.list).toHaveBeenCalledWith({ kind: 'talk', organizationUid: ORG.uid });
+  const NONE = { kind: null, organizationUid: null, status: null, isMasked: null } as const;
+
+  it('実績を持つ組織の uid なら、4 つの条件のすべてで絞り、選択肢と一緒に返す', async () => {
+    const requested = {
+      kind: 'talk',
+      organizationUid: ORG.uid,
+      status: 'published',
+      isMasked: false,
+    } as const;
+    const result = await listProjects(projects, requested);
+    expect(projects.list).toHaveBeenCalledWith(requested);
     expect(result.organizations).toEqual([ORG]);
-    expect(result.filter).toEqual({ kind: 'talk', organizationUid: ORG.uid });
+    expect(result.filter).toEqual(requested);
   });
 
-  it('実績を持つ組織に無い uid では、組織で絞らない', async () => {
+  it('実績を持つ組織に無い uid では、組織で絞らない。ほかの条件は保つ', async () => {
     const other = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
-    const result = await listProjects(projects, { kind: null, organizationUid: other });
-    expect(projects.list).toHaveBeenCalledWith({ kind: null, organizationUid: null });
+    const result = await listProjects(projects, {
+      ...NONE,
+      organizationUid: other,
+      isMasked: true,
+    });
+    expect(projects.list).toHaveBeenCalledWith({ ...NONE, isMasked: true });
     expect(result.filter.organizationUid).toBeNull();
   });
 });

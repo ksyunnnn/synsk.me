@@ -67,6 +67,12 @@ describe('管理画面の経路', () => {
     expect(listBy({ kind: 'talk', organizationUid: org })).toBe(
       `/dash/projects?kind=talk&org=${org}`,
     );
+    expect(listBy({ kind: null, organizationUid: null, status: 'draft', isMasked: false })).toBe(
+      '/dash/projects?status=draft&masked=false',
+    );
+    expect(listBy({ kind: null, organizationUid: null, status: null, isMasked: true })).toBe(
+      '/dash/projects?masked=true',
+    );
     expect(routes.dash.projects.media('u1', 'k')).toBe('/dash/projects/u1/media/k');
   });
 

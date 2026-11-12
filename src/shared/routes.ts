@@ -1,4 +1,5 @@
 import type { ProjectKind } from '@/shared/domain/project-kind';
+import type { SiteStatus } from '@/shared/domain/site-status';
 
 /**
  * 画面の経路。`src/app/` のページの経路を 1 か所で持ち、リンク・`redirect()`・`src/proxy.ts` の
@@ -60,19 +61,25 @@ export const routes = {
     projects: {
       ...projects,
       /**
-       * 一覧を種類と組織で絞った経路（issue #330）。null の条件はクエリに出さない。組織は uid で指し、
-       * 数字の id を出さない（ADR-0051）
+       * 一覧を種類・組織・サイトに載せるか・秘匿化するかで絞った経路（issue #330）。null の条件は
+       * クエリに出さない。組織は uid で指し、数字の id を出さない（ADR-0051）
        */
       listBy: ({
         kind,
         organizationUid,
+        status = null,
+        isMasked = null,
       }: {
         kind: ProjectKind | null;
         organizationUid: string | null;
+        status?: SiteStatus | null;
+        isMasked?: boolean | null;
       }) => {
         const query = new URLSearchParams();
         if (kind !== null) query.set('kind', kind);
         if (organizationUid !== null) query.set('org', organizationUid);
+        if (status !== null) query.set('status', status);
+        if (isMasked !== null) query.set('masked', String(isMasked));
         return query.size === 0 ? projects.list : `${projects.list}?${query}`;
       },
       /** 一覧が描く画像を、オーナーにだけ返す経路（issue #330） */

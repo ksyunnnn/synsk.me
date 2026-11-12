@@ -70,6 +70,10 @@ export type ProjectSummary = Pick<
 export type ProjectListFilter = {
   kind: ProjectKind | null;
   organizationUid: Uid | null;
+  /** サイトに載せるか */
+  status: SiteStatus | null;
+  /** 秘匿化するか */
+  isMasked: boolean | null;
 };
 
 /** オーナーの一覧を組織で絞るときの選択肢。実績を持つ組織だけ（issue #330） */
