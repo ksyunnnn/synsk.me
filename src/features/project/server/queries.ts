@@ -2,8 +2,6 @@ import 'server-only';
 
 import { cache } from 'react';
 import type { ProjectDeps } from '@/features/project/application/deps';
-import { getProjectForEdit as getProjectForEditUseCase } from '@/features/project/application/get-project-for-edit';
-import { getVisitorProject as getVisitorProjectUseCase } from '@/features/project/application/get-visitor-project';
 import {
   listProjects as listProjectsUseCase,
   type ProjectList,
@@ -59,7 +57,7 @@ export const respondWithProjectMedia = async (
  * 1 つの要求の中では D1 に 1 回だけ問い合わせる
  */
 export const getVisitorProject = cache(async (slug: string): Promise<VisitorProject | null> =>
-  getVisitorProjectUseCase((await createProjectDeps()).projects, slug),
+  (await createProjectDeps()).projects.findVisitorBySlug(slug),
 );
 
 /** オーナーの一覧と、組織で絞る選択肢。null の条件では絞らない。オーナーでなければ 403 */
@@ -87,7 +85,7 @@ export const getProjectForEdit = async (uid: string): Promise<Project | null> =>
   await requireAuthor();
   const { projects } = await createProjectDeps();
   const id = await findIdByUid(projects, uid);
-  return id === null ? null : getProjectForEditUseCase(projects, id);
+  return id === null ? null : projects.findForEdit(id);
 };
 
 /** 実績の入力でつなげるスキルの選択肢（FR-032）。オーナーでなければ 403 */

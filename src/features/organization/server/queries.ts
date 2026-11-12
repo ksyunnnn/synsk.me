@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { listOrganizations as listOrganizationsUseCase } from '@/features/organization/application/list-organizations';
 import type { Organization, OrganizationRepository } from '@/shared/domain/organization';
 import { findIdByUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
@@ -18,7 +17,7 @@ export const createOrganizationRepository = async (): Promise<OrganizationReposi
 /** オーナーの一覧。オーナーでなければ 403 */
 export const listOrganizations = async (): Promise<Organization[]> => {
   await requireAuthor();
-  return listOrganizationsUseCase(await createOrganizationRepository());
+  return (await createOrganizationRepository()).list();
 };
 
 /** 職歴・実績の組織名の選択肢。登録した組織の名前（FR-002）。オーナーでなければ 403 */

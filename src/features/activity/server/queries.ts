@@ -1,9 +1,7 @@
 import 'server-only';
 
 import { cache } from 'react';
-import { listFeed } from '@/features/activity/application/list-feed';
 import { refreshNextSources } from '@/features/activity/application/refresh-next-sources';
-import { getVisitorLifeEvent as getVisitorLifeEventUseCase } from '@/features/activity/application/get-visitor-life-event';
 import type { FetchByUrl } from '@/features/activity/application/register-external-activity';
 import type { ExternalActivity } from '@/features/activity/domain/external-activity';
 import type { FeedPage } from '@/features/activity/domain/feed';
@@ -73,7 +71,7 @@ export const refreshNextSourcesNow = async (now: string): Promise<RefreshOutcome
  * 呼ぶため、1 つの要求の中では D1 に 1 回だけ問い合わせる
  */
 export const listFeedItems = cache(async (page: number): Promise<FeedPage> =>
-  listFeed((await createActivityDeps()).feed, page),
+  (await createActivityDeps()).feed.list(page),
 );
 
 /**
@@ -81,7 +79,7 @@ export const listFeedItems = cache(async (page: number): Promise<FeedPage> =>
  * 1 つの要求の中では D1 に 1 回だけ問い合わせる
  */
 export const getVisitorLifeEvent = cache(async (slug: string): Promise<VisitorLifeEvent | null> =>
-  getVisitorLifeEventUseCase((await createActivityDeps()).lifeEvents, slug),
+  (await createActivityDeps()).lifeEvents.findVisitorBySlug(slug),
 );
 
 /** オーナーの一覧。オーナーでなければ 403 */

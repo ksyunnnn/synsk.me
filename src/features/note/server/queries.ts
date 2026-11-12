@@ -2,16 +2,9 @@ import 'server-only';
 
 import { cache } from 'react';
 import type { LinkPreviewSource, NoteDeps } from '@/features/note/application/deps';
-import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getNotePreview as getNotePreviewUseCase } from '@/features/note/application/get-note-preview';
 import { getPreviewNoteMedia as getPreviewNoteMediaUseCase } from '@/features/note/application/get-preview-note-media';
-import { getVisitorNote as getVisitorNoteUseCase } from '@/features/note/application/get-visitor-note';
 import { getVisitorNoteMedia as getVisitorNoteMediaUseCase } from '@/features/note/application/get-visitor-note-media';
-import {
-  getNoteRevision as getNoteRevisionUseCase,
-  listNoteRevisions as listNoteRevisionsUseCase,
-} from '@/features/note/application/list-note-revisions';
-import { listNotes as listNotesUseCase } from '@/features/note/application/list-notes';
 import type {
   Note,
   NotePreview,
@@ -99,13 +92,13 @@ export const respondWithNoteMedia = async (
  * メタデータの両方が呼ぶため、1 つの要求の中では D1 に 1 回だけ問い合わせる
  */
 export const getVisitorNote = cache(async (slug: string): Promise<VisitorNote | null> =>
-  getVisitorNoteUseCase((await createNoteDeps()).notes, slug),
+  (await createNoteDeps()).notes.findVisitorBySlug(slug),
 );
 
 /** オーナーの一覧。オーナーでなければ 403 */
 export const listNotes = async (): Promise<NoteSummary[]> => {
   await requireAuthor();
-  return listNotesUseCase((await createNoteDeps()).notes);
+  return (await createNoteDeps()).notes.list();
 };
 
 /** オーナーが編集する note。削除した note も返す。オーナーでなければ 403。無い uid なら null */
@@ -113,7 +106,7 @@ export const getNoteForEdit = async (uid: string): Promise<Note | null> => {
   await requireAuthor();
   const { notes } = await createNoteDeps();
   const id = await findIdByUid(notes, uid);
-  return id === null ? null : getNoteForEditUseCase(notes, id);
+  return id === null ? null : notes.findForEdit(id);
 };
 
 /**
@@ -138,8 +131,8 @@ export const listNoteRevisions = async (
   const id = await findIdByUid(notes, uid);
   if (id === null) return null;
   const [note, revisions] = await Promise.all([
-    getNoteForEditUseCase(notes, id),
-    listNoteRevisionsUseCase(notes, id),
+    notes.findForEdit(id),
+    notes.listRevisions(id),
   ]);
   return note ? { note, revisions } : null;
 };
@@ -158,8 +151,8 @@ export const getNoteRevision = async (
   const parsedRevisionUid = parseUid(revisionUid);
   if (id === null || parsedRevisionUid === null) return null;
   const [note, revision] = await Promise.all([
-    getNoteForEditUseCase(notes, id),
-    getNoteRevisionUseCase(notes, id, parsedRevisionUid),
+    notes.findForEdit(id),
+    notes.findRevision(id, parsedRevisionUid),
   ]);
   return note && revision ? { note, revision } : null;
 };
