@@ -38,7 +38,6 @@ import { createNoteDeps } from '@/features/note/server/queries';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
-import { fetchLinkPreview } from '@/features/note/server/link-preview-fetch';
 import { routes } from '@/shared/routes';
 
 /**
@@ -300,7 +299,7 @@ export const addNoteMedia = async (
 
 /**
  * URL カードの参照先の情報を取り直し、見た目の確認の画面へ移る（User Story 6 の 3、FR-029）。
- * 取得の上限と内部のアドレスの検査は共有の部品の本番の値のまま。取れなければ前の情報を残し、
+ * 取得の上限と内部のアドレスの検査は取得の部品の本番の値のまま。取れなければ前の情報を残し、
  * 理由を返す
  */
 export const refetchLinkPreview = async (
@@ -314,7 +313,7 @@ export const refetchLinkPreview = async (
 
   const url = readString(formData, LINK_PREVIEW_URL_FIELD);
   const outcome = await refetchLinkPreviewUseCase(
-    { notes: deps.notes, fetchLinkPreview: (target) => fetchLinkPreview(target) },
+    deps,
     author,
     id,
     url,

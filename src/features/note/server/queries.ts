@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { cache } from 'react';
-import type { NoteDeps } from '@/features/note/application/deps';
+import type { LinkPreviewSource, NoteDeps } from '@/features/note/application/deps';
 import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
 import { getNotePreview as getNotePreviewUseCase } from '@/features/note/application/get-note-preview';
 import { getPreviewNoteMedia as getPreviewNoteMediaUseCase } from '@/features/note/application/get-preview-note-media';
@@ -25,7 +25,10 @@ import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
-import { fetchLinkPreviews as fetchSharedLinkPreviews } from '@/features/note/server/link-preview-fetch';
+import {
+  fetchLinkPreview,
+  fetchLinkPreviews as fetchLinkPreviewResults,
+} from '@/features/note/server/link-preview-fetch';
 import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 
 /**
@@ -33,9 +36,25 @@ import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/serv
  * D1 から読み出せなければ投げる。画面は投げられた例外で 500 を返す
  */
 
+/**
+ * 参照先の題と画像の URL を取り、取れた URL だけを返す（research.md の R13）。取れなかった URL は
+ * 書かないため、次に見た目の確認を開いたときに取り直す。上限は取得の部品の本番の値
+ */
+const fetchLinkPreviews: LinkPreviewSource = async (urls) =>
+  (await fetchLinkPreviewResults(urls)).flatMap((result) =>
+    result.status === 'fetched'
+      ? [{ url: result.url, title: result.title, imageUrl: result.imageUrl }]
+      : [],
+  );
+
 export const createNoteDeps = async (): Promise<NoteDeps> => {
   const { DB } = await readEnv();
-  return { notes: createD1NoteRepository(DB), media: await createMediaStorage() };
+  return {
+    notes: createD1NoteRepository(DB),
+    media: await createMediaStorage(),
+    fetchLinkPreviews,
+    fetchLinkPreview: (url) => fetchLinkPreview(url),
+  };
 };
 
 /**
@@ -98,27 +117,14 @@ export const getNoteForEdit = async (uid: string): Promise<Note | null> => {
 };
 
 /**
- * 参照先の題と画像の URL を取り、取れた URL だけを返す（research.md の R13）。取れなかった URL は
- * 書かないため、次に見た目の確認を開いたときに取り直す。上限は共有の部品の本番の値
- */
-const fetchLinkPreviews = async (urls: string[]) =>
-  (await fetchSharedLinkPreviews(urls)).flatMap((result) =>
-    result.status === 'fetched'
-      ? [{ url: result.url, title: result.title, imageUrl: result.imageUrl }]
-      : [],
-  );
-
-/**
  * 見た目の確認で描く形（REQUIREMENTS.md の FR-13）。オーナーでなければ 403。無い uid なら null。
  * 参照先の情報を持たない URL は、描く前に取る（U9 の決定）
  */
 export const getNotePreview = async (uid: string): Promise<NotePreview | null> => {
   await requireAuthor();
-  const { notes } = await createNoteDeps();
-  const id = await findIdByUid(notes, uid);
-  return id === null
-    ? null
-    : getNotePreviewUseCase({ notes, fetchLinkPreviews }, id, new Date().toISOString());
+  const deps = await createNoteDeps();
+  const id = await findIdByUid(deps.notes, uid);
+  return id === null ? null : getNotePreviewUseCase(deps, id, new Date().toISOString());
 };
 
 /**
