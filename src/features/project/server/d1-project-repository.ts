@@ -273,9 +273,26 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       return results;
     },
 
+    listOrganizationOptions: async () => {
+      const { results } = await db
+        .prepare(
+          `SELECT o.uid, o.name FROM organization o
+           WHERE EXISTS (SELECT 1 FROM project p WHERE p.organization_id = o.id)
+           ORDER BY o.name, o.id`,
+        )
+        .all<{ uid: string; name: string }>();
+      return results;
+    },
+
     list: async (filter) => {
-      // 種類で絞るときは、実績と画像の両方を同じ条件で読む。`?` に NULL を渡すと絞らない
+      // 絞るときは、実績と画像の両方を同じ条件で読む。`?` に NULL を渡すと、その条件では絞らない
       const kind = filter?.kind ?? null;
+      const organizationUid = filter?.organizationUid ?? null;
+      const status = filter?.status ?? null;
+      const isMasked = filter?.isMasked == null ? null : filter.isMasked ? 1 : 0;
+      const where =
+        '(?1 IS NULL OR p.kind = ?1) AND (?2 IS NULL OR o.uid = ?2)' +
+        ' AND (?3 IS NULL OR p.status = ?3) AND (?4 IS NULL OR p.is_masked = ?4)';
       const [projects, media] = await db.batch<
         ProjectListRow | { project_id: number; storage_key: string }
       >([
@@ -285,17 +302,18 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
                p.ended_on, p.description, cm.storage_key AS card_storage_key,
                o.name AS organization_name
              FROM project p JOIN organization o ON o.id = p.organization_id ${CARD_MEDIA_JOIN}
-             WHERE ?1 IS NULL OR p.kind = ?1
+             WHERE ${where}
              ORDER BY p.started_on DESC, p.id DESC`,
           )
-          .bind(kind),
+          .bind(kind, organizationUid, status, isMasked),
         db
           .prepare(
             `SELECT m.project_id, m.storage_key FROM media m JOIN project p ON p.id = m.project_id
-             WHERE ?1 IS NULL OR p.kind = ?1
+             JOIN organization o ON o.id = p.organization_id
+             WHERE ${where}
              ORDER BY m.id`,
           )
-          .bind(kind),
+          .bind(kind, organizationUid, status, isMasked),
       ]);
       const keysByProject = new Map<number, string[]>();
       for (const row of media.results as { project_id: number; storage_key: string }[]) {

@@ -58,9 +58,21 @@ describe('管理画面の経路', () => {
     expect(paths.missing('u1')).toBe(`/dash/${collection}/u1/missing`);
   });
 
-  it('実績の一覧を種類で絞る経路と、オーナーの画像の経路（issue #330）', () => {
-    expect(routes.dash.projects.listByKind(null)).toBe('/dash/projects');
-    expect(routes.dash.projects.listByKind('talk')).toBe('/dash/projects?kind=talk');
+  it('実績の一覧を種類と組織で絞る経路と、オーナーの画像の経路（issue #330）', () => {
+    const org = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const listBy = routes.dash.projects.listBy;
+    expect(listBy({ kind: null, organizationUid: null })).toBe('/dash/projects');
+    expect(listBy({ kind: 'talk', organizationUid: null })).toBe('/dash/projects?kind=talk');
+    expect(listBy({ kind: null, organizationUid: org })).toBe(`/dash/projects?org=${org}`);
+    expect(listBy({ kind: 'talk', organizationUid: org })).toBe(
+      `/dash/projects?kind=talk&org=${org}`,
+    );
+    expect(listBy({ kind: null, organizationUid: null, status: 'draft', isMasked: false })).toBe(
+      '/dash/projects?status=draft&masked=false',
+    );
+    expect(listBy({ kind: null, organizationUid: null, status: null, isMasked: true })).toBe(
+      '/dash/projects?masked=true',
+    );
     expect(routes.dash.projects.media('u1', 'k')).toBe('/dash/projects/u1/media/k');
   });
 

@@ -66,6 +66,19 @@ export type ProjectSummary = Pick<
   organizationName: string;
 };
 
+/** オーナーの一覧を絞る条件。null の条件では絞らない（issue #330） */
+export type ProjectListFilter = {
+  kind: ProjectKind | null;
+  organizationUid: Uid | null;
+  /** サイトに載せるか */
+  status: SiteStatus | null;
+  /** 秘匿化するか */
+  isMasked: boolean | null;
+};
+
+/** オーナーの一覧を組織で絞るときの選択肢。実績を持つ組織だけ（issue #330） */
+export type ProjectOrganizationOption = { uid: Uid; name: string };
+
 /** オーナーの一覧のカードに出す、本文の要約と画像（issue #330） */
 export type ProjectCardPreview = {
   /** 本文の最初の段落。無ければ null */

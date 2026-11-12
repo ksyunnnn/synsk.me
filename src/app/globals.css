@@ -46,6 +46,17 @@
   --color-chart-3: hsl(var(--chart-3));
   --color-chart-4: hsl(var(--chart-4));
   --color-chart-5: hsl(var(--chart-5));
+
+  /* 息づき。500ms で scale 0.9→1.0 を往復する（design/foundations.pen の Motion） */
+  --animate-breathe: breathe 500ms ease-in-out infinite alternate;
+  @keyframes breathe {
+    from {
+      transform: scale(0.9);
+    }
+    to {
+      transform: scale(1);
+    }
+  }
 }
 
 /*

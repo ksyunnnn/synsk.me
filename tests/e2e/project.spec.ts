@@ -259,3 +259,83 @@ test('オーナーはキーボードだけで実績を登録・編集・削除�
   expect(await visit(visitor, path)).toBe(404);
   await visitor.close();
 });
+
+test('一覧を組織で絞り込み、種類と組み合わせられる（issue #330）', async ({ page, context }) => {
+  await actAsAuthor(context);
+  const organization = {
+    organizationName: 'E2E 実績の組織 絞り込み',
+    organizationNameMasked: 'E2E 実績の秘匿化した組織 絞り込み',
+  };
+  await registerProject(page, { ...organization, title: 'E2E 実績の題 絞り込み 開発' });
+  await registerProject(page, {
+    ...organization,
+    title: 'E2E 実績の題 絞り込み 登壇',
+    kind: '登壇',
+  });
+
+  await page.goto('/dash/projects');
+  const select = page.getByRole('combobox', { name: '組織' });
+  const submit = page.getByRole('button', { name: '絞り込む' });
+  await select.selectOption({ label: organization.organizationName });
+  await submit.click();
+  await expect(page).toHaveURL(/[?&]org=[0-9a-f]{32}/);
+  await expect(page.getByText('2 件', { exact: true })).toBeVisible();
+
+  // 種類を足して絞る。form は選んだ組織を保つ
+  await page.getByRole('group', { name: '種類' }).getByRole('radio', { name: '登壇' }).check();
+  await submit.click();
+  await expect(page).toHaveURL(/kind=talk&org=[0-9a-f]{32}/);
+  await expect(page.getByText('1 件', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'E2E 実績の題 絞り込み 登壇' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'E2E 実績の題 絞り込み 開発' })).toHaveCount(0);
+  await expect(select.locator('option:checked')).toHaveText(organization.organizationName);
+
+  // 形の違う組織の値では、組織で絞らない
+  await page.goto('/dash/projects?kind=talk&org=1');
+  await expect(select).toHaveValue('');
+});
+
+test('一覧の札でサイトに載せるかと秘匿化するかが分かり、その 2 つでも絞り込める（issue #330）', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  const organization = {
+    organizationName: 'E2E 実績の組織 状態',
+    organizationNameMasked: 'E2E 実績の秘匿化した組織 状態',
+  };
+  await registerProject(page, {
+    ...organization,
+    title: 'E2E 実績の題 状態 載せる',
+    onSite: true,
+    isMasked: false,
+  });
+  await registerProject(page, { ...organization, title: 'E2E 実績の題 状態 載せない' });
+
+  await page.goto('/dash/projects');
+  const card = (title: string) =>
+    page.getByRole('listitem').filter({ has: page.getByRole('link', { name: title }) });
+  await expect(card('E2E 実績の題 状態 載せる')).toContainText('サイトに載せる');
+  await expect(card('E2E 実績の題 状態 載せる')).toContainText('秘匿化しない');
+  await expect(card('E2E 実績の題 状態 載せない')).toContainText('サイトに載せない');
+  await expect(card('E2E 実績の題 状態 載せない')).toContainText('秘匿化する');
+
+  await page
+    .getByRole('group', { name: 'サイトに載せるか' })
+    .getByRole('radio', { name: 'サイトに載せない' })
+    .check();
+  await page
+    .getByRole('group', { name: '秘匿化するか' })
+    .getByRole('radio', { name: '秘匿化する', exact: true })
+    .check();
+  await page.getByRole('button', { name: '絞り込む' }).click();
+  await expect(page).toHaveURL(/status=draft&masked=true/);
+  // 選んでいる条件を件数の横に出す
+  await expect(page.getByText('サイトに載せない・秘匿化する', { exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'E2E 実績の題 状態 載せない' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'E2E 実績の題 状態 載せる' })).toHaveCount(0);
+
+  await page.getByRole('link', { name: '条件を外す' }).click();
+  await expect(page).toHaveURL(/\/dash\/projects$/);
+  await expect(page.getByRole('link', { name: 'E2E 実績の題 状態 載せる' })).toBeVisible();
+});

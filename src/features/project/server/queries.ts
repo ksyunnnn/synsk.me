@@ -8,11 +8,13 @@ import {
   ownerProjectMediaAccess,
   visitorProjectMediaAccess,
 } from '@/features/project/application/project-media';
-import { listProjects as listProjectsUseCase } from '@/features/project/application/list-projects';
-import type { Project, ProjectSummary, VisitorProject } from '@/features/project/domain/project';
+import {
+  listProjects as listProjectsUseCase,
+  type ProjectList,
+} from '@/features/project/application/list-projects';
+import type { Project, ProjectListFilter, VisitorProject } from '@/features/project/domain/project';
 import { createD1ProjectRepository } from '@/features/project/server/d1-project-repository';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
-import type { ProjectKind } from '@/shared/domain/project-kind';
 import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
 import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
@@ -58,10 +60,10 @@ export const getVisitorProject = cache(async (slug: string): Promise<VisitorProj
   getVisitorProjectUseCase((await createProjectDeps()).projects, slug),
 );
 
-/** オーナーの一覧。`kind` が null なら、すべての種類。オーナーでなければ 403 */
-export const listProjects = async (kind: ProjectKind | null): Promise<ProjectSummary[]> => {
+/** オーナーの一覧と、組織で絞る選択肢。null の条件では絞らない。オーナーでなければ 403 */
+export const listProjects = async (filter: ProjectListFilter): Promise<ProjectList> => {
   await requireAuthor();
-  return listProjectsUseCase((await createProjectDeps()).projects, kind);
+  return listProjectsUseCase((await createProjectDeps()).projects, filter);
 };
 
 /**
