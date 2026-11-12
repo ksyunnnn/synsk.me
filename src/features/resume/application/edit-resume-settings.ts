@@ -1,10 +1,13 @@
 import { parseExpiresInput, type EditTimes, type ResumeId } from '@/features/resume/domain/resume';
-import type { FieldError, ResumeSettingsField } from '@/features/resume/domain/resume-forms';
+import type {
+  FieldError,
+  ResumeSettingsField,
+  ResumeSettingsResult,
+  ResumeSettingsValues,
+} from '@/features/resume/domain/resume-forms';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
-import { toEditOutcome, type EditOutcome } from './edit-outcome';
-
-export type ResumeSettingsValues = Record<ResumeSettingsField, string>;
+import { toEditOutcome } from '@/features/resume/domain/edit-outcome';
 
 /**
  * 題と期限を直す（FR-001・FR-013・FR-014）。期限を過ぎた後に先の日時にすると、同じ URL で
@@ -17,7 +20,7 @@ export const editResumeSettings = async (
   id: ResumeId,
   values: ResumeSettingsValues,
   times: EditTimes,
-): Promise<EditOutcome<ResumeSettingsValues, Partial<Record<ResumeSettingsField, FieldError>>>> => {
+): Promise<ResumeSettingsResult> => {
   if (!author) return { status: 'forbidden' };
   const errors: Partial<Record<ResumeSettingsField, FieldError>> = {};
   const title = values.title.trim();

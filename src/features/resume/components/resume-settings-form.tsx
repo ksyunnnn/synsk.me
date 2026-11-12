@@ -1,14 +1,16 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { EditOutcome } from '@/features/resume/application/edit-outcome';
 import {
   BUTTON,
   messageOf,
   ResumeFormHidden,
   type ResumeFormCommon,
 } from '@/features/resume/components/resume-form-parts';
-import type { FieldError, ResumeSettingsField } from '@/features/resume/domain/resume-forms';
+import type {
+  ResumeSettingsResult as SettingsResult,
+  ResumeSettingsValues as SettingsValues,
+} from '@/features/resume/domain/resume-forms';
 import { InputField } from '@/shared/components/field';
 import { SubmitButton } from '@/shared/components/submit-button';
 
@@ -18,9 +20,6 @@ import { SubmitButton } from '@/shared/components/submit-button';
  * 期限の入力は plan.md の U9 の仮の形（日本時間の日付と時刻、空なら期限なし）。
  * 状態の切り替えは resume-status-form.tsx が持つ
  */
-
-type SettingsValues = Record<ResumeSettingsField, string>;
-type SettingsResult = EditOutcome<SettingsValues, Partial<Record<ResumeSettingsField, FieldError>>>;
 
 export const ResumeSettingsForm = ({
   action,

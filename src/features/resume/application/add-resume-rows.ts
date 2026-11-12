@@ -16,7 +16,7 @@ import {
 import type { AddResumeRowsErrors } from '@/features/resume/domain/resume-forms';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
-import { toEditOutcome, type EditOutcome } from './edit-outcome';
+import { toEditOutcome, type EditOutcome } from '@/features/resume/domain/edit-outcome';
 
 export type AddResumeRowsOutcome = EditOutcome<string[], AddResumeRowsErrors>;
 

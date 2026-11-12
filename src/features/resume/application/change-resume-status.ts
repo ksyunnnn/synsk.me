@@ -2,7 +2,7 @@ import { isResumeStatus, type EditTimes, type ResumeId } from '@/features/resume
 import type { FieldError } from '@/features/resume/domain/resume-forms';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
-import { toEditOutcome, type EditOutcome } from './edit-outcome';
+import { toEditOutcome, type EditOutcome } from '@/features/resume/domain/edit-outcome';
 
 /** 下書きか、訪問者に見せるかを切り替える（FR-021）。オーナーでなければ何も書かない（FR-033） */
 export const changeResumeStatus = async (

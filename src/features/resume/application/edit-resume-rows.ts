@@ -15,7 +15,7 @@ import {
 } from '@/features/resume/domain/resume-forms';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
-import { toEditOutcome, type EditOutcome } from './edit-outcome';
+import { toEditOutcome, type EditOutcome } from '@/features/resume/domain/edit-outcome';
 
 /**
  * 職務経歴書の中で写した値を直す（FR-031・FR-032・FR-038）。直した値はその職務経歴書にだけ効き、

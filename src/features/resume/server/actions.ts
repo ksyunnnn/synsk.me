@@ -10,7 +10,7 @@ import {
 import { changeResumeStatus as changeResumeStatusUseCase } from '@/features/resume/application/change-resume-status';
 import { createResume as createResumeUseCase } from '@/features/resume/application/create-resume';
 import { deleteResume as deleteResumeUseCase } from '@/features/resume/application/delete-resume';
-import type { EditOutcome } from '@/features/resume/application/edit-outcome';
+import type { EditOutcome } from '@/features/resume/domain/edit-outcome';
 import {
   editResumeCareer as editResumeCareerUseCase,
   editResumeEducation as editResumeEducationUseCase,
@@ -25,7 +25,6 @@ import {
   type EditTimes,
   SELECTION_KEY_OF_KIND,
   type ResumeId,
-  type ResumeStatus,
 } from '@/features/resume/domain/resume';
 import {
   OPENED_UPDATED_AT_FIELD,
@@ -42,15 +41,13 @@ import {
   SELECTION_FIELDS,
   STATUS_FIELD,
   type CreateResumeFormResult,
-  type FieldError,
-  type ResumeCareerField,
-  type ResumeCareerFormValues,
-  type ResumeEducationField,
-  type ResumeEducationFormValues,
-  type ResumeProjectField,
-  type ResumeProjectFormValues,
-  type ResumeSettingsField,
-  type SkillOverrideFormRow,
+  type RegenerateResumeUrlResult,
+  type ResumeCareerResult,
+  type ResumeEducationResult,
+  type ResumeProjectResult,
+  type ResumeSettingsResult,
+  type ResumeSkillOverridesResult,
+  type ResumeStatusResult,
 } from '@/features/resume/domain/resume-forms';
 import {
   createResumeRepository,
@@ -116,11 +113,6 @@ const finish = <V, E>({ uid }: ResumeTarget, outcome: EditOutcome<V, E>) => {
   return outcome;
 };
 
-export type ResumeSettingsResult = EditOutcome<
-  Record<ResumeSettingsField, string>,
-  Partial<Record<ResumeSettingsField, FieldError>>
->;
-
 /** 題と期限を直す */
 export const editResumeSettings = async (
   _state: ResumeSettingsResult | null,
@@ -140,11 +132,6 @@ export const editResumeSettings = async (
     ),
   );
 };
-
-export type ResumeStatusResult =
-  | EditOutcome<{ status: string }, { status?: FieldError }>
-  /** 移らずに切り替えた。画面に残す、切り替えた後の状態と更新日時 */
-  | { status: 'changed'; resumeStatus: ResumeStatus; updatedAt: string };
 
 /** 状態を書き、書いた状態と更新日時を返す。保存できなければ `finish` と同じ形にする */
 const writeStatus = async (formData: FormData): Promise<ResumeStatusResult> => {
@@ -180,8 +167,6 @@ export const changeResumeStatusInPlace = async (
   _state: ResumeStatusResult | null,
   formData: FormData,
 ): Promise<ResumeStatusResult> => writeStatus(formData);
-
-export type RegenerateResumeUrlResult = EditOutcome<Record<string, never>, Record<string, never>>;
 
 /** 限定公開用の URL を出し直し、設定の画面へ移す（FR-040） */
 export const regenerateResumeUrl = async (
@@ -236,11 +221,6 @@ export const addResumeRows = async (
   );
 };
 
-export type ResumeCareerResult = EditOutcome<
-  ResumeCareerFormValues,
-  Partial<Record<ResumeCareerField, FieldError>>
->;
-
 export const editResumeCareer = async (
   _state: ResumeCareerResult | null,
   formData: FormData,
@@ -259,11 +239,6 @@ export const editResumeCareer = async (
     ),
   );
 };
-
-export type ResumeProjectResult = EditOutcome<
-  ResumeProjectFormValues,
-  Partial<Record<ResumeProjectField, FieldError>>
->;
 
 export const editResumeProject = async (
   _state: ResumeProjectResult | null,
@@ -284,11 +259,6 @@ export const editResumeProject = async (
   );
 };
 
-export type ResumeEducationResult = EditOutcome<
-  ResumeEducationFormValues,
-  Partial<Record<ResumeEducationField, FieldError>>
->;
-
 export const editResumeEducation = async (
   _state: ResumeEducationResult | null,
   formData: FormData,
@@ -307,11 +277,6 @@ export const editResumeEducation = async (
     ),
   );
 };
-
-export type ResumeSkillOverridesResult = EditOutcome<
-  SkillOverrideFormRow[],
-  { invalidRows: number[] }
->;
 
 /** 写した経験年数の上書きを直す。行はスキルの名前・年・月を同じ順に並べて送る */
 export const editResumeSkillOverrides = async (
