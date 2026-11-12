@@ -125,8 +125,8 @@ const refreshSource = async (
       return fail(deps, source, now, `書き込みに失敗した: ${messageOf(error)}`);
     }
   }
-  const upserts = planRefresh(stored, listing.items);
   const checks = await checkGoneOf(deps, source, stored, listing, limits);
+  const upserts = planRefresh(stored, listing.items);
   const removals = planRemovals(stored, listing, limits.maxRemovals, checks.gone);
   const deleted = new Set(removals.deletes);
   const goneChecked = keptStreaks(checks.checked, deleted, removals.keptOverLimit);
