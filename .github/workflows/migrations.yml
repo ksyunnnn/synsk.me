@@ -1,0 +1,47 @@
+# 既にある行を移すマイグレーションのテスト（tests/migrations/）を回す。
+#
+# 当てる前に一度だけ確かめれば足りるため、毎回の CI（ci.yml）からは外し、
+# migrations/ か tests/migrations/ が変わったときだけ回す。
+#
+# paths で絞った workflow は、絞られて走らないと、その check が Pending のまま残る。
+# この workflow を main の必須の check にしない。
+# https://docs.github.com/actions/managing-workflow-runs/skipping-workflow-runs
+name: Migrations
+
+on:
+  pull_request:
+    paths:
+      - 'migrations/**'
+      - 'tests/migrations/**'
+      - 'vitest.migrations.config.ts'
+  push:
+    branches: [main]
+    paths:
+      - 'migrations/**'
+      - 'tests/migrations/**'
+      - 'vitest.migrations.config.ts'
+
+concurrency:
+  group: migrations-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  migrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          check-latest: true
+          cache: npm
+
+      - run: npm ci
+
+      - name: binding の型を生成
+        run: npm run cf-typegen
+
+      - name: 既にある行を移すマイグレーション
+        run: npm run test:migrations
