@@ -2,15 +2,13 @@
 // 自分の写真に v1 の最終版（横）か v2（縦）の表現をかけ、動画に書き出す
 // プレビューの canvas は書き出す動画と同じ画素数で描く。プレビューで見たものがそのまま動画になる
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
-import {
-  ArrowCounterClockwise,
-  DownloadSimple,
-  Export,
-  ImageSquare,
-  Pause,
-  Play,
-  SlidersHorizontal,
-} from '@phosphor-icons/react';
+import { ArrowCounterClockwiseIcon as ArrowCounterClockwise } from '@phosphor-icons/react/dist/csr/ArrowCounterClockwise';
+import { DownloadSimpleIcon as DownloadSimple } from '@phosphor-icons/react/dist/csr/DownloadSimple';
+import { ExportIcon as Export } from '@phosphor-icons/react/dist/csr/Export';
+import { ImageSquareIcon as ImageSquare } from '@phosphor-icons/react/dist/csr/ImageSquare';
+import { PauseIcon as Pause } from '@phosphor-icons/react/dist/csr/Pause';
+import { PlayIcon as Play } from '@phosphor-icons/react/dist/csr/Play';
+import { SlidersHorizontalIcon as SlidersHorizontal } from '@phosphor-icons/react/dist/csr/SlidersHorizontal';
 
 import { sourceSans } from '@/lib/fonts';
 
