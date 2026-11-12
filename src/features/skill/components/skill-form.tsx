@@ -11,6 +11,7 @@ import {
 import { InputField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * スキルを登録する・編集するフォーム。上書きの経験年数は年と月で入れる（FR-034）。
@@ -35,9 +36,7 @@ const ERROR_MESSAGES: Record<SkillField, Partial<Record<SkillFieldError, string>
 
 export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: SkillField) => {
     const reason = errors[field];
     return reason ? ERROR_MESSAGES[field][reason] : undefined;

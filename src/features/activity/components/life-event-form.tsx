@@ -11,6 +11,7 @@ import {
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * life event を作る・書き換えるフォーム（specs/004-external-activity/contracts/dash.md）。
@@ -50,9 +51,7 @@ const RESULT_MESSAGES = {
 
 export const LifeEventForm = ({ action, initialValues, uid }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: LifeEventField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;

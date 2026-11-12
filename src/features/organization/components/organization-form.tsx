@@ -11,6 +11,7 @@ import {
 import { InputField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * 組織名と秘匿化した組織名を直すフォーム。Server Action は props で受け取り、`server/` を
@@ -42,9 +43,7 @@ export const OrganizationForm = ({
   isReferencedByMasked,
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: OrganizationField) => {
     const reason = errors[field];
     return reason ? ERROR_MESSAGES[reason] : undefined;

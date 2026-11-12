@@ -13,6 +13,7 @@ import { OWNED_SOURCES, type OwnedSourceName } from '@/features/activity/domain/
 import { InputField, SelectField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * URL を指名した・手で入力した外部の activity を登録する・書き換えるフォーム
@@ -64,9 +65,7 @@ const RESULT_MESSAGES = {
 
 export const ExternalActivityForm = ({ action, initialValues, editing }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: ExternalActivityField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;

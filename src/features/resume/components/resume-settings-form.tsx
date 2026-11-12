@@ -13,6 +13,7 @@ import type {
 } from '@/features/resume/domain/resume-forms';
 import { InputField } from '@/shared/components/field';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * 職務経歴書の設定（題・期限）のフォーム（specs/002-resume/contracts/dash.md の
@@ -34,9 +35,7 @@ export const ResumeSettingsForm = ({
   isLimited: boolean;
 }) => {
   const [result, formAction] = useActionState(action, null);
-  const values =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const message = messageOf(result);
 
   return (

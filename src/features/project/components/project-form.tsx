@@ -17,6 +17,7 @@ import {
 } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { formStateOf } from '@/shared/domain/action-result';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -95,9 +96,7 @@ export const ProjectForm = ({
   project,
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values: ProjectFormValues =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: ProjectField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;

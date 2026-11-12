@@ -15,6 +15,7 @@ import { DraftRetainingForm } from '@/features/note/components/draft-retention';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * note を作る・保存するフォーム（specs/003-note/contracts/dash.md）。
@@ -68,9 +69,7 @@ const RESULT_MESSAGES = {
 
 export const NoteForm = ({ action, initialValues, note }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values: NoteFormValues =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: NoteField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
