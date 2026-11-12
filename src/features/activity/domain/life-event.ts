@@ -66,7 +66,7 @@ export type LifeEventFormResult = ActionResult<LifeEventField, LifeEventFieldErr
 export const LIFE_EVENT_UID_FIELD = 'lifeEventUid';
 
 /** フォームの値を保存する内容に読み替える。題（FR-024）と起きた日（FR-025）は必須 */
-export const parseLifeEventContent = (
+const parseLifeEventContent = (
   values: LifeEventFormValues,
 ):
   | { ok: true; content: LifeEventContent }
@@ -93,13 +93,34 @@ export const parseLifeEventContent = (
  * 保存する識別子を決める（FR-035）。空なら、作るときは推測できない値を入れ、編集では今の値の
  * ままにする。形の違う値は拒む。重複は D1 の UNIQUE が拒む
  */
-export const decideLifeEventSlug = (
+const decideLifeEventSlug = (
   requested: string,
   current?: string,
 ): { ok: true; slug: string } | { ok: false } => {
   const slug = requested.trim();
   if (slug === '') return { ok: true, slug: current ?? newSlug() };
   return isSlug(slug) ? { ok: true, slug } : { ok: false };
+};
+
+/**
+ * フォームの値を検査し、保存する内容と識別子を決める。作るときは `currentSlug` を渡さない。
+ * 中身の誤りと識別子の誤りを合わせて返す
+ */
+export const parseLifeEventInput = (
+  values: LifeEventFormValues,
+  currentSlug?: string,
+):
+  | { ok: true; content: LifeEventContent & { slug: string } }
+  | { ok: false; errors: Partial<Record<LifeEventField, LifeEventFieldError>> } => {
+  const parsed = parseLifeEventContent(values);
+  const slug = decideLifeEventSlug(values.slug, currentSlug);
+  if (!parsed.ok || !slug.ok) {
+    return {
+      ok: false,
+      errors: { ...(parsed.ok ? {} : parsed.errors), ...(slug.ok ? {} : { slug: 'invalid' }) },
+    };
+  }
+  return { ok: true, content: { ...parsed.content, slug: slug.slug } };
 };
 
 export const toLifeEventFormValues = (lifeEvent?: LifeEvent): LifeEventFormValues => ({

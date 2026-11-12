@@ -1,6 +1,5 @@
 import {
-  decideLifeEventSlug,
-  parseLifeEventContent,
+  parseLifeEventInput,
   type LifeEventField,
   type LifeEventFieldError,
   type LifeEventFormValues,
@@ -30,17 +29,10 @@ export const registerLifeEvent = async (
 ): Promise<RegisterLifeEventOutcome> => {
   if (!author) return { status: 'forbidden' };
 
-  const parsed = parseLifeEventContent(values);
-  const slug = decideLifeEventSlug(values.slug);
-  if (!parsed.ok || !slug.ok) {
-    return {
-      status: 'invalid',
-      errors: { ...(parsed.ok ? {} : parsed.errors), ...(slug.ok ? {} : { slug: 'invalid' }) },
-      values,
-    };
-  }
+  const parsed = parseLifeEventInput(values);
+  if (!parsed.ok) return { status: 'invalid', errors: parsed.errors, values };
 
-  const result = await lifeEvents.register({ ...parsed.content, slug: slug.slug });
+  const result = await lifeEvents.register(parsed.content);
   return result.ok
     ? { status: 'registered', id: result.id, uid: result.uid }
     : { status: 'invalid', errors: { slug: 'slug-taken' }, values };
