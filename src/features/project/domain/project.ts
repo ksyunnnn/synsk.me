@@ -3,7 +3,7 @@ import type { Author } from '@/shared/domain/author';
 import type { MediaAccess, MediaStorageKey } from '@/shared/domain/media';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
-import { toPeriod, type Period } from '@/shared/domain/period';
+import { toPeriod, type Period, toPeriodFieldError } from '@/shared/domain/period';
 import { SITE_STATUSES, parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import { isSlug, newSlug } from '@/shared/domain/slug';
 import { parseUid, type Uid } from '@/shared/domain/uid';
@@ -192,10 +192,8 @@ export const parseProjectContent = (
 
   const period = toPeriod(values.startedOn, values.endedOn);
   if (!period.ok) {
-    if (period.error === 'invalid-started-on')
-      errors.startedOn = values.startedOn === '' ? 'missing' : 'invalid';
-    else if (period.error === 'invalid-ended-on') errors.endedOn = 'invalid';
-    else errors.endedOn = 'ended-before-started';
+    const [field, reason] = toPeriodFieldError(period.error, values.startedOn);
+    errors[field] = reason;
   }
 
   const url = emptyToNull(values.url);

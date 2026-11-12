@@ -55,6 +55,20 @@ export const toPeriod = (
   return { ok: true, period: { startedOn: started, endedOn: ended } };
 };
 
+/**
+ * `toPeriod` の誤りを、入力の項目（始まりの日・終わりの日）と理由の組に移す。始まりの日が空なら
+ * `missing`。使い手は career・project・education・resume の入力の読み替え
+ */
+export const toPeriodFieldError = (
+  error: PeriodError,
+  startedOn: string,
+): ['startedOn', 'missing' | 'invalid'] | ['endedOn', 'invalid' | 'ended-before-started'] => {
+  if (error === 'invalid-started-on')
+    return ['startedOn', startedOn === '' ? 'missing' : 'invalid'];
+  if (error === 'invalid-ended-on') return ['endedOn', 'invalid'];
+  return ['endedOn', 'ended-before-started'];
+};
+
 /*
  * 経験年数（spec の FR-033）。月を単位に数え、日付の日の部分を使わない。各期間の始まりの月から
  * 終わりの月までを両端を含めて数え、終わりの日が空なら日本時間の今月までを数える。期間が

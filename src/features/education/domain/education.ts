@@ -1,6 +1,6 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
-import { toPeriod, type Period } from '@/shared/domain/period';
+import { toPeriod, type Period, toPeriodFieldError } from '@/shared/domain/period';
 import type { Uid } from '@/shared/domain/uid';
 import { normalizeNewlines } from '@/shared/domain/newlines';
 
@@ -47,10 +47,8 @@ export const parseEducationContent = (
   if (values.school.trim() === '') errors.school = 'missing';
   const period = toPeriod(values.startedOn, values.endedOn);
   if (!period.ok) {
-    if (period.error === 'invalid-started-on')
-      errors.startedOn = values.startedOn === '' ? 'missing' : 'invalid';
-    else if (period.error === 'invalid-ended-on') errors.endedOn = 'invalid';
-    else errors.endedOn = 'ended-before-started';
+    const [field, reason] = toPeriodFieldError(period.error, values.startedOn);
+    errors[field] = reason;
   }
   if (Object.keys(errors).length > 0 || !period.ok) return { ok: false, errors };
   return {
