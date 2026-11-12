@@ -1,6 +1,10 @@
 import type { NoteId } from '@/features/note/domain/note';
 import type { Author } from '@/shared/domain/author';
-import type { MediaRejection, MediaStorageKey } from '@/shared/domain/media';
+import {
+  saveAndRecordMedia,
+  type MediaRejection,
+  type MediaStorageKey,
+} from '@/shared/domain/media';
 import type { NoteDeps } from './deps';
 
 export type AddNoteMediaOutcome =
@@ -28,18 +32,9 @@ export const addNoteMedia = async (
   if (!current || current.deletedAt !== null) return { status: 'not-found' };
   if (file === null) return { status: 'invalid', error: 'empty' };
 
-  const saved = await media.save(file);
-  if (!saved.ok) return { status: 'invalid', error: saved.reason };
-
-  const { storageKey, size } = saved.media;
-  let recorded: boolean;
-  try {
-    recorded = (await notes.addMedia(id, storageKey, size)).ok;
-  } catch (error) {
-    await media.remove([storageKey]);
-    throw error;
-  }
-  if (recorded) return { status: 'added', storageKey };
-  await media.remove([storageKey]);
-  return { status: 'not-found' };
+  return saveAndRecordMedia(
+    media,
+    file,
+    async ({ storageKey, size }) => (await notes.addMedia(id, storageKey, size)).ok,
+  );
 };

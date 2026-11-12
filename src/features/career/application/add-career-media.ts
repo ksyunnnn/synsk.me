@@ -1,7 +1,12 @@
 import type { CareerId } from '@/features/career/domain/career';
 import type { CareerRepository } from '@/features/career/domain/career-repository';
 import type { Author } from '@/shared/domain/author';
-import type { MediaRejection, MediaStorage, MediaStorageKey } from '@/shared/domain/media';
+import {
+  saveAndRecordMedia,
+  type MediaRejection,
+  type MediaStorage,
+  type MediaStorageKey,
+} from '@/shared/domain/media';
 
 export type AddCareerMediaOutcome =
   | { status: 'added'; storageKey: MediaStorageKey }
@@ -26,18 +31,5 @@ export const addCareerMedia = async (
   if (!author) return { status: 'forbidden' };
   if (file === null) return { status: 'invalid', error: 'empty' };
 
-  const saved = await media.save(file);
-  if (!saved.ok) return { status: 'invalid', error: saved.reason };
-
-  const { storageKey, size } = saved.media;
-  let recorded: boolean;
-  try {
-    recorded = (await careers.addMedia(id, { storageKey, size })).ok;
-  } catch (error) {
-    await media.remove([storageKey]);
-    throw error;
-  }
-  if (recorded) return { status: 'added', storageKey };
-  await media.remove([storageKey]);
-  return { status: 'not-found' };
+  return saveAndRecordMedia(media, file, async (saved) => (await careers.addMedia(id, saved)).ok);
 };

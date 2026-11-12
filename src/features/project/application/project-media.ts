@@ -1,7 +1,12 @@
 import type { ProjectId } from '@/features/project/domain/project';
 import type { ProjectRepository } from '@/features/project/domain/project-repository';
 import type { Author } from '@/shared/domain/author';
-import type { MediaRejection, MediaStorage, MediaStorageKey } from '@/shared/domain/media';
+import {
+  saveAndRecordMedia,
+  type MediaRejection,
+  type MediaStorage,
+  type MediaStorageKey,
+} from '@/shared/domain/media';
 
 /*
  * 実績の画像（specs/001-career-and-project/spec.md の FR-027・FR-028・FR-030）。形式と大きさと
@@ -32,20 +37,11 @@ export const addProjectMedia = async (
   if (!author) return { status: 'forbidden' };
   if (file === null) return { status: 'invalid', error: 'empty' };
 
-  const saved = await media.save(file);
-  if (!saved.ok) return { status: 'invalid', error: saved.reason };
-
-  const { storageKey, size } = saved.media;
-  let recorded: boolean;
-  try {
-    recorded = (await projects.addMedia(id, { storageKey, size }, options)).ok;
-  } catch (error) {
-    await media.remove([storageKey]);
-    throw error;
-  }
-  if (recorded) return { status: 'added', storageKey };
-  await media.remove([storageKey]);
-  return { status: 'not-found' };
+  return saveAndRecordMedia(
+    media,
+    file,
+    async (saved) => (await projects.addMedia(id, saved, options)).ok,
+  );
 };
 
 export type ChangeProjectCardImageOutcome =
