@@ -25,7 +25,7 @@ import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
-import { fetchLinkPreviews as fetchSharedLinkPreviews } from '@/shared/server/link-preview-fetch';
+import { fetchLinkPreviews as fetchSharedLinkPreviews } from '@/features/note/server/link-preview-fetch';
 import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 
 /**

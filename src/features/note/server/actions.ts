@@ -38,7 +38,7 @@ import { createNoteDeps } from '@/features/note/server/queries';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
-import { fetchLinkPreview } from '@/shared/server/link-preview-fetch';
+import { fetchLinkPreview } from '@/features/note/server/link-preview-fetch';
 import { routes } from '@/shared/routes';
 
 /**

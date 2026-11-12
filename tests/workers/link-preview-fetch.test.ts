@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { fetchLinkPreview, type LinkPreviewFetcher } from '@/shared/server/link-preview-fetch';
+import { fetchLinkPreview, type LinkPreviewFetcher } from '@/features/note/server/link-preview-fetch';
 
 /**
- * 参照先の取得（src/shared/server/link-preview-fetch.ts）が workerd の `Response`・`TextDecoder`・
+ * 参照先の取得（src/features/note/server/link-preview-fetch.ts）が workerd の `Response`・`TextDecoder`・
  * 中止の合図の上で動くこと。外へ要求を出さず、作り物の応答を返す `fetcher` を渡す。読み方の細部は
  * tests/unit/link-preview-fetch.test.ts が持つ
  */

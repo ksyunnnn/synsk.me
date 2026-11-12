@@ -5,7 +5,7 @@ import { readMarkdown } from '@/shared/domain/markdown';
 /**
  * 参照先の題と画像の URL を取る。取れた URL だけを返し、取れなかった URL は返さない。取る数・
  * 時間・大きさの上限は実装が持つ（plan.md の「参照先への取得の上限」）。本番の実装は
- * src/shared/server/link-preview-fetch.ts を包む（`src/features/note/server/queries.ts`）
+ * src/features/note/server/link-preview-fetch.ts を包む（`src/features/note/server/queries.ts`）
  */
 export type LinkPreviewSource = (urls: string[]) => Promise<VisitorLinkPreview[]>;
 

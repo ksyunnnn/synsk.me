@@ -11,7 +11,7 @@ import { readMarkdown } from '@/shared/domain/markdown';
 /**
  * 1 つの URL の題と画像の URL を取る。投げずに、取れたか取れなかった理由を返す。上限と内部の
  * アドレスの検査は実装が持つ（plan.md の「参照先への取得の上限」）。本番の実装は
- * src/shared/server/link-preview-fetch.ts の `fetchLinkPreview`（`src/features/note/server/actions.ts`）
+ * src/features/note/server/link-preview-fetch.ts の `fetchLinkPreview`（`src/features/note/server/actions.ts`）
  */
 export type SingleLinkPreviewSource = (
   url: string,

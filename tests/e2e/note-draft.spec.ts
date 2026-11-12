@@ -8,7 +8,7 @@ import { createNote, openNoteEditor, uniqueNoteSlug, waitForHydration } from './
  * 書きかけの note の保持（specs/003-note/spec.md の FR-018・FR-019、User Story 4 の 1・2、
  * research.md の R10）。書きかけは共有担当の `DraftRetainingForm` がブラウザの `localStorage` に
  * 持ち、テストごとの context は別の保存先を持つ。書きかけは、画面の JavaScript が動き始めた
- * 時点の入力と、その後の入力を持つ（src/shared/components/draft-retention.tsx）。入力は、書きかけが
+ * 時点の入力と、その後の入力を持つ（src/features/note/components/draft-retention.tsx）。入力は、書きかけが
  * 書き込まれるまで入れ直す
  */
 

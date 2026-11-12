@@ -3,9 +3,8 @@ import 'server-only';
 import { isWebUrl } from '@/shared/domain/web-url';
 
 /**
- * 参照先のページから題と画像の URL を取る（specs/003-note/research.md の R13）。使い手は 003 の
- * URL カードと 004 の「URL から題を取ってフォームの初期値に入れる」（issue #281）。機能どうしは
- * import しないため `src/shared/` に置く（ADR-0026）。
+ * 参照先のページから題と画像の URL を取る（specs/003-note/research.md の R13）。使い手は note の
+ * URL カードだけ。ほかの機能が使うときは `src/shared/server/` に置く（ADR-0026）。
  *
  * - 取った HTML は、このモジュールの中で題と画像の URL に詰め替え、外の形を持ち出さない
  *   （docs/SOFTWARE_DESIGN.md の Anti-Corruption Layer、constitution VII）
