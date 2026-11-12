@@ -11,6 +11,13 @@ export default defineConfig(({ command }) => ({
     // src/app/DevTabTitle.tsx が使う
     __WORKSPACE_NAME__: JSON.stringify(command === 'serve' ? basename(import.meta.dirname) : ''),
   },
+  environments: {
+    client: {
+      // simple-icons はサーバ側（lab の SourceIcon.tsx）でしか使わない。client の事前バンドルに入れると、
+      // vinext の vite-plugin-commonjs が 1 行 5.2MB の index.mjs に正規表現をかけて約 27 秒かかる
+      optimizeDeps: { exclude: ['simple-icons'] },
+    },
+  },
   plugins: [
     vinext({
       cache: { cdn: cdnAdapter() },
