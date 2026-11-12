@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { isWebUrl } from '@/shared/domain/web-url';
+import { withTimeout } from '@/shared/server/with-timeout';
 
 /**
  * 参照先のページから題と画像の URL を取る（specs/003-note/research.md の R13）。使い手は note の
@@ -324,21 +325,15 @@ export const fetchLinkPreview = async (
   }
   if (!isFetchableUrl(parsed)) return { status: 'failed', url, reason: 'blocked' };
 
-  const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
   // fetcher と本文の読み込みが中止の合図を見なくても、待ち時間で打ち切る
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      controller.abort();
-      reject(new Timeout());
-    }, limits.timeoutMs);
-  });
   try {
-    return await Promise.race([follow(url, fetcher, limits, controller.signal), timeout]);
+    return await withTimeout(
+      limits.timeoutMs,
+      (signal) => follow(url, fetcher, limits, signal),
+      () => new Timeout(),
+    );
   } catch (error) {
     return { status: 'failed', url, reason: error instanceof Timeout ? 'timeout' : 'network' };
-  } finally {
-    clearTimeout(timer);
   }
 };
 
