@@ -48,15 +48,31 @@ npm install -g @pen.dev/cli                      # 保存に使う。初回は p
 pen interactive -a desktop -i design/<file>.pen  # 対話シェル。save() がファイルへ書き込む
 ```
 
-手元の D1 はワークスペース（`desk-NN`）ごとに別で、`npm run dev` か `wrangler d1 … --local` を初めて実行したときに `.wrangler/state` の下に作られる。表を作って seed を入れるには、ワークスペースの直下で次を実行する。
+### 手元の D1
+
+手元の D1 はワークスペース（`desk-NN`）ごとに別で、`.wrangler/state` の下にある。コマンドはワークスペースの直下で実行する。
+
+**最初に用意する**
 
 ```bash
-npx wrangler d1 migrations apply synsk-me --local                            # 手元の D1 に表を作る
+npx wrangler d1 migrations apply synsk-me --local                            # 表を作る
 npx wrangler d1 execute synsk-me --local --file ../../private/seed-local.sql # seed を入れる
 bash ../../private/upload-media-local.sh                                     # seed の本文が指す画像を手元の R2 に置く
 ```
 
-seed は実名を含むため、リポジトリに入れず `synsk.me/private/seed-local.sql` に置く。
+**seed を入れ直す**
+
+```bash
+npx wrangler d1 execute synsk-me --local --file ../../private/seed-local.sql
+```
+
+seed は入れる表を先に空にするため、何度入れても行は重ならない。seed は実名を含むため、リポジトリに入れず `synsk.me/private/seed-local.sql` に置く。表の制約が変わったら、seed も合わせて直す。
+
+**マイグレーションが増えたとき**
+
+```bash
+npx wrangler d1 migrations apply synsk-me --local # まだ当てていないものだけを当てる
+```
 
 手元の D1 の中身は `sqlite3` で見る。
 
