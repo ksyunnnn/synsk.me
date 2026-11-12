@@ -172,3 +172,12 @@ export const respondWithMedia = async (
   headers.set('Content-Length', String(media.size));
   return new Response(media.body, { headers });
 };
+
+/**
+ * 開発中のページの画像を、検索エンジンに載せない。画像には meta タグを置けないため、応答の
+ * ヘッダで伝える（https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag）
+ */
+export const withNoindex = (response: Response): Response => {
+  response.headers.set('X-Robots-Tag', 'noindex');
+  return response;
+};

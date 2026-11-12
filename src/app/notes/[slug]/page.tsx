@@ -44,6 +44,9 @@ export const generateMetadata = async (
       description,
       images,
     },
+    // 開発中のページは検索エンジンに載せない
+    // （https://developers.google.com/search/docs/crawling-indexing/block-indexing）
+    robots: { index: false },
   };
 };
 

@@ -11,7 +11,7 @@ import { createD1ProjectRepository } from '@/features/project/server/d1-project-
 import { requireAuthor } from '@/shared/server/author';
 import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
-import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
+import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
@@ -43,11 +43,7 @@ export const respondWithProjectMedia = async (
     parseMediaStorageKey(key) === null
       ? 'hidden'
       : visitorProjectMediaAccess(await projects.findVisitorBySlug(slug), key);
-  const response = await respondWithMedia(media, key, access, ifNoneMatch);
-  // 実績の画像は検索エンジンに載せない。画像には meta タグを置けないため、応答のヘッダで伝える
-  // （https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag）
-  response.headers.set('X-Robots-Tag', 'noindex');
-  return response;
+  return withNoindex(await respondWithMedia(media, key, access, ifNoneMatch));
 };
 
 /**

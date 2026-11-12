@@ -11,11 +11,16 @@ export const instant = false;
 
 type Props = { params: Promise<{ slug: string }> };
 
-// メタデータは訪問者向けの DTO の値だけから作る
+// メタデータは訪問者向けの DTO の値だけから作る。開発中のページは検索エンジンに載せない
+// （https://developers.google.com/search/docs/crawling-indexing/block-indexing）
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
   const lifeEvent = await getVisitorLifeEvent((await params).slug);
   if (!lifeEvent) notFound();
-  return { title: `${lifeEvent.title} | synsk.me`, openGraph: { title: lifeEvent.title } };
+  return {
+    title: `${lifeEvent.title} | synsk.me`,
+    openGraph: { title: lifeEvent.title },
+    robots: { index: false },
+  };
 };
 
 const Page = async ({ params }: Props) => {

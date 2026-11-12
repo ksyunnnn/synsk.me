@@ -12,7 +12,7 @@ export const instant = false;
 type Props = { params: Promise<{ slug: string }> };
 
 // メタデータは訪問者向けの DTO の値だけから作る。秘匿化した実績では秘匿化した題になる。
-// 実績のページは検索エンジンに載せない（https://developers.google.com/search/docs/crawling-indexing/block-indexing）
+// 開発中のページは検索エンジンに載せない（https://developers.google.com/search/docs/crawling-indexing/block-indexing）
 export const generateMetadata = async ({ params }: Props): Promise<Metadata> => {
   const project = await getVisitorProject((await params).slug);
   if (!project) notFound();

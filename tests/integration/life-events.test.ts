@@ -62,6 +62,11 @@ describe('/life-events/{slug}（SC-007）', () => {
     expect(text).not.toContain(editUid);
   });
 
+  it('開発中のページなので、検索エンジンに載せない（noindex）', async () => {
+    const html = await (await ctx.server.fetch(`/life-events/${SEEDED.slug}`)).text();
+    expect(html).toMatch(/<meta name="robots" content="noindex"\s*\/?>/);
+  });
+
   it('無い識別子は 404', async () => {
     const res = await ctx.server.fetch('/life-events/no-such-life-event');
     expect(res.status).toBe(404);
@@ -271,6 +276,12 @@ describe('/life-events/{slug}/media/{storage_key}', () => {
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('image/png');
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
+  });
+
+  it('代表画像は、検索エンジンに載せない（noindex）', async () => {
+    const res = await ctx.server.fetch(`/life-events/${SEEDED.slug}/media/${CARD_KEY}`);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
   });
 
   it('個別のページの DTO に、代表画像の URL が入る', async () => {

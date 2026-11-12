@@ -26,7 +26,7 @@ import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
 import { fetchLinkPreviews as fetchSharedLinkPreviews } from '@/shared/server/link-preview-fetch';
-import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
+import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 
 /**
  * note の画面・Server Action・`src/proxy.ts` が呼ぶ組み立て用の関数（ADR-0030）。
@@ -72,7 +72,7 @@ export const respondWithNoteMedia = async (
     parseMediaStorageKey(key) === null
       ? 'hidden'
       : await getVisitorNoteMediaUseCase(notes, slug, key);
-  return respondWithMedia(media, key, access, ifNoneMatch);
+  return withNoindex(await respondWithMedia(media, key, access, ifNoneMatch));
 };
 
 /**
