@@ -130,10 +130,7 @@ export const listNoteRevisions = async (
   const { notes } = await createNoteDeps();
   const id = await findIdByUid(notes, uid);
   if (id === null) return null;
-  const [note, revisions] = await Promise.all([
-    notes.findForEdit(id),
-    notes.listRevisions(id),
-  ]);
+  const [note, revisions] = await Promise.all([notes.findForEdit(id), notes.listRevisions(id)]);
   return note ? { note, revisions } : null;
 };
 
