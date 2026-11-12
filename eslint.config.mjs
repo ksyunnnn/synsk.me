@@ -4,7 +4,7 @@ import prettier from 'eslint-config-prettier/flat';
 import boundaries from 'eslint-plugin-boundaries';
 import { globSync, readFileSync } from 'node:fs';
 
-/** 依存の向きの規則（ADR-0026）の対象から外す試作の置き場。 */
+/** 依存の向きの規則（ADR-0026）と `react/no-multi-comp` の対象から外す試作の置き場。 */
 const boundariesIgnore = ['src/app/lab/**', 'src/app/top-draft/**'];
 
 /**
@@ -97,6 +97,7 @@ const config = [
     // ページの中に部品を置かない。部品は components/ か、同じフォルダの別ファイルに置く（#333）
     name: 'synsk/app-pages',
     files: ['src/app/**/page.tsx'],
+    ignores: boundariesIgnore,
     rules: {
       'react/no-multi-comp': 2,
     },

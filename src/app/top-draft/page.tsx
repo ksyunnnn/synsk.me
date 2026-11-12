@@ -9,8 +9,6 @@ import { listFeedItems } from '@/features/activity/server/queries';
 import { fontFamily, sourceSans } from '@/lib/fonts';
 import { routes } from '@/shared/routes';
 
-import { TextLink } from './TextLink';
-
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す。D1 から読めない
 // ときに 500 を返すため、`loading.tsx` を置かない。キャッシュしない（specs/005-feed/research.md の R9）
 export const instant = false;
@@ -23,6 +21,12 @@ export const metadata: Metadata = {
   title: 'トップの下書き | synsk.me',
   robots: { index: false, follow: false },
 };
+
+const TextLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
+  <Link href={href} className="w-fit font-normal underline underline-offset-4">
+    {children}
+  </Link>
+);
 
 const Page = async ({ searchParams }: Props) => {
   const page = readFeedPage((await searchParams).page);
