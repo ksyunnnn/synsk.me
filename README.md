@@ -104,11 +104,14 @@ npx wrangler d1 migrations apply synsk-me --remote # 本番の D1 に、まだ�
 npm test              # 単体。純関数とソースの静的な検査
 npm run test:watch    # 単体を watch で回す
 npm run test:workers  # workerd の中。D1 の binding とマイグレーション
+npm run test:migrations # 既にある行を移すマイグレーションを、当てる前に一度だけ確かめる
 npm run test:integration # 結合。ビルドしてから本番出力を workerd で起動する
 npm run test:e2e      # E2E。ビルドしてから実ブラウザで開く
 ```
 
 E2E の前に `npx playwright install chromium` でブラウザを入れる。
+
+既にある行を移すマイグレーションのテストは `tests/migrations/` に置く。表の制約のテストは `tests/workers/migrations.test.ts` に置く。CI は `tests/migrations/` を、`migrations/` か `tests/migrations/` が変わったときだけ回す。
 
 段階ごとの割り当てと時間の上限は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
 
