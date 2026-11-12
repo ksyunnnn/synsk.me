@@ -115,16 +115,18 @@ E2E の前に `npx playwright install chromium` でブラウザを入れる。
 
 デプロイ後の検査は `npm run verify:deploy` が担う。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体は、デプロイ前には確かめられない。
 
-カバレッジは単体と workerd で別々に測る。単体は v8、workerd は istanbul を使う。Cloudflare が workerd での V8 のカバレッジに対応していないため（[Known issues](https://developers.cloudflare.com/workers/testing/vitest-integration/known-issues/)）。
+### カバレッジ
+
+必要なときに手で測る。上の段階には含めない。率は、実装が正しいかの判定に使わない（[docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md)）。
 
 ```bash
 npx vitest run --config vitest.config.ts --coverage.enabled --coverage.provider=v8 --coverage.include='src/**/*.{ts,tsx}' --coverage.include='worker/**/*.ts' --coverage.exclude='**/*.d.ts'               # 単体
 npx vitest run --config vitest.workers.config.ts --coverage.enabled --coverage.provider=istanbul --coverage.include='src/**/*.{ts,tsx}' --coverage.include='worker/**/*.ts' --coverage.exclude='**/*.d.ts' # workerd の中
 ```
 
-分母は `src/` の `.ts` と `.tsx`（`.d.ts` を除く）と、`worker/` の `.ts` とする。分母は設定ファイルでなく CLI の引数で指定する。`coverage.include` を指定しないと、テストが読み込んだファイルだけが分母になるため（[Coverage](https://v4.vitest.dev/config/coverage)）。結果は既定の出力先 `coverage/` に書かれる（git が追跡しない）。
-
-カバレッジ率は、実装が正しいかの判定に使わない。判定の方法は [docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md) が定める。
+- 分母は `src/` の `.ts`・`.tsx`（`.d.ts` を除く）と `worker/` の `.ts`。`--coverage.include` を省くと、テストが読み込んだファイルだけが分母になる（[Coverage](https://v4.vitest.dev/config/coverage)）
+- workerd は istanbul を使う。workerd は V8 のカバレッジに対応していない（[Known issues](https://developers.cloudflare.com/workers/testing/vitest-integration/known-issues/)）
+- 結果は `coverage/` に出る。git は追跡しない
 
 ## 配信
 
