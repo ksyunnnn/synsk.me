@@ -115,6 +115,19 @@ E2E の前に `npx playwright install chromium` でブラウザを入れる。
 
 デプロイ後の検査は `npm run verify:deploy` が担う。エッジのキャッシュ・ビルド時に埋まる環境変数・PNG の実体は、デプロイ前には確かめられない。
 
+### カバレッジ
+
+必要なときに手で測る。上の段階には含めない。率は、実装が正しいかの判定に使わない（[docs/decisions/0019-testing-strategy.md](./docs/decisions/0019-testing-strategy.md)）。
+
+```bash
+npx vitest run --config vitest.config.ts --coverage.enabled --coverage.provider=v8 --coverage.include='src/**/*.{ts,tsx}' --coverage.include='worker/**/*.ts' --coverage.exclude='**/*.d.ts'               # 単体
+npx vitest run --config vitest.workers.config.ts --coverage.enabled --coverage.provider=istanbul --coverage.include='src/**/*.{ts,tsx}' --coverage.include='worker/**/*.ts' --coverage.exclude='**/*.d.ts' # workerd の中
+```
+
+- 分母は `src/` の `.ts`・`.tsx`（`.d.ts` を除く）と `worker/` の `.ts`。`--coverage.include` を省くと、テストが読み込んだファイルだけが分母になる（[Coverage](https://v4.vitest.dev/config/coverage)）
+- workerd は istanbul を使う。workerd は V8 のカバレッジに対応していない（[Known issues](https://developers.cloudflare.com/workers/testing/vitest-integration/known-issues/)）
+- 結果は `coverage/` に出る。git は追跡しない
+
 ## 配信
 
 本番は Cloudflare Workers Builds が `main` への push を受けてビルドし、デプロイする。ビルド構成はリポジトリではなく Cloudflare のダッシュボード（Workers & Pages → `synsk-me` → Settings → Build）が持つ。
