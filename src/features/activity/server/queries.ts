@@ -19,7 +19,7 @@ import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
-import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
+import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 
 /**
  * activity の画面・Server Action・`src/proxy.ts` が呼ぶ組み立て用の関数（ADR-0030）。
@@ -108,10 +108,12 @@ export const respondWithLifeEventImage = async (
   const isCard =
     storageKey !== null &&
     (await (await createLifeEventRepository()).isCardImage(slug, storageKey));
-  return respondWithMedia(
-    await createMediaStorage(),
-    key,
-    isCard ? 'public' : 'hidden',
-    ifNoneMatch,
+  return withNoindex(
+    await respondWithMedia(
+      await createMediaStorage(),
+      key,
+      isCard ? 'public' : 'hidden',
+      ifNoneMatch,
+    ),
   );
 };

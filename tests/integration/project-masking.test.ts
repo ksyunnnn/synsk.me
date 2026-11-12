@@ -317,6 +317,18 @@ describe('実績の本文と画像（FR-021・FR-023・FR-027・FR-028・FR-030�
     await expectHidden(await fetchMedia(DRAFT_SLUG, bodyKey));
   });
 
+  it('実績のページと画像は、検索エンジンに載せない（noindex）', async () => {
+    const key = await upload(openId);
+    await setBody(openId, `![作り物の図](media:${key})`);
+
+    const html = (await fetchVisitor(OPEN_SLUG, AS_HTML)).text;
+    expect(html).toMatch(/<meta name="robots" content="noindex"\s*\/?>/);
+
+    const res = await fetchMedia(OPEN_SLUG, key);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
+  });
+
   it.each([
     ['HTML', AS_HTML],
     ['RSC', AS_RSC],

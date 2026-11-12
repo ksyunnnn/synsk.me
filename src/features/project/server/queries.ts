@@ -11,7 +11,7 @@ import { createD1ProjectRepository } from '@/features/project/server/d1-project-
 import { requireAuthor } from '@/shared/server/author';
 import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
-import { createMediaStorage, respondWithMedia } from '@/shared/server/media-storage';
+import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 import { readEnv } from '@/shared/server/env';
 import { createD1OrganizationRepository } from '@/shared/server/organization-repository';
 
@@ -43,7 +43,7 @@ export const respondWithProjectMedia = async (
     parseMediaStorageKey(key) === null
       ? 'hidden'
       : visitorProjectMediaAccess(await projects.findVisitorBySlug(slug), key);
-  return respondWithMedia(media, key, access, ifNoneMatch);
+  return withNoindex(await respondWithMedia(media, key, access, ifNoneMatch));
 };
 
 /**

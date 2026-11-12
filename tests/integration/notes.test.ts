@@ -249,6 +249,11 @@ describe('/notes/{slug}（FR-004・FR-012・FR-015・SC-001）', () => {
     expect(html).toContain('公開した本文');
   });
 
+  it('開発中のページなので、検索エンジンに載せない（noindex）', async () => {
+    const html = await (await ctx.server.fetch('/notes/integration-published')).text();
+    expect(html).toMatch(/<meta name="robots" content="noindex"\s*\/?>/);
+  });
+
   it.each([AS_HTML, AS_RSC])(
     '公開した後に保存した版は応答に無い（%o）',
     async ({ headers, query }) => {
@@ -627,6 +632,16 @@ describe('note の画像と代表画像（FR-023〜FR-026、SC-001、User Story 
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toBe('image/png');
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(PNG);
+  });
+
+  it('公開した note の画像は、検索エンジンに載せない（noindex）', async () => {
+    const note = await insertNote(ctx.db, { slug: 'integration-image-noindex' });
+    const key = await upload(note.uid);
+    await insertNoteRevision(ctx.db, note.id, { title: '画像の題', body: `![図](media:${key})` });
+    await publishNoteRow(ctx.db, note.id);
+    const res = await fetchMedia('integration-image-noindex', key);
+    expect(res.status).toBe(200);
+    expect(res.headers.get('x-robots-tag')).toBe('noindex');
   });
 
   it('公開した後に保存した版にだけ置いた画像は、公開し直すまで返らない（User Story 5 の 5）', async () => {
