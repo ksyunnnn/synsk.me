@@ -25,6 +25,13 @@ const componentsTypes = ['feature-components', 'shared-components'];
 const featureTypes = featureLayers.map((layer) => `feature-${layer}`);
 const sharedTypes = [...sharedLayers.map((layer) => `shared-${layer}`), 'shared'];
 
+// Phosphor の入口から読み込むと、開発サーバが全アイコンのモジュールを変換して遅くなる（#331）
+const phosphorEntryPaths = ['@phosphor-icons/react', '@phosphor-icons/react/ssr'].map((name) => ({
+  name,
+  message:
+    'アイコンごとのファイルから読み込む。例: @phosphor-icons/react/dist/csr/X（サーバ専用は dist/ssr/X）',
+}));
+
 /** `to` に並べた要素の種類を、値の import に限って止める。型の import は通す（ADR-0033）。 */
 const disallowValue = (types, extra = {}) => ({
   to: { element: { type: types, ...extra } },
@@ -82,15 +89,63 @@ const config = [
     rules: {
       'react/function-component-definition': [2, { namedComponents: 'arrow-function' }],
       'no-console': 2,
-      // Phosphor の入口から読み込むと、開発サーバが全アイコンのモジュールを変換して遅くなる（#331）
+      'no-restricted-imports': [2, { paths: phosphorEntryPaths }],
+    },
+  },
+
+  {
+    // ページの中に部品を置かない。部品は components/ か、同じフォルダの別ファイルに置く（#333）
+    name: 'synsk/app-pages',
+    files: ['src/app/**/page.tsx'],
+    rules: {
+      'react/no-multi-comp': 2,
+    },
+  },
+
+  {
+    // Server Action のファイル。組み立て（Repository の実装・R2・env を渡すこと）は
+    // server/queries.ts の組み立て用の関数が持つ。型は domain/ か application/ に置く（#333）
+    name: 'synsk/server-actions',
+    files: ['src/features/*/server/actions.ts'],
+    rules: {
+      // flat config は同じ規則の設定を後のもので置き換えるため、Phosphor の制限も並べ直す
       'no-restricted-imports': [
         2,
         {
-          paths: ['@phosphor-icons/react', '@phosphor-icons/react/ssr'].map((name) => ({
-            name,
-            message:
-              'アイコンごとのファイルから読み込む。例: @phosphor-icons/react/dist/csr/X（サーバ専用は dist/ssr/X）',
-          })),
+          paths: [
+            ...phosphorEntryPaths,
+            ...[
+              '@/shared/server/env',
+              '@/shared/server/media-storage',
+              '@/shared/server/media-usage',
+              '@/shared/server/organization-repository',
+              'cloudflare:workers',
+            ].map((name) => ({
+              name,
+              allowTypeImports: true,
+              message: '組み立ては server/queries.ts の組み立て用の関数から受け取る（#333）',
+            })),
+          ],
+          patterns: [
+            {
+              group: ['**/d1-*'],
+              allowTypeImports: true,
+              message:
+                'Repository の実装は server/queries.ts の組み立て用の関数から受け取る（#333）',
+            },
+          ],
+        },
+      ],
+      // 'use server' のファイルの export は、すべて Server Function になる（React の 'use server'）
+      'no-restricted-syntax': [
+        2,
+        {
+          selector: "ExportNamedDeclaration[exportKind='type']",
+          message: '型は domain/ か application/ に置き、そこから import する（#333）',
+        },
+        {
+          selector: "ExportSpecifier[exportKind='type']",
+          message: '型は domain/ か application/ に置き、そこから import する（#333）',
         },
       ],
     },
@@ -171,7 +226,7 @@ const config = [
     name: 'synsk/rules-typescript',
     files: ['**/*.{ts,tsx,mts,cts}'],
     rules: {
-      '@typescript-eslint/no-unused-vars': 1,
+      '@typescript-eslint/no-unused-vars': 2,
       '@typescript-eslint/no-explicit-any': 2,
     },
   },
