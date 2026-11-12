@@ -121,7 +121,7 @@ describe('toFeedItem', () => {
           is_masked: 1,
           title_masked: '業務システムの開発',
           organization_name_masked: 'ある会社',
-          project_kind: 'application',
+          project_kind: 'develop',
           slug: '0123456789abcdef0123456789abcdef',
         }),
       ),
@@ -130,7 +130,7 @@ describe('toFeedItem', () => {
       isMasked: true,
       title: '業務システムの開発',
       organizationName: 'ある会社',
-      projectKind: 'application',
+      projectKind: 'develop',
       period: { startedOn: '2021-04-01', endedOn: null },
       // 秘匿化した実績も個別のページを持つ（001 の spec の Edge Cases）。識別子は uid の形
       slug: '0123456789abcdef0123456789abcdef',
@@ -146,7 +146,7 @@ describe('toFeedItem', () => {
         title_masked: '業務システムの開発',
         organization_name: '作り物の実際の組織',
         organization_name_masked: 'ある会社',
-        project_kind: 'application',
+        project_kind: 'develop',
       }),
     );
     const text = JSON.stringify(item);
@@ -345,7 +345,7 @@ describe('toFeedItem の代表画像（U5）', () => {
         row({
           title: '作り物の題',
           organization_name: '作り物株式会社',
-          project_kind: 'application',
+          project_kind: 'develop',
           slug: 'fake-project',
           card_storage_key: KEY,
         }),
@@ -359,7 +359,7 @@ describe('toFeedItem の代表画像（U5）', () => {
         is_masked: 1,
         title_masked: '業務システムの開発',
         organization_name_masked: 'ある会社',
-        project_kind: 'application',
+        project_kind: 'develop',
         slug: '0123456789abcdef0123456789abcdef',
         card_storage_key: KEY,
       }),

@@ -36,7 +36,7 @@ const project = (overrides: Partial<Project> = {}): Project => ({
   uid: '0123456789abcdef0123456789abcdef',
   slug: '0b6f3c1e-1111-4222-8333-444455556666',
   organization: { id: 1, name: '作り物株式会社', nameMasked: 'ある会社' },
-  kind: 'application',
+  kind: 'develop',
   title: '作り物の受託開発',
   titleMasked: '業務システムの開発',
   isMasked: true,
@@ -303,7 +303,7 @@ describe('visitorProjectMediaAccess（FR-030）', () => {
   const unmasked = {
     isMasked: false as const,
     slug: 'a',
-    kind: 'application' as const,
+    kind: 'develop' as const,
     title: '題',
     organizationName: '組織',
     period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },

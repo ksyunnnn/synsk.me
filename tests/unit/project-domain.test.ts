@@ -26,7 +26,7 @@ const values = (overrides: Partial<ProjectFormValues> = {}): ProjectFormValues =
 
 describe('種類（FR-012）', () => {
   it('4 つの値を持つ', () => {
-    expect(PROJECT_KINDS).toEqual(['application', 'talk', 'event', 'other']);
+    expect(PROJECT_KINDS).toEqual(['develop', 'host', 'talk', 'other']);
   });
 
   it.each(PROJECT_KINDS)('%s を通す', (kind) => {
@@ -52,7 +52,7 @@ describe('parseProjectContent', () => {
       content: {
         organizationName: '作り物株式会社',
         organizationNameMasked: 'ある会社',
-        kind: 'application',
+        kind: 'develop',
         title: '作り物の受託開発',
         titleMasked: '業務システムの開発',
         isMasked: true,

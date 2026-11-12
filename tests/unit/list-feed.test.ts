@@ -16,7 +16,7 @@ const ITEMS: FeedItem[] = [
     isMasked: false,
     title: '作り物の受託開発',
     organizationName: '作り物株式会社',
-    projectKind: 'application',
+    projectKind: 'develop',
     period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
     slug: 'fake-contract-work',
     imageUrl: null,

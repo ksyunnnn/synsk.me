@@ -65,7 +65,7 @@ test('サイトに載せる、秘匿化しない実績は、訪問者のペー�
   await registerSkill(page, 'E2E-Skill-実名');
   const { path } = await registerProject(page, {
     organizationName: 'E2E 実績の組織 実名',
-    kind: 'アプリ',
+    kind: '開発',
     title: 'E2E 実績の題 実名',
     titleMasked: 'E2E 実績の秘匿化した題 実名',
     startedOn: '2022-04-01',
@@ -81,7 +81,7 @@ test('サイトに載せる、秘匿化しない実績は、訪問者のペー�
   await expect(visitor).toHaveTitle('E2E 実績の題 実名 | synsk.me');
   await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('E2E 実績の題 実名');
   await expect(visitor.getByText('E2E 実績の組織 実名')).toBeVisible();
-  await expect(visitor.getByText('アプリ', { exact: true })).toBeVisible();
+  await expect(visitor.getByText('開発', { exact: true })).toBeVisible();
   await expect(visitor.getByText('2022-04-01 〜 2023-03-31')).toBeVisible();
   await expect(visitor.getByText('E2E-Skill-実名')).toBeVisible();
   await expect(visitor.getByRole('link', { name: '関連するページ' })).toHaveAttribute(

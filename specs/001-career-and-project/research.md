@@ -38,7 +38,7 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
 
 ## R3 行の型（#188 が未決）
 
-- 決めたこと: 表の行の型は、表ごとに 1 つの Repository の実装のファイルの中だけで書き、そこで domain の型に詰め替える。CHECK で守る値の一覧（`project.kind` の `application`・`talk`・`event`・`other`）は、domain に `as const` の配列で 1 か所に置く
+- 決めたこと: 表の行の型は、表ごとに 1 つの Repository の実装のファイルの中だけで書き、そこで domain の型に詰め替える。CHECK で守る値の一覧（`project.kind` の `develop`・`host`・`talk`・`other`）は、domain に `as const` の配列で 1 か所に置く
 - 理由: #188 がどちらに決まっても、差し替える場所が Repository の実装の行の型と、CHECK の値の配列の 2 か所に限られる。手で書いた行の型が実物と食い違うことは、本物の migration を当てた workerd の検査で補う（ADR-0035 の Consequences）
 - 未決: 型を生成するか、生成するなら何で作るか（#188）。止めるタスクは無い
 

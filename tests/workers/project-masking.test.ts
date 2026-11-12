@@ -58,7 +58,7 @@ describe('秘匿化した実績', () => {
     expect(await projects.findVisitorBySlug('the-project')).toEqual({
       isMasked: true,
       slug: 'the-project',
-      kind: 'application',
+      kind: 'develop',
       title: '業務システムの開発',
       organizationName: 'ある会社',
       period: { startedOn: '2021-04-01', endedOn: '2022-03-31' },
@@ -119,7 +119,7 @@ describe('秘匿化しない実績', () => {
     expect(await projects.findVisitorBySlug('the-project')).toEqual({
       isMasked: false,
       slug: 'the-project',
-      kind: 'application',
+      kind: 'develop',
       title: REAL.title,
       organizationName: REAL.organization,
       period: { startedOn: '2021-04-01', endedOn: '2022-03-31' },

@@ -26,7 +26,7 @@ const NOW = '2026-11-04T00:00:00.000Z';
 const projectContent = (skillIds: number[]): ProjectContent & { slug: string } => ({
   organizationName: '作り物株式会社',
   organizationNameMasked: 'ある会社',
-  kind: 'application',
+  kind: 'develop',
   title: '作り物の受託開発',
   titleMasked: '業務システムの開発',
   isMasked: true,

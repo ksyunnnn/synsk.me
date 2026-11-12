@@ -79,7 +79,7 @@ def rules_note(x, y):
         "activity_feed: 外部の activity と life event は activity の行を出す。url は外部の activity だけ",
         "activity_feed: sort_at は note.created_at・activity.published_at を Asia/Tokyo の時刻にした値か、年月日。元の日時は created_at・published_at",
         "activity_feed: 公開中で削除していない note の syndication.url と URL が一致する外部の activity は出さない（転載の重なり）",
-        "CHECK の値: *.status は draft・published。resume.audience は limited・public（既定は limited）。project.kind は application・talk・event・other",
+        "CHECK の値: *.status は draft・published。resume.audience は limited・public（既定は limited）。project.kind は develop・host・talk・other（ADR-0055）",
         "CHECK の値: activity_source.kind は article・embed・life_event・other。note.card_image は media・site（既定は site）",
         "年月日の列は、形と「終わり ≥ 始まり」を CHECK で守る",
         "*.card_media_id と note.published_revision_id は、複合の外部キーで同じ持ち主の行だけを指す",
@@ -243,7 +243,7 @@ el += entity(335, 370, 210, "resume_project", "職務経歴書に写した実績
 el += entity(335, 846, 210, "resume_education", "職務経歴書に写した学歴", resume_education)
 el += entity(880, 60, 200, "organization", "組織。会社・団体・自営業（個人）", organization)
 el += entity(580, 60, 240, "career", "職歴。組織にオーナーが所属した履歴", career)
-el += entity(580, 416, 240, "project", "実績。kind: application・talk・event・other", project)
+el += entity(580, 416, 240, "project", "実績。kind: develop・host・talk・other", project)
 el += entity(580, 832, 240, "education", "学歴", education)
 el += entity(880, 460, 210, "skill", "スキル。経験年数は実績から計算", skill)
 el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", project_skill)

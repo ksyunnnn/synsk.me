@@ -94,7 +94,7 @@ export const insertCareer = (
 
 export type ProjectRowInput = {
   organizationId: number;
-  kind?: 'application' | 'talk' | 'event' | 'other';
+  kind?: 'develop' | 'host' | 'talk' | 'other';
   slug?: string;
   title?: string;
   titleMasked?: string;
@@ -112,7 +112,7 @@ export const insertProject = (
   db: D1Database,
   {
     organizationId,
-    kind = 'application',
+    kind = 'develop',
     slug = crypto.randomUUID(),
     title = '作り物の受託開発',
     titleMasked = '業務システムの開発',
