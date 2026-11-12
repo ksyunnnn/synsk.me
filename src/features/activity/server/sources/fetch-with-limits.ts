@@ -11,7 +11,7 @@ import type { FetchLimits } from '@/features/activity/domain/limits';
 export type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 
 /** 検証記録の再現の手順と同じ値。dev.to は空の User-Agent に 403 を返す */
-export const USER_AGENT = 'synsk.me (+https://synsk.me)';
+const USER_AGENT = 'synsk.me (+https://synsk.me)';
 
 /** 取得元が 2xx でない応答を返した。状態の値で、取れない（4xx）と取得元の不調を分けられる */
 export class SourceHttpError extends Error {
@@ -33,7 +33,7 @@ const NOT_FOUND_STATUSES = new Set([400, 401, 404, 410]);
 export const isClientError = (error: unknown): boolean =>
   error instanceof SourceHttpError && NOT_FOUND_STATUSES.has(error.status);
 
-export type SourceResponse = { status: number; headers: Headers; text: string };
+type SourceResponse = { status: number; headers: Headers; text: string };
 
 export type SourceHttp = {
   /** まだ出せる要求の数 */

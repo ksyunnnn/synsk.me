@@ -11,7 +11,7 @@ export const RESUME_AUDIENCES = ['limited', 'public'] as const;
 /** 限定公開用か公開用か。作った後に変えない（FR-004） */
 export type ResumeAudience = (typeof RESUME_AUDIENCES)[number];
 
-export const RESUME_STATUSES = ['draft', 'published'] as const;
+const RESUME_STATUSES = ['draft', 'published'] as const;
 /** 下書きか、訪問者に見せるか（FR-021） */
 export type ResumeStatus = (typeof RESUME_STATUSES)[number];
 
@@ -110,7 +110,7 @@ export type ResumeContent = {
 export type ResumeForEdit = Resume & ResumeContent;
 
 /** 写した行の種類。管理画面の経路の名前と同じ */
-export const RESUME_ROW_KINDS = ['careers', 'projects', 'educations'] as const;
+const RESUME_ROW_KINDS = ['careers', 'projects', 'educations'] as const;
 export type ResumeRowKind = (typeof RESUME_ROW_KINDS)[number];
 
 export const isResumeRowKind = (value: string): value is ResumeRowKind =>
@@ -121,7 +121,7 @@ export const isResumeRowKind = (value: string): value is ResumeRowKind =>
  * import しないため（ADR-0026）、写すのに要る列だけをここで持つ
  */
 
-export type ResumeSourceCareer = {
+type ResumeSourceCareer = {
   id: number;
   organizationName: string;
   organizationNameMasked: string | null;
@@ -147,7 +147,7 @@ export type ResumeSourceProject = {
   skills: { name: string; monthsOverride: number | null }[];
 };
 
-export type ResumeSourceEducation = {
+type ResumeSourceEducation = {
   id: number;
   school: string;
   department: string | null;

@@ -30,7 +30,6 @@
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
     "@vinext/cloudflare": "^1.1.1",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jose": "^6.2.12",
     "mdast-util-from-markdown": "^2.1.0",

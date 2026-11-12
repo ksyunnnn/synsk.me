@@ -26,12 +26,8 @@ export const NOTE_STATUS_LABELS: Record<NoteStatus, string> = {
 export const NOTE_CARD_IMAGES = ['media', 'site'] as const;
 export type NoteCardImage = (typeof NOTE_CARD_IMAGES)[number];
 
-export const isNoteCardImage = (value: string): value is NoteCardImage =>
-  (NOTE_CARD_IMAGES as readonly string[]).includes(value);
-
 /** 主キー。URL とフォームに出さない（ADR-0051） */
 export type NoteId = number;
-export type NoteRevisionId = number;
 
 /** 題と本文の長さの上限（FR-005、`note_revision.title`・`body` の CHECK） */
 export const NOTE_TITLE_MAX_LENGTH = 200;

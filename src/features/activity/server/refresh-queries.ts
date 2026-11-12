@@ -13,7 +13,7 @@ import { readEnv } from '@/shared/server/env';
  * 取得のユースケースの組み立て用の関数（docs/SOFTWARE_DESIGN.md の「組み立て用の関数」、ADR-0030）。
  * 外への要求は Workers の `fetch` で出す
  */
-export const createActivityDeps = async (): Promise<ActivityDeps> => {
+const createActivityDeps = async (): Promise<ActivityDeps> => {
   const env = await readEnv();
   const registry = createSourceRegistry((url, init) => fetch(url, init), env);
   return {

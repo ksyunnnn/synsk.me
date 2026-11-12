@@ -74,7 +74,7 @@ export type NoteFeedItem = {
  * 外部の activity の分類（`activity_source.kind` のうち life event でないもの、migration 0007 の
  * CHECK）。画面は分類で見せ方を分ける（FR-019）
  */
-export const EXTERNAL_ACTIVITY_SOURCE_KINDS = ['article', 'embed', 'other'] as const;
+const EXTERNAL_ACTIVITY_SOURCE_KINDS = ['article', 'embed', 'other'] as const;
 export type ExternalActivitySourceKind = (typeof EXTERNAL_ACTIVITY_SOURCE_KINDS)[number];
 
 export const isExternalActivitySourceKind = (value: string): value is ExternalActivitySourceKind =>

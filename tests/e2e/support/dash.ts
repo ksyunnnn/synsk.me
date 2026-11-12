@@ -44,7 +44,7 @@ export type ProjectInput = SiteOptions & {
 };
 
 /** 訪問者に開かせる、職務経歴書の外の画面。実績の個別のページは別に確かめる */
-export const VISITOR_PAGES = ['/', '/about', '/contact', '/resume'] as const;
+const VISITOR_PAGES = ['/', '/about', '/contact', '/resume'] as const;
 
 /** ラベルの名前と同じ名前の文字の入力 */
 export const textbox = (page: Page, name: string) =>
@@ -226,7 +226,7 @@ export const registerSkill = async (page: Page, name: string) => {
  * 職務経歴書の作成の画面で、名前が `keep` に合わない職歴・実績・学歴の選択を外す。
  * 職歴の名前は「組織名・肩書」、実績は題、学歴は学校
  */
-export const keepOnlySources = async (page: Page, keep: RegExp) => {
+const keepOnlySources = async (page: Page, keep: RegExp) => {
   const all = page.getByRole('checkbox');
   const kept = page.getByRole('checkbox', { name: keep });
   const count = await all.count();

@@ -18,7 +18,7 @@ export type Profile = {
 };
 
 /** オーナーが値を入れる */
-export const PROFILE_CONTENT: Omit<Profile, 'email'> = {
+const PROFILE_CONTENT: Omit<Profile, 'email'> = {
   name: '小橋俊介',
   introduction: 'プロダクト実装のファシリテーター\n\n生年月日: 1992/2/23',
   photoSrc: '/profile-photo.jpg',

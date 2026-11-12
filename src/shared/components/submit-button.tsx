@@ -4,7 +4,7 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
 import { useFormStatus } from 'react-dom';
 
 /** 送っている間に、ボタンの名前の代わりに出す文言 */
-export const PENDING_LABEL = '送っています…';
+const PENDING_LABEL = '送っています…';
 
 /**
  * 送った結果が失敗のときに、フォーカスを移す先。最初の誤りの項目を選び、項目ごとの誤りが

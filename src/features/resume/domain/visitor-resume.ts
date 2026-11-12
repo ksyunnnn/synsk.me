@@ -10,7 +10,7 @@ import type { ProjectKind } from '@/shared/domain/project-kind';
  * 題・識別子・期限・状態・写し元の id は渡さない
  */
 
-export type VisitorResumeCareer = {
+type VisitorResumeCareer = {
   isMasked: false;
   organizationName: string;
   role: string;
@@ -19,7 +19,7 @@ export type VisitorResumeCareer = {
   url: string | null;
 };
 
-export type VisitorResumeProject = {
+type VisitorResumeProject = {
   isMasked: false;
   organizationName: string;
   kind: ProjectKind;
@@ -30,7 +30,7 @@ export type VisitorResumeProject = {
   url: string | null;
 };
 
-export type VisitorResumeEducation = {
+type VisitorResumeEducation = {
   school: string;
   department: string | null;
   period: Period;

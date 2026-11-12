@@ -169,7 +169,7 @@ export type ProjectFormValues = Record<ProjectField, string>;
 export type ProjectFormResult = ActionResult<ProjectField, ProjectFieldError>;
 
 /** `isMasked` の値。送られた値が秘匿化しないことを示すときだけ、秘匿化しない（FR-015） */
-export const IS_MASKED_VALUES = { masked: '1', unmasked: '0' } as const;
+const IS_MASKED_VALUES = { masked: '1', unmasked: '0' } as const;
 
 /**
  * フォームの値を保存する内容に読み替える。秘匿化するかは、秘匿化しないと選んだときだけ

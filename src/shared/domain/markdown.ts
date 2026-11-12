@@ -35,7 +35,7 @@ export const mediaMarkOf = (storageKey: MediaStorageKey) =>
   `![代替テキスト](${MEDIA_URL_PREFIX}${storageKey} "ホバーで出す文")\n*キャプション*`;
 
 /** 画像の印の URL から置き場のキーを読む。印でないか、キーの形が違えば null */
-export const mediaKeyOf = (url: string): MediaStorageKey | null =>
+const mediaKeyOf = (url: string): MediaStorageKey | null =>
   url.startsWith(MEDIA_URL_PREFIX)
     ? parseMediaStorageKey(url.slice(MEDIA_URL_PREFIX.length))
     : null;
@@ -55,7 +55,7 @@ export const imageSourceOf = (url: string): ImageSource | null => {
  * 段落の中身の文字列が、http か https の URL 1 つだけなら、その URL を `URL` の形に揃えた値。
  * URL カードにする行（R11）。空白や改行を含めば、文と並べた URL として null
  */
-export const urlLineOf = (text: string): string | null =>
+const urlLineOf = (text: string): string | null =>
   !/\s/.test(text) && isWebUrl(text) ? new URL(text).href : null;
 
 const walk = (node: Nodes, visit: (node: Nodes) => void) => {
@@ -105,7 +105,7 @@ export type ParagraphKind =
   | { kind: 'url'; url: string };
 
 /** 段落を見分ける。どちらでもなければ null。リストと引用の中の段落も同じに見分ける（R11） */
-export const paragraphKindOf = (
+const paragraphKindOf = (
   paragraph: Paragraph,
   definitions: Map<string, string>,
 ): ParagraphKind | null => {
@@ -126,7 +126,7 @@ export const paragraphKindOf = (
 };
 
 /** 描く側が見分けた段落に付ける要素の名前と属性。生の HTML は文字列で出るため、この要素は作れない */
-export const MARKED_PARAGRAPH_TAG = 'div';
+const MARKED_PARAGRAPH_TAG = 'div';
 /** 画像だけの段落の印。値は画像の URL の欄（`media:<storageKey>` か外の URL） */
 export const MARKED_IMAGE_PROPERTY = 'dataMarkdownImage';
 export const MARKED_URL_PROPERTY = 'dataMarkdownUrl';

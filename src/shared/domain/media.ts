@@ -96,10 +96,10 @@ export type MediaStorageKey = string;
 export const parseMediaStorageKey = (value: string): MediaStorageKey | null =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value) ? value : null;
 
-export type SavedMedia = { storageKey: MediaStorageKey; type: MediaType; size: number };
+type SavedMedia = { storageKey: MediaStorageKey; type: MediaType; size: number };
 
 /** 置き場から読んだ画像 */
-export type StoredMedia = {
+type StoredMedia = {
   body: ReadableStream;
   type: MediaType;
   size: number;

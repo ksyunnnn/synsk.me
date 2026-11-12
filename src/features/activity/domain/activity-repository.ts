@@ -121,5 +121,5 @@ export type ExternalActivityRepository = {
 };
 
 /** 編集で書き換える列。URL と題は手で入力する取得元だけが持つ（contracts/dash.md） */
-export type ExternalActivityChanges = Pick<ExternalActivityContent, 'publishedAt'> &
+type ExternalActivityChanges = Pick<ExternalActivityContent, 'publishedAt'> &
   Partial<Pick<ExternalActivityContent, 'url' | 'title'>>;

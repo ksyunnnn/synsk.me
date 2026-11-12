@@ -53,7 +53,7 @@ export const INSPECTOR_PORT_ARGS =
   process.env.E2E_PORT === undefined || process.env.E2E_PORT === ''
     ? ''
     : ` --inspector-port ${WORKER_PORT + 2}`;
-export const ACCESS_ISSUER = `http://127.0.0.1:${ACCESS_SERVER_PORT}`;
+const ACCESS_ISSUER = `http://127.0.0.1:${ACCESS_SERVER_PORT}`;
 export const ACCESS_CERTS_URL = `${ACCESS_ISSUER}${ACCESS_CERTS_PATH}`;
 
 /** テスト用の鍵の組を置く場所。`.wrangler/` は git が追跡しない */

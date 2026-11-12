@@ -17,7 +17,7 @@ import type {
  */
 
 /** 保存できなかった理由 */
-export type ProjectWriteFailure =
+type ProjectWriteFailure =
   /** 識別子がほかの実績と重なる（FR-013） */
   | 'slug-taken'
   /** 秘匿化する実績が、秘匿化した組織名の無い組織を指す（FR-001） */
