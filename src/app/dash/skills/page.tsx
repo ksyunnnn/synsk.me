@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listSkills } from '@/features/skill/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { toYearsAndMonths } from '@/shared/domain/period';
@@ -25,11 +26,7 @@ const Page = async ({ searchParams }: Props) => {
   const { saved, deleted } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">スキル</h1>
+    <DashPage back={{ href: routes.dash.index, label: '管理画面へ戻る' }} title="スキル">
       {saved === '1' && <SavedNotice flags={['saved']}>保存しました</SavedNotice>}
       {deleted === '1' && <SavedNotice flags={['deleted']}>スキルを削除しました</SavedNotice>}
       <p>
@@ -70,7 +67,7 @@ const Page = async ({ searchParams }: Props) => {
           </tbody>
         </table>
       )}
-    </main>
+    </DashPage>
   );
 };
 

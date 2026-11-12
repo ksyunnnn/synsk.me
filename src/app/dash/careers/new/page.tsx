@@ -3,7 +3,7 @@ import { CareerForm } from '@/features/career/components/career-form';
 import { toCareerFormValues } from '@/features/career/domain/career';
 import { registerCareer } from '@/features/career/server/actions';
 import { listOrganizationNames } from '@/features/organization/server/queries';
-import { TextLink } from '@/shared/components/text-link';
+import { DashPage } from '@/shared/components/dash-page';
 import { requireAuthor } from '@/shared/server/author';
 import { routes } from '@/shared/routes';
 
@@ -17,17 +17,16 @@ const Page = async () => {
   await requireAuthor();
   const organizationNames = await listOrganizationNames();
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.careers.list}>職歴の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">職歴を登録する</h1>
+    <DashPage
+      back={{ href: routes.dash.careers.list, label: '職歴の一覧へ戻る' }}
+      title="職歴を登録する"
+    >
       <CareerForm
         action={registerCareer}
         initialValues={toCareerFormValues()}
         organizationNames={organizationNames}
       />
-    </main>
+    </DashPage>
   );
 };
 

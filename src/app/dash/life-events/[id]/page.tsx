@@ -9,6 +9,7 @@ import {
   removeLifeEventImage,
 } from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { FormSection } from '@/shared/components/form-section';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
@@ -38,11 +39,10 @@ const Page = async ({ params, searchParams }: Props) => {
   const valuesVersion = JSON.stringify(values);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.lifeEvents.list}>life event の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">life event を編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.lifeEvents.list, label: 'life event の一覧へ戻る' }}
+      title="life event を編集する"
+    >
       {saved === '1' && (
         <SavedNotice key={valuesVersion} flags={['saved']}>
           保存しました
@@ -85,7 +85,7 @@ const Page = async ({ params, searchParams }: Props) => {
           </TextLink>
         </p>
       </FormSection>
-    </main>
+    </DashPage>
   );
 };
 

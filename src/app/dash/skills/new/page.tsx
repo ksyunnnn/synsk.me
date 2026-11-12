@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { SkillForm } from '@/features/skill/components/skill-form';
 import { toSkillFormValues } from '@/features/skill/domain/skill';
 import { registerSkill } from '@/features/skill/server/actions';
-import { TextLink } from '@/shared/components/text-link';
+import { DashPage } from '@/shared/components/dash-page';
 import { requireAuthor } from '@/shared/server/author';
 import { routes } from '@/shared/routes';
 
@@ -15,13 +15,12 @@ export const metadata: Metadata = { title: 'スキルを登録する | synsk.me'
 const Page = async () => {
   await requireAuthor();
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.skills.list}>スキルの一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">スキルを登録する</h1>
+    <DashPage
+      back={{ href: routes.dash.skills.list, label: 'スキルの一覧へ戻る' }}
+      title="スキルを登録する"
+    >
       <SkillForm action={registerSkill} initialValues={toSkillFormValues()} />
-    </main>
+    </DashPage>
   );
 };
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { formatExpires, isExpired } from '@/features/resume/domain/resume';
 import { listResumes } from '@/features/resume/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -20,11 +21,7 @@ const Page = async ({ searchParams }: Props) => {
   const now = new Date();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">職務経歴書</h1>
+    <DashPage back={{ href: routes.dash.index, label: '管理画面へ戻る' }} title="職務経歴書">
       {deleted === '1' && <SavedNotice flags={['deleted']}>職務経歴書を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.resumes.new}>職務経歴書を作る</TextLink>
@@ -48,7 +45,7 @@ const Page = async ({ searchParams }: Props) => {
           ))}
         </ul>
       )}
-    </main>
+    </DashPage>
   );
 };
 

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { NOTE_UID_FIELD } from '@/features/note/domain/note';
 import { deleteNote } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -21,8 +22,7 @@ const Page = async ({ params }: Props) => {
   if (!note) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">note を削除する</h1>
+    <DashPage title="note を削除する">
       <p>
         次の note
         を削除します。訪問者のページは見つからなくなります。データは残り、編集の画面から元に戻せます。
@@ -39,7 +39,7 @@ const Page = async ({ params }: Props) => {
       <p>
         <TextLink href={routes.dash.notes.row(note.uid)}>編集の画面へ戻る</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

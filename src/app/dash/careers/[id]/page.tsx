@@ -5,6 +5,7 @@ import { CareerForm } from '@/features/career/components/career-form';
 import { CAREER_UID_FIELD, toCareerFormValues } from '@/features/career/domain/career';
 import { addCareerMedia, editCareer } from '@/features/career/server/actions';
 import { getCareerForEdit } from '@/features/career/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
@@ -31,11 +32,10 @@ const Page = async ({ params, searchParams }: Props) => {
   ]);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.careers.list}>職歴の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">職歴を編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.careers.list, label: '職歴の一覧へ戻る' }}
+      title="職歴を編集する"
+    >
       {mediaAdded === '1' && (
         <SavedNotice key={career.updatedAt} flags={['mediaAdded']} className="text-sm">
           画像を足しました
@@ -62,7 +62,7 @@ const Page = async ({ params, searchParams }: Props) => {
       <p>
         <TextLink href={routes.dash.careers.delete(career.uid)}>この職歴を削除する</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

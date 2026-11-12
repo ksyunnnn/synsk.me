@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { OrganizationForm } from '@/features/organization/components/organization-form';
 import { editOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -26,11 +27,10 @@ const Page = async ({ params, searchParams }: Props) => {
   const { saved } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.organizations.list}>組織の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">組織を編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.organizations.list, label: '組織の一覧へ戻る' }}
+      title="組織を編集する"
+    >
       {saved === '1' && (
         <SavedNotice key={organization.updatedAt} flags={['saved']}>
           保存しました
@@ -50,7 +50,7 @@ const Page = async ({ params, searchParams }: Props) => {
           </TextLink>
         </p>
       )}
-    </main>
+    </DashPage>
   );
 };
 

@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { EDUCATION_UID_FIELD } from '@/features/education/domain/education';
 import { deleteEducation } from '@/features/education/server/actions';
 import { getEducationForEdit } from '@/features/education/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -21,8 +22,7 @@ const Page = async ({ params }: Props) => {
   if (!education) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">学歴を削除する</h1>
+    <DashPage title="学歴を削除する">
       <p>次の学歴を削除します。戻せません。作った職務経歴書の中身は残ります。</p>
       <p>{education.school}</p>
       <DeleteForm
@@ -36,7 +36,7 @@ const Page = async ({ params }: Props) => {
       <p>
         <TextLink href={routes.dash.educations.row(education.uid)}>編集の画面へ戻る</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

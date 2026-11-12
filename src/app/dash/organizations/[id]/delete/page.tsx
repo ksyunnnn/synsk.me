@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { DeleteOrganizationForm } from '@/features/organization/components/delete-organization-form';
 import { deleteOrganization } from '@/features/organization/server/actions';
 import { getOrganizationForEdit } from '@/features/organization/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -21,15 +22,14 @@ const Page = async ({ params }: Props) => {
   const { organization } = found;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">組織を削除する</h1>
+    <DashPage title="組織を削除する">
       <p>次の組織を削除します。職歴か実績が指している組織と、個人の組織は消せません。</p>
       <p>組織名: {organization.name}</p>
       <DeleteOrganizationForm action={deleteOrganization} organizationUid={organization.uid} />
       <p>
         <TextLink href={routes.dash.organizations.row(organization.uid)}>編集の画面へ戻る</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

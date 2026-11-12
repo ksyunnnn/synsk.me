@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { NoteForm } from '@/features/note/components/note-form';
 import { toNoteFormValues } from '@/features/note/domain/note';
 import { createNote } from '@/features/note/server/actions';
-import { TextLink } from '@/shared/components/text-link';
+import { DashPage } from '@/shared/components/dash-page';
 import { requireAuthor } from '@/shared/server/author';
 import { routes } from '@/shared/routes';
 
@@ -16,14 +16,13 @@ const Page = async () => {
   await requireAuthor();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">note を作る</h1>
+    <DashPage
+      back={{ href: routes.dash.notes.list, label: 'note の一覧へ戻る' }}
+      title="note を作る"
+    >
       <p>作った note は下書きです。公開するまで訪問者には見えません</p>
       <NoteForm action={createNote} initialValues={toNoteFormValues()} />
-    </main>
+    </DashPage>
   );
 };
 

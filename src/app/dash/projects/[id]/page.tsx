@@ -14,6 +14,7 @@ import {
   editProject,
 } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { FormSection } from '@/shared/components/form-section';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
@@ -51,11 +52,10 @@ const Page = async ({ params, searchParams }: Props) => {
   );
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.projects.list}>実績の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">実績を編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.projects.list, label: '実績の一覧へ戻る' }}
+      title="実績を編集する"
+    >
       {notice && (
         <SavedNotice key={project.updatedAt} flags={[notice]} className="text-sm">
           {NOTICES[notice]}
@@ -111,7 +111,7 @@ const Page = async ({ params, searchParams }: Props) => {
           <TextLink href={routes.dash.projects.delete(project.uid)}>この実績を削除する</TextLink>
         </p>
       </FormSection>
-    </main>
+    </DashPage>
   );
 };
 

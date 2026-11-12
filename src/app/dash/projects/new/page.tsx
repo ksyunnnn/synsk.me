@@ -4,7 +4,7 @@ import { toProjectFormValues } from '@/features/project/domain/project';
 import { registerProject } from '@/features/project/server/actions';
 import { listOrganizationNames } from '@/features/organization/server/queries';
 import { listSkillOptions } from '@/features/project/server/queries';
-import { TextLink } from '@/shared/components/text-link';
+import { DashPage } from '@/shared/components/dash-page';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認）を `<Suspense>` の外で読み、描画を終えてから応答を返す
@@ -21,18 +21,17 @@ const Page = async () => {
   ]);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.projects.list}>実績の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">実績を登録する</h1>
+    <DashPage
+      back={{ href: routes.dash.projects.list, label: '実績の一覧へ戻る' }}
+      title="実績を登録する"
+    >
       <ProjectForm
         action={registerProject}
         initialValues={toProjectFormValues()}
         organizationNames={organizationNames}
         skillOptions={skillOptions}
       />
-    </main>
+    </DashPage>
   );
 };
 

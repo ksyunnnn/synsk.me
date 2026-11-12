@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listOrganizations } from '@/features/organization/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -18,11 +19,7 @@ const Page = async ({ searchParams }: Props) => {
   const { deleted } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">組織</h1>
+    <DashPage back={{ href: routes.dash.index, label: '管理画面へ戻る' }} title="組織">
       {deleted === '1' && <SavedNotice flags={['deleted']}>組織を削除しました</SavedNotice>}
       <p>組織は、職歴と実績の入力の中で組織名を入れると作られます。</p>
       {organizations.length === 0 ? (
@@ -41,7 +38,7 @@ const Page = async ({ searchParams }: Props) => {
           ))}
         </ul>
       )}
-    </main>
+    </DashPage>
   );
 };
 

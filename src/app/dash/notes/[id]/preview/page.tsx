@@ -4,8 +4,8 @@ import { LinkPreviewRefetchForm } from '@/features/note/components/link-preview-
 import { VisitorNoteView } from '@/features/note/components/visitor-note';
 import { refetchLinkPreview } from '@/features/note/server/actions';
 import { getNotePreview } from '@/features/note/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
-import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -32,10 +32,7 @@ const Page = async ({ params, searchParams }: Props) => {
   if (!note) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.notes.row(id)}>編集の画面へ戻る</TextLink>
-      </p>
+    <DashPage back={{ href: routes.dash.notes.row(id), label: '編集の画面へ戻る' }}>
       <p role="note" className="rounded-md border border-input px-4 py-2 text-sm">
         最も新しい版を、訪問者に見せたときの見た目で出しています
       </p>
@@ -51,7 +48,7 @@ const Page = async ({ params, searchParams }: Props) => {
           <LinkPreviewRefetchForm action={refetchLinkPreview} noteUid={id} url={url} />
         )}
       />
-    </main>
+    </DashPage>
   );
 };
 

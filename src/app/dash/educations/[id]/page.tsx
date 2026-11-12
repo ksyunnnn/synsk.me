@@ -4,6 +4,7 @@ import { EducationForm } from '@/features/education/components/education-form';
 import { toEducationFormValues } from '@/features/education/domain/education';
 import { editEducation } from '@/features/education/server/actions';
 import { getEducationForEdit } from '@/features/education/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -21,11 +22,10 @@ const Page = async ({ params }: Props) => {
   if (!education) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.educations.list}>学歴の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">学歴を編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.educations.list, label: '学歴の一覧へ戻る' }}
+      title="学歴を編集する"
+    >
       <EducationForm
         action={editEducation}
         initialValues={toEducationFormValues(education)}
@@ -34,7 +34,7 @@ const Page = async ({ params }: Props) => {
       <p>
         <TextLink href={routes.dash.educations.delete(education.uid)}>この学歴を削除する</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

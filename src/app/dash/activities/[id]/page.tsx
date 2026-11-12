@@ -7,6 +7,7 @@ import {
 } from '@/features/activity/domain/external-activity';
 import { editExternalActivity } from '@/features/activity/server/actions';
 import { getExternalActivityForEdit } from '@/features/activity/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -31,11 +32,10 @@ const Page = async ({ params, searchParams }: Props) => {
   const valuesVersion = JSON.stringify(values);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.activities.list}>外部の activity の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">外部の activity を編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.activities.list, label: '外部の activity の一覧へ戻る' }}
+      title="外部の activity を編集する"
+    >
       {saved === '1' && (
         <SavedNotice key={valuesVersion} flags={['saved']}>
           保存しました
@@ -60,7 +60,7 @@ const Page = async ({ params, searchParams }: Props) => {
           この activity を削除する
         </TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 
