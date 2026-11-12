@@ -4,9 +4,9 @@ import type { MediaAccess, MediaStorageKey } from '@/shared/domain/media';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
-import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
+import { SITE_STATUSES, parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import { isSlug, newSlug } from '@/shared/domain/slug';
-import type { Uid } from '@/shared/domain/uid';
+import { parseUid, type Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
 import { PROJECT_KINDS, isProjectKind, type ProjectKind } from '@/shared/domain/project-kind';
 import { normalizeNewlines } from '@/shared/domain/newlines';
@@ -351,3 +351,35 @@ export const ownerProjectMediaAccess = (
   author !== null && project !== null && project.mediaStorageKeys.includes(storageKey)
     ? 'restricted'
     : 'hidden';
+
+/** 一覧の URL の検索の値（`?kind=` など）。Next.js の `searchParams` の 1 つの値の形 */
+type ListParam = string | string[] | undefined;
+
+/** `?kind=` の値。種類の値でなければ、すべての種類 */
+const parseKind = (value: ListParam): ProjectKind | null =>
+  typeof value === 'string' && isProjectKind(value) ? value : null;
+
+/** `?org=` の値。uid の形でなければ、すべての組織 */
+const parseOrganizationUid = (value: ListParam): Uid | null =>
+  typeof value === 'string' ? parseUid(value) : null;
+
+/** `?status=` の値。サイトに載せるかの値でなければ、どちらも */
+const parseStatus = (value: ListParam): SiteStatus | null =>
+  SITE_STATUSES.find((status) => status === value) ?? null;
+
+/** `?masked=` の値。`true` か `false` でなければ、どちらも */
+const parseIsMasked = (value: ListParam): boolean | null =>
+  value === 'true' ? true : value === 'false' ? false : null;
+
+/** オーナーの一覧の URL の検索の値を、絞り込みの条件にする。読めない値は、その条件で絞らない */
+export const parseProjectListFilter = (params: {
+  kind?: ListParam;
+  org?: ListParam;
+  status?: ListParam;
+  masked?: ListParam;
+}): ProjectListFilter => ({
+  kind: parseKind(params.kind),
+  organizationUid: parseOrganizationUid(params.org),
+  status: parseStatus(params.status),
+  isMasked: parseIsMasked(params.masked),
+});
