@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { toProjectCardPreview, type ProjectSummary } from '@/features/project/domain/project';
 import { listProjects } from '@/features/project/server/queries';
+import { LinkPendingHint } from '@/shared/components/link-pending-hint';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { formatPeriod } from '@/shared/domain/period';
@@ -32,7 +33,11 @@ const FILTERS: { kind: ProjectKind | null; label: string }[] = [
   ...PROJECT_KINDS.map((kind) => ({ kind, label: PROJECT_KIND_LABELS[kind] })),
 ];
 
-/** 種類で絞り込むリンク。選んでいるリンクは `aria-current` で示す */
+/**
+ * 種類で絞り込むリンク。選んでいるリンクは `aria-current` を持ち、下線を外して下に線を引く。
+ * 太さは変えない。幅が変わり、隣のリンクの位置がずれるため（design/guidelines.md の Loading）。
+ * 押してから移動が終わるまで、リンクの中の点が合図を出す
+ */
 const KindFilter = ({ current }: { current: ProjectKind | null }) => (
   <nav aria-label="種類で絞り込む">
     <ul className="flex flex-wrap gap-x-4 gap-y-2">
@@ -41,9 +46,10 @@ const KindFilter = ({ current }: { current: ProjectKind | null }) => (
           <TextLink
             href={routes.dash.projects.listByKind(kind)}
             aria-current={kind === current ? 'page' : undefined}
-            className="aria-[current=page]:font-bold aria-[current=page]:no-underline"
+            className="inline-flex items-center gap-2 border-b-2 border-transparent pb-1 aria-[current=page]:border-foreground aria-[current=page]:no-underline"
           >
             {label}
+            <LinkPendingHint />
           </TextLink>
         </li>
       ))}
@@ -102,6 +108,10 @@ const Page = async ({ searchParams }: Props) => {
         <TextLink href={routes.dash.projects.new}>実績を登録する</TextLink>
       </p>
       <KindFilter current={kind} />
+      {/* 絞り込みを変えたとき、読み上げにも件数の変化を伝える */}
+      <p aria-live="polite" className="text-sm text-muted-foreground">
+        {projects.length} 件
+      </p>
       {projects.length === 0 ? (
         <p>{kind === null ? '登録した実績はありません' : 'この種類の実績はありません'}</p>
       ) : (
