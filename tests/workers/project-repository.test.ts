@@ -25,7 +25,7 @@ const NOW = '2026-11-04T00:00:00.000Z';
 const content = (overrides: Partial<ProjectContent & { slug: string }> = {}) => ({
   organizationName: '作り物株式会社',
   organizationNameMasked: 'ある会社',
-  kind: 'application' as const,
+  kind: 'develop' as const,
   title: '作り物の受託開発',
   titleMasked: '業務システムの開発',
   isMasked: true,
@@ -269,7 +269,7 @@ describe('delete', () => {
     ).first<{ id: number }>();
     await env.DB.prepare(
       `INSERT INTO resume_project (resume_id, project_id, organization_name, kind, title, started_on)
-       VALUES (?, ?, '写した組織名', 'application', '写した題', '2021-04-01')`,
+       VALUES (?, ?, '写した組織名', 'develop', '写した題', '2021-04-01')`,
     )
       .bind(resume?.id, id)
       .run();

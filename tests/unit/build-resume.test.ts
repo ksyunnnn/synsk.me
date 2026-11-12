@@ -41,7 +41,7 @@ const SOURCES: ResumeSources = {
       id: 10,
       organizationName: '実際の作り物株式会社',
       organizationNameMasked: 'ある会社',
-      kind: 'application',
+      kind: 'develop',
       title: '実際の作り物の受託開発',
       titleMasked: '業務システムの開発',
       isMasked: true,

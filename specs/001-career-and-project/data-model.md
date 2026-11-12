@@ -74,7 +74,7 @@
 - `Skill`: id・uid・名前・上書きの月数（空あり）
 - `Education`: id・uid・学校・学部（空あり）・期間・備考（空あり）
 - `Period`（`src/shared/domain/period.ts`）: 始まりの日・終わりの日（空なら続いている）。日付は `YYYY-MM-DD` の文字列のまま持ち、時刻帯を持たない
-- `ProjectKind`: `application`・`talk`・`event`・`other` の `as const` の配列から作る型
+- `ProjectKind`（`src/shared/domain/project-kind.ts`）: `develop`・`host`・`talk`・`other` の `as const` の配列から作る型
 - `SiteStatus`（`src/shared/domain/site-status.ts`）: `draft`・`published` の `as const` の配列から作る型
 
 ## 訪問者向けの DTO

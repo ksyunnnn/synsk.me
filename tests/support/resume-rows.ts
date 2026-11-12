@@ -101,7 +101,7 @@ export type ResumeProjectRowInput = {
   resumeId: number;
   projectId?: number | null;
   organizationName?: string;
-  kind?: 'application' | 'talk' | 'event' | 'other';
+  kind?: 'develop' | 'host' | 'talk' | 'other';
   title?: string;
   startedOn?: string;
   endedOn?: string | null;
@@ -118,7 +118,7 @@ export const insertResumeProject = async (
     resumeId,
     projectId = null,
     organizationName = '写した作り物株式会社',
-    kind = 'application',
+    kind = 'develop',
     title = '写した作り物の受託開発',
     startedOn = '2021-04-01',
     endedOn = null,

@@ -54,7 +54,7 @@ const careerContent = (overrides: Partial<ResumeCareerContent> = {}): ResumeCare
 
 const projectContent = (overrides: Partial<ResumeProjectContent> = {}): ResumeProjectContent => ({
   organizationName: '写した作り物株式会社',
-  kind: 'application',
+  kind: 'develop',
   title: '直した作り物の題',
   period: { startedOn: '2021-04-01' as CalendarDate, endedOn: null },
   description: '直した本文',

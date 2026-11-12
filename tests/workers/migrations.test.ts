@@ -1211,7 +1211,7 @@ describe('migration 0026 の activity_feed の識別子', () => {
     ] as const) {
       ids.projects.push(
         await insertId(
-          "INSERT INTO project (organization_id, kind, slug, title, title_masked, started_on, is_masked, status) VALUES (?, 'application', ?, '0026 の実際の題', '0026 の伏せた題', '2026-01-01', ?, 'published')",
+          "INSERT INTO project (organization_id, kind, slug, title, title_masked, started_on, is_masked, status) VALUES (?, 'develop', ?, '0026 の実際の題', '0026 の伏せた題', '2026-01-01', ?, 'published')",
           organization,
           slug,
           isMasked,
@@ -1345,7 +1345,7 @@ describe('migration 0027 の activity_feed の代表画像', () => {
       ['0027aaaaaaaaaaaaaaaaaaaaaaaaaaaa', 1, KEY.maskedProject],
     ] as const) {
       const projectId = await insertId(
-        "INSERT INTO project (organization_id, kind, slug, title, title_masked, started_on, is_masked, status) VALUES (?, 'application', ?, '0027 の実際の題', '0027 の伏せた題', '2026-01-01', ?, 'published')",
+        "INSERT INTO project (organization_id, kind, slug, title, title_masked, started_on, is_masked, status) VALUES (?, 'develop', ?, '0027 の実際の題', '0027 の伏せた題', '2026-01-01', ?, 'published')",
         organization,
         slug,
         isMasked,

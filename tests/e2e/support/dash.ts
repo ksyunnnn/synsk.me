@@ -32,7 +32,7 @@ export type CareerInput = SiteOptions & {
 export type ProjectInput = SiteOptions & {
   organizationName: string;
   organizationNameMasked?: string;
-  kind?: 'アプリ' | '登壇' | 'イベント' | 'その他';
+  kind?: '開発' | '主催' | '登壇' | 'その他';
   title: string;
   titleMasked?: string;
   startedOn?: string;
