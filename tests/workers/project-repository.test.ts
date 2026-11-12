@@ -388,7 +388,7 @@ describe('一覧と有無', () => {
 
   it('種類を渡すと、その種類の実績だけを返す（issue #330）', async () => {
     const orgId = await insertOrganization(env.DB);
-    await insertProject(env.DB, { organizationId: orgId, title: 'アプリ', kind: 'develop' });
+    await insertProject(env.DB, { organizationId: orgId, title: '開発', kind: 'develop' });
     await insertProject(env.DB, { organizationId: orgId, title: '登壇', kind: 'talk' });
     expect((await projects.list({ kind: 'talk' })).map((p) => p.title)).toEqual(['登壇']);
     expect(await projects.list()).toHaveLength(2);
