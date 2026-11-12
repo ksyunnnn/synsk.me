@@ -33,6 +33,7 @@ cp ../../private/.env.local .env.local # 手元の環境変数を写す
 npm run dev        # 開発サーバー（http://localhost:3000）
 npm run build      # プロダクションビルド（出力は dist/）
 npm run lint       # リンター
+npm run knip       # 使われていないファイル・export・依存を一覧にする。CI では回らず、必要なときに手で回す
 npm run preview    # ビルドして Workers ランタイムでローカル起動
 npm run deploy     # ビルド済みの dist をデプロイし、配信を検査する
 npm run preview:branch # ビルド済みの dist から、ブランチの Preview を作る
