@@ -6,6 +6,7 @@ import {
   NOTE_UID_FIELD,
   type FirstParagraphAsDescriptionFormResult,
 } from '@/features/note/domain/note';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -26,7 +27,7 @@ type Props = {
 };
 
 const MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+  forbidden: FORBIDDEN_MESSAGE,
   invalid: 'どちらかを選び直してください',
 } as const;
 
@@ -71,11 +72,7 @@ export const NoteFirstParagraphAsDescriptionForm = ({ action, noteUid, current }
           説明を出さない
         </label>
       </fieldset>
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       <div>
         <SubmitButton className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           説明文が空のときの説明を変える

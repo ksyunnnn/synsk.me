@@ -5,6 +5,7 @@ import { deleteNote } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
 import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
+import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -33,7 +34,7 @@ const Page = async ({ params }: Props) => {
         uidField={NOTE_UID_FIELD}
         uid={note.uid}
         messages={{
-          forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+          forbidden: FORBIDDEN_MESSAGE,
         }}
       />
       <p>

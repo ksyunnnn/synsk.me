@@ -5,6 +5,7 @@ import { deleteLifeEvent } from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
 import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
+import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -32,7 +33,7 @@ const Page = async ({ params }: Props) => {
         uidField={LIFE_EVENT_UID_FIELD}
         uid={lifeEvent.uid}
         messages={{
-          forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+          forbidden: FORBIDDEN_MESSAGE,
         }}
       />
       <p>

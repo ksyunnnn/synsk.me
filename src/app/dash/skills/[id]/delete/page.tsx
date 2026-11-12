@@ -5,6 +5,7 @@ import { deleteSkill } from '@/features/skill/server/actions';
 import { getSkillForEdit } from '@/features/skill/server/queries';
 import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
+import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -30,7 +31,7 @@ const Page = async ({ params }: Props) => {
         uidField={SKILL_UID_FIELD}
         uid={skill.uid}
         messages={{
-          forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+          forbidden: FORBIDDEN_MESSAGE,
         }}
       />
       <p>

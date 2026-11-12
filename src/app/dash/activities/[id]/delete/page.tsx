@@ -8,6 +8,7 @@ import { deleteExternalActivity } from '@/features/activity/server/actions';
 import { getExternalActivityForEdit } from '@/features/activity/server/queries';
 import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
+import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -36,7 +37,7 @@ const Page = async ({ params }: Props) => {
         uidField={EXTERNAL_ACTIVITY_UID_FIELD}
         uid={activity.uid}
         messages={{
-          forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+          forbidden: FORBIDDEN_MESSAGE,
         }}
       />
       <p>

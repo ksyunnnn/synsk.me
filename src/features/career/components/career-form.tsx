@@ -10,6 +10,11 @@ import {
   type CareerFormValues,
 } from '@/features/career/domain/career';
 import { InputField, TextareaField } from '@/shared/components/field';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
 import { MaskingField } from '@/shared/components/masking-field';
 import { OrganizationNameFields } from '@/shared/components/organization-name-fields';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
@@ -49,8 +54,8 @@ const ERROR_MESSAGES: Record<CareerField, Partial<Record<CareerFieldError, strin
 };
 
 const RESULT_MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
-  invalid: '入力を確かめてください',
+  forbidden: FORBIDDEN_INPUT_MESSAGE,
+  invalid: INVALID_INPUT_MESSAGE,
   conflict:
     'この職歴は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
@@ -72,9 +77,7 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
         </>
       )}
       {result && result.status !== 'saved' && (
-        <p role="alert" className="text-destructive">
-          {RESULT_MESSAGES[result.status]}
-        </p>
+        <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
       <SiteStatusField status={values.status} />
       <MaskingField

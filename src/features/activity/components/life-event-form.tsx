@@ -10,6 +10,11 @@ import {
 } from '@/features/activity/domain/life-event';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { formStateOf } from '@/shared/domain/action-result';
 
@@ -44,8 +49,8 @@ const ERROR_MESSAGES: Record<LifeEventField, Partial<Record<LifeEventFieldError,
 };
 
 const RESULT_MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
-  invalid: '入力を確かめてください',
+  forbidden: FORBIDDEN_INPUT_MESSAGE,
+  invalid: INVALID_INPUT_MESSAGE,
   conflict: '保存していません。開き直してから入力し直してください',
 } as const;
 
@@ -61,9 +66,7 @@ export const LifeEventForm = ({ action, initialValues, uid }: Props) => {
     <form action={formAction} className="flex flex-col gap-6">
       {uid && <input type="hidden" name={LIFE_EVENT_UID_FIELD} value={uid} />}
       {result && result.status !== 'saved' && (
-        <p role="alert" className="text-destructive">
-          {RESULT_MESSAGES[result.status]}
-        </p>
+        <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
       <InputField
         name="title"

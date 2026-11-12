@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { PROJECT_UID_FIELD } from '@/features/project/domain/project';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -26,11 +27,7 @@ export const DeleteProjectForm = ({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name={PROJECT_UID_FIELD} value={projectUid} />
-      {result?.status === 'forbidden' && (
-        <p role="alert" className="text-destructive">
-          オーナーであることを確かめられませんでした。ログインし直してください
-        </p>
-      )}
+      {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_MESSAGE}</FormAlert>}
       <div>
         <SubmitButton className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           削除する

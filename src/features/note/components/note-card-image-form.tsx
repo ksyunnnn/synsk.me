@@ -8,6 +8,7 @@ import {
   type CardImageFormResult,
   type VisitorNoteCardImage,
 } from '@/features/note/domain/note';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -28,7 +29,7 @@ type Props = {
 };
 
 const MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+  forbidden: FORBIDDEN_MESSAGE,
   invalid: '代表画像を選び直してください',
   'media-not-owned': 'この note の画像だけを代表画像に選べます',
 } as const;
@@ -72,11 +73,7 @@ export const NoteCardImageForm = ({ action, noteUid, current, mediaStorageKeys }
           </label>
         ))}
       </fieldset>
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       <div>
         <SubmitButton className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           代表画像を変える

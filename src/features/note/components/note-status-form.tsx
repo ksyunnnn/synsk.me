@@ -7,6 +7,7 @@ import {
   type NoteFormResult,
   type NoteStatus,
 } from '@/features/note/domain/note';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -24,7 +25,7 @@ type Props = {
 };
 
 const MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+  forbidden: FORBIDDEN_MESSAGE,
   untitled: '題が空の版は公開できません。題を入力して保存してから公開してください',
   failed: '状態を変えられませんでした',
 } as const;
@@ -49,11 +50,7 @@ export const NoteStatusForm = ({ noteUid, status, publishAction, unpublishAction
       <h2 id="note-status-heading" className="text-lg font-bold">
         状態: {NOTE_STATUS_LABELS[status]}
       </h2>
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       <div className="flex flex-wrap gap-3">
         <form action={publish}>
           <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />

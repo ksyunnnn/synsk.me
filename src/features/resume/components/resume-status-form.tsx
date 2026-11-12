@@ -12,6 +12,7 @@ import {
   ResumeFormHidden,
   type ResumeFormCommon,
 } from '@/features/resume/components/resume-form-parts';
+import { FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -61,11 +62,7 @@ export const ResumeStatusFields = ({
   return (
     <form action={formAction} className="flex flex-col gap-3">
       <ResumeFormHidden resumeUid={resumeUid} updatedAt={updatedAt} />
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       <p className="flex flex-wrap items-baseline gap-x-2">
         <strong>{status === 'draft' ? '非公開' : '公開中'}</strong>
         {status === 'draft' && draftNote && (

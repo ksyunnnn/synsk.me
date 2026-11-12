@@ -8,6 +8,7 @@ import {
   type ResumeFormCommon,
 } from '@/features/resume/components/resume-form-parts';
 import { InputField } from '@/shared/components/field';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -18,7 +19,7 @@ import { SubmitButton } from '@/shared/components/submit-button';
 const MESSAGES: Partial<Record<UrlResult['status'], string>> = {
   conflict:
     'この職務経歴書は、開いた後に別の画面で書き換えられていました。URL は出し直していません。開き直してください',
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+  forbidden: FORBIDDEN_MESSAGE,
 };
 
 export const ResumeUrlForm = ({
@@ -35,11 +36,7 @@ export const ResumeUrlForm = ({
   return (
     <form action={formAction} className="flex flex-col gap-3">
       <ResumeFormHidden {...common} />
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       <InputField name="limitedUrl" label="限定公開用の URL" readOnly defaultValue={url} />
       <div className="flex flex-col gap-1">
         <p className="text-sm text-muted-foreground">出し直すと、今の URL は開けなくなります</p>

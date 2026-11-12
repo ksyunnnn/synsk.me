@@ -12,6 +12,11 @@ import {
 import { OWNED_SOURCES, type OwnedSourceName } from '@/features/activity/domain/sources';
 import { InputField, SelectField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { formStateOf } from '@/shared/domain/action-result';
 
@@ -58,8 +63,8 @@ const ERROR_MESSAGES: Record<
 };
 
 const RESULT_MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
-  invalid: '入力を確かめてください',
+  forbidden: FORBIDDEN_INPUT_MESSAGE,
+  invalid: INVALID_INPUT_MESSAGE,
   conflict: '保存していません。開き直してから入力し直してください',
 } as const;
 
@@ -76,9 +81,7 @@ export const ExternalActivityForm = ({ action, initialValues, editing }: Props) 
     <form action={formAction} className="flex flex-col gap-6">
       {editing && <input type="hidden" name={EXTERNAL_ACTIVITY_UID_FIELD} value={editing.uid} />}
       {result && result.status !== 'saved' && (
-        <p role="alert" className="text-destructive">
-          {RESULT_MESSAGES[result.status]}
-        </p>
+        <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
       {editing ? (
         <p>取得元: {OWNED_SOURCE_LABELS[editing.source]}</p>

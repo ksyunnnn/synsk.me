@@ -10,6 +10,11 @@ import {
 } from '@/features/education/domain/education';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { formStateOf } from '@/shared/domain/action-result';
@@ -46,16 +51,8 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
       {educationUid !== undefined && (
         <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
       )}
-      {result?.status === 'forbidden' && (
-        <p role="alert" className="text-destructive">
-          オーナーであることを確かめられませんでした。ログインし直してから入力し直してください
-        </p>
-      )}
-      {result?.status === 'invalid' && (
-        <p role="alert" className="text-destructive">
-          入力を確かめてください
-        </p>
-      )}
+      {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
+      {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}
       <InputField
         name="school"
         label="学校"

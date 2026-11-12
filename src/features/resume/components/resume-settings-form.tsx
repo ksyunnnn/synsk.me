@@ -12,6 +12,7 @@ import type {
   ResumeSettingsValues as SettingsValues,
 } from '@/features/resume/domain/resume-forms';
 import { InputField } from '@/shared/components/field';
+import { FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { formStateOf } from '@/shared/domain/action-result';
 
@@ -41,11 +42,7 @@ export const ResumeSettingsForm = ({
   return (
     <form action={formAction} className="flex flex-col gap-6">
       <ResumeFormHidden {...common} />
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       <InputField
         name="title"
         label="題"

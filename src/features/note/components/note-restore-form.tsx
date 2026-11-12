@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react';
 import { NOTE_UID_FIELD } from '@/features/note/domain/note';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -25,11 +26,7 @@ export const NoteRestoreForm = ({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />
-      {result?.status === 'forbidden' && (
-        <p role="alert" className="text-destructive">
-          オーナーであることを確かめられませんでした。ログインし直してください
-        </p>
-      )}
+      {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_MESSAGE}</FormAlert>}
       <div>
         <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           元に戻す
