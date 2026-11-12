@@ -16,6 +16,7 @@ import {
   TextareaField,
 } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
+import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
@@ -62,14 +63,7 @@ const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, str
   titleMasked: { missing: '秘匿化した題を入力してください' },
   isMasked: {},
   status: {},
-  startedOn: {
-    missing: '始まりの日を入力してください',
-    invalid: '始まりの日を年月日で入力してください',
-  },
-  endedOn: {
-    invalid: '終わりの日を年月日で入力してください',
-    'ended-before-started': '終わりの日は始まりの日より前にできません',
-  },
+  ...PERIOD_FIELD_MESSAGES,
   description: {},
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
   skillIds: { invalid: 'スキルを選び直してください' },

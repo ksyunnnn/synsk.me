@@ -11,6 +11,7 @@ import {
 } from '@/features/career/domain/career';
 import { InputField, SuggestingInputField, TextareaField } from '@/shared/components/field';
 import { MaskingField } from '@/shared/components/masking-field';
+import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -41,14 +42,7 @@ const ERROR_MESSAGES: Record<CareerField, Partial<Record<CareerFieldError, strin
   role: { missing: '肩書を入力してください' },
   isMasked: {},
   status: {},
-  startedOn: {
-    missing: '始まりの日を入力してください',
-    invalid: '始まりの日を年月日で入力してください',
-  },
-  endedOn: {
-    invalid: '終わりの日を年月日で入力してください',
-    'ended-before-started': '終わりの日は始まりの日より前にできません',
-  },
+  ...PERIOD_FIELD_MESSAGES,
   description: {},
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
 };

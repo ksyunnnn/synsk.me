@@ -10,6 +10,7 @@ import {
 } from '@/features/education/domain/education';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { formStateOf } from '@/shared/domain/action-result';
 
@@ -28,14 +29,7 @@ type Props = {
 const ERROR_MESSAGES: Record<EducationField, Partial<Record<EducationFieldError, string>>> = {
   school: { missing: '学校を入力してください' },
   department: {},
-  startedOn: {
-    missing: '始まりの日を入力してください',
-    invalid: '始まりの日を年月日で入力してください',
-  },
-  endedOn: {
-    invalid: '終わりの日を年月日で入力してください',
-    'ended-before-started': '終わりの日は始まりの日より前にできません',
-  },
+  ...PERIOD_FIELD_MESSAGES,
   remarks: {},
 };
 

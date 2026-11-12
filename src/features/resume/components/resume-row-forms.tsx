@@ -17,6 +17,7 @@ import {
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -41,14 +42,7 @@ const FIELD_MESSAGES: Record<string, Partial<Record<FieldError, string>>> = {
   kind: { invalid: '種類を選んでください' },
   title: { missing: '題を入力してください' },
   school: { missing: '学校を入力してください' },
-  startedOn: {
-    missing: '始まりの日を入力してください',
-    invalid: '始まりの日を年月日で入力してください',
-  },
-  endedOn: {
-    invalid: '終わりの日を年月日で入力してください',
-    'ended-before-started': '終わりの日は始まりの日より前にできません',
-  },
+  ...PERIOD_FIELD_MESSAGES,
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
   skills: { invalid: `スキルは ${MAX_COPIED_ROWS} 個までにしてください` },
 };
