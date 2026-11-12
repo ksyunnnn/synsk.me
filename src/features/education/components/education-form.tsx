@@ -10,7 +10,14 @@ import {
 } from '@/features/education/domain/education';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
+import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * 学歴を登録する・編集するフォーム。Server Action は props で受け取り、`server/` を読み込まない
@@ -27,22 +34,13 @@ type Props = {
 const ERROR_MESSAGES: Record<EducationField, Partial<Record<EducationFieldError, string>>> = {
   school: { missing: '学校を入力してください' },
   department: {},
-  startedOn: {
-    missing: '始まりの日を入力してください',
-    invalid: '始まりの日を年月日で入力してください',
-  },
-  endedOn: {
-    invalid: '終わりの日を年月日で入力してください',
-    'ended-before-started': '終わりの日は始まりの日より前にできません',
-  },
+  ...PERIOD_FIELD_MESSAGES,
   remarks: {},
 };
 
 export const EducationForm = ({ action, initialValues, educationUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: EducationField) => {
     const reason = errors[field];
     return reason ? ERROR_MESSAGES[field][reason] : undefined;
@@ -53,16 +51,8 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
       {educationUid !== undefined && (
         <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
       )}
-      {result?.status === 'forbidden' && (
-        <p role="alert" className="text-destructive">
-          オーナーであることを確かめられませんでした。ログインし直してから入力し直してください
-        </p>
-      )}
-      {result?.status === 'invalid' && (
-        <p role="alert" className="text-destructive">
-          入力を確かめてください
-        </p>
-      )}
+      {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
+      {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}
       <InputField
         name="school"
         label="学校"

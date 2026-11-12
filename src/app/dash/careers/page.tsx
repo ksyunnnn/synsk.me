@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listCareers } from '@/features/career/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { formatPeriod } from '@/shared/domain/period';
@@ -20,11 +21,7 @@ const Page = async ({ searchParams }: Props) => {
   const { deleted } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">職歴</h1>
+    <DashPage back={{ href: routes.dash.index, label: '管理画面へ戻る' }} title="職歴">
       {deleted === '1' && <SavedNotice flags={['deleted']}>職歴を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.careers.new}>職歴を登録する</TextLink>
@@ -46,7 +43,7 @@ const Page = async ({ searchParams }: Props) => {
           ))}
         </ul>
       )}
-    </main>
+    </DashPage>
   );
 };
 

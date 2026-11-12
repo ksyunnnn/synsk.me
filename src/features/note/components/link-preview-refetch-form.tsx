@@ -7,6 +7,7 @@ import {
   type LinkPreviewRefetchError,
   type LinkPreviewRefetchFormResult,
 } from '@/features/note/domain/note';
+import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -32,8 +33,7 @@ const REASONS: Record<LinkPreviewRefetchError, string> = {
 };
 
 const messageOf = (result: LinkPreviewRefetchFormResult | null): string | null => {
-  if (result?.status === 'forbidden')
-    return 'オーナーであることを確かめられませんでした。ログインし直してください';
+  if (result?.status === 'forbidden') return FORBIDDEN_MESSAGE;
   if (result?.status !== 'invalid') return null;
   const reason = REASONS[result.errors[LINK_PREVIEW_URL_FIELD] ?? 'network'];
   return `取り直せませんでした。${reason}。表示は取り直す前のままです`;

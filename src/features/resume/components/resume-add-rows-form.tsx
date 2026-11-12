@@ -20,6 +20,7 @@ import {
   type AddResumeRowsError,
 } from '@/features/resume/domain/resume-forms';
 import { FormActions } from '@/shared/components/form-actions';
+import { FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -61,11 +62,7 @@ export const ResumeAddRowsForm = ({
     <form action={formAction} className="flex flex-col gap-6">
       <ResumeFormHidden resumeUid={resumeUid} updatedAt={updatedAt} />
       <input type="hidden" name={ROW_KIND_FIELD} value={kind} />
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       {error && <p className="text-sm text-destructive">{errorText(error, legend)}</p>}
       <SourceFieldset
         legend={legend}

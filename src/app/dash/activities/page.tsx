@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { OWNED_SOURCE_LABELS } from '@/features/activity/domain/external-activity';
 import { listExternalActivities } from '@/features/activity/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -25,11 +26,7 @@ const Page = async ({ searchParams }: Props) => {
   const { saved, deleted } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">外部の activity</h1>
+    <DashPage back={{ href: routes.dash.index, label: '管理画面へ戻る' }} title="外部の activity">
       <p>URL を指名して、または手で入力して登録した activity です。</p>
       {/* 登録に成功すると、この画面へ移る */}
       {saved === '1' && <SavedNotice flags={['saved']}>保存しました</SavedNotice>}
@@ -54,7 +51,7 @@ const Page = async ({ searchParams }: Props) => {
           ))}
         </ul>
       )}
-    </main>
+    </DashPage>
   );
 };
 

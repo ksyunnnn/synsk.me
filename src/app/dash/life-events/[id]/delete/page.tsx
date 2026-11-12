@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 import { LIFE_EVENT_UID_FIELD } from '@/features/activity/domain/life-event';
 import { deleteLifeEvent } from '@/features/activity/server/actions';
 import { getLifeEventForEdit } from '@/features/activity/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
+import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -21,8 +23,7 @@ const Page = async ({ params }: Props) => {
   if (!lifeEvent) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">life event を削除する</h1>
+    <DashPage title="life event を削除する">
       <p>次の life event を削除します。戻せません。訪問者のページも無くなります。</p>
       <p>
         {lifeEvent.title}・<time dateTime={lifeEvent.happenedOn}>{lifeEvent.happenedOn}</time>
@@ -32,13 +33,13 @@ const Page = async ({ params }: Props) => {
         uidField={LIFE_EVENT_UID_FIELD}
         uid={lifeEvent.uid}
         messages={{
-          forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+          forbidden: FORBIDDEN_MESSAGE,
         }}
       />
       <p>
         <TextLink href={routes.dash.lifeEvents.row(lifeEvent.uid)}>編集の画面へ戻る</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

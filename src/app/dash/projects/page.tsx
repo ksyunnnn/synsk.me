@@ -6,6 +6,7 @@ import {
 } from '@/features/project/components/project-list';
 import { parseProjectListFilter } from '@/features/project/domain/project';
 import { listProjects } from '@/features/project/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -35,11 +36,7 @@ const Page = async ({ searchParams }: Props) => {
   const conditions = describeProjectListFilter(filter, organizations);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">実績</h1>
+    <DashPage back={{ href: routes.dash.index, label: '管理画面へ戻る' }} title="実績">
       {deleted === '1' && <SavedNotice flags={['deleted']}>実績を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.projects.new}>実績を登録する</TextLink>
@@ -64,7 +61,7 @@ const Page = async ({ searchParams }: Props) => {
           ))}
         </ul>
       )}
-    </main>
+    </DashPage>
   );
 };
 

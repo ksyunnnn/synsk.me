@@ -6,7 +6,7 @@ import {
   type ResumeRowKind,
   type ResumeSources,
 } from '@/features/resume/domain/resume';
-import { TextLink } from '@/shared/components/text-link';
+import { DashPage } from '@/shared/components/dash-page';
 import { routes } from '@/shared/routes';
 
 /**
@@ -37,11 +37,10 @@ export const ResumeAddRows = ({
   const options = toSourceOptions(sources)[kind].filter((option) => !copied.has(option.id));
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.resumes.row(resume.uid)}>設定の画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">{label}を足す</h1>
+    <DashPage
+      back={{ href: routes.dash.resumes.row(resume.uid), label: '設定の画面へ戻る' }}
+      title={<>{label}を足す</>}
+    >
       <p className="text-sm text-muted-foreground">
         選んだ{label}を、元の値で写します。写した後に元を直しても変わりません
       </p>
@@ -54,6 +53,6 @@ export const ResumeAddRows = ({
         resumeUid={resume.uid}
         updatedAt={resume.updatedAt}
       />
-    </main>
+    </DashPage>
   );
 };

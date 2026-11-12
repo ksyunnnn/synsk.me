@@ -50,6 +50,14 @@ const readValues = (formData: FormData): ProjectFormValues =>
     ]),
   ) as ProjectFormValues;
 
+/** フォームの uid が指す実績の id。無い uid なら null。オーナーの確認の後に呼ぶ */
+const resolveProject = async (formData: FormData) => {
+  const deps = await createProjectDeps();
+  const uid = readString(formData, PROJECT_UID_FIELD);
+  const id = await findIdByUid(deps.projects, uid);
+  return { deps, uid, id };
+};
+
 /** 実績を登録し、編集の画面へ移る */
 export const registerProject = async (
   _state: ProjectFormResult | null,
@@ -71,9 +79,7 @@ export const editProject = async (
 ): Promise<ProjectFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const deps = await createProjectDeps();
-  const uid = readString(formData, PROJECT_UID_FIELD);
-  const id = await findIdByUid(deps.projects, uid);
+  const { deps, uid, id } = await resolveProject(formData);
   if (id === null) redirect(routes.dash.projects.list);
 
   const outcome = await editProjectUseCase(deps, author, id, readValues(formData), {
@@ -92,8 +98,7 @@ export const deleteProject = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const deps = await createProjectDeps();
-  const id = await findIdByUid(deps.projects, readString(formData, PROJECT_UID_FIELD));
+  const { deps, id } = await resolveProject(formData);
   if (id === null) redirect(routes.dash.projects.list);
 
   const outcome = await deleteProjectUseCase(deps, author, id);
@@ -108,9 +113,7 @@ export const addProjectMedia = async (
 ): Promise<MediaFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const deps = await createProjectDeps();
-  const uid = readString(formData, PROJECT_UID_FIELD);
-  const id = await findIdByUid(deps.projects, uid);
+  const { deps, uid, id } = await resolveProject(formData);
   if (id === null) redirect(routes.dash.projects.list);
 
   const file = formData.get(MEDIA_FILE_FIELD);
@@ -134,9 +137,7 @@ export const changeProjectCardImage = async (
 ): Promise<CardImageFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const deps = await createProjectDeps();
-  const uid = readString(formData, PROJECT_UID_FIELD);
-  const id = await findIdByUid(deps.projects, uid);
+  const { deps, uid, id } = await resolveProject(formData);
   if (id === null) redirect(routes.dash.projects.list);
 
   const value = readString(formData, CARD_IMAGE_FIELD);

@@ -10,7 +10,13 @@ import {
 } from '@/features/skill/domain/skill';
 import { InputField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { formStateOf } from '@/shared/domain/action-result';
 
 /**
  * スキルを登録する・編集するフォーム。上書きの経験年数は年と月で入れる（FR-034）。
@@ -35,9 +41,7 @@ const ERROR_MESSAGES: Record<SkillField, Partial<Record<SkillFieldError, string>
 
 export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: SkillField) => {
     const reason = errors[field];
     return reason ? ERROR_MESSAGES[field][reason] : undefined;
@@ -46,16 +50,8 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   return (
     <form action={formAction} className="flex flex-col gap-6">
       {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
-      {result?.status === 'forbidden' && (
-        <p role="alert" className="text-destructive">
-          オーナーであることを確かめられませんでした。ログインし直してから入力し直してください
-        </p>
-      )}
-      {result?.status === 'invalid' && (
-        <p role="alert" className="text-destructive">
-          入力を確かめてください
-        </p>
-      )}
+      {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
+      {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}
       <InputField
         name="name"
         label="名前"

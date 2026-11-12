@@ -26,6 +26,7 @@ import {
   unpublishNote,
 } from '@/features/note/server/actions';
 import { getNoteForEdit } from '@/features/note/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { FormSection } from '@/shared/components/form-section';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
@@ -81,11 +82,10 @@ const Page = async ({ params, searchParams }: Props) => {
     // 削除した note は、中身を読み取りだけで出し、「元に戻す」だけを置く（contracts/dash.md）
     const { latestRevision } = note;
     return (
-      <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-        <p>
-          <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
-        </p>
-        <h1 className="text-2xl font-bold">削除した note</h1>
+      <DashPage
+        back={{ href: routes.dash.notes.list, label: 'note の一覧へ戻る' }}
+        title="削除した note"
+      >
         <p>
           この note は削除済みです。訪問者には見えません。元に戻すと、削除の前の状態（
           {NOTE_STATUS_LABELS[note.status]}）と版に戻ります
@@ -101,16 +101,15 @@ const Page = async ({ params, searchParams }: Props) => {
           <dd className="whitespace-pre-wrap">{latestRevision.body}</dd>
         </dl>
         <NoteRestoreForm action={restoreNote} noteUid={note.uid} />
-      </main>
+      </DashPage>
     );
   }
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.notes.list}>note の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">note を編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.notes.list, label: 'note の一覧へ戻る' }}
+      title="note を編集する"
+    >
       {flags.saved === '1' && (
         <NoteSavedNotice noteUid={note.uid} revisionUid={note.latestRevision.uid} />
       )}
@@ -190,7 +189,7 @@ const Page = async ({ params, searchParams }: Props) => {
           </li>
         </ul>
       </FormSection>
-    </main>
+    </DashPage>
   );
 };
 

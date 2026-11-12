@@ -18,6 +18,11 @@ import {
   type SourceOption,
 } from '@/features/resume/components/resume-source-fieldset';
 import { InputField } from '@/shared/components/field';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 import { FormActions } from '@/shared/components/form-actions';
@@ -56,8 +61,8 @@ const ERROR_MESSAGES: Record<CreateResumeField, Partial<Record<CreateResumeError
 };
 
 const RESULT_MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
-  invalid: '入力を確かめてください',
+  forbidden: FORBIDDEN_INPUT_MESSAGE,
+  invalid: INVALID_INPUT_MESSAGE,
 } as const;
 
 const AUDIENCE_LABELS: Record<ResumeAudience, string> = {
@@ -126,11 +131,7 @@ export const ResumeCreateForm = ({
 
   return (
     <form action={formAction} className="flex flex-col gap-6">
-      {result && (
-        <p role="alert" className="text-destructive">
-          {RESULT_MESSAGES[result.status]}
-        </p>
-      )}
+      {result && <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>}
       <InputField
         name="title"
         label="題"

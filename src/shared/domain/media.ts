@@ -127,6 +127,36 @@ export type MediaStorage = {
   remove: (storageKeys: MediaStorageKey[]) => Promise<void>;
 };
 
+/**
+ * 画像を置き場に置き、`record` で記録する。記録の前に持ち主が削除されていた（`record` が false を
+ * 返した）ら、置いた画像を消して not-found を返す。記録が例外で失敗したときも、置いた画像を消して
+ * から投げ直す。使い手は職歴・実績・note の画像を足すユースケース
+ */
+export const saveAndRecordMedia = async (
+  media: MediaStorage,
+  file: Blob,
+  record: (saved: { storageKey: MediaStorageKey; size: number }) => Promise<boolean>,
+): Promise<
+  | { status: 'added'; storageKey: MediaStorageKey }
+  | { status: 'not-found' }
+  | { status: 'invalid'; error: MediaRejection }
+> => {
+  const saved = await media.save(file);
+  if (!saved.ok) return { status: 'invalid', error: saved.reason };
+
+  const { storageKey, size } = saved.media;
+  let recorded: boolean;
+  try {
+    recorded = await record({ storageKey, size });
+  } catch (error) {
+    await media.remove([storageKey]);
+    throw error;
+  }
+  if (recorded) return { status: 'added', storageKey };
+  await media.remove([storageKey]);
+  return { status: 'not-found' };
+};
+
 /*
  * 消し損ねた画像（src/shared/server/sweep-orphaned-media.ts）。`media` の行を消した後に置き場の
  * 削除が失敗するか、その間に Worker が止まると、どの行も指さない画像が置き場に残る。記録せず、

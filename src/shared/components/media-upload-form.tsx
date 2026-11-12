@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState, type ReactNode } from 'react';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { mediaMarkOf } from '@/shared/domain/markdown';
 import {
   MEDIA_FILE_FIELD,
@@ -38,12 +39,11 @@ const ERROR_MESSAGES: Record<MediaRejection, string> = {
   'storage-full': MEDIA_STORAGE_FULL_MESSAGE,
 };
 
-const FORBIDDEN = 'オーナーであることを確かめられませんでした。ログインし直してください';
-
 export const MediaUploadForm = ({ action, owner, mediaStorageKeys, children }: Props) => {
   const [result, formAction] = useActionState(action, null);
   const reason = result?.status === 'invalid' ? result.errors[MEDIA_FILE_FIELD] : undefined;
-  const message = result?.status === 'forbidden' ? FORBIDDEN : reason && ERROR_MESSAGES[reason];
+  const message =
+    result?.status === 'forbidden' ? FORBIDDEN_MESSAGE : reason && ERROR_MESSAGES[reason];
 
   return (
     <section aria-labelledby="media-upload-heading" className="flex flex-col gap-3">
@@ -82,11 +82,7 @@ export const MediaUploadForm = ({ action, owner, mediaStorageKeys, children }: P
           />
         </label>
         {children}
-        {message && (
-          <p role="alert" className="text-destructive">
-            {message}
-          </p>
-        )}
+        {message && <FormAlert>{message}</FormAlert>}
         <div>
           <SubmitButton className="rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             画像を足す

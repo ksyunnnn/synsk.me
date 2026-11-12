@@ -11,6 +11,7 @@ import {
   MEDIA_TYPES,
   type MediaRejection,
 } from '@/shared/domain/media';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -29,7 +30,7 @@ type Props = {
 };
 
 const MESSAGES: Record<'forbidden' | MediaRejection, string> = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+  forbidden: FORBIDDEN_MESSAGE,
   empty: '画像のファイルを選んでください',
   'too-large': '画像は 1 枚 10 MB までです',
   'unsupported-type': '画像は JPEG・PNG・WebP・GIF のどれかにしてください',
@@ -52,11 +53,7 @@ export const LifeEventImageForm = ({ uid, cardImageUrl, register, remove }: Prop
       <h2 id="life-event-image-heading" className="text-xl font-bold">
         代表画像
       </h2>
-      {message && (
-        <p role="alert" className="text-destructive">
-          {message}
-        </p>
-      )}
+      {message && <FormAlert>{message}</FormAlert>}
       {cardImageUrl ? (
         // 代表画像の説明の文は持たない（spec が決めていない）。見出しが何の画像かを示す
         // eslint-disable-next-line @next/next/no-img-element

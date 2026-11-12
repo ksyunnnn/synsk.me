@@ -7,7 +7,7 @@ import {
   type ProjectId,
 } from '@/features/project/domain/project';
 import type { Author } from '@/shared/domain/author';
-import { canSaveWithOrganization } from '@/shared/domain/organization';
+import { checkOrganizationForSave } from '@/shared/domain/organization';
 import type { ProjectDeps } from './deps';
 
 export type EditProjectOutcome =
@@ -51,14 +51,8 @@ export const editProject = async (
   }
   const { content } = parsed;
 
-  const organization = await organizations.findByName(content.organizationName);
-  if (!canSaveWithOrganization(organization, content)) {
-    return {
-      status: 'invalid',
-      errors: { organizationNameMasked: 'masked-name-required' },
-      values,
-    };
-  }
+  const organizationError = await checkOrganizationForSave(organizations, content);
+  if (organizationError) return { status: 'invalid', errors: organizationError, values };
 
   const result = await projects.edit(id, { ...content, slug: slug.slug }, times);
   if (result.ok) return { status: 'saved' };

@@ -7,6 +7,7 @@ import {
   REVISION_UID_FIELD,
   type RevertNoteResult,
 } from '@/features/note/domain/note';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -28,7 +29,7 @@ type Props = {
 };
 
 const MESSAGES: Record<RevertNoteResult['status'], string> = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+  forbidden: FORBIDDEN_MESSAGE,
   conflict:
     'この note は、開いた後に別の画面で保存されていました。戻していません。開き直してから戻してください',
 };
@@ -40,11 +41,7 @@ export const NoteRevertForm = ({ action, noteUid, revisionUid, openedRevisionUid
       <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />
       <input type="hidden" name={REVISION_UID_FIELD} value={revisionUid} />
       <input type="hidden" name={OPENED_REVISION_UID_FIELD} value={openedRevisionUid} />
-      {result && (
-        <p role="alert" className="text-destructive">
-          {MESSAGES[result.status]}
-        </p>
-      )}
+      {result && <FormAlert>{MESSAGES[result.status]}</FormAlert>}
       <div>
         <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           この版に戻す

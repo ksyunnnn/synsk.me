@@ -45,6 +45,22 @@ import { routes } from '@/shared/routes';
 const readLifeEventValues = (formData: FormData): LifeEventFormValues =>
   readValues(formData, LIFE_EVENT_FIELDS);
 
+/** フォームの uid が指す life event の id。無い uid なら null。オーナーの確認の後に呼ぶ */
+const resolveLifeEvent = async (formData: FormData) => {
+  const deps = await createActivityDeps();
+  const uid = readString(formData, LIFE_EVENT_UID_FIELD);
+  const id = await findIdByUid(deps.lifeEvents, uid);
+  return { deps, uid, id };
+};
+
+/** フォームの uid が指す外部の activity の id。無い uid なら null。オーナーの確認の後に呼ぶ */
+const resolveExternalActivity = async (formData: FormData) => {
+  const deps = await createActivityDeps();
+  const uid = readString(formData, EXTERNAL_ACTIVITY_UID_FIELD);
+  const id = await findIdByUid(deps.externalActivities, uid);
+  return { deps, uid, id };
+};
+
 /** life event を作り、編集の画面へ移る */
 export const registerLifeEvent = async (
   _state: LifeEventFormResult | null,
@@ -67,12 +83,15 @@ export const editLifeEvent = async (
 ): Promise<LifeEventFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { lifeEvents } = await createActivityDeps();
-  const uid = readString(formData, LIFE_EVENT_UID_FIELD);
-  const id = await findIdByUid(lifeEvents, uid);
+  const { deps, uid, id } = await resolveLifeEvent(formData);
   if (id === null) redirect(routes.dash.lifeEvents.list);
 
-  const outcome = await editLifeEventUseCase(lifeEvents, author, id, readLifeEventValues(formData));
+  const outcome = await editLifeEventUseCase(
+    deps.lifeEvents,
+    author,
+    id,
+    readLifeEventValues(formData),
+  );
   if (outcome.status === 'saved') redirect(`${routes.dash.lifeEvents.row(uid)}?saved=1`);
   if (outcome.status === 'not-found') redirect(routes.dash.lifeEvents.list);
   return outcome;
@@ -85,11 +104,10 @@ export const deleteLifeEvent = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { lifeEvents, media } = await createActivityDeps();
-  const id = await findIdByUid(lifeEvents, readString(formData, LIFE_EVENT_UID_FIELD));
+  const { deps, id } = await resolveLifeEvent(formData);
   if (id === null) redirect(routes.dash.lifeEvents.list);
 
-  const outcome = await deleteLifeEventUseCase(lifeEvents, media, author, id);
+  const outcome = await deleteLifeEventUseCase(deps.lifeEvents, deps.media, author, id);
   if (outcome.status === 'forbidden') return outcome;
   redirect(`${routes.dash.lifeEvents.list}?deleted=1`);
 };
@@ -125,13 +143,11 @@ export const editExternalActivity = async (
 ): Promise<ExternalActivityFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { externalActivities: activities } = await createActivityDeps();
-  const uid = readString(formData, EXTERNAL_ACTIVITY_UID_FIELD);
-  const id = await findIdByUid(activities, uid);
+  const { deps, uid, id } = await resolveExternalActivity(formData);
   if (id === null) redirect(routes.dash.activities.list);
 
   const outcome = await editExternalActivityUseCase(
-    activities,
+    deps.externalActivities,
     author,
     id,
     readExternalActivityValues(formData),
@@ -148,11 +164,10 @@ export const deleteExternalActivity = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { externalActivities: activities } = await createActivityDeps();
-  const id = await findIdByUid(activities, readString(formData, EXTERNAL_ACTIVITY_UID_FIELD));
+  const { deps, id } = await resolveExternalActivity(formData);
   if (id === null) redirect(routes.dash.activities.list);
 
-  const outcome = await deleteExternalActivityUseCase(activities, author, id);
+  const outcome = await deleteExternalActivityUseCase(deps.externalActivities, author, id);
   if (outcome.status === 'forbidden') return outcome;
   redirect(`${routes.dash.activities.list}?deleted=1`);
 };
@@ -167,15 +182,13 @@ export const registerLifeEventImage = async (
 ): Promise<LifeEventImageResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { lifeEvents, media } = await createActivityDeps();
-  const uid = readString(formData, LIFE_EVENT_UID_FIELD);
-  const id = await findIdByUid(lifeEvents, uid);
+  const { deps, uid, id } = await resolveLifeEvent(formData);
   if (id === null) redirect(routes.dash.lifeEvents.list);
 
   const file = formData.get(LIFE_EVENT_IMAGE_FIELD);
   const outcome = await registerLifeEventImageUseCase(
-    lifeEvents,
-    media,
+    deps.lifeEvents,
+    deps.media,
     author,
     id,
     file instanceof Blob ? file : new Blob([]),
@@ -192,12 +205,10 @@ export const removeLifeEventImage = async (
 ): Promise<LifeEventImageResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const { lifeEvents, media } = await createActivityDeps();
-  const uid = readString(formData, LIFE_EVENT_UID_FIELD);
-  const id = await findIdByUid(lifeEvents, uid);
+  const { deps, uid, id } = await resolveLifeEvent(formData);
   if (id === null) redirect(routes.dash.lifeEvents.list);
 
-  const outcome = await removeLifeEventImageUseCase(lifeEvents, media, author, id);
+  const outcome = await removeLifeEventImageUseCase(deps.lifeEvents, deps.media, author, id);
   if (outcome.status === 'saved') redirect(`${routes.dash.lifeEvents.row(uid)}?imageRemoved=1`);
   if (outcome.status === 'not-found') redirect(routes.dash.lifeEvents.list);
   return outcome;

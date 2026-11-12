@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { NOTE_STATUS_LABELS } from '@/features/note/domain/note';
 import { listNotes } from '@/features/note/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
@@ -19,11 +20,7 @@ const Page = async ({ searchParams }: Props) => {
   const { deleted } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.index}>管理画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">note</h1>
+    <DashPage back={{ href: routes.dash.index, label: '管理画面へ戻る' }} title="note">
       {deleted === '1' && <SavedNotice flags={['deleted']}>note を削除しました</SavedNotice>}
       <p>
         <TextLink href={routes.dash.notes.new}>note を作る</TextLink>
@@ -45,7 +42,7 @@ const Page = async ({ searchParams }: Props) => {
           ))}
         </ul>
       )}
-    </main>
+    </DashPage>
   );
 };
 

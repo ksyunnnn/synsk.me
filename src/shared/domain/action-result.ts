@@ -21,3 +21,16 @@ export type ActionResult<Field extends string, Reason extends string = string> =
     }
   /** 開いた後に、別の画面で先に書き換えられていた。何も書かない（FR-042） */
   | { status: 'conflict'; values: Partial<Record<Field, string>> };
+
+/**
+ * フォームが `useActionState` の結果から、入力に戻す値と項目ごとの誤りを取り出す。値は、
+ * 結果が送られた値を持てばそれを初めの値に重ね、持たなければ初めの値のまま。誤りは
+ * `invalid` のときだけ返す。使い手は各機能の管理画面のフォーム
+ */
+export const formStateOf = <Values extends object, Errors extends object>(
+  result: { status: string; values?: Partial<Values>; errors?: Errors } | null,
+  initialValues: Values,
+): { values: Values; errors: Partial<Errors> } => ({
+  values: result && 'values' in result ? { ...initialValues, ...result.values } : initialValues,
+  errors: (result?.status === 'invalid' ? result.errors : undefined) ?? {},
+});

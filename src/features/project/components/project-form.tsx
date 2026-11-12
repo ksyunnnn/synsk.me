@@ -9,14 +9,17 @@ import {
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
+import { InputField, SelectField, TextareaField } from '@/shared/components/field';
 import {
-  InputField,
-  SuggestingInputField,
-  SelectField,
-  TextareaField,
-} from '@/shared/components/field';
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
 import { MaskingField } from '@/shared/components/masking-field';
+import { OrganizationNameFields } from '@/shared/components/organization-name-fields';
+import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { formStateOf } from '@/shared/domain/action-result';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -61,14 +64,7 @@ const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, str
   titleMasked: { missing: '秘匿化した題を入力してください' },
   isMasked: {},
   status: {},
-  startedOn: {
-    missing: '始まりの日を入力してください',
-    invalid: '始まりの日を年月日で入力してください',
-  },
-  endedOn: {
-    invalid: '終わりの日を年月日で入力してください',
-    'ended-before-started': '終わりの日は始まりの日より前にできません',
-  },
+  ...PERIOD_FIELD_MESSAGES,
   description: {},
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
   skillIds: { invalid: 'スキルを選び直してください' },
@@ -81,8 +77,8 @@ const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, str
 };
 
 const RESULT_MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
-  invalid: '入力を確かめてください',
+  forbidden: FORBIDDEN_INPUT_MESSAGE,
+  invalid: INVALID_INPUT_MESSAGE,
   conflict:
     'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
@@ -95,9 +91,7 @@ export const ProjectForm = ({
   project,
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const values: ProjectFormValues =
-    result && 'values' in result ? { ...initialValues, ...result.values } : initialValues;
-  const errors = result?.status === 'invalid' ? result.errors : {};
+  const { values, errors } = formStateOf(result, initialValues);
   const errorOf = (field: ProjectField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
@@ -115,9 +109,7 @@ export const ProjectForm = ({
       )}
 
       {result && result.status !== 'saved' && (
-        <p role="alert" className="text-destructive">
-          {RESULT_MESSAGES[result.status]}
-        </p>
+        <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
 
       <SiteStatusField status={values.status} />
@@ -127,22 +119,11 @@ export const ProjectForm = ({
         description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
       />
 
-      <SuggestingInputField
-        name="organizationName"
-        label="組織名"
-        hint="登録した組織から選ぶか、新しい組織名を入力します"
-        options={organizationNames}
-        defaultValue={values.organizationName}
-        autoComplete="off"
-        error={errorOf('organizationName')}
-      />
-      <InputField
-        name="organizationNameMasked"
-        label="秘匿化した組織名"
-        hint="組織が秘匿化した組織名を持たないときだけ使います。持っている組織の値は変えません"
-        defaultValue={values.organizationNameMasked}
-        autoComplete="off"
-        error={errorOf('organizationNameMasked')}
+      <OrganizationNameFields
+        organizationNames={organizationNames}
+        organizationName={values.organizationName}
+        organizationNameMasked={values.organizationNameMasked}
+        errorOf={errorOf}
       />
       <SelectField name="kind" label="種類" defaultValue={values.kind} error={errorOf('kind')}>
         {PROJECT_KINDS.map((kind) => (

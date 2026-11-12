@@ -1,6 +1,7 @@
 import 'server-only';
 
 import type { FetchLimits } from '@/features/activity/domain/limits';
+import { withTimeout } from '@/shared/server/with-timeout';
 
 /**
  * 取得元への要求に上限をかける（specs/004-external-activity/research.md の R8、contracts/fetch.md）。
@@ -67,72 +68,56 @@ export const createSourceHttp = (
         throw new Error(`要求の数の上限（${limits.maxRequests} 本）に達した`);
       }
       used += 1;
-      return withTimeout(limits.timeoutMs, async (signal) => {
-        // リダイレクトは 1 段ずつ辿り、別のホストへは要求を出さない。要求を出すのは、その取得元の
-        // ホストだけ（research.md の R10）。fetch に辿らせると、取得元の API キーなどのヘッダが
-        // 移った先のホストへ届く
-        const origin = new URL(url).host;
-        let current = url;
-        let response: Response;
-        for (let hop = 0; ; hop += 1) {
-          response = await fetcher(current, {
-            headers: { ...headers, 'User-Agent': USER_AGENT },
-            redirect: 'manual',
-            signal,
-          });
-          const location = response.headers.get('Location');
-          if (!followRedirects || !isRedirect(response.status) || location === null) break;
-          await response.body?.cancel();
-          const next = new URL(location, current);
-          if (next.host !== origin) throw new Error(`取得元が別のホストへ移した: ${url}`);
-          if (hop >= MAX_REDIRECTS) {
-            throw new Error(`リダイレクトの段の上限（${MAX_REDIRECTS} 段）を超えた: ${url}`);
+      return withTimeout(
+        limits.timeoutMs,
+        async (signal) => {
+          // リダイレクトは 1 段ずつ辿り、別のホストへは要求を出さない。要求を出すのは、その取得元の
+          // ホストだけ（research.md の R10）。fetch に辿らせると、取得元の API キーなどのヘッダが
+          // 移った先のホストへ届く
+          const origin = new URL(url).host;
+          let current = url;
+          let response: Response;
+          for (let hop = 0; ; hop += 1) {
+            response = await fetcher(current, {
+              headers: { ...headers, 'User-Agent': USER_AGENT },
+              redirect: 'manual',
+              signal,
+            });
+            const location = response.headers.get('Location');
+            if (!followRedirects || !isRedirect(response.status) || location === null) break;
+            await response.body?.cancel();
+            const next = new URL(location, current);
+            if (next.host !== origin) throw new Error(`取得元が別のホストへ移した: ${url}`);
+            if (hop >= MAX_REDIRECTS) {
+              throw new Error(`リダイレクトの段の上限（${MAX_REDIRECTS} 段）を超えた: ${url}`);
+            }
+            current = next.href;
           }
-          current = next.href;
-        }
-        // fetcher が redirect: 'manual' を守らずに辿った場合も、別のホストの応答は読まない
-        if (response.redirected && new URL(response.url).host !== origin) {
-          await response.body?.cancel();
-          throw new Error(`取得元が別のホストへ移した: ${url}`);
-        }
-        // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）。条件を
-        // 付けていない要求への 304（途中のキャッシュなど）は、中身を取れなかった失敗にする
-        const conditional = Object.keys(headers).some((name) =>
-          /^if-(none-match|modified-since)$/i.test(name),
-        );
-        if (response.status === 304 && conditional) {
-          await response.body?.cancel();
-          return { status: 304, headers: response.headers, text: '' };
-        }
-        if (!response.ok) {
-          await response.body?.cancel();
-          throw new SourceHttpError(response.status, url);
-        }
-        const text = await readText(response, limits.maxBytes);
-        return { status: response.status, headers: response.headers, text };
-      });
+          // fetcher が redirect: 'manual' を守らずに辿った場合も、別のホストの応答は読まない
+          if (response.redirected && new URL(response.url).host !== origin) {
+            await response.body?.cancel();
+            throw new Error(`取得元が別のホストへ移した: ${url}`);
+          }
+          // 条件付きの要求に、変わっていないと答えた。本文を持たない（research.md の R9）。条件を
+          // 付けていない要求への 304（途中のキャッシュなど）は、中身を取れなかった失敗にする
+          const conditional = Object.keys(headers).some((name) =>
+            /^if-(none-match|modified-since)$/i.test(name),
+          );
+          if (response.status === 304 && conditional) {
+            await response.body?.cancel();
+            return { status: 304, headers: response.headers, text: '' };
+          }
+          if (!response.ok) {
+            await response.body?.cancel();
+            throw new SourceHttpError(response.status, url);
+          }
+          const text = await readText(response, limits.maxBytes);
+          return { status: response.status, headers: response.headers, text };
+        },
+        () => new Error(`待ち時間（${limits.timeoutMs} ms）を超えた`),
+      );
     },
   };
-};
-
-/** 待ち時間を超えたら投げる。fetcher が中止の合図を見なくても待ち続けない */
-const withTimeout = async <T>(
-  timeoutMs: number,
-  run: (signal: AbortSignal) => Promise<T>,
-): Promise<T> => {
-  const controller = new AbortController();
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      controller.abort();
-      reject(new Error(`待ち時間（${timeoutMs} ms）を超えた`));
-    }, timeoutMs);
-  });
-  try {
-    return await Promise.race([run(controller.signal), timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
 };
 
 /** 本文を読む。大きさの上限を超えたら、読むのを止めて投げる */

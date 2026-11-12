@@ -1,6 +1,5 @@
 import {
-  decideLifeEventSlug,
-  parseLifeEventContent,
+  parseLifeEventInput,
   type LifeEventField,
   type LifeEventFieldError,
   type LifeEventFormValues,
@@ -34,17 +33,10 @@ export const editLifeEvent = async (
   const current = await lifeEvents.findForEdit(id);
   if (!current) return { status: 'not-found' };
 
-  const parsed = parseLifeEventContent(values);
-  const slug = decideLifeEventSlug(values.slug, current.slug);
-  if (!parsed.ok || !slug.ok) {
-    return {
-      status: 'invalid',
-      errors: { ...(parsed.ok ? {} : parsed.errors), ...(slug.ok ? {} : { slug: 'invalid' }) },
-      values,
-    };
-  }
+  const parsed = parseLifeEventInput(values, current.slug);
+  if (!parsed.ok) return { status: 'invalid', errors: parsed.errors, values };
 
-  const result = await lifeEvents.edit(id, { ...parsed.content, slug: slug.slug });
+  const result = await lifeEvents.edit(id, parsed.content);
   if (result.ok) return { status: 'saved' };
   return result.reason === 'not-found'
     ? { status: 'not-found' }

@@ -4,7 +4,7 @@ import { ResumeSkillOverridesForm } from '@/features/resume/components/resume-ro
 import { listResumeSkills } from '@/features/resume/domain/resume-skills';
 import { editResumeSkillOverrides } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';
-import { TextLink } from '@/shared/components/text-link';
+import { DashPage } from '@/shared/components/dash-page';
 import { toYearsAndMonths } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
 
@@ -30,11 +30,10 @@ const Page = async ({ params }: Props) => {
   });
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.resumes.row(resume.uid)}>設定の画面へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">経験年数の上書きを直す</h1>
+    <DashPage
+      back={{ href: routes.dash.resumes.row(resume.uid), label: '設定の画面へ戻る' }}
+      title="経験年数の上書きを直す"
+    >
       <p className="text-sm text-muted-foreground">
         空のスキルは、写した実績の期間から求めます。直した値はこの職務経歴書にだけ効きます
       </p>
@@ -44,7 +43,7 @@ const Page = async ({ params }: Props) => {
         initialRows={rows}
         target={{ resumeUid: resume.uid, updatedAt: resume.updatedAt }}
       />
-    </main>
+    </DashPage>
   );
 };
 

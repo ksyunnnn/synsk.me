@@ -8,6 +8,7 @@ import {
   type SyndicationFormResult,
 } from '@/features/note/domain/note';
 import { InputField } from '@/shared/components/field';
+import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -38,8 +39,6 @@ const ERROR_MESSAGES: Record<SyndicationFieldError, string> = {
   taken: 'この URL は、この note かほかの note に記録済みです',
 };
 
-const FORBIDDEN = 'オーナーであることを確かめられませんでした。ログインし直してください';
-
 const BUTTON =
   'rounded-md border border-input px-4 py-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
@@ -61,11 +60,7 @@ const RemoveForm = ({
       <SubmitButton className={BUTTON} aria-label={`${url} を外す`}>
         外す
       </SubmitButton>
-      {result?.status === 'forbidden' && (
-        <p role="alert" className="text-destructive">
-          {FORBIDDEN}
-        </p>
-      )}
+      {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_MESSAGE}</FormAlert>}
     </form>
   );
 };
@@ -93,11 +88,7 @@ export const NoteSyndicationForm = ({ noteUid, urls, addAction, removeAction }: 
       )}
       <form action={formAction} className="flex flex-col gap-3">
         <input type="hidden" name={NOTE_UID_FIELD} value={noteUid} />
-        {result?.status === 'forbidden' && (
-          <p role="alert" className="text-destructive">
-            {FORBIDDEN}
-          </p>
-        )}
+        {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_MESSAGE}</FormAlert>}
         <InputField
           key={value}
           inputMode="url"

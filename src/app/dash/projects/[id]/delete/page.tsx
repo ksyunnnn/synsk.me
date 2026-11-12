@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { DeleteProjectForm } from '@/features/project/components/delete-project-form';
 import { deleteProject } from '@/features/project/server/actions';
 import { getProjectForEdit } from '@/features/project/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -20,8 +21,7 @@ const Page = async ({ params }: Props) => {
   if (!project) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">実績を削除する</h1>
+    <DashPage title="実績を削除する">
       <p>
         次の実績を削除します。訪問者のページは見つからなくなり、戻せません。作った職務経歴書の中身は残ります。
       </p>
@@ -30,7 +30,7 @@ const Page = async ({ params }: Props) => {
       <p>
         <TextLink href={routes.dash.projects.row(project.uid)}>編集の画面へ戻る</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

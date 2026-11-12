@@ -18,6 +18,14 @@ import { routes } from '@/shared/routes';
  * オーナーでなければ、入力した値を返さない
  */
 
+/** フォームの uid が指すスキルの id。無い uid なら null。オーナーの確認の後に呼ぶ */
+const resolveSkill = async (formData: FormData) => {
+  const skills = await createSkillRepository();
+  const uid = readString(formData, SKILL_UID_FIELD);
+  const id = await findIdByUid(skills, uid);
+  return { skills, uid, id };
+};
+
 export const registerSkill = async (
   _state: SkillFormResult | null,
   formData: FormData,
@@ -37,8 +45,7 @@ export const editSkill = async (
 ): Promise<SkillFormResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const skills = await createSkillRepository();
-  const id = await findIdByUid(skills, readString(formData, SKILL_UID_FIELD));
+  const { skills, id } = await resolveSkill(formData);
   if (id === null) redirect(routes.dash.skills.list);
   const outcome = await editSkillUseCase(skills, author, id, readValues(formData, SKILL_FIELDS));
   if (outcome.status === 'saved') redirect(`${routes.dash.skills.list}?saved=1`);
@@ -52,8 +59,7 @@ export const deleteSkill = async (
 ): Promise<{ status: 'forbidden' }> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
-  const skills = await createSkillRepository();
-  const id = await findIdByUid(skills, readString(formData, SKILL_UID_FIELD));
+  const { skills, id } = await resolveSkill(formData);
   if (id === null) redirect(routes.dash.skills.list);
   const outcome = await deleteSkillUseCase(skills, author, id);
   if (outcome.status === 'forbidden') return { status: 'forbidden' };

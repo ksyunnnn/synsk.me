@@ -3,7 +3,9 @@ import { notFound } from 'next/navigation';
 import { SKILL_UID_FIELD } from '@/features/skill/domain/skill';
 import { deleteSkill } from '@/features/skill/server/actions';
 import { getSkillForEdit } from '@/features/skill/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { DeleteForm } from '@/shared/components/delete-form';
+import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -21,8 +23,7 @@ const Page = async ({ params }: Props) => {
   if (!skill) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <h1 className="text-2xl font-bold">スキルを削除する</h1>
+    <DashPage title="スキルを削除する">
       <p>次のスキルを削除します。実績とのつながりも消えます。作った職務経歴書の中身は残ります。</p>
       <p>名前: {skill.name}</p>
       <DeleteForm
@@ -30,13 +31,13 @@ const Page = async ({ params }: Props) => {
         uidField={SKILL_UID_FIELD}
         uid={skill.uid}
         messages={{
-          forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',
+          forbidden: FORBIDDEN_MESSAGE,
         }}
       />
       <p>
         <TextLink href={routes.dash.skills.row(skill.uid)}>編集の画面へ戻る</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 

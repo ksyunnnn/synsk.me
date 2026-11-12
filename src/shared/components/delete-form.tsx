@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import { FormAlert } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -25,11 +26,7 @@ export const DeleteForm = <R extends Result>({ action, uidField, uid, messages }
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name={uidField} value={uid} />
-      {result && (
-        <p role="alert" className="text-destructive">
-          {messages[result.status as R['status']]}
-        </p>
-      )}
+      {result && <FormAlert>{messages[result.status as R['status']]}</FormAlert>}
       <div>
         <SubmitButton className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           削除する

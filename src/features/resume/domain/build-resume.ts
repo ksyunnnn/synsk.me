@@ -33,7 +33,7 @@ export const countSelected = (selection: ResumeSelection): number =>
   new Set(selection.educationIds).size;
 
 /** 写す行の数。`MAX_COPIED_ROWS` と比べる */
-export const countCopiedRows = (content: NewResumeContent): number =>
+const countCopiedRows = (content: NewResumeContent): number =>
   content.careers.length +
   content.projects.reduce((sum, project) => sum + 1 + project.skills.length, 0) +
   content.educations.length +
@@ -56,7 +56,7 @@ const collectOverrides = (sources: ResumeSources['projects']): ResumeSkillOverri
  * 選んだ写し元がすべて読めたか。開いた後に消えた行があれば false。作るときと足すときに、
  * 写す前に確かめる（FR-007・FR-041）
  */
-export const hasAllSources = (sources: ResumeSources, selection: ResumeSelection): boolean =>
+const hasAllSources = (sources: ResumeSources, selection: ResumeSelection): boolean =>
   sources.careers.length === new Set(selection.careerIds).size &&
   sources.projects.length === new Set(selection.projectIds).size &&
   sources.educations.length === new Set(selection.educationIds).size;
@@ -108,4 +108,23 @@ export const buildResumeContent = (
       skillOverrides: collectOverrides(projects),
     },
   };
+};
+
+/**
+ * 読み込んだ写し元から写す行を作り、写してよいかを確かめる。作るときと、作ったあとに足すとき
+ * （FR-041）が同じ写し方と同じ検査で写す。選んだ写し元が欠けていたら `source-missing`
+ * （research.md の R14）、写す行が上限を超えたら `too-many`（research.md の R15）
+ */
+export const copyResumeRows = (
+  sources: ResumeSources,
+  selection: ResumeSelection,
+  audience: ResumeAudience,
+):
+  | { ok: true; content: NewResumeContent }
+  | { ok: false; reason: 'source-missing' | 'too-many' | 'public-not-supported' } => {
+  if (!hasAllSources(sources, selection)) return { ok: false, reason: 'source-missing' };
+  const built = buildResumeContent(sources, selection, audience);
+  if (!built.ok) return built;
+  if (countCopiedRows(built.content) > MAX_COPIED_ROWS) return { ok: false, reason: 'too-many' };
+  return built;
 };

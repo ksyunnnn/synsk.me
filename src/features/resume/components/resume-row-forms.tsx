@@ -17,6 +17,12 @@ import {
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
 import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import {
+  FORBIDDEN_INPUT_MESSAGE,
+  FormAlert,
+  INVALID_INPUT_MESSAGE,
+} from '@/shared/components/form-alert';
+import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -28,8 +34,8 @@ import { SubmitButton } from '@/shared/components/submit-button';
  */
 
 const MESSAGES = {
-  forbidden: 'オーナーであることを確かめられませんでした。ログインし直してから入力し直してください',
-  invalid: '入力を確かめてください',
+  forbidden: FORBIDDEN_INPUT_MESSAGE,
+  invalid: INVALID_INPUT_MESSAGE,
   conflict:
     'この職務経歴書は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
   'not-found': '直す行が見つかりませんでした',
@@ -41,14 +47,7 @@ const FIELD_MESSAGES: Record<string, Partial<Record<FieldError, string>>> = {
   kind: { invalid: '種類を選んでください' },
   title: { missing: '題を入力してください' },
   school: { missing: '学校を入力してください' },
-  startedOn: {
-    missing: '始まりの日を入力してください',
-    invalid: '始まりの日を年月日で入力してください',
-  },
-  endedOn: {
-    invalid: '終わりの日を年月日で入力してください',
-    'ended-before-started': '終わりの日は始まりの日より前にできません',
-  },
+  ...PERIOD_FIELD_MESSAGES,
   url: { invalid: '関連 URL は http か https で始まる URL にしてください' },
   skills: { invalid: `スキルは ${MAX_COPIED_ROWS} 個までにしてください` },
 };
@@ -85,11 +84,7 @@ const Frame = ({
       <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
     )}
     <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={target.updatedAt} />
-    {message && (
-      <p role="alert" className="text-destructive">
-        {message}
-      </p>
-    )}
+    {message && <FormAlert>{message}</FormAlert>}
     {children}
     <FormActions>
       <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">

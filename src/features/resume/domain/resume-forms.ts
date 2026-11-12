@@ -12,7 +12,7 @@ import {
 import type { EditOutcome } from '@/features/resume/domain/edit-outcome';
 import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
-import { toPeriod, type Period } from '@/shared/domain/period';
+import { toPeriod, type Period, toPeriodFieldError } from '@/shared/domain/period';
 import { isWebUrl } from '@/shared/domain/web-url';
 import { isProjectKind } from '@/shared/domain/project-kind';
 import { normalizeNewlines } from '@/shared/domain/newlines';
@@ -38,10 +38,8 @@ const readPeriod = <F extends string>(
 ): Period | null => {
   const result = toPeriod(values.startedOn, values.endedOn);
   if (result.ok) return result.period;
-  if (result.error === 'invalid-started-on')
-    errors.startedOn = values.startedOn === '' ? 'missing' : 'invalid';
-  else if (result.error === 'invalid-ended-on') errors.endedOn = 'invalid';
-  else errors.endedOn = 'ended-before-started';
+  const [field, reason] = toPeriodFieldError(result.error, values.startedOn);
+  errors[field] = reason;
   return null;
 };
 

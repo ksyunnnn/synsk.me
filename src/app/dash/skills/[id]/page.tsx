@@ -4,6 +4,7 @@ import { SkillForm } from '@/features/skill/components/skill-form';
 import { toSkillFormValues } from '@/features/skill/domain/skill';
 import { editSkill } from '@/features/skill/server/actions';
 import { getSkillForEdit } from '@/features/skill/server/queries';
+import { DashPage } from '@/shared/components/dash-page';
 import { TextLink } from '@/shared/components/text-link';
 import { routes } from '@/shared/routes';
 
@@ -21,16 +22,15 @@ const Page = async ({ params }: Props) => {
   if (!skill) notFound();
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
-      <p>
-        <TextLink href={routes.dash.skills.list}>スキルの一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">スキルを編集する</h1>
+    <DashPage
+      back={{ href: routes.dash.skills.list, label: 'スキルの一覧へ戻る' }}
+      title="スキルを編集する"
+    >
       <SkillForm action={editSkill} initialValues={toSkillFormValues(skill)} skillUid={skill.uid} />
       <p>
         <TextLink href={routes.dash.skills.delete(skill.uid)}>このスキルを削除する</TextLink>
       </p>
-    </main>
+    </DashPage>
   );
 };
 
