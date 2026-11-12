@@ -53,6 +53,17 @@ const config = [
     rules: {
       'react/function-component-definition': [2, { namedComponents: 'arrow-function' }],
       'no-console': 2,
+      // Phosphor の入口から読み込むと、開発サーバが全アイコンのモジュールを変換して遅くなる（#331）
+      'no-restricted-imports': [
+        2,
+        {
+          paths: ['@phosphor-icons/react', '@phosphor-icons/react/ssr'].map((name) => ({
+            name,
+            message:
+              'アイコンごとのファイルから読み込む。例: @phosphor-icons/react/dist/csr/X（サーバ専用は dist/ssr/X）',
+          })),
+        },
+      ],
     },
   },
 
