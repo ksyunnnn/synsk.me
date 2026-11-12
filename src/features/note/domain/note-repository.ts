@@ -20,7 +20,7 @@ import type { MediaStorageKey } from '@/shared/domain/media';
  */
 
 /** 書けなかった理由 */
-export type NoteWriteFailure =
+type NoteWriteFailure =
   /** 識別子がほかの note と重なる。削除した note も含む（FR-002） */
   | 'slug-taken'
   /** 一度でも公開した note の識別子を変えようとした（FR-003） */

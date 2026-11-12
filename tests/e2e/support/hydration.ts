@@ -11,7 +11,7 @@ import { waitForHydration } from './note';
  * 画面のスクリプトの読み込みを止める。返した関数を呼ぶと、止めていた読み込みを流し、それ以降は
  * 止めない。止めている要求が残るうちに経路の登録を外すと、Playwright が二重の処理として止まる
  */
-export const holdScripts = async (page: Page) => {
+const holdScripts = async (page: Page) => {
   let release = () => {};
   const released = new Promise<void>((resolve) => {
     release = resolve;

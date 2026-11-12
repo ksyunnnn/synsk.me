@@ -15,7 +15,7 @@ import { routes } from '@/shared/routes';
  * （research.md の R14）。フォームには選択肢の名前だけを渡し、本文や関連 URL を渡さない
  */
 
-export const RESUME_ROW_KIND_LABELS: Record<ResumeRowKind, string> = {
+const RESUME_ROW_KIND_LABELS: Record<ResumeRowKind, string> = {
   careers: '職歴',
   projects: '実績',
   educations: '学歴',

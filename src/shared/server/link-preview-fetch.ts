@@ -38,7 +38,7 @@ export const LINK_PREVIEW_LIMITS: LinkPreviewLimits = {
 };
 
 /** 題の長さの上限（文字）。note の題の上限（specs/003-note の FR-005）と揃える */
-export const LINK_PREVIEW_TITLE_MAX_LENGTH = 200;
+const LINK_PREVIEW_TITLE_MAX_LENGTH = 200;
 
 /** 画像の URL の長さの上限（文字）。超えた URL は持たない */
 const IMAGE_URL_MAX_LENGTH = 2048;
@@ -56,7 +56,7 @@ export type LinkPreview = { title: string | null; imageUrl: string | null };
  * 取れなかった理由。`blocked` は内部のアドレスなど要求を出さない URL、`http` は 2xx でない応答、
  * `network` は要求が投げた、`timeout` は待ち時間を超えた、`too-many-redirects` はリダイレクトの段の上限
  */
-export type LinkPreviewFailure = 'blocked' | 'http' | 'network' | 'timeout' | 'too-many-redirects';
+type LinkPreviewFailure = 'blocked' | 'http' | 'network' | 'timeout' | 'too-many-redirects';
 
 /** 1 つの URL の取得の結果。`url` は渡した URL（リダイレクトの行き先ではない） */
 export type LinkPreviewResult =

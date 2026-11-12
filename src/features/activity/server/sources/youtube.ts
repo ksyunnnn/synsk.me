@@ -35,7 +35,7 @@ const VIDEO_ID = /^[\w-]+$/;
  * `si` などのクエリが付いた形は、oEmbed がどれも同じ動画を返した（2026-11-09 実測）。動画の ID を
  * 読めない URL はそのまま返す
  */
-export const canonicalYouTubeUrl = (url: string): string => {
+const canonicalYouTubeUrl = (url: string): string => {
   let parsed: URL;
   try {
     parsed = new URL(url);

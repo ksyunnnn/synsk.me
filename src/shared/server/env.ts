@@ -24,7 +24,7 @@ export type AccessEnv = {
  * 職務経歴書のプロフィールのメールアドレス（specs/002-resume/research.md の R10）。コードに書かず、
  * Worker の secret に置く。欠ければ職務経歴書にメールアドレスを出さない。値の雛形は `.dev.vars.example` にある
  */
-export type ResumeEnv = {
+type ResumeEnv = {
   RESUME_EMAIL?: string;
 };
 

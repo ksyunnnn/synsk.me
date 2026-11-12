@@ -3,6 +3,6 @@
 import { Noto_Sans_JP, Source_Sans_3 } from 'next/font/google';
 
 export const sourceSans = Source_Sans_3({ subsets: ['latin'], weight: ['300', '400', '600'] });
-export const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false });
+const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false });
 
 export const fontFamily = `${sourceSans.style.fontFamily}, ${notoSansJp.style.fontFamily}, sans-serif`;

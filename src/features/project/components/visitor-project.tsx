@@ -14,7 +14,7 @@ import { routes } from '@/shared/routes';
  */
 
 /** 実績の画像を配る経路 */
-export const projectMediaPath = (slug: string, storageKey: string) =>
+const projectMediaPath = (slug: string, storageKey: string) =>
   routes.projectMedia(slug, storageKey);
 
 export const VisitorProjectView = ({ project }: { project: VisitorProject }) => (
