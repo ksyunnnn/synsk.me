@@ -1,10 +1,11 @@
 import type { MediaStorageKey } from '@/shared/domain/media';
-import type { ProjectKind } from '@/shared/domain/project-kind';
 import type { Uid } from '@/shared/domain/uid';
 import type {
   Project,
   ProjectContent,
   ProjectId,
+  ProjectListFilter,
+  ProjectOrganizationOption,
   ProjectSummary,
   VisitorProject,
 } from '@/features/project/domain/project';
@@ -34,8 +35,13 @@ export type ProjectRepository = {
   findForEdit: (id: ProjectId) => Promise<Project | null>;
   /** 管理画面の URL とフォームの uid が指す実績の id。無ければ null */
   findIdByUid: (uid: Uid) => Promise<ProjectId | null>;
-  /** オーナーの一覧。始まりの日の新しい順。`kind` を渡せば、その種類の実績だけ */
-  list: (filter?: { kind: ProjectKind }) => Promise<ProjectSummary[]>;
+  /**
+   * オーナーの一覧。始まりの日の新しい順。条件を渡せば、どの条件も満たす実績だけ。
+   * 無い組織の uid を渡せば、空を返す
+   */
+  list: (filter?: Partial<ProjectListFilter>) => Promise<ProjectSummary[]>;
+  /** オーナーの一覧を組織で絞る選択肢。実績を持つ組織だけを、名前の順に返す */
+  listOrganizationOptions: () => Promise<ProjectOrganizationOption[]>;
   register: (
     content: ProjectContent & { slug: string },
   ) => Promise<

@@ -388,10 +388,39 @@ describe('一覧と有無', () => {
 
   it('種類を渡すと、その種類の実績だけを返す（issue #330）', async () => {
     const orgId = await insertOrganization(env.DB);
-    await insertProject(env.DB, { organizationId: orgId, title: 'アプリ', kind: 'application' });
+    await insertProject(env.DB, { organizationId: orgId, title: '開発', kind: 'develop' });
     await insertProject(env.DB, { organizationId: orgId, title: '登壇', kind: 'talk' });
     expect((await projects.list({ kind: 'talk' })).map((p) => p.title)).toEqual(['登壇']);
     expect(await projects.list()).toHaveLength(2);
+  });
+
+  it('組織の uid を渡すと、その組織の実績だけを返し、種類と組み合わせられる（issue #330）', async () => {
+    const a = await insertOrganization(env.DB, { name: '作り物 A' });
+    const b = await insertOrganization(env.DB, { name: '作り物 B' });
+    await insertProject(env.DB, { organizationId: a, title: 'A の開発', kind: 'develop' });
+    await insertProject(env.DB, { organizationId: a, title: 'A の登壇', kind: 'talk' });
+    await insertProject(env.DB, { organizationId: b, title: 'B の登壇', kind: 'talk' });
+    const uidOf = async (id: number) =>
+      (await env.DB.prepare('SELECT uid FROM organization WHERE id = ?').bind(id).first<{
+        uid: string;
+      }>())!.uid;
+    const aUid = await uidOf(a);
+    const titles = async (filter: Parameters<typeof projects.list>[0]) =>
+      (await projects.list(filter)).map((p) => p.title).sort();
+    expect(await titles({ organizationUid: aUid })).toEqual(['A の登壇', 'A の開発'].sort());
+    expect(await titles({ kind: 'talk', organizationUid: aUid })).toEqual(['A の登壇']);
+    expect(await titles({ organizationUid: 'f'.repeat(32) })).toEqual([]);
+  });
+
+  it('組織の選択肢は、実績を持つ組織だけを名前の順に返す（issue #330）', async () => {
+    const b = await insertOrganization(env.DB, { name: '作り物 B' });
+    const a = await insertOrganization(env.DB, { name: '作り物 A' });
+    await insertOrganization(env.DB, { name: '作り物 実績なし' });
+    await insertProject(env.DB, { organizationId: b });
+    await insertProject(env.DB, { organizationId: a });
+    const options = await projects.listOrganizationOptions();
+    expect(options.map((o) => o.name)).toEqual(['作り物 A', '作り物 B']);
+    expect(options.every((o) => /^[0-9a-f]{32}$/.test(o.uid))).toBe(true);
   });
 
   it('一覧の行は、本文・その実績の画像のキー・代表画像のキーを持つ（issue #330）', async () => {

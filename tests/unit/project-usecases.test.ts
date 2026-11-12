@@ -8,6 +8,7 @@ import {
   ownerProjectMediaAccess,
   visitorProjectMediaAccess,
 } from '@/features/project/application/project-media';
+import { listProjects } from '@/features/project/application/list-projects';
 import { registerProject } from '@/features/project/application/register-project';
 import {
   toProjectFormValues,
@@ -60,7 +61,8 @@ const fakeProjects = (current: Project | null) =>
   ({
     findVisitorBySlug: vi.fn(),
     findForEdit: vi.fn(async () => current),
-    list: vi.fn(),
+    list: vi.fn<ProjectRepository['list']>(async () => []),
+    listOrganizationOptions: vi.fn<ProjectRepository['listOrganizationOptions']>(async () => []),
     findIdByUid: vi.fn(),
     register: vi.fn(async () => ({
       ok: true as const,
@@ -351,5 +353,27 @@ describe('ownerProjectMediaAccess（issue #330）', () => {
     );
     expect(ownerProjectMediaAccess(OWNER, { mediaStorageKeys: [MEDIA_KEY] }, other)).toBe('hidden');
     expect(ownerProjectMediaAccess(OWNER, null, MEDIA_KEY)).toBe('hidden');
+  });
+});
+
+describe('listProjects（issue #330）', () => {
+  const ORG = { uid: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', name: '作り物株式会社' };
+
+  beforeEach(() => {
+    projects.listOrganizationOptions.mockResolvedValue([ORG]);
+  });
+
+  it('実績を持つ組織の uid なら、種類と組織の両方で絞り、選択肢と一緒に返す', async () => {
+    const result = await listProjects(projects, { kind: 'talk', organizationUid: ORG.uid });
+    expect(projects.list).toHaveBeenCalledWith({ kind: 'talk', organizationUid: ORG.uid });
+    expect(result.organizations).toEqual([ORG]);
+    expect(result.filter).toEqual({ kind: 'talk', organizationUid: ORG.uid });
+  });
+
+  it('実績を持つ組織に無い uid では、組織で絞らない', async () => {
+    const other = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const result = await listProjects(projects, { kind: null, organizationUid: other });
+    expect(projects.list).toHaveBeenCalledWith({ kind: null, organizationUid: null });
+    expect(result.filter.organizationUid).toBeNull();
   });
 });

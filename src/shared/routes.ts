@@ -59,9 +59,22 @@ export const routes = {
     careers: dashCollection('careers'),
     projects: {
       ...projects,
-      /** 一覧を種類で絞った経路。null ならすべての種類 */
-      listByKind: (kind: ProjectKind | null) =>
-        kind === null ? projects.list : `${projects.list}?kind=${kind}`,
+      /**
+       * 一覧を種類と組織で絞った経路（issue #330）。null の条件はクエリに出さない。組織は uid で指し、
+       * 数字の id を出さない（ADR-0051）
+       */
+      listBy: ({
+        kind,
+        organizationUid,
+      }: {
+        kind: ProjectKind | null;
+        organizationUid: string | null;
+      }) => {
+        const query = new URLSearchParams();
+        if (kind !== null) query.set('kind', kind);
+        if (organizationUid !== null) query.set('org', organizationUid);
+        return query.size === 0 ? projects.list : `${projects.list}?${query}`;
+      },
       /** 一覧が描く画像を、オーナーにだけ返す経路（issue #330） */
       media: (uid: string, key: string) => `${projects.row(uid)}/media/${key}`,
     },
