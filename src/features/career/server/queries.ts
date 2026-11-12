@@ -1,8 +1,6 @@
 import 'server-only';
 
 import type { CareerDeps } from '@/features/career/application/deps';
-import { getCareerForEdit as getCareerForEditUseCase } from '@/features/career/application/get-career-for-edit';
-import { listCareers as listCareersUseCase } from '@/features/career/application/list-careers';
 import type { Career, CareerSummary } from '@/features/career/domain/career';
 import { createD1CareerRepository } from '@/features/career/server/d1-career-repository';
 import { requireAuthor } from '@/shared/server/author';
@@ -25,7 +23,7 @@ export const createCareerDeps = async (): Promise<CareerDeps> => {
 /** オーナーの一覧。オーナーでなければ 403 */
 export const listCareers = async (): Promise<CareerSummary[]> => {
   await requireAuthor();
-  return listCareersUseCase((await createCareerDeps()).careers);
+  return (await createCareerDeps()).careers.list();
 };
 
 /** オーナーが編集する職歴。オーナーでなければ 403。無い uid なら null */
@@ -33,7 +31,7 @@ export const getCareerForEdit = async (uid: string): Promise<Career | null> => {
   await requireAuthor();
   const { careers } = await createCareerDeps();
   const id = await findIdByUid(careers, uid);
-  return id === null ? null : getCareerForEditUseCase(careers, id);
+  return id === null ? null : careers.findForEdit(id);
 };
 
 /** `src/proxy.ts` が呼ぶ。職歴がある uid か */

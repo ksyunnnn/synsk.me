@@ -4,6 +4,7 @@
  * （specs/001-career-and-project/research.md の R9・R10）。
  */
 
+import type { ActionResult } from '@/shared/domain/action-result';
 import type { Uid } from '@/shared/domain/uid';
 
 export type OrganizationId = number;
@@ -115,3 +116,16 @@ export type OrganizationRepository = {
     id: OrganizationId,
   ) => Promise<{ ok: true } | { ok: false; reason: 'referenced' | 'personal' | 'not-found' }>;
 };
+
+/** 組織のフォームが、入力の項目とは別に送る値 */
+export const ORGANIZATION_UID_FIELD = 'organizationUid';
+
+export type OrganizationField = 'name' | 'nameMasked';
+export type OrganizationFieldError = 'missing' | 'name-taken' | 'masked-name-required';
+export type OrganizationFormValues = Record<OrganizationField, string>;
+
+/** 組織のフォームの Server Action が返す結果 */
+export type OrganizationFormResult = ActionResult<OrganizationField, OrganizationFieldError>;
+
+/** 組織を消す確認のフォームの Server Action が返す結果 */
+export type DeleteOrganizationResult = { status: 'forbidden' | 'referenced' | 'personal' };

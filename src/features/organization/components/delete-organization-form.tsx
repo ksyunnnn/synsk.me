@@ -1,12 +1,13 @@
 'use client';
 
 import { useActionState } from 'react';
-import { ORGANIZATION_UID_FIELD } from '@/features/organization/application/edit-organization';
+import {
+  ORGANIZATION_UID_FIELD,
+  type DeleteOrganizationResult as Result,
+} from '@/shared/domain/organization';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /** 組織を消す確認のフォーム。消せなければ理由を示す */
-
-type Result = { status: 'forbidden' | 'referenced' | 'personal' };
 
 const MESSAGES: Record<Result['status'], string> = {
   forbidden: 'オーナーであることを確かめられませんでした。ログインし直してください',

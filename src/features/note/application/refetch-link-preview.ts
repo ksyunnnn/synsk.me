@@ -1,24 +1,7 @@
-import type {
-  LinkPreviewFetchFailure,
-  LinkPreviewRefetchError,
-  NoteId,
-  VisitorLinkPreview,
-} from '@/features/note/domain/note';
-import type { NoteRepository } from '@/features/note/domain/note-repository';
+import type { NoteDeps } from '@/features/note/application/deps';
+import type { LinkPreviewRefetchError, NoteId } from '@/features/note/domain/note';
 import type { Author } from '@/shared/domain/author';
 import { readMarkdown } from '@/shared/domain/markdown';
-
-/**
- * 1 つの URL の題と画像の URL を取る。投げずに、取れたか取れなかった理由を返す。上限と内部の
- * アドレスの検査は実装が持つ（plan.md の「参照先への取得の上限」）。本番の実装は
- * src/shared/server/link-preview-fetch.ts の `fetchLinkPreview`（`src/features/note/server/actions.ts`）
- */
-export type SingleLinkPreviewSource = (
-  url: string,
-) => Promise<
-  | ({ status: 'fetched' } & VisitorLinkPreview)
-  | { status: 'failed'; reason: LinkPreviewFetchFailure }
->;
 
 export type RefetchLinkPreviewOutcome =
   | { status: 'refetched' }
@@ -34,7 +17,7 @@ export type RefetchLinkPreviewOutcome =
  * （FR-033）
  */
 export const refetchLinkPreview = async (
-  { notes, fetchLinkPreview }: { notes: NoteRepository; fetchLinkPreview: SingleLinkPreviewSource },
+  { notes, fetchLinkPreview }: Pick<NoteDeps, 'notes' | 'fetchLinkPreview'>,
   author: Author | null,
   id: NoteId,
   url: string,

@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import {
   LIFE_EVENT_IMAGE_FIELD,
   LIFE_EVENT_UID_FIELD,
+  type LifeEventImageResult as Result,
 } from '@/features/activity/domain/life-event';
 import {
   MEDIA_STORAGE_FULL_MESSAGE,
@@ -18,7 +19,6 @@ import { SubmitButton } from '@/shared/components/submit-button';
  * で、新しく登録すると前の画像を消す（research.md の R12）
  */
 
-type Result = { status: 'forbidden' } | { status: 'rejected'; reason: MediaRejection };
 type Action = (state: Result | null, formData: FormData) => Promise<Result>;
 
 type Props = {

@@ -1,5 +1,5 @@
 import type { ActivityDeps } from '@/features/activity/application/deps';
-import { pickSourcesForRun } from '@/features/activity/application/pick-sources';
+import { pickSourcesForRun } from '@/features/activity/domain/pick-sources';
 import { refreshSources } from '@/features/activity/application/refresh-sources';
 import type { RefreshOutcome, SourceName } from '@/features/activity/domain/fetched-item';
 import type { RefreshLimits } from '@/features/activity/domain/limits';

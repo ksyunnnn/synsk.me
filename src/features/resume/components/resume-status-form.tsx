@@ -1,9 +1,11 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { EditOutcome } from '@/features/resume/application/edit-outcome';
 import type { ResumeStatus } from '@/features/resume/domain/resume';
-import { STATUS_FIELD, type FieldError } from '@/features/resume/domain/resume-forms';
+import {
+  STATUS_FIELD,
+  type ResumeStatusResult as StatusResult,
+} from '@/features/resume/domain/resume-forms';
 import {
   BUTTON,
   messageOf,
@@ -19,10 +21,6 @@ import { SubmitButton } from '@/shared/components/submit-button';
  * 設定の画面の Server Action は保存したら画面を移す。作成の画面の Server Action は移らずに
  * `changed` を返し、このフォームが切り替えた後の状態と更新日時で描き直す
  */
-
-type StatusResult =
-  | EditOutcome<{ status: string }, { status?: FieldError }>
-  | { status: 'changed'; resumeStatus: ResumeStatus; updatedAt: string };
 
 type StatusAction = (state: StatusResult | null, formData: FormData) => Promise<StatusResult>;
 

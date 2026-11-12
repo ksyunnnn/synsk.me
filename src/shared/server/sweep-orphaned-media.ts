@@ -69,6 +69,7 @@ export const sweepOrphanedMedia = async (
   let reachedEnd = false;
 
   try {
+    // 読む → 計算 → 書くの例外。1 回で読み書きする量に上限をかけるため、頁ごとに読み書きする（原則 2）
     for (let page = 0; page < limits.maxPages; page += 1) {
       const listed = await storage.list({ cursor, limit: limits.pageSize });
       const candidates = listed.items

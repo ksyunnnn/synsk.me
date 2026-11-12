@@ -1,6 +1,6 @@
 'use client';
 
-import { DraftSavedNotice } from '@/shared/components/draft-retention';
+import { DraftSavedNotice } from '@/features/note/components/draft-retention';
 
 /**
  * 保存できたことの知らせ。続けて保存すると同じ `?saved=1` の画面へ移り、`DraftSavedNotice` が

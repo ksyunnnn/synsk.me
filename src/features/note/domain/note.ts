@@ -208,7 +208,7 @@ export type SyndicationFormResult = ActionResult<
 export const LINK_PREVIEW_URL_FIELD = 'linkPreviewUrl';
 
 /**
- * 参照先の情報を取れなかった理由。値は src/shared/server/link-preview-fetch.ts の
+ * 参照先の情報を取れなかった理由。値は src/features/note/server/link-preview-fetch.ts の
  * `LinkPreviewFailure` と同じ。画面に理由を出すため、domain の言葉として持つ
  */
 export type LinkPreviewFetchFailure =

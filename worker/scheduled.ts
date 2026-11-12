@@ -1,4 +1,4 @@
-import { refreshNextSourcesNow } from '@/features/activity/server/refresh-queries';
+import { refreshNextSourcesNow } from '@/features/activity/server/queries';
 import { sweepOrphanedMediaNow } from '@/shared/server/sweep-orphaned-media';
 
 /**

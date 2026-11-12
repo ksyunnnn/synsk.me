@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, type ReactNode } from 'react';
-import type { EditOutcome } from '@/features/resume/application/edit-outcome';
+import type { EditOutcome } from '@/features/resume/domain/edit-outcome';
 import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import {
   OPENED_UPDATED_AT_FIELD,

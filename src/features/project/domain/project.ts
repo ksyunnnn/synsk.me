@@ -1,11 +1,12 @@
 import type { ActionResult } from '@/shared/domain/action-result';
-import type { MediaStorageKey } from '@/shared/domain/media';
+import type { Author } from '@/shared/domain/author';
+import type { MediaAccess, MediaStorageKey } from '@/shared/domain/media';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { parseOrganizationName, type Organization } from '@/shared/domain/organization';
 import { toPeriod, type Period } from '@/shared/domain/period';
-import { parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
+import { SITE_STATUSES, parseSiteStatus, type SiteStatus } from '@/shared/domain/site-status';
 import { isSlug, newSlug } from '@/shared/domain/slug';
-import type { Uid } from '@/shared/domain/uid';
+import { parseUid, type Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
 import { PROJECT_KINDS, isProjectKind, type ProjectKind } from '@/shared/domain/project-kind';
 import { normalizeNewlines } from '@/shared/domain/newlines';
@@ -321,3 +322,64 @@ export type MaskedVisitorProject = {
 };
 
 export type VisitorProject = UnmaskedVisitorProject | MaskedVisitorProject;
+
+/**
+ * 実績の画像を訪問者に見せてよいか（FR-030）。サイトに載せる、秘匿化しない実績の、本文が指す
+ * その実績の画像と代表画像だけを `public` にする。秘匿化した実績・サイトに載せない実績の画像は
+ * `hidden`
+ */
+export const visitorProjectMediaAccess = (
+  project: VisitorProject | null,
+  storageKey: MediaStorageKey,
+): MediaAccess => {
+  if (!project || project.isMasked) return 'hidden';
+  return project.media.includes(storageKey) || project.cardImageKey === storageKey
+    ? 'public'
+    : 'hidden';
+};
+
+/**
+ * 実績の画像をオーナーに見せてよいか（issue #330）。管理画面の一覧が、サイトに載せない実績と
+ * 秘匿化した実績の画像も描くために使う。オーナーで、その実績の画像なら `restricted`（どの
+ * キャッシュにも残さない。docs/REQUIREMENTS.md の NFR-09）。ほかは `hidden`
+ */
+export const ownerProjectMediaAccess = (
+  author: Author | null,
+  project: Pick<Project, 'mediaStorageKeys'> | null,
+  storageKey: MediaStorageKey,
+): MediaAccess =>
+  author !== null && project !== null && project.mediaStorageKeys.includes(storageKey)
+    ? 'restricted'
+    : 'hidden';
+
+/** 一覧の URL の検索の値（`?kind=` など）。Next.js の `searchParams` の 1 つの値の形 */
+type ListParam = string | string[] | undefined;
+
+/** `?kind=` の値。種類の値でなければ、すべての種類 */
+const parseKind = (value: ListParam): ProjectKind | null =>
+  typeof value === 'string' && isProjectKind(value) ? value : null;
+
+/** `?org=` の値。uid の形でなければ、すべての組織 */
+const parseOrganizationUid = (value: ListParam): Uid | null =>
+  typeof value === 'string' ? parseUid(value) : null;
+
+/** `?status=` の値。サイトに載せるかの値でなければ、どちらも */
+const parseStatus = (value: ListParam): SiteStatus | null =>
+  SITE_STATUSES.find((status) => status === value) ?? null;
+
+/** `?masked=` の値。`true` か `false` でなければ、どちらも */
+const parseIsMasked = (value: ListParam): boolean | null =>
+  value === 'true' ? true : value === 'false' ? false : null;
+
+/** オーナーの一覧の URL の検索の値を、絞り込みの条件にする。読めない値は、その条件で絞らない */
+export const parseProjectListFilter = (params: {
+  kind?: ListParam;
+  org?: ListParam;
+  status?: ListParam;
+  masked?: ListParam;
+}): ProjectListFilter => ({
+  kind: parseKind(params.kind),
+  organizationUid: parseOrganizationUid(params.org),
+  status: parseStatus(params.status),
+  isMasked: parseIsMasked(params.masked),
+});

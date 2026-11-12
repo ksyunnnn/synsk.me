@@ -5,13 +5,13 @@ import { editProject } from '@/features/project/application/edit-project';
 import {
   addProjectMedia,
   changeProjectCardImage,
-  ownerProjectMediaAccess,
-  visitorProjectMediaAccess,
 } from '@/features/project/application/project-media';
 import { listProjects } from '@/features/project/application/list-projects';
 import { registerProject } from '@/features/project/application/register-project';
 import {
+  ownerProjectMediaAccess,
   toProjectFormValues,
+  visitorProjectMediaAccess,
   type Project,
   type ProjectFormValues,
 } from '@/features/project/domain/project';

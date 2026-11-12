@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { EditOutcome } from '@/features/resume/application/edit-outcome';
+import type { RegenerateResumeUrlResult as UrlResult } from '@/features/resume/domain/resume-forms';
 import {
   BUTTON,
   ResumeFormHidden,
@@ -14,8 +14,6 @@ import { SubmitButton } from '@/shared/components/submit-button';
  * 限定公開用の URL と、URL を出し直すフォーム（specs/002-resume/contracts/dash.md の
  * `regenerateResumeUrl`、FR-040）。出し直すと識別子が新しい uid になり、古い URL は 404 になる
  */
-
-type UrlResult = EditOutcome<Record<string, never>, Record<string, never>>;
 
 const MESSAGES: Partial<Record<UrlResult['status'], string>> = {
   conflict:

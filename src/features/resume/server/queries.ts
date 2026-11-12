@@ -2,13 +2,11 @@ import 'server-only';
 
 import { headers } from 'next/headers';
 import { cache } from 'react';
-import { getResumeForEdit as getResumeForEditUseCase } from '@/features/resume/application/get-resume-for-edit';
 import {
   getResumePreview as getResumePreviewUseCase,
   getVisitorLimitedResume as getVisitorLimitedResumeUseCase,
 } from '@/features/resume/application/get-visitor-resume';
 import { listResumeSources as listResumeSourcesUseCase } from '@/features/resume/application/list-resume-sources';
-import { listResumes as listResumesUseCase } from '@/features/resume/application/list-resumes';
 import { toProfile } from '@/features/resume/domain/profile';
 import {
   isResumeRowKind,
@@ -38,7 +36,7 @@ const readProfile = async () => toProfile((await readEnv()).RESUME_EMAIL);
 /** オーナーの一覧。オーナーでなければ 403 */
 export const listResumes = async (): Promise<Resume[]> => {
   await requireAuthor();
-  return listResumesUseCase(await createResumeRepository());
+  return (await createResumeRepository()).list();
 };
 
 /** 作成の画面の選択肢。オーナーでなければ 403 */
@@ -68,7 +66,7 @@ export const getResumeForEdit = async (uid: string): Promise<ResumeForEdit | nul
   await requireAuthor();
   const resumes = await createResumeRepository();
   const id = await findIdByUid(resumes, uid);
-  return id === null ? null : getResumeForEditUseCase(resumes, id);
+  return id === null ? null : resumes.findForEdit(id);
 };
 
 /**

@@ -3,7 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { refreshSources } from '@/features/activity/application/refresh-sources';
 import type { GoneCheck } from '@/features/activity/domain/fetched-item';
 import { SOURCES } from '@/features/activity/domain/sources';
-import { planRefresh } from '@/features/activity/application/plan-refresh';
+import { planRefresh } from '@/features/activity/domain/plan-refresh';
 import {
   createD1ActivityRepository,
   createD1ExternalActivityRepository,

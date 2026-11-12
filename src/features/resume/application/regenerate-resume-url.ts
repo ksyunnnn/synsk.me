@@ -2,7 +2,7 @@ import type { EditTimes, ResumeId } from '@/features/resume/domain/resume';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
 import type { Author } from '@/shared/domain/author';
 import { newSlug } from '@/shared/domain/slug';
-import { toEditOutcome, type EditOutcome } from './edit-outcome';
+import { toEditOutcome, type EditOutcome } from '@/features/resume/domain/edit-outcome';
 
 /**
  * 限定公開用の URL を出し直す（FR-040）。識別子を新しい uid に作り直し、古い URL は 404 になる。

@@ -7,7 +7,7 @@ import {
   readLinkPreview,
   type LinkPreviewFetcher,
   type LinkPreviewLimits,
-} from '@/shared/server/link-preview-fetch';
+} from '@/features/note/server/link-preview-fetch';
 
 /**
  * 参照先のページから題と画像の URL を取る部品（specs/003-note/research.md の R13、plan.md の

@@ -1,11 +1,11 @@
 import type { ActivityDeps } from '@/features/activity/application/deps';
-import { planRefresh } from '@/features/activity/application/plan-refresh';
+import { planRefresh } from '@/features/activity/domain/plan-refresh';
 import {
   GONE_STREAK_TO_REMOVE,
   listedWithGoneStreak,
   pickGoneChecks,
   planRemovals,
-} from '@/features/activity/application/plan-removals';
+} from '@/features/activity/domain/plan-removals';
 import type { StoredItem } from '@/features/activity/domain/activity-repository';
 import type {
   GoneCheck,
@@ -125,8 +125,8 @@ const refreshSource = async (
       return fail(deps, source, now, `書き込みに失敗した: ${messageOf(error)}`);
     }
   }
-  const upserts = planRefresh(stored, listing.items);
   const checks = await checkGoneOf(deps, source, stored, listing, limits);
+  const upserts = planRefresh(stored, listing.items);
   const removals = planRemovals(stored, listing, limits.maxRemovals, checks.gone);
   const deleted = new Set(removals.deletes);
   const goneChecked = keptStreaks(checks.checked, deleted, removals.keptOverLimit);

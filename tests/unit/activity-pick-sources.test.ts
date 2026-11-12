@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { pickSourcesForRun } from '@/features/activity/application/pick-sources';
+import { pickSourcesForRun } from '@/features/activity/domain/pick-sources';
 
 /**
  * 1 回の実行で取り直す取得元を、上限の数まで、最後に取り直した日時の古い順に選ぶ

@@ -5,9 +5,9 @@ import {
   ORGANIZATION_UID_FIELD,
   type OrganizationField,
   type OrganizationFieldError,
+  type OrganizationFormResult,
   type OrganizationFormValues,
-} from '@/features/organization/application/edit-organization';
-import type { ActionResult } from '@/shared/domain/action-result';
+} from '@/shared/domain/organization';
 import { InputField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -16,8 +16,6 @@ import { SubmitButton } from '@/shared/components/submit-button';
  * 組織名と秘匿化した組織名を直すフォーム。Server Action は props で受け取り、`server/` を
  * 読み込まない（ADR-0026 の依存の向き 3）。失敗の結果は、入力を消さずに理由を示す
  */
-
-type OrganizationFormResult = ActionResult<OrganizationField, OrganizationFieldError>;
 
 type Props = {
   action: (

@@ -14,7 +14,7 @@ export type PurgeNoteOutcome =
  * 管理画面からこれを呼ぶ画面は作らない（spec の Assumptions）
  */
 export const purgeNote = async (
-  { notes, media }: NoteDeps,
+  { notes, media }: Pick<NoteDeps, 'notes' | 'media'>,
   author: Author | null,
   id: NoteId,
 ): Promise<PurgeNoteOutcome> => {

@@ -7,7 +7,9 @@ import {
   type ResumeProject,
   type ResumeProjectContent,
   type ResumeSkillOverride,
+  type ResumeStatus,
 } from '@/features/resume/domain/resume';
+import type { EditOutcome } from '@/features/resume/domain/edit-outcome';
 import { MAX_COPIED_ROWS } from '@/features/resume/domain/build-resume';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
 import { toPeriod, type Period } from '@/shared/domain/period';
@@ -303,3 +305,41 @@ export const parseSkillOverrides = (
   });
   return invalidRows.length > 0 ? { ok: false, invalidRows } : { ok: true, overrides };
 };
+
+/*
+ * 管理画面の Server Action（src/features/resume/server/actions.ts）が返す結果
+ */
+
+export type ResumeSettingsValues = Record<ResumeSettingsField, string>;
+
+export type ResumeSettingsResult = EditOutcome<
+  ResumeSettingsValues,
+  Partial<Record<ResumeSettingsField, FieldError>>
+>;
+
+export type ResumeStatusResult =
+  | EditOutcome<{ status: string }, { status?: FieldError }>
+  /** 移らずに切り替えた。画面に残す、切り替えた後の状態と更新日時 */
+  | { status: 'changed'; resumeStatus: ResumeStatus; updatedAt: string };
+
+export type RegenerateResumeUrlResult = EditOutcome<Record<string, never>, Record<string, never>>;
+
+export type ResumeCareerResult = EditOutcome<
+  ResumeCareerFormValues,
+  Partial<Record<ResumeCareerField, FieldError>>
+>;
+
+export type ResumeProjectResult = EditOutcome<
+  ResumeProjectFormValues,
+  Partial<Record<ResumeProjectField, FieldError>>
+>;
+
+export type ResumeEducationResult = EditOutcome<
+  ResumeEducationFormValues,
+  Partial<Record<ResumeEducationField, FieldError>>
+>;
+
+export type ResumeSkillOverridesResult = EditOutcome<
+  SkillOverrideFormRow[],
+  { invalidRows: number[] }
+>;

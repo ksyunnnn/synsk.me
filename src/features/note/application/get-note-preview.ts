@@ -1,13 +1,6 @@
-import type { NoteId, NotePreview, VisitorLinkPreview } from '@/features/note/domain/note';
-import type { NoteRepository } from '@/features/note/domain/note-repository';
+import type { NoteDeps } from '@/features/note/application/deps';
+import type { NoteId, NotePreview } from '@/features/note/domain/note';
 import { readMarkdown } from '@/shared/domain/markdown';
-
-/**
- * 参照先の題と画像の URL を取る。取れた URL だけを返し、取れなかった URL は返さない。取る数・
- * 時間・大きさの上限は実装が持つ（plan.md の「参照先への取得の上限」）。本番の実装は
- * src/shared/server/link-preview-fetch.ts を包む（`src/features/note/server/queries.ts`）
- */
-export type LinkPreviewSource = (urls: string[]) => Promise<VisitorLinkPreview[]>;
 
 /**
  * 公開したときの見た目を確かめる形（REQUIREMENTS.md の FR-13、research.md の R15）。最も新しい版を、
@@ -19,7 +12,7 @@ export type LinkPreviewSource = (urls: string[]) => Promise<VisitorLinkPreview[]
  * （原則 4）
  */
 export const getNotePreview = async (
-  { notes, fetchLinkPreviews }: { notes: NoteRepository; fetchLinkPreviews: LinkPreviewSource },
+  { notes, fetchLinkPreviews }: Pick<NoteDeps, 'notes' | 'fetchLinkPreviews'>,
   id: NoteId,
   now: string,
 ): Promise<NotePreview | null> => {

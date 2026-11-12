@@ -13,7 +13,7 @@ import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
  * このモジュールは、フォームを hydration する前に読み込まれる。読み込んだ時点で初めの値と違う
  * 値と、それから動き始めるまでの入力を、要素ごとに持つ。動き始めたら、持った値を戻す。
  * 端末（localStorage）には書かない。書きかけを端末に残すのは note の入力だけで、
- * `src/shared/components/draft-retention.tsx` が持つ
+ * `src/features/note/components/draft-retention.tsx` が持つ
  */
 
 const MARK = 'data-keeps-typed';

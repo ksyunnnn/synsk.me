@@ -1,17 +1,10 @@
 import 'server-only';
 
 import { cache } from 'react';
-import type { NoteDeps } from '@/features/note/application/deps';
-import { getNoteForEdit as getNoteForEditUseCase } from '@/features/note/application/get-note-for-edit';
+import type { LinkPreviewSource, NoteDeps } from '@/features/note/application/deps';
 import { getNotePreview as getNotePreviewUseCase } from '@/features/note/application/get-note-preview';
 import { getPreviewNoteMedia as getPreviewNoteMediaUseCase } from '@/features/note/application/get-preview-note-media';
-import { getVisitorNote as getVisitorNoteUseCase } from '@/features/note/application/get-visitor-note';
 import { getVisitorNoteMedia as getVisitorNoteMediaUseCase } from '@/features/note/application/get-visitor-note-media';
-import {
-  getNoteRevision as getNoteRevisionUseCase,
-  listNoteRevisions as listNoteRevisionsUseCase,
-} from '@/features/note/application/list-note-revisions';
-import { listNotes as listNotesUseCase } from '@/features/note/application/list-notes';
 import type {
   Note,
   NotePreview,
@@ -25,7 +18,10 @@ import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
-import { fetchLinkPreviews as fetchSharedLinkPreviews } from '@/shared/server/link-preview-fetch';
+import {
+  fetchLinkPreview,
+  fetchLinkPreviews as fetchLinkPreviewResults,
+} from '@/features/note/server/link-preview-fetch';
 import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 
 /**
@@ -33,9 +29,25 @@ import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/serv
  * D1 から読み出せなければ投げる。画面は投げられた例外で 500 を返す
  */
 
+/**
+ * 参照先の題と画像の URL を取り、取れた URL だけを返す（research.md の R13）。取れなかった URL は
+ * 書かないため、次に見た目の確認を開いたときに取り直す。上限は取得の部品の本番の値
+ */
+const fetchLinkPreviews: LinkPreviewSource = async (urls) =>
+  (await fetchLinkPreviewResults(urls)).flatMap((result) =>
+    result.status === 'fetched'
+      ? [{ url: result.url, title: result.title, imageUrl: result.imageUrl }]
+      : [],
+  );
+
 export const createNoteDeps = async (): Promise<NoteDeps> => {
   const { DB } = await readEnv();
-  return { notes: createD1NoteRepository(DB), media: await createMediaStorage() };
+  return {
+    notes: createD1NoteRepository(DB),
+    media: await createMediaStorage(),
+    fetchLinkPreviews,
+    fetchLinkPreview: (url) => fetchLinkPreview(url),
+  };
 };
 
 /**
@@ -80,13 +92,13 @@ export const respondWithNoteMedia = async (
  * メタデータの両方が呼ぶため、1 つの要求の中では D1 に 1 回だけ問い合わせる
  */
 export const getVisitorNote = cache(async (slug: string): Promise<VisitorNote | null> =>
-  getVisitorNoteUseCase((await createNoteDeps()).notes, slug),
+  (await createNoteDeps()).notes.findVisitorBySlug(slug),
 );
 
 /** オーナーの一覧。オーナーでなければ 403 */
 export const listNotes = async (): Promise<NoteSummary[]> => {
   await requireAuthor();
-  return listNotesUseCase((await createNoteDeps()).notes);
+  return (await createNoteDeps()).notes.list();
 };
 
 /** オーナーが編集する note。削除した note も返す。オーナーでなければ 403。無い uid なら null */
@@ -94,19 +106,8 @@ export const getNoteForEdit = async (uid: string): Promise<Note | null> => {
   await requireAuthor();
   const { notes } = await createNoteDeps();
   const id = await findIdByUid(notes, uid);
-  return id === null ? null : getNoteForEditUseCase(notes, id);
+  return id === null ? null : notes.findForEdit(id);
 };
-
-/**
- * 参照先の題と画像の URL を取り、取れた URL だけを返す（research.md の R13）。取れなかった URL は
- * 書かないため、次に見た目の確認を開いたときに取り直す。上限は共有の部品の本番の値
- */
-const fetchLinkPreviews = async (urls: string[]) =>
-  (await fetchSharedLinkPreviews(urls)).flatMap((result) =>
-    result.status === 'fetched'
-      ? [{ url: result.url, title: result.title, imageUrl: result.imageUrl }]
-      : [],
-  );
 
 /**
  * 見た目の確認で描く形（REQUIREMENTS.md の FR-13）。オーナーでなければ 403。無い uid なら null。
@@ -114,11 +115,9 @@ const fetchLinkPreviews = async (urls: string[]) =>
  */
 export const getNotePreview = async (uid: string): Promise<NotePreview | null> => {
   await requireAuthor();
-  const { notes } = await createNoteDeps();
-  const id = await findIdByUid(notes, uid);
-  return id === null
-    ? null
-    : getNotePreviewUseCase({ notes, fetchLinkPreviews }, id, new Date().toISOString());
+  const deps = await createNoteDeps();
+  const id = await findIdByUid(deps.notes, uid);
+  return id === null ? null : getNotePreviewUseCase(deps, id, new Date().toISOString());
 };
 
 /**
@@ -131,10 +130,7 @@ export const listNoteRevisions = async (
   const { notes } = await createNoteDeps();
   const id = await findIdByUid(notes, uid);
   if (id === null) return null;
-  const [note, revisions] = await Promise.all([
-    getNoteForEditUseCase(notes, id),
-    listNoteRevisionsUseCase(notes, id),
-  ]);
+  const [note, revisions] = await Promise.all([notes.findForEdit(id), notes.listRevisions(id)]);
   return note ? { note, revisions } : null;
 };
 
@@ -152,8 +148,8 @@ export const getNoteRevision = async (
   const parsedRevisionUid = parseUid(revisionUid);
   if (id === null || parsedRevisionUid === null) return null;
   const [note, revision] = await Promise.all([
-    getNoteForEditUseCase(notes, id),
-    getNoteRevisionUseCase(notes, id, parsedRevisionUid),
+    notes.findForEdit(id),
+    notes.findRevision(id, parsedRevisionUid),
   ]);
   return note && revision ? { note, revision } : null;
 };

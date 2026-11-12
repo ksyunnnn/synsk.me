@@ -17,7 +17,7 @@ export type AddNoteMediaOutcome =
  * 置いた画像を消して not-found を返す。記録が例外で失敗したときも、置いた画像を消してから投げ直す
  */
 export const addNoteMedia = async (
-  { notes, media }: NoteDeps,
+  { notes, media }: Pick<NoteDeps, 'notes' | 'media'>,
   author: Author | null,
   id: NoteId,
   file: Blob | null,

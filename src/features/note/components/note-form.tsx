@@ -11,7 +11,7 @@ import {
   type NoteFormResult,
   type NoteFormValues,
 } from '@/features/note/domain/note';
-import { DraftRetainingForm } from '@/shared/components/draft-retention';
+import { DraftRetainingForm } from '@/features/note/components/draft-retention';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';

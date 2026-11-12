@@ -5,7 +5,7 @@ import Link from 'next/link';
 
 import { Feed } from '@/features/activity/components/feed';
 import { readFeedPage } from '@/features/activity/domain/feed';
-import { listFeedItems } from '@/features/activity/server/feed-queries';
+import { listFeedItems } from '@/features/activity/server/queries';
 import { fontFamily, sourceSans } from '@/lib/fonts';
 import { routes } from '@/shared/routes';
 

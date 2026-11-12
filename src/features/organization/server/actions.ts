@@ -4,15 +4,14 @@ import 'server-only';
 
 import { redirect } from 'next/navigation';
 import { deleteOrganization as deleteOrganizationUseCase } from '@/features/organization/application/delete-organization';
-import {
-  ORGANIZATION_UID_FIELD,
-  editOrganization as editOrganizationUseCase,
-  type OrganizationField,
-  type OrganizationFieldError,
-} from '@/features/organization/application/edit-organization';
+import { editOrganization as editOrganizationUseCase } from '@/features/organization/application/edit-organization';
 import { createOrganizationRepository } from '@/features/organization/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
-import type { ActionResult } from '@/shared/domain/action-result';
+import {
+  ORGANIZATION_UID_FIELD,
+  type DeleteOrganizationResult,
+  type OrganizationFormResult,
+} from '@/shared/domain/organization';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString } from '@/shared/server/form-data';
 import { routes } from '@/shared/routes';
@@ -21,8 +20,6 @@ import { routes } from '@/shared/routes';
  * 組織のフォームが呼ぶ Server Action。何より先にオーナーであることを確かめる（ADR-0036）。
  * オーナーでなければ、入力した値を返さない
  */
-
-export type OrganizationFormResult = ActionResult<OrganizationField, OrganizationFieldError>;
 
 /** 組織を直し、同じ画面へ移る */
 export const editOrganization = async (
@@ -44,8 +41,6 @@ export const editOrganization = async (
   if (outcome.status === 'not-found') redirect(routes.dash.organizations.list);
   return outcome;
 };
-
-export type DeleteOrganizationResult = { status: 'forbidden' | 'referenced' | 'personal' };
 
 /** 組織を消し、一覧の画面へ移る。消せなければ、確認の画面に理由を返す */
 export const deleteOrganization = async (
