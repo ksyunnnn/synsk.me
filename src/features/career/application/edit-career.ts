@@ -6,7 +6,7 @@ import {
   type CareerId,
 } from '@/features/career/domain/career';
 import type { Author } from '@/shared/domain/author';
-import { canSaveWithOrganization } from '@/shared/domain/organization';
+import { checkOrganizationForSave } from '@/shared/domain/organization';
 import type { CareerDeps } from './deps';
 
 export type EditCareerOutcome =
@@ -34,14 +34,8 @@ export const editCareer = async (
   if (!parsed.ok) return { status: 'invalid', errors: parsed.errors, values };
   const { content } = parsed;
 
-  const organization = await organizations.findByName(content.organizationName);
-  if (!canSaveWithOrganization(organization, content)) {
-    return {
-      status: 'invalid',
-      errors: { organizationNameMasked: 'masked-name-required' },
-      values,
-    };
-  }
+  const organizationError = await checkOrganizationForSave(organizations, content);
+  if (organizationError) return { status: 'invalid', errors: organizationError, values };
   const result = await careers.edit(id, content, times);
   if (result.ok) return { status: 'saved' };
   if (result.reason === 'not-found') return { status: 'not-found' };
