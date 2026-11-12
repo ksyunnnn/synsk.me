@@ -1,7 +1,9 @@
 'use client';
-import * as Icons from '@phosphor-icons/react';
+import { ArrowLeftIcon } from '@phosphor-icons/react/dist/csr/ArrowLeft';
+import { CraneIcon } from '@phosphor-icons/react/dist/csr/Crane';
+import { InfoIcon } from '@phosphor-icons/react/dist/csr/Info';
 
 /** @see - https://phosphoricons.com/ */
-export const Info = Icons.Info;
-export const ArrowLeft = Icons.ArrowLeft;
-export const Crane = Icons.Crane;
+export const Info = InfoIcon;
+export const ArrowLeft = ArrowLeftIcon;
+export const Crane = CraneIcon;

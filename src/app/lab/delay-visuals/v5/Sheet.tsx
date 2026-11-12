@@ -5,7 +5,7 @@
 // 閉じ方: 閉じるボタン、暗くした部分を押す、下へ引く、Esc
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
-import { X } from '@phosphor-icons/react';
+import { XIcon as X } from '@phosphor-icons/react/dist/csr/X';
 
 type Detent = 'medium' | 'large';
 

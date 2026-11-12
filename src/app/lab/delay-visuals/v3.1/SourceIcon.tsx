@@ -1,6 +1,6 @@
 // activity.source のアイコン。ADR-0004 の 2 層構造と PR #47 の PlatformIcon に従う。
 // Simple Icons に無いもの（connpass・CodePen・登録していないサイト）は Phosphor の Planet に落とす
-import { Planet } from '@phosphor-icons/react/ssr';
+import { PlanetIcon as Planet } from '@phosphor-icons/react/dist/ssr/Planet';
 import {
   type SimpleIcon,
   siCodesandbox,
