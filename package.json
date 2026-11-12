@@ -24,7 +24,8 @@
     "test:integration": "vinext build && vitest run --config vitest.integration.config.ts",
     "test:e2e": "vinext build && playwright test",
     "test:integration:only": "vitest run --config vitest.integration.config.ts",
-    "test:e2e:only": "playwright test"
+    "test:e2e:only": "playwright test",
+    "knip": "knip"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -62,7 +63,9 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "16.4.2",
     "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-boundaries": "^7.4.2",
     "eslint-plugin-jsx-a11y": "^6.10.2",
+    "knip": "^6.45.1",
     "postcss": "^8",
     "prettier": "3.9.6",
     "tailwindcss": "^4.3.3",
