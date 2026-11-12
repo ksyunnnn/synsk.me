@@ -17,7 +17,6 @@ import {
 import {
   registerLifeEventImage as registerLifeEventImageUseCase,
   removeLifeEventImage as removeLifeEventImageUseCase,
-  type LifeEventImageOutcome,
 } from '@/features/activity/application/life-event-image';
 import { registerLifeEvent as registerLifeEventUseCase } from '@/features/activity/application/register-life-event';
 import {
@@ -25,6 +24,7 @@ import {
   LIFE_EVENT_IMAGE_FIELD,
   LIFE_EVENT_UID_FIELD,
   type LifeEventFormResult,
+  type LifeEventImageResult,
   type LifeEventFormValues,
 } from '@/features/activity/domain/life-event';
 import { createActivityDeps } from '@/features/activity/server/queries';
@@ -156,12 +156,6 @@ export const deleteExternalActivity = async (
   if (outcome.status === 'forbidden') return outcome;
   redirect(`${routes.dash.activities.list}?deleted=1`);
 };
-
-/** 画像の操作の結果。保存したら同じ画面へ移すので、画面に返すのは保存しなかったときだけ */
-export type LifeEventImageResult = Exclude<
-  LifeEventImageOutcome,
-  { status: 'saved' | 'not-found' }
->;
 
 /**
  * life event の代表画像を登録し、同じ画面へ移る（FR-028）。前の画像は消える。形式と大きさは

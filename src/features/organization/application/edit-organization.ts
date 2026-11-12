@@ -2,16 +2,12 @@ import type { Author } from '@/shared/domain/author';
 import {
   canChangeMaskedName,
   parseOrganizationName,
+  type OrganizationField,
+  type OrganizationFieldError,
+  type OrganizationFormValues,
   type OrganizationId,
   type OrganizationRepository,
 } from '@/shared/domain/organization';
-
-/** 組織のフォームが、入力の項目とは別に送る値 */
-export const ORGANIZATION_UID_FIELD = 'organizationUid';
-
-export type OrganizationField = 'name' | 'nameMasked';
-export type OrganizationFieldError = 'missing' | 'name-taken' | 'masked-name-required';
-export type OrganizationFormValues = Record<OrganizationField, string>;
 
 export type EditOrganizationOutcome =
   | { status: 'saved' }

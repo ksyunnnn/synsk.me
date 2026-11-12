@@ -1,5 +1,6 @@
 import type { ActionResult } from '@/shared/domain/action-result';
 import { emptyToNull } from '@/shared/domain/empty-to-null';
+import type { MediaRejection } from '@/shared/domain/media';
 import { normalizeNewlines } from '@/shared/domain/newlines';
 import { parseCalendarDate, type CalendarDate } from '@/shared/domain/period';
 import { isSlug, newSlug } from '@/shared/domain/slug';
@@ -107,3 +108,9 @@ export const toLifeEventFormValues = (lifeEvent?: LifeEvent): LifeEventFormValue
   happenedOn: lifeEvent?.happenedOn ?? '',
   slug: lifeEvent?.slug ?? '',
 });
+
+/**
+ * 代表画像の操作の Server Action が返す結果。保存したら同じ画面へ移すので、画面に返すのは
+ * 保存しなかったときだけ
+ */
+export type LifeEventImageResult = { status: 'forbidden' } | { status: 'rejected'; reason: MediaRejection };
