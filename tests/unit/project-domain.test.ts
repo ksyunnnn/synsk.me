@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   parseProjectContent,
   parseProjectId,
+  toProjectCardPreview,
   toProjectFormValues,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
@@ -145,5 +146,44 @@ describe('parseProjectId', () => {
     ['', null],
   ])('%j は %j', (value, expected) => {
     expect(parseProjectId(value)).toBe(expected);
+  });
+});
+
+describe('toProjectCardPreview（issue #330）', () => {
+  const OWN = '11111111-1111-4111-8111-111111111111';
+  const CARD = '22222222-2222-4222-8222-222222222222';
+  const OTHER = '33333333-3333-4333-8333-333333333333';
+
+  it('本文の最初の段落を要約にし、画像だけの段落は飛ばす', () => {
+    const preview = toProjectCardPreview({
+      description: `![図](media:${OWN})\n\n最初の段落\nの続き\n\n二つ目`,
+      mediaStorageKeys: [OWN],
+      cardMediaKey: null,
+    });
+    expect(preview).toEqual({ excerpt: '最初の段落 の続き', imageKey: OWN });
+  });
+
+  it('代表画像があれば、本文の画像より先に代表画像を出す', () => {
+    const preview = toProjectCardPreview({
+      description: `![図](media:${OWN})`,
+      mediaStorageKeys: [OWN, CARD],
+      cardMediaKey: CARD,
+    });
+    expect(preview.imageKey).toBe(CARD);
+  });
+
+  it('本文が指す画像のうち、その実績の画像だけを出す', () => {
+    const preview = toProjectCardPreview({
+      description: `![よその図](media:${OTHER})\n\n![図](media:${OWN})`,
+      mediaStorageKeys: [OWN],
+      cardMediaKey: null,
+    });
+    expect(preview.imageKey).toBe(OWN);
+  });
+
+  it('本文が無ければ、要約は null で、代表画像だけを出す', () => {
+    expect(
+      toProjectCardPreview({ description: null, mediaStorageKeys: [CARD], cardMediaKey: CARD }),
+    ).toEqual({ excerpt: null, imageKey: CARD });
   });
 });

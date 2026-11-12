@@ -1,3 +1,5 @@
+import type { ProjectKind } from '@/shared/domain/project-kind';
+
 /**
  * 画面の経路。`src/app/` のページの経路を 1 か所で持ち、リンク・`redirect()`・`src/proxy.ts` の
  * rewrite の行き先はここから取る。静的な経路は定数、識別子を含む経路は関数にする。
@@ -24,6 +26,7 @@ type ResumeEntryKind = 'careers' | 'projects' | 'educations';
 
 const resumes = dashCollection('resumes');
 const notes = dashCollection('notes');
+const projects = dashCollection('projects');
 
 export const routes = {
   home: '/',
@@ -54,7 +57,14 @@ export const routes = {
     /** `src/proxy.ts` が、コレクションの名前から行が無いときの画面を作る */
     rowMissing: (collection: string, uid: string) => `/dash/${collection}/${uid}/missing`,
     careers: dashCollection('careers'),
-    projects: dashCollection('projects'),
+    projects: {
+      ...projects,
+      /** 一覧を種類で絞った経路。null ならすべての種類 */
+      listByKind: (kind: ProjectKind | null) =>
+        kind === null ? projects.list : `${projects.list}?kind=${kind}`,
+      /** 一覧が描く画像を、オーナーにだけ返す経路（issue #330） */
+      media: (uid: string, key: string) => `${projects.row(uid)}/media/${key}`,
+    },
     educations: dashCollection('educations'),
     skills: dashCollection('skills'),
     organizations: dashCollection('organizations'),

@@ -1,4 +1,5 @@
 import type { MediaStorageKey } from '@/shared/domain/media';
+import type { ProjectKind } from '@/shared/domain/project-kind';
 import type { Uid } from '@/shared/domain/uid';
 import type {
   Project,
@@ -33,8 +34,8 @@ export type ProjectRepository = {
   findForEdit: (id: ProjectId) => Promise<Project | null>;
   /** 管理画面の URL とフォームの uid が指す実績の id。無ければ null */
   findIdByUid: (uid: Uid) => Promise<ProjectId | null>;
-  /** オーナーの一覧。始まりの日の新しい順 */
-  list: () => Promise<ProjectSummary[]>;
+  /** オーナーの一覧。始まりの日の新しい順。`kind` を渡せば、その種類の実績だけ */
+  list: (filter?: { kind: ProjectKind }) => Promise<ProjectSummary[]>;
   register: (
     content: ProjectContent & { slug: string },
   ) => Promise<

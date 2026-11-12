@@ -4,11 +4,15 @@ import { cache } from 'react';
 import type { ProjectDeps } from '@/features/project/application/deps';
 import { getProjectForEdit as getProjectForEditUseCase } from '@/features/project/application/get-project-for-edit';
 import { getVisitorProject as getVisitorProjectUseCase } from '@/features/project/application/get-visitor-project';
-import { visitorProjectMediaAccess } from '@/features/project/application/project-media';
+import {
+  ownerProjectMediaAccess,
+  visitorProjectMediaAccess,
+} from '@/features/project/application/project-media';
 import { listProjects as listProjectsUseCase } from '@/features/project/application/list-projects';
 import type { Project, ProjectSummary, VisitorProject } from '@/features/project/domain/project';
 import { createD1ProjectRepository } from '@/features/project/server/d1-project-repository';
-import { requireAuthor } from '@/shared/server/author';
+import { getCurrentAuthor, requireAuthor } from '@/shared/server/author';
+import type { ProjectKind } from '@/shared/domain/project-kind';
 import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
 import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
@@ -54,10 +58,24 @@ export const getVisitorProject = cache(async (slug: string): Promise<VisitorProj
   getVisitorProjectUseCase((await createProjectDeps()).projects, slug),
 );
 
-/** オーナーの一覧。オーナーでなければ 403 */
-export const listProjects = async (): Promise<ProjectSummary[]> => {
+/** オーナーの一覧。`kind` が null なら、すべての種類。オーナーでなければ 403 */
+export const listProjects = async (kind: ProjectKind | null): Promise<ProjectSummary[]> => {
   await requireAuthor();
-  return listProjectsUseCase((await createProjectDeps()).projects);
+  return listProjectsUseCase((await createProjectDeps()).projects, kind);
+};
+
+/**
+ * 実績の画像をオーナーにだけ返す（issue #330）。`/dash/projects/{uid}/media/{key}` の `route.ts` が
+ * 呼ぶ。オーナーでないときと形の違うキーは、D1 を読まずに `respondWithMedia` が 404 にする
+ */
+export const respondWithOwnerProjectMedia = async (uid: string, key: string): Promise<Response> => {
+  const { projects, media } = await createProjectDeps();
+  const author = await getCurrentAuthor();
+  const storageKey = parseMediaStorageKey(key);
+  if (author === null || storageKey === null) return respondWithMedia(media, key, 'hidden');
+  const id = await findIdByUid(projects, uid);
+  const project = id === null ? null : await projects.findForEdit(id);
+  return respondWithMedia(media, key, ownerProjectMediaAccess(author, project, storageKey));
 };
 
 /** オーナーが編集する実績。オーナーでなければ 403。無い uid なら null */

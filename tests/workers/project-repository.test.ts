@@ -386,6 +386,37 @@ describe('一覧と有無', () => {
     expect((await projects.list()).map((p) => p.title)).toEqual(['新しい', '古い']);
   });
 
+  it('種類を渡すと、その種類の実績だけを返す（issue #330）', async () => {
+    const orgId = await insertOrganization(env.DB);
+    await insertProject(env.DB, { organizationId: orgId, title: 'アプリ', kind: 'application' });
+    await insertProject(env.DB, { organizationId: orgId, title: '登壇', kind: 'talk' });
+    expect((await projects.list({ kind: 'talk' })).map((p) => p.title)).toEqual(['登壇']);
+    expect(await projects.list()).toHaveLength(2);
+  });
+
+  it('一覧の行は、本文・その実績の画像のキー・代表画像のキーを持つ（issue #330）', async () => {
+    const own = crypto.randomUUID();
+    const card = crypto.randomUUID();
+    const id = await register({ description: `![図](media:${own})` });
+    const other = await register();
+    await projects.addMedia(id, { storageKey: own, size: 64 }, { asCardImage: false });
+    await projects.addMedia(id, { storageKey: card, size: 64 }, { asCardImage: true });
+    await projects.addMedia(
+      other,
+      { storageKey: crypto.randomUUID(), size: 64 },
+      {
+        asCardImage: false,
+      },
+    );
+
+    const row = (await projects.list()).find((p) => p.id === id);
+    expect(row).toMatchObject({
+      description: `![図](media:${own})`,
+      mediaStorageKeys: [own, card],
+      cardMediaKey: card,
+    });
+  });
+
   it('識別子の有無を返す', async () => {
     await register({ slug: 'exists', status: 'published' });
     expect(await projects.hasSlug('exists')).toBe(true);

@@ -9,6 +9,7 @@ import type { Uid } from '@/shared/domain/uid';
 import { isWebUrl } from '@/shared/domain/web-url';
 import { PROJECT_KINDS, isProjectKind, type ProjectKind } from '@/shared/domain/project-kind';
 import { normalizeNewlines } from '@/shared/domain/newlines';
+import { readMarkdown } from '@/shared/domain/markdown';
 
 /**
  * 実績の型と決まり（specs/001-career-and-project/spec.md の FR-011〜FR-019・FR-026・FR-044、
@@ -50,9 +51,39 @@ export type Project = {
 /** オーナーの一覧の 1 行 */
 export type ProjectSummary = Pick<
   Project,
-  'id' | 'uid' | 'slug' | 'kind' | 'title' | 'isMasked' | 'status' | 'period'
+  | 'id'
+  | 'uid'
+  | 'slug'
+  | 'kind'
+  | 'title'
+  | 'isMasked'
+  | 'status'
+  | 'period'
+  | 'description'
+  | 'mediaStorageKeys'
+  | 'cardMediaKey'
 > & {
   organizationName: string;
+};
+
+/** オーナーの一覧のカードに出す、本文の要約と画像（issue #330） */
+export type ProjectCardPreview = {
+  /** 本文の最初の段落。無ければ null */
+  excerpt: string | null;
+  /**
+   * 出す画像の置き場のキー。代表画像があればそれ、無ければ本文が最初に指すその実績の画像。
+   * 代表画像の無いときに本文の画像を出すのは、決定の無い仮説（issue #330 の宣言）
+   */
+  imageKey: MediaStorageKey | null;
+};
+
+export const toProjectCardPreview = (
+  project: Pick<ProjectSummary, 'description' | 'mediaStorageKeys' | 'cardMediaKey'>,
+): ProjectCardPreview => {
+  if (project.description === null) return { excerpt: null, imageKey: project.cardMediaKey };
+  const { firstParagraph, mediaKeys } = readMarkdown(project.description);
+  const bodyImage = mediaKeys.find((key) => project.mediaStorageKeys.includes(key)) ?? null;
+  return { excerpt: firstParagraph, imageKey: project.cardMediaKey ?? bodyImage };
 };
 
 /**
