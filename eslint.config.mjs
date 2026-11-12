@@ -1,6 +1,35 @@
 import nextCoreWebVitals from 'eslint-config-next/core-web-vitals';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import prettier from 'eslint-config-prettier/flat';
+import boundaries from 'eslint-plugin-boundaries';
+import { globSync, readFileSync } from 'node:fs';
+
+/** 依存の向きの規則（ADR-0026）の対象から外す試作の置き場。 */
+const boundariesIgnore = ['src/app/lab/**', 'src/app/top-draft/**'];
+
+/**
+ * 先頭に `'use client'` を書いたファイル。boundaries はファイルの中身で選べない
+ * ため、設定を読み込むときに探して、パスの一覧として渡す（ADR-0026 の規則 3）。
+ */
+const clientFiles = globSync('src/**/*.{js,jsx,ts,tsx}', { exclude: boundariesIgnore }).filter(
+  // ディレクティブの前に置けるのはコメントだけなので、先頭のコメントを読み飛ばす
+  (path) =>
+    /^(?:\s|\/\/[^\n]*|\/\*[\s\S]*?\*\/)*['"]use client['"]/.test(readFileSync(path, 'utf8')),
+);
+
+const featureLayers = ['domain', 'application', 'components', 'server'];
+const sharedLayers = ['domain', 'components', 'server', 'types'];
+const domains = ['feature-domain', 'shared-domain'];
+const servers = ['feature-server', 'shared-server'];
+const componentsTypes = ['feature-components', 'shared-components'];
+const featureTypes = featureLayers.map((layer) => `feature-${layer}`);
+const sharedTypes = [...sharedLayers.map((layer) => `shared-${layer}`), 'shared'];
+
+/** `to` に並べた要素の種類を、値の import に限って止める。型の import は通す（ADR-0033）。 */
+const disallowValue = (types, extra = {}) => ({
+  to: { element: { type: types, ...extra } },
+  dependency: { kind: 'value' },
+});
 
 /**
  * ESLint flat config。
@@ -62,6 +91,75 @@ const config = [
             message:
               'アイコンごとのファイルから読み込む。例: @phosphor-icons/react/dist/csr/X（サーバ専用は dist/ssr/X）',
           })),
+        },
+      ],
+    },
+  },
+
+  {
+    // 依存の向き（docs/decisions/0026-code-structure-adop.md の規則 1〜5）。
+    // 既定は許可にし、禁止だけを並べる（ADR-0033）。import 先の解決は
+    // eslint-config-next が設定する `import/resolver` を使う。
+    name: 'synsk/boundaries',
+    files: ['**/*.{js,mjs,jsx,ts,tsx}'],
+    plugins: { boundaries },
+    settings: {
+      'boundaries/ignore': boundariesIgnore,
+      'boundaries/legacy-templates': false,
+      'boundaries/elements': [
+        ...featureLayers.map((layer) => ({
+          type: `feature-${layer}`,
+          pattern: `src/features/*/${layer}`,
+          capture: ['feature'],
+          partialMatch: false,
+        })),
+        ...sharedLayers.map((layer) => ({
+          type: `shared-${layer}`,
+          pattern: `src/shared/${layer}`,
+          partialMatch: false,
+        })),
+        { type: 'shared', pattern: 'src/shared', partialMatch: false },
+        { type: 'app', pattern: 'src/app', partialMatch: false },
+        // どの層にも当たらないファイルを受け止める（ADR-0033）
+        { type: 'other', pattern: '**' },
+      ],
+      'boundaries/files': [{ pattern: clientFiles, category: 'client' }],
+    },
+    rules: {
+      'boundaries/dependencies': [
+        2,
+        {
+          default: 'allow',
+          policies: [
+            {
+              from: { element: { type: featureTypes } },
+              disallow: disallowValue(featureTypes, {
+                captured: { feature: '!{{ from.element.captured.feature }}' },
+              }),
+              message: '規則 1: 機能どうしは import しない（ADR-0026）',
+            },
+            {
+              from: { element: { type: sharedTypes } },
+              disallow: disallowValue(featureTypes),
+              message: '規則 2: shared/ は features/ を import しない（ADR-0026）',
+            },
+            {
+              from: { file: { categories: { anyOf: ['client'] } } },
+              disallow: disallowValue(servers),
+              message: "規則 3: 'use client' のファイルは server/ を import しない（ADR-0026）",
+            },
+            {
+              from: { element: { type: domains } },
+              disallow: disallowValue([...servers, ...componentsTypes]),
+              message: '規則 4: domain/ は server/ も components/ も import しない（ADR-0026）',
+            },
+            {
+              from: { element: { type: 'feature-application' } },
+              disallow: disallowValue([...servers, ...componentsTypes]),
+              message:
+                '規則 5: application/ は server/ も components/ も直接 import しない。インタフェースを介す（ADR-0026）',
+            },
+          ],
         },
       ],
     },
