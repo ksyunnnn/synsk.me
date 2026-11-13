@@ -1,6 +1,5 @@
-import { access } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createTestHarness } from 'wrangler';
+import { startTestServer, type TestServer } from './support/d1';
 
 /**
  * 本番のビルド出力を workerd で起動し、訪問者が到達する経路を検査する。
@@ -15,36 +14,32 @@ import { createTestHarness } from 'wrangler';
  *
  * エッジのキャッシュそのものはここで検査しない。Workers Cache への保存は、ローカルの
  * workerd では起きない。外に出る指示は `cache-candidates.test.ts` が見る。
+ *
+ * `/` は要求ごとに D1 の一覧を読むため、`migrations/` を当てた D1 で起動する
+ * （`tests/integration/feed.test.ts` の `/top-draft` と同じ）。
  */
 
-const CONFIG = './dist/server/wrangler.json';
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47];
 
-let server: ReturnType<typeof createTestHarness>;
+let ctx: TestServer;
 
 beforeAll(async () => {
-  await access(CONFIG).catch(() => {
-    throw new Error(
-      `${CONFIG} がない。結合テストはビルドを前提とする。npm run test:integration を使う`,
-    );
-  });
-  server = createTestHarness({ workers: [{ configPath: CONFIG }] });
-  await server.listen();
+  ctx = await startTestServer();
 }, 60_000);
 
 afterAll(async () => {
-  await server?.close();
+  await ctx?.close();
 });
 
 describe('訪問者が到達する経路', () => {
   it('/ が HTML を返す', async () => {
-    const res = await server.fetch('/');
+    const res = await ctx.server.fetch('/');
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/^text\/html/);
   });
 
   it('/ が題を持つ', async () => {
-    const html = await (await server.fetch('/')).text();
+    const html = await (await ctx.server.fetch('/')).text();
     expect(html).toMatch(/<title>[^<]+<\/title>/);
   });
 
@@ -54,19 +49,19 @@ describe('訪問者が到達する経路', () => {
    * 回すときは、その値を指すことを確かめる
    */
   it('/ の og:image が本番の origin の絶対 URL を指す', async () => {
-    const html = await (await server.fetch('/')).text();
+    const html = await (await ctx.server.fetch('/')).text();
     const image = /<meta property="og:image" content="([^"]+)"/.exec(html)?.[1];
     const origin = process.env.SITE_ORIGIN || 'https://synsk.me';
     expect(image?.startsWith(`${origin}/opengraph-image`)).toBe(true);
   });
 
   it('/ の twitter:card は大きい画像のカード（サイト全体の設定。note のページだけが summary）', async () => {
-    const html = await (await server.fetch('/')).text();
+    const html = await (await ctx.server.fetch('/')).text();
     expect(html).toMatch(/<meta name="twitter:card" content="summary_large_image"/);
   });
 
   it('存在しない経路は 404 を返す', async () => {
-    const res = await server.fetch('/__nonexistent');
+    const res = await ctx.server.fetch('/__nonexistent');
     expect(res.status).toBe(404);
   });
 });
@@ -78,7 +73,7 @@ describe('画像を生成する経路', () => {
    * 実際に生成できることを確かめる。
    */
   it.each(['/icon', '/opengraph-image'])('%s が PNG を返す', async (path) => {
-    const res = await server.fetch(path);
+    const res = await ctx.server.fetch(path);
     expect(res.status).toBe(200);
     expect(res.headers.get('content-type')).toMatch(/^image\/png/);
 

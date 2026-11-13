@@ -104,9 +104,15 @@ describe.each([
   );
 });
 
-it('プレビュー配信では、キャッシュしてよい / の RSC も、どのキャッシュにも残らない', async () => {
+/**
+ * キャッシュしてよい画面。`/` は要求ごとに D1 を読みキャッシュしないため使わない
+ * （tests/integration/cache-candidates.test.ts の CACHEABLE_PATHS）
+ */
+const CACHEABLE_PAGE = '/about';
+
+it('プレビュー配信では、キャッシュしてよい /about の RSC も、どのキャッシュにも残らない', async () => {
   // Worker の入口 worker/index.ts が、ホスト名でプレビュー配信を見分ける
-  const res = await ctx.server.fetch(`${PREVIEW_ORIGIN}/${AS_RSC.query}`, {
+  const res = await ctx.server.fetch(`${PREVIEW_ORIGIN}${CACHEABLE_PAGE}${AS_RSC.query}`, {
     headers: AS_RSC.headers,
     redirect: 'manual',
   });
@@ -115,9 +121,9 @@ it('プレビュー配信では、キャッシュしてよい / の RSC も、�
   expectNoStore(res);
 });
 
-it('対照: キャッシュしてよい / の RSC は、no-store を返さない', async () => {
+it('対照: キャッシュしてよい /about の RSC は、no-store を返さない', async () => {
   // 上の検査が、どの応答にも no-store が付く状態で素通りしていないことを確かめる
-  const res = await ctx.server.fetch(`/${AS_RSC.query}`, {
+  const res = await ctx.server.fetch(`${CACHEABLE_PAGE}${AS_RSC.query}`, {
     headers: AS_RSC.headers,
     redirect: 'manual',
   });
