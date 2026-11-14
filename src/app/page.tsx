@@ -72,8 +72,8 @@ const Page = async () => {
         <hr className="h-px shrink-0 border-0 bg-foreground" />
 
         <div className="@container">
-          {/* 3 列が入りきらない幅（内容の幅 588px 未満）では、Figma の順に縦に積む */}
-          <div className="flex flex-col gap-space-sm @min-[588px]:h-[208px] @min-[588px]:flex-row">
+          {/* 3 列が入りきらない幅（内容の幅 699px 未満）では、Figma の順に縦に積む */}
+          <div className="flex flex-col gap-space-sm @min-[699px]:h-[208px] @min-[699px]:flex-row">
             <div className="flex h-[208px] w-[122px] shrink-0 gap-space-xs">
               <PaperFiber className="w-[12px] shrink-0" />
               <p className="whitespace-nowrap">
@@ -83,7 +83,7 @@ const Page = async () => {
             </div>
             <div
               aria-hidden
-              className="h-px w-full shrink-0 bg-foreground @min-[588px]:h-auto @min-[588px]:w-px"
+              className="h-px w-full shrink-0 bg-foreground @min-[699px]:h-auto @min-[699px]:w-px"
             />
             <a
               href="https://2024.synsk.me"
@@ -102,29 +102,32 @@ const Page = async () => {
             </a>
             <div
               aria-hidden
-              className="h-px w-full shrink-0 bg-foreground @min-[588px]:h-auto @min-[588px]:w-px"
+              className="h-px w-full shrink-0 bg-foreground @min-[699px]:h-auto @min-[699px]:w-px"
             />
             {/* 縦書き（vertical-rl）。列は右から左へ並び、ラテン文字は右に 90° 回る */}
             <nav aria-label="SNS" className="flex min-w-0 flex-1 justify-end">
               {/* 縦書きの中では flex-col が右から左（block の向き）に並べる */}
               <div className="flex h-[208px] flex-col [writing-mode:vertical-rl]">
-                <p className={`${sourceSans.className} text-[16px] leading-[20px] font-light`}>
+                {/* 右の端の列に置き、下に寄せる（縦書きの行の終わりは下） */}
+                <p
+                  className={`${sourceSans.className} text-end text-[16px] leading-[20px] font-light`}
+                >
                   SOCIAL / LINKS
                 </p>
                 <ul className="flex flex-col">
                   {SOCIAL_LINKS.map(({ label, href }) => (
-                    <li key={label} className="border-l border-foreground">
+                    <li key={label}>
                       <a
                         href={href}
                         {...EXTERNAL}
-                        className="flex h-full w-[46px] items-center justify-between whitespace-nowrap"
+                        className="flex h-full w-[25px] items-center justify-between whitespace-nowrap"
                       >
-                        <span className={`${tinos.className} text-[29px] leading-[36px]`}>
+                        <span className={`${tinos.className} text-[24px] leading-[25px]`}>
                           {label}
                         </span>
                         <span
                           aria-hidden
-                          className={`${sourceSans.className} text-[22px] leading-[30px] font-light`}
+                          className={`${sourceSans.className} text-[22px] leading-[25px] font-light`}
                         >
                           ↗
                         </span>
