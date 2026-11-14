@@ -64,23 +64,18 @@ const Page = async () => {
         <hr className="h-px shrink-0 border-0 bg-foreground" />
 
         <div className="@container">
-          {/* 3 列が入りきらない幅（内容の幅 560px 未満）では、Figma の順に縦に積む */}
-          <div className="flex flex-col gap-space-sm @min-[560px]:h-[208px] @min-[560px]:flex-row">
+          {/* 3 列が入りきらない幅（内容の幅 588px 未満）では、Figma の順に縦に積む */}
+          <div className="flex flex-col gap-space-sm @min-[588px]:h-[208px] @min-[588px]:flex-row">
             <div className="flex h-[208px] w-[122px] shrink-0 gap-space-xs">
               <PaperFiber className="w-[12px] shrink-0" />
-              <p className="flex gap-space-xs">
-                <span className="text-[29px] leading-[36px]">
-                  連<br />絡<br />は
-                </span>
-                <span className="text-[27px] leading-[36px]">
-                  DM
-                  <br />へ<br />。
-                </span>
+              <p className="whitespace-nowrap">
+                <span className="block text-[29px] leading-[36px]">連絡は</span>
+                <span className="block text-[27px] leading-[36px]">DMへ。</span>
               </p>
             </div>
             <div
               aria-hidden
-              className="h-px w-full shrink-0 bg-foreground @min-[560px]:h-auto @min-[560px]:w-px"
+              className="h-px w-full shrink-0 bg-foreground @min-[588px]:h-auto @min-[588px]:w-px"
             />
             <a
               href="https://2024.synsk.me"
@@ -99,36 +94,37 @@ const Page = async () => {
             </a>
             <div
               aria-hidden
-              className="h-px w-full shrink-0 bg-foreground @min-[560px]:h-auto @min-[560px]:w-px"
+              className="h-px w-full shrink-0 bg-foreground @min-[588px]:h-auto @min-[588px]:w-px"
             />
-            <nav
-              aria-label="SNS"
-              className="flex min-w-0 flex-1 flex-col @min-[560px]:min-w-[180px]"
-            >
-              <p className={`${sourceSans.className} text-[16px] leading-[20px] font-light`}>
-                SOCIAL / LINKS
-              </p>
-              <ul>
-                {SOCIAL_LINKS.map(({ label, href }) => (
-                  <li key={label} className="border-b border-foreground">
-                    <a
-                      href={href}
-                      {...EXTERNAL}
-                      className="flex h-[46px] items-center justify-between whitespace-nowrap"
-                    >
-                      <span className={`${tinos.className} text-[29px] leading-[36px]`}>
-                        {label}
-                      </span>
-                      <span
-                        aria-hidden
-                        className={`${sourceSans.className} text-[22px] leading-[30px] font-light`}
+            {/* 縦書き（vertical-rl）。列は右から左へ並び、ラテン文字は右に 90° 回る */}
+            <nav aria-label="SNS" className="flex min-w-0 flex-1 justify-end">
+              {/* 縦書きの中では flex-col が右から左（block の向き）に並べる */}
+              <div className="flex h-[208px] flex-col [writing-mode:vertical-rl]">
+                <p className={`${sourceSans.className} text-[16px] leading-[20px] font-light`}>
+                  SOCIAL / LINKS
+                </p>
+                <ul className="flex flex-col">
+                  {SOCIAL_LINKS.map(({ label, href }) => (
+                    <li key={label} className="border-l border-foreground">
+                      <a
+                        href={href}
+                        {...EXTERNAL}
+                        className="flex h-full w-[46px] items-center justify-between whitespace-nowrap"
                       >
-                        ↗
-                      </span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
+                        <span className={`${tinos.className} text-[29px] leading-[36px]`}>
+                          {label}
+                        </span>
+                        <span
+                          aria-hidden
+                          className={`${sourceSans.className} text-[22px] leading-[30px] font-light`}
+                        >
+                          ↗
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </nav>
           </div>
         </div>
