@@ -19,6 +19,14 @@ const SOCIAL_LINKS = [
   { label: 'Facebook', href: 'https://www.facebook.com/syunsuke.kobashi' },
   { label: 'Zenn', href: 'https://zenn.dev/ksyunnnn' },
   { label: 'GitHub', href: 'https://github.com/ksyunnnn' },
+  { label: 'Qiita', href: 'https://qiita.com/ksyunnnn' },
+  { label: 'DEV', href: 'https://dev.to/ksyunnnn' },
+  { label: 'Medium', href: 'https://medium.com/@ksyunnnn' },
+  { label: 'Speaker Deck', href: 'https://speakerdeck.com/ksyunnnn' },
+  { label: 'Spotify', href: 'https://open.spotify.com/user/21xqcp2fwj4histejz5mtqlsi' },
+  { label: 'CodeSandbox', href: 'https://codesandbox.io/u/ksyunnnn' },
+  { label: 'YouTube', href: 'https://www.youtube.com/@synsk_hello' },
+  { label: 'CodePen', href: 'https://codepen.io/ksyunnnn' },
 ];
 
 const EXTERNAL = { target: '_blank', rel: 'noopener noreferrer' } as const;
