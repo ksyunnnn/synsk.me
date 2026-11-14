@@ -1,6 +1,7 @@
 // トップ。Figma の「小橋俊介 study」（ファイル yhHrXDTtvF7CjkLCeOZOU8、ノード 7:9）の文字の大きさ・行の高さ・
 // 字間・幅をそのまま書いたもの。余白は Figma の space/8・16・24 を foundations の space-xs・sm・md で使う。
 // 線の間には一覧（specs/005-feed）の最新の activity の題を並べる。データの取り方は top-draft と同じ
+import { ArrowDownRightIcon as ArrowDownRight } from '@phosphor-icons/react/dist/ssr/ArrowDownRight';
 import type { Viewport } from 'next';
 import { ActivityLinks } from '@/features/activity/components/activity-links';
 import { listFeedItems } from '@/features/activity/server/queries';
@@ -127,11 +128,14 @@ const Page = async () => {
                         >
                           {label}
                         </span>
+                        {/* 文字の ↗ は iOS の Safari で絵文字になるため、アイコンにする。SVG は縦書きで回らないので、
+                            PC で回って見えていた向き（右下）のアイコンを使う。大きさと太さは PC の字に合わせ、
+                            はみ出す箱は列の幅で切る */}
                         <span
                           aria-hidden
-                          className={`${sourceSans.className} text-[22px] leading-[25px] font-light`}
+                          className="flex h-[22px] w-[25px] shrink-0 items-center justify-center overflow-hidden"
                         >
-                          ↗
+                          <ArrowDownRight weight="thin" size={36} className="shrink-0" />
                         </span>
                       </a>
                     </li>
