@@ -1,88 +1,149 @@
-// トップ。Figma の「小橋俊介 study」（ファイル yhHrXDTtvF7CjkLCeOZOU8、ノード 7:9）を書いたもの。
-// Figma の長さは design/foundations.pen の半分の縮尺で描かれているため、2 倍してトークンに合わせる。
+// トップ。Figma の「小橋俊介 study」（ファイル yhHrXDTtvF7CjkLCeOZOU8、ノード 7:9）の文字の大きさ・行の高さ・
+// 字間・幅をそのまま書いたもの。余白は Figma の space/8・16・24 を foundations の space-xs・sm・md で使う。
 // 線の間には一覧（specs/005-feed）の最新の activity の題を並べる。データの取り方は top-draft と同じ
+import type { Viewport } from 'next';
 import { ActivityLinks } from '@/features/activity/components/activity-links';
 import { listFeedItems } from '@/features/activity/server/queries';
-import { notoSerifJp, tinos } from '@/lib/fonts';
+import { notoSerifJp, sourceSans, tinos } from '@/lib/fonts';
+import { PaperCanvas, paperCanvasViewport } from '@/shared/components/paper-canvas';
 import { PaperFiber } from '@/shared/components/paper-fiber';
-import { SnsLinks } from '@/shared/components/sns-links';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す。D1 から読めない
 // ときに 500 を返すため、`loading.tsx` を置かない。キャッシュしない（specs/005-feed/research.md の R9）
 export const instant = false;
 
-/**
- * 内容の幅 1240px（Figma の 620px の 2 倍）のときの長さを、内容の幅に比例して縮める。
- * 内容の幅が 1240px 以上のときは、そのままの長さにする。負の長さは、絶対値を縮めてから符号を付ける
- */
-const scaled = (px: number): string =>
-  px < 0 ? `calc(-1 * ${scaled(-px)})` : `min(${px}px, ${px / 12.4}cqw)`;
+export const viewport: Viewport = paperCanvasViewport;
+
+const SOCIAL_LINKS = [
+  { label: 'X', href: 'https://twitter.com/ksyunnnn' },
+  { label: 'Facebook', href: 'https://www.facebook.com/syunsuke.kobashi' },
+  { label: 'Zenn', href: 'https://zenn.dev/ksyunnnn' },
+  { label: 'GitHub', href: 'https://github.com/ksyunnnn' },
+];
+
+const EXTERNAL = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
 const Page = async () => {
   const { items } = await listFeedItems(1);
   return (
-    <div className={`${notoSerifJp.className} min-h-screen bg-background text-foreground`}>
-      <main className="mx-auto max-w-[calc(1240px+2*var(--spacing-space-lg))] px-space-lg pt-[14px] pb-space-xl">
+    <>
+      <PaperCanvas />
+      <main
+        className={`${notoSerifJp.className} @container mx-auto flex max-w-[calc(800px+2*var(--spacing-space-md))] flex-col gap-space-sm py-space-md pr-[max(var(--spacing-space-md),env(safe-area-inset-right))] pl-[max(var(--spacing-space-md),env(safe-area-inset-left))] text-foreground`}
+      >
+        {/* 名前と「制作記録」が横に入りきらない幅（内容の幅 500px 未満）では、「制作記録」を名前の下に置く */}
+        <header className="flex flex-col @min-[500px]:h-[184px] @min-[500px]:flex-row @min-[500px]:justify-between">
+          <div>
+            <h1
+              className={`${tinos.className} -mt-[8px] text-[66px] leading-[59px] tracking-[-1.98px]`}
+            >
+              SHUNSUKE
+              <br />
+              KOBASHI
+            </h1>
+            <p className="mt-[2px] text-[56px] leading-[66px] tracking-[-2.8px]">小橋俊介</p>
+          </div>
+          <p className="mr-[8px] flex gap-[10px] self-end text-[72px] leading-[80px] @min-[500px]:-mt-[7px] @min-[500px]:self-start">
+            <span className="flex flex-col">
+              <span>制</span>
+              <span>作</span>
+            </span>
+            <span className="flex flex-col">
+              <span>記</span>
+              <span>録</span>
+            </span>
+          </p>
+        </header>
+
+        <hr className="h-px shrink-0 border-0 bg-foreground" />
+
+        <section aria-label="activity" className="text-[14px] leading-[22px]">
+          <ActivityLinks items={items} />
+        </section>
+
+        <hr className="h-px shrink-0 border-0 bg-foreground" />
+
         <div className="@container">
-          <header className="flex items-start justify-between gap-space-sm">
-            <div className="min-w-0 tracking-heading whitespace-nowrap">
-              <h1
-                className={tinos.className}
-                style={{ fontSize: scaled(128), lineHeight: scaled(120) }}
-              >
-                SHUNSUKE
-                <br />
-                KOHASHI
-              </h1>
-              <p style={{ fontSize: scaled(112), lineHeight: scaled(140), marginTop: scaled(-12) }}>
-                小橋俊介
+          {/* 3 列が入りきらない幅（内容の幅 560px 未満）では、Figma の順に縦に積む */}
+          <div className="flex flex-col gap-space-sm @min-[560px]:h-[208px] @min-[560px]:flex-row">
+            <div className="flex h-[208px] w-[122px] shrink-0 gap-space-xs">
+              <PaperFiber className="w-[12px] shrink-0" />
+              <p className="flex gap-space-xs">
+                <span className="text-[29px] leading-[36px]">
+                  連<br />絡<br />は
+                </span>
+                <span className="text-[27px] leading-[36px]">
+                  DM
+                  <br />へ<br />。
+                </span>
               </p>
             </div>
-            <div className="grid shrink-0 grid-cols-2" style={{ gap: scaled(36) }}>
-              {[1, 2, 3, 4].map((key) => (
-                <PaperFiber key={key} style={{ width: scaled(136), height: scaled(136) }} />
-              ))}
-            </div>
-          </header>
-
-          <hr className="border-0 border-t border-foreground" />
-
-          <section aria-label="activity" className="py-space-sm text-body">
-            <ActivityLinks items={items} />
-          </section>
-
-          <hr className="border-0 border-t border-foreground" />
-
-          <div className="mt-space-md flex flex-col gap-space-sm md:flex-row md:items-end md:justify-between">
-            {/* 縮めた高さに文字が収まらない幅では、文字の分だけ伸ばす */}
-            <div className="flex gap-space-sm" style={{ minHeight: scaled(406) }}>
-              <PaperFiber className="shrink-0" style={{ width: scaled(56) }} />
-              <PaperFiber className="shrink-0" style={{ width: scaled(80) }} />
-              <PaperFiber className="shrink-0" style={{ width: scaled(16) }} />
-              <div className="flex min-w-0 flex-1 md:flex-none">
-                <div className="min-w-0 flex-1 pt-space-xs md:w-[228px] md:flex-none">
-                  <p className="text-heading-1">連絡はDMへ。</p>
-                  <p className="text-body">
+            <div
+              aria-hidden
+              className="h-px w-full shrink-0 bg-foreground @min-[560px]:h-auto @min-[560px]:w-px"
+            />
+            <a
+              href="https://2024.synsk.me"
+              {...EXTERNAL}
+              className="flex h-[208px] w-[191px] shrink-0 flex-col justify-between whitespace-nowrap"
+            >
+              <span className="text-[21px] leading-[29px]">年のデザイン</span>
+              <span className={`${tinos.className} text-[22px] leading-[23px]`}>
+                DESIGN
+                <br />
+                ARCHIVE
+              </span>
+              <span className={`${tinos.className} text-[77px] leading-[82px] tracking-[-4.62px]`}>
+                2024
+              </span>
+            </a>
+            <div
+              aria-hidden
+              className="h-px w-full shrink-0 bg-foreground @min-[560px]:h-auto @min-[560px]:w-px"
+            />
+            <nav
+              aria-label="SNS"
+              className="flex min-w-0 flex-1 flex-col @min-[560px]:min-w-[180px]"
+            >
+              <p className={`${sourceSans.className} text-[16px] leading-[20px] font-light`}>
+                SOCIAL / LINKS
+              </p>
+              <ul>
+                {SOCIAL_LINKS.map(({ label, href }) => (
+                  <li key={label} className="border-b border-foreground">
                     <a
-                      href="https://2024.synsk.me"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="underline underline-offset-2"
+                      href={href}
+                      {...EXTERNAL}
+                      className="flex h-[46px] items-center justify-between whitespace-nowrap"
                     >
-                      2024年のデザイン
+                      <span className={`${tinos.className} text-[29px] leading-[36px]`}>
+                        {label}
+                      </span>
+                      <span
+                        aria-hidden
+                        className={`${sourceSans.className} text-[22px] leading-[30px] font-light`}
+                      >
+                        ↗
+                      </span>
                     </a>
-                  </p>
-                </div>
-                <PaperFiber className="shrink-0" style={{ width: scaled(4) }} />
-              </div>
-            </div>
-            <SnsLinks className="self-end" iconSize={scaled(136)} gap={scaled(36)} />
+                  </li>
+                ))}
+              </ul>
+            </nav>
           </div>
-
-          <PaperFiber className="mt-space-sm w-full" style={{ height: scaled(60) }} />
         </div>
+
+        <PaperFiber className="flex h-[196px] flex-col justify-between p-space-sm text-background">
+          <div className="relative flex h-[32px] items-start justify-between">
+            <p className="text-[22px] leading-[30px]">小橋俊介</p>
+            <p className="text-[14px] leading-[24px]">連絡はDMへ。</p>
+          </div>
+          <p className={`${tinos.className} relative text-[51px] leading-[58px]`}>
+            SHUNSUKE KOBASHI
+          </p>
+        </PaperFiber>
       </main>
-    </div>
+    </>
   );
 };
 
