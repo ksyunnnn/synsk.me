@@ -46,7 +46,7 @@ export const ActivityLinks = ({ items }: { items: FeedItem[] }) => (
             <a
               href={link.href}
               {...(link.isExternal && { target: '_blank', rel: 'noopener noreferrer' })}
-              className="underline underline-offset-2"
+              className="underline underline-offset-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
               {titleOf(item)}
             </a>

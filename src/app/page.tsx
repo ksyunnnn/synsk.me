@@ -88,9 +88,9 @@ const Page = async () => {
             <a
               href="https://2024.synsk.me"
               {...EXTERNAL}
-              className="flex h-[208px] w-[191px] shrink-0 flex-col justify-between whitespace-nowrap"
+              className="flex h-[208px] w-[191px] shrink-0 flex-col justify-between whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              <span className="text-[21px] leading-[29px]">年のデザイン</span>
+              <span className="text-[21px] leading-[29px]">過去のデザイン</span>
               <span className={`${tinos.className} text-[22px] leading-[23px]`}>
                 DESIGN
                 <br />
@@ -120,9 +120,11 @@ const Page = async () => {
                       <a
                         href={href}
                         {...EXTERNAL}
-                        className="flex h-full w-[25px] items-center justify-between whitespace-nowrap"
+                        className="group flex h-full w-[25px] items-center justify-between whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
-                        <span className={`${tinos.className} text-[24px] leading-[25px]`}>
+                        <span
+                          className={`${tinos.className} text-[24px] leading-[25px] group-hover:underline`}
+                        >
                           {label}
                         </span>
                         <span
