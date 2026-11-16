@@ -2,7 +2,9 @@ import type { ReactNode } from 'react';
 import { PrintButton } from '@/features/resume/components/print-button';
 import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
 import { fontFamily, sourceSans } from '@/lib/fonts';
+import { MarkdownBody } from '@/shared/components/markdown-body';
 import { PeriodText } from '@/shared/components/period-text';
+import type { MediaStorageKey } from '@/shared/domain/media';
 import { toYearsAndMonths } from '@/shared/domain/period';
 import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
@@ -19,8 +21,8 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  * プロフィールの画像として丸く切り抜いて出す。印刷での左の列の幅 50mm は選んだ値で、出典はない。
  * スキルの行（スキル名と経験年数）が 1 行に収まる幅として選んだ。
  *
- * 本文の書式は plan.md の U4 で決まっていない。決まるまでの仮の形として、本文は書式を持たない
- * 文字列として改行だけを残して出す。本文の画像は出さない。
+ * 自己紹介と学歴の補足は、書式を持たない文字列として改行だけを残して出す。職歴と実績の本文は
+ * Markdown として描き、本文の画像は `mediaSrc` が返す URL で出す。
  *
  * メールアドレスは、環境変数で渡したときだけ出す。スパム対策（FR-035）は plan.md の U8 で
  * 決まっておらず、本番の応答で Email Address Obfuscation が効くかを確かめる（tasks.md の T072）
@@ -28,6 +30,20 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 
 const Body = ({ text }: { text: string | null }) =>
   text ? <p className="whitespace-pre-line">{text}</p> : null;
+
+/** 職歴・実績の本文。Markdown として描く */
+const MarkdownText = ({
+  text,
+  mediaSrc,
+}: {
+  text: string | null;
+  mediaSrc: (storageKey: MediaStorageKey) => string | null;
+}) =>
+  text ? (
+    <div className="flex flex-col gap-4 [&_img]:max-w-full">
+      <MarkdownBody body={text} mediaSrc={mediaSrc} />
+    </div>
+  ) : null;
 
 const ExternalLink = ({ href }: { href: string | null }) =>
   href ? (
@@ -87,9 +103,13 @@ type Props = {
   resume: VisitorResume;
   /** 上の帯の左端に置く操作（管理画面の「設定の画面へ戻る」など） */
   toolbarStart?: ReactNode;
+  /** 本文の画像の URL を作る。渡さなければ本文の画像を出さない */
+  mediaSrc?: (storageKey: MediaStorageKey) => string | null;
 };
 
-export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
+const hideMedia = () => null;
+
+export const VisitorResumeView = ({ resume, toolbarStart, mediaSrc = hideMedia }: Props) => {
   const { profile } = resume;
   return (
     // 書体は design/foundations.pen の font-en と font-ja
@@ -177,7 +197,7 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
                     <p className={META}>
                       {career.role}・<PeriodText period={career.period} ongoing="現在" />
                     </p>
-                    <Body text={career.body} />
+                    <MarkdownText text={career.body} mediaSrc={mediaSrc} />
                     <ExternalLink href={career.url} />
                   </li>
                 ))}
@@ -198,7 +218,7 @@ export const VisitorResumeView = ({ resume, toolbarStart }: Props) => {
                     {project.skills.length > 0 && (
                       <p className="text-sm print:text-[10.5pt]">{project.skills.join('、')}</p>
                     )}
-                    <Body text={project.body} />
+                    <MarkdownText text={project.body} mediaSrc={mediaSrc} />
                     <ExternalLink href={project.url} />
                   </li>
                 ))}
