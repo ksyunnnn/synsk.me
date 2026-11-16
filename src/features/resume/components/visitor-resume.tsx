@@ -101,26 +101,21 @@ const formatMonths = (months: number) => {
   return rest === 0 ? `${years} 年` : `${years} 年 ${rest} か月`;
 };
 
-/** 右の列の節。上に番号・英語名・件数、その下に見出し */
+/** 右の列の節。上に番号・英語名、その下に見出し */
 const Section = ({
   id,
   label,
   title,
-  count,
   children,
 }: {
   id: string;
   label: string;
   title: string;
-  count: number;
   children: ReactNode;
 }) => (
   <section id={id} className="flex flex-col gap-12">
     <div className={`flex flex-col gap-2 ${KEEP_WITH_NEXT}`}>
-      <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
-        <span className="min-w-0 flex-1">{label}</span>
-        <span className="whitespace-nowrap">{count} 件</span>
-      </p>
+      <p className={`${CAPTION} ${SECONDARY}`}>{label}</p>
       <h2 className={`${HEADING} ${PRIMARY}`}>{title}</h2>
     </div>
     {children}
@@ -272,12 +267,7 @@ export const VisitorResumeView = ({
 
             <div className="flex min-w-0 flex-col gap-24">
               {resume.careers.length > 0 && (
-                <Section
-                  id="careers"
-                  label={`${numberOf('careers')} / CAREER`}
-                  title="職歴"
-                  count={resume.careers.length}
-                >
+                <Section id="careers" label={`${numberOf('careers')} / CAREER`} title="職歴">
                   <ol className="flex flex-col gap-12">
                     {resume.careers.map((career, i) => (
                       <li key={i} className="flex flex-col gap-6">
@@ -300,12 +290,7 @@ export const VisitorResumeView = ({
               )}
 
               {resume.projects.length > 0 && (
-                <Section
-                  id="projects"
-                  label={`${numberOf('projects')} / PROJECTS`}
-                  title="実績"
-                  count={resume.projects.length}
-                >
+                <Section id="projects" label={`${numberOf('projects')} / PROJECTS`} title="実績">
                   <ol className="flex flex-col gap-12">
                     {resume.projects.map((project, i) => (
                       <li key={i} className="flex flex-col gap-6">
