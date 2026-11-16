@@ -239,7 +239,6 @@ export const VisitorResumeView = ({
 
               {resume.skills.length > 0 && (
                 <SideSection id="skills" title={`${numberOf('skills')} / スキル`}>
-                  <p className={`${CAPTION} ${SECONDARY}`}>実績から集計した経験期間</p>
                   <ul className={`flex flex-col gap-2 ${CAPTION}`}>
                     {resume.skills.map((skill) => (
                       <li key={skill.name} className="flex gap-2 break-inside-avoid">
