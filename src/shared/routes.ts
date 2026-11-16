@@ -47,6 +47,7 @@ export const routes = {
   lifeEventMedia: (slug: string, key: string) => `/life-events/${slug}/media/${key}`,
   resume: (slug: string) => `/resume/${slug}`,
   resumeMissing: (slug: string) => `/resume/${slug}/missing`,
+  resumeMedia: (slug: string, key: string) => `/resume/${slug}/media/${key}`,
   note: (slug: string) => `/notes/${slug}`,
   noteMissing: (slug: string) => `/notes/${slug}/missing`,
   /** note の画像の経路の前半。置き場のキーを `/` でつないで使う */

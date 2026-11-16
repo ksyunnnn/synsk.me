@@ -15,11 +15,16 @@ import {
   type ResumeSources,
 } from '@/features/resume/domain/resume';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
-import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
+import {
+  visitorResumeMediaAccess,
+  type VisitorResume,
+} from '@/features/resume/domain/visitor-resume';
 import { createD1ResumeRepository } from '@/features/resume/server/d1-resume-repository';
+import { parseMediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
+import { createMediaStorage, respondWithMedia, withNoindex } from '@/shared/server/media-storage';
 import { routes } from '@/shared/routes';
 
 /**
@@ -129,4 +134,16 @@ export const findMissingResumeRow = async (
   const id = await findIdByUid(resumes, uid);
   if (id === null) return 'resume';
   return (await findResumeRowId(resumes, id, kind, rowUid)) === null ? 'row' : null;
+};
+
+/**
+ * 限定公開用の職務経歴書の本文の画像を訪問者に配る。`/resume/{slug}/media/{key}` の `route.ts` が
+ * 呼ぶ。見せてよいかは `visitorResumeMediaAccess` が決め、形の違うキーは D1 を読まずに 404 にする
+ */
+export const respondWithResumeMedia = async (slug: string, key: string): Promise<Response> => {
+  const access =
+    parseMediaStorageKey(key) === null
+      ? 'hidden'
+      : visitorResumeMediaAccess(await getVisitorLimitedResume(slug), key);
+  return withNoindex(await respondWithMedia(await createMediaStorage(), key, access));
 };
