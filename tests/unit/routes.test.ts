@@ -25,6 +25,7 @@ describe('訪問者の画面の経路', () => {
     expect(routes.lifeEventMedia('a-1', 'k')).toBe('/life-events/a-1/media/k');
     expect(routes.resume('a-1')).toBe('/resume/a-1');
     expect(routes.resumeMissing('a-1')).toBe('/resume/a-1/missing');
+    expect(routes.resumeMedia('a-1', 'k')).toBe('/resume/a-1/media/k');
     expect(routes.note('a-1')).toBe('/notes/a-1');
     expect(routes.noteMissing('a-1')).toBe('/notes/a-1/missing');
     expect(routes.noteMedia('a-1')).toBe('/notes/a-1/media');

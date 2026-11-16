@@ -1,6 +1,8 @@
 import type { Profile } from '@/features/resume/domain/profile';
 import type { ResumeContent } from '@/features/resume/domain/resume';
 import { listResumeSkills, type ResumeSkill } from '@/features/resume/domain/resume-skills';
+import { readMarkdown } from '@/shared/domain/markdown';
+import type { MediaAccess, MediaStorageKey } from '@/shared/domain/media';
 import type { Period } from '@/shared/domain/period';
 import type { ProjectKind } from '@/shared/domain/project-kind';
 
@@ -83,3 +85,19 @@ export const toLimitedVisitorResume = (
   })),
   skills: listResumeSkills(content.projects, content.skillOverrides, now),
 });
+
+/**
+ * 職務経歴書の本文の画像を訪問者に見せてよいか。見せてよい職務経歴書で、職歴か実績の本文に
+ * 印（`media:<storageKey>`）が書かれた画像なら `restricted`（限定公開のため、どのキャッシュにも
+ * 残さない。docs/REQUIREMENTS.md の NFR-09）。ほかは `hidden`
+ */
+export const visitorResumeMediaAccess = (
+  resume: VisitorResume | null,
+  storageKey: MediaStorageKey,
+): MediaAccess => {
+  if (!resume) return 'hidden';
+  const bodies = [...resume.careers, ...resume.projects].map((row) => row.body ?? '');
+  return bodies.some((body) => readMarkdown(body).mediaKeys.includes(storageKey))
+    ? 'restricted'
+    : 'hidden';
+};

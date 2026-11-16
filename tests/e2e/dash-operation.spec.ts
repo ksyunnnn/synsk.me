@@ -281,7 +281,9 @@ test.describe('戻る道', () => {
       new URL(resumeUrl).pathname,
     ]) {
       await visitor.goto(path);
-      await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
+      // 職務経歴書には、上の帯と結びの 2 か所に「トップへ戻る」がある。どのページにもある
+      // 上の帯の戻る道を確かめるため、文書の順で最初のリンクを押す
+      await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).first().click();
       await expect(visitor).toHaveURL('/top-draft');
     }
     await visitor.close();

@@ -2,6 +2,8 @@ import type { ReactNode } from 'react';
 import { PrintButton } from '@/features/resume/components/print-button';
 import type { VisitorResume } from '@/features/resume/domain/visitor-resume';
 import { fontFamily, sourceSans } from '@/lib/fonts';
+import { MarkdownBody } from '@/shared/components/markdown-body';
+import type { MediaStorageKey } from '@/shared/domain/media';
 import type { Period } from '@/shared/domain/period';
 import { toYearsAndMonths } from '@/shared/domain/period';
 import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
@@ -14,41 +16,58 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  * 上の帯にページの操作（「PDF で保存」）を置き、職務経歴書の中身と分ける。中身の見た目は Figma の
  * 「職務経歴書 — Quiet resume」（file yhHrXDTtvF7CjkLCeOZOU8、node 30:2）の Profile から下に従う。
  * 上にプロフィール、その下は 2 列で、左に目次・スキル・学歴、右に職歴・実績を置き、最後に結びを置く。
- * 幅は 1280px で固定し、画面の幅に合わせて組み替えない。
+ *
+ * 中身は 1280px の幅の組みだけを持ち、画面の幅に合わせて組み替えない。狭い画面ではページの
+ * viewport（src/app/resume/[slug]/page.tsx）が全体を縮める。印刷も同じ組みのまま、A4 の
+ * 印刷できる幅（用紙と余白は globals.css。210mm − 25mm − 15mm = 170mm ≒ 642px）に収まるよう
+ * 全体を 0.5 倍に縮める。印刷で隠すのは上の帯だけ。背景と区切り線も画面と同じに刷る。
  *
  * 色と寸法はデザインの値を直に書いている。トークンにまだ無い値のため。
  *
- * 印刷は A4 縦（用紙と余白は globals.css）。本文は 10.5pt にする（厚生労働省・ハローワーク
- * 『職務経歴書の作り方』の「本文部分で 10.5〜12 ポイント程度」）。印刷での左の列の幅 50mm は
- * 選んだ値で、出典はない。スキルの行（スキル名と経験年数）が 1 行に収まる幅として選んだ。
- *
- * 本文の書式は plan.md の U4 で決まっていない。決まるまでの仮の形として、本文は書式を持たない
- * 文字列として改行だけを残して出す。本文の画像は出さない。
+ * 自己紹介と学歴の補足は、書式を持たない文字列として改行だけを残して出す。職歴と実績の本文は
+ * Markdown として描き、本文の画像は `mediaSrc` が返す URL で出す。
  *
  * メールアドレスは、環境変数で渡したときだけ出す。スパム対策（FR-035）は plan.md の U8 で
  * 決まっておらず、本番の応答で Email Address Obfuscation が効くかを確かめる（tasks.md の T072）
  */
 
 /** デザインの文字の段（Quiet / Display・Heading・Body・Caption）。どれも Light 300 */
-const DISPLAY = 'text-[64px] leading-[88px] print:text-[18pt] print:leading-normal';
-const HEADING = 'text-[36px] leading-[54px] print:text-[13pt] print:leading-normal';
-const BODY = 'text-[20px] leading-[36px] print:text-[10.5pt] print:leading-normal';
-const CAPTION = 'text-[16px] leading-[28px] print:text-[10.5pt] print:leading-normal';
+const DISPLAY = 'text-[64px] leading-[88px]';
+const HEADING = 'text-[36px] leading-[54px]';
+const BODY = 'text-[20px] leading-[36px]';
+const CAPTION = 'text-[16px] leading-[28px]';
 
 const PRIMARY = 'text-[#242424]';
 const SECONDARY = 'text-[#686868]';
 
 /**
- * 節の見出し。印刷では節をまるごと次のページへ送らず、項目（li）1 つずつを切らないようにする。
- * 見出しだけがページの末に残らないよう、見出しの直後で改ページしない指定を付ける。この指定は
- * Chrome だけが効き、Safari と Firefox は効かない（MDN の break-after の互換表）
+ * 印刷で、まとまりを途中で切らず、直後でも改ページしない（見出しや項目の頭だけがページの末に
+ * 残らないようにする）。長い本文は途中で切ってよい。break-after は Chrome だけが効き、Safari と
+ * Firefox は効かない（MDN の break-after の互換表）
  */
-const HEADING_PRINT = 'print:break-after-avoid';
+const KEEP_WITH_NEXT = 'break-inside-avoid break-after-avoid';
 
-const Divider = () => <div aria-hidden className="h-px w-full bg-[#dedede]" />;
+/** 区切り線。背景色は印刷の既定で刷られないため、線で描く */
+const Divider = () => <hr aria-hidden className="w-full border-0 border-t border-[#dedede]" />;
 
 const Body = ({ text, className = '' }: { text: string | null; className?: string }) =>
   text ? <p className={`whitespace-pre-line ${className}`}>{text}</p> : null;
+
+/** 職歴・実績の本文。Markdown として描く */
+const MarkdownText = ({
+  text,
+  mediaSrc,
+}: {
+  text: string | null;
+  mediaSrc: (storageKey: MediaStorageKey) => string | null;
+}) =>
+  text ? (
+    <div
+      className={`flex flex-col gap-4 ${BODY} [&_figcaption]:text-[16px] [&_figcaption]:leading-[28px] [&_figcaption]:text-[#686868] [&_figure]:flex [&_figure]:flex-col [&_figure]:gap-2 [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6`}
+    >
+      <MarkdownBody body={text} mediaSrc={mediaSrc} />
+    </div>
+  ) : null;
 
 const ExternalLink = ({ href }: { href: string | null }) =>
   href ? (
@@ -96,8 +115,8 @@ const Section = ({
   count: number;
   children: ReactNode;
 }) => (
-  <section id={id} className="flex flex-col gap-12 print:gap-4">
-    <div className={`flex flex-col gap-2 ${HEADING_PRINT}`}>
+  <section id={id} className="flex flex-col gap-12">
+    <div className={`flex flex-col gap-2 ${KEEP_WITH_NEXT}`}>
       <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
         <span className="min-w-0 flex-1">{label}</span>
         <span className="whitespace-nowrap">{count} 件</span>
@@ -118,9 +137,11 @@ const SideSection = ({
   title: string;
   children: ReactNode;
 }) => (
-  <section id={id} className="flex flex-col gap-6 print:gap-4">
-    <Divider />
-    <h2 className={`${BODY} ${PRIMARY} ${HEADING_PRINT}`}>{title}</h2>
+  <section id={id} className="flex flex-col gap-6">
+    <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
+      <Divider />
+      <h2 className={`${BODY} ${PRIMARY}`}>{title}</h2>
+    </div>
     {children}
   </section>
 );
@@ -129,11 +150,20 @@ type Props = {
   resume: VisitorResume;
   /** 上の帯の左端に置く操作（管理画面の「設定の画面へ戻る」など） */
   toolbarStart?: ReactNode;
-  /** 結びの右端に置く操作（訪問者の「トップへ戻る」など）。印刷には出さない */
+  /** 結びの右端に置く操作（訪問者の「トップへ戻る」など） */
   footerEnd?: ReactNode;
+  /** 本文の画像の URL を作る。渡さなければ本文の画像を出さない */
+  mediaSrc?: (storageKey: MediaStorageKey) => string | null;
 };
 
-export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) => {
+const hideMedia = () => null;
+
+export const VisitorResumeView = ({
+  resume,
+  toolbarStart,
+  footerEnd,
+  mediaSrc = hideMedia,
+}: Props) => {
   const { profile } = resume;
   const index = [
     { id: 'careers', title: '職歴', count: resume.careers.length },
@@ -154,11 +184,14 @@ export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) =>
         </div>
       </div>
 
-      <div className={`bg-[#fafafa] font-light ${PRIMARY} print:bg-transparent`}>
-        <article className="mx-auto w-[1280px] print:w-auto">
-          <header className="flex flex-col gap-12 px-16 pt-16 pb-24 print:gap-[6mm] print:p-0 print:pb-[8mm]">
-            <div className="flex items-center gap-16 print:gap-[8mm]">
-              <div className="flex min-w-0 flex-1 flex-col gap-6 print:gap-[3mm]">
+      <div
+        className={`bg-[#fafafa] font-light ${PRIMARY} print:[print-color-adjust:exact] print:[zoom:0.5]`}
+      >
+        {/* 空白の無い長い文字列（本文の URL など）は列の幅で折り返し、横にはみ出させない */}
+        <article className="mx-auto w-[1280px] [overflow-wrap:anywhere]">
+          <header className="flex flex-col gap-12 px-16 pt-16 pb-24">
+            <div className="flex items-center gap-16">
+              <div className="flex min-w-0 flex-1 flex-col gap-6">
                 <h1 className={DISPLAY}>{profile.name}</h1>
                 <Body text={profile.introduction} className={BODY} />
                 {profile.email && (
@@ -178,15 +211,15 @@ export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) =>
                 alt={`${profile.name}の写真`}
                 width={128}
                 height={128}
-                className="size-32 shrink-0 border border-[#dedede] bg-[#f2f2f2] object-cover print:size-[24mm]"
+                className="size-32 shrink-0 border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
           </header>
 
-          <div className="grid grid-cols-[224px_minmax(0,1fr)] gap-24 px-16 print:grid-cols-[50mm_minmax(0,1fr)] print:gap-[8mm] print:p-0">
-            <aside className="flex flex-col gap-16 print:gap-[8mm]">
-              <nav aria-label="目次" className={`flex flex-col gap-6 ${CAPTION} print:hidden`}>
+          <div className="grid grid-cols-[224px_minmax(0,1fr)] gap-24 px-16">
+            <aside className="flex flex-col gap-16">
+              <nav aria-label="目次" className={`flex flex-col gap-6 ${CAPTION}`}>
                 <p className={SECONDARY}>CONTENTS</p>
                 <ol className="flex flex-col gap-6">
                   {index.map((item) => (
@@ -222,7 +255,7 @@ export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) =>
 
               {resume.educations.length > 0 && (
                 <SideSection id="educations" title={`${numberOf('educations')} / 学歴`}>
-                  <ol className="flex flex-col gap-6 print:gap-4">
+                  <ol className="flex flex-col gap-6">
                     {resume.educations.map((education, i) => (
                       <li key={i} className="flex flex-col gap-2 break-inside-avoid">
                         <h3 className={BODY}>{education.school}</h3>
@@ -238,7 +271,7 @@ export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) =>
               )}
             </aside>
 
-            <div className="flex min-w-0 flex-col gap-24 print:gap-[8mm]">
+            <div className="flex min-w-0 flex-col gap-24">
               {resume.careers.length > 0 && (
                 <Section
                   id="careers"
@@ -246,18 +279,20 @@ export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) =>
                   title="職歴"
                   count={resume.careers.length}
                 >
-                  <ol className="flex flex-col gap-12 print:gap-6">
+                  <ol className="flex flex-col gap-12">
                     {resume.careers.map((career, i) => (
-                      <li key={i} className="flex flex-col gap-6 break-inside-avoid print:gap-2">
-                        <Divider />
-                        <div className="flex flex-col gap-2">
-                          <p className={`${CAPTION} ${SECONDARY}`}>
-                            <ResumePeriod period={career.period} />
-                          </p>
-                          <h3 className={BODY}>{career.organizationName}</h3>
-                          <p className={`${CAPTION} ${SECONDARY}`}>{career.role}</p>
+                      <li key={i} className="flex flex-col gap-6">
+                        <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
+                          <Divider />
+                          <div className="flex flex-col gap-2">
+                            <p className={`${CAPTION} ${SECONDARY}`}>
+                              <ResumePeriod period={career.period} />
+                            </p>
+                            <h3 className={BODY}>{career.organizationName}</h3>
+                            <p className={`${CAPTION} ${SECONDARY}`}>{career.role}</p>
+                          </div>
                         </div>
-                        <Body text={career.body} className={BODY} />
+                        <MarkdownText text={career.body} mediaSrc={mediaSrc} />
                         <ExternalLink href={career.url} />
                       </li>
                     ))}
@@ -272,26 +307,28 @@ export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) =>
                   title="実績"
                   count={resume.projects.length}
                 >
-                  <ol className="flex flex-col gap-12 print:gap-6">
+                  <ol className="flex flex-col gap-12">
                     {resume.projects.map((project, i) => (
-                      <li key={i} className="flex flex-col gap-6 break-inside-avoid print:gap-2">
-                        <Divider />
-                        <div className="flex flex-col gap-2">
-                          <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
-                            <span className="min-w-0 flex-1">
-                              <ResumePeriod period={project.period} />
-                            </span>
-                            <span className="whitespace-nowrap">
-                              {PROJECT_KIND_LABELS[project.kind]}
-                            </span>
-                          </p>
-                          <h3 className={HEADING}>{project.title}</h3>
-                          <p className={`${CAPTION} ${SECONDARY}`}>{project.organizationName}</p>
+                      <li key={i} className="flex flex-col gap-6">
+                        <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
+                          <Divider />
+                          <div className="flex flex-col gap-2">
+                            <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
+                              <span className="min-w-0 flex-1">
+                                <ResumePeriod period={project.period} />
+                              </span>
+                              <span className="whitespace-nowrap">
+                                {PROJECT_KIND_LABELS[project.kind]}
+                              </span>
+                            </p>
+                            <h3 className={HEADING}>{project.title}</h3>
+                            <p className={`${CAPTION} ${SECONDARY}`}>{project.organizationName}</p>
+                          </div>
                         </div>
                         {project.skills.length > 0 && (
                           <p className={`${CAPTION} ${SECONDARY}`}>{project.skills.join(' / ')}</p>
                         )}
-                        <Body text={project.body} className={BODY} />
+                        <MarkdownText text={project.body} mediaSrc={mediaSrc} />
                         <ExternalLink href={project.url} />
                       </li>
                     ))}
@@ -301,7 +338,7 @@ export const VisitorResumeView = ({ resume, toolbarStart, footerEnd }: Props) =>
             </div>
           </div>
 
-          <footer className="flex items-center justify-between gap-6 px-16 pt-24 pb-16 print:hidden">
+          <footer className="flex items-center justify-between gap-6 px-16 pt-24 pb-16 break-inside-avoid">
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <p className={BODY}>{profile.name}</p>
               <p className={`${CAPTION} ${SECONDARY}`}>職務経歴書 / RESUME</p>
