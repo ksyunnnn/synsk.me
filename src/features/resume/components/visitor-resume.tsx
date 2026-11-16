@@ -211,7 +211,7 @@ export const VisitorResumeView = ({
                 alt={`${profile.name}の写真`}
                 width={128}
                 height={128}
-                className="size-32 shrink-0 border border-[#dedede] bg-[#f2f2f2] object-cover"
+                className="size-32 shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
