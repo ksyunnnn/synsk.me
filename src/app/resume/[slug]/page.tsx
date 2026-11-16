@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { VisitorResumeView } from '@/features/resume/components/visitor-resume';
 import { getVisitorLimitedResume } from '@/features/resume/server/queries';
 import { BackToTopLink } from '@/shared/components/back-to-top-link';
+import { routes } from '@/shared/routes';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
 // （https://nextjs.org/docs/messages/blocking-prerender-dynamic）。キャッシュしない
@@ -33,7 +35,19 @@ const Page = async ({ params }: Props) => {
 
   return (
     <main>
-      <VisitorResumeView resume={resume} toolbarStart={<BackToTopLink />} />
+      <VisitorResumeView
+        resume={resume}
+        toolbarStart={<BackToTopLink />}
+        footerEnd={
+          // Figma の Quiet / Button / Secondary（node 2:167）
+          <Link
+            href={routes.top}
+            className="shrink-0 border border-[#686868] px-8 py-3.5 text-[20px] leading-[36px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            トップへ戻る
+          </Link>
+        }
+      />
     </main>
   );
 };
