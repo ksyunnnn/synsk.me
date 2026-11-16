@@ -1,4 +1,5 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { VisitorResumeView } from '@/features/resume/components/visitor-resume';
 import { getVisitorLimitedResume } from '@/features/resume/server/queries';
@@ -17,6 +18,12 @@ export const metadata: Metadata = {
   openGraph: { title: '職務経歴書' },
   robots: { index: false, follow: false },
 };
+
+// 職務経歴書は PDF と同じく、どの画面でも 1280px 幅の組みのまま全体を縮めて見せる。
+// このページだけに効かせる（https://nextjs.org/docs/app/api-reference/functions/generate-viewport）。
+// 既定の initial-scale=1 が残ると狭い画面で縮まないため、undefined で外す（vinext の
+// mergeViewport は undefined の値を meta に書かない）
+export const viewport: Viewport = { width: 1280, initialScale: undefined };
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -38,6 +45,15 @@ const Page = async ({ params }: Props) => {
         resume={resume}
         toolbarStart={<BackToTopLink />}
         mediaSrc={(key) => routes.resumeMedia(slug, key)}
+        footerEnd={
+          // Figma の Quiet / Button / Secondary（node 2:167）
+          <Link
+            href={routes.top}
+            className="shrink-0 border border-[#686868] px-8 py-3.5 text-[20px] leading-[36px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            トップへ戻る
+          </Link>
+        }
       />
     </main>
   );
