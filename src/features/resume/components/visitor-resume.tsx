@@ -32,10 +32,10 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  */
 
 /** デザインの文字の段（Quiet / Display・Heading・Body・Caption）。どれも Light 300 */
-const DISPLAY = 'text-[64px] leading-[88px]';
-const HEADING = 'text-[36px] leading-[54px]';
-const BODY = 'text-[20px] leading-[36px]';
-const CAPTION = 'text-[16px] leading-[28px]';
+const DISPLAY = 'text-[40px] leading-[56px]';
+const HEADING = 'text-[28px] leading-[42px]';
+const BODY = 'text-[16px] leading-[28px]';
+const CAPTION = 'text-[14px] leading-[24px]';
 
 const PRIMARY = 'text-[#242424]';
 const SECONDARY = 'text-[#686868]';
@@ -63,7 +63,7 @@ const MarkdownText = ({
 }) =>
   text ? (
     <div
-      className={`flex flex-col gap-4 ${BODY} [&_figcaption]:text-[16px] [&_figcaption]:leading-[28px] [&_figcaption]:text-[#686868] [&_figure]:flex [&_figure]:flex-col [&_figure]:gap-2 [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6`}
+      className={`flex flex-col gap-4 ${BODY} [&_figcaption]:text-[14px] [&_figcaption]:leading-[24px] [&_figcaption]:text-[#686868] [&_figure]:flex [&_figure]:flex-col [&_figure]:gap-2 [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6`}
     >
       <MarkdownBody body={text} mediaSrc={mediaSrc} />
     </div>
@@ -184,7 +184,7 @@ export const VisitorResumeView = ({
       >
         {/* 空白の無い長い文字列（本文の URL など）は列の幅で折り返し、横にはみ出させない */}
         <article className="mx-auto w-[1280px] [overflow-wrap:anywhere]">
-          <header className="flex flex-col gap-12 px-16 pt-16 pb-24">
+          <header className="flex flex-col gap-8 px-16 pt-12 pb-12">
             <div className="flex items-center gap-16">
               <div className="flex min-w-0 flex-1 flex-col gap-6">
                 <h1 className={DISPLAY}>{profile.name}</h1>
@@ -204,9 +204,9 @@ export const VisitorResumeView = ({
               <img
                 src={profile.photoSrc}
                 alt={`${profile.name}の写真`}
-                width={128}
-                height={128}
-                className="size-32 shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
+                width={96}
+                height={96}
+                className="size-24 shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
