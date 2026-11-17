@@ -299,11 +299,9 @@ export const VisitorResumeView = ({
                               <ResumePeriod period={project.period} />
                             </p>
                             <h3 className={HEADING}>{project.title}</h3>
-                            <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
-                              <span className="min-w-0">{project.organizationName}</span>
-                              <span className="whitespace-nowrap">
-                                {PROJECT_KIND_LABELS[project.kind]}
-                              </span>
+                            {/* 種類は会社名の添え書き。括弧で関係を示し、下の技術の一覧（/ 区切り）と混ぜない */}
+                            <p className={`${CAPTION} ${SECONDARY}`}>
+                              {project.organizationName}（{PROJECT_KIND_LABELS[project.kind]}）
                             </p>
                           </div>
                         </div>
