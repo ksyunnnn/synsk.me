@@ -256,7 +256,6 @@ export const VisitorResumeView = ({
                     {resume.careers.map((career, i) => (
                       <li key={i} className="flex flex-col gap-6">
                         <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
-                          <Divider />
                           <div className="flex flex-col gap-2">
                             <p className={`${CAPTION} ${SECONDARY}`}>
                               <ResumePeriod period={career.period} />
@@ -279,7 +278,6 @@ export const VisitorResumeView = ({
                     {resume.projects.map((project, i) => (
                       <li key={i} className="flex flex-col gap-6">
                         <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
-                          <Divider />
                           <div className="flex flex-col gap-2">
                             <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
                               <span className="min-w-0 flex-1">
