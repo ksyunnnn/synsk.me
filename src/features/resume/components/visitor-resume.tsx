@@ -119,7 +119,7 @@ const SideSection = ({
   title: string;
   children: ReactNode;
 }) => (
-  <section id={id} className="flex flex-col gap-6">
+  <section id={id} className="flex flex-col gap-4">
     <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
       <Divider />
       <h2 className={`${BODY} ${PRIMARY}`}>{title}</h2>
