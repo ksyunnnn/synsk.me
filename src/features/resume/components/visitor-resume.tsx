@@ -260,7 +260,7 @@ export const VisitorResumeView = ({
                             <p className={`${CAPTION} ${SECONDARY}`}>
                               <ResumePeriod period={career.period} />
                             </p>
-                            <h3 className={HEADING}>{career.organizationName}</h3>
+                            <h3 className={BODY}>{career.organizationName}</h3>
                             <p className={`${CAPTION} ${SECONDARY}`}>{career.role}</p>
                           </div>
                         </div>
