@@ -94,6 +94,21 @@ const ResumePeriod = ({ period }: { period: Period }) => (
   </>
 );
 
+/** 期間を 2 行で表す。1 行目に始まり、2 行目に「— 終わり」 */
+const StackedPeriod = ({ period }: { period: Period }) => (
+  <>
+    <time dateTime={period.startedOn}>{toMonthText(period.startedOn)}</time>
+    <span>
+      {'— '}
+      {period.endedOn ? (
+        <time dateTime={period.endedOn}>{toMonthText(period.endedOn)}</time>
+      ) : (
+        '現在'
+      )}
+    </span>
+  </>
+);
+
 /** 経験年数。年と月で表す（001 の FR-034） */
 const formatMonths = (months: number) => {
   const { years, months: rest } = toYearsAndMonths(months);
@@ -254,18 +269,19 @@ export const VisitorResumeView = ({
                 <Section id="careers" title="職歴">
                   <ol className="flex flex-col gap-16">
                     {resume.careers.map((career, i) => (
-                      <li key={i} className="flex flex-col gap-4">
-                        <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
-                          <div className="flex flex-col gap-2">
-                            <p className={`${CAPTION} ${SECONDARY}`}>
-                              <ResumePeriod period={career.period} />
-                            </p>
+                      // 期間を左の細い列に吊るし、左端を縦に追うと年だけを拾えるようにする
+                      <li key={i} className="grid grid-cols-[128px_minmax(0,1fr)] gap-x-8">
+                        <p className={`flex flex-col ${CAPTION} ${SECONDARY}`}>
+                          <StackedPeriod period={career.period} />
+                        </p>
+                        <div className="flex min-w-0 flex-col gap-4">
+                          <div className={`flex flex-col gap-2 ${KEEP_WITH_NEXT}`}>
                             <h3 className={BODY}>{career.organizationName}</h3>
                             <p className={`${CAPTION} ${SECONDARY}`}>{career.role}</p>
                           </div>
+                          <MarkdownText text={career.body} mediaSrc={mediaSrc} />
+                          <ExternalLink href={career.url} />
                         </div>
-                        <MarkdownText text={career.body} mediaSrc={mediaSrc} />
-                        <ExternalLink href={career.url} />
                       </li>
                     ))}
                   </ol>
