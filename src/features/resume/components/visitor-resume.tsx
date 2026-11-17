@@ -94,6 +94,12 @@ const ResumePeriod = ({ period }: { period: Period }) => (
   </>
 );
 
+/** 生年月日（暦の日付 `YYYY-MM-DD`）を「1992年2月23日生」にする */
+const toBirthDateText = (date: string) => {
+  const [y, m, d] = date.split('-').map(Number);
+  return `${y}年${m}月${d}日生`;
+};
+
 /** 期間を 2 行で表す。1 行目に始まり、2 行目に「— 終わり」 */
 const StackedPeriod = ({ period }: { period: Period }) => (
   <>
@@ -185,20 +191,31 @@ export const VisitorResumeView = ({
         {/* 空白の無い長い文字列（本文の URL など）は列の幅で折り返し、横にはみ出させない */}
         <article className="mx-auto w-[1280px] [overflow-wrap:anywhere]">
           <header className="flex flex-col gap-8 px-16 pt-12 pb-12">
-            <div className="flex items-center gap-16">
-              <div className="flex min-w-0 flex-1 flex-col gap-6">
-                <h1 className={DISPLAY}>{profile.name}</h1>
-                <Body text={profile.introduction} className={BODY} />
-                {profile.email && (
-                  <p className={`${CAPTION} ${SECONDARY}`}>
-                    <a
-                      href={`mailto:${profile.email}`}
-                      className="underline rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                    >
-                      {profile.email}
-                    </a>
-                  </p>
-                )}
+            {/* 写真は名前の上端にそろえる */}
+            <div className="flex items-start gap-16">
+              <div className="flex min-w-0 flex-1 flex-col gap-4">
+                {/* 名前と肩書きを 1 つのまとまりにする */}
+                <div className="flex flex-col gap-2">
+                  <h1 className={DISPLAY}>{profile.name}</h1>
+                  <Body text={profile.introduction} className={BODY} />
+                </div>
+                {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
+                <p className={`${CAPTION} ${SECONDARY}`}>
+                  <time dateTime={profile.birthDate}>{toBirthDateText(profile.birthDate)}</time>
+                  {profile.email && (
+                    <>
+                      <span aria-hidden className="px-2">
+                        ·
+                      </span>
+                      <a
+                        href={`mailto:${profile.email}`}
+                        className="underline rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      >
+                        {profile.email}
+                      </a>
+                    </>
+                  )}
+                </p>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element -- 写真は `public/` の 1 枚で、最適化の経路を通さない */}
               <img
