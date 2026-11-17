@@ -295,16 +295,16 @@ export const VisitorResumeView = ({
                       <li key={i} className="flex flex-col gap-4">
                         <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
                           <div className="flex flex-col gap-2">
+                            <p className={`${CAPTION} ${SECONDARY}`}>
+                              <ResumePeriod period={project.period} />
+                            </p>
+                            <h3 className={HEADING}>{project.title}</h3>
                             <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
-                              <span className="min-w-0 flex-1">
-                                <ResumePeriod period={project.period} />
-                              </span>
+                              <span className="min-w-0">{project.organizationName}</span>
                               <span className="whitespace-nowrap">
                                 {PROJECT_KIND_LABELS[project.kind]}
                               </span>
                             </p>
-                            <h3 className={HEADING}>{project.title}</h3>
-                            <p className={`${CAPTION} ${SECONDARY}`}>{project.organizationName}</p>
                           </div>
                         </div>
                         {project.skills.length > 0 && (
