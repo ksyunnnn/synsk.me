@@ -249,12 +249,12 @@ export const VisitorResumeView = ({
               )}
             </aside>
 
-            <div className="flex min-w-0 flex-col gap-24">
+            <div className="flex min-w-0 flex-col gap-32">
               {resume.careers.length > 0 && (
                 <Section id="careers" title="職歴">
-                  <ol className="flex flex-col gap-12">
+                  <ol className="flex flex-col gap-16">
                     {resume.careers.map((career, i) => (
-                      <li key={i} className="flex flex-col gap-6">
+                      <li key={i} className="flex flex-col gap-4">
                         <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
                           <div className="flex flex-col gap-2">
                             <p className={`${CAPTION} ${SECONDARY}`}>
@@ -274,9 +274,9 @@ export const VisitorResumeView = ({
 
               {resume.projects.length > 0 && (
                 <Section id="projects" title="実績">
-                  <ol className="flex flex-col gap-12">
+                  <ol className="flex flex-col gap-16">
                     {resume.projects.map((project, i) => (
-                      <li key={i} className="flex flex-col gap-6">
+                      <li key={i} className="flex flex-col gap-4">
                         <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
                           <div className="flex flex-col gap-2">
                             <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
