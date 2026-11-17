@@ -31,7 +31,7 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  * 決まっておらず、本番の応答で Email Address Obfuscation が効くかを確かめる（tasks.md の T072）
  */
 
-/** デザインの文字の段（Quiet / Display・Heading・Body・Caption）。どれも Light 300 */
+/** デザインの文字の段（Quiet / Display・Heading・Body・Caption）。どれも Light 300。名前（h1）だけ Regular 400 */
 const DISPLAY = 'text-[40px] leading-[56px]';
 const HEADING = 'text-[28px] leading-[42px]';
 const BODY = 'text-[16px] leading-[28px]';
@@ -196,7 +196,7 @@ export const VisitorResumeView = ({
               <div className="flex min-w-0 flex-1 flex-col gap-4">
                 {/* 名前と肩書きを 1 つのまとまりにする */}
                 <div className="flex flex-col gap-2">
-                  <h1 className={DISPLAY}>{profile.name}</h1>
+                  <h1 className={`${DISPLAY} font-normal`}>{profile.name}</h1>
                   <Body text={profile.introduction} className={BODY} />
                 </div>
                 {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
