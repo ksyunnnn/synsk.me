@@ -101,23 +101,10 @@ const formatMonths = (months: number) => {
   return rest === 0 ? `${years} 年` : `${years} 年 ${rest} か月`;
 };
 
-/** 右の列の節。上に番号・英語名、その下に見出し */
-const Section = ({
-  id,
-  label,
-  title,
-  children,
-}: {
-  id: string;
-  label: string;
-  title: string;
-  children: ReactNode;
-}) => (
+/** 右の列の節。見出しの下に中身 */
+const Section = ({ id, title, children }: { id: string; title: string; children: ReactNode }) => (
   <section id={id} className="flex flex-col gap-12">
-    <div className={`flex flex-col gap-2 ${KEEP_WITH_NEXT}`}>
-      <p className={`${CAPTION} ${SECONDARY}`}>{label}</p>
-      <h2 className={`${HEADING} ${PRIMARY}`}>{title}</h2>
-    </div>
+    <h2 className={`${HEADING} ${PRIMARY} ${KEEP_WITH_NEXT}`}>{title}</h2>
     {children}
   </section>
 );
@@ -166,8 +153,6 @@ export const VisitorResumeView = ({
     { id: 'skills', title: 'スキル', count: resume.skills.length },
     { id: 'educations', title: '学歴', count: resume.educations.length },
   ].filter((item) => item.count > 0);
-  const numberOf = (id: string) =>
-    String(index.findIndex((item) => item.id === id) + 1).padStart(2, '0');
 
   return (
     // 書体は design/foundations.pen の font-en と font-ja
@@ -215,7 +200,7 @@ export const VisitorResumeView = ({
           <div className="grid grid-cols-[224px_minmax(0,1fr)] gap-24 px-16">
             <aside className="flex flex-col gap-16">
               <nav aria-label="目次" className={`flex flex-col gap-6 ${CAPTION}`}>
-                <p className={SECONDARY}>CONTENTS</p>
+                <p className={SECONDARY}>目次</p>
                 <ol className="flex flex-col gap-6">
                   {index.map((item) => (
                     <li key={item.id}>
@@ -223,7 +208,6 @@ export const VisitorResumeView = ({
                         href={`#${item.id}`}
                         className="flex items-center gap-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
-                        <span className={SECONDARY}>{numberOf(item.id)}</span>
                         <span className="min-w-0 flex-1">{item.title}</span>
                         <span className={SECONDARY}>{item.count}</span>
                       </a>
@@ -233,7 +217,7 @@ export const VisitorResumeView = ({
               </nav>
 
               {resume.skills.length > 0 && (
-                <SideSection id="skills" title={`${numberOf('skills')} / スキル`}>
+                <SideSection id="skills" title="スキル">
                   <ul className={`flex flex-col gap-2 ${CAPTION}`}>
                     {resume.skills.map((skill) => (
                       <li key={skill.name} className="flex gap-2 break-inside-avoid">
@@ -248,7 +232,7 @@ export const VisitorResumeView = ({
               )}
 
               {resume.educations.length > 0 && (
-                <SideSection id="educations" title={`${numberOf('educations')} / 学歴`}>
+                <SideSection id="educations" title="学歴">
                   <ol className="flex flex-col gap-6">
                     {resume.educations.map((education, i) => (
                       <li key={i} className="flex flex-col gap-2 break-inside-avoid">
@@ -267,7 +251,7 @@ export const VisitorResumeView = ({
 
             <div className="flex min-w-0 flex-col gap-24">
               {resume.careers.length > 0 && (
-                <Section id="careers" label={`${numberOf('careers')} / CAREER`} title="職歴">
+                <Section id="careers" title="職歴">
                   <ol className="flex flex-col gap-12">
                     {resume.careers.map((career, i) => (
                       <li key={i} className="flex flex-col gap-6">
@@ -290,7 +274,7 @@ export const VisitorResumeView = ({
               )}
 
               {resume.projects.length > 0 && (
-                <Section id="projects" label={`${numberOf('projects')} / PROJECTS`} title="実績">
+                <Section id="projects" title="実績">
                   <ol className="flex flex-col gap-12">
                     {resume.projects.map((project, i) => (
                       <li key={i} className="flex flex-col gap-6">
@@ -325,7 +309,7 @@ export const VisitorResumeView = ({
           <footer className="flex items-center justify-between gap-6 px-16 pt-24 pb-16 break-inside-avoid">
             <div className="flex min-w-0 flex-1 flex-col gap-2">
               <p className={BODY}>{profile.name}</p>
-              <p className={`${CAPTION} ${SECONDARY}`}>職務経歴書 / RESUME</p>
+              <p className={`${CAPTION} ${SECONDARY}`}>職務経歴書</p>
             </div>
             {footerEnd}
           </footer>
