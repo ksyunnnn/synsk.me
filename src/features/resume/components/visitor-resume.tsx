@@ -200,7 +200,7 @@ export const VisitorResumeView = ({
           <div className="grid grid-cols-[224px_minmax(0,1fr)] gap-24 px-16">
             <aside className="flex flex-col gap-16">
               <nav aria-label="目次" className={`flex flex-col gap-4 ${CAPTION}`}>
-                <p className={SECONDARY}>目次</p>
+                <p className={`${BODY} ${PRIMARY}`}>目次</p>
                 <ol className="flex flex-col gap-2">
                   {index.map((item) => (
                     <li key={item.id}>
