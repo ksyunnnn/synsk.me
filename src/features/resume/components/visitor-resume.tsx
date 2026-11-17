@@ -299,9 +299,13 @@ export const VisitorResumeView = ({
                               <ResumePeriod period={project.period} />
                             </p>
                             <h3 className={HEADING}>{project.title}</h3>
-                            {/* 種類は会社名の添え書き。括弧で関係を示し、下の技術の一覧（/ 区切り）と混ぜない */}
+                            {/* 種類を先頭に「 · 」でつなぐ（Frank Chimero の「Book · 2012」の型）。下の技術の一覧（/ 区切り）と記号で分ける */}
                             <p className={`${CAPTION} ${SECONDARY}`}>
-                              {project.organizationName}（{PROJECT_KIND_LABELS[project.kind]}）
+                              {PROJECT_KIND_LABELS[project.kind]}
+                              <span aria-hidden className="px-2">
+                                ·
+                              </span>
+                              {project.organizationName}
                             </p>
                           </div>
                         </div>
