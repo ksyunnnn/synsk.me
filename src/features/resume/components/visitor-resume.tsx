@@ -36,10 +36,14 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  */
 
 /** デザインの文字の段（Quiet / Display・Heading・Body・Caption）。どれも Light 300。名前（h1）だけ Regular 400 */
-const DISPLAY = 'text-[45px] leading-[63px]';
+const DISPLAY = 'text-[45px] leading-[54px]';
 const HEADING = 'text-[24.5px] leading-[36.8px]';
 const BODY = 'text-[14px] leading-[24.5px]';
 const CAPTION = 'text-[12.3px] leading-[21px]';
+
+/** ヘッダーの 1 行だけの段。行の高さは文字の 1.2 倍にし、上下に空きを作らない */
+const HEADER_BODY = 'text-[14px] leading-[16.8px]';
+const HEADER_CAPTION = 'text-[12.3px] leading-[14.8px]';
 
 const PRIMARY = 'text-[#242424]';
 const SECONDARY = 'text-[#686868]';
@@ -197,21 +201,24 @@ export const VisitorResumeView = ({
         <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
           {/* 上の帯との間は 14px。印刷では帯を出さないので、上の余白を 42px に戻す */}
           <header className="flex flex-col gap-[28px] px-[39.7px] pt-[14px] pb-[42px] print:pt-[42px]">
-            {/* 写真は文字の塊と同じ高さ（名前 63 + ローマ字 21 + 21 + 肩書き 24.5 + 7 + 属性 21 = 157.5px）にし、上下をそろえる */}
+            {/* 写真は文字の塊と同じ高さ（名前 54 + ローマ字 14.8 + 21 + 肩書き 16.8 + 7 + 属性 14.8 = 128.4px）にし、上下をそろえる */}
             <div className="flex items-center gap-[56px]">
               {/* 名前の組（名前とローマ字）と説明の組（肩書きと属性）に分け、組の間を組の中より広く空ける */}
               <div className="flex min-w-0 flex-1 flex-col gap-[21px]">
                 {/* 名前・ローマ字・肩書きは、どれも文字の大きさの 0.2 倍の字間で組む。行の右端はそろえない。生年月日とメールアドレスは読み取る値なので字間を足さない */}
                 <hgroup className="flex flex-col">
                   <h1 className={`${DISPLAY} font-normal tracking-[0.2em]`}>{profile.name}</h1>
-                  <p lang="en" className={`${CAPTION} ${SECONDARY} uppercase tracking-[0.2em]`}>
+                  <p
+                    lang="en"
+                    className={`${HEADER_CAPTION} ${SECONDARY} uppercase tracking-[0.2em]`}
+                  >
                     {profile.nameRomaji}
                   </p>
                 </hgroup>
                 <div className="flex flex-col gap-[7px]">
-                  <Body text={profile.introduction} className={`${BODY} tracking-[0.2em]`} />
+                  <Body text={profile.introduction} className={`${HEADER_BODY} tracking-[0.2em]`} />
                   {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
-                  <p className={`${CAPTION} ${SECONDARY}`}>
+                  <p className={`${HEADER_CAPTION} ${SECONDARY}`}>
                     <time dateTime={profile.birthDate}>{toBirthDateText(profile.birthDate)}</time>
                     {profile.email && (
                       <>
@@ -233,9 +240,9 @@ export const VisitorResumeView = ({
               <img
                 src={profile.photoSrc}
                 alt={`${profile.name}の写真`}
-                width={158}
-                height={158}
-                className="size-[157.5px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
+                width={128}
+                height={128}
+                className="size-[128.4px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
