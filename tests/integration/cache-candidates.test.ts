@@ -26,8 +26,8 @@ const PRERENDER_PATHS = './dist/server/vinext-prerender-paths.json';
  * 経路を足すときは、データや認証によって応答が変わらないことを確かめてから足す。
  */
 const CACHEABLE_PATHS = [
-  // トップの下書きのリンク先のモック。データも認証も使わない（#148）。トップ `/` とトップの下書き
-  // `/top-draft` は要求ごとに D1 の一覧を読むので載せない（specs/005-feed/research.md の R9）
+  // トップの下書きのリンク先のモック。データも認証も使わない（#148）。トップ（`routes.home`）とトップの
+  // 下書き（`routes.topDraft`）は要求ごとに D1 の一覧を読むので載せない（specs/005-feed/research.md の R9）
   '/about',
   '/contact',
   '/resume',

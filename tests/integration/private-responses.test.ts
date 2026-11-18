@@ -105,7 +105,7 @@ describe.each([
 });
 
 /**
- * キャッシュしてよい画面。`/` は要求ごとに D1 を読みキャッシュしないため使わない
+ * キャッシュしてよい画面。トップ（`routes.home`）は要求ごとに D1 を読みキャッシュしないため使わない
  * （tests/integration/cache-candidates.test.ts の CACHEABLE_PATHS）
  */
 const CACHEABLE_PAGE = '/about';

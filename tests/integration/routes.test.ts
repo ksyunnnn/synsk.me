@@ -15,8 +15,8 @@ import { startTestServer, type TestServer } from './support/d1';
  * エッジのキャッシュそのものはここで検査しない。Workers Cache への保存は、ローカルの
  * workerd では起きない。外に出る指示は `cache-candidates.test.ts` が見る。
  *
- * `/` は要求ごとに D1 の一覧を読むため、`migrations/` を当てた D1 で起動する
- * （`tests/integration/feed.test.ts` の `/top-draft` と同じ）。
+ * トップ（`routes.home`）は要求ごとに D1 の一覧を読むため、`migrations/` を当てた D1 で起動する
+ * （`tests/integration/feed.test.ts` の `routes.topDraft` と同じ）。
  */
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47];
