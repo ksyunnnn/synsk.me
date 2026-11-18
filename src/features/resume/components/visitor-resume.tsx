@@ -55,6 +55,13 @@ const SECONDARY = 'text-[#686868]';
  */
 const KEEP_WITH_NEXT = 'break-inside-avoid break-after-avoid';
 
+/**
+ * 地の紙の粒子（`public/resume-paper-grain.png`、240px 四方）を、地の色に multiply で重ねる。画像は
+ * SVG の fractalNoise（baseFrequency 0.8・numOctaves 3・彩度 0・不透明度 0.25）を描いたもの。作り方は
+ * #362 の「左下の KOBASHI タグ」の地と同じ。SVG のまま重ねると、印刷の PDF が約 3 倍の大きさになるため画像にした
+ */
+const PAPER_GRAIN = "url('/resume-paper-grain.png')";
+
 /** 区切り線。背景色は印刷の既定で刷られないため、線で描く */
 const Divider = () => <hr aria-hidden className="w-full border-0 border-t border-[#dedede]" />;
 
@@ -185,7 +192,10 @@ export const VisitorResumeView = ({
 
   return (
     // 書体は design/foundations.pen の font-en と font-ja
-    <div className={`bg-[#fafafa] ${sourceSans.className}`} style={{ fontFamily }}>
+    <div
+      className={`bg-[#fafafa] bg-blend-multiply ${sourceSans.className} print:[print-color-adjust:exact]`}
+      style={{ fontFamily, backgroundImage: PAPER_GRAIN }}
+    >
       {/* 上の帯。画面の上に留め、下を通る中身をすりガラスで透かす（foundations.pen の Materials:
           すりガラスは操作の層にだけ使う。値は lab の delay-visuals の帯と同じ）。地は中身から取り、
           線を引かない（HIG の Toolbars）。中身の左右の端を、職務経歴書の中身の端にそろえる */}
@@ -196,7 +206,7 @@ export const VisitorResumeView = ({
         </div>
       </div>
 
-      <div className={`bg-[#fafafa] font-light ${PRIMARY} print:[print-color-adjust:exact]`}>
+      <div className={`font-light ${PRIMARY}`}>
         {/* 空白の無い長い文字列（本文の URL など）は列の幅で折り返し、横にはみ出させない */}
         <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
           {/* 上の帯との間は 14px。印刷では帯を出さないので、上の余白を 42px に戻す */}
