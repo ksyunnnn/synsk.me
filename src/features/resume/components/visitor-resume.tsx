@@ -292,8 +292,9 @@ export const VisitorResumeView = ({
                 <Section id="careers" title="職歴">
                   <ol className="flex flex-col gap-[56px]">
                     {resume.careers.map((career, i) => (
-                      // 期間を左の細い列に吊るし、左端を縦に追うと年だけを拾えるようにする
-                      <li key={i} className="grid grid-cols-[112px_minmax(0,1fr)] gap-x-[28px]">
+                      // 期間を左の細い列に吊るし、左端を縦に追うと年だけを拾えるようにする。列の幅は
+                      // 一番長い「— YYYY.MM」（51px）に合わせ、期間と本文を近づける
+                      <li key={i} className="grid grid-cols-[56px_minmax(0,1fr)] gap-x-[28px]">
                         <p className={`flex flex-col ${CAPTION} ${SECONDARY}`}>
                           <StackedPeriod period={career.period} />
                         </p>
