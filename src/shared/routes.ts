@@ -32,7 +32,7 @@ const projects = dashCollection('projects');
 export const routes = {
   home: '/',
   // 新しいトップが `/` を置き換えたら `/` に移す（specs/005-feed の U1）
-  top: '/top-draft',
+  top: '/',
   about: '/about',
   contact: '/contact',
   resumes: '/resume',
