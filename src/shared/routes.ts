@@ -31,7 +31,7 @@ const projects = dashCollection('projects');
 
 export const routes = {
   home: '/',
-  // 新しいトップが `/` を置き換えたら `/` に移す（specs/005-feed の U1）
+  // 「トップへ戻る」などのリンクの行き先。新しいトップの下書きは `/top-draft` に置く（specs/005-feed の U1）
   top: '/',
   about: '/about',
   contact: '/contact',
