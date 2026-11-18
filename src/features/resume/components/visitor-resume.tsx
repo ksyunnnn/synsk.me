@@ -177,9 +177,12 @@ export const VisitorResumeView = ({
 
   return (
     // 書体は design/foundations.pen の font-en と font-ja
-    <div className={sourceSans.className} style={{ fontFamily }}>
-      <div className="border-b print:hidden">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-6 py-2">
+    <div className={`bg-[#fafafa] ${sourceSans.className}`} style={{ fontFamily }}>
+      {/* 上の帯。画面の上に留め、下を通る中身をすりガラスで透かす（foundations.pen の Materials:
+          すりガラスは操作の層にだけ使う。値は lab の delay-visuals の帯と同じ）。地は中身から取り、
+          線を引かない（HIG の Toolbars）。中身の左右の端を、職務経歴書の中身の端にそろえる */}
+      <div className="sticky top-0 z-10 bg-[#fafafa]/70 backdrop-blur-xl print:hidden">
+        <div className="mx-auto flex h-16 w-[1280px] items-center justify-between gap-2 px-16">
           <div>{toolbarStart}</div>
           <PrintButton />
         </div>
@@ -190,7 +193,8 @@ export const VisitorResumeView = ({
       >
         {/* 空白の無い長い文字列（本文の URL など）は列の幅で折り返し、横にはみ出させない */}
         <article className="mx-auto w-[1280px] [overflow-wrap:anywhere]">
-          <header className="flex flex-col gap-8 px-16 pt-12 pb-12">
+          {/* 上の帯との間は 16px。印刷では帯を出さないので、上の余白を 48px に戻す */}
+          <header className="flex flex-col gap-8 px-16 pt-4 pb-12 print:pt-12">
             {/* 写真は名前の上端にそろえる */}
             <div className="flex items-start gap-16">
               <div className="flex min-w-0 flex-1 flex-col gap-4">

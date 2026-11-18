@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { VisitorResumeView } from '@/features/resume/components/visitor-resume';
+import { ToolbarBackLink } from '@/features/resume/components/toolbar-link';
 import { getVisitorLimitedResume } from '@/features/resume/server/queries';
-import { BackToTopLink } from '@/shared/components/back-to-top-link';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
@@ -43,7 +43,7 @@ const Page = async ({ params }: Props) => {
     <main>
       <VisitorResumeView
         resume={resume}
-        toolbarStart={<BackToTopLink />}
+        toolbarStart={<ToolbarBackLink href={routes.top}>トップへ戻る</ToolbarBackLink>}
         mediaSrc={(key) => routes.resumeMedia(slug, key)}
         footerEnd={
           // Figma の Quiet / Button / Secondary（node 2:167）
