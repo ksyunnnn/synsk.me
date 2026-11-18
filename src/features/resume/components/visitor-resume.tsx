@@ -25,8 +25,10 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  * 色はデザインの値を直に書いている。トークンにまだ無い値のため。寸法は、1280px の幅のデザインの
  * 値に 0.875 を掛け、小数 1 桁に丸めた値。本文が 16px × 0.875 = 14px（10.5pt）になり、印刷物の
  * 本文に最適とされる 10〜12pt に入る（https://practicaltypography.com/point-size.html）。
- * 線の太さ 1px は掛けない。横は紙の幅を超えられないため、外側の余白と 2 列の間は 39.7px
- * （≒ 10.5mm）にする。
+ * 線の太さ 1px は掛けない。次はこの規則に従わず、それぞれの箇所の注釈が値の決め方を持つ。
+ * - 外側の余白と 2 列の間: 紙の幅を超えられないため 39.7px（≒ 10.5mm）
+ * - 職歴の期間の列: 一番長い期間の幅に合わせた 56px
+ * - ヘッダー（名前から区切り線まで）: 名前の大きさ・字間・行の高さ・写真
  *
  * 自己紹介と学歴の補足は、書式を持たない文字列として改行だけを残して出す。職歴と実績の本文は
  * Markdown として描き、本文の画像は `mediaSrc` が返す URL で出す。
@@ -57,8 +59,8 @@ const KEEP_WITH_NEXT = 'break-inside-avoid break-after-avoid';
 
 /**
  * 地の紙の粒子（`public/resume-paper-grain.png`、240px 四方）を、地の色に multiply で重ねる。画像は
- * SVG の fractalNoise（baseFrequency 0.8・numOctaves 3・彩度 0・不透明度 0.25）を描いたもの。作り方は
- * #362 の「左下の KOBASHI タグ」の地と同じ。SVG のまま重ねると、印刷の PDF が約 3 倍の大きさになるため画像にした
+ * SVG の fractalNoise（baseFrequency 0.8・numOctaves 3・彩度 0・不透明度 0.25）を描いたもの。粒子は
+ * SVG のフィルターでなく画像で重ねる。SVG のフィルターは印刷の PDF の大きさを数倍にするため
  */
 const PAPER_GRAIN = "url('/resume-paper-grain.png')";
 
@@ -100,12 +102,21 @@ const ExternalLink = ({ href }: { href: string | null }) =>
 /** 期間の月。`YYYY-MM-DD` を `YYYY.MM` にする */
 const toMonthText = (date: string) => `${date.slice(0, 4)}.${date.slice(5, 7)}`;
 
-/** 期間。`YYYY.MM — YYYY.MM`。続いている期間の終わりは「現在」 */
+/** 期間の始まり */
+const PeriodStart = ({ period }: { period: Period }) => (
+  <time dateTime={period.startedOn}>{toMonthText(period.startedOn)}</time>
+);
+
+/** 期間の終わり。続いている期間は「現在」 */
+const PeriodEnd = ({ period }: { period: Period }) =>
+  period.endedOn ? <time dateTime={period.endedOn}>{toMonthText(period.endedOn)}</time> : '現在';
+
+/** 期間。`YYYY.MM — YYYY.MM` */
 const ResumePeriod = ({ period }: { period: Period }) => (
   <>
-    <time dateTime={period.startedOn}>{toMonthText(period.startedOn)}</time>
+    <PeriodStart period={period} />
     {' — '}
-    {period.endedOn ? <time dateTime={period.endedOn}>{toMonthText(period.endedOn)}</time> : '現在'}
+    <PeriodEnd period={period} />
   </>
 );
 
@@ -118,17 +129,19 @@ const toBirthDateText = (date: string) => {
 /** 期間を 2 行で表す。1 行目に始まり、2 行目に「— 終わり」 */
 const StackedPeriod = ({ period }: { period: Period }) => (
   <>
-    <time dateTime={period.startedOn}>{toMonthText(period.startedOn)}</time>
+    <PeriodStart period={period} />
     <span>
       {'— '}
-      {period.endedOn ? (
-        <time dateTime={period.endedOn}>{toMonthText(period.endedOn)}</time>
-      ) : (
-        '現在'
-      )}
+      <PeriodEnd period={period} />
     </span>
   </>
 );
+
+/**
+ * 目次から飛んだ節の見出しを、画面の上に留めた帯（高さ 64px）の下に出す。帯の下の空きは、ページの
+ * 上の余白と同じ 42px
+ */
+const SCROLL_MARGIN = 'scroll-mt-[106px]';
 
 /** 経験年数。年と月で表す（001 の FR-034） */
 const formatMonths = (months: number) => {
@@ -139,7 +152,7 @@ const formatMonths = (months: number) => {
 
 /** 右の列の節。見出しの下に中身 */
 const Section = ({ id, title, children }: { id: string; title: string; children: ReactNode }) => (
-  <section id={id} className="flex flex-col gap-[42px]">
+  <section id={id} className={`flex flex-col gap-[42px] ${SCROLL_MARGIN}`}>
     <h2 className={`${HEADING} ${PRIMARY} ${KEEP_WITH_NEXT}`}>{title}</h2>
     {children}
   </section>
@@ -155,7 +168,7 @@ const SideSection = ({
   title: string;
   children: ReactNode;
 }) => (
-  <section id={id} className="flex flex-col gap-[14px]">
+  <section id={id} className={`flex flex-col gap-[14px] ${SCROLL_MARGIN}`}>
     <div className={`flex flex-col gap-[21px] ${KEEP_WITH_NEXT}`}>
       <Divider />
       <h2 className={`${BODY} ${PRIMARY}`}>{title}</h2>
