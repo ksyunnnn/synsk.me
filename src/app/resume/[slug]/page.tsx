@@ -46,10 +46,10 @@ const Page = async ({ params }: Props) => {
         toolbarStart={<ToolbarBackLink href={routes.top}>トップへ戻る</ToolbarBackLink>}
         mediaSrc={(key) => routes.resumeMedia(slug, key)}
         footerEnd={
-          // Figma の Quiet / Button / Secondary（node 2:167）
+          // Figma の Quiet / Button / Secondary（node 2:167）。紙では押せないので印刷に出さない
           <Link
             href={routes.top}
-            className="shrink-0 border border-[#686868] px-8 py-3.5 text-[20px] leading-[36px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="shrink-0 border border-[#686868] px-8 py-3.5 text-[20px] leading-[36px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring print:hidden"
           >
             トップへ戻る
           </Link>
