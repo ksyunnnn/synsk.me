@@ -1,5 +1,5 @@
 // トップの下書き（src/app/top-draft/page.tsx）を写したもの。埋め込みと下のほうの節は入れない。
-// timeline は entries.json（top-draft の並べ方で並べた、埋め込みを除く新しい 10 件）から読む
+// timeline は entries.json（トップの下書き `routes.topDraft` の並べ方で並べた、埋め込みを除く新しい 10 件）から読む
 import { fontFamily, sourceSans } from '@/lib/fonts';
 
 import entries from './entries.json';
