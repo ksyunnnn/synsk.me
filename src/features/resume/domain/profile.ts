@@ -3,12 +3,14 @@
  * research.md の R10、plan.md の U6）。1 つだけで、職務経歴書に写さない。職務経歴書のページを
  * 作るたびにここから読むため、値を直すと作ったすべての職務経歴書に出る。
  *
- * 氏名・自己紹介・生年月日・写真はこの定数に置く。生年月日は自己紹介と分け、添え書きの行に出す。
+ * 氏名・ローマ字の名前・自己紹介・生年月日・写真はこの定数に置く。生年月日は自己紹介と分け、添え書きの行に出す。
  * メールアドレスはコードに書かず、環境変数 `RESUME_EMAIL`（src/shared/server/env.ts）から読む。
  */
 
 export type Profile = {
   name: string;
+  /** ローマ字の名前。名前の下に大文字で添える */
+  nameRomaji: string;
   /** 段落は空行で区切る */
   introduction: string;
   /** 生年月日。暦の日付（`YYYY-MM-DD`） */
@@ -22,6 +24,7 @@ export type Profile = {
 /** オーナーが値を入れる */
 const PROFILE_CONTENT: Omit<Profile, 'email'> = {
   name: '小橋俊介',
+  nameRomaji: 'Shunsuke Kobashi',
   introduction: 'プロダクト実装のファシリテーター',
   birthDate: '1992-02-23',
   photoSrc: '/profile-photo.jpg',

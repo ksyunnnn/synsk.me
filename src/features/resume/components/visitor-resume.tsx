@@ -197,12 +197,18 @@ export const VisitorResumeView = ({
         <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
           {/* 上の帯との間は 14px。印刷では帯を出さないので、上の余白を 42px に戻す */}
           <header className="flex flex-col gap-[28px] px-[39.7px] pt-[14px] pb-[42px] print:pt-[42px]">
-            {/* 写真は名前の上端にそろえる */}
-            <div className="flex items-start gap-[56px]">
+            {/* 写真は名前の塊と上下の中心をそろえ、塊と釣り合う大きさにする */}
+            <div className="flex items-center gap-[56px]">
               <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
                 {/* 名前と肩書きを 1 つのまとまりにする */}
                 <div className="flex flex-col gap-[7px]">
-                  <h1 className={`${DISPLAY} font-normal`}>{profile.name}</h1>
+                  {/* 名前は字間で見せる。ローマ字は大文字にし、さらに広い字間で添える */}
+                  <hgroup className="flex flex-col gap-[7px]">
+                    <h1 className={`${DISPLAY} font-normal tracking-[0.2em]`}>{profile.name}</h1>
+                    <p lang="en" className={`${CAPTION} ${SECONDARY} uppercase tracking-[0.3em]`}>
+                      {profile.nameRomaji}
+                    </p>
+                  </hgroup>
                   <Body text={profile.introduction} className={BODY} />
                 </div>
                 {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
@@ -227,9 +233,9 @@ export const VisitorResumeView = ({
               <img
                 src={profile.photoSrc}
                 alt={`${profile.name}の写真`}
-                width={84}
-                height={84}
-                className="size-[84px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
+                width={126}
+                height={126}
+                className="size-[126px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
