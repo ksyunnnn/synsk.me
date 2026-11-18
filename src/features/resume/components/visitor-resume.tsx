@@ -17,12 +17,18 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  * 「職務経歴書 — Quiet resume」（file yhHrXDTtvF7CjkLCeOZOU8、node 30:2）の Profile から下に従う。
  * 上にプロフィール、その下は 2 列で、左に目次・スキル・学歴、右に職歴・実績を置き、最後に結びを置く。
  *
- * 中身は 1280px の幅の組みだけを持ち、画面の幅に合わせて組み替えない。狭い画面ではページの
- * viewport（src/app/resume/[slug]/page.tsx）が全体を縮める。印刷も同じ組みのまま、A4 の
- * 印刷できる幅（用紙と余白は globals.css。210mm − 25mm − 15mm = 170mm ≒ 642px）に収まるよう
- * 全体を 0.5 倍に縮める。印刷で隠すのは上の帯だけ。背景と区切り線も画面と同じに刷る。
+ * 中身は A4 の横幅（210mm ≒ 794px）の組みだけを持ち、画面の幅に合わせて組み替えない。画面と
+ * 印刷で同じ組みを使い、印刷では縮めずに刷る。画面の幅の違いはページの viewport
+ * （src/app/resume/[slug]/page.tsx）が吸収する。印刷で隠すのは上の帯だけ。背景と区切り線も
+ * 画面と同じに刷る。
  *
- * 色と寸法はデザインの値を直に書いている。トークンにまだ無い値のため。
+ * 色はデザインの値を直に書いている。トークンにまだ無い値のため。寸法は、1280px の幅のデザインの
+ * 値に 0.875 を掛け、小数 1 桁に丸めた値。本文が 16px × 0.875 = 14px（10.5pt）になり、印刷物の
+ * 本文に最適とされる 10〜12pt に入る（https://practicaltypography.com/point-size.html）。
+ * 線の太さ 1px は掛けない。次はこの規則に従わず、それぞれの箇所の注釈が値の決め方を持つ。
+ * - 外側の余白と 2 列の間: 紙の幅を超えられないため 39.7px（≒ 10.5mm）
+ * - 職歴の期間の列: 一番長い期間の幅に合わせた 56px
+ * - ヘッダー（名前から区切り線まで）: 名前の大きさ・字間・行の高さ・写真
  *
  * 自己紹介と学歴の補足は、書式を持たない文字列として改行だけを残して出す。職歴と実績の本文は
  * Markdown として描き、本文の画像は `mediaSrc` が返す URL で出す。
@@ -31,11 +37,15 @@ import { PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
  * 決まっておらず、本番の応答で Email Address Obfuscation が効くかを確かめる（tasks.md の T072）
  */
 
-/** デザインの文字の段（Quiet / Display・Heading・Body・Caption）。どれも Light 300 */
-const DISPLAY = 'text-[64px] leading-[88px]';
-const HEADING = 'text-[36px] leading-[54px]';
-const BODY = 'text-[20px] leading-[36px]';
-const CAPTION = 'text-[16px] leading-[28px]';
+/** デザインの文字の段（Quiet / Display・Heading・Body・Caption）。どれも Light 300。名前（h1）だけ Regular 400 */
+const DISPLAY = 'text-[45px] leading-[54px]';
+const HEADING = 'text-[24.5px] leading-[36.8px]';
+const BODY = 'text-[14px] leading-[24.5px]';
+const CAPTION = 'text-[12.3px] leading-[21px]';
+
+/** ヘッダーの 1 行だけの段。行の高さは文字の 1.2 倍にし、上下に空きを作らない */
+const HEADER_BODY = 'text-[14px] leading-[16.8px]';
+const HEADER_CAPTION = 'text-[12.3px] leading-[14.8px]';
 
 const PRIMARY = 'text-[#242424]';
 const SECONDARY = 'text-[#686868]';
@@ -46,6 +56,13 @@ const SECONDARY = 'text-[#686868]';
  * Firefox は効かない（MDN の break-after の互換表）
  */
 const KEEP_WITH_NEXT = 'break-inside-avoid break-after-avoid';
+
+/**
+ * 地の紙の粒子（`public/resume-paper-grain.png`、240px 四方）を、地の色に multiply で重ねる。画像は
+ * SVG の fractalNoise（baseFrequency 0.8・numOctaves 3・彩度 0・不透明度 0.25）を描いたもの。粒子は
+ * SVG のフィルターでなく画像で重ねる。SVG のフィルターは印刷の PDF の大きさを数倍にするため
+ */
+const PAPER_GRAIN = "url('/resume-paper-grain.png')";
 
 /** 区切り線。背景色は印刷の既定で刷られないため、線で描く */
 const Divider = () => <hr aria-hidden className="w-full border-0 border-t border-[#dedede]" />;
@@ -63,7 +80,7 @@ const MarkdownText = ({
 }) =>
   text ? (
     <div
-      className={`flex flex-col gap-4 ${BODY} [&_figcaption]:text-[16px] [&_figcaption]:leading-[28px] [&_figcaption]:text-[#686868] [&_figure]:flex [&_figure]:flex-col [&_figure]:gap-2 [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6`}
+      className={`flex flex-col gap-[14px] ${BODY} [&_figcaption]:text-[12.3px] [&_figcaption]:leading-[21px] [&_figcaption]:text-[#686868] [&_figure]:flex [&_figure]:flex-col [&_figure]:gap-[7px] [&_img]:max-w-full [&_ol]:list-decimal [&_ol]:pl-[21px] [&_ul]:list-disc [&_ul]:pl-[21px]`}
     >
       <MarkdownBody body={text} mediaSrc={mediaSrc} />
     </div>
@@ -85,14 +102,46 @@ const ExternalLink = ({ href }: { href: string | null }) =>
 /** 期間の月。`YYYY-MM-DD` を `YYYY.MM` にする */
 const toMonthText = (date: string) => `${date.slice(0, 4)}.${date.slice(5, 7)}`;
 
-/** 期間。`YYYY.MM — YYYY.MM`。続いている期間の終わりは「現在」 */
+/** 期間の始まり */
+const PeriodStart = ({ period }: { period: Period }) => (
+  <time dateTime={period.startedOn}>{toMonthText(period.startedOn)}</time>
+);
+
+/** 期間の終わり。続いている期間は「現在」 */
+const PeriodEnd = ({ period }: { period: Period }) =>
+  period.endedOn ? <time dateTime={period.endedOn}>{toMonthText(period.endedOn)}</time> : '現在';
+
+/** 期間。`YYYY.MM — YYYY.MM` */
 const ResumePeriod = ({ period }: { period: Period }) => (
   <>
-    <time dateTime={period.startedOn}>{toMonthText(period.startedOn)}</time>
+    <PeriodStart period={period} />
     {' — '}
-    {period.endedOn ? <time dateTime={period.endedOn}>{toMonthText(period.endedOn)}</time> : '現在'}
+    <PeriodEnd period={period} />
   </>
 );
+
+/** 生年月日（暦の日付 `YYYY-MM-DD`）を「1992年2月23日生」にする */
+const toBirthDateText = (date: string) => {
+  const [y, m, d] = date.split('-').map(Number);
+  return `${y}年${m}月${d}日生`;
+};
+
+/** 期間を 2 行で表す。1 行目に始まり、2 行目に「— 終わり」 */
+const StackedPeriod = ({ period }: { period: Period }) => (
+  <>
+    <PeriodStart period={period} />
+    <span>
+      {'— '}
+      <PeriodEnd period={period} />
+    </span>
+  </>
+);
+
+/**
+ * 目次から飛んだ節の見出しを、画面の上に留めた帯（高さ 64px）の下に出す。帯の下の空きは、ページの
+ * 上の余白と同じ 42px
+ */
+const SCROLL_MARGIN = 'scroll-mt-[106px]';
 
 /** 経験年数。年と月で表す（001 の FR-034） */
 const formatMonths = (months: number) => {
@@ -101,23 +150,10 @@ const formatMonths = (months: number) => {
   return rest === 0 ? `${years} 年` : `${years} 年 ${rest} か月`;
 };
 
-/** 右の列の節。上に番号・英語名、その下に見出し */
-const Section = ({
-  id,
-  label,
-  title,
-  children,
-}: {
-  id: string;
-  label: string;
-  title: string;
-  children: ReactNode;
-}) => (
-  <section id={id} className="flex flex-col gap-12">
-    <div className={`flex flex-col gap-2 ${KEEP_WITH_NEXT}`}>
-      <p className={`${CAPTION} ${SECONDARY}`}>{label}</p>
-      <h2 className={`${HEADING} ${PRIMARY}`}>{title}</h2>
-    </div>
+/** 右の列の節。見出しの下に中身 */
+const Section = ({ id, title, children }: { id: string; title: string; children: ReactNode }) => (
+  <section id={id} className={`flex flex-col gap-[42px] ${SCROLL_MARGIN}`}>
+    <h2 className={`${HEADING} ${PRIMARY} ${KEEP_WITH_NEXT}`}>{title}</h2>
     {children}
   </section>
 );
@@ -132,8 +168,8 @@ const SideSection = ({
   title: string;
   children: ReactNode;
 }) => (
-  <section id={id} className="flex flex-col gap-6">
-    <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
+  <section id={id} className={`flex flex-col gap-[14px] ${SCROLL_MARGIN}`}>
+    <div className={`flex flex-col gap-[21px] ${KEEP_WITH_NEXT}`}>
       <Divider />
       <h2 className={`${BODY} ${PRIMARY}`}>{title}</h2>
     </div>
@@ -166,64 +202,89 @@ export const VisitorResumeView = ({
     { id: 'skills', title: 'スキル', count: resume.skills.length },
     { id: 'educations', title: '学歴', count: resume.educations.length },
   ].filter((item) => item.count > 0);
-  const numberOf = (id: string) =>
-    String(index.findIndex((item) => item.id === id) + 1).padStart(2, '0');
 
   return (
     // 書体は design/foundations.pen の font-en と font-ja
-    <div className={sourceSans.className} style={{ fontFamily }}>
-      <div className="border-b print:hidden">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-6 py-2">
+    <div
+      className={`bg-[#fafafa] bg-blend-multiply ${sourceSans.className} print:[print-color-adjust:exact]`}
+      style={{ fontFamily, backgroundImage: PAPER_GRAIN }}
+    >
+      {/* 上の帯。画面の上に留め、下を通る中身をすりガラスで透かす（foundations.pen の Materials:
+          すりガラスは操作の層にだけ使う。ぼかしは lab の delay-visuals の帯と同じ）。地は白の 70% に中身と同じ
+          紙の粒子を重ね、粒子の乗った中身の地と明るさをそろえる。線を引かない（HIG の Toolbars）。中身の幅は職務経歴書より広い最大 1280px にし、帯と職務経歴書の境界が分かるようにする */}
+      <div
+        className="sticky top-0 z-10 bg-white/70 bg-blend-multiply backdrop-blur-xl print:hidden"
+        style={{ backgroundImage: PAPER_GRAIN }}
+      >
+        <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between gap-2 px-16">
           <div>{toolbarStart}</div>
           <PrintButton />
         </div>
       </div>
 
-      <div
-        className={`bg-[#fafafa] font-light ${PRIMARY} print:[print-color-adjust:exact] print:[zoom:0.5]`}
-      >
+      <div className={`font-light ${PRIMARY}`}>
         {/* 空白の無い長い文字列（本文の URL など）は列の幅で折り返し、横にはみ出させない */}
-        <article className="mx-auto w-[1280px] [overflow-wrap:anywhere]">
-          <header className="flex flex-col gap-12 px-16 pt-16 pb-24">
-            <div className="flex items-center gap-16">
-              <div className="flex min-w-0 flex-1 flex-col gap-6">
-                <h1 className={DISPLAY}>{profile.name}</h1>
-                <Body text={profile.introduction} className={BODY} />
-                {profile.email && (
-                  <p className={`${CAPTION} ${SECONDARY}`}>
-                    <a
-                      href={`mailto:${profile.email}`}
-                      className="underline rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                    >
-                      {profile.email}
-                    </a>
+        <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
+          {/* 上の余白は、画面でも印刷でも 42px にし、画面の帯の下と紙の上端からの空きをそろえる */}
+          <header className="flex flex-col gap-[28px] px-[39.7px] pt-[42px] pb-[42px]">
+            {/* 写真は文字の塊（名前 54 + ローマ字 14.8 + 21 + 肩書き 16.8 + 7 + 属性 14.8 = 128.4px）より一回り小さい 112px にし、塊と上下の中心をそろえる */}
+            <div className="flex items-center gap-[56px]">
+              {/* 名前の組（名前とローマ字）と説明の組（肩書きと属性）に分け、組の間を組の中より広く空ける */}
+              <div className="flex min-w-0 flex-1 flex-col gap-[21px]">
+                {/* 名前・ローマ字・肩書きは、どれも文字の大きさの 0.2 倍の字間で組む。行の右端はそろえない。生年月日とメールアドレスは読み取る値なので字間を足さない */}
+                <hgroup className="flex flex-col">
+                  <h1 className={`${DISPLAY} font-normal tracking-[0.2em]`}>{profile.name}</h1>
+                  <p
+                    lang="en"
+                    className={`${HEADER_CAPTION} ${SECONDARY} uppercase tracking-[0.2em]`}
+                  >
+                    {profile.nameRomaji}
                   </p>
-                )}
+                </hgroup>
+                <div className="flex flex-col gap-[7px]">
+                  <Body text={profile.introduction} className={`${HEADER_BODY} tracking-[0.2em]`} />
+                  {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
+                  <p className={`${HEADER_CAPTION} ${SECONDARY}`}>
+                    <time dateTime={profile.birthDate}>{toBirthDateText(profile.birthDate)}</time>
+                    {profile.email && (
+                      <>
+                        <span aria-hidden className="px-[7px]">
+                          ·
+                        </span>
+                        <a
+                          href={`mailto:${profile.email}`}
+                          className="rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        >
+                          {profile.email}
+                        </a>
+                      </>
+                    )}
+                  </p>
+                </div>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element -- 写真は `public/` の 1 枚で、最適化の経路を通さない */}
               <img
                 src={profile.photoSrc}
                 alt={`${profile.name}の写真`}
-                width={128}
-                height={128}
-                className="size-32 shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
+                width={112}
+                height={112}
+                className="size-[112px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
           </header>
 
-          <div className="grid grid-cols-[224px_minmax(0,1fr)] gap-24 px-16">
-            <aside className="flex flex-col gap-16">
-              <nav aria-label="目次" className={`flex flex-col gap-6 ${CAPTION}`}>
-                <p className={SECONDARY}>CONTENTS</p>
-                <ol className="flex flex-col gap-6">
+          <div className="grid grid-cols-[196px_minmax(0,1fr)] gap-[39.7px] px-[39.7px]">
+            <aside className="flex flex-col gap-[56px]">
+              <nav aria-label="目次" className={`flex flex-col gap-[14px] ${CAPTION}`}>
+                <p className={`${BODY} ${PRIMARY}`}>目次</p>
+                <ol className="flex flex-col gap-[7px]">
                   {index.map((item) => (
                     <li key={item.id}>
                       <a
                         href={`#${item.id}`}
-                        className="flex items-center gap-4 rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        className="flex items-center gap-[14px] rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       >
-                        <span className={SECONDARY}>{numberOf(item.id)}</span>
                         <span className="min-w-0 flex-1">{item.title}</span>
                         <span className={SECONDARY}>{item.count}</span>
                       </a>
@@ -233,10 +294,10 @@ export const VisitorResumeView = ({
               </nav>
 
               {resume.skills.length > 0 && (
-                <SideSection id="skills" title={`${numberOf('skills')} / スキル`}>
-                  <ul className={`flex flex-col gap-2 ${CAPTION}`}>
+                <SideSection id="skills" title="スキル">
+                  <ul className={`flex flex-col gap-[7px] ${CAPTION}`}>
                     {resume.skills.map((skill) => (
-                      <li key={skill.name} className="flex gap-2 break-inside-avoid">
+                      <li key={skill.name} className="flex gap-[7px] break-inside-avoid">
                         <span className="min-w-0 flex-1">{skill.name}</span>
                         <span className={`whitespace-nowrap ${SECONDARY}`}>
                           {formatMonths(skill.months)}
@@ -248,10 +309,10 @@ export const VisitorResumeView = ({
               )}
 
               {resume.educations.length > 0 && (
-                <SideSection id="educations" title={`${numberOf('educations')} / 学歴`}>
-                  <ol className="flex flex-col gap-6">
+                <SideSection id="educations" title="学歴">
+                  <ol className="flex flex-col gap-[21px]">
                     {resume.educations.map((education, i) => (
-                      <li key={i} className="flex flex-col gap-2 break-inside-avoid">
+                      <li key={i} className="flex flex-col gap-[7px] break-inside-avoid">
                         <h3 className={BODY}>{education.school}</h3>
                         {education.department && <p className={CAPTION}>{education.department}</p>}
                         <p className={`${CAPTION} ${SECONDARY}`}>
@@ -265,24 +326,25 @@ export const VisitorResumeView = ({
               )}
             </aside>
 
-            <div className="flex min-w-0 flex-col gap-24">
+            <div className="flex min-w-0 flex-col gap-[112px]">
               {resume.careers.length > 0 && (
-                <Section id="careers" label={`${numberOf('careers')} / CAREER`} title="職歴">
-                  <ol className="flex flex-col gap-12">
+                <Section id="careers" title="職歴">
+                  <ol className="flex flex-col gap-[56px]">
                     {resume.careers.map((career, i) => (
-                      <li key={i} className="flex flex-col gap-6">
-                        <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
-                          <Divider />
-                          <div className="flex flex-col gap-2">
-                            <p className={`${CAPTION} ${SECONDARY}`}>
-                              <ResumePeriod period={career.period} />
-                            </p>
+                      // 期間を左の細い列に吊るし、左端を縦に追うと年だけを拾えるようにする。列の幅は
+                      // 一番長い「— YYYY.MM」（51px）に合わせ、期間と本文を近づける
+                      <li key={i} className="grid grid-cols-[56px_minmax(0,1fr)] gap-x-[28px]">
+                        <p className={`flex flex-col ${CAPTION} ${SECONDARY}`}>
+                          <StackedPeriod period={career.period} />
+                        </p>
+                        <div className="flex min-w-0 flex-col gap-[14px]">
+                          <div className={`flex flex-col gap-[7px] ${KEEP_WITH_NEXT}`}>
                             <h3 className={BODY}>{career.organizationName}</h3>
                             <p className={`${CAPTION} ${SECONDARY}`}>{career.role}</p>
                           </div>
+                          <MarkdownText text={career.body} mediaSrc={mediaSrc} />
+                          <ExternalLink href={career.url} />
                         </div>
-                        <MarkdownText text={career.body} mediaSrc={mediaSrc} />
-                        <ExternalLink href={career.url} />
                       </li>
                     ))}
                   </ol>
@@ -290,23 +352,24 @@ export const VisitorResumeView = ({
               )}
 
               {resume.projects.length > 0 && (
-                <Section id="projects" label={`${numberOf('projects')} / PROJECTS`} title="実績">
-                  <ol className="flex flex-col gap-12">
+                <Section id="projects" title="実績">
+                  <ol className="flex flex-col gap-[56px]">
                     {resume.projects.map((project, i) => (
-                      <li key={i} className="flex flex-col gap-6">
-                        <div className={`flex flex-col gap-6 ${KEEP_WITH_NEXT}`}>
-                          <Divider />
-                          <div className="flex flex-col gap-2">
-                            <p className={`flex gap-6 ${CAPTION} ${SECONDARY}`}>
-                              <span className="min-w-0 flex-1">
-                                <ResumePeriod period={project.period} />
-                              </span>
-                              <span className="whitespace-nowrap">
-                                {PROJECT_KIND_LABELS[project.kind]}
-                              </span>
+                      <li key={i} className="flex flex-col gap-[14px]">
+                        <div className={`flex flex-col gap-[21px] ${KEEP_WITH_NEXT}`}>
+                          <div className="flex flex-col gap-[7px]">
+                            <p className={`${CAPTION} ${SECONDARY}`}>
+                              <ResumePeriod period={project.period} />
                             </p>
                             <h3 className={HEADING}>{project.title}</h3>
-                            <p className={`${CAPTION} ${SECONDARY}`}>{project.organizationName}</p>
+                            {/* 種類を先頭に「 · 」でつなぐ（Frank Chimero の「Book · 2012」の型）。下の技術の一覧（/ 区切り）と記号で分ける */}
+                            <p className={`${CAPTION} ${SECONDARY}`}>
+                              {PROJECT_KIND_LABELS[project.kind]}
+                              <span aria-hidden className="px-[7px]">
+                                ·
+                              </span>
+                              {project.organizationName}
+                            </p>
                           </div>
                         </div>
                         {project.skills.length > 0 && (
@@ -322,10 +385,10 @@ export const VisitorResumeView = ({
             </div>
           </div>
 
-          <footer className="flex items-center justify-between gap-6 px-16 pt-24 pb-16 break-inside-avoid">
-            <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <footer className="flex items-center justify-between gap-[21px] px-[39.7px] pt-[84px] pb-[56px] break-inside-avoid">
+            <div className="flex min-w-0 flex-1 flex-col gap-[7px]">
               <p className={BODY}>{profile.name}</p>
-              <p className={`${CAPTION} ${SECONDARY}`}>職務経歴書 / RESUME</p>
+              <p className={`${CAPTION} ${SECONDARY}`}>職務経歴書</p>
             </div>
             {footerEnd}
           </footer>

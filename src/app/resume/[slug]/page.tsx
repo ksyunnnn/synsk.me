@@ -2,8 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { VisitorResumeView } from '@/features/resume/components/visitor-resume';
+import { ToolbarBackLink } from '@/features/resume/components/toolbar-link';
 import { getVisitorLimitedResume } from '@/features/resume/server/queries';
-import { BackToTopLink } from '@/shared/components/back-to-top-link';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（D1）を `<Suspense>` の外で読み、描画を終えてから応答を返す
@@ -19,11 +19,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// 職務経歴書は PDF と同じく、どの画面でも 1280px 幅の組みのまま全体を縮めて見せる。
+// 職務経歴書は PDF と同じく、どの画面でも A4 の横幅（794px）の組みのまま全体を縮めて見せる。
 // このページだけに効かせる（https://nextjs.org/docs/app/api-reference/functions/generate-viewport）。
 // 既定の initial-scale=1 が残ると狭い画面で縮まないため、undefined で外す（vinext の
 // mergeViewport は undefined の値を meta に書かない）
-export const viewport: Viewport = { width: 1280, initialScale: undefined };
+export const viewport: Viewport = { width: 794, initialScale: undefined };
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -43,13 +43,13 @@ const Page = async ({ params }: Props) => {
     <main>
       <VisitorResumeView
         resume={resume}
-        toolbarStart={<BackToTopLink />}
+        toolbarStart={<ToolbarBackLink href={routes.top}>トップへ戻る</ToolbarBackLink>}
         mediaSrc={(key) => routes.resumeMedia(slug, key)}
         footerEnd={
-          // Figma の Quiet / Button / Secondary（node 2:167）
+          // Figma の Quiet / Button / Secondary（node 2:167）。紙では押せないので印刷に出さない
           <Link
             href={routes.top}
-            className="shrink-0 border border-[#686868] px-8 py-3.5 text-[20px] leading-[36px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="shrink-0 border border-[#686868] px-[28px] py-[12.3px] text-[17.5px] leading-[31.5px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring print:hidden"
           >
             トップへ戻る
           </Link>
