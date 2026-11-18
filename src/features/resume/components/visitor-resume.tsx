@@ -197,12 +197,12 @@ export const VisitorResumeView = ({
         <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
           {/* 上の帯との間は 14px。印刷では帯を出さないので、上の余白を 42px に戻す */}
           <header className="flex flex-col gap-[28px] px-[39.7px] pt-[14px] pb-[42px] print:pt-[42px]">
-            {/* 写真は文字の塊と同じ高さ（名前 49 + 7 + ローマ字 21 + 21 + 肩書き 24.5 + 7 + 属性 21 = 150.5px）にし、上下をそろえる */}
+            {/* 写真は文字の塊と同じ高さ（名前 49 + ローマ字 21 + 21 + 肩書き 24.5 + 7 + 属性 21 = 143.5px）にし、上下をそろえる */}
             <div className="flex items-center gap-[56px]">
               {/* 名前の組（名前とローマ字）と説明の組（肩書きと属性）に分け、組の間を組の中より広く空ける */}
               <div className="flex min-w-0 flex-1 flex-col gap-[21px]">
                 {/* 名前は字間で見せる。ローマ字は大文字にし、さらに広い字間で添える */}
-                <hgroup className="flex flex-col gap-[7px]">
+                <hgroup className="flex flex-col">
                   <h1 className={`${DISPLAY} font-normal tracking-[0.2em]`}>{profile.name}</h1>
                   <p lang="en" className={`${CAPTION} ${SECONDARY} uppercase tracking-[0.3em]`}>
                     {profile.nameRomaji}
@@ -220,7 +220,7 @@ export const VisitorResumeView = ({
                         </span>
                         <a
                           href={`mailto:${profile.email}`}
-                          className="underline rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                          className="rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                         >
                           {profile.email}
                         </a>
@@ -233,9 +233,9 @@ export const VisitorResumeView = ({
               <img
                 src={profile.photoSrc}
                 alt={`${profile.name}の写真`}
-                width={151}
-                height={151}
-                className="size-[150.5px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
+                width={144}
+                height={144}
+                className="size-[143.5px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
