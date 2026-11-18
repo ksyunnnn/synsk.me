@@ -197,45 +197,45 @@ export const VisitorResumeView = ({
         <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
           {/* 上の帯との間は 14px。印刷では帯を出さないので、上の余白を 42px に戻す */}
           <header className="flex flex-col gap-[28px] px-[39.7px] pt-[14px] pb-[42px] print:pt-[42px]">
-            {/* 写真は名前の塊と上下の中心をそろえ、塊と釣り合う大きさにする */}
+            {/* 写真は文字の塊と同じ高さ（名前 49 + 7 + ローマ字 21 + 21 + 肩書き 24.5 + 7 + 属性 21 = 150.5px）にし、上下をそろえる */}
             <div className="flex items-center gap-[56px]">
-              <div className="flex min-w-0 flex-1 flex-col gap-[14px]">
-                {/* 名前と肩書きを 1 つのまとまりにする */}
+              {/* 名前の組（名前とローマ字）と説明の組（肩書きと属性）に分け、組の間を組の中より広く空ける */}
+              <div className="flex min-w-0 flex-1 flex-col gap-[21px]">
+                {/* 名前は字間で見せる。ローマ字は大文字にし、さらに広い字間で添える */}
+                <hgroup className="flex flex-col gap-[7px]">
+                  <h1 className={`${DISPLAY} font-normal tracking-[0.2em]`}>{profile.name}</h1>
+                  <p lang="en" className={`${CAPTION} ${SECONDARY} uppercase tracking-[0.3em]`}>
+                    {profile.nameRomaji}
+                  </p>
+                </hgroup>
                 <div className="flex flex-col gap-[7px]">
-                  {/* 名前は字間で見せる。ローマ字は大文字にし、さらに広い字間で添える */}
-                  <hgroup className="flex flex-col gap-[7px]">
-                    <h1 className={`${DISPLAY} font-normal tracking-[0.2em]`}>{profile.name}</h1>
-                    <p lang="en" className={`${CAPTION} ${SECONDARY} uppercase tracking-[0.3em]`}>
-                      {profile.nameRomaji}
-                    </p>
-                  </hgroup>
                   <Body text={profile.introduction} className={BODY} />
+                  {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
+                  <p className={`${CAPTION} ${SECONDARY}`}>
+                    <time dateTime={profile.birthDate}>{toBirthDateText(profile.birthDate)}</time>
+                    {profile.email && (
+                      <>
+                        <span aria-hidden className="px-[7px]">
+                          ·
+                        </span>
+                        <a
+                          href={`mailto:${profile.email}`}
+                          className="underline rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                        >
+                          {profile.email}
+                        </a>
+                      </>
+                    )}
+                  </p>
                 </div>
-                {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
-                <p className={`${CAPTION} ${SECONDARY}`}>
-                  <time dateTime={profile.birthDate}>{toBirthDateText(profile.birthDate)}</time>
-                  {profile.email && (
-                    <>
-                      <span aria-hidden className="px-[7px]">
-                        ·
-                      </span>
-                      <a
-                        href={`mailto:${profile.email}`}
-                        className="underline rounded-sm break-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                      >
-                        {profile.email}
-                      </a>
-                    </>
-                  )}
-                </p>
               </div>
               {/* eslint-disable-next-line @next/next/no-img-element -- 写真は `public/` の 1 枚で、最適化の経路を通さない */}
               <img
                 src={profile.photoSrc}
                 alt={`${profile.name}の写真`}
-                width={126}
-                height={126}
-                className="size-[126px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
+                width={151}
+                height={151}
+                className="size-[150.5px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
