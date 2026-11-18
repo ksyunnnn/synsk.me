@@ -20,6 +20,6 @@ for (const path of ['/dash', '/dash/projects/new']) {
     expect(outline).not.toBe('none');
 
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL('/top-draft');
+    await expect(page).toHaveURL('/');
   });
 }
