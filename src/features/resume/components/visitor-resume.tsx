@@ -201,15 +201,14 @@ export const VisitorResumeView = ({
             <div className="flex items-center gap-[56px]">
               {/* 名前の組（名前とローマ字）と説明の組（肩書きと属性）に分け、組の間を組の中より広く空ける */}
               <div className="flex min-w-0 flex-1 flex-col gap-[21px]">
-                {/* 名前は字間で見せる。ローマ字は大文字にし、名前と同じ幅になる字間で添える */}
+                {/* 名前・ローマ字・肩書きは、どれも文字の大きさの 0.2 倍の字間で組む。行の右端はそろえない。生年月日とメールアドレスは読み取る値なので字間を足さない */}
                 <hgroup className="flex flex-col">
                   <h1 className={`${DISPLAY} font-normal tracking-[0.2em]`}>{profile.name}</h1>
-                  <p lang="en" className={`${CAPTION} ${SECONDARY} uppercase tracking-[0.55em]`}>
+                  <p lang="en" className={`${CAPTION} ${SECONDARY} uppercase tracking-[0.2em]`}>
                     {profile.nameRomaji}
                   </p>
                 </hgroup>
                 <div className="flex flex-col gap-[7px]">
-                  {/* 肩書きは名前と同じ字間で組み、名前の調子をそろえる */}
                   <Body text={profile.introduction} className={`${BODY} tracking-[0.2em]`} />
                   {/* 属性は添え書きの 1 行。区切りは実績の「種類 · 会社名」と同じ */}
                   <p className={`${CAPTION} ${SECONDARY}`}>
