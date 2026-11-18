@@ -19,11 +19,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// 職務経歴書は PDF と同じく、どの画面でも 1280px 幅の組みのまま全体を縮めて見せる。
+// 職務経歴書は PDF と同じく、どの画面でも A4 の横幅（794px）の組みのまま全体を縮めて見せる。
 // このページだけに効かせる（https://nextjs.org/docs/app/api-reference/functions/generate-viewport）。
 // 既定の initial-scale=1 が残ると狭い画面で縮まないため、undefined で外す（vinext の
 // mergeViewport は undefined の値を meta に書かない）
-export const viewport: Viewport = { width: 1280, initialScale: undefined };
+export const viewport: Viewport = { width: 794, initialScale: undefined };
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -49,7 +49,7 @@ const Page = async ({ params }: Props) => {
           // Figma の Quiet / Button / Secondary（node 2:167）。紙では押せないので印刷に出さない
           <Link
             href={routes.top}
-            className="shrink-0 border border-[#686868] px-8 py-3.5 text-[20px] leading-[36px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring print:hidden"
+            className="shrink-0 border border-[#686868] px-[19.9px] py-[8.7px] text-[12.4px] leading-[22.3px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring print:hidden"
           >
             トップへ戻る
           </Link>
