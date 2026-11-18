@@ -49,7 +49,7 @@ const Page = async ({ params }: Props) => {
           // Figma の Quiet / Button / Secondary（node 2:167）。紙では押せないので印刷に出さない
           <Link
             href={routes.top}
-            className="shrink-0 border border-[#686868] px-[19.9px] py-[8.7px] text-[12.4px] leading-[22.3px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring print:hidden"
+            className="shrink-0 border border-[#686868] px-[28px] py-[12.3px] text-[17.5px] leading-[31.5px] whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring print:hidden"
           >
             トップへ戻る
           </Link>
