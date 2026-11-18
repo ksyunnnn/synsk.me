@@ -13,7 +13,7 @@ import { routes } from '@/shared/routes';
 // ときに 500 を返すため、`loading.tsx` を置かない。キャッシュしない（specs/005-feed/research.md の R9）
 export const instant = false;
 
-const PATH = routes.top;
+const PATH = routes.topDraft;
 
 type Props = { searchParams: Promise<{ page?: string | string[] }> };
 

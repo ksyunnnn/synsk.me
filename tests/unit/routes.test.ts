@@ -9,7 +9,8 @@ import { routes } from '@/shared/routes';
 describe('訪問者の画面の経路', () => {
   it('静的な経路は定数で持つ', () => {
     expect(routes.home).toBe('/');
-    expect(routes.top).toBe('/top-draft');
+    expect(routes.top).toBe('/');
+    expect(routes.topDraft).toBe('/top-draft');
     expect(routes.about).toBe('/about');
     expect(routes.contact).toBe('/contact');
     expect(routes.resumes).toBe('/resume');
