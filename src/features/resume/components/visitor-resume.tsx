@@ -197,10 +197,10 @@ export const VisitorResumeView = ({
       style={{ fontFamily, backgroundImage: PAPER_GRAIN }}
     >
       {/* 上の帯。画面の上に留め、下を通る中身をすりガラスで透かす（foundations.pen の Materials:
-          すりガラスは操作の層にだけ使う。値は lab の delay-visuals の帯と同じ）。地は中身から取り、
-          線を引かない（HIG の Toolbars）。中身の幅は職務経歴書より広い最大 1280px にし、帯と職務経歴書の境界が分かるようにする */}
+          すりガラスは操作の層にだけ使う。ぼかしは lab の delay-visuals の帯と同じ）。地は白の 70% に中身と同じ
+          紙の粒子を重ね、粒子の乗った中身の地と明るさをそろえる。線を引かない（HIG の Toolbars）。中身の幅は職務経歴書より広い最大 1280px にし、帯と職務経歴書の境界が分かるようにする */}
       <div
-        className="sticky top-0 z-10 bg-[#fafafa]/70 bg-blend-multiply backdrop-blur-xl print:hidden"
+        className="sticky top-0 z-10 bg-white/70 bg-blend-multiply backdrop-blur-xl print:hidden"
         style={{ backgroundImage: PAPER_GRAIN }}
       >
         <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between gap-2 px-16">
@@ -214,7 +214,7 @@ export const VisitorResumeView = ({
         <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
           {/* 上の余白は、画面でも印刷でも 42px にし、画面の帯の下と紙の上端からの空きをそろえる */}
           <header className="flex flex-col gap-[28px] px-[39.7px] pt-[42px] pb-[42px]">
-            {/* 写真は文字の塊と同じ高さ（名前 54 + ローマ字 14.8 + 21 + 肩書き 16.8 + 7 + 属性 14.8 = 128.4px）にし、上下をそろえる */}
+            {/* 写真は文字の塊（名前 54 + ローマ字 14.8 + 21 + 肩書き 16.8 + 7 + 属性 14.8 = 128.4px）より一回り小さい 112px にし、塊と上下の中心をそろえる */}
             <div className="flex items-center gap-[56px]">
               {/* 名前の組（名前とローマ字）と説明の組（肩書きと属性）に分け、組の間を組の中より広く空ける */}
               <div className="flex min-w-0 flex-1 flex-col gap-[21px]">
@@ -253,9 +253,9 @@ export const VisitorResumeView = ({
               <img
                 src={profile.photoSrc}
                 alt={`${profile.name}の写真`}
-                width={128}
-                height={128}
-                className="size-[128.4px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
+                width={112}
+                height={112}
+                className="size-[112px] shrink-0 rounded-full border border-[#dedede] bg-[#f2f2f2] object-cover"
               />
             </div>
             <Divider />
