@@ -209,8 +209,8 @@ export const VisitorResumeView = ({
       <div className={`font-light ${PRIMARY}`}>
         {/* 空白の無い長い文字列（本文の URL など）は列の幅で折り返し、横にはみ出させない */}
         <article className="mx-auto w-[794px] [overflow-wrap:anywhere]">
-          {/* 上の帯との間は 14px。印刷では帯を出さないので、上の余白を 42px に戻す */}
-          <header className="flex flex-col gap-[28px] px-[39.7px] pt-[14px] pb-[42px] print:pt-[42px]">
+          {/* 上の余白は、画面でも印刷でも 42px にし、画面の帯の下と紙の上端からの空きをそろえる */}
+          <header className="flex flex-col gap-[28px] px-[39.7px] pt-[42px] pb-[42px]">
             {/* 写真は文字の塊と同じ高さ（名前 54 + ローマ字 14.8 + 21 + 肩書き 16.8 + 7 + 属性 14.8 = 128.4px）にし、上下をそろえる */}
             <div className="flex items-center gap-[56px]">
               {/* 名前の組（名前とローマ字）と説明の組（肩書きと属性）に分け、組の間を組の中より広く空ける */}
