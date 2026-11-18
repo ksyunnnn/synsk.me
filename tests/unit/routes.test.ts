@@ -2,21 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { routes } from '@/shared/routes';
 
 /**
- * 画面の経路の定数（`src/shared/routes.ts`）が、`src/app/` のページの経路と同じ値を返すかを
- * 確かめる。値を変えると、リンク・`redirect()`・`src/proxy.ts` の rewrite の行き先が変わる
+ * 画面の経路を作る関数（`src/shared/routes.ts`）が、渡した識別子と条件を埋めた経路を返すかを
+ * 確かめる。定数の値を書き写す検査は置かない（https://testing.googleblog.com/2015/01/testing-on-toilet-change-detector-tests.html）
  */
 
 describe('訪問者の画面の経路', () => {
-  it('静的な経路は定数で持つ', () => {
-    expect(routes.home).toBe('/');
-    expect(routes.top).toBe('/');
-    expect(routes.topDraft).toBe('/top-draft');
-    expect(routes.about).toBe('/about');
-    expect(routes.contact).toBe('/contact');
-    expect(routes.resumes).toBe('/resume');
-    expect(routes.lab).toBe('/lab');
-  });
-
   it('識別子を含む経路は関数で作る', () => {
     expect(routes.project('a-1')).toBe('/projects/a-1');
     expect(routes.projectMissing('a-1')).toBe('/projects/a-1/missing');
@@ -37,11 +27,6 @@ describe('訪問者の画面の経路', () => {
 });
 
 describe('管理画面の経路', () => {
-  it('入口と 403 の画面', () => {
-    expect(routes.dash.index).toBe('/dash');
-    expect(routes.dash.forbidden).toBe('/dash/forbidden');
-  });
-
   it.each([
     ['careers', routes.dash.careers],
     ['projects', routes.dash.projects],
