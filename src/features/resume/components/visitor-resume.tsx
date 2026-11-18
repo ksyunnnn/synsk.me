@@ -199,7 +199,10 @@ export const VisitorResumeView = ({
       {/* 上の帯。画面の上に留め、下を通る中身をすりガラスで透かす（foundations.pen の Materials:
           すりガラスは操作の層にだけ使う。値は lab の delay-visuals の帯と同じ）。地は中身から取り、
           線を引かない（HIG の Toolbars）。中身の幅は職務経歴書より広い最大 1280px にし、帯と職務経歴書の境界が分かるようにする */}
-      <div className="sticky top-0 z-10 bg-[#fafafa]/70 backdrop-blur-xl print:hidden">
+      <div
+        className="sticky top-0 z-10 bg-[#fafafa]/70 bg-blend-multiply backdrop-blur-xl print:hidden"
+        style={{ backgroundImage: PAPER_GRAIN }}
+      >
         <div className="mx-auto flex h-16 w-full max-w-[1280px] items-center justify-between gap-2 px-16">
           <div>{toolbarStart}</div>
           <PrintButton />
