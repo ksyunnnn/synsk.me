@@ -12,6 +12,7 @@ import {
 } from './support/dash';
 import { typeBeforeHydration } from './support/hydration';
 import { createNote, uniqueNoteSlug, waitForHydration } from './support/note';
+import { routes } from '../../src/shared/routes';
 
 /**
  * 管理画面の基本の操作が分かること（issue #219 の 2026-11-11 の宣言）。
@@ -284,7 +285,7 @@ test.describe('戻る道', () => {
       // 職務経歴書には、上の帯と結びの 2 か所に「トップへ戻る」がある。どのページにもある
       // 上の帯の戻る道を確かめるため、文書の順で最初のリンクを押す
       await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).first().click();
-      await expect(visitor).toHaveURL('/top-draft');
+      await expect(visitor).toHaveURL(routes.top);
     }
     await visitor.close();
   });
@@ -300,7 +301,7 @@ test.describe('404 の画面', () => {
       expect(await visit(visitor, path)).toBe(404);
       await expect(visitor.getByRole('heading', { level: 1 })).toHaveText('ページが見つかりません');
       await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
-      await expect(visitor).toHaveURL('/top-draft');
+      await expect(visitor).toHaveURL(routes.top);
     }
     await visitor.close();
   });
@@ -309,7 +310,7 @@ test.describe('404 の画面', () => {
     const visitor = await openVisitor(browser);
     expect(await visit(visitor, '/dash')).toBe(403);
     await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
-    await expect(visitor).toHaveURL('/top-draft');
+    await expect(visitor).toHaveURL(routes.top);
     await visitor.close();
   });
 });

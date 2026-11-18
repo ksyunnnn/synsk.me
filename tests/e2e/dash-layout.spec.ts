@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import { tabTo } from './support/dash';
+import { routes } from '../../src/shared/routes';
 
 /**
  * 管理画面のすべての画面が、上にサイトのトップへのリンクを持つ（`src/app/dash/layout.tsx`）。
@@ -20,6 +21,6 @@ for (const path of ['/dash', '/dash/projects/new']) {
     expect(outline).not.toBe('none');
 
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL('/top-draft');
+    await expect(page).toHaveURL(routes.top);
   });
 }

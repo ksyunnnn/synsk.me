@@ -31,8 +31,9 @@ const projects = dashCollection('projects');
 
 export const routes = {
   home: '/',
-  // 「トップへ戻る」などのリンクの行き先。新しいトップの下書きは `/top-draft` に置く（specs/005-feed の U1）
+  // 「トップへ戻る」などのリンクの行き先。新しいトップの下書きは `routes.topDraft` に置く（specs/005-feed の U1）
   top: '/',
+  topDraft: '/top-draft',
   about: '/about',
   contact: '/contact',
   resumes: '/resume',

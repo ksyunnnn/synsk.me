@@ -7,6 +7,6 @@ const notoSansJp = Noto_Sans_JP({ weight: ['300', '400', '600'], preload: false 
 
 export const fontFamily = `${sourceSans.style.fontFamily}, ${notoSansJp.style.fontFamily}, sans-serif`;
 
-// トップ（`/`）で使う書体。Figma の「小橋俊介 study」の指定（英語の見出し Tinos、ほかは Noto Serif JP）
+// トップ（`routes.home`）で使う書体。Figma の「小橋俊介 study」の指定（英語の見出し Tinos、ほかは Noto Serif JP）
 export const tinos = Tinos({ subsets: ['latin'], weight: ['400'] });
 export const notoSerifJp = Noto_Serif_JP({ weight: ['400'], preload: false });

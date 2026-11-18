@@ -16,9 +16,10 @@ import {
   publishNoteRow,
 } from '../support/note-rows';
 import { deleteActivityRows, insertActivity } from '../support/activity-rows';
+import { routes } from '../../src/shared/routes';
 
 /**
- * 訪問者に見せる一覧の画面（開発中の `/` の置き場 `/top-draft`）の、本番ビルドの HTML と RSC の
+ * 訪問者に見せる一覧の画面（トップの下書き `routes.topDraft`）の、本番ビルドの HTML と RSC の
  * 応答（specs/005-feed/tasks.md の T065。T012・T022・T033・T043 の内容を含む）。
  *
  * - 秘匿化した職歴と実績の実際の値・本文・関連 URL・画像を含めない（SC-001、FR-013）
@@ -35,7 +36,7 @@ import { deleteActivityRows, insertActivity } from '../support/activity-rows';
  * 値はすべて作り物で、ほかの値と重ならない
  */
 
-const PATH = '/top-draft';
+const PATH = routes.topDraft;
 
 /** 秘匿化した職歴と実績の、訪問者に出してはいけない値 */
 const HIDDEN = {
@@ -117,12 +118,14 @@ const fetchFeed = async (as: typeof AS_HTML, page?: string) => {
  * 応答の中の、一覧のページ送りのリンクの行き先。HTML の `<a>` の属性と、RSC の `"a"` の要素の
  * props の両方から読む。ページ送りは `<a>` で作る（feed.tsx）。RSC の応答は、404 と 403 の画面
  * （src/app/not-found.tsx・src/app/forbidden.tsx）を境界の代わりの中身として毎回含み、その
- * 「トップへ戻る」も同じ経路を指す。こちらは `next/link` の部品なので、`"a"` の要素に限って除く
+ * 「トップへ戻る」は `routes.top` を指す。こちらは `next/link` の部品なので、`"a"` の要素に限って
+ * 読み、`routes.top` と `routes.topDraft` が重なっても数えない
  */
-const feedHrefs = (text: string) =>
-  [...text.matchAll(/(?:<a href=|\["\$","a",null,\{"href":)"(\/top-draft[^"]*)"/g)].map(
-    (match) => match[1],
-  );
+const FEED_HREF = new RegExp(
+  `(?:<a href=|\\["\\$","a",null,\\{"href":)"(${RegExp.escape(PATH)}[^"]*)"`,
+  'g',
+);
+const feedHrefs = (text: string) => [...text.matchAll(FEED_HREF)].map((match) => match[1]);
 
 /** 応答の中の、個別のページへのリンクの行き先。読み方は `feedHrefs` と同じ */
 const detailHrefs = (text: string) =>

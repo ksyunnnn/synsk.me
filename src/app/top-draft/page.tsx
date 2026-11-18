@@ -1,5 +1,5 @@
 // 新しいトップの下書き。#148 のローデザイン（配置と呼び名だけ）をそのまま書いたもの。
-// timeline は D1 の一覧（specs/005-feed）を出す（#166）。完成したら中身を `/` に移し、このフォルダを消す。
+// timeline は D1 の一覧（specs/005-feed）を出す（#166）。完成したら中身を `routes.home` に移し、このフォルダを消す。
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
@@ -13,7 +13,7 @@ import { routes } from '@/shared/routes';
 // ときに 500 を返すため、`loading.tsx` を置かない。キャッシュしない（specs/005-feed/research.md の R9）
 export const instant = false;
 
-const PATH = routes.top;
+const PATH = routes.topDraft;
 
 type Props = { searchParams: Promise<{ page?: string | string[] }> };
 

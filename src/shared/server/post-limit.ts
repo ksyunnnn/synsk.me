@@ -6,7 +6,7 @@ import { routes } from '@/shared/routes';
  * 10.5 MB）は経路で分けられず、Server Action はどの経路へ送っても動く。画像を上げるのは `/dash` の
  * 中だけなので、`/dash` の外では vinext の既定の 1 MB で止める（docs/SOFTWARE_DESIGN.md の
  * 原則 1・2）。`src/proxy.ts` では拒まない。matcher をすべての経路に広げると、vinext が
- * どの経路もキャッシュの判定で dynamic にし、`/` のエッジのキャッシュが崩れる（ADR-0040）
+ * どの経路もキャッシュの判定で dynamic にし、トップ（`routes.home`）のエッジのキャッシュが崩れる（ADR-0040）
  */
 
 /** `/dash` の外への POST の本文の上限。vinext の Server Action の既定と同じ 1 MB */

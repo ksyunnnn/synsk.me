@@ -1,6 +1,6 @@
 // トップ。Figma の「小橋俊介 study」（ファイル yhHrXDTtvF7CjkLCeOZOU8、ノード 7:9）の文字の大きさ・行の高さ・
 // 字間・幅をそのまま書いたもの。余白は Figma の space/8・16・24 を foundations の space-xs・sm・md で使う。
-// 線の間には一覧（specs/005-feed）の最新の activity の題を並べる。データの取り方は top-draft と同じ
+// 線の間には一覧（specs/005-feed）の最新の activity の題を並べる。データの取り方はトップの下書き（`routes.topDraft`）と同じ
 import { ArrowDownRightIcon as ArrowDownRight } from '@phosphor-icons/react/dist/ssr/ArrowDownRight';
 import type { Viewport } from 'next';
 import { ActivityLinks } from '@/features/activity/components/activity-links';
