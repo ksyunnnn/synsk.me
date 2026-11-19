@@ -103,7 +103,7 @@
 - `ResumeProject`: id・uid・写し元の id（空あり）・組織名・種類・題・期間・本文（空あり）・関連 URL（空あり）・スキルの名前の並び
 - `ResumeEducation`: id・uid・写し元の id（空あり）・学校・学部（空あり）・期間・備考（空あり）
 - `ResumeSkill`: 名前・経験年数（求めた値か写した上書き）。保存しない
-- `Profile`: 氏名・自己紹介・メールアドレス（空あり）。コードの定数と環境変数から作る（research.md の R10）
+- `Profile`: 氏名・ローマ字の名前・自己紹介・生年月日（暦の日付）・メールアドレス（空あり）。コードの定数と環境変数から作る（research.md の R10）
 - `Period`・`CalendarDate`: `src/shared/domain/period.ts`（001 の T015）を使う
 
 ## 訪問者向けの DTO
