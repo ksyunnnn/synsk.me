@@ -160,11 +160,12 @@ describe.each([
     expect(text).not.toContain('非公開');
   });
 
-  it.each(['/', '/dash/projects/{uid}'])(
+  it.each(['/', '/dash/projects?selected={uid}'])(
     '訪問者が到達するほかの経路 %s も、隠す値を含まない',
     async (template) => {
       const path = template.replace('{uid}', await uidOf(ctx.db, 'project', maskedId));
-      const res = await ctx.server.fetch(`${path}${as.query}`, {
+      const query = path.includes('?') ? as.query.replace('?', '&') : as.query;
+      const res = await ctx.server.fetch(`${path}${query}`, {
         headers: as.headers,
         redirect: 'manual',
       });
@@ -201,7 +202,7 @@ describe('実績の本文と画像（FR-021・FR-023・FR-027・FR-028・FR-030�
   /** オーナーとして、編集の画面の画像のフォームで画像を 1 枚足し、足した画像のキーを返す */
   const upload = async (projectId: number, extra: Record<string, string> = {}) => {
     const uid = await uidOf(ctx.db, 'project', projectId);
-    const path = `/dash/projects/${uid}`;
+    const path = `/dash/projects?selected=${uid}`;
     const page = await ctx.server.fetch(path, { headers: await authorHeaders() });
     const forms = (await page.text()).match(/<form\b[\s\S]*?<\/form>/g) ?? [];
     const form = forms.find((html) => html.includes('name="mediaFile"'));
@@ -393,7 +394,7 @@ describe('秘匿化を切り替えた直後の要求（FR-043）', () => {
   /** オーナーとして、JavaScript なしのブラウザと同じ形で編集のフォームを送る */
   const submitEdit = async (id: number, values: Record<string, string>) => {
     const uid = await uidOf(ctx.db, 'project', id);
-    const path = `/dash/projects/${uid}`;
+    const path = `/dash/projects?selected=${uid}`;
     const page = await ctx.server.fetch(path, { headers: await authorHeaders() });
     expect(page.status).toBe(200);
     const row = await ctx.db
