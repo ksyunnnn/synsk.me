@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, type ReactNode } from 'react';
+import { useActionState } from 'react';
 import {
   OPENED_UPDATED_AT_FIELD,
   PROJECT_UID_FIELD,
@@ -23,6 +23,7 @@ import { formStateOf } from '@/shared/domain/action-result';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
+import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -84,14 +85,6 @@ const RESULT_MESSAGES = {
     'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
 
-/** 項目のまとまり。見出しで区切り、まとまりの中の項目を縦に並べる */
-const FormGroup = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-4">
-    <h3 className="text-caption font-medium text-muted-foreground">{title}</h3>
-    {children}
-  </section>
-);
-
 export const ProjectForm = ({
   action,
   initialValues,
@@ -124,13 +117,13 @@ export const ProjectForm = ({
       )}
 
       {/* 公開の設定。オンとオフの 2 つを 1 つのまとまりに並べる */}
-      <div className="divide-y divide-border rounded-2xl bg-muted/50 px-4">
+      <SettingsGroup>
         <SiteStatusField status={values.status} />
         <MaskingField
           isMasked={values.isMasked}
           description="訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
         />
-      </div>
+      </SettingsGroup>
 
       <FormGroup title="何を">
         <fieldset className="flex flex-col gap-1">

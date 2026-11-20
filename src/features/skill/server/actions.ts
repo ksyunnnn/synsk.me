@@ -48,7 +48,9 @@ export const editSkill = async (
   const { skills, id } = await resolveSkill(formData);
   if (id === null) redirect(routes.dash.skills.list);
   const outcome = await editSkillUseCase(skills, author, id, readValues(formData, SKILL_FIELDS));
-  if (outcome.status === 'saved') redirect(`${routes.dash.skills.list}?saved=1`);
+  // 保存した 1 件を選んだ一覧へ戻る（#366 の明文化）
+  if (outcome.status === 'saved')
+    redirect(`${routes.dash.skills.row(readString(formData, SKILL_UID_FIELD))}?saved=1`);
   if (outcome.status === 'not-found') redirect(routes.dash.skills.list);
   return outcome;
 };

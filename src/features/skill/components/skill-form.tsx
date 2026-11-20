@@ -16,6 +16,7 @@ import {
   INVALID_INPUT_MESSAGE,
 } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { useDraft } from '@/shared/components/drafts';
 import { formStateOf } from '@/shared/domain/action-result';
 
 /**
@@ -41,14 +42,16 @@ const ERROR_MESSAGES: Record<SkillField, Partial<Record<SkillFieldError, string>
 
 export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const { values, errors } = formStateOf(result, initialValues);
+  // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
+  const draft = useDraft(`skill:${skillUid ?? 'new'}`, initialValues);
+  const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: SkillField) => {
     const reason = errors[field];
     return reason ? ERROR_MESSAGES[field][reason] : undefined;
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form action={formAction} className="flex flex-col gap-6" {...draft.bind}>
       {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
       {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
       {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}
@@ -84,7 +87,7 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
         </div>
       </fieldset>
       <FormActions>
-        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {skillUid === undefined ? '登録する' : '保存する'}
         </SubmitButton>
       </FormActions>
