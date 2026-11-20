@@ -157,7 +157,7 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     ],
     [
       'editResumeCareer',
-      `/dash/resumes/${resume.uid}/careers/${rows.career}`,
+      `/dash/resumes/${resume.uid}/careers?selected=${rows.career}`,
       {
         ...(await common()),
         rowUid: rows.career,
@@ -171,7 +171,7 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     ],
     [
       'editResumeProject',
-      `/dash/resumes/${resume.uid}/projects/${rows.project}`,
+      `/dash/resumes/${resume.uid}/projects?selected=${rows.project}`,
       {
         ...(await common()),
         rowUid: rows.project,
@@ -187,7 +187,7 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
     ],
     [
       'editResumeEducation',
-      `/dash/resumes/${resume.uid}/educations/${rows.education}`,
+      `/dash/resumes/${resume.uid}/educations?selected=${rows.education}`,
       {
         ...(await common()),
         rowUid: rows.education,
@@ -239,7 +239,7 @@ describe('JWT のない Server Action は D1 を変えない（FR-033）', () =>
 });
 
 describe('作ったあとに足す（FR-041）', () => {
-  it('オーナーが選んだ職歴を、元の値で写して足し、設定の画面へ 303 で移す', async () => {
+  it('オーナーが選んだ職歴を、元の値で写して足し、写した職歴のタブへ 303 で移す', async () => {
     const added = await insertResume(ctx.db);
     const formPath = `/dash/resumes/${added.uid}/careers/new`;
     const res = await sendNthForm(ctx, {
@@ -255,7 +255,7 @@ describe('作ったあとに足す（FR-041）', () => {
     });
     await res.arrayBuffer();
     expect(res.status).toBe(303);
-    expect(res.headers.get('location')).toContain(`/dash/resumes/${added.uid}?saved=1`);
+    expect(res.headers.get('location')).toContain(`/dash/resumes/${added.uid}/careers?saved=1`);
     const copied = await ctx.db
       .prepare('SELECT career_id, organization_name FROM resume_career WHERE resume_id = ?')
       .bind(added.id)

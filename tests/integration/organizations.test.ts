@@ -42,7 +42,7 @@ describe('オーナーの JWT がない書き込み（FR-040）', () => {
       const before = await readRows(ctx, 'organization');
       const res = await sendForm(ctx, {
         how,
-        formPath: `/dash/organizations/${organizationUid}`,
+        formPath: `/dash/organizations?selected=${organizationUid}`,
         to: OUTSIDE_DASH,
         values: { organizationUid, name: 'JWT なしで直した組織名', nameMasked: '' },
         asAuthor: false,
@@ -81,7 +81,7 @@ it('オーナーの JWT がない組織の画面は 403', async () => {
 it('組織名を直した直後に、実績のページが直した組織名を出す（FR-004・SC-003）', async () => {
   const res = await sendForm(ctx, {
     how: 'submit',
-    formPath: `/dash/organizations/${organizationUid}`,
+    formPath: `/dash/organizations?selected=${organizationUid}`,
     values: { organizationUid, name: '直した後の作り物の組織', nameMasked: 'ある会社' },
     asAuthor: true,
   });

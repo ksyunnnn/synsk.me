@@ -17,6 +17,11 @@ const dashCollection = <const C extends string>(collection: C) => {
     list,
     new: `${list}/new` as const,
     row: (uid: string) => `${list}/${uid}`,
+    /**
+     * その 1 件を選んだ一覧。シングルは一覧の右に出す（#366 の明文化）。`flag` は保存の知らせなど。
+     * 保存の後はここへ直接移り、1 件の経路を経ない
+     */
+    selected: (uid: string, flag?: string) => `${list}?selected=${uid}${flag ? `&${flag}=1` : ''}`,
     delete: (uid: string) => `${list}/${uid}/delete`,
     missing: (uid: string) => `${list}/${uid}/missing`,
   };
@@ -94,6 +99,8 @@ export const routes = {
       ...resumes,
       preview: (uid: string) => `${resumes.row(uid)}/preview`,
       skills: (uid: string) => `${resumes.row(uid)}/skills`,
+      /** 写した行の一覧。職務経歴書の中身を切り替えるタブの 1 つ（#366 の明文化） */
+      entries: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}`,
       entryNew: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}/new`,
       entry: (uid: string, kind: ResumeEntryKind, rowUid: string) =>
         `${resumes.row(uid)}/${kind}/${rowUid}`,

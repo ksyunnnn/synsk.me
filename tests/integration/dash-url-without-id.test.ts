@@ -21,7 +21,7 @@ import { insertNote, insertNoteRevision, publishNoteRow } from '../support/note-
  * specs/001-career-and-project/research.md の R17）。
  *
  * オーナーとして `/dash` から管理画面のリンクを辿り、開いたすべての画面で次を確かめる。
- * - `/dash` へのリンクの経路に、数字だけの区切りが無い
+ * - `/dash` へのリンクの経路に、数字だけの区切りが無い。検索の値（`selected` など）にも数字だけの値が無い
  * - 隠しフィールドに、数字だけの値が無い（React が描く `$ACTION_` の入力は除く）
  * 保存の後の redirect 先の経路にも、数字だけの区切りが無いことを確かめる
  */
@@ -41,10 +41,23 @@ const dashLinksOf = (html: string) =>
     .map(([, href]) => decodeEntities(href))
     .filter((href) => href === '/dash' || href.startsWith('/dash/'));
 
-const digitSegmentsOf = (href: string) =>
-  new URL(href, 'https://synsk.test').pathname
-    .split('/')
-    .filter((segment) => DIGITS_ONLY.test(segment));
+/** 保存の後の知らせの値（`saved=1` など）。主キーではない */
+const NOTICE_FLAGS = new Set(['saved', 'deleted', 'mediaAdded', 'cardImageChanged', 'regenerated']);
+const isNoticeFlag = (name: string, value: string) => value === '1' && NOTICE_FLAGS.has(name);
+
+const digitSegmentsOf = (href: string) => {
+  const url = new URL(href, 'https://synsk.test');
+  const values = [...url.searchParams]
+    .filter(([name, value]) => !isNoticeFlag(name, value))
+    .map(([, value]) => value);
+  return [...url.pathname.split('/'), ...values].filter((segment) => DIGITS_ONLY.test(segment));
+};
+
+/** 辿る先の鍵。1 件を選んだ一覧（`?selected=`）は別の画面として辿る */
+const pageOf = (href: string) => {
+  const url = new URL(href, 'https://synsk.test');
+  return `${url.pathname}${url.search}`;
+};
 
 const digitHiddenInputsOf = (html: string) =>
   [...html.matchAll(/<input\b[^>]*>/g)]
@@ -98,7 +111,7 @@ describe('管理画面のリンクと隠しフィールドに主キーが出な�
 
       for (const href of dashLinksOf(html)) {
         if (digitSegmentsOf(href).length > 0) found.push(`${path} のリンク ${href}`);
-        const next = new URL(href, 'https://synsk.test').pathname;
+        const next = pageOf(href);
         if (!visited.has(next)) queue.push(next);
       }
       for (const { name, value } of digitHiddenInputsOf(html)) {
@@ -107,17 +120,22 @@ describe('管理画面のリンクと隠しフィールドに主キーが出な�
     }
 
     expect(found).toEqual([]);
-    // 行を 1 つずつ開く画面まで辿れていること。辿れていなければ、上の確かめが空振りする
+    // 行を 1 つずつ開く画面まで辿れていること。辿れていなければ、上の確かめが空振りする。
+    // 1 件は、その 1 件を選んだ一覧の右に開く
     for (const pattern of [
-      /^\/dash\/organizations\/[0-9a-f]{32}$/,
+      /^\/dash\/organizations\?selected=[0-9a-f]{32}$/,
+      /^\/dash\/careers\?selected=[0-9a-f]{32}$/,
+      /^\/dash\/projects\?selected=[0-9a-f]{32}$/,
+      /^\/dash\/educations\?selected=[0-9a-f]{32}$/,
+      /^\/dash\/skills\?selected=[0-9a-f]{32}$/,
       /^\/dash\/careers\/[0-9a-f]{32}\/delete$/,
       /^\/dash\/projects\/[0-9a-f]{32}\/delete$/,
       /^\/dash\/educations\/[0-9a-f]{32}\/delete$/,
       /^\/dash\/skills\/[0-9a-f]{32}\/delete$/,
       /^\/dash\/resumes\/[0-9a-f]{32}\/delete$/,
-      /^\/dash\/resumes\/[0-9a-f]{32}\/careers\/[0-9a-f]{32}$/,
-      /^\/dash\/resumes\/[0-9a-f]{32}\/projects\/[0-9a-f]{32}$/,
-      /^\/dash\/resumes\/[0-9a-f]{32}\/educations\/[0-9a-f]{32}$/,
+      /^\/dash\/resumes\/[0-9a-f]{32}\/careers\?selected=[0-9a-f]{32}$/,
+      /^\/dash\/resumes\/[0-9a-f]{32}\/projects\?selected=[0-9a-f]{32}$/,
+      /^\/dash\/resumes\/[0-9a-f]{32}\/educations\?selected=[0-9a-f]{32}$/,
       /^\/dash\/notes\/[0-9a-f]{32}$/,
       /^\/dash\/notes\/[0-9a-f]{32}\/delete$/,
       /^\/dash\/notes\/[0-9a-f]{32}\/preview$/,
@@ -132,7 +150,7 @@ describe('管理画面のリンクと隠しフィールドに主キーが出な�
 });
 
 describe('保存の後の redirect 先に主キーが出ない', () => {
-  it('職歴を登録すると、uid の編集の画面へ移る', async () => {
+  it('職歴を登録すると、uid で選んだ職歴の一覧へ移る', async () => {
     const res = await sendForm(ctx, {
       how: 'submit',
       formPath: '/dash/careers/new',
@@ -151,9 +169,7 @@ describe('保存の後の redirect 先に主キーが出ない', () => {
     });
     expect(res.status).toBe(303);
     const location = res.headers.get('location') ?? '';
-    expect(new URL(location, 'https://synsk.test').pathname).toMatch(
-      /^\/dash\/careers\/[0-9a-f]{32}$/,
-    );
+    expect(pageOf(location)).toMatch(/^\/dash\/careers\?selected=[0-9a-f]{32}&saved=1$/);
     expect(digitSegmentsOf(location)).toEqual([]);
   });
 

@@ -109,16 +109,27 @@ export const typeDate = async (page: Page, field: Locator, iso: string) => {
   throw new Error(`${field} に ${iso} を打てなかった。値は ${await field.inputValue()}`);
 };
 
-/** 秘匿化するか・サイトに載せるかのラジオボタンを選ぶ。省いたものは触らない */
+/** 職歴・実績の入力の Switch。オンが「秘匿化する」「サイトに載せる」 */
+export const siteSwitch = (page: Page, name: '秘匿化する' | 'サイトに載せる') =>
+  page.getByRole('switch', { name, exact: true });
+
+/** 秘匿化するか・サイトに載せるかの Switch を切り替える。省いたものは触らない */
 export const chooseSiteOptions = async (page: Page, { isMasked, onSite }: SiteOptions) => {
-  if (isMasked !== undefined) {
-    const name = isMasked ? '秘匿化する' : '秘匿化しない（実際の値で出す）';
-    await page.getByRole('radio', { name, exact: true }).check();
-  }
-  if (onSite !== undefined) {
-    const name = onSite ? 'サイトに載せる' : 'サイトに載せない';
-    await page.getByRole('radio', { name, exact: true }).check();
-  }
+  if (isMasked !== undefined) await siteSwitch(page, '秘匿化する').setChecked(isMasked);
+  if (onSite !== undefined) await siteSwitch(page, 'サイトに載せる').setChecked(onSite);
+};
+
+/**
+ * 1 件を選んだ一覧の URL から、知らせの値（saved など）を外す。編集の画面は、その 1 件を選んだ
+ * 一覧（`/dash/{collection}?selected={uid}`）にある
+ */
+export const selectedUrl = (page: Page) => {
+  const url = new URL(page.url());
+  for (const flag of ['saved', 'mediaAdded', 'cardImageChanged']) url.searchParams.delete(flag);
+  expect(url.searchParams.get('selected'), `${url} は 1 件を選んでいない`).toMatch(
+    /^[0-9a-f]{32}$/,
+  );
+  return url.toString();
 };
 
 /** 職歴の登録の画面か編集の画面で、入力を埋める */
@@ -139,14 +150,35 @@ export const registerCareer = async (page: Page, input: CareerInput) => {
   await fillCareer(page, { startedOn: '2020-04-01', ...input });
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
-  return page.url().replace(/\?.*$/, '');
+  return selectedUrl(page);
+};
+
+/**
+ * 見えない入力（`sr-only`）のラジオボタンかチェックボックスを、包むラベルを押して選ぶ。種類と
+ * スキルは、押す先が札の形のラベルで、入力そのものは押せる位置に無い
+ */
+const checkByLabel = async (
+  page: Page,
+  scope: Page | Locator,
+  role: 'radio' | 'checkbox',
+  name: string,
+) => {
+  const input = scope.getByRole(role, { name, exact: true });
+  if (!(await input.isChecked())) {
+    // `has` はラベルの中から探すので、page から作る
+    const inLabel = page.getByRole(role, { name, exact: true });
+    await scope.locator('label').filter({ has: inLabel }).click();
+  }
+  await expect(input).toBeChecked();
 };
 
 /** 実績の登録の画面か編集の画面で、入力を埋める */
 export const fillProject = async (page: Page, input: Partial<ProjectInput>) => {
   await fillIfGiven(page, '組織名', input.organizationName);
   await fillIfGiven(page, '秘匿化した組織名', input.organizationNameMasked);
-  if (input.kind) await page.getByRole('combobox', { name: '種類' }).selectOption(input.kind);
+  if (input.kind) {
+    await checkByLabel(page, page.getByRole('group', { name: '種類' }), 'radio', input.kind);
+  }
   await fillIfGiven(page, '題', input.title);
   await fillIfGiven(page, '秘匿化した題', input.titleMasked);
   await fillIfGiven(page, '始まりの日', input.startedOn);
@@ -154,7 +186,7 @@ export const fillProject = async (page: Page, input: Partial<ProjectInput>) => {
   await fillIfGiven(page, '本文', input.description);
   await fillIfGiven(page, '関連 URL', input.url);
   for (const skill of input.skills ?? []) {
-    await page.getByRole('checkbox', { name: skill, exact: true }).check();
+    await checkByLabel(page, page, 'checkbox', skill);
   }
   await chooseSiteOptions(page, input);
 };
@@ -182,7 +214,7 @@ export const registerProject = async (page: Page, input: ProjectInput) => {
   await fillProject(page, { startedOn: '2021-04-01', titleMasked: 'E2E の秘匿化した題', ...input });
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
-  return { editUrl: page.url().replace(/\?.*$/, ''), path: await readProjectPath(page) };
+  return { editUrl: selectedUrl(page), path: await readProjectPath(page) };
 };
 
 /**
@@ -205,21 +237,29 @@ export const saveEdit = async (page: Page) => {
   await expect(page.getByRole('status')).toHaveText('保存しました');
 };
 
-/** 学歴を登録する */
+/**
+ * 学歴を登録し、一覧に移ったことを確かめる。登録の知らせは、登録した学歴の検査
+ * （tests/e2e/career-and-education.spec.ts）が確かめる
+ */
 export const registerEducation = async (page: Page, school: string) => {
   await page.goto('/dash/educations/new');
   await textbox(page, '学校').fill(school);
   await textbox(page, '始まりの日').fill('2014-04-01');
   await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect(page).toHaveURL(/\/dash\/educations(\?|$)/);
+  await expect(page.getByRole('link', { name: school, exact: true })).toBeVisible();
 };
 
-/** スキルを登録する */
+/**
+ * スキルを登録し、一覧に移ったことを確かめる。登録の知らせは、スキルの検査
+ * （tests/e2e/skill.spec.ts）が確かめる
+ */
 export const registerSkill = async (page: Page, name: string) => {
   await page.goto('/dash/skills/new');
   await textbox(page, '名前').fill(name);
   await page.getByRole('button', { name: '登録する' }).click();
-  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect(page).toHaveURL(/\/dash\/skills(\?|$)/);
+  await expect(page.getByRole('link', { name, exact: true })).toBeVisible();
 };
 
 /**
@@ -296,21 +336,45 @@ export const createEmptyLimitedResume = async (page: Page, title: string) => {
   return page.url().replace(/\?.*$/, '');
 };
 
+/** 職務経歴書の中身のタブの名前 */
+type ResumeTabName = '写した実績' | '写した職歴' | '写した学歴' | 'スキル' | 'プレビュー' | '設定';
+
+/** 職務経歴書の中身のタブ */
+const resumeTab = (page: Page, name: ResumeTabName) =>
+  page
+    .getByRole('navigation', { name: '職務経歴書の中身' })
+    .getByRole('link', { name, exact: true });
+
 /**
- * 設定の画面から、作ったあとに職歴・実績・学歴を足す（FR-041）。`kind` は見出しの名前、
- * `option` は足す画面のチェックボックスの名前（職歴は「組織名・肩書」、実績は題、学歴は学校）。
- * 足した後は設定の画面に戻る
+ * 職務経歴書の中身のタブを開き、開いたタブになるまで待つ。前のタブの中身は、隠れて DOM に
+ * 残ることがある（tests/e2e/career-and-education.spec.ts）
+ */
+export const openResumeTab = async (page: Page, name: ResumeTabName) => {
+  await resumeTab(page, name).click();
+  await expect(resumeTab(page, name)).toHaveAttribute('aria-current', 'page');
+};
+
+const RESUME_ROW_PATHS = { 職歴: 'careers', 実績: 'projects', 学歴: 'educations' } as const;
+
+/**
+ * 職務経歴書の写した行のタブから、作ったあとに職歴・実績・学歴を足す（FR-041）。`kind` は
+ * タブの名前の種類、`option` は足す画面のチェックボックスの名前（職歴は「組織名・肩書」、実績は題、
+ * 学歴は学校）。足した後は、その種類のタブに戻る
  */
 export const addResumeRow = async (
   page: Page,
-  kind: '職歴' | '実績' | '学歴',
+  kind: keyof typeof RESUME_ROW_PATHS,
   option: string | RegExp,
 ) => {
-  await page.getByRole('link', { name: `${kind}を足す` }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText(`${kind}を足す`);
+  const path = RESUME_ROW_PATHS[kind];
+  await openResumeTab(page, `写した${kind}`);
+  const add = page.getByRole('link', { name: '経歴から写す' });
+  await expect(add).toHaveAttribute('href', new RegExp(`/${path}/new$`));
+  await add.click();
+  await expect(page.getByRole('heading', { name: `${kind}を足す` })).toBeVisible();
   await page.getByRole('checkbox', { name: option }).check();
   await submitAndWait(page, '足す');
-  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect(page).toHaveURL(new RegExp(`/dash/resumes/[0-9a-f]{32}/${path}\\?saved=1$`));
 };
 
 /**

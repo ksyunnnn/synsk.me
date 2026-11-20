@@ -5,6 +5,7 @@ import {
   openVisitor,
   registerCareer,
   registerProject,
+  openResumeTab,
   setResumeExpires,
   setResumeVisible,
   submitLimitedResume,
@@ -112,7 +113,7 @@ test('下書きの間と、存在しない識別子の URL では 404 で中身�
     title: 'E2E 状態の職務経歴書',
     keep: keepOf('状態'),
   });
-  await expect(page.getByText('限定公開用・期限 期限なし')).toBeVisible();
+  await expect(page.getByText('限定公開用・期限なし')).toBeVisible();
   const path = new URL(url).pathname;
 
   const visitor = await openVisitor(browser);
@@ -194,16 +195,16 @@ test('期限を過ぎると 404 になり、設定の画面に過ぎていると
   expect(await visit(visitor, path)).toBe(404);
   expect(await visitor.content()).not.toContain('E2E 限定公開の組織 期限');
   // 期限が切れても職務経歴書は消えず、オーナーは読める（Edge Cases）
-  await page.getByRole('link', { name: '訪問者に見せたときの見た目を見る' }).click();
+  await openResumeTab(page, 'プレビュー');
   await expect(page.getByRole('heading', { name: 'E2E 限定公開の組織 期限' })).toBeVisible();
-  await page.getByRole('link', { name: '設定の画面へ戻る' }).click();
+  await openResumeTab(page, '設定');
 
   await setResumeExpires(page, '2099-12-31T23:59');
   expect(await visit(visitor, path)).toBe(200);
   await expect(visitor.getByRole('heading', { name: 'E2E 限定公開の組織 期限' })).toBeVisible();
 
   await setResumeExpires(page, '');
-  await expect(page.getByText('限定公開用・期限 期限なし')).toBeVisible();
+  await expect(page.getByText('限定公開用・期限なし')).toBeVisible();
   expect(await visit(visitor, path)).toBe(200);
   await visitor.close();
 });

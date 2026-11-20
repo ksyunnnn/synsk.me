@@ -161,8 +161,14 @@ it('オーナーの管理画面にも、作ったときの値が出る', async (
     .prepare('SELECT uid FROM resume WHERE slug = ?')
     .bind(url.slug)
     .first<{ uid: string }>())!.uid;
-  const res = await ctx.server.fetch(`/dash/resumes/${uid}`, { headers: await asAuthor() });
-  const text = await res.text();
-  expect(text).toContain(ORIGINAL.title);
-  expect(text).toContain(ORIGINAL.school);
+  // 写した行は、職務経歴書の中身のタブごとに出る
+  for (const [tab, value] of [
+    ['projects', ORIGINAL.title],
+    ['educations', ORIGINAL.school],
+  ] as const) {
+    const res = await ctx.server.fetch(`/dash/resumes/${uid}/${tab}`, {
+      headers: await asAuthor(),
+    });
+    expect(await res.text(), tab).toContain(value);
+  }
 });

@@ -17,6 +17,7 @@ import {
 } from '@/shared/components/form-alert';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { useDraft } from '@/shared/components/drafts';
 import { formStateOf } from '@/shared/domain/action-result';
 
 /**
@@ -40,14 +41,16 @@ const ERROR_MESSAGES: Record<EducationField, Partial<Record<EducationFieldError,
 
 export const EducationForm = ({ action, initialValues, educationUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const { values, errors } = formStateOf(result, initialValues);
+  // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
+  const draft = useDraft(`education:${educationUid ?? 'new'}`, initialValues);
+  const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: EducationField) => {
     const reason = errors[field];
     return reason ? ERROR_MESSAGES[field][reason] : undefined;
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form action={formAction} className="flex flex-col gap-6" {...draft.bind}>
       {educationUid !== undefined && (
         <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
       )}
@@ -84,7 +87,7 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
       />
       <TextareaField name="remarks" label="備考" rows={4} defaultValue={values.remarks} />
       <FormActions>
-        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {educationUid === undefined ? '登録する' : '保存する'}
         </SubmitButton>
       </FormActions>

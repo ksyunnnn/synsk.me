@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
 import {
   fillProject,
@@ -8,10 +8,12 @@ import {
   registerProject,
   registerSkill,
   saveEdit,
+  siteSwitch,
   tabTo,
   typeDate,
   visit,
 } from './support/dash';
+import { waitForHydration } from './support/note';
 
 /**
  * オーナーとしての実績の登録・編集・削除と、訪問者の個別のページ（specs/001-career-and-project/
@@ -21,6 +23,14 @@ import {
  *
  * テストは同じ手元の D1 を並行して使う。名前は、ほかのテストと重ならない値にする。
  */
+
+/** 一覧の絞り込みのメニュー `axis` を開き、`option` を選ぶ。選んだ条件の一覧に移るまで待つ */
+const chooseFilter = async (page: Page, axis: string, option: string) => {
+  const before = page.url();
+  await page.getByRole('button', { name: new RegExp(`^${axis}(: |$)`) }).click();
+  await page.getByRole('menuitem', { name: option, exact: true }).click();
+  await expect(page).not.toHaveURL(before);
+};
 
 test('実績を登録・編集・削除でき、削除した実績の訪問者のページは 404 になる', async ({
   page,
@@ -35,15 +45,17 @@ test('実績を登録・編集・削除でき、削除した実績の訪問者�
     titleMasked: 'E2E 実績の秘匿化した題 削除',
   });
   // 既定は、秘匿化する・サイトに載せない（FR-015・FR-044）
-  await expect(page.getByRole('radio', { name: '秘匿化する', exact: true })).toBeChecked();
-  await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
+  await expect(siteSwitch(page, '秘匿化する')).toBeChecked();
+  await expect(siteSwitch(page, 'サイトに載せる')).not.toBeChecked();
 
   await fillProject(page, { title: 'E2E 実績の直した題 削除', kind: '登壇', onSite: true });
   await saveEdit(page);
   await expect(page.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
     'E2E 実績の直した題 削除',
   );
-  await expect(page.getByRole('combobox', { name: '種類' })).toHaveValue('talk');
+  await expect(
+    page.getByRole('group', { name: '種類' }).getByRole('radio', { name: '登壇' }),
+  ).toBeChecked();
 
   const visitor = await openVisitor(browser);
   expect(await visit(visitor, path)).toBe(200);
@@ -182,6 +194,8 @@ test('同じ実績を 2 つのタブで開くと、後から保存した側は�
   });
   const other = await context.newPage();
   await other.goto(editUrl);
+  // フォームが動いてから打つ（tests/e2e/dash-operation.spec.ts と同じ）
+  await waitForHydration(other.locator('main form').first());
 
   await page.getByRole('textbox', { name: '題', exact: true }).fill('先に保存した実績の題');
   await saveEdit(page);
@@ -207,7 +221,7 @@ test('オーナーはキーボードだけで実績を登録・編集・削除�
   await actAsAuthor(context);
   await page.goto('/dash/projects');
 
-  await tabTo(page, page.getByRole('link', { name: '実績を登録する' }));
+  await tabTo(page, page.getByRole('link', { name: '追加', exact: true }));
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/dash\/projects\/new$/);
 
@@ -227,10 +241,10 @@ test('オーナーはキーボードだけで実績を登録・編集・削除�
   await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toHaveText('保存しました');
 
-  // ラジオボタンは、組の中で選ばれたものに Tab で入り、矢印のキーで選び直す
-  await tabTo(page, page.getByRole('radio', { name: 'サイトに載せない', exact: true }));
-  await page.keyboard.press('ArrowDown');
-  await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
+  // Switch は Tab で入り、スペースのキーで切り替える
+  await tabTo(page, siteSwitch(page, 'サイトに載せる'));
+  await page.keyboard.press('Space');
+  await expect(siteSwitch(page, 'サイトに載せる')).toBeChecked();
   await tabTo(page, page.getByRole('textbox', { name: '題', exact: true }));
   await page.keyboard.press('ControlOrMeta+A');
   await page.keyboard.type('E2E 実績の直した題 キーボード');
@@ -274,25 +288,28 @@ test('一覧を組織で絞り込み、種類と組み合わせられる（issue
   });
 
   await page.goto('/dash/projects');
-  const select = page.getByRole('combobox', { name: '組織' });
-  const submit = page.getByRole('button', { name: '絞り込む' });
-  await select.selectOption({ label: organization.organizationName });
-  await submit.click();
+  await chooseFilter(page, '組織', organization.organizationName);
   await expect(page).toHaveURL(/[?&]org=[0-9a-f]{32}/);
-  await expect(page.getByText('2 件', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`2 件・${organization.organizationName}`, { exact: true }),
+  ).toBeVisible();
 
-  // 種類を足して絞る。form は選んだ組織を保つ
-  await page.getByRole('group', { name: '種類' }).getByRole('radio', { name: '登壇' }).check();
-  await submit.click();
+  // 種類を足して絞る。選んだ組織を保つ
+  await chooseFilter(page, '種類', '登壇');
   await expect(page).toHaveURL(/kind=talk&org=[0-9a-f]{32}/);
-  await expect(page.getByText('1 件', { exact: true })).toBeVisible();
+  await expect(
+    page.getByText(`1 件・${organization.organizationName}・登壇`, { exact: true }),
+  ).toBeVisible();
   await expect(page.getByRole('link', { name: 'E2E 実績の題 絞り込み 登壇' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'E2E 実績の題 絞り込み 開発' })).toHaveCount(0);
-  await expect(select.locator('option:checked')).toHaveText(organization.organizationName);
+  await expect(
+    page.getByRole('button', { name: `組織: ${organization.organizationName}` }),
+  ).toBeVisible();
 
   // 形の違う組織の値では、組織で絞らない
   await page.goto('/dash/projects?kind=talk&org=1');
-  await expect(select).toHaveValue('');
+  await expect(page.getByRole('button', { name: '組織', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '種類: 登壇', exact: true })).toBeVisible();
 });
 
 test('一覧の札でサイトに載せるかと秘匿化するかが分かり、その 2 つでも絞り込める（issue #330）', async ({
@@ -313,29 +330,34 @@ test('一覧の札でサイトに載せるかと秘匿化するかが分かり�
   await registerProject(page, { ...organization, title: 'E2E 実績の題 状態 載せない' });
 
   await page.goto('/dash/projects');
-  const card = (title: string) =>
-    page.getByRole('listitem').filter({ has: page.getByRole('link', { name: title }) });
-  await expect(card('E2E 実績の題 状態 載せる')).toContainText('サイトに載せる');
-  await expect(card('E2E 実績の題 状態 載せる')).toContainText('秘匿化しない');
-  await expect(card('E2E 実績の題 状態 載せない')).toContainText('サイトに載せない');
-  await expect(card('E2E 実績の題 状態 載せない')).toContainText('秘匿化する');
+  // 列は 題・期間・状態。組織と種類は題の下に添える
+  const cells = (title: string) =>
+    page
+      .getByRole('row')
+      .filter({ has: page.getByRole('link', { name: title, exact: true }) })
+      .getByRole('cell');
+  await expect(cells('E2E 実績の題 状態 載せる')).toHaveText([
+    new RegExp(`^E2E 実績の題 状態 載せる${organization.organizationName}・開発`),
+    /^2021-04-01 〜継続中$/,
+    'サイトに載せる秘匿化しない',
+  ]);
+  await expect(cells('E2E 実績の題 状態 載せない')).toHaveText([
+    new RegExp(`^E2E 実績の題 状態 載せない${organization.organizationName}・開発`),
+    /^2021-04-01 〜継続中$/,
+    '載せない秘匿化する',
+  ]);
 
-  await page
-    .getByRole('group', { name: 'サイトに載せるか' })
-    .getByRole('radio', { name: 'サイトに載せない' })
-    .check();
-  await page
-    .getByRole('group', { name: '秘匿化するか' })
-    .getByRole('radio', { name: '秘匿化する', exact: true })
-    .check();
-  await page.getByRole('button', { name: '絞り込む' }).click();
+  await chooseFilter(page, 'サイト', 'サイトに載せない');
+  await chooseFilter(page, '秘匿化', '秘匿化する');
   await expect(page).toHaveURL(/status=draft&masked=true/);
   // 選んでいる条件を件数の横に出す
-  await expect(page.getByText('サイトに載せない・秘匿化する', { exact: true })).toBeVisible();
+  await expect(page.getByText(/^\d+ 件・サイトに載せない・秘匿化する$/)).toBeVisible();
   await expect(page.getByRole('link', { name: 'E2E 実績の題 状態 載せない' })).toBeVisible();
   await expect(page.getByRole('link', { name: 'E2E 実績の題 状態 載せる' })).toHaveCount(0);
 
-  await page.getByRole('link', { name: '条件を外す' }).click();
+  // 「すべて」を選ぶと条件が外れる
+  await chooseFilter(page, 'サイト', 'すべて');
+  await chooseFilter(page, '秘匿化', 'すべて');
   await expect(page).toHaveURL(/\/dash\/projects$/);
   await expect(page.getByRole('link', { name: 'E2E 実績の題 状態 載せる' })).toBeVisible();
 });

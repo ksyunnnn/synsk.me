@@ -70,7 +70,11 @@ test.describe('フォームの区切り', () => {
       title: uniqueTitle('フォームの区切り'),
     });
     await page.goto(editUrl);
-    const content = page.getByRole('region', { name: '内容', exact: true });
+    // 実績は、選んだ 1 件の中で、保存のボタンを持つフォームが内容の区切り
+    const content = page
+      .getByRole('region', { name: '選んだ実績' })
+      .locator('form')
+      .filter({ has: page.getByRole('button', { name: '保存する', exact: true }) });
     await expect(content.getByRole('button', { name: '保存する', exact: true })).toBeVisible();
     await expect(content.getByRole('button', { name: '画像を足す' })).toHaveCount(0);
     await expect(content.getByRole('button', { name: '代表画像を選び直す' })).toHaveCount(0);
@@ -204,6 +208,8 @@ test.describe('保存の知らせ', () => {
     await expect(page.getByRole('alert')).toHaveText('入力を確かめてください');
     await expect(page.getByRole('status')).toHaveCount(0);
 
+    // 保存していない入力があるので、再読み込みの前の確かめを受け入れる
+    page.once('dialog', (dialog) => dialog.accept());
     await page.reload();
     await expect(page.getByRole('status')).toHaveCount(0);
   });

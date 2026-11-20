@@ -84,7 +84,7 @@ describe('オーナーの JWT がない書き込み（FR-040）', () => {
       [
         '職歴の編集',
         'career',
-        `/dash/careers/${careerUid}`,
+        `/dash/careers?selected=${careerUid}`,
         { ...CAREER_INPUT, careerUid, openedUpdatedAt: '' },
       ],
       ['職歴の削除', 'career', `/dash/careers/${careerUid}/delete`, { careerUid }],
@@ -92,12 +92,12 @@ describe('オーナーの JWT がない書き込み（FR-040）', () => {
       [
         '学歴の編集',
         'education',
-        `/dash/educations/${educationUid}`,
+        `/dash/educations?selected=${educationUid}`,
         { ...EDUCATION_INPUT, educationUid },
       ],
       ['学歴の削除', 'education', `/dash/educations/${educationUid}/delete`, { educationUid }],
       ['スキルの登録', 'skill', '/dash/skills/new', SKILL_INPUT],
-      ['スキルの編集', 'skill', `/dash/skills/${skillUid}`, { ...SKILL_INPUT, skillUid }],
+      ['スキルの編集', 'skill', `/dash/skills?selected=${skillUid}`, { ...SKILL_INPUT, skillUid }],
       ['スキルの削除', 'skill', `/dash/skills/${skillUid}/delete`, { skillUid }],
     ] as const;
 

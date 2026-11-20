@@ -35,7 +35,7 @@ const Page = async ({ params }: Props) => {
         }}
       />
       <p>
-        <TextLink href={routes.dash.skills.row(skill.uid)}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.skills.selected(skill.uid)}>編集の画面へ戻る</TextLink>
       </p>
     </DashPage>
   );

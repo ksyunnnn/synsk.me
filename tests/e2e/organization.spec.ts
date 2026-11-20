@@ -11,11 +11,13 @@ import { openVisitor, registerCareer, registerProject, saveEdit } from './suppor
  * テストは同じ手元の D1 を並行して使う。名前は、ほかのテストと重ならない値にする。
  */
 
-/** 組織の一覧から、組織名で編集の画面を開く */
+/** 組織の一覧から、組織名で選び、右に編集の項目を開く */
 const openOrganization = async (page: Page, name: string) => {
   await page.goto('/dash/organizations');
   await page.getByRole('link', { name, exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('組織を編集する');
+  await expect(
+    page.getByRole('region', { name: '選んだ組織' }).getByRole('heading', { level: 2 }),
+  ).toHaveText(name);
 };
 
 test('組織名を直すと、その組織を指す職歴と実績の表示が変わり、組織は 1 つのまま', async ({
@@ -47,8 +49,11 @@ test('組織名を直すと、その組織を指す職歴と実績の表示が�
   await page.goto('/dash/careers');
   await expect(page.getByRole('link', { name: /E2E 直した後の組織/ })).toBeVisible();
   await page.goto('/dash/projects');
-  // 組織で絞り込む select の選択肢にも組織名が出るため、カードの中で探す
-  await expect(page.getByRole('listitem').getByText(/E2E 直した後の組織/)).toBeVisible();
+  await expect(
+    page
+      .getByRole('row')
+      .filter({ has: page.getByRole('link', { name: 'E2E 直す組織の実績', exact: true }) }),
+  ).toContainText('E2E 直した後の組織');
 
   const visitor = await openVisitor(browser);
   await visitor.goto(path);

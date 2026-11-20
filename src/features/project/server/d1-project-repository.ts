@@ -293,8 +293,10 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       const where =
         '(?1 IS NULL OR p.kind = ?1) AND (?2 IS NULL OR o.uid = ?2)' +
         ' AND (?3 IS NULL OR p.status = ?3) AND (?4 IS NULL OR p.is_masked = ?4)';
-      const [projects, media] = await db.batch<
-        ProjectListRow | { project_id: number; storage_key: string }
+      const [projects, media, skills] = await db.batch<
+        | ProjectListRow
+        | { project_id: number; storage_key: string }
+        | { project_id: number; skill_id: number }
       >([
         db
           .prepare(
@@ -314,7 +316,16 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
              ORDER BY m.id`,
           )
           .bind(kind, organizationUid, status, isMasked),
+        // スキルで絞る・目立たせるための、実績とスキルのつながり（#366 の明文化）
+        db.prepare('SELECT project_id, skill_id FROM project_skill ORDER BY skill_id'),
       ]);
+      const skillsByProject = new Map<number, number[]>();
+      for (const row of skills.results as { project_id: number; skill_id: number }[]) {
+        skillsByProject.set(row.project_id, [
+          ...(skillsByProject.get(row.project_id) ?? []),
+          row.skill_id,
+        ]);
+      }
       const keysByProject = new Map<number, string[]>();
       for (const row of media.results as { project_id: number; storage_key: string }[]) {
         const keys = keysByProject.get(row.project_id) ?? [];
@@ -335,6 +346,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         mediaStorageKeys: keysByProject.get(row.id) ?? [],
         cardMediaKey: row.card_storage_key,
         organizationName: row.organization_name,
+        skillIds: skillsByProject.get(row.id) ?? [],
       }));
     },
 

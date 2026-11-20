@@ -6,7 +6,6 @@ import { editResumeSkillOverrides } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';
 import { DashPage } from '@/shared/components/dash-page';
 import { toYearsAndMonths } from '@/shared/domain/period';
-import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -30,10 +29,7 @@ const Page = async ({ params }: Props) => {
   });
 
   return (
-    <DashPage
-      back={{ href: routes.dash.resumes.row(resume.uid), label: '設定の画面へ戻る' }}
-      title="経験年数の上書きを直す"
-    >
+    <DashPage title="経験年数の上書きを直す">
       <p className="text-sm text-muted-foreground">
         空のスキルは、写した実績の期間から求めます。直した値はこの職務経歴書にだけ効きます
       </p>

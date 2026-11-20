@@ -16,7 +16,7 @@ export const DashPage = ({
   title?: ReactNode;
   children: ReactNode;
 }) => (
-  <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-6">
+  <main className="flex flex-col gap-6 rounded-3xl bg-background px-6 py-12 md:px-12">
     {back && (
       <p>
         <TextLink href={back.href}>{back.label}</TextLink>

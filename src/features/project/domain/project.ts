@@ -63,6 +63,7 @@ export type ProjectSummary = Pick<
   | 'description'
   | 'mediaStorageKeys'
   | 'cardMediaKey'
+  | 'skillIds'
 > & {
   organizationName: string;
 };

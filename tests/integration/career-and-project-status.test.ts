@@ -145,7 +145,7 @@ describe.each([
 it('サイトに載せないに切り替えると、直後の要求から 404 になる（FR-043）', async () => {
   const authorHeaders = async () => ({ 'cf-access-jwt-assertion': await ctx.signAuthorJwt() });
   const uid = await uidOf(ctx.db, 'project', publishedId);
-  const path = `/dash/projects/${uid}`;
+  const path = `/dash/projects?selected=${uid}`;
   const page = await ctx.server.fetch(path, { headers: await authorHeaders() });
   expect(page.status).toBe(200);
   const row = await ctx.db
