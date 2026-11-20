@@ -1,18 +1,18 @@
 import type { ReactNode } from 'react';
-import { TextLink } from '@/shared/components/text-link';
-import { routes } from '@/shared/routes';
+import { DashSidebar } from '@/shared/components/dash-sidebar';
 
 /**
- * 管理画面のすべての画面に共通の枠。上にサイトのトップへのリンクを置く。何も読まないので、
- * オーナーでない要求にも出してよい（オーナーの確認は各ページと `src/proxy.ts` が持つ）
+ * 管理画面のすべての画面に共通の枠。左に Sidebar、右に各画面を置く。狭い画面では Sidebar を上に
+ * 置く。何も読まないので、オーナーでない要求にも出してよい（オーナーの確認は各ページと
+ * `src/proxy.ts` が持つ）
  */
 const Layout = ({ children }: { children: ReactNode }) => (
-  <>
-    <nav aria-label="サイト" className="mx-auto max-w-2xl px-4 pt-6">
-      <TextLink href={routes.top}>サイトのトップへ</TextLink>
-    </nav>
-    {children}
-  </>
+  <div className="min-h-dvh bg-muted/60">
+    <div className="mx-auto grid max-w-[1440px] gap-4 p-4 md:grid-cols-[220px_minmax(0,1fr)]">
+      <DashSidebar />
+      <div className="min-w-0">{children}</div>
+    </div>
+  </div>
 );
 
 export default Layout;
