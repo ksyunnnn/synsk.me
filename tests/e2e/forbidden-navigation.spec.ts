@@ -12,10 +12,10 @@ test('オーナーでなくなった後にリンクで移ると、開く権限�
 }) => {
   await actAsAuthor(context);
   await page.goto('/dash');
-  await expect(page.getByRole('link', { name: '実績' })).toBeVisible();
+  await expect(page.getByRole('main').getByRole('link', { name: /^実績/ })).toBeVisible();
 
   await context.setExtraHTTPHeaders({});
-  await page.getByRole('link', { name: '実績' }).click();
+  await page.getByRole('main').getByRole('link', { name: /^実績/ }).click();
 
   await expect(
     page.getByRole('heading', { name: 'このページを開く権限がありません' }),

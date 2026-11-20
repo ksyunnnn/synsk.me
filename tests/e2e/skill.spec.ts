@@ -14,16 +14,26 @@ import { registerProject, registerSkill } from './support/dash';
 const skillRow = (page: Page, name: string) =>
   page.getByRole('row').filter({ has: page.getByRole('link', { name, exact: true }) });
 
-/** スキルの一覧から、名前で編集の画面を開く */
+/** スキルの一覧から、名前で選び、右に編集の項目を開く */
 const openSkill = async (page: Page, name: string) => {
   await page.goto('/dash/skills');
   await page.getByRole('link', { name, exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('スキルを編集する');
+  await expect(
+    page.getByRole('region', { name: '選んだスキル' }).getByRole('heading', { level: 2 }),
+  ).toHaveText(name);
 };
+
+/** 選んだスキルの、計算で決まる値 */
+const skillFact = (page: Page, label: string) =>
+  page
+    .getByRole('region', { name: '選んだスキル' })
+    .getByRole('definition')
+    .filter({ has: page.locator(`xpath=preceding-sibling::dt[1][normalize-space()="${label}"]`) });
 
 test('スキルを登録・編集・削除できる', async ({ page, context }) => {
   await actAsAuthor(context);
   await registerSkill(page, 'E2E-Skill-Crud');
+  await expect(page.getByRole('status')).toHaveText('保存しました');
   await expect(skillRow(page, 'E2E-Skill-Crud')).toBeVisible();
 
   await openSkill(page, 'E2E-Skill-Crud');
@@ -81,7 +91,8 @@ test('経験年数は、つないだ実績の期間を重なりを除いてつ�
 
   await page.goto('/dash/skills');
   const row = skillRow(page, 'E2E-Skill-Years');
-  await expect(row.getByRole('cell')).toHaveText(['E2E-Skill-Years', '1 年 6 か月', '1 年 6 か月']);
+  // 列は 名前・経験年数・実績の数
+  await expect(row.getByRole('cell')).toHaveText(['E2E-Skill-Years', '1 年 6 か月', '2 件']);
 
   await openSkill(page, 'E2E-Skill-Years');
   await page.getByRole('textbox', { name: '年' }).fill('3');
@@ -91,6 +102,8 @@ test('経験年数は、つないだ実績の期間を重なりを除いてつ�
   await expect(row.getByRole('cell')).toHaveText([
     'E2E-Skill-Years',
     '3 年 2 か月（上書き）',
-    '1 年 6 か月',
+    '2 件',
   ]);
+  // 実績の期間から求めた値は、上書きしても変わらない
+  await expect(skillFact(page, '実績の期間から求めた値')).toHaveText('1 年 6 か月');
 });
