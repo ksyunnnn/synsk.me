@@ -43,7 +43,7 @@ export const registerCareer = async (
     await getCurrentAuthor(),
     readValues(formData, CAREER_FIELDS),
   );
-  if (outcome.status === 'registered') redirect(`${routes.dash.careers.row(outcome.uid)}?saved=1`);
+  if (outcome.status === 'registered') redirect(routes.dash.careers.selected(outcome.uid, 'saved'));
   return outcome;
 };
 
@@ -61,7 +61,7 @@ export const editCareer = async (
     openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
     now: new Date().toISOString(),
   });
-  if (outcome.status === 'saved') redirect(`${routes.dash.careers.row(uid)}?saved=1`);
+  if (outcome.status === 'saved') redirect(routes.dash.careers.selected(uid, 'saved'));
   if (outcome.status === 'not-found') redirect(routes.dash.careers.list);
   return outcome;
 };
@@ -97,7 +97,7 @@ export const addCareerMedia = async (
     id,
     file instanceof Blob && file.size > 0 ? file : null,
   );
-  if (outcome.status === 'added') redirect(`${routes.dash.careers.row(uid)}?mediaAdded=1`);
+  if (outcome.status === 'added') redirect(routes.dash.careers.selected(uid, 'mediaAdded'));
   if (outcome.status === 'not-found') redirect(routes.dash.careers.list);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };

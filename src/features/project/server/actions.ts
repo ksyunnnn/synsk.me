@@ -68,7 +68,8 @@ export const registerProject = async (
     await getCurrentAuthor(),
     readValues(formData),
   );
-  if (outcome.status === 'registered') redirect(`${routes.dash.projects.row(outcome.uid)}?saved=1`);
+  if (outcome.status === 'registered')
+    redirect(routes.dash.projects.selected(outcome.uid, 'saved'));
   return outcome;
 };
 
@@ -86,7 +87,7 @@ export const editProject = async (
     openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
     now: new Date().toISOString(),
   });
-  if (outcome.status === 'saved') redirect(`${routes.dash.projects.row(uid)}?saved=1`);
+  if (outcome.status === 'saved') redirect(routes.dash.projects.selected(uid, 'saved'));
   if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
   return outcome;
 };
@@ -124,7 +125,7 @@ export const addProjectMedia = async (
     file instanceof Blob && file.size > 0 ? file : null,
     { asCardImage: readString(formData, AS_CARD_IMAGE_FIELD) === '1' },
   );
-  if (outcome.status === 'added') redirect(`${routes.dash.projects.row(uid)}?mediaAdded=1`);
+  if (outcome.status === 'added') redirect(routes.dash.projects.selected(uid, 'mediaAdded'));
   if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
@@ -145,7 +146,8 @@ export const changeProjectCardImage = async (
   if (value !== NO_CARD_IMAGE && storageKey === null)
     return { status: 'invalid', errors: { [CARD_IMAGE_FIELD]: 'invalid' }, values: {} };
   const outcome = await changeProjectCardImageUseCase(deps.projects, author, id, storageKey);
-  if (outcome.status === 'changed') redirect(`${routes.dash.projects.row(uid)}?cardImageChanged=1`);
+  if (outcome.status === 'changed')
+    redirect(routes.dash.projects.selected(uid, 'cardImageChanged'));
   if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [CARD_IMAGE_FIELD]: outcome.error }, values: {} };

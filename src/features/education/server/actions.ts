@@ -41,7 +41,8 @@ export const registerEducation = async (
     await getCurrentAuthor(),
     readValues(formData, EDUCATION_FIELDS),
   );
-  if (outcome.status === 'registered') redirect(`${routes.dash.educations.list}?saved=1`);
+  if (outcome.status === 'registered')
+    redirect(routes.dash.educations.selected(outcome.uid, 'saved'));
   return outcome;
 };
 
@@ -61,7 +62,7 @@ export const editEducation = async (
   );
   // 保存した 1 件を選んだ一覧へ戻る（#366 の明文化）
   if (outcome.status === 'saved')
-    redirect(`${routes.dash.educations.row(readString(formData, EDUCATION_UID_FIELD))}?saved=1`);
+    redirect(routes.dash.educations.selected(readString(formData, EDUCATION_UID_FIELD), 'saved'));
   if (outcome.status === 'not-found') redirect(routes.dash.educations.list);
   return outcome;
 };

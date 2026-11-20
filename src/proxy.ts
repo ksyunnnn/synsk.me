@@ -74,7 +74,24 @@ const DASH_ROW_EXISTS: Record<string, (uid: string) => Promise<boolean>> = {
  */
 const isResumeSlugPath = (segments: string[]) => segments[0] === 'resume' && segments.length >= 2;
 
-const decide = async (request: NextRequest): Promise<string | null> => {
+/**
+ * シングルを一覧の右に出すコレクション（#366 の明文化）。1 件の経路（`/dash/<コレクション>/{uid}`）は、
+ * その 1 件を選んだ一覧へ HTTP で移す。ページの中の `redirect()` は Workers の上で移り続けたため、
+ * 描く前にここで移す
+ */
+const SELECTABLE = new Set(['projects', 'careers', 'organizations', 'educations', 'skills']);
+
+/** 移す先。元の検索の値（`saved` などの知らせ）を引き継ぎ、`selected` に 1 件を入れる */
+const selectedUrl = (request: NextRequest, list: string, uid: string) => {
+  const url = new URL(list, request.url);
+  request.nextUrl.searchParams.forEach((value, key) => url.searchParams.set(key, value));
+  url.searchParams.set('selected', uid);
+  return url;
+};
+
+type Decision = { rewrite: string } | { redirect: URL } | null;
+
+const decide = async (request: NextRequest): Promise<Decision> => {
   const segments = request.nextUrl.pathname.split('/').filter(Boolean);
   // 書き込みの操作は、Server Action がオーナーと行を確かめて結果を返す
   const isRead = request.method === 'GET' || request.method === 'HEAD';
@@ -82,30 +99,30 @@ const decide = async (request: NextRequest): Promise<string | null> => {
   if (segments[0] === 'projects') {
     const slug = segments[1];
     if (!isRead || !slug || segments.length !== 2) return null;
-    return (await hasProjectSlug(slug)) ? null : routes.projectMissing(slug);
+    return (await hasProjectSlug(slug)) ? null : { rewrite: routes.projectMissing(slug) };
   }
 
   if (segments[0] === 'life-events') {
     const slug = segments[1];
     if (!isRead || !slug) return null;
-    return (await hasLifeEventSlug(slug)) ? null : routes.lifeEventMissing(slug);
+    return (await hasLifeEventSlug(slug)) ? null : { rewrite: routes.lifeEventMissing(slug) };
   }
 
   if (segments[0] === 'resume') {
     // 公開用は tasks.md の Phase 7（US5）で足すまで中身を返さず、404 になる
     const [, slug] = segments;
     if (!isRead || segments.length !== 2) return null;
-    return (await hasVisitorResume(slug)) ? null : routes.resumeMissing(slug);
+    return (await hasVisitorResume(slug)) ? null : { rewrite: routes.resumeMissing(slug) };
   }
 
   if (segments[0] === 'notes') {
     // 下書き・下書きに戻した・削除した note は、無い識別子と同じ 404（specs/003-note/plan.md の U10）
     const slug = segments[1];
     if (!isRead || !slug || segments.length !== 2) return null;
-    return (await hasNoteSlug(slug)) ? null : routes.noteMissing(slug);
+    return (await hasNoteSlug(slug)) ? null : { rewrite: routes.noteMissing(slug) };
   }
 
-  if (!(await getAuthorFromHeaders(request.headers))) return routes.dash.forbidden;
+  if (!(await getAuthorFromHeaders(request.headers))) return { rewrite: routes.dash.forbidden };
 
   const [, collection, uid, action, rowUid, rowAction] = segments;
   const exists = collection === undefined ? undefined : DASH_ROW_EXISTS[collection];
@@ -123,16 +140,26 @@ const decide = async (request: NextRequest): Promise<string | null> => {
   ) {
     // 職務経歴書と行の有無を 1 回で確かめる。職務経歴書の id を D1 から 2 回引かない
     const missing = await findMissingResumeRow(uid, action, rowUid);
-    if (missing === 'resume') return routes.dash.resumes.missing(uid);
-    return missing === 'row' ? routes.dash.resumes.entryMissing(uid, action, rowUid) : null;
+    if (missing === 'resume') return { rewrite: routes.dash.resumes.missing(uid) };
+    if (missing === 'row')
+      return { rewrite: routes.dash.resumes.entryMissing(uid, action, rowUid) };
+    // 写した行のシングルは、その行を選んだ中身の一覧に出す
+    return segments.length === 5
+      ? { redirect: selectedUrl(request, routes.dash.resumes.entries(uid, action), rowUid) }
+      : null;
   }
   if (collection === 'notes' && action === 'revisions' && rowUid && rowAction !== 'missing') {
     // note の過去の版の画面（specs/003-note/contracts/dash.md）。note と版の有無を 1 回で確かめる
     const missing = await findMissingNoteRevision(uid, rowUid);
-    if (missing === 'note') return routes.dash.notes.missing(uid);
-    return missing === 'revision' ? routes.dash.notes.revisionMissing(uid, rowUid) : null;
+    if (missing === 'note') return { rewrite: routes.dash.notes.missing(uid) };
+    return missing === 'revision'
+      ? { rewrite: routes.dash.notes.revisionMissing(uid, rowUid) }
+      : null;
   }
-  return (await exists(uid)) ? null : routes.dash.rowMissing(collection, uid);
+  if (!(await exists(uid))) return { rewrite: routes.dash.rowMissing(collection, uid) };
+  return SELECTABLE.has(collection) && segments.length === 3
+    ? { redirect: selectedUrl(request, `/dash/${collection}`, uid) }
+    : null;
 };
 
 /**
@@ -144,13 +171,16 @@ const decide = async (request: NextRequest): Promise<string | null> => {
 const NO_STORE = 'no-store, must-revalidate';
 
 const respond = async (request: NextRequest) => {
-  let path: string | null;
+  let decision: Decision;
   try {
-    path = await decide(request);
+    decision = await decide(request);
   } catch {
     return NextResponse.next();
   }
-  return path ? NextResponse.rewrite(new URL(path, request.url)) : NextResponse.next();
+  if (decision === null) return NextResponse.next();
+  return 'redirect' in decision
+    ? NextResponse.redirect(decision.redirect, 307)
+    : NextResponse.rewrite(new URL(decision.rewrite, request.url));
 };
 
 /**

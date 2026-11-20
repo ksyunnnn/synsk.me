@@ -28,7 +28,7 @@ const Page = async ({ params }: Props) => {
       <p>題: {project.title}</p>
       <DeleteProjectForm action={deleteProject} projectUid={project.uid} />
       <p>
-        <TextLink href={routes.dash.projects.row(project.uid)}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.projects.selected(project.uid)}>編集の画面へ戻る</TextLink>
       </p>
     </DashPage>
   );
