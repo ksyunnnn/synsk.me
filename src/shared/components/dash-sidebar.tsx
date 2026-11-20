@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useDraftKeys } from '@/shared/components/drafts';
 import { cn } from '@/lib/utils';
 import { routes } from '@/shared/routes';
 
@@ -34,8 +35,26 @@ const GROUPS = [
   },
 ] as const;
 
+/** 直しかけの鍵の頭と、その直しかけがある項目 */
+const DRAFT_OWNERS: Record<string, string> = {
+  project: routes.dash.projects.list,
+  career: routes.dash.careers.list,
+  organization: routes.dash.organizations.list,
+  education: routes.dash.educations.list,
+  skill: routes.dash.skills.list,
+  'resume-project': routes.dash.resumes.list,
+  'resume-career': routes.dash.resumes.list,
+  'resume-education': routes.dash.resumes.list,
+};
+
 export const DashSidebar = () => {
   const pathname = usePathname();
+  // どの項目に直しかけがあるか。保存は 1 件ずつなので、残っている場所を見失わないようにする
+  const drafted = new Set(
+    useDraftKeys()
+      .filter((key) => !key.endsWith(':new'))
+      .map((key) => DRAFT_OWNERS[key.split(':')[0]]),
+  );
   return (
     <nav
       aria-label="管理する項目"
@@ -67,6 +86,12 @@ export const DashSidebar = () => {
                     )}
                   >
                     {label}
+                    {drafted.has(href) && (
+                      <span className="ml-1.5 text-caption text-tint">
+                        <span aria-hidden>●</span>
+                        <span className="sr-only">直しかけあり</span>
+                      </span>
+                    )}
                   </Link>
                 </li>
               );

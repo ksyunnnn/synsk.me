@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { DetailSheet } from '@/shared/components/detail-sheet';
 import { DraftMark } from '@/shared/components/drafts';
 import { cn } from '@/lib/utils';
+import type { Period } from '@/shared/domain/period';
 
 /**
  * 管理画面の Split view（HIG Split views、#366 の明文化の「3. アクションとインタラクション」）。
@@ -119,6 +120,7 @@ export const CollectionTable = <Row,>({
   selectedKey,
   draftKey,
   emphasized,
+  subtitle,
 }: {
   rows: Row[];
   columns: [CollectionColumn<Row>, ...CollectionColumn<Row>[]];
@@ -129,6 +131,8 @@ export const CollectionTable = <Row,>({
   draftKey?: (row: Row) => string;
   /** 目立たせる行（絞り込みのスキルを持つ実績など）。無ければ目立たせない */
   emphasized?: (row: Row) => boolean;
+  /** 1 列めの下に添える属性。列を減らし、題を読める幅に保つ */
+  subtitle?: (row: Row) => ReactNode;
 }) => {
   const [first, ...rest] = columns;
   return (
@@ -175,6 +179,11 @@ export const CollectionTable = <Row,>({
                       <DraftMark draftKey={draftKey(row)} />
                     </span>
                   )}
+                  {subtitle && (
+                    <span className="mt-0.5 block text-caption text-muted-foreground">
+                      {subtitle(row)}
+                    </span>
+                  )}
                 </td>
                 {rest.map((column) => (
                   <td
@@ -197,6 +206,14 @@ export const CollectionTable = <Row,>({
     </div>
   );
 };
+
+/** 表の期間。始まりと終わりを 2 行に分け、題の列の幅を空ける。続いているものは「継続中」 */
+export const PeriodLines = ({ period }: { period: Period }) => (
+  <>
+    <span className="block">{period.startedOn} 〜</span>
+    <span className="block">{period.endedOn ?? '継続中'}</span>
+  </>
+);
 
 /** 一覧が空のときの文 */
 export const CollectionEmpty = ({ children }: { children: ReactNode }) => (

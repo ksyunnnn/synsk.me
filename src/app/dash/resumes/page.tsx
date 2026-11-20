@@ -56,7 +56,7 @@ const Page = async ({ searchParams }: Props) => {
               cell: ({ resume }) =>
                 `${resume.audience === 'limited' ? '限定公開用' : '公開用'}・${resume.status === 'draft' ? '非公開' : '公開中'}${
                   resume.audience === 'limited'
-                    ? `・期限 ${formatExpires(resume.limitedExpiresAt)}${isExpired(resume.limitedExpiresAt, now) ? '（過ぎています）' : ''}`
+                    ? `・${resume.limitedExpiresAt === null ? '' : '期限 '}${formatExpires(resume.limitedExpiresAt)}${isExpired(resume.limitedExpiresAt, now) ? '（過ぎています）' : ''}`
                     : ''
                 }`,
               muted: true,

@@ -10,6 +10,7 @@ import {
   CollectionEmpty,
   CollectionTable,
   CollectionToolbar,
+  PeriodLines,
   SplitView,
   ViewSwitch,
   withParam,
@@ -199,26 +200,31 @@ const Page = async ({ searchParams }: Props) => {
           selectedKey={selected}
           draftKey={(project) => `project:${project.uid}`}
           emphasized={skill === null ? undefined : (project) => hasSkill(project) === true}
+          subtitle={(project) => (
+            <>
+              {project.organizationName}・{PROJECT_KIND_LABELS[project.kind]}
+              <span className="md:hidden">・{periodText(project)}</span>
+            </>
+          )}
           columns={[
             { header: '題', cell: (project) => project.title },
-            { header: '組織', cell: (project) => project.organizationName, wide: true },
             {
-              header: '種類',
-              cell: (project) => PROJECT_KIND_LABELS[project.kind],
-              nowrap: true,
-              wide: true,
-            },
-            { header: '期間', cell: periodText, nowrap: true, muted: true },
-            {
-              header: 'サイト',
-              cell: (project) => (project.status === 'published' ? '載せる' : '載せない'),
+              header: '期間',
+              cell: (project) => <PeriodLines period={project.period} />,
               nowrap: true,
               muted: true,
               wide: true,
             },
             {
-              header: '秘匿化',
-              cell: (project) => (project.isMasked ? 'する' : 'しない'),
+              header: '状態',
+              cell: (project) => (
+                <>
+                  <span className="block">
+                    {project.status === 'published' ? 'サイトに載せる' : '載せない'}
+                  </span>
+                  <span className="block">{project.isMasked ? '秘匿化する' : '秘匿化しない'}</span>
+                </>
+              ),
               nowrap: true,
               muted: true,
               wide: true,

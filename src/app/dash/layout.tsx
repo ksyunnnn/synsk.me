@@ -9,13 +9,13 @@ import { DraftProvider } from '@/shared/components/drafts';
  */
 const Layout = ({ children }: { children: ReactNode }) => (
   <div className="min-h-dvh bg-muted/60">
-    <div className="mx-auto grid max-w-[1440px] gap-4 p-4 md:grid-cols-[220px_minmax(0,1fr)]">
-      <DashSidebar />
-      {/* 直しかけは管理画面の中を移っても残す（#366 の「直しかけの扱い」） */}
-      <DraftProvider>
+    {/* 直しかけは管理画面の中を移っても残し、Sidebar にも印を出す（#366 の「直しかけの扱い」） */}
+    <DraftProvider>
+      <div className="mx-auto grid max-w-[1440px] gap-4 p-4 md:grid-cols-[220px_minmax(0,1fr)]">
+        <DashSidebar />
         <div className="min-w-0">{children}</div>
-      </DraftProvider>
-    </div>
+      </div>
+    </DraftProvider>
   </div>
 );
 

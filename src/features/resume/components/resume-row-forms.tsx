@@ -321,8 +321,7 @@ export const ResumeSkillOverridesForm = ({
               <InputField
                 inputMode="numeric"
                 name={OVERRIDE_MONTHS_FIELD}
-                label="か月"
-                hint="0〜11"
+                label="か月（0〜11）"
                 defaultValue={row.months}
                 autoComplete="off"
                 error={invalid.has(index) ? '0〜11 の整数にしてください' : undefined}

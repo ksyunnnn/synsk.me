@@ -14,6 +14,7 @@ import {
   CollectionTable,
   CollectionToolbar,
   DetailHeading,
+  PeriodLines,
   SplitView,
   ViewSwitch,
   withParam,
@@ -143,16 +144,21 @@ const Page = async ({ params, searchParams }: Props) => {
           rowHref={(row) => link({ selected: row.uid })}
           selectedKey={selected}
           draftKey={(row) => `resume-project:${row.uid}`}
+          subtitle={(row) => (
+            <>
+              {row.organizationName}・{PROJECT_KIND_LABELS[row.kind]}
+              <span className="md:hidden">・{periodText(row)}</span>
+            </>
+          )}
           columns={[
             { header: '題', cell: (row) => row.title },
-            { header: '組織', cell: (row) => row.organizationName, wide: true },
             {
-              header: '種類',
-              cell: (row) => PROJECT_KIND_LABELS[row.kind],
+              header: '期間',
+              cell: (row) => <PeriodLines period={row.period} />,
               nowrap: true,
+              muted: true,
               wide: true,
             },
-            { header: '期間', cell: periodText, nowrap: true, muted: true },
           ]}
         />
       )}

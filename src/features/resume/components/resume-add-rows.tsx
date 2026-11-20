@@ -38,7 +38,7 @@ export const ResumeAddRows = ({
 
   return (
     <DashPage
-      back={{ href: routes.dash.resumes.row(resume.uid), label: '設定の画面へ戻る' }}
+      back={{ href: routes.dash.resumes.entries(resume.uid, kind), label: `写した${label}へ戻る` }}
       title={<>{label}を足す</>}
     >
       <p className="text-sm text-muted-foreground">

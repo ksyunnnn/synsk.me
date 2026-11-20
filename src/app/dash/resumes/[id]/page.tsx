@@ -37,7 +37,7 @@ const Page = async ({ params, searchParams }: Props) => {
 
   return (
     <main className="flex flex-col gap-8 rounded-3xl bg-background px-6 py-8 md:px-12">
-      <h2 className="text-heading-2 font-semibold tracking-heading">設定</h2>
+      <h2 className="sr-only">設定</h2>
       {saved === '1' && (
         <SavedNotice key={resume.updatedAt} flags={['saved']}>
           保存しました
@@ -51,7 +51,7 @@ const Page = async ({ params, searchParams }: Props) => {
       <p className="text-sm text-muted-foreground">
         {isLimited ? '限定公開用' : '公開用'}
         {isLimited &&
-          `・期限 ${formatExpires(resume.limitedExpiresAt)}${
+          `・${resume.limitedExpiresAt === null ? '' : '期限 '}${formatExpires(resume.limitedExpiresAt)}${
             isExpired(resume.limitedExpiresAt, now)
               ? '（過ぎています。訪問者には中身を返しません）'
               : ''

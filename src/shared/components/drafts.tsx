@@ -151,6 +151,9 @@ export const useDraft = <V extends Record<string, string>>(key: string, initialV
   return { values, hasDraft: entry !== undefined, bind };
 };
 
+/** 直しかけの鍵の一覧。鍵は `<オブジェクト>:<uid>`。Sidebar が、どのまとまりに直しかけがあるかを示すのに使う */
+export const useDraftKeys = (): string[] => [...(useContext(DraftContext)?.drafts.keys() ?? [])];
+
 /** 直しかけがあることの印。一覧の行とシングルに置く。色だけに頼らず、言葉も添える */
 export const DraftMark = ({ draftKey }: { draftKey: string }) => {
   const store = useContext(DraftContext);
