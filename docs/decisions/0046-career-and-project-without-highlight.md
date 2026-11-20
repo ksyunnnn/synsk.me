@@ -59,6 +59,7 @@ Chosen option: "職歴と実績が組織を指し、一覧は元の表を UNION 
 
 * Good, because note・project・career を直しても、一覧の行が古くならない。保存のときに書くのは元の 1 行だけ
 * Good, because 組織名と秘匿化した組織名を organization に 1 つだけ持つ。同じ組織の表記がぶれない。組織名を直すと、それを指す職歴と実績に反映する
+* Good, because 一度退社して同じ組織に戻ったときも、職歴を期間の違う 2 行で持てば、実績は期間の重なりでどちらの職歴に入るかが決まる。career と project が直接つながらないため、実績の側に職歴を選ぶ列が要らない
 * Bad, because 一覧を読む速さが D1 で確かめられていない。手元の SQLite（3.51.0、作り物のデータ）では速かったが、ビューの各腕の式の affinity が揃わないと全行を読む（[SQLite: Query Flattening](https://www.sqlite.org/optoverview.html#subquery_flattening)）
 * Bad, because 外部の取得元から取った activity は、元が DB の外にあるので写して持つしかない。取得元で直された値が古くなる危険は残る
 
