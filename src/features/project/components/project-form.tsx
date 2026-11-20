@@ -21,6 +21,7 @@ import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
 
@@ -99,7 +100,9 @@ export const ProjectForm = ({
   project,
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const { values, errors } = formStateOf(result, initialValues);
+  // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
+  const draft = useDraft(`project:${project?.uid ?? 'new'}`, initialValues);
+  const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: ProjectField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
@@ -108,7 +111,7 @@ export const ProjectForm = ({
   const checkedSkillIds = new Set(values.skillIds.split(','));
 
   return (
-    <form action={formAction} className="flex flex-col gap-8">
+    <form action={formAction} className="flex flex-col gap-8" {...draft.bind}>
       {project && (
         <>
           <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />
