@@ -66,6 +66,7 @@ const Page = async ({ searchParams }: Props) => {
     filter.organizationUid && organizations.find((o) => o.uid === filter.organizationUid)?.name,
     filter.kind && PROJECT_KIND_LABELS[filter.kind],
     filter.status && SITE_STATUS_LABELS[filter.status],
+    filter.isMasked !== null && (filter.isMasked ? '秘匿化する' : '秘匿化しない'),
   ].filter(Boolean);
   const experience = skill && toYearsAndMonths(skill.experienceMonths);
   const summary = [
@@ -127,6 +128,22 @@ const Page = async ({ searchParams }: Props) => {
               href: link({ skill: s.uid }),
               current: skill?.uid === s.uid,
             })),
+          ]}
+        />
+        <FilterMenu
+          label="秘匿化"
+          options={[
+            { label: 'すべて', href: link({ masked: null }), current: filter.isMasked === null },
+            {
+              label: '秘匿化する',
+              href: link({ masked: 'true' }),
+              current: filter.isMasked === true,
+            },
+            {
+              label: '秘匿化しない',
+              href: link({ masked: 'false' }),
+              current: filter.isMasked === false,
+            },
           ]}
         />
         <FilterMenu
@@ -192,6 +209,20 @@ const Page = async ({ searchParams }: Props) => {
               wide: true,
             },
             { header: '期間', cell: periodText, nowrap: true, muted: true },
+            {
+              header: 'サイト',
+              cell: (project) => (project.status === 'published' ? '載せる' : '載せない'),
+              nowrap: true,
+              muted: true,
+              wide: true,
+            },
+            {
+              header: '秘匿化',
+              cell: (project) => (project.isMasked ? 'する' : 'しない'),
+              nowrap: true,
+              muted: true,
+              wide: true,
+            },
           ]}
         />
       )}
