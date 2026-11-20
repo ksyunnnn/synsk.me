@@ -16,14 +16,16 @@ import {
   type ResumeProjectFormValues,
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
-import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { InputField, TextareaField } from '@/shared/components/field';
+import { useDraft } from '@/shared/components/drafts';
+import { FormGroup } from '@/shared/components/form-group';
+import { KindField } from '@/shared/components/kind-field';
 import {
   FORBIDDEN_INPUT_MESSAGE,
   FormAlert,
   INVALID_INPUT_MESSAGE,
 } from '@/shared/components/form-alert';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
-import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
 
@@ -60,25 +62,35 @@ type Action<V, E> = (
 ) => Promise<EditOutcome<V, E>>;
 
 /** 結果の知らせと、楽観ロックの値を持つフォームの枠 */
-const useRowForm = <V extends object, E>(action: Action<V, E>, initialValues: V) => {
+const useRowForm = <V extends object, E>(
+  action: Action<V, E>,
+  initialValues: V,
+  /** 直しかけを残す鍵。無ければ残さない */
+  draftKey?: string,
+) => {
   const [result, formAction] = useActionState(action, null);
-  const values = result && 'values' in result ? result.values : initialValues;
+  // 保存せずに別の 1 行を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
+  const draft = useDraft(draftKey ?? '', initialValues as Record<string, string>);
+  const initial = draftKey ? (draft.values as V) : initialValues;
+  const values = result && 'values' in result ? result.values : initial;
   const message = result && result.status !== 'saved' ? MESSAGES[result.status] : null;
-  return { result, formAction, values, message };
+  return { result, formAction, values, message, bind: draftKey ? draft.bind : undefined };
 };
 
 const Frame = ({
   formAction,
   target,
   message,
+  bind,
   children,
 }: {
   formAction: (formData: FormData) => void;
   target: Target;
   message: string | null;
+  bind?: ReturnType<typeof useDraft>['bind'];
   children: ReactNode;
 }) => (
-  <form action={formAction} className="flex flex-col gap-6">
+  <form action={formAction} className="flex flex-col gap-8" {...bind}>
     <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
     {target.rowUid !== undefined && (
       <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
@@ -108,7 +120,7 @@ const PeriodFields = ({
   errors: Record<string, FieldError | undefined>;
   endedHint: string;
 }) => (
-  <>
+  <div className="grid gap-4 sm:grid-cols-2">
     <InputField
       type="date"
       name="startedOn"
@@ -124,7 +136,7 @@ const PeriodFields = ({
       defaultValue={values.endedOn}
       error={errorText(errors, 'endedOn')}
     />
-  </>
+  </div>
 );
 
 type Errors = Partial<Record<string, FieldError>>;
@@ -138,10 +150,15 @@ export const ResumeCareerForm = ({
   initialValues: ResumeCareerFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message } = useRowForm(action, initialValues);
+  const { result, formAction, values, message, bind } = useRowForm(
+    action,
+    initialValues,
+    `resume-career:${target.rowUid ?? 'new'}`,
+  );
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message}>
+    <Frame formAction={formAction} target={target} message={message} bind={bind}>
+      <FormGroup title="どこで">
       <InputField
         name="organizationName"
         label="組織名"
@@ -156,7 +173,11 @@ export const ResumeCareerForm = ({
         autoComplete="off"
         error={errorText(errors, 'role')}
       />
-      <PeriodFields values={values} errors={errors} endedHint="所属が続いている職歴は空にします" />
+      </FormGroup>
+      <FormGroup title="いつ">
+        <PeriodFields values={values} errors={errors} endedHint="所属が続いているなら空にします" />
+      </FormGroup>
+      <FormGroup title="中身">
       <TextareaField name="description" label="本文" rows={8} defaultValue={values.description} />
       <InputField
         inputMode="url"
@@ -166,6 +187,7 @@ export const ResumeCareerForm = ({
         autoComplete="off"
         error={errorText(errors, 'url')}
       />
+      </FormGroup>
     </Frame>
   );
 };
@@ -179,54 +201,54 @@ export const ResumeProjectForm = ({
   initialValues: ResumeProjectFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message } = useRowForm(action, initialValues);
+  const { result, formAction, values, message, bind } = useRowForm(
+    action,
+    initialValues,
+    `resume-project:${target.rowUid ?? 'new'}`,
+  );
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
+  // 元の実績のフォームと、まとまりと部品をそろえる（#366 の明文化）
   return (
-    <Frame formAction={formAction} target={target} message={message}>
-      <InputField
-        name="organizationName"
-        label="組織名"
-        defaultValue={values.organizationName}
-        autoComplete="off"
-        error={errorText(errors, 'organizationName')}
-      />
-      <SelectField
-        name="kind"
-        label="種類"
-        defaultValue={values.kind}
-        error={errorText(errors, 'kind')}
-      >
-        {PROJECT_KINDS.map((kind) => (
-          <option key={kind} value={kind}>
-            {PROJECT_KIND_LABELS[kind]}
-          </option>
-        ))}
-      </SelectField>
-      <InputField
-        name="title"
-        label="題"
-        defaultValue={values.title}
-        autoComplete="off"
-        error={errorText(errors, 'title')}
-      />
-      <PeriodFields values={values} errors={errors} endedHint="続いている実績は空にします" />
-      <TextareaField
-        name="skills"
-        label="スキル"
-        hint="1 行に 1 つ書きます"
-        rows={4}
-        defaultValue={values.skills}
-        error={errorText(errors, 'skills')}
-      />
-      <TextareaField name="description" label="本文" rows={8} defaultValue={values.description} />
-      <InputField
-        inputMode="url"
-        name="url"
-        label="関連 URL"
-        defaultValue={values.url}
-        autoComplete="off"
-        error={errorText(errors, 'url')}
-      />
+    <Frame formAction={formAction} target={target} message={message} bind={bind}>
+      <FormGroup title="何を">
+        <KindField value={values.kind} error={errorText(errors, 'kind')} />
+        <InputField
+          name="title"
+          label="題"
+          defaultValue={values.title}
+          autoComplete="off"
+          error={errorText(errors, 'title')}
+        />
+        <InputField
+          name="organizationName"
+          label="組織名"
+          defaultValue={values.organizationName}
+          autoComplete="off"
+          error={errorText(errors, 'organizationName')}
+        />
+      </FormGroup>
+      <FormGroup title="いつ">
+        <PeriodFields values={values} errors={errors} endedHint="続いているなら空にします" />
+      </FormGroup>
+      <FormGroup title="中身">
+        <TextareaField name="description" label="本文" rows={8} defaultValue={values.description} />
+        <InputField
+          inputMode="url"
+          name="url"
+          label="関連 URL"
+          defaultValue={values.url}
+          autoComplete="off"
+          error={errorText(errors, 'url')}
+        />
+        <TextareaField
+          name="skills"
+          label="使ったスキル"
+          hint="1 行に 1 つ書きます。この職務経歴書にだけ効きます"
+          rows={4}
+          defaultValue={values.skills}
+          error={errorText(errors, 'skills')}
+        />
+      </FormGroup>
     </Frame>
   );
 };
@@ -240,10 +262,14 @@ export const ResumeEducationForm = ({
   initialValues: ResumeEducationFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message } = useRowForm(action, initialValues);
+  const { result, formAction, values, message, bind } = useRowForm(
+    action,
+    initialValues,
+    `resume-education:${target.rowUid ?? 'new'}`,
+  );
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message}>
+    <Frame formAction={formAction} target={target} message={message} bind={bind}>
       <InputField
         name="school"
         label="学校"

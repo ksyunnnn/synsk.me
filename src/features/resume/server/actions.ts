@@ -106,9 +106,12 @@ export const createResume = async (
   };
 };
 
-/** 書き込みの結果を画面に返す形にする。保存したら設定の画面へ移す */
-const finish = <V, E>({ uid }: ResumeTarget, outcome: EditOutcome<V, E>) => {
-  if (outcome.status === 'saved') redirect(`${routes.dash.resumes.row(uid)}?saved=1`);
+/**
+ * 書き込みの結果を画面に返す形にする。保存したら `next`（無ければ設定の画面）へ移す。写した行は、
+ * その行を選んだ中身の一覧へ戻る（#366 の明文化）
+ */
+const finish = <V, E>({ uid }: ResumeTarget, outcome: EditOutcome<V, E>, next?: string) => {
+  if (outcome.status === 'saved') redirect(`${next ?? routes.dash.resumes.row(uid)}?saved=1`);
   if (outcome.status === 'not-found') redirect(routes.dash.resumes.row(uid));
   return outcome;
 };
@@ -195,7 +198,7 @@ const readTarget = async (formData: FormData, kind: 'careers' | 'projects' | 'ed
 };
 
 /**
- * 作ったあとに、元の職歴・実績・学歴から選んだ行を足し、設定の画面へ移す（FR-041）。
+ * 作ったあとに、元の職歴・実績・学歴から選んだ行を足し、足した種類の一覧へ移す（FR-041）。
  * 選んだ id は種類ごとに作成と同じ名前（`SELECTION_FIELDS`）で送る
  */
 export const addResumeRows = async (
@@ -216,6 +219,7 @@ export const addResumeRows = async (
       readStrings(formData, SELECTION_FIELDS[SELECTION_KEY_OF_KIND[kind]]),
       readTimes(formData),
     ),
+    routes.dash.resumes.entries(target.uid, kind),
   );
 };
 
@@ -226,6 +230,7 @@ export const editResumeCareer = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'careers');
+  const next = routes.dash.resumes.entry(resume.uid, 'careers', readString(formData, ROW_UID_FIELD));
   return finish(
     resume,
     await editResumeCareerUseCase(
@@ -235,6 +240,7 @@ export const editResumeCareer = async (
       readValues(formData, RESUME_CAREER_FIELDS),
       readTimes(formData),
     ),
+    next,
   );
 };
 
@@ -245,6 +251,7 @@ export const editResumeProject = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'projects');
+  const next = routes.dash.resumes.entry(resume.uid, 'projects', readString(formData, ROW_UID_FIELD));
   return finish(
     resume,
     await editResumeProjectUseCase(
@@ -254,6 +261,7 @@ export const editResumeProject = async (
       readValues(formData, RESUME_PROJECT_FIELDS),
       readTimes(formData),
     ),
+    next,
   );
 };
 
@@ -264,6 +272,7 @@ export const editResumeEducation = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'educations');
+  const next = routes.dash.resumes.entry(resume.uid, 'educations', readString(formData, ROW_UID_FIELD));
   return finish(
     resume,
     await editResumeEducationUseCase(
@@ -273,6 +282,7 @@ export const editResumeEducation = async (
       readValues(formData, RESUME_EDUCATION_FIELDS),
       readTimes(formData),
     ),
+    next,
   );
 };
 
@@ -295,6 +305,7 @@ export const editResumeSkillOverrides = async (
   return finish(
     target,
     await editResumeSkillOverridesUseCase(resumes, author, target.id, rows, readTimes(formData)),
+    routes.dash.resumes.skills(target.uid),
   );
 };
 

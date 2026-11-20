@@ -94,6 +94,8 @@ export const routes = {
       ...resumes,
       preview: (uid: string) => `${resumes.row(uid)}/preview`,
       skills: (uid: string) => `${resumes.row(uid)}/skills`,
+      /** 写した行の一覧。職務経歴書の中身を切り替えるタブの 1 つ（#366 の明文化） */
+      entries: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}`,
       entryNew: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}/new`,
       entry: (uid: string, kind: ResumeEntryKind, rowUid: string) =>
         `${resumes.row(uid)}/${kind}/${rowUid}`,

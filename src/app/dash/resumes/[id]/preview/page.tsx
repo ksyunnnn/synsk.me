@@ -2,8 +2,6 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { VisitorResumeView } from '@/features/resume/components/visitor-resume';
 import { getResumePreview } from '@/features/resume/server/queries';
-import { TextLink } from '@/shared/components/text-link';
-import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -24,10 +22,10 @@ const Page = async ({ params }: Props) => {
   if (!resume) notFound();
 
   return (
-    <main>
+    <main className="overflow-hidden rounded-3xl bg-background">
       <VisitorResumeView
         resume={resume}
-        toolbarStart={<TextLink href={routes.dash.resumes.row(id)}>設定の画面へ戻る</TextLink>}
+        toolbarStart={<span className="text-small text-muted-foreground">訪問者に見せたときの見た目</span>}
       />
     </main>
   );

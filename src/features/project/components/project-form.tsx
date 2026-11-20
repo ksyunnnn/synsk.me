@@ -20,9 +20,9 @@ import { OrganizationNameFields } from '@/shared/components/organization-name-fi
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
-import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
+import { KindField } from '@/shared/components/kind-field';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
 
@@ -126,27 +126,7 @@ export const ProjectForm = ({
       </SettingsGroup>
 
       <FormGroup title="何を">
-        <fieldset className="flex flex-col gap-1">
-          <legend className="text-small font-medium">種類</legend>
-          {/* 4 つから 1 つを選ぶ。値が少なく決まっているので、並べて一目で選べる形にする */}
-          <div className="grid grid-cols-4 rounded-xl bg-muted p-0.5 text-small">
-            {PROJECT_KINDS.map((kind) => (
-              <label key={kind} className="relative">
-                <input
-                  type="radio"
-                  name="kind"
-                  value={kind}
-                  defaultChecked={values.kind === kind}
-                  className="peer sr-only"
-                />
-                <span className="block cursor-pointer rounded-[10px] py-1.5 text-center text-muted-foreground transition-colors peer-checked:bg-background peer-checked:font-medium peer-checked:text-foreground peer-checked:shadow-sm peer-focus-visible:outline-2 peer-focus-visible:outline-ring motion-reduce:transition-none">
-                  {PROJECT_KIND_LABELS[kind]}
-                </span>
-              </label>
-            ))}
-          </div>
-          {errorOf('kind') && <p className="text-sm text-destructive">{errorOf('kind')}</p>}
-        </fieldset>
+        <KindField value={values.kind} error={errorOf('kind')} />
         <InputField
           name="title"
           label="題"
