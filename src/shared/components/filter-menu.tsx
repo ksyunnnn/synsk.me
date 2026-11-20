@@ -37,6 +37,7 @@ export const FilterMenu = ({
             {options.map((option) => (
               <Menu.LinkItem
                 key={option.label}
+                closeOnClick
                 render={<Link href={option.href} scroll={false} />}
                 className="flex items-center gap-2 rounded-xl px-3 py-1.5 outline-none data-[highlighted]:bg-tint data-[highlighted]:text-tint-foreground"
               >

@@ -12,7 +12,7 @@ import type { ReactNode } from 'react';
 export const FormActions = ({ children }: { children: ReactNode }) => (
   <div
     data-form-actions=""
-    className="glass sticky bottom-4 flex flex-wrap items-center justify-end gap-4 rounded-full p-1.5"
+    className="glass sticky bottom-4 flex w-fit flex-wrap items-center gap-4 self-end rounded-full p-1.5"
   >
     {children}
   </div>

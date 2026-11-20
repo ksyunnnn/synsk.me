@@ -94,6 +94,17 @@ export const useDraft = <V extends Record<string, string>>(key: string, initialV
   const entry = store?.drafts.get(key);
   // 直しかけが無いときに開いた値。元の値と比べ、変わっていなければ直しかけにしない
   const mounted = useRef<Draft | null>(null);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  // 送信した後は、残っている読み取りで直しかけを作り直さない
+  const submitting = useRef(false);
+  const hadEntry = useRef(entry !== undefined);
+  useEffect(() => {
+    // 部品（Switch など）が隠れた値を入れた後に、元の値を読む
+    const timer = setTimeout(() => {
+      if (!hadEntry.current && formRef.current) mounted.current = serialize(formRef.current);
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
 
   const values = useMemo(
     () => (entry ? ({ ...initialValues, ...entry.values } as V) : initialValues),
@@ -106,6 +117,7 @@ export const useDraft = <V extends Record<string, string>>(key: string, initialV
     if (!store) return;
     // 部品（Switch など）が値を書き換えた後に読む
     setTimeout(() => {
+      if (submitting.current) return;
       const current = serialize(form);
       const baseline = store.drafts.get(key)?.baseline ?? mounted.current ?? current;
       const changed = Object.keys({ ...baseline, ...current }).some(
@@ -118,12 +130,22 @@ export const useDraft = <V extends Record<string, string>>(key: string, initialV
 
   const bind = {
     ref: (form: HTMLFormElement | null) => {
-      if (form && mounted.current === null && !entry) mounted.current = serialize(form);
+      formRef.current = form;
     },
-    onInput: (event: FormEvent<HTMLFormElement>) => capture(event.currentTarget),
-    onChange: (event: FormEvent<HTMLFormElement>) => capture(event.currentTarget),
+    // 入力し直したら（保存に失敗した後など）、また直しかけを残す
+    onInput: (event: FormEvent<HTMLFormElement>) => {
+      submitting.current = false;
+      capture(event.currentTarget);
+    },
+    onChange: (event: FormEvent<HTMLFormElement>) => {
+      submitting.current = false;
+      capture(event.currentTarget);
+    },
     onClick: (event: FormEvent<HTMLFormElement>) => capture(event.currentTarget),
-    onSubmit: () => store?.clear(key),
+    onSubmit: () => {
+      submitting.current = true;
+      store?.clear(key);
+    },
   };
 
   return { values, hasDraft: entry !== undefined, bind };
