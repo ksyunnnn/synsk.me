@@ -321,7 +321,10 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       ]);
       const skillsByProject = new Map<number, number[]>();
       for (const row of skills.results as { project_id: number; skill_id: number }[]) {
-        skillsByProject.set(row.project_id, [...(skillsByProject.get(row.project_id) ?? []), row.skill_id]);
+        skillsByProject.set(row.project_id, [
+          ...(skillsByProject.get(row.project_id) ?? []),
+          row.skill_id,
+        ]);
       }
       const keysByProject = new Map<number, string[]>();
       for (const row of media.results as { project_id: number; storage_key: string }[]) {

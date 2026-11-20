@@ -72,7 +72,8 @@ const Page = async ({ searchParams }: Props) => {
 
   const detail = async (uid: string) => {
     const education = await getEducationForEdit(uid);
-    if (!education) return <p className="py-12 text-center text-muted-foreground">この学歴はありません</p>;
+    if (!education)
+      return <p className="py-12 text-center text-muted-foreground">この学歴はありません</p>;
     return (
       <div className="flex flex-col gap-6">
         <DetailHeading
@@ -87,7 +88,9 @@ const Page = async ({ searchParams }: Props) => {
           educationUid={education.uid}
         />
         <p className="border-t border-border pt-6 text-small">
-          <TextLink href={routes.dash.educations.delete(education.uid)}>この学歴を削除する</TextLink>
+          <TextLink href={routes.dash.educations.delete(education.uid)}>
+            この学歴を削除する
+          </TextLink>
         </p>
       </div>
     );

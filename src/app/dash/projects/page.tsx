@@ -94,7 +94,11 @@ const Page = async ({ searchParams }: Props) => {
         <FilterMenu
           label="組織"
           options={[
-            { label: 'すべて', href: link({ org: null }), current: filter.organizationUid === null },
+            {
+              label: 'すべて',
+              href: link({ org: null }),
+              current: filter.organizationUid === null,
+            },
             ...organizations.map((o) => ({
               label: o.name,
               href: link({ org: o.uid }),
@@ -161,7 +165,9 @@ const Page = async ({ searchParams }: Props) => {
             emphasized: hasSkill(project),
           }))}
           bands={careers
-            .filter((career) => projects.some((p) => p.organizationName === career.organizationName))
+            .filter((career) =>
+              projects.some((p) => p.organizationName === career.organizationName),
+            )
             .map((career) => ({
               key: career.uid,
               label: `${career.organizationName}・${career.role}`,
@@ -179,7 +185,12 @@ const Page = async ({ searchParams }: Props) => {
           columns={[
             { header: '題', cell: (project) => project.title },
             { header: '組織', cell: (project) => project.organizationName, wide: true },
-            { header: '種類', cell: (project) => PROJECT_KIND_LABELS[project.kind], nowrap: true, wide: true },
+            {
+              header: '種類',
+              cell: (project) => PROJECT_KIND_LABELS[project.kind],
+              nowrap: true,
+              wide: true,
+            },
             { header: '期間', cell: periodText, nowrap: true, muted: true },
           ]}
         />

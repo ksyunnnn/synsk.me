@@ -159,34 +159,34 @@ export const ResumeCareerForm = ({
   return (
     <Frame formAction={formAction} target={target} message={message} bind={bind}>
       <FormGroup title="どこで">
-      <InputField
-        name="organizationName"
-        label="組織名"
-        defaultValue={values.organizationName}
-        autoComplete="off"
-        error={errorText(errors, 'organizationName')}
-      />
-      <InputField
-        name="role"
-        label="肩書"
-        defaultValue={values.role}
-        autoComplete="off"
-        error={errorText(errors, 'role')}
-      />
+        <InputField
+          name="organizationName"
+          label="組織名"
+          defaultValue={values.organizationName}
+          autoComplete="off"
+          error={errorText(errors, 'organizationName')}
+        />
+        <InputField
+          name="role"
+          label="肩書"
+          defaultValue={values.role}
+          autoComplete="off"
+          error={errorText(errors, 'role')}
+        />
       </FormGroup>
       <FormGroup title="いつ">
         <PeriodFields values={values} errors={errors} endedHint="所属が続いているなら空にします" />
       </FormGroup>
       <FormGroup title="中身">
-      <TextareaField name="description" label="本文" rows={8} defaultValue={values.description} />
-      <InputField
-        inputMode="url"
-        name="url"
-        label="関連 URL"
-        defaultValue={values.url}
-        autoComplete="off"
-        error={errorText(errors, 'url')}
-      />
+        <TextareaField name="description" label="本文" rows={8} defaultValue={values.description} />
+        <InputField
+          inputMode="url"
+          name="url"
+          label="関連 URL"
+          defaultValue={values.url}
+          autoComplete="off"
+          error={errorText(errors, 'url')}
+        />
       </FormGroup>
     </Frame>
   );

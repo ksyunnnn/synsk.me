@@ -230,7 +230,11 @@ export const editResumeCareer = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'careers');
-  const next = routes.dash.resumes.entry(resume.uid, 'careers', readString(formData, ROW_UID_FIELD));
+  const next = routes.dash.resumes.entry(
+    resume.uid,
+    'careers',
+    readString(formData, ROW_UID_FIELD),
+  );
   return finish(
     resume,
     await editResumeCareerUseCase(
@@ -251,7 +255,11 @@ export const editResumeProject = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'projects');
-  const next = routes.dash.resumes.entry(resume.uid, 'projects', readString(formData, ROW_UID_FIELD));
+  const next = routes.dash.resumes.entry(
+    resume.uid,
+    'projects',
+    readString(formData, ROW_UID_FIELD),
+  );
   return finish(
     resume,
     await editResumeProjectUseCase(
@@ -272,7 +280,11 @@ export const editResumeEducation = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'educations');
-  const next = routes.dash.resumes.entry(resume.uid, 'educations', readString(formData, ROW_UID_FIELD));
+  const next = routes.dash.resumes.entry(
+    resume.uid,
+    'educations',
+    readString(formData, ROW_UID_FIELD),
+  );
   return finish(
     resume,
     await editResumeEducationUseCase(

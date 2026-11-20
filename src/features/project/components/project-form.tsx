@@ -166,7 +166,9 @@ export const ProjectForm = ({
             error={errorOf('endedOn')}
           />
         </div>
-        <p className="-mt-2 text-caption text-muted-foreground">終わりの日は、続いているなら空にします</p>
+        <p className="-mt-2 text-caption text-muted-foreground">
+          終わりの日は、続いているなら空にします
+        </p>
       </FormGroup>
 
       <FormGroup title="中身">

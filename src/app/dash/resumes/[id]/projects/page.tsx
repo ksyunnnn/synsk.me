@@ -72,7 +72,10 @@ const Page = async ({ params, searchParams }: Props) => {
       <CollectionToolbar
         title="写した実績"
         summary={[`${rows.length} 件`, ...conditions].join('・')}
-        action={{ href: routes.dash.resumes.entryNew(resume.uid, 'projects'), label: '経歴から写す' }}
+        action={{
+          href: routes.dash.resumes.entryNew(resume.uid, 'projects'),
+          label: '経歴から写す',
+        }}
       >
         <ViewSwitch
           options={[
@@ -124,7 +127,9 @@ const Page = async ({ params, searchParams }: Props) => {
           }))}
           // 写した職歴を、組織名が同じものだけ帯にする（写しは元と切り離されているので、写しどうしで求める）
           bands={resume.careers
-            .filter((career) => rows.some((row) => row.organizationName === career.organizationName))
+            .filter((career) =>
+              rows.some((row) => row.organizationName === career.organizationName),
+            )
             .map((career) => ({
               key: career.uid,
               label: `${career.organizationName}・${career.role}`,
@@ -141,7 +146,12 @@ const Page = async ({ params, searchParams }: Props) => {
           columns={[
             { header: '題', cell: (row) => row.title },
             { header: '組織', cell: (row) => row.organizationName, wide: true },
-            { header: '種類', cell: (row) => PROJECT_KIND_LABELS[row.kind], nowrap: true, wide: true },
+            {
+              header: '種類',
+              cell: (row) => PROJECT_KIND_LABELS[row.kind],
+              nowrap: true,
+              wide: true,
+            },
             { header: '期間', cell: periodText, nowrap: true, muted: true },
           ]}
         />
@@ -154,7 +164,12 @@ const Page = async ({ params, searchParams }: Props) => {
     <div className="flex flex-col gap-6">
       <DetailHeading title={row.title} draftKey={`resume-project:${row.uid}`}>
         <DetailFacts
-          facts={[{ label: '効く範囲', value: `この職務経歴書（${resume.title}）だけ。元の実績は変わりません` }]}
+          facts={[
+            {
+              label: '効く範囲',
+              value: `この職務経歴書（${resume.title}）だけ。元の実績は変わりません`,
+            },
+          ]}
         />
       </DetailHeading>
       {first(raw.saved) === '1' && (

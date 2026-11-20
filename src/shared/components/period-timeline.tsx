@@ -66,7 +66,10 @@ export const PeriodTimeline = ({
         })}
       </div>
       {bands.length > 0 && (
-        <ul aria-label="職歴（期間の重なりで求めたもの）" className="mb-3 flex flex-col gap-2 border-b border-border/60 pb-3">
+        <ul
+          aria-label="職歴（期間の重なりで求めたもの）"
+          className="mb-3 flex flex-col gap-2 border-b border-border/60 pb-3"
+        >
           {bands.map((band) => (
             <li key={band.key} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-0">
               <span className="pt-0.5 text-caption text-muted-foreground">職歴</span>

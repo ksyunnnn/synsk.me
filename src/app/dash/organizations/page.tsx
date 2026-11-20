@@ -2,10 +2,7 @@ import type { Metadata } from 'next';
 import { listCareers } from '@/features/career/server/queries';
 import { OrganizationForm } from '@/features/organization/components/organization-form';
 import { editOrganization } from '@/features/organization/server/actions';
-import {
-  getOrganizationForEdit,
-  listOrganizations,
-} from '@/features/organization/server/queries';
+import { getOrganizationForEdit, listOrganizations } from '@/features/organization/server/queries';
 import { listProjects } from '@/features/project/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
 import { SavedNotice } from '@/shared/components/saved-notice';
@@ -74,8 +71,18 @@ const Page = async ({ searchParams }: Props) => {
           draftKey={(o) => `organization:${o.uid}`}
           columns={[
             { header: '組織名', cell: (o) => o.name },
-            { header: '職歴', cell: (o) => `${careersOf(o.name).length} 件`, nowrap: true, muted: true },
-            { header: '実績', cell: (o) => `${projectsOf(o.name).length} 件`, nowrap: true, muted: true },
+            {
+              header: '職歴',
+              cell: (o) => `${careersOf(o.name).length} 件`,
+              nowrap: true,
+              muted: true,
+            },
+            {
+              header: '実績',
+              cell: (o) => `${projectsOf(o.name).length} 件`,
+              nowrap: true,
+              muted: true,
+            },
           ]}
         />
       )}
@@ -84,7 +91,8 @@ const Page = async ({ searchParams }: Props) => {
 
   const detail = async (uid: string) => {
     const found = await getOrganizationForEdit(uid);
-    if (!found) return <p className="py-12 text-center text-muted-foreground">この組織はありません</p>;
+    if (!found)
+      return <p className="py-12 text-center text-muted-foreground">この組織はありません</p>;
     const { organization, references } = found;
     const own = careersOf(organization.name).sort((a, b) =>
       b.period.startedOn.localeCompare(a.period.startedOn),
@@ -111,7 +119,10 @@ const Page = async ({ searchParams }: Props) => {
                           <span className="text-muted-foreground">
                             {' '}
                             {formatPeriod(career.period)}・実績{' '}
-                            {ownProjects.filter((p) => periodsOverlap(career.period, p.period)).length}{' '}
+                            {
+                              ownProjects.filter((p) => periodsOverlap(career.period, p.period))
+                                .length
+                            }{' '}
                             件
                           </span>
                         </li>

@@ -46,7 +46,10 @@ const Page = async ({ params, searchParams }: Props) => {
       <CollectionToolbar
         title="写した学歴"
         summary={`${rows.length} 件`}
-        action={{ href: routes.dash.resumes.entryNew(resume.uid, 'educations'), label: '経歴から写す' }}
+        action={{
+          href: routes.dash.resumes.entryNew(resume.uid, 'educations'),
+          label: '経歴から写す',
+        }}
       />
       {rows.length === 0 ? (
         <CollectionEmpty>写した学歴はありません</CollectionEmpty>

@@ -25,7 +25,9 @@ const Page = async ({ params }: Props) => {
     <main className="overflow-hidden rounded-3xl bg-background">
       <VisitorResumeView
         resume={resume}
-        toolbarStart={<span className="text-small text-muted-foreground">訪問者に見せたときの見た目</span>}
+        toolbarStart={
+          <span className="text-small text-muted-foreground">訪問者に見せたときの見た目</span>
+        }
       />
     </main>
   );

@@ -8,7 +8,13 @@ import { routes } from '@/shared/routes';
  * 職務経歴書のシングル。上にパンくずと題、中身を切り替える Tab view を置き、下に選んだ中身を出す
  * （#366 の明文化の「職務経歴書」）。パンくずは W3C APG Breadcrumb の形にする
  */
-const Layout = async ({ params, children }: { params: Promise<{ id: string }>; children: ReactNode }) => {
+const Layout = async ({
+  params,
+  children,
+}: {
+  params: Promise<{ id: string }>;
+  children: ReactNode;
+}) => {
   // オーナーでなければ、読む前に 403 になる
   const resume = await getResumeForEdit((await params).id);
   // 無い職務経歴書（`missing` の画面など）は、ページに任せる

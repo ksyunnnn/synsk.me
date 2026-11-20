@@ -54,7 +54,10 @@ const Page = async ({ params, searchParams }: Props) => {
       <CollectionToolbar
         title="写した職歴"
         summary={`${rows.length} 件`}
-        action={{ href: routes.dash.resumes.entryNew(resume.uid, 'careers'), label: '経歴から写す' }}
+        action={{
+          href: routes.dash.resumes.entryNew(resume.uid, 'careers'),
+          label: '経歴から写す',
+        }}
       >
         <ViewSwitch
           options={[
@@ -105,7 +108,10 @@ const Page = async ({ params, searchParams }: Props) => {
       >
         <DetailFacts
           facts={[
-            { label: '効く範囲', value: `この職務経歴書（${resume.title}）だけ。元の職歴は変わりません` },
+            {
+              label: '効く範囲',
+              value: `この職務経歴書（${resume.title}）だけ。元の職歴は変わりません`,
+            },
           ]}
         />
       </DetailHeading>

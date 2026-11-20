@@ -71,7 +71,8 @@ const Page = async ({ searchParams }: Props) => {
             { header: '名前', cell: (s) => s.name },
             {
               header: '経験年数',
-              cell: (s) => `${formatMonths(s.experienceMonths)}${s.monthsOverride !== null ? '（上書き）' : ''}`,
+              cell: (s) =>
+                `${formatMonths(s.experienceMonths)}${s.monthsOverride !== null ? '（上書き）' : ''}`,
               nowrap: true,
             },
             {
@@ -113,7 +114,12 @@ const Page = async ({ searchParams }: Props) => {
           />
         </DetailHeading>
         {first(raw.saved) === '1' && <SavedNotice flags={['saved']}>保存しました</SavedNotice>}
-        <SkillForm key={uid} action={editSkill} initialValues={toSkillFormValues(skill)} skillUid={uid} />
+        <SkillForm
+          key={uid}
+          action={editSkill}
+          initialValues={toSkillFormValues(skill)}
+          skillUid={uid}
+        />
         <p className="border-t border-border pt-6 text-small">
           <TextLink href={routes.dash.skills.delete(uid)}>このスキルを削除する</TextLink>
         </p>

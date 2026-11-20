@@ -26,7 +26,8 @@ export const CareerDetail = async ({
   flags: Record<string, string | undefined>;
 }) => {
   const career = await getCareerForEdit(uid);
-  if (!career) return <p className="py-12 text-center text-muted-foreground">この職歴はありません</p>;
+  if (!career)
+    return <p className="py-12 text-center text-muted-foreground">この職歴はありません</p>;
   const [organizationNames, { projects, organizations }] = await Promise.all([
     listOrganizationNames(),
     listProjects(NO_FILTER),
