@@ -90,7 +90,7 @@ const Page = async ({ searchParams }: Props) => {
           </div>
           <Link
             href={routes.dash.projects.new}
-            className="rounded-full bg-primary px-4 py-1.5 text-small font-medium text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+            className="rounded-full bg-tint px-4 py-1.5 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
           >
             追加
           </Link>

@@ -42,7 +42,7 @@ export const ProjectTable = ({
             key={project.uid}
             className={cn(
               'relative border-t border-border/60',
-              selected ? 'bg-primary text-primary-foreground' : 'hover:bg-muted/70',
+              selected ? 'bg-tint/12' : 'hover:bg-muted/70',
             )}
           >
             <td className="px-3 py-2.5">
@@ -61,7 +61,7 @@ export const ProjectTable = ({
             <td
               className={cn(
                 'whitespace-nowrap px-3 py-2.5 tabular-nums',
-                !selected && 'text-muted-foreground',
+                'text-muted-foreground',
               )}
             >
               {formatPeriod(project.period)}

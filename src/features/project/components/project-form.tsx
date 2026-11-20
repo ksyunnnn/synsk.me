@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, type ReactNode } from 'react';
 import {
   OPENED_UPDATED_AT_FIELD,
   PROJECT_UID_FIELD,
@@ -9,7 +9,7 @@ import {
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
-import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { InputField, TextareaField } from '@/shared/components/field';
 import {
   FORBIDDEN_INPUT_MESSAGE,
   FormAlert,
@@ -83,6 +83,14 @@ const RESULT_MESSAGES = {
     'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
 } as const;
 
+/** 項目のまとまり。見出しで区切り、まとまりの中の項目を縦に並べる */
+const FormGroup = ({ title, children }: { title: string; children: ReactNode }) => (
+  <section className="flex flex-col gap-4">
+    <h3 className="text-caption font-medium text-muted-foreground">{title}</h3>
+    {children}
+  </section>
+);
+
 export const ProjectForm = ({
   action,
   initialValues,
@@ -100,7 +108,7 @@ export const ProjectForm = ({
   const checkedSkillIds = new Set(values.skillIds.split(','));
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form action={formAction} className="flex flex-col gap-8">
       {project && (
         <>
           <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />
@@ -112,113 +120,141 @@ export const ProjectForm = ({
         <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
 
-      <SiteStatusField status={values.status} />
-
-      <MaskingField
-        isMasked={values.isMasked}
-        description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
-      />
-
-      <OrganizationNameFields
-        organizationNames={organizationNames}
-        organizationName={values.organizationName}
-        organizationNameMasked={values.organizationNameMasked}
-        errorOf={errorOf}
-      />
-      <SelectField name="kind" label="種類" defaultValue={values.kind} error={errorOf('kind')}>
-        {PROJECT_KINDS.map((kind) => (
-          <option key={kind} value={kind}>
-            {PROJECT_KIND_LABELS[kind]}
-          </option>
-        ))}
-      </SelectField>
-      <InputField
-        name="title"
-        label="題"
-        defaultValue={values.title}
-        autoComplete="off"
-        error={errorOf('title')}
-      />
-      <InputField
-        name="titleMasked"
-        label="秘匿化した題"
-        defaultValue={values.titleMasked}
-        autoComplete="off"
-        error={errorOf('titleMasked')}
-      />
-      {project && (
-        <InputField
-          name="slug"
-          label="識別子"
-          hint={
-            project.isMasked
-              ? '秘匿化した実績の識別子は変えられません。秘匿化を外して保存した後に変えられます'
-              : 'URL に出ます。英小文字・数字・ハイフンで、100 文字まで。秘匿化に切り替えると、新しい識別子になります'
-          }
-          defaultValue={values.slug}
-          readOnly={project.isMasked}
-          autoComplete="off"
-          error={errorOf('slug')}
+      {/* 公開の設定。オンとオフの 2 つを 1 つのまとまりに並べる */}
+      <div className="divide-y divide-border rounded-2xl bg-muted/50 px-4">
+        <SiteStatusField status={values.status} />
+        <MaskingField
+          isMasked={values.isMasked}
+          description="訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
         />
-      )}
-      <InputField
-        type="date"
-        name="startedOn"
-        label="始まりの日"
-        defaultValue={values.startedOn}
-        error={errorOf('startedOn')}
-      />
-      <InputField
-        type="date"
-        name="endedOn"
-        label="終わりの日"
-        hint="続いている実績は空にします"
-        defaultValue={values.endedOn}
-        error={errorOf('endedOn')}
-      />
-      <TextareaField
-        name="description"
-        label="本文"
-        rows={8}
-        defaultValue={values.description}
-        error={errorOf('description')}
-      />
-      <InputField
-        inputMode="url"
-        name="url"
-        label="関連 URL"
-        defaultValue={values.url}
-        autoComplete="off"
-        error={errorOf('url')}
-      />
+      </div>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="font-bold">使ったスキル</legend>
-        {skillOptions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            スキルは、スキルの画面で登録するとここで選べます
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            {skillOptions.map((skill) => (
-              <label key={skill.id} className="flex items-center gap-2">
+      <FormGroup title="何を">
+        <fieldset className="flex flex-col gap-1">
+          <legend className="text-small font-medium">種類</legend>
+          {/* 4 つから 1 つを選ぶ。値が少なく決まっているので、並べて一目で選べる形にする */}
+          <div className="grid grid-cols-4 rounded-xl bg-muted p-0.5 text-small">
+            {PROJECT_KINDS.map((kind) => (
+              <label key={kind} className="relative">
                 <input
-                  type="checkbox"
-                  name="skillIds"
-                  value={skill.id}
-                  defaultChecked={checkedSkillIds.has(String(skill.id))}
-                  className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  type="radio"
+                  name="kind"
+                  value={kind}
+                  defaultChecked={values.kind === kind}
+                  className="peer sr-only"
                 />
-                {skill.name}
+                <span className="block cursor-pointer rounded-[10px] py-1.5 text-center text-muted-foreground transition-colors peer-checked:bg-background peer-checked:font-medium peer-checked:text-foreground peer-checked:shadow-sm peer-focus-visible:outline-2 peer-focus-visible:outline-ring motion-reduce:transition-none">
+                  {PROJECT_KIND_LABELS[kind]}
+                </span>
               </label>
             ))}
           </div>
+          {errorOf('kind') && <p className="text-sm text-destructive">{errorOf('kind')}</p>}
+        </fieldset>
+        <InputField
+          name="title"
+          label="題"
+          defaultValue={values.title}
+          autoComplete="off"
+          error={errorOf('title')}
+        />
+        <InputField
+          name="titleMasked"
+          label="秘匿化した題"
+          defaultValue={values.titleMasked}
+          autoComplete="off"
+          error={errorOf('titleMasked')}
+        />
+        <OrganizationNameFields
+          organizationNames={organizationNames}
+          organizationName={values.organizationName}
+          organizationNameMasked={values.organizationNameMasked}
+          errorOf={errorOf}
+        />
+      </FormGroup>
+
+      <FormGroup title="いつ">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <InputField
+            type="date"
+            name="startedOn"
+            label="始まりの日"
+            defaultValue={values.startedOn}
+            error={errorOf('startedOn')}
+          />
+          <InputField
+            type="date"
+            name="endedOn"
+            label="終わりの日"
+            hint="続いているなら空にします"
+            defaultValue={values.endedOn}
+            error={errorOf('endedOn')}
+          />
+        </div>
+      </FormGroup>
+
+      <FormGroup title="中身">
+        <TextareaField
+          name="description"
+          label="本文"
+          rows={8}
+          defaultValue={values.description}
+          error={errorOf('description')}
+        />
+        <InputField
+          inputMode="url"
+          name="url"
+          label="関連 URL"
+          defaultValue={values.url}
+          autoComplete="off"
+          error={errorOf('url')}
+        />
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-small font-medium">使ったスキル</legend>
+          {skillOptions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              スキルは、スキルの画面で登録するとここで選べます
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {skillOptions.map((skill) => (
+                <label key={skill.id}>
+                  <input
+                    type="checkbox"
+                    name="skillIds"
+                    value={skill.id}
+                    defaultChecked={checkedSkillIds.has(String(skill.id))}
+                    className="peer sr-only"
+                  />
+                  {/* 選んだスキルは塗り、選んでいないものは枠だけにし、色だけに頼らない（WCAG 2.2 SC 1.4.1） */}
+                  <span className="block cursor-pointer rounded-full border border-border px-3 py-1 text-small transition-colors peer-checked:border-tint peer-checked:bg-tint peer-checked:text-tint-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring motion-reduce:transition-none">
+                    {skill.name}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
+        </fieldset>
+        {project && (
+          <InputField
+            name="slug"
+            label="識別子"
+            hint={
+              project.isMasked
+                ? '秘匿化した実績の識別子は変えられません。秘匿化を外して保存した後に変えられます'
+                : 'URL に出ます。英小文字・数字・ハイフンで、100 文字まで。秘匿化に切り替えると、新しい識別子になります'
+            }
+            defaultValue={values.slug}
+            readOnly={project.isMasked}
+            autoComplete="off"
+            error={errorOf('slug')}
+          />
         )}
-        {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
-      </fieldset>
+      </FormGroup>
 
       <FormActions>
-        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {project ? '保存する' : '登録する'}
         </SubmitButton>
       </FormActions>
