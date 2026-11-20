@@ -162,11 +162,11 @@ export const ProjectForm = ({
             type="date"
             name="endedOn"
             label="終わりの日"
-            hint="続いているなら空にします"
             defaultValue={values.endedOn}
             error={errorOf('endedOn')}
           />
         </div>
+        <p className="-mt-2 text-caption text-muted-foreground">終わりの日は、続いているなら空にします</p>
       </FormGroup>
 
       <FormGroup title="中身">

@@ -140,8 +140,8 @@ const Page = async ({ params, searchParams }: Props) => {
           draftKey={(row) => `resume-project:${row.uid}`}
           columns={[
             { header: '題', cell: (row) => row.title },
-            { header: '組織', cell: (row) => row.organizationName },
-            { header: '種類', cell: (row) => PROJECT_KIND_LABELS[row.kind], nowrap: true },
+            { header: '組織', cell: (row) => row.organizationName, wide: true },
+            { header: '種類', cell: (row) => PROJECT_KIND_LABELS[row.kind], nowrap: true, wide: true },
             { header: '期間', cell: periodText, nowrap: true, muted: true },
           ]}
         />

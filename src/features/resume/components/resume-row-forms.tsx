@@ -132,10 +132,10 @@ const PeriodFields = ({
       type="date"
       name="endedOn"
       label="終わりの日"
-      hint={endedHint}
       defaultValue={values.endedOn}
       error={errorText(errors, 'endedOn')}
     />
+    <p className="text-caption text-muted-foreground sm:col-span-2">終わりの日は、{endedHint}</p>
   </div>
 );
 

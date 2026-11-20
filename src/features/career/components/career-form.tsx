@@ -118,11 +118,11 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
             type="date"
             name="endedOn"
             label="終わりの日"
-            hint="所属が続いているなら空にします"
             defaultValue={values.endedOn}
             error={errorOf('endedOn')}
           />
         </div>
+        <p className="-mt-2 text-caption text-muted-foreground">終わりの日は、所属が続いているなら空にします</p>
       </FormGroup>
       <FormGroup title="中身">
         <TextareaField

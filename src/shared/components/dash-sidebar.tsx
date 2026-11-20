@@ -39,18 +39,21 @@ export const DashSidebar = () => {
   return (
     <nav
       aria-label="管理する項目"
-      className="glass flex flex-col gap-6 rounded-3xl p-3 text-small md:sticky md:top-4 md:max-h-[calc(100dvh-2rem)] md:overflow-y-auto"
+      className="glass flex gap-1 overflow-x-auto rounded-3xl p-2 text-small md:sticky md:top-4 md:max-h-[calc(100dvh-2rem)] md:flex-col md:gap-6 md:overflow-y-auto md:p-3"
     >
       <Link
         href={routes.dash.index}
-        className="rounded-xl px-3 py-2 font-semibold focus-visible:outline-2 focus-visible:outline-ring"
+        className="shrink-0 rounded-xl px-3 py-1.5 font-semibold focus-visible:outline-2 focus-visible:outline-ring md:py-2"
       >
         管理画面
       </Link>
       {GROUPS.map((group) => (
-        <div key={group.label} className="flex flex-col gap-1">
-          <p className="px-3 text-caption font-medium text-muted-foreground">{group.label}</p>
-          <ul className="flex flex-col">
+        <div key={group.label} className="flex shrink-0 flex-col gap-1">
+          {/* 狭い画面では、まとまりの名前を省いて横に並べる */}
+          <p className="hidden px-3 text-caption font-medium text-muted-foreground md:block">
+            {group.label}
+          </p>
+          <ul className="flex md:flex-col">
             {group.items.map(({ href, label }) => {
               const current = pathname === href || pathname.startsWith(`${href}/`);
               return (
@@ -59,7 +62,7 @@ export const DashSidebar = () => {
                     href={href}
                     aria-current={current ? 'page' : undefined}
                     className={cn(
-                      'block rounded-xl px-3 py-1.5 transition-colors focus-visible:outline-2 focus-visible:outline-ring motion-reduce:transition-none',
+                      'block rounded-xl px-3 py-1.5 whitespace-nowrap transition-colors focus-visible:outline-2 focus-visible:outline-ring motion-reduce:transition-none',
                       current ? 'bg-foreground/8 font-medium' : 'hover:bg-foreground/5',
                     )}
                   >
@@ -73,7 +76,7 @@ export const DashSidebar = () => {
       ))}
       <Link
         href={routes.top}
-        className="mt-auto rounded-xl px-3 py-2 text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
+        className="hidden rounded-xl px-3 py-2 text-muted-foreground md:mt-auto md:block hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
       >
         サイトのトップへ
       </Link>

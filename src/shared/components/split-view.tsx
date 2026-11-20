@@ -103,6 +103,8 @@ export type CollectionColumn<Row> = {
   nowrap?: boolean;
   /** 薄い文字で出す列 */
   muted?: boolean;
+  /** 狭い画面では出さない列。題と期間だけで選べるようにする */
+  wide?: boolean;
 };
 
 /**
@@ -135,7 +137,11 @@ export const CollectionTable = <Row,>({
         <thead className="text-left text-caption text-muted-foreground">
           <tr>
             {columns.map((column) => (
-              <th key={column.header} scope="col" className="px-3 py-2 font-medium">
+              <th
+                key={column.header}
+                scope="col"
+                className={cn('px-3 py-2 font-medium', column.wide && 'hidden md:table-cell')}
+              >
                 {column.header}
               </th>
             ))}
@@ -177,6 +183,7 @@ export const CollectionTable = <Row,>({
                       'px-3 py-2.5',
                       column.nowrap && 'whitespace-nowrap tabular-nums',
                       column.muted && 'text-muted-foreground',
+                      column.wide && 'hidden md:table-cell',
                     )}
                   >
                     {column.cell(row)}

@@ -199,3 +199,13 @@
     box-shadow: none;
   }
 }
+
+/*
+  ガラスの上に載ったガラスは、塗りにする（WWDC25 Meet Liquid Glass: "always avoid glass on glass"）。
+  例: 半分の高さのシートの上の、保存の行
+*/
+.glass .glass {
+  background-color: hsl(var(--background));
+  backdrop-filter: none;
+  box-shadow: 0 0 0 1px hsl(var(--border));
+}

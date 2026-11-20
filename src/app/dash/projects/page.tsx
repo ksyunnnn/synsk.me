@@ -178,8 +178,8 @@ const Page = async ({ searchParams }: Props) => {
           emphasized={skill === null ? undefined : (project) => hasSkill(project) === true}
           columns={[
             { header: '題', cell: (project) => project.title },
-            { header: '組織', cell: (project) => project.organizationName },
-            { header: '種類', cell: (project) => PROJECT_KIND_LABELS[project.kind], nowrap: true },
+            { header: '組織', cell: (project) => project.organizationName, wide: true },
+            { header: '種類', cell: (project) => PROJECT_KIND_LABELS[project.kind], nowrap: true, wide: true },
             { header: '期間', cell: periodText, nowrap: true, muted: true },
           ]}
         />
