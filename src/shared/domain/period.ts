@@ -167,6 +167,12 @@ export const projectsOfCareer = <P extends Experience>(
       periodsOverlap(career.period, project.period),
   );
 
+/** 実績が入る職歴。同じ組織で期間が重なる職歴を、渡した順のまま返す */
+export const careersOfProject = <C extends Experience>(
+  project: Experience,
+  careers: readonly C[],
+): C[] => careers.filter((career) => projectsOfCareer(career, [project]).length > 0);
+
 /**
  * 職歴のスキル。職歴の実績につないだスキルを、重ねずに、出てきた順に合わせる。`visitor` は
  * サイトで訪問者に出す職歴のスキルで、サイトに載せる実績（`published`）だけから求める（FR-035）

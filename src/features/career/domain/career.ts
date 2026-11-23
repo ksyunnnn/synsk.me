@@ -39,6 +39,7 @@ export type CareerSummary = Pick<
   Career,
   'id' | 'uid' | 'role' | 'isMasked' | 'status' | 'period'
 > & {
+  organizationId: number;
   organizationName: string;
 };
 

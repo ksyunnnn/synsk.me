@@ -60,6 +60,7 @@ type ProjectListRow = Pick<
   | 'ended_on'
   | 'description'
   | 'card_storage_key'
+  | 'organization_id'
 > & { organization_name: string };
 
 /** 秘匿化しない実績の訪問者向けの列 */
@@ -302,7 +303,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
           .prepare(
             `SELECT p.id, p.uid, p.slug, p.kind, p.title, p.is_masked, p.status, p.started_on,
                p.ended_on, p.description, cm.storage_key AS card_storage_key,
-               o.name AS organization_name
+               p.organization_id, o.name AS organization_name
              FROM project p JOIN organization o ON o.id = p.organization_id ${CARD_MEDIA_JOIN}
              WHERE ${where}
              ORDER BY p.started_on DESC, p.id DESC`,
@@ -345,6 +346,7 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
         description: row.description,
         mediaStorageKeys: keysByProject.get(row.id) ?? [],
         cardMediaKey: row.card_storage_key,
+        organizationId: row.organization_id,
         organizationName: row.organization_name,
         skillIds: skillsByProject.get(row.id) ?? [],
       }));

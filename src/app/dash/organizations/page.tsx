@@ -15,7 +15,7 @@ import {
   withParam,
 } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
-import { formatPeriod, periodsOverlap } from '@/shared/domain/period';
+import { formatPeriod, projectsOfCareer } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -119,11 +119,7 @@ const Page = async ({ searchParams }: Props) => {
                           <span className="text-muted-foreground">
                             {' '}
                             {formatPeriod(career.period)}・実績{' '}
-                            {
-                              ownProjects.filter((p) => periodsOverlap(career.period, p.period))
-                                .length
-                            }{' '}
-                            件
+                            {projectsOfCareer(career, ownProjects).length} 件
                           </span>
                         </li>
                       ))}

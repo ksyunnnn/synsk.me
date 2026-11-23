@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   countExperienceMonths,
   periodsOverlap,
+  careersOfProject,
   projectsOfCareer,
   skillsOfCareer,
   toYearsAndMonths,
@@ -161,6 +162,16 @@ describe('職歴の実績とスキル（FR-017・FR-035）', () => {
       '同じ組織で端の日だけ接する',
       'サイトに載せない',
     ]);
+  });
+
+  it('実績が入る職歴は、同じ組織で期間が重なる職歴', () => {
+    const careers = [
+      { name: '同じ組織で重なる', organizationId: 1, period: period('2020-04-01', '2022-03-31') },
+      { name: '同じ組織で重ならない', organizationId: 1, period: period('2023-04-01', null) },
+      { name: '別の組織で重なる', organizationId: 2, period: period('2020-04-01', null) },
+    ];
+    const project = { organizationId: 1, period: period('2021-01-01', '2021-06-30') };
+    expect(careersOfProject(project, careers).map((c) => c.name)).toEqual(['同じ組織で重なる']);
   });
 
   it('オーナー向けのスキルは、職歴の実績のスキルを重ねずに合わせる', () => {

@@ -65,6 +65,7 @@ export type ProjectSummary = Pick<
   | 'cardMediaKey'
   | 'skillIds'
 > & {
+  organizationId: number;
   organizationName: string;
 };
 

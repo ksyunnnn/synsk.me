@@ -19,7 +19,7 @@ import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { DetailHeading } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
-import { formatPeriod, periodsOverlap } from '@/shared/domain/period';
+import { careersOfProject, formatPeriod } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
 
 /** 同じ画面へ戻ったときの知らせ。URL の値で選ぶ */
@@ -50,10 +50,9 @@ export const ProjectDetail = async ({
     // 実績を写した職務経歴書。写しは元から切り離されているので、写したことだけを示す
     listResumesCopyingProject(project.id),
   ]);
-  const ownCareers = careers.filter(
-    (career) =>
-      career.organizationName === project.organization.name &&
-      periodsOverlap(career.period, project.period),
+  const ownCareers = careersOfProject(
+    { organizationId: project.organization.id, period: project.period },
+    careers,
   );
   const notice = (Object.keys(NOTICES) as (keyof typeof NOTICES)[]).find(
     (key) => flags[key] === '1',

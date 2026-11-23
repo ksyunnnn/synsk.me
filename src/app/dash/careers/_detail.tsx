@@ -9,7 +9,7 @@ import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { DetailHeading } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
-import { periodsOverlap } from '@/shared/domain/period';
+import { projectsOfCareer } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
 
 const NO_FILTER = { kind: null, organizationUid: null, status: null, isMasked: null };
@@ -32,10 +32,9 @@ export const CareerDetail = async ({
     listOrganizationNames(),
     listProjects(NO_FILTER),
   ]);
-  const own = projects.filter(
-    (project) =>
-      project.organizationName === career.organization.name &&
-      periodsOverlap(career.period, project.period),
+  const own = projectsOfCareer(
+    { organizationId: career.organization.id, period: career.period },
+    projects,
   );
   const organizationUid = organizations.find((o) => o.name === career.organization.name)?.uid;
 
