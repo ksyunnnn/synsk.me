@@ -20,7 +20,7 @@ import {
   withParam,
 } from '@/shared/components/split-view';
 import { formatPeriod } from '@/shared/domain/period';
-import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { isProjectKind, PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -45,9 +45,11 @@ const periodText = (row: ResumeProject) =>
  */
 const Page = async ({ params, searchParams }: Props) => {
   const raw = await searchParams;
+  const kind = first(raw.kind);
   const query = {
     org: first(raw.org),
-    kind: first(raw.kind),
+    // 種類でない値では絞らない（実績の一覧の parseProjectListFilter と同じ）
+    kind: kind !== undefined && isProjectKind(kind) ? kind : undefined,
     view: first(raw.view),
     selected: first(raw.selected),
   };
@@ -64,9 +66,7 @@ const Page = async ({ params, searchParams }: Props) => {
   );
   const view = query.view === 'timeline' ? 'timeline' : 'table';
   const selected = query.selected ?? null;
-  const conditions = [query.org, query.kind && PROJECT_KIND_LABELS[query.kind as never]].filter(
-    Boolean,
-  );
+  const conditions = [query.org, query.kind && PROJECT_KIND_LABELS[query.kind]].filter(Boolean);
 
   const collection = (
     <>
