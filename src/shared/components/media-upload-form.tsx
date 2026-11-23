@@ -37,7 +37,7 @@ type Props = {
 
 const MAX_MB = MEDIA_MAX_BYTES / 1024 / 1024;
 
-const ERROR_MESSAGES: Record<MediaRejection, string> = {
+export const MEDIA_ERROR_MESSAGES: Record<MediaRejection, string> = {
   empty: '画像のファイルを選んでください',
   'too-large': `画像は 1 枚 ${MAX_MB} MB までにしてください`,
   'unsupported-type': '画像は JPEG・PNG・WebP・GIF にしてください',
@@ -54,7 +54,7 @@ export const MediaUploadForm = ({
   const [result, formAction] = useActionState(action, null);
   const reason = result?.status === 'invalid' ? result.errors[MEDIA_FILE_FIELD] : undefined;
   const message =
-    result?.status === 'forbidden' ? FORBIDDEN_MESSAGE : reason && ERROR_MESSAGES[reason];
+    result?.status === 'forbidden' ? FORBIDDEN_MESSAGE : reason && MEDIA_ERROR_MESSAGES[reason];
 
   return (
     <section aria-labelledby={labelledBy ?? 'media-upload-heading'} className="flex flex-col gap-3">

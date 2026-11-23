@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, type ReactNode } from 'react';
 import {
   OPENED_UPDATED_AT_FIELD,
   PROJECT_UID_FIELD,
@@ -10,6 +10,9 @@ import {
   type ProjectFormValues,
 } from '@/features/project/domain/project';
 import { InputField, TextareaField } from '@/shared/components/field';
+import { MediaAttachTextareaField } from '@/shared/components/media-attach-textarea-field';
+import type { MediaFormResult, MediaStorageKey } from '@/shared/domain/media';
+import { routes } from '@/shared/routes';
 import {
   FORBIDDEN_INPUT_MESSAGE,
   FormAlert,
@@ -54,7 +57,22 @@ type Props = {
   /** つなげるスキルの選択肢（FR-032） */
   skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
-  project?: { uid: string; updatedAt: string; isMasked: boolean };
+  project?: {
+    uid: string;
+    updatedAt: string;
+    isMasked: boolean;
+    /** この実績の画像の置き場のキー。本文のプレビューが出す画像 */
+    mediaStorageKeys?: string[];
+  };
+  /** 本文に落とした・貼った画像を足す Server Action。編集のフォームだけが持つ */
+  attachMedia?: (
+    formData: FormData,
+  ) => Promise<{ status: 'added'; storageKey: string } | MediaFormResult>;
+  /** 本文のプレビューの中身。渡さなければ本文の Markdown だけを描く */
+  renderBodyPreview?: (
+    body: string,
+    mediaSrc: (storageKey: MediaStorageKey) => string | null,
+  ) => ReactNode;
 };
 
 const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, string>>> = {
@@ -104,12 +122,18 @@ const LABELS = {
   skillIds: '使ったスキル',
 };
 
+/** 本文のプレビューの画像。その実績の画像だけを、オーナーにだけ返す経路で出す */
+const bodyMediaSrc = (project: { uid: string; mediaStorageKeys?: string[] }, key: string) =>
+  project.mediaStorageKeys?.includes(key) ? routes.dash.projects.media(project.uid, key) : null;
+
 export const ProjectForm = ({
   action,
   initialValues,
   organizationNames,
   skillOptions,
   project,
+  attachMedia,
+  renderBodyPreview,
 }: Props) => {
   const [result, formAction, isPending] = useActionState(action, null);
   // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる
@@ -189,13 +213,29 @@ export const ProjectForm = ({
       </FormGroup>
 
       <FormGroup title="中身">
-        <TextareaField
-          name="description"
-          label="本文"
-          rows={8}
-          defaultValue={values.description}
-          error={errorOf('description')}
-        />
+        {project && attachMedia ? (
+          <MediaAttachTextareaField
+            name="description"
+            label="本文"
+            rows={8}
+            defaultValue={values.description}
+            error={errorOf('description')}
+            attach={{ action: attachMedia, owner: { field: PROJECT_UID_FIELD, uid: project.uid } }}
+            mediaSrc={(key) => bodyMediaSrc(project, key)}
+            renderPreview={
+              renderBodyPreview &&
+              ((body) => renderBodyPreview(body, (key) => bodyMediaSrc(project, key)))
+            }
+          />
+        ) : (
+          <TextareaField
+            name="description"
+            label="本文"
+            rows={8}
+            defaultValue={values.description}
+            error={errorOf('description')}
+          />
+        )}
         <InputField
           inputMode="url"
           name="url"
