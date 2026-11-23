@@ -356,19 +356,53 @@ test.describe('狭い画面のシート', () => {
     await expect(row).toBeFocused();
   });
 
-  test('選んだ 1 件の URL を直接開くと、全体の高さで開く', async ({ page, context }) => {
+  test('選んだ 1 件の URL を直接開くと、全体の高さの CSS のシートで開いて一覧を覆い、閉じると選んだ行へ戻る', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const title = uniqueTitle('シートを直接開く');
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E シートの組織',
+      organizationNameMasked: 'E2E シートの秘匿化した組織名',
+      title,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(editUrl);
+    const sheet = page.getByRole('region', { name: '選んだ実績' });
+    await expect(sheet.getByRole('heading', { level: 2, name: title })).toBeFocused();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    // 覆われた一覧の行は、フォーカスを受けない
+    const row = page.getByRole('link', { name: title, exact: true });
+    await expect(row.locator('xpath=ancestor::*[@inert]')).toHaveCount(1);
+    await sheet.getByRole('link', { name: '閉じる' }).click();
+    await expect(page).not.toHaveURL(/selected=/);
+    await expect(row).toBeFocused();
+    // 閉じた後に行を選ぶと、Drawer で半分の高さから開く
+    await row.click();
+    await expect(
+      page.getByRole('dialog', { name: '選んだ実績' }).getByRole('button', {
+        name: '全体の高さにする',
+      }),
+    ).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('選んだ 1 件の URL を直接開いて、動く前に打った入力は、動いた後も残る', async ({
+    page,
+    context,
+  }) => {
     await actAsAuthor(context);
     const { editUrl } = await registerProject(page, {
       organizationName: 'E2E シートの組織',
       organizationNameMasked: 'E2E シートの秘匿化した組織名',
-      title: uniqueTitle('シートを直接開く'),
+      title: uniqueTitle('動く前の入力'),
     });
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(editUrl);
-    const sheet = page.getByRole('dialog', { name: '選んだ実績' });
-    await expect(sheet.getByRole('button', { name: '半分の高さにする' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
+    const typed = 'E2E 動く前に打った題';
+    await typeBeforeHydration(page, editUrl, typed, '題');
+    // 狭い画面に合わせて描き直した後も残る
+    const sheet = page.getByRole('region', { name: '選んだ実績' });
+    await expect(sheet.getByRole('heading', { level: 2 }).first()).toBeFocused();
+    await expect(textbox(page, '題')).toHaveValue(typed);
   });
 });

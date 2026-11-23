@@ -2,7 +2,7 @@
 
 import { Toggle } from '@base-ui/react/toggle';
 import { useSearchParams } from 'next/navigation';
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 /**
@@ -13,6 +13,14 @@ import { cn } from '@/lib/utils';
  */
 
 type Pane = 'sidebar' | 'detail';
+
+/**
+ * 狭い画面で、全体の高さのシートが一覧を覆っているか。覆っている間は、一覧を `inert` にする
+ * （WCAG 2.2 SC 2.4.11）。シート（`DetailSheet`）が知らせる
+ */
+export const CoverContext = createContext<{ setCollectionCovered: (covered: boolean) => void }>({
+  setCollectionCovered: () => {},
+});
 
 const PanesContext = createContext<{
   hidden: Record<Pane, boolean>;
@@ -100,6 +108,8 @@ export const SplitPanes = ({
   detail: ReactNode;
 }) => {
   const { hidden, setHidden } = useContext(PanesContext);
+  const [covered, setCollectionCovered] = useState(false);
+  const cover = useMemo(() => ({ setCollectionCovered }), []);
   const selected = useSearchParams().get('selected');
   useEffect(() => {
     if (selected) setHidden('detail', false);
@@ -118,8 +128,12 @@ export const SplitPanes = ({
           <PaneToggle pane="detail" className="flex bg-background" />
         </div>
       )}
-      {collection}
-      <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>
+      <div className="contents" inert={covered}>
+        {collection}
+      </div>
+      <CoverContext value={cover}>
+        <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>
+      </CoverContext>
     </main>
   );
 };
