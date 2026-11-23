@@ -1,5 +1,4 @@
 import type { ProjectKind } from '@/shared/domain/project-kind';
-import { keepParams } from '@/shared/domain/search-param';
 import type { SiteStatus } from '@/shared/domain/site-status';
 
 /**
@@ -11,9 +10,18 @@ import type { SiteStatus } from '@/shared/domain/site-status';
  * 取らない（https://nextjs.org/docs/app/api-reference/file-conventions/proxy#matcher）
  */
 
-/** 保存の後に移る経路に、`from`（送った時点の一覧の検索の値）のうち `keys` を足す */
+/**
+ * 保存の後に移る経路に、`from`（送った時点の一覧の検索の値）のうち `keys` に挙げた名前だけを、
+ * 最初の値で足す。フォームから届く値は書き換えられうるため、知らせの印（`saved` など）や知らない
+ * 名前を持ち越さない。経路は呼び手が決め、`from` からは検索の値だけを取る
+ */
 const appendKept = (path: string, from: string, keys: readonly string[]) => {
-  const kept = keepParams(from, keys);
+  const source = new URLSearchParams(from);
+  const kept = new URLSearchParams();
+  for (const key of keys) {
+    const value = source.get(key);
+    if (value) kept.set(key, value);
+  }
   return kept.size === 0 ? path : `${path}&${kept}`;
 };
 
