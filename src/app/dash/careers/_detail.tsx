@@ -8,7 +8,7 @@ import { listProjects } from '@/features/project/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { SavedNotice } from '@/shared/components/saved-notice';
-import { DetailHeading } from '@/shared/components/split-view';
+import { DetailBody } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
 import { projectsOfCareer } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
@@ -38,11 +38,34 @@ export const CareerDetail = async ({
   const organizationUid = organizations.find((o) => o.name === career.organization.name)?.uid;
 
   return (
-    <div className="flex flex-col gap-6">
-      <DetailHeading
-        title={`${career.organization.name}・${career.role}`}
-        draftKey={`career:${career.uid}`}
-      >
+    <DetailBody
+      title={`${career.organization.name}・${career.role}`}
+      draftKey={`career:${career.uid}`}
+      notice={
+        <>
+          {flags.saved === '1' && (
+            <SavedNotice key={`saved-${career.updatedAt}`} flags={['saved']}>
+              保存しました
+            </SavedNotice>
+          )}
+          {flags.mediaAdded === '1' && (
+            <SavedNotice key={`mediaAdded-${career.updatedAt}`} flags={['mediaAdded']}>
+              画像を足しました
+            </SavedNotice>
+          )}
+        </>
+      }
+      form={
+        // 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す
+        <CareerForm
+          key={career.updatedAt}
+          action={editCareer}
+          initialValues={toCareerFormValues(career)}
+          organizationNames={organizationNames}
+          career={{ uid: career.uid, updatedAt: career.updatedAt }}
+        />
+      }
+      relations={
         <DetailFacts
           facts={[
             {
@@ -70,39 +93,22 @@ export const CareerDetail = async ({
             },
           ]}
         />
-      </DetailHeading>
-      {flags.saved === '1' && (
-        <SavedNotice key={`saved-${career.updatedAt}`} flags={['saved']}>
-          保存しました
-        </SavedNotice>
-      )}
-      {flags.mediaAdded === '1' && (
-        <SavedNotice key={`mediaAdded-${career.updatedAt}`} flags={['mediaAdded']}>
-          画像を足しました
-        </SavedNotice>
-      )}
-      {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
-      <CareerForm
-        key={career.updatedAt}
-        action={editCareer}
-        initialValues={toCareerFormValues(career)}
-        organizationNames={organizationNames}
-        career={{ uid: career.uid, updatedAt: career.updatedAt }}
-      />
-      <section className="flex flex-col gap-4 border-t border-border pt-6">
-        <h3 id="career-media-heading" className="text-caption text-muted-foreground">
-          画像
-        </h3>
-        <MediaUploadForm
-          labelledBy="career-media-heading"
-          action={addCareerMedia}
-          owner={{ field: CAREER_UID_FIELD, uid: career.uid }}
-          mediaStorageKeys={career.mediaStorageKeys}
-        />
-      </section>
-      <p className="border-t border-border pt-6 text-small">
-        <TextLink href={routes.dash.careers.delete(career.uid)}>この職歴を削除する</TextLink>
-      </p>
-    </div>
+      }
+      sections={[
+        {
+          heading: '画像',
+          headingId: 'career-media-heading',
+          content: (
+            <MediaUploadForm
+              labelledBy="career-media-heading"
+              action={addCareerMedia}
+              owner={{ field: CAREER_UID_FIELD, uid: career.uid }}
+              mediaStorageKeys={career.mediaStorageKeys}
+            />
+          ),
+        },
+      ]}
+      deletion={{ href: routes.dash.careers.delete(career.uid), label: 'この職歴を削除する' }}
+    />
   );
 };

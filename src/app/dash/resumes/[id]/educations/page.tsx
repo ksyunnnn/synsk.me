@@ -9,7 +9,7 @@ import {
   CollectionEmpty,
   CollectionTable,
   CollectionToolbar,
-  DetailHeading,
+  DetailBody,
   SplitView,
   withParam,
 } from '@/shared/components/split-view';
@@ -79,23 +79,25 @@ const Page = async ({ params, searchParams }: Props) => {
 
   const row = selected === null ? undefined : rows.find((e) => e.uid === selected);
   const detail = row ? (
-    <div className="flex flex-col gap-6">
-      <DetailHeading
-        title={`${row.school}${row.department ? `・${row.department}` : ''}`}
-        draftKey={`resume-education:${row.uid}`}
-      />
-      {firstParam(raw.saved) === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['saved']}>
-          保存しました
-        </SavedNotice>
-      )}
-      <ResumeEducationForm
-        key={`${row.uid}-${resume.updatedAt}`}
-        action={editResumeEducation}
-        initialValues={toResumeEducationFormValues(row)}
-        target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
-      />
-    </div>
+    <DetailBody
+      title={`${row.school}${row.department ? `・${row.department}` : ''}`}
+      draftKey={`resume-education:${row.uid}`}
+      notice={
+        firstParam(raw.saved) === '1' && (
+          <SavedNotice key={resume.updatedAt} flags={['saved']}>
+            保存しました
+          </SavedNotice>
+        )
+      }
+      form={
+        <ResumeEducationForm
+          key={`${row.uid}-${resume.updatedAt}`}
+          action={editResumeEducation}
+          initialValues={toResumeEducationFormValues(row)}
+          target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
+        />
+      }
+    />
   ) : (
     <p className="py-12 text-center text-muted-foreground">この学歴はありません</p>
   );

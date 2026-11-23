@@ -5,7 +5,7 @@ import { getOrganizationForEdit } from '@/features/organization/server/queries';
 import type { ProjectSummary } from '@/features/project/domain/project';
 import { DetailFacts } from '@/shared/components/detail-facts';
 import { SavedNotice } from '@/shared/components/saved-notice';
-import { DetailHeading } from '@/shared/components/split-view';
+import { DetailBody } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
 import { formatPeriod, projectsOfCareer } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
@@ -37,8 +37,26 @@ export const OrganizationDetail = async ({
     .sort((a, b) => b.period.startedOn.localeCompare(a.period.startedOn));
   const ownProjects = projects.filter((p) => p.organizationName === organization.name);
   return (
-    <div className="flex flex-col gap-6">
-      <DetailHeading title={organization.name} draftKey={`organization:${organization.uid}`}>
+    <DetailBody
+      title={organization.name}
+      draftKey={`organization:${organization.uid}`}
+      notice={
+        flags.saved === '1' && (
+          <SavedNotice key={`saved-${organization.updatedAt}`} flags={['saved']}>
+            保存しました
+          </SavedNotice>
+        )
+      }
+      form={
+        <OrganizationForm
+          key={organization.updatedAt}
+          action={editOrganization}
+          organizationUid={organization.uid}
+          initialValues={{ name: organization.name, nameMasked: organization.nameMasked ?? '' }}
+          isReferencedByMasked={references.isReferencedByMasked}
+        />
+      }
+      relations={
         <DetailFacts
           facts={[
             {
@@ -77,26 +95,15 @@ export const OrganizationDetail = async ({
             },
           ]}
         />
-      </DetailHeading>
-      {flags.saved === '1' && (
-        <SavedNotice key={`saved-${organization.updatedAt}`} flags={['saved']}>
-          保存しました
-        </SavedNotice>
-      )}
-      <OrganizationForm
-        key={organization.updatedAt}
-        action={editOrganization}
-        organizationUid={organization.uid}
-        initialValues={{ name: organization.name, nameMasked: organization.nameMasked ?? '' }}
-        isReferencedByMasked={references.isReferencedByMasked}
-      />
-      {!references.isReferenced && (
-        <p className="border-t border-border pt-6 text-small">
-          <TextLink href={routes.dash.organizations.delete(organization.uid)}>
-            この組織を削除する
-          </TextLink>
-        </p>
-      )}
-    </div>
+      }
+      deletion={
+        references.isReferenced
+          ? undefined
+          : {
+              href: routes.dash.organizations.delete(organization.uid),
+              label: 'この組織を削除する',
+            }
+      }
+    />
   );
 };

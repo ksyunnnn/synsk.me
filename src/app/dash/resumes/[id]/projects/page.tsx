@@ -13,7 +13,7 @@ import {
   CollectionEmpty,
   CollectionTable,
   CollectionToolbar,
-  DetailHeading,
+  DetailBody,
   PeriodLines,
   SplitView,
   ViewSwitch,
@@ -164,23 +164,26 @@ const Page = async ({ params, searchParams }: Props) => {
 
   const row = selected === null ? undefined : resume.projects.find((p) => p.uid === selected);
   const detail = row ? (
-    <div className="flex flex-col gap-6">
-      <DetailHeading compact title={row.title} draftKey={`resume-project:${row.uid}`} />
-      {firstParam(raw.saved) === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['saved']}>
-          保存しました
-        </SavedNotice>
-      )}
-      <ResumeProjectForm
-        key={`${row.uid}-${resume.updatedAt}`}
-        action={editResumeProject}
-        initialValues={toResumeProjectFormValues(row)}
-        target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
-        skillNames={skillOptions.map((skill) => skill.name)}
-      />
-      {/* 元の実績の詳細と同じく、入力の後に置く（#366 の明文化: 元と写しで形をそろえる） */}
-      <section className="flex flex-col gap-4 border-t border-border pt-6">
-        <h3 className="text-caption text-muted-foreground">つながり</h3>
+    <DetailBody
+      title={row.title}
+      draftKey={`resume-project:${row.uid}`}
+      notice={
+        firstParam(raw.saved) === '1' && (
+          <SavedNotice key={resume.updatedAt} flags={['saved']}>
+            保存しました
+          </SavedNotice>
+        )
+      }
+      form={
+        <ResumeProjectForm
+          key={`${row.uid}-${resume.updatedAt}`}
+          action={editResumeProject}
+          initialValues={toResumeProjectFormValues(row)}
+          target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
+          skillNames={skillOptions.map((skill) => skill.name)}
+        />
+      }
+      relations={
         <DetailFacts
           facts={[
             {
@@ -189,8 +192,8 @@ const Page = async ({ params, searchParams }: Props) => {
             },
           ]}
         />
-      </section>
-    </div>
+      }
+    />
   ) : (
     <p className="py-12 text-center text-muted-foreground">この実績はありません</p>
   );
