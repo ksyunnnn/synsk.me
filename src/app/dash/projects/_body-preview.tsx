@@ -40,7 +40,7 @@ export const ProjectBodyPreview = ({
   body: string;
   mediaSrc: (storageKey: MediaStorageKey) => string | null;
 }) => {
-  const [view, setView] = useState<View>('project');
+  const [view, setView] = useState<View>('resume');
 
   return (
     // 見え方の切り替えは枠の外のすぐ上に置き、枠は本文だけを囲む

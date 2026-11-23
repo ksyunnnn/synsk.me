@@ -90,7 +90,7 @@ const messageOf = (result: Exclude<Awaited<ReturnType<Attach>>, { status: 'added
 };
 
 const TAB = cn(
-  'rounded-full px-3 py-1 text-caption font-medium text-muted-foreground data-[active]:bg-foreground/6 data-[active]:text-foreground',
+  'rounded-full px-3 py-1 font-medium text-muted-foreground data-[active]:bg-foreground/6 data-[active]:text-foreground',
   FOCUS_VISIBLE,
 );
 
@@ -162,7 +162,7 @@ export const MediaAttachTextareaField = ({
         <label htmlFor={id} className="text-small font-medium">
           {label}
         </label>
-        <Tabs.List aria-label={`${label}の表示`} className="flex gap-1">
+        <Tabs.List aria-label={`${label}の表示`} className="flex gap-1 text-small">
           <Tabs.Tab value="write" className={TAB}>
             書く
           </Tabs.Tab>
