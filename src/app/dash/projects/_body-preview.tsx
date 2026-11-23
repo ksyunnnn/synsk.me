@@ -43,34 +43,36 @@ export const ProjectBodyPreview = ({
   const [view, setView] = useState<View>('project');
 
   return (
-    <div className="flex flex-col gap-3">
-      <ToggleGroup
-        aria-label="プレビューの見え方"
-        value={[view]}
-        onValueChange={(values) => {
-          const next = values[0] as View | undefined;
-          // 選んでいる見え方をもう一度押しても、選んだままにする
-          if (next) setView(next);
-        }}
-        className={`${VIEW_SWITCH} self-start`}
-      >
-        {VIEWS.map((option) => (
-          <Toggle
-            key={option.value}
-            value={option.value}
-            className={viewSwitchItem(view === option.value)}
-          >
-            {option.label}
-          </Toggle>
-        ))}
-      </ToggleGroup>
-      <div className="overflow-x-auto rounded-xl border border-border">
+    // 見え方の切り替えは枠の上辺の帯に置き、このプレビューの見え方だと位置で示す
+    <div className="overflow-hidden rounded-xl border border-border">
+      <div className="flex border-b border-border px-3 py-2">
+        <ToggleGroup
+          aria-label="プレビューの見え方"
+          value={[view]}
+          onValueChange={(values) => {
+            const next = values[0] as View | undefined;
+            // 選んでいる見え方をもう一度押しても、選んだままにする
+            if (next) setView(next);
+          }}
+          className={`${VIEW_SWITCH} self-start`}
+        >
+          {VIEWS.map((option) => (
+            <Toggle
+              key={option.value}
+              value={option.value}
+              className={viewSwitchItem(view === option.value)}
+            >
+              {option.label}
+            </Toggle>
+          ))}
+        </ToggleGroup>
+      </div>
+      <div className="overflow-x-auto">
         {view === 'project' ? (
-          <div className="mx-auto w-full max-w-2xl px-4 py-6">
-            <section className="flex flex-col gap-2">
-              <h2 className="text-caption text-muted-foreground">本文</h2>
-              <MarkdownBody body={body} mediaSrc={mediaSrc} />
-            </section>
+          // 入力欄の見出しが「本文」なので、訪問者のページの見出し「本文」は重ねない
+          // 段落の間は、訪問者のページで本文を包む section と同じ gap-2
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-2 px-4 py-6">
+            <MarkdownBody body={body} mediaSrc={mediaSrc} />
           </div>
         ) : (
           <div
