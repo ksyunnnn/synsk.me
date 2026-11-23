@@ -23,7 +23,7 @@ const Page = async ({ params }: Props) => {
   if (!resume) notFound();
 
   return (
-    <DashPage title="職務経歴書を削除する">
+    <DashPage title="職務経歴書を削除する" headingLevel={2}>
       <p>
         次の職務経歴書を削除します。戻せません。渡した URL
         は読めなくなります。元の職歴・実績・学歴は残ります。

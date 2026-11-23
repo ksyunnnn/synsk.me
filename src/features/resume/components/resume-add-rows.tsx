@@ -40,6 +40,7 @@ export const ResumeAddRows = ({
     <DashPage
       back={{ href: routes.dash.resumes.entries(resume.uid, kind), label: `写した${label}へ戻る` }}
       title={<>{label}を足す</>}
+      headingLevel={2}
     >
       <p className="text-sm text-muted-foreground">
         選んだ{label}を、元の値で写します。写した後に元を直しても変わりません

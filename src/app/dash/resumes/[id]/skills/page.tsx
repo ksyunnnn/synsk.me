@@ -34,7 +34,7 @@ const Page = async ({ params, searchParams }: Props) => {
   });
 
   return (
-    <DashPage title="経験年数の上書きを直す">
+    <DashPage title="経験年数の上書きを直す" headingLevel={2}>
       <p className="text-sm text-muted-foreground">
         空のスキルは、写した実績の期間から求めます。直した値はこの職務経歴書にだけ効きます
       </p>
