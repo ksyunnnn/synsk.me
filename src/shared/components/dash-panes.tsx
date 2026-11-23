@@ -1,5 +1,6 @@
 'use client';
 
+import { Toggle } from '@base-ui/react/toggle';
 import { useSearchParams } from 'next/navigation';
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import { cn } from '@/lib/utils';
@@ -18,21 +19,24 @@ const PanesContext = createContext<{
   setHidden: (pane: Pane, value: boolean) => void;
 }>({ hidden: { sidebar: false, detail: false }, setHidden: () => {} });
 
-const LABELS: Record<Pane, { hide: string; show: string }> = {
-  sidebar: { hide: 'サイドバーを隠す', show: 'サイドバーを表示' },
-  detail: { hide: '詳細を隠す', show: '詳細を表示' },
+/** 押した状態が「隠している」にあたる。状態は押した状態（`aria-pressed`）で伝え、名前は変えない */
+const LABELS: Record<Pane, string> = {
+  sidebar: 'サイドバーを隠す',
+  detail: '詳細を隠す',
 };
 
-/** 隠す・表示するボタン。いまの状態の逆を行う */
+/**
+ * 隠すかを切り替えるボタン。列の表示を切り替えるだけなので、Base UI の Toggle（押した状態を持つ
+ * ボタン）にする（https://base-ui.com/react/components/toggle）
+ */
 export const PaneToggle = ({ pane, className }: { pane: Pane; className?: string }) => {
   const { hidden, setHidden } = useContext(PanesContext);
-  const label = hidden[pane] ? LABELS[pane].show : LABELS[pane].hide;
   return (
-    <button
-      type="button"
-      onClick={() => setHidden(pane, !hidden[pane])}
-      aria-label={label}
-      title={label}
+    <Toggle
+      pressed={hidden[pane]}
+      onPressedChange={(pressed) => setHidden(pane, pressed)}
+      aria-label={LABELS[pane]}
+      title={LABELS[pane]}
       className={cn(
         'size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
         className,
@@ -53,7 +57,7 @@ export const PaneToggle = ({ pane, className }: { pane: Pane; className?: string
           <line x1="15" y1="4" x2="15" y2="20" />
         )}
       </svg>
-    </button>
+    </Toggle>
   );
 };
 
