@@ -67,3 +67,33 @@ export const changeProjectCardImage = async (
     ? { status: 'not-found' }
     : { status: 'invalid', error: 'media-not-owned' };
 };
+
+export type DeleteProjectMediaOutcome =
+  | { status: 'deleted' }
+  | { status: 'forbidden' }
+  | { status: 'not-found' }
+  | { status: 'invalid'; error: 'media-not-owned' };
+
+/**
+ * 実績の画像を 1 枚消す。代表画像なら代表画像を外す。オーナーでなければ何も消さない（FR-040）。
+ * 消せるのはその実績の画像だけ。
+ *
+ * 行を消してから、置き場から消す（`deleteProject` と同じ順）。置き場から消し損ねた画像は、
+ * 消し損ねの突き合わせ（src/shared/server/sweep-orphaned-media.ts）が消し直す。本文に残った
+ * 画像の印は書き換えない
+ */
+export const deleteProjectMedia = async (
+  { projects, media }: { projects: ProjectRepository; media: Pick<MediaStorage, 'remove'> },
+  author: Author | null,
+  id: ProjectId,
+  storageKey: MediaStorageKey,
+): Promise<DeleteProjectMediaOutcome> => {
+  if (!author) return { status: 'forbidden' };
+  const result = await projects.deleteMedia(id, storageKey);
+  if (!result.ok)
+    return result.reason === 'not-found'
+      ? { status: 'not-found' }
+      : { status: 'invalid', error: 'media-not-owned' };
+  await media.remove([storageKey]);
+  return { status: 'deleted' };
+};

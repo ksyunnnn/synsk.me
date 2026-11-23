@@ -5,6 +5,7 @@ import { editProject } from '@/features/project/application/edit-project';
 import {
   addProjectMedia,
   changeProjectCardImage,
+  deleteProjectMedia,
 } from '@/features/project/application/project-media';
 import { listProjects } from '@/features/project/application/list-projects';
 import { registerProject } from '@/features/project/application/register-project';
@@ -75,6 +76,7 @@ const fakeProjects = (current: Project | null) =>
     listSkillOptions: vi.fn(async () => []),
     addMedia: vi.fn(async () => ({ ok: true })),
     changeCardImage: vi.fn<ProjectRepository['changeCardImage']>(async () => ({ ok: true })),
+    deleteMedia: vi.fn<ProjectRepository['deleteMedia']>(async () => ({ ok: true })),
   }) satisfies ProjectRepository;
 
 const MEDIA_KEY = '11111111-1111-4111-8111-111111111111';
@@ -297,6 +299,38 @@ describe('changeProjectCardImage（FR-028）', () => {
   it('オーナーでなければ何も書かない', async () => {
     expect(await changeProjectCardImage(projects, null, 1, null)).toEqual({ status: 'forbidden' });
     expect(projects.changeCardImage).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteProjectMedia', () => {
+  it('その実績の画像の行を消してから、置き場から消す', async () => {
+    expect(await deleteProjectMedia(deps, OWNER, 1, MEDIA_KEY)).toEqual({ status: 'deleted' });
+    expect(projects.deleteMedia).toHaveBeenCalledWith(1, MEDIA_KEY);
+    expect(media.remove).toHaveBeenCalledWith([MEDIA_KEY]);
+    expect(projects.deleteMedia.mock.invocationCallOrder[0]).toBeLessThan(
+      media.remove.mock.invocationCallOrder[0] ?? 0,
+    );
+  });
+
+  it('ほかの持ち主の画像は消さず、置き場を触らない', async () => {
+    projects.deleteMedia.mockResolvedValue({ ok: false, reason: 'media-not-owned' });
+    expect(await deleteProjectMedia(deps, OWNER, 1, MEDIA_KEY)).toEqual({
+      status: 'invalid',
+      error: 'media-not-owned',
+    });
+    expect(media.remove).not.toHaveBeenCalled();
+  });
+
+  it('無い実績なら not-found で、置き場を触らない', async () => {
+    projects.deleteMedia.mockResolvedValue({ ok: false, reason: 'not-found' });
+    expect(await deleteProjectMedia(deps, OWNER, 9, MEDIA_KEY)).toEqual({ status: 'not-found' });
+    expect(media.remove).not.toHaveBeenCalled();
+  });
+
+  it('オーナーでなければ何も消さない（FR-040）', async () => {
+    expect(await deleteProjectMedia(deps, null, 1, MEDIA_KEY)).toEqual({ status: 'forbidden' });
+    expect(projects.deleteMedia).not.toHaveBeenCalled();
+    expect(media.remove).not.toHaveBeenCalled();
   });
 });
 

@@ -353,6 +353,52 @@ describe('画像（FR-027・FR-028）', () => {
     expect(await projects.changeCardImage(999, own)).toEqual({ ok: false, reason: 'not-found' });
   });
 
+  it('画像の行を消す。代表画像なら代表画像を外し、ほかの画像は残す', async () => {
+    const id = await register();
+    const [card, kept] = [crypto.randomUUID(), crypto.randomUUID()];
+    await projects.addMedia(id, { storageKey: card, size: 64 }, { asCardImage: true });
+    await projects.addMedia(id, { storageKey: kept, size: 64 }, { asCardImage: false });
+
+    expect(await projects.deleteMedia(id, card)).toEqual({ ok: true });
+    expect(await projects.findForEdit(id)).toMatchObject({
+      mediaStorageKeys: [kept],
+      cardMediaKey: null,
+    });
+    expect(
+      await env.DB.prepare('SELECT 1 FROM media WHERE storage_key = ?').bind(card).first(),
+    ).toBeNull();
+  });
+
+  it('代表画像でない画像を消しても、代表画像は変えない', async () => {
+    const id = await register();
+    const [card, other] = [crypto.randomUUID(), crypto.randomUUID()];
+    await projects.addMedia(id, { storageKey: card, size: 64 }, { asCardImage: true });
+    await projects.addMedia(id, { storageKey: other, size: 64 }, { asCardImage: false });
+
+    expect(await projects.deleteMedia(id, other)).toEqual({ ok: true });
+    expect(await projects.findForEdit(id)).toMatchObject({
+      mediaStorageKeys: [card],
+      cardMediaKey: card,
+    });
+  });
+
+  it('ほかの実績の画像は消さず、無い実績なら not-found', async () => {
+    const id = await register();
+    const other = await register();
+    const others = crypto.randomUUID();
+    await projects.addMedia(other, { storageKey: others, size: 64 }, { asCardImage: true });
+
+    expect(await projects.deleteMedia(id, others)).toEqual({
+      ok: false,
+      reason: 'media-not-owned',
+    });
+    expect(await projects.findForEdit(other)).toMatchObject({
+      mediaStorageKeys: [others],
+      cardMediaKey: others,
+    });
+    expect(await projects.deleteMedia(999, others)).toEqual({ ok: false, reason: 'not-found' });
+  });
+
   it('訪問者向けには、本文が指すその実績の画像と代表画像のキーだけを出す（FR-030）', async () => {
     const own = crypto.randomUUID();
     const card = crypto.randomUUID();
