@@ -61,7 +61,7 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
-  /* 主な操作と選んだ行の色。#366 で足した値で、design/foundations.pen にはまだない */
+  /* 主な操作と選んだ行の色 */
   --color-tint: hsl(var(--tint));
   --color-tint-foreground: hsl(var(--tint-foreground));
 
