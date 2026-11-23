@@ -14,7 +14,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { CoverContext, PaneToggle } from '@/shared/components/dash-panes';
+import { CoverContext, PaneToggle, useDetailPeek } from '@/shared/components/dash-panes';
 import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +37,12 @@ import { cn } from '@/lib/utils';
  * 「Avoid placing controls or critical information at the bottom of a window」、HIG Toolbars の
  * 主な操作は 1 つで末尾）。広い画面ではペインの上の行、狭い画面ではシートの上の行に置く。
  * ペインが詳細のフォームの id を決め、`useDetailForm` でフォームに渡す。画面ごとに id を配線しない
+ *
+ * 広い画面で詳細の列を隠しているときは、選んだ 1 件を、一覧の右に重なるドロワー（peek）で出す。
+ * 一覧の幅を変えず、一覧を操作し続けられるよう、モーダルにしない（Notion の Side peek、
+ * https://www.notion.com/help/views-filters-and-sorts ）。本文の面なのでガラスにしない
+ * （HIG Materials の「Don't use Liquid Glass in the content layer.」）。閉じるボタンと Esc で閉じる。
+ * 上の行の「詳細を隠す」を外すと、詳細の列に戻る
  */
 
 /** ペインが決めた、詳細のフォームの id。ペインの外では無い */
@@ -179,6 +185,26 @@ const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) =
 /** 閉じた後にフォーカスを戻す行。閉じると決めた時点で選んでいた行 */
 const selectedRow = () => document.querySelector<HTMLElement>('main a[aria-current="true"]');
 
+/**
+ * 広い画面のドロワーを Esc で閉じる。メニューやダイアログが Esc を受けたとき（既定の動作を止めた
+ * とき）と、変換の確定中は閉じない
+ */
+const useCloseOnEscape = (active: boolean, close: () => void) => {
+  const closeRef = useRef(close);
+  useEffect(() => {
+    closeRef.current = close;
+  });
+  useEffect(() => {
+    if (!active) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
+      closeRef.current();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [active]);
+};
+
 export const DetailSheet = ({
   open,
   closeHref,
@@ -196,6 +222,10 @@ export const DetailSheet = ({
   const actions = open ? <DetailSubmit form={formId} /> : undefined;
   const narrow = useNarrow();
   const hydrating = useHydrating();
+  const router = useRouter();
+  // 広い画面で詳細の列を隠しているか。選んだ 1 件があるときだけ、ドロワーで出す
+  const hiddenPane = useDetailPeek();
+  const peek = hiddenPane && open && !narrow;
   const { setCovered } = useContext(CoverContext);
   const sectionRef = useRef<HTMLElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -224,8 +254,12 @@ export const DetailSheet = ({
     openerRef.current.focus();
     openerRef.current = null;
   }, [open]);
-  useFitToViewport(sectionRef, open && !narrow);
+  useFitToViewport(sectionRef, open && !narrow && !peek);
   useSaveShortcut(formId, open);
+  useCloseOnEscape(peek, () => {
+    openerRef.current = selectedRow();
+    router.push(closeHref, { scroll: false });
+  });
   if (narrow && !direct)
     return (
       <NarrowSheet open={open} closeHref={closeHref} label={label} actions={actions}>
@@ -244,6 +278,11 @@ export const DetailSheet = ({
         open
           ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl bg-background lg:sticky lg:inset-x-auto lg:bottom-auto lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
           : 'hidden',
+        // 詳細の列を隠しているときは、選んだ 1 件が無ければ出さない
+        hiddenPane && !open && 'lg:hidden',
+        // 一覧の右に重なるドロワー。幅は詳細の列の上限と同じにし、画面からはみ出さない
+        peek &&
+          'lg:fixed lg:top-4 lg:right-4 lg:bottom-4 lg:left-auto lg:z-30 lg:h-auto lg:max-h-none lg:w-[600px] lg:max-w-[calc(100vw-2rem)] lg:shadow-2xl lg:ring-1 lg:ring-foreground/10',
       )}
     >
       {open && (
@@ -277,6 +316,18 @@ export const DetailSheet = ({
       {/* 広い画面のペインの上の行。詳細の列を隠すボタンと、末尾に主な操作を置く。ガラスのバーに
           しない。一覧の列を隠すボタンは、一覧のツールバーが持つ */}
       <div className="sticky top-0 z-10 hidden items-center justify-end gap-2 bg-background px-4 pt-3 pb-2 lg:flex">
+        {peek && (
+          <Link
+            href={closeHref}
+            scroll={false}
+            onClick={() => {
+              openerRef.current = selectedRow();
+            }}
+            className="mr-auto rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
+          >
+            閉じる
+          </Link>
+        )}
         <PaneToggle pane="detail" className="flex" />
         {actions}
       </div>

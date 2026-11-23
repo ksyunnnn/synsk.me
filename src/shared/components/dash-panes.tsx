@@ -78,6 +78,12 @@ export const PaneToggle = ({ pane, className }: { pane: Pane; className?: string
   );
 };
 
+/**
+ * 広い画面で、詳細の列を隠しているか。隠しているときは、選んだ 1 件を一覧に重なるドロワーで出す
+ * （`DetailSheet`）
+ */
+export const useDetailPeek = () => useContext(PanesContext).hidden.detail;
+
 /** Split view の中か。一覧のツールバーは、一覧だけの画面でも使うため */
 const InSplitContext = createContext(false);
 
@@ -135,10 +141,13 @@ export const DashPanes = ({ sidebar, children }: { sidebar: ReactNode; children:
 };
 
 /**
- * Split view の並び。片方の列を隠しているときは、もう片方が全体の幅を使う。別の 1 件を選んだら、
- * 詳細の列を表示に戻す（選んだ結果が見えないままにしない）。選んだ 1 件を外したら（Sidebar や
- * パンくずから一覧へ移ったときを含む）、一覧の列を表示に戻す。隠した列を戻す手段を、ボタンの
- * ほかにも持たせる（HIG Split views の「Provide multiple ways to reveal hidden panes」）。
+ * Split view の並び。片方の列を隠しているときは、もう片方が全体の幅を使う。詳細の列を隠して
+ * いるときに 1 件を選んだら、列には戻さず、一覧に重なるドロワーで出す。一覧の幅を保ったまま、
+ * 一覧を操作し続けられるようにする（Notion の Side peek の「The rest of the database view
+ * continues to be interactive on the left.」https://www.notion.com/help/views-filters-and-sorts ）。
+ * 選んだ 1 件を外したら（Sidebar やパンくずから一覧へ移ったときを含む）、一覧の列を表示に戻す。
+ * 隠した列を戻す手段を、ボタンのほかにも持たせる（HIG Split views の「Provide multiple ways to
+ * reveal hidden panes」）。
  *
  * 詳細の列は、入力が詰まらない幅を下限にする（HIG Split views の「Set reasonable defaults for
  * minimum and maximum pane sizes」）
@@ -154,8 +163,7 @@ export const SplitPanes = ({
   const { covered } = useContext(CoverContext);
   const selected = useSearchParams().get('selected');
   useEffect(() => {
-    if (selected) setHidden('detail', false);
-    else setHidden('collection', false);
+    if (!selected) setHidden('collection', false);
     // setHidden は描画のたびに作り直すので、選んだ 1 件が変わったときだけ動かす
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
@@ -183,7 +191,8 @@ export const SplitPanes = ({
         <div className={cn('contents', hidden.collection && 'lg:hidden')} inert={covered}>
           {collection}
         </div>
-        <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>
+        {/* 詳細を隠しているときの出し方は、詳細のペイン（`DetailSheet`）が決める */}
+        {detail}
       </main>
     </InSplitContext>
   );
