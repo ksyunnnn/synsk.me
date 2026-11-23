@@ -73,6 +73,33 @@ const DetailSubmit = ({ form }: { form: string }) => (
 );
 
 /**
+ * ⌘S（macOS 以外は Ctrl+S）で詳細のフォームを保存する（HIG Keyboards の標準のショートカット
+ * 「Command-S: Save a new document or save a version of a document」）。保存のボタンは見た目の
+ * 並びのとおりフォームより前にあり、最後の欄から Tab で進んでも届かない。本文のように Enter で送れない
+ * 欄からも、戻らずに保存できるようにする。フォーカスが詳細のフォームの中にあるときだけ働き、
+ * 送っている間は何もしない
+ */
+const useSaveShortcut = (formId: string, active: boolean) => {
+  useEffect(() => {
+    if (!active) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 's' || event.shiftKey || event.altKey) return;
+      if (!(event.metaKey || event.ctrlKey) || event.isComposing) return;
+      const form = document.getElementById(formId);
+      if (!(form instanceof HTMLFormElement) || !form.contains(event.target as Node)) return;
+      event.preventDefault();
+      const button = document.querySelector<HTMLButtonElement>(
+        `button[form="${CSS.escape(formId)}"]`,
+      );
+      if (button?.disabled) return;
+      form.requestSubmit();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [formId, active]);
+};
+
+/**
  * 狭い画面の上の行で、保存のボタンが出るときの形。ボタンと同じく、詳細のフォームがあるかを CSS の
  * `:has()` で見る。フォームが無い（「この実績はありません」など）ときは、閉じるを末尾に置き、高さを取らない
  */
@@ -198,6 +225,7 @@ export const DetailSheet = ({
     openerRef.current = null;
   }, [open]);
   useFitToViewport(sectionRef, open && !narrow);
+  useSaveShortcut(formId, open);
   if (narrow && !direct)
     return (
       <NarrowSheet open={open} closeHref={closeHref} label={label} actions={actions}>
