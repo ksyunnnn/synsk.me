@@ -60,7 +60,24 @@ export const ProjectDetail = async ({
 
   return (
     <div className="flex flex-col gap-6">
-      <DetailHeading title={project.title} draftKey={`project:${project.uid}`}>
+      <DetailHeading compact title={project.title} draftKey={`project:${project.uid}`} />
+      {notice && (
+        <SavedNotice key={`${notice}-${project.updatedAt}`} flags={[notice]}>
+          {NOTICES[notice]}
+        </SavedNotice>
+      )}
+      {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
+      <ProjectForm
+        key={project.updatedAt}
+        action={editProject}
+        initialValues={toProjectFormValues(project)}
+        organizationNames={organizationNames}
+        skillOptions={skillOptions}
+        project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
+      />
+      {/* 計算で決まる関係は、入力の後に置く（HIG Layout の「Order content by relative importance」） */}
+      <section className="flex flex-col gap-4 border-t border-border pt-6">
+        <h3 className="text-caption text-muted-foreground">つながり</h3>
         <DetailFacts
           facts={[
             {
@@ -80,21 +97,7 @@ export const ProjectDetail = async ({
         <p className="text-small">
           <TextLink href={routes.project(project.slug)}>訪問者に見せるページを開く</TextLink>
         </p>
-      </DetailHeading>
-      {notice && (
-        <SavedNotice key={`${notice}-${project.updatedAt}`} flags={[notice]}>
-          {NOTICES[notice]}
-        </SavedNotice>
-      )}
-      {/* 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す */}
-      <ProjectForm
-        key={project.updatedAt}
-        action={editProject}
-        initialValues={toProjectFormValues(project)}
-        organizationNames={organizationNames}
-        skillOptions={skillOptions}
-        project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
-      />
+      </section>
       <section className="flex flex-col gap-4 border-t border-border pt-6">
         <h3 id="project-media-heading" className="text-caption text-muted-foreground">
           画像

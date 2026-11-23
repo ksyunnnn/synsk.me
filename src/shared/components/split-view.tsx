@@ -237,16 +237,22 @@ export const CollectionEmpty = ({ children }: { children: ReactNode }) => (
 export const DetailHeading = ({
   title,
   draftKey,
+  compact = false,
   children,
 }: {
   title: ReactNode;
   draftKey?: string;
+  /**
+   * 見出しを本文の大きさの 2 行までにする。すぐ下の入力に同じ題があるフォームで、入力を
+   * 押し下げないために使う（HIG Layout の「Order content by relative importance」）
+   */
+  compact?: boolean;
   /** 見出しの下に添える、計算で決まる関係など */
   children?: ReactNode;
 }) => (
-  <header className="flex flex-col gap-2 pb-6">
+  <header className={cn('flex flex-col gap-2', compact ? 'pb-2' : 'pb-6')}>
     {draftKey && <DraftMark draftKey={draftKey} />}
-    <h2 className="text-heading-2">{title}</h2>
+    <h2 className={compact ? 'line-clamp-2 font-semibold' : 'text-heading-2'}>{title}</h2>
     {children}
   </header>
 );

@@ -134,15 +134,6 @@ export const ProjectForm = ({
         <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
 
-      {/* 公開の設定。オンとオフの 2 つを 1 つのまとまりに並べる */}
-      <SettingsGroup>
-        <SiteStatusField status={values.status} />
-        <MaskingField
-          isMasked={values.isMasked}
-          description="訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
-        />
-      </SettingsGroup>
-
       <FormGroup title="何を">
         <KindField value={values.kind} error={errorOf('kind')} />
         <InputField
@@ -247,6 +238,18 @@ export const ProjectForm = ({
             error={errorOf('slug')}
           />
         )}
+      </FormGroup>
+
+      {/* 公開の設定は、何を・いつ・中身の入力の後に置く（HIG Layout の「Order content by relative
+          importance」）。状態を隠さないよう、たたまずに出す */}
+      <FormGroup title="公開">
+        <SettingsGroup>
+          <SiteStatusField status={values.status} />
+          <MaskingField
+            isMasked={values.isMasked}
+            description="訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
+          />
+        </SettingsGroup>
       </FormGroup>
 
       <FormActions>
