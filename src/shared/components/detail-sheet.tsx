@@ -107,7 +107,9 @@ const useHydrating = () =>
 /**
  * 広い画面で、ペインの上端から画面の下端までの高さに収める。ペインより上に見出しやタブがある画面
  * （職務経歴書の中身）で、ペインの下端が画面の外に出て、末尾が隠れないようにする。上端の位置は
- * スクロールで変わる（一覧が長いとペインは留まる）ので、スクロールのたびに測り直す
+ * スクロールで変わる（一覧が長いとペインは留まる）ので、スクロールのたびに測り直す。列を隠すと
+ * 上に戻すボタンの行が足され、スクロールしなくても上端が下がるので、ページの大きさが変わったときも
+ * 測り直す
  */
 const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) => {
   useEffect(() => {
@@ -125,7 +127,12 @@ const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) =
     measure();
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
+    const resized = new ResizeObserver(schedule);
+    resized.observe(document.body);
+    const main = element.closest('main');
+    if (main) resized.observe(main);
     return () => {
+      resized.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
