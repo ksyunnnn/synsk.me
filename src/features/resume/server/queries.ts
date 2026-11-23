@@ -73,13 +73,16 @@ export const findResumeRowId = async (
     : resumes.findRowIdByUid(id, kind, parsed);
 };
 
-/** オーナーが編集する職務経歴書。オーナーでなければ 403。無い uid なら null */
-export const getResumeForEdit = async (uid: string): Promise<ResumeForEdit | null> => {
+/**
+ * オーナーが編集する職務経歴書。オーナーでなければ 403。無い uid なら null。職務経歴書の中の
+ * レイアウトとページの両方が呼ぶため、1 つの要求の中では D1 に 1 回だけ問い合わせる
+ */
+export const getResumeForEdit = cache(async (uid: string): Promise<ResumeForEdit | null> => {
   await requireAuthor();
   const resumes = await createResumeRepository();
   const id = await findIdByUid(resumes, uid);
   return id === null ? null : resumes.findForEdit(id);
-};
+});
 
 /**
  * 限定公開用の URL（`/resume/{slug}`）。要求の host から作る。URL を知る人は誰でも読めるため、
