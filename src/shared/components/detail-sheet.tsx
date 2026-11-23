@@ -72,6 +72,41 @@ const DetailSubmit = ({ form }: { form: string }) => (
   </SubmitButton>
 );
 
+/**
+ * ⌘S（macOS 以外は Ctrl+S）で詳細のフォームを保存する（HIG Keyboards の標準のショートカット
+ * 「Command-S: Save a new document or save a version of a document」）。保存のボタンは見た目の
+ * 並びのとおりフォームより前にあり、最後の欄から Tab で進んでも届かない。本文のように Enter で送れない
+ * 欄からも、戻らずに保存できるようにする。フォーカスが詳細のフォームの中にあるときだけ働き、
+ * 送っている間は何もしない
+ */
+const useSaveShortcut = (formId: string, active: boolean) => {
+  useEffect(() => {
+    if (!active) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 's' || event.shiftKey || event.altKey) return;
+      if (!(event.metaKey || event.ctrlKey) || event.isComposing) return;
+      const form = document.getElementById(formId);
+      if (!(form instanceof HTMLFormElement) || !form.contains(event.target as Node)) return;
+      event.preventDefault();
+      const button = document.querySelector<HTMLButtonElement>(
+        `button[form="${CSS.escape(formId)}"]`,
+      );
+      if (button?.disabled) return;
+      form.requestSubmit();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [formId, active]);
+};
+
+/**
+ * 狭い画面の上の行で、保存のボタンが出るときの形。ボタンと同じく、詳細のフォームがあるかを CSS の
+ * `:has()` で見る。フォームが無い（「この実績はありません」など）ときは、閉じるを末尾に置き、高さを取らない
+ */
+const SUBMIT_ROW_HEIGHT = 'group-has-[[data-detail-form]]/detail:min-h-12';
+const CLOSE_BESIDE_SUBMIT =
+  'right-3 group-has-[[data-detail-form]]/detail:right-auto group-has-[[data-detail-form]]/detail:left-3';
+
 /** `globals.css` の `--breakpoint-lg`（976px）より狭い画面 */
 const NARROW_QUERY = '(max-width: 975.98px)';
 
@@ -107,7 +142,9 @@ const useHydrating = () =>
 /**
  * 広い画面で、ペインの上端から画面の下端までの高さに収める。ペインより上に見出しやタブがある画面
  * （職務経歴書の中身）で、ペインの下端が画面の外に出て、末尾が隠れないようにする。上端の位置は
- * スクロールで変わる（一覧が長いとペインは留まる）ので、スクロールのたびに測り直す
+ * スクロールで変わる（一覧が長いとペインは留まる）ので、スクロールのたびに測り直す。列を隠すと
+ * 上に戻すボタンの行が足され、スクロールしなくても上端が下がるので、ページの大きさが変わったときも
+ * 測り直す
  */
 const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) => {
   useEffect(() => {
@@ -125,7 +162,12 @@ const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) =
     measure();
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
+    const resized = new ResizeObserver(schedule);
+    resized.observe(document.body);
+    const main = element.closest('main');
+    if (main) resized.observe(main);
     return () => {
+      resized.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
@@ -183,6 +225,7 @@ export const DetailSheet = ({
     openerRef.current = null;
   }, [open]);
   useFitToViewport(sectionRef, open && !narrow);
+  useSaveShortcut(formId, open);
   if (narrow && !direct)
     return (
       <NarrowSheet open={open} closeHref={closeHref} label={label} actions={actions}>
@@ -207,8 +250,9 @@ export const DetailSheet = ({
         <div
           className={cn(
             'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1 lg:hidden',
-            // 主な操作のボタンが、下の見出しに重ならない高さを取る
-            actions && 'min-h-12',
+            // 主な操作のボタンが、下の見出しに重ならない高さを取る。ボタンは詳細のフォームが
+            // あるときだけ出る（DetailSubmit）ので、高さも同じ条件で取る
+            actions && SUBMIT_ROW_HEIGHT,
           )}
         >
           <span aria-hidden className="h-6 w-16" />
@@ -222,7 +266,7 @@ export const DetailSheet = ({
             }}
             className={cn(
               'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
-              actions ? 'left-3' : 'right-3',
+              actions ? CLOSE_BESIDE_SUBMIT : 'right-3',
             )}
           >
             閉じる
@@ -328,7 +372,7 @@ const NarrowSheet = ({
             <div
               className={cn(
                 'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1',
-                actions && 'min-h-12',
+                actions && SUBMIT_ROW_HEIGHT,
               )}
             >
               {/* つまみ。引いて高さを変え、押すと高さを切り替える（HIG Sheets の grabber） */}
@@ -343,11 +387,11 @@ const NarrowSheet = ({
                   {expanded ? '半分の高さにする' : '全体の高さにする'}
                 </span>
               </button>
-              {/* 主な操作があるときは、閉じるを先頭に、主な操作を末尾に置く */}
+              {/* 主な操作が出るときは、閉じるを先頭に、主な操作を末尾に置く */}
               <Drawer.Close
                 className={cn(
                   'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
-                  actions ? 'left-3' : 'right-3',
+                  actions ? CLOSE_BESIDE_SUBMIT : 'right-3',
                 )}
               >
                 閉じる

@@ -210,6 +210,10 @@ export const ProjectForm = ({
             <p className="text-sm text-muted-foreground">
               スキルは、スキルの画面で登録するとここで選べます
             </p>
+            {/* 選べるスキルが無いときも、送ったスキルを受け付けなかった（選んだ後に消えたスキル）ことを知らせる */}
+            {errorOf('skillIds') && (
+              <p className="text-sm text-destructive">{errorOf('skillIds')}</p>
+            )}
           </div>
         ) : (
           <TokenField
