@@ -17,7 +17,7 @@ export const DashTile = ({ href, label, note }: { href: string; label: string; n
 
 export const DashGroup = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="flex flex-col gap-3 rounded-3xl bg-background p-6">
-    <h2 className="text-caption font-medium text-muted-foreground">{title}</h2>
+    <h2 className="text-caption text-muted-foreground">{title}</h2>
     <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">{children}</ul>
   </section>
 );

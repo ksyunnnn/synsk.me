@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
  */
 export const FormGroup = ({ title, children }: { title: string; children: ReactNode }) => (
   <section className="flex flex-col gap-4">
-    <h3 className="text-caption font-medium text-muted-foreground">{title}</h3>
+    <h3 className="text-caption text-muted-foreground">{title}</h3>
     {children}
   </section>
 );

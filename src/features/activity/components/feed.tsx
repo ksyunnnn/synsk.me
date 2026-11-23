@@ -61,7 +61,7 @@ const TitleLink = ({
   rel?: string;
   children: ReactNode;
 }) => (
-  <h2 className="text-heading-2 tracking-heading">
+  <h2 className="font-bold">
     <a href={href} rel={rel} className={titleLinkClassName}>
       {children}
     </a>
@@ -71,7 +71,7 @@ const TitleLink = ({
 const CareerRow = ({ item }: { item: CareerFeedItem }) => (
   <article className="flex flex-col gap-1">
     <p className="text-sm text-muted-foreground">職歴</p>
-    <h2 className="text-heading-2 tracking-heading">{item.organizationName}</h2>
+    <h2 className="font-bold">{item.organizationName}</h2>
     <p>{item.role}</p>
     <p className="text-sm text-muted-foreground">
       <PeriodText period={item.period} />
