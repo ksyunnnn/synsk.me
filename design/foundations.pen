@@ -1194,6 +1194,24 @@
                   "content": "muted の上に muted-foreground を置かない。ライトで 4.5:1 を満たさない"
                 }
               }
+            },
+            {
+              "id": "V4DQST",
+              "type": "ref",
+              "ref": "NtFfY",
+              "name": "instance: Compare",
+              "width": "fill_container",
+              "descendants": {
+                "w0dTl": {
+                  "content": "文字色の 8% の薄い地で示した、選んだ項目"
+                },
+                "cFPUR": {
+                  "content": "濃い地で塗った、選んだ項目"
+                },
+                "LX4u5": {
+                  "content": "選んだ項目（サイドバー・タブ）は、文字色の 8% の薄い地で示す。濃い地は主な操作に取っておく"
+                }
+              }
             }
           ]
         },
@@ -1218,7 +1236,7 @@
               "fill": "#888888",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "出典: ADR-0005、WCAG 2.2 SC 1.4.3",
+              "content": "出典: ADR-0005、WCAG 2.2 SC 1.4.3、ADR-0056、HIG Color",
               "lineHeight": 1.6,
               "fontFamily": "Noto Sans JP",
               "fontSize": 12,
@@ -1234,7 +1252,7 @@
       "ref": "R4S4f4",
       "name": "instance: Dark Mode",
       "x": 800,
-      "y": 1686,
+      "y": 1961,
       "descendants": {
         "FtVpy": {
           "content": "Dark Mode"
@@ -1308,7 +1326,7 @@
       "ref": "R4S4f4",
       "name": "instance: Typography",
       "x": 800,
-      "y": 2355,
+      "y": 2630,
       "descendants": {
         "FtVpy": {
           "content": "Typography"
@@ -1788,6 +1806,188 @@
               }
             },
             {
+              "id": "ISmDp",
+              "type": "ref",
+              "ref": "QAcJN",
+              "name": "instance: Spec",
+              "width": "fill_container",
+              "descendants": {
+                "e6fwQ": {
+                  "type": "frame",
+                  "id": "TphgK",
+                  "name": "Frame: Area",
+                  "width": "fill_container",
+                  "layout": "vertical",
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "id": "yXfij",
+                      "name": "Frame: Row",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "gap": 16,
+                      "padding": [
+                        "$space-xs",
+                        "$space-sm"
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "JYzK1",
+                          "name": "Text: Label",
+                          "fill": "#737373",
+                          "textGrowth": "fixed-width",
+                          "width": 176,
+                          "content": "ページの題",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 12,
+                          "fontWeight": "300"
+                        },
+                        {
+                          "type": "text",
+                          "id": "n8PwUR",
+                          "name": "Text: Sample",
+                          "fill": "#0A0A0A",
+                          "content": "heading-1",
+                          "lineHeight": 1.3,
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 36,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "DX0Mn",
+                      "name": "Frame: Row",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "gap": 16,
+                      "padding": [
+                        "$space-xs",
+                        "$space-sm"
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "U4Tmn",
+                          "name": "Text: Label",
+                          "fill": "#737373",
+                          "textGrowth": "fixed-width",
+                          "width": 176,
+                          "content": "上に Tab view を持つ画面の題",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 12,
+                          "fontWeight": "300"
+                        },
+                        {
+                          "type": "text",
+                          "id": "PiDG3",
+                          "name": "Text: Sample",
+                          "fill": "#0A0A0A",
+                          "content": "heading-2・太字",
+                          "lineHeight": 1.4,
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 28,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "PjDov",
+                      "name": "Frame: Row",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "gap": 16,
+                      "padding": [
+                        "$space-xs",
+                        "$space-sm"
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "KmWIS",
+                          "name": "Text: Label",
+                          "fill": "#737373",
+                          "textGrowth": "fixed-width",
+                          "width": 176,
+                          "content": "節の見出し",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 12,
+                          "fontWeight": "300"
+                        },
+                        {
+                          "type": "text",
+                          "id": "gFupF",
+                          "name": "Text: Sample",
+                          "fill": "#0A0A0A",
+                          "content": "heading-2",
+                          "lineHeight": 1.4,
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 28,
+                          "fontWeight": "300"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "id": "xMO9S",
+                      "name": "Frame: Row",
+                      "width": "fill_container",
+                      "fill": "#FFFFFF",
+                      "stroke": "#E5E5E5",
+                      "strokeWidth": 1,
+                      "gap": 16,
+                      "padding": [
+                        "$space-xs",
+                        "$space-sm"
+                      ],
+                      "alignItems": "center",
+                      "children": [
+                        {
+                          "type": "text",
+                          "id": "CkMbU",
+                          "name": "Text: Label",
+                          "fill": "#737373",
+                          "textGrowth": "fixed-width",
+                          "width": 176,
+                          "content": "ツールバーの題",
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 12,
+                          "fontWeight": "300"
+                        },
+                        {
+                          "type": "text",
+                          "id": "rwcWL",
+                          "name": "Text: Sample",
+                          "fill": "#0A0A0A",
+                          "content": "一覧の行と同じ大きさ・太字",
+                          "lineHeight": 1.5,
+                          "fontFamily": "Noto Sans JP",
+                          "fontSize": 16,
+                          "fontWeight": "600"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "oYJvX": {
+                  "content": "見出しの段（h1 / h2）は文書の構造で決め、大きさと太さは役割で決める。上に Tab view を持つ画面の題は heading-2 の太字にする"
+                }
+              }
+            },
+            {
               "id": "UPogt",
               "type": "ref",
               "ref": "j68Vl",
@@ -1897,7 +2097,43 @@
                   "content": "ウェイトの差で区別した見出し"
                 },
                 "LX4u5": {
-                  "content": "見出しはサイズの差で区別し、ウェイトの差に頼らない"
+                  "content": "見出しはサイズの差で区別し、ウェイトの差に頼らない。太字にしてよいのは、ツールバーの題と、上に Tab view を持つ画面の題に限る"
+                }
+              }
+            },
+            {
+              "id": "h84sAD",
+              "type": "ref",
+              "ref": "NtFfY",
+              "name": "instance: Compare",
+              "width": "fill_container",
+              "descendants": {
+                "w0dTl": {
+                  "content": "一覧の行と同じ大きさの太字にしたツールバーの題"
+                },
+                "cFPUR": {
+                  "content": "見出しの段に合わせて heading-1 にしたツールバーの題"
+                },
+                "LX4u5": {
+                  "content": "ツールバーの題は、一覧の行の文字と同じ大きさの太字にする。見出しの段（h1 / h2）で大きさを変えない"
+                }
+              }
+            },
+            {
+              "id": "DfC6t",
+              "type": "ref",
+              "ref": "NtFfY",
+              "name": "instance: Compare",
+              "width": "fill_container",
+              "descendants": {
+                "w0dTl": {
+                  "content": "タブの名前だけが見えている区画"
+                },
+                "cFPUR": {
+                  "content": "タブと同じ名前のツールバーの題を重ねた区画"
+                },
+                "LX4u5": {
+                  "content": "タブで同じ名前が見えている区画では、ツールバーの題を画面に出さず、読み上げにだけ残す"
                 }
               }
             }
@@ -1912,7 +2148,7 @@
               "fill": "#888888",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "出典: ADR-0005、MDN clamp()",
+              "content": "出典: ADR-0005、MDN clamp()、ADR-0056、HIG Toolbars",
               "lineHeight": 1.6,
               "fontFamily": "Noto Sans JP",
               "fontSize": 12,
@@ -1928,7 +2164,7 @@
       "ref": "R4S4f4",
       "name": "instance: Layout",
       "x": 800,
-      "y": 4218,
+      "y": 5399,
       "descendants": {
         "FtVpy": {
           "content": "Layout"
@@ -2603,7 +2839,7 @@
       "ref": "R4S4f4",
       "name": "instance: Icons",
       "x": 800,
-      "y": 6511,
+      "y": 7692,
       "descendants": {
         "FtVpy": {
           "content": "Icons"
@@ -2683,7 +2919,7 @@
       "ref": "R4S4f4",
       "name": "instance: Images",
       "x": 800,
-      "y": 7442,
+      "y": 8623,
       "descendants": {
         "FtVpy": {
           "content": "Images"
@@ -2747,7 +2983,7 @@
       "ref": "R4S4f4",
       "name": "instance: Branding",
       "x": 800,
-      "y": 8086,
+      "y": 9267,
       "descendants": {
         "FtVpy": {
           "content": "Branding"
@@ -2978,7 +3214,7 @@
       "ref": "R4S4f4",
       "name": "instance: Materials",
       "x": 800,
-      "y": 9267,
+      "y": 10448,
       "descendants": {
         "FtVpy": {
           "content": "Materials"
@@ -5102,7 +5338,7 @@
       "ref": "R4S4f4",
       "name": "instance: Elevation",
       "x": 800,
-      "y": 10154,
+      "y": 11335,
       "descendants": {
         "FtVpy": {
           "content": "Elevation"
