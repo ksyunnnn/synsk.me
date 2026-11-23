@@ -21,7 +21,8 @@ import {
   type VisitorResume,
 } from '@/features/resume/domain/visitor-resume';
 import { createD1ResumeRepository } from '@/features/resume/server/d1-resume-repository';
-import { parseMediaStorageKey } from '@/shared/domain/media';
+import { readMarkdown } from '@/shared/domain/markdown';
+import { parseMediaStorageKey, type MediaStorageKey } from '@/shared/domain/media';
 import { findIdByUid, parseUid } from '@/shared/domain/uid';
 import { requireAuthor } from '@/shared/server/author';
 import { readEnv } from '@/shared/server/env';
@@ -49,6 +50,26 @@ export const listResumes = async (): Promise<ResumeListItem[]> => {
 export const listResumesCopyingProject = async (projectId: number): Promise<Resume[]> => {
   await requireAuthor();
   return (await createResumeRepository()).listCopyingProject(projectId);
+};
+
+/**
+ * 実績（`project` の id）の画像を本文で使う職務経歴書の題。キーは画像の置き場のキー。写した行の
+ * 本文の画像の印から求める。オーナーでなければ 403
+ */
+export const listResumesUsingProjectMedia = async (
+  projectId: number,
+): Promise<Record<MediaStorageKey, string[]>> => {
+  await requireAuthor();
+  const usage: Record<MediaStorageKey, string[]> = {};
+  for (const { resumeTitle, description } of await (
+    await createResumeRepository()
+  ).listProjectCopyBodies(projectId)) {
+    for (const key of readMarkdown(description ?? '').mediaKeys) {
+      const titles = (usage[key] ??= []);
+      if (!titles.includes(resumeTitle)) titles.push(resumeTitle);
+    }
+  }
+  return usage;
 };
 
 /** 作成の画面の選択肢。オーナーでなければ 403 */

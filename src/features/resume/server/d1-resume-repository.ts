@@ -530,6 +530,22 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
       return results.map(toResume);
     },
 
+    listProjectCopyBodies: async (projectId) => {
+      const { results } = await db
+        .prepare(
+          `SELECT resume.title AS resume_title, resume_project.description
+           FROM resume_project JOIN resume ON resume.id = resume_project.resume_id
+           WHERE resume_project.project_id = ?
+           ORDER BY resume.created_at DESC, resume.id DESC`,
+        )
+        .bind(projectId)
+        .all<{ resume_title: string; description: string | null }>();
+      return results.map((row) => ({
+        resumeTitle: row.resume_title,
+        description: row.description,
+      }));
+    },
+
     findForEdit: async (id) => {
       const row = await db
         .prepare(`SELECT ${RESUME_COLUMNS} FROM resume WHERE id = ?`)

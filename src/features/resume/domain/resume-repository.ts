@@ -41,6 +41,10 @@ export type ResumeRepository = {
   list: () => Promise<ResumeListItem[]>;
   /** 実績（`project` の id）を写した職務経歴書。1 つの問い合わせで読む。作った日時の新しい順 */
   listCopyingProject: (projectId: number) => Promise<Resume[]>;
+  /** 実績（`project` の id）を写した行の本文と、その職務経歴書の題。1 つの問い合わせで読む */
+  listProjectCopyBodies: (
+    projectId: number,
+  ) => Promise<{ resumeTitle: string; description: string | null }[]>;
   findForEdit: (id: ResumeId) => Promise<ResumeForEdit | null>;
   /** 管理画面の URL とフォームの uid が指す職務経歴書の id。無ければ null */
   findIdByUid: (uid: Uid) => Promise<ResumeId | null>;

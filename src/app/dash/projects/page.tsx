@@ -234,6 +234,7 @@ const Page = async ({ searchParams }: Props) => {
               saved: firstParam(raw.saved),
               mediaAdded: firstParam(raw.mediaAdded),
               cardImageChanged: firstParam(raw.cardImageChanged),
+              mediaDeleted: firstParam(raw.mediaDeleted),
             }}
           />
         )

@@ -1,13 +1,16 @@
 'use client';
 
+import { AlertDialog } from '@base-ui/react/alert-dialog';
 import { Popover } from '@base-ui/react/popover';
-import { useActionState, useId } from 'react';
+import { useActionState, useId, useRef } from 'react';
 import {
   AS_CARD_IMAGE_FIELD,
   CARD_IMAGE_FIELD,
+  DELETE_MEDIA_FIELD,
   NO_CARD_IMAGE,
   PROJECT_UID_FIELD,
   type CardImageFormResult,
+  type DeleteMediaFormResult,
 } from '@/features/project/domain/project';
 import { cn } from '@/lib/utils';
 import { FORBIDDEN_MESSAGE, FormAlert } from '@/shared/components/form-alert';
@@ -37,11 +40,17 @@ type Props = {
   bodyMediaKeys: string[];
   /** 画像の URL。オーナーにだけ返す経路 */
   mediaUrls: Record<string, string>;
+  /** 画像を本文で使う職務経歴書の題。キーは画像の置き場のキー */
+  resumesUsingMedia: Record<string, string[]>;
   changeCardImage: (
     state: CardImageFormResult | null,
     formData: FormData,
   ) => Promise<CardImageFormResult>;
   addMedia: (state: MediaFormResult | null, formData: FormData) => Promise<MediaFormResult>;
+  deleteMedia: (
+    state: DeleteMediaFormResult | null,
+    formData: FormData,
+  ) => Promise<DeleteMediaFormResult>;
 };
 
 const FOCUS = 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
@@ -169,7 +178,15 @@ const CardImagePicker = ({
   </Popover.Root>
 );
 
-const MediaGrid = ({ mediaStorageKeys, cardMediaKey, bodyMediaKeys, mediaUrls }: Props) => (
+const MediaGrid = ({
+  projectUid,
+  mediaStorageKeys,
+  cardMediaKey,
+  bodyMediaKeys,
+  mediaUrls,
+  resumesUsingMedia,
+  deleteMedia,
+}: Props) => (
   <div className="flex flex-col gap-3">
     <h4 className="text-small font-medium">この実績の画像</h4>
     {mediaStorageKeys.length === 0 ? (
@@ -211,6 +228,13 @@ const MediaGrid = ({ mediaStorageKeys, cardMediaKey, bodyMediaKeys, mediaUrls }:
                   {inBody ? '本文で使用中' : '本文で未使用'}
                 </span>
               </div>
+              <DeleteMediaButton
+                projectUid={projectUid}
+                storageKey={key}
+                label={`画像 ${index + 1}`}
+                resumeTitles={resumesUsingMedia[key] ?? []}
+                deleteMedia={deleteMedia}
+              />
             </li>
           );
         })}
@@ -218,6 +242,69 @@ const MediaGrid = ({ mediaStorageKeys, cardMediaKey, bodyMediaKeys, mediaUrls }:
     )}
   </div>
 );
+
+/**
+ * 画像を 1 枚消すボタンと確認。確認は AlertDialog で出し、初めのフォーカスは「やめる」に置く
+ * （HIG の Alerts、https://developer.apple.com/design/human-interface-guidelines/alerts ）。
+ * 職務経歴書の本文で使う画像なら、その題を確認に出す。本文と職務経歴書に残った印は書き換えない
+ */
+const DeleteMediaButton = ({
+  projectUid,
+  storageKey,
+  label,
+  resumeTitles,
+  deleteMedia,
+}: {
+  projectUid: string;
+  storageKey: string;
+  label: string;
+  resumeTitles: string[];
+  deleteMedia: Props['deleteMedia'];
+}) => {
+  const [result, formAction] = useActionState(deleteMedia, null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+  const message =
+    result?.status === 'forbidden'
+      ? FORBIDDEN_MESSAGE
+      : result?.status === 'invalid'
+        ? result.errors[DELETE_MEDIA_FIELD] === 'media-not-owned'
+          ? 'この実績の画像だけを削除できます'
+          : '画像を削除できませんでした'
+        : null;
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <AlertDialog.Root>
+        <AlertDialog.Trigger className={cn(BUTTON, 'self-start')}>削除</AlertDialog.Trigger>
+        <AlertDialog.Portal>
+          <AlertDialog.Backdrop className="fixed inset-0 z-50 bg-foreground/20" />
+          <AlertDialog.Popup
+            initialFocus={cancelRef}
+            className="fixed top-1/2 left-1/2 z-50 flex w-80 max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-2xl bg-background p-4 shadow-lg ring-1 ring-border outline-none"
+          >
+            <AlertDialog.Title className="text-small font-medium">
+              {label}を削除しますか
+            </AlertDialog.Title>
+            <AlertDialog.Description className="text-small text-muted-foreground">
+              削除すると戻せません。
+              {resumeTitles.length > 0 &&
+                `次の職務経歴書の本文で使っています: ${resumeTitles.join('、')}`}
+            </AlertDialog.Description>
+            <form action={formAction} className="flex justify-end gap-2">
+              <input type="hidden" name={PROJECT_UID_FIELD} value={projectUid} />
+              <input type="hidden" name={DELETE_MEDIA_FIELD} value={storageKey} />
+              <AlertDialog.Close ref={cancelRef} className={BUTTON}>
+                やめる
+              </AlertDialog.Close>
+              <SubmitButton className={cn(BUTTON, 'text-destructive')}>削除する</SubmitButton>
+            </form>
+          </AlertDialog.Popup>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
+      {message && <FormAlert>{message}</FormAlert>}
+    </div>
+  );
+};
 
 /** 本文に入れずに画像を足すフォーム。代表画像にもできる（FR-028 の「本文とは別に登録」） */
 const AddMediaForm = ({ projectUid, addMedia }: Props) => {

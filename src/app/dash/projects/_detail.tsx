@@ -7,10 +7,14 @@ import {
   addProjectMedia,
   attachProjectMedia,
   changeProjectCardImage,
+  deleteProjectMedia,
   editProject,
 } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
-import { listResumesCopyingProject } from '@/features/resume/server/queries';
+import {
+  listResumesCopyingProject,
+  listResumesUsingProjectMedia,
+} from '@/features/resume/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { DetailBody } from '@/shared/components/split-view';
@@ -24,6 +28,7 @@ const NOTICES = {
   saved: '保存しました',
   mediaAdded: '画像を足しました',
   cardImageChanged: '代表画像を変えました',
+  mediaDeleted: '画像を削除しました',
 } as const;
 
 /**
@@ -40,13 +45,16 @@ export const ProjectDetail = async ({
   const project = await getProjectForEdit(uid);
   if (!project)
     return <p className="py-12 text-center text-muted-foreground">この実績はありません</p>;
-  const [skillOptions, organizationNames, careers, copiedTo] = await Promise.all([
-    listSkillOptions(),
-    listOrganizationNames(),
-    listCareers(),
-    // 実績を写した職務経歴書。写しは元から切り離されているので、写したことだけを示す
-    listResumesCopyingProject(project.id),
-  ]);
+  const [skillOptions, organizationNames, careers, copiedTo, resumesUsingMedia] = await Promise.all(
+    [
+      listSkillOptions(),
+      listOrganizationNames(),
+      listCareers(),
+      // 実績を写した職務経歴書。写しは元から切り離されているので、写したことだけを示す
+      listResumesCopyingProject(project.id),
+      listResumesUsingProjectMedia(project.id),
+    ],
+  );
   const ownCareers = careersOfProject(
     { organizationId: project.organization.id, period: project.period },
     careers,
@@ -125,8 +133,10 @@ export const ProjectDetail = async ({
                   routes.dash.projects.media(project.uid, key),
                 ]),
               )}
+              resumesUsingMedia={resumesUsingMedia}
               changeCardImage={changeProjectCardImage}
               addMedia={addProjectMedia}
+              deleteMedia={deleteProjectMedia}
             />
           ),
         },
