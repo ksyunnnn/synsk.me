@@ -14,7 +14,12 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { CoverContext, PaneToggle, useDetailPeek } from '@/shared/components/dash-panes';
+import {
+  CoverContext,
+  ExpandDetailButton,
+  PaneToggle,
+  useDetailPeek,
+} from '@/shared/components/dash-panes';
 import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
 import { cn } from '@/lib/utils';
 
@@ -40,9 +45,10 @@ import { cn } from '@/lib/utils';
  *
  * 広い画面で詳細の列を隠しているときは、選んだ 1 件を、一覧の右に重なるドロワー（peek）で出す。
  * 一覧の幅を変えず、一覧を操作し続けられるよう、モーダルにしない（Notion の Side peek、
- * https://www.notion.com/help/views-filters-and-sorts ）。本文の面なのでガラスにしない
- * （HIG Materials の「Don't use Liquid Glass in the content layer.」）。閉じるボタンと Esc で閉じる。
- * 上の行の「詳細を隠す」を外すと、詳細の列に戻る
+ * https://www.notion.com/help/views-filters-and-sorts ）。ドロワーは一覧の上に浮く層なので、狭い画面の
+ * 半分の高さのシートと同じくガラスにする（#388）。閉じるボタンと Esc で閉じる。上の行の「全体に
+ * 広げる」で、一覧を隠して詳細を全体の幅で出す（Notion の「Click ⤡ at the top left to view in full
+ * page mode.」https://www.notion.com/help/intro-to-databases ）。「詳細を隠す」を外すと、詳細の列に戻る
  */
 
 /** ペインが決めた、詳細のフォームの id。ペインの外では無い */
@@ -129,6 +135,12 @@ const useNarrow = () =>
     () => window.matchMedia(NARROW_QUERY).matches,
     () => false,
   );
+
+/**
+ * 広い画面のドロワーが出入りする時間。狭い画面のシート（`NarrowSheet`）と同じ時間と曲線にし、
+ * 画面の幅が変わっても動きの感じを揃える
+ */
+const PEEK_MS = 300;
 
 /** 止まる高さ。半分（HIG Sheets の medium detent）と全体（large detent） */
 const HALF = 0.55;
@@ -256,10 +268,16 @@ export const DetailSheet = ({
   }, [open]);
   useFitToViewport(sectionRef, open && !narrow && !peek);
   useSaveShortcut(formId, open);
-  useCloseOnEscape(peek, () => {
+  // ドロワーを閉じ始めたか。右へ出ていく動きを見せてから、選んだ 1 件を外した一覧へ移る
+  const [leaving, setLeaving] = useState(false);
+  if (leaving && !open) setLeaving(false);
+  const closePeek = () => {
     openerRef.current = selectedRow();
-    router.push(closeHref, { scroll: false });
-  });
+    setLeaving(true);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.setTimeout(() => router.push(closeHref, { scroll: false }), reduced ? 0 : PEEK_MS);
+  };
+  useCloseOnEscape(peek && !leaving, closePeek);
   if (narrow && !direct)
     return (
       <NarrowSheet open={open} closeHref={closeHref} label={label} actions={actions}>
@@ -272,17 +290,23 @@ export const DetailSheet = ({
       aria-label={label}
       className={cn(
         // 留めたツールバーの下に、フォーカスを移した入力が隠れないようにする（WCAG 2.2 SC 2.4.11）
-        'group/detail min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-0 lg:shadow-none lg:backdrop-filter-none',
+        'group/detail min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:p-0',
+        peek ? 'glass' : 'lg:border-0 lg:bg-background lg:shadow-none lg:backdrop-filter-none',
         // 狭い画面でこの形が出るのは、URL を直接開いたときだけ。全体の高さで一覧を覆う。広い画面では
         // fixed を外して sticky に戻し、ページをスクロールしてもペインの上端のツールバーを見せる
         open
-          ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl bg-background lg:sticky lg:inset-x-auto lg:bottom-auto lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
+          ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl max-lg:bg-background lg:sticky lg:inset-x-auto lg:bottom-auto lg:h-auto lg:flex-none lg:overflow-y-auto'
           : 'hidden',
         // 詳細の列を隠しているときは、選んだ 1 件が無ければ出さない
         hiddenPane && !open && 'lg:hidden',
-        // 一覧の右に重なるドロワー。幅は詳細の列の上限と同じにし、画面からはみ出さない
+        // 一覧の右に重なるドロワー。幅は詳細の列の上限と同じにし、画面からはみ出さない。上の行を
+        // 留め、本文だけをスクロールする（ガラスの上の行に本文が透けて重ならないようにする）
         peek &&
-          'lg:fixed lg:top-4 lg:right-4 lg:bottom-4 lg:left-auto lg:z-30 lg:h-auto lg:max-h-none lg:w-[600px] lg:max-w-[calc(100vw-2rem)] lg:shadow-2xl lg:ring-1 lg:ring-foreground/10',
+          'lg:fixed lg:top-4 lg:right-4 lg:bottom-4 lg:left-auto lg:z-30 lg:flex lg:h-auto lg:max-h-none lg:w-[600px] lg:max-w-[calc(100vw-2rem)] lg:flex-col lg:overflow-hidden',
+        // 右から入り、右へ出ていく。入りは表示になった瞬間の位置（@starting-style）から動かす
+        peek &&
+          'lg:transition-[translate] lg:duration-300 lg:ease-[cubic-bezier(0.32,0.72,0,1)] lg:starting:translate-x-[calc(100%+1rem)] motion-reduce:transition-none',
+        peek && leaving && 'lg:translate-x-[calc(100%+1rem)]',
       )}
     >
       {open && (
@@ -315,24 +339,36 @@ export const DetailSheet = ({
       )}
       {/* 広い画面のペインの上の行。詳細の列を隠すボタンと、末尾に主な操作を置く。ガラスのバーに
           しない。一覧の列を隠すボタンは、一覧のツールバーが持つ */}
-      <div className="sticky top-0 z-10 hidden items-center justify-end gap-2 bg-background px-4 pt-3 pb-2 lg:flex">
+      <div
+        className={cn(
+          'z-10 hidden shrink-0 items-center justify-end gap-2 px-4 pt-3 pb-2 lg:flex',
+          peek ? 'relative' : 'sticky top-0 bg-background',
+        )}
+      >
         {peek && (
           <Link
             href={closeHref}
             scroll={false}
-            onClick={() => {
-              openerRef.current = selectedRow();
+            onClick={(event) => {
+              event.preventDefault();
+              closePeek();
             }}
             className="mr-auto rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
           >
             閉じる
           </Link>
         )}
+        {peek && <ExpandDetailButton />}
         <PaneToggle pane="detail" className="flex" />
         {actions}
       </div>
       {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}
-      <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:px-6 lg:pt-2 lg:pb-6">
+      <div
+        className={cn(
+          'mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:px-6 lg:pt-2 lg:pb-6',
+          peek ? 'lg:scroll-pt-4 lg:overflow-y-auto' : 'lg:overflow-visible',
+        )}
+      >
         <DetailFormContext value={formId}>{children}</DetailFormContext>
       </div>
     </section>

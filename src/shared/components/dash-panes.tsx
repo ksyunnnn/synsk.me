@@ -84,6 +84,37 @@ export const PaneToggle = ({ pane, className }: { pane: Pane; className?: string
  */
 export const useDetailPeek = () => useContext(PanesContext).hidden.detail;
 
+/**
+ * ドロワーを全体の幅に広げるボタン。一覧を隠し、詳細を全体の幅の列で出す（Notion の「Click ⤡ at
+ * the top left to view in full page mode.」https://www.notion.com/help/intro-to-databases ）。
+ * 一覧に戻すのは、一覧の列を隠すボタン（`PaneToggle`）が持つ
+ */
+export const ExpandDetailButton = () => {
+  const { setHidden } = useContext(PanesContext);
+  return (
+    <button
+      type="button"
+      onClick={() => setHidden('collection', true)}
+      aria-label="全体に広げる"
+      title="全体に広げる"
+      className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
+    >
+      <svg
+        aria-hidden
+        viewBox="0 0 24 24"
+        className="size-[18px]"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7" />
+      </svg>
+    </button>
+  );
+};
+
 /** Split view の中か。一覧のツールバーは、一覧だけの画面でも使うため */
 const InSplitContext = createContext(false);
 
