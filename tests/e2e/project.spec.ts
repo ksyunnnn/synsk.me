@@ -216,6 +216,89 @@ test('同じ実績を 2 つのタブで開くと、後から保存した側は�
   );
 });
 
+test('使ったスキルを全部外して保存せずに別の実績を選び、戻ると、外したままになっている', async ({
+  page,
+  context,
+}) => {
+  const id = crypto.randomUUID().slice(0, 8);
+  const skill = `E2E-Skill-Remove-${id}`;
+  const first = `E2E 実績の題 スキルを外す ${id}`;
+  const second = `E2E 実績の題 別の実績 ${id}`;
+  await actAsAuthor(context);
+  await registerSkill(page, skill);
+  const { editUrl } = await registerProject(page, {
+    organizationName: 'E2E 実績の組織 スキルを外す',
+    title: first,
+    skills: [skill],
+    isMasked: false,
+  });
+  await registerProject(page, {
+    organizationName: 'E2E 実績の組織 スキルを外す',
+    title: second,
+    isMasked: false,
+  });
+
+  await page.goto(editUrl);
+  const heading = page.getByRole('region', { name: '選んだ実績' }).getByRole('heading', {
+    level: 2,
+  });
+  await expect(heading).toHaveText(first);
+  const remove = page.getByRole('button', { name: `${skill}を外す`, exact: true });
+  await waitForHydration(remove);
+  await remove.click();
+  await expect(remove).toHaveCount(0);
+
+  await page.getByRole('link', { name: second, exact: true }).click();
+  await expect(heading).toHaveText(second);
+  await page.getByRole('link', { name: first, exact: true }).click();
+  await expect(heading).toHaveText(first);
+  await expect(remove).toHaveCount(0);
+});
+
+test('実績の詳細は、保存のボタンがフォームの外にあっても、欄で Enter か ⌘S（Ctrl+S）を押すと保存できる', async ({
+  page,
+  context,
+}) => {
+  await actAsAuthor(context);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const skill = `E2E-Skill-Keyboard-${crypto.randomUUID().slice(0, 8)}`;
+  await registerSkill(page, skill);
+  const { editUrl } = await registerProject(page, {
+    organizationName: 'E2E 実績の組織 キーで保存',
+    title: 'E2E 実績の題 キーで保存',
+    skills: [skill],
+    isMasked: false,
+  });
+  await page.goto(editUrl);
+  const title = page.getByRole('textbox', { name: '題', exact: true });
+  await waitForHydration(title);
+  // 送った Server Action の応答を待つ。登録の後の「保存しました」が画面に残っているため
+  const saveWith = async (key: string) => {
+    await Promise.all([
+      page.waitForResponse((res) => res.request().method() === 'POST'),
+      page.keyboard.press(key),
+    ]);
+    await expect(page.getByRole('status')).toHaveText('保存しました');
+  };
+
+  // 1 行の欄は、フォームの外の保存のボタン（`form` 属性）で Enter の送信が働く
+  await title.fill('E2E 実績の題 Enter で保存');
+  await saveWith('Enter');
+  await expect(title).toHaveValue('E2E 実績の題 Enter で保存');
+
+  // トークンの欄も、候補を開いていなければ Enter で送る
+  await page.getByRole('combobox', { name: '使ったスキル', exact: true }).focus();
+  await saveWith('Enter');
+
+  // 本文は Enter で改行するので、⌘S（Ctrl+S）で送る
+  const description = page.getByRole('textbox', { name: '本文', exact: true });
+  await description.fill('E2E ⌘S で保存した本文');
+  await saveWith('ControlOrMeta+S');
+  await page.reload();
+  await waitForHydration(description);
+  await expect(description).toHaveValue('E2E ⌘S で保存した本文');
+});
+
 test('オーナーはキーボードだけで実績を登録・編集・削除できる（constitution V）', async ({
   page,
   context,

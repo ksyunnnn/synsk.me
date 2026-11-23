@@ -70,12 +70,15 @@ test.describe('フォームの区切り', () => {
       title: uniqueTitle('フォームの区切り'),
     });
     await page.goto(editUrl);
-    // 実績は、選んだ 1 件の中で、保存のボタンを持つフォームが内容の区切り
-    const content = page
-      .getByRole('region', { name: '選んだ実績' })
-      .locator('form')
-      .filter({ has: page.getByRole('button', { name: '保存する', exact: true }) });
-    await expect(content.getByRole('button', { name: '保存する', exact: true })).toBeVisible();
+    // 実績は、選んだ 1 件の中で、保存のボタンが `form` 属性で指すフォームが内容の区切り。ボタンは
+    // ペインの上の行にあり、フォームの外に置かれる（src/shared/components/detail-sheet.tsx）
+    const detail = page.getByRole('region', { name: '選んだ実績' });
+    const save = detail.getByRole('button', { name: '保存する', exact: true });
+    await expect(save).toBeVisible();
+    const formId = await save.getAttribute('form');
+    expect(formId, '保存のボタンがフォームを指していない').toBeTruthy();
+    const content = detail.locator(`form[id="${formId}"]`);
+    await expect(content).toHaveCount(1);
     await expect(content.getByRole('button', { name: '画像を足す' })).toHaveCount(0);
     await expect(content.getByRole('button', { name: '代表画像を選び直す' })).toHaveCount(0);
 
@@ -415,5 +418,41 @@ test.describe('狭い画面のシート', () => {
     const sheet = page.getByRole('region', { name: '選んだ実績' });
     await expect(sheet.getByRole('heading', { level: 2 }).first()).toBeFocused();
     await expect(textbox(page, '題')).toHaveValue(typed);
+  });
+});
+
+test.describe('詳細を隠した Split view', () => {
+  test('詳細を隠して 1 件を選ぶと、一覧の幅を保ったまま詳細がドロワーで重なり、Esc で閉じる', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const title = uniqueTitle('ドロワー');
+    await registerProject(page, {
+      organizationName: 'E2E ドロワーの組織',
+      organizationNameMasked: 'E2E ドロワーの秘匿化した組織名',
+      title,
+    });
+    await page.goto('/dash/projects');
+    const hide = page.getByRole('button', { name: '詳細を隠す' });
+    await waitForHydration(hide);
+    await hide.click();
+    const toolbar = page.getByRole('heading', { name: '実績', level: 1 }).locator('..');
+    const before = await toolbar.boundingBox();
+
+    await page.getByRole('link', { name: title }).click();
+    const drawer = page.getByRole('region', { name: '選んだ実績' });
+    await expect(drawer.getByRole('heading', { name: title })).toBeVisible();
+    // 一覧の列は狭まらない（src/shared/components/detail-sheet.tsx の peek）
+    expect((await toolbar.boundingBox())?.width).toBe(before?.width);
+
+    await page.keyboard.press('Escape');
+    await expect(page).not.toHaveURL(/selected=/);
+    await expect(drawer).toBeHidden();
+    await expect(page.getByRole('button', { name: '詳細を隠す' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
   });
 });

@@ -14,7 +14,12 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
-import { CoverContext, PaneToggle } from '@/shared/components/dash-panes';
+import {
+  CoverContext,
+  ExpandDetailButton,
+  PaneToggle,
+  useDetailPeek,
+} from '@/shared/components/dash-panes';
 import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
 import { cn } from '@/lib/utils';
 
@@ -37,6 +42,13 @@ import { cn } from '@/lib/utils';
  * 「Avoid placing controls or critical information at the bottom of a window」、HIG Toolbars の
  * 主な操作は 1 つで末尾）。広い画面ではペインの上の行、狭い画面ではシートの上の行に置く。
  * ペインが詳細のフォームの id を決め、`useDetailForm` でフォームに渡す。画面ごとに id を配線しない
+ *
+ * 広い画面で詳細の列を隠しているときは、選んだ 1 件を、一覧の右に重なるドロワー（peek）で出す。
+ * 一覧の幅を変えず、一覧を操作し続けられるよう、モーダルにしない（Notion の Side peek、
+ * https://www.notion.com/help/views-filters-and-sorts ）。ドロワーは一覧の上に浮く層なので、狭い画面の
+ * 半分の高さのシートと同じくガラスにする（#388）。閉じるボタンと Esc で閉じる。上の行の「全体に
+ * 広げる」で、一覧を隠して詳細を全体の幅で出す（Notion の「Click ⤡ at the top left to view in full
+ * page mode.」https://www.notion.com/help/intro-to-databases ）。「詳細を隠す」を外すと、詳細の列に戻る
  */
 
 /** ペインが決めた、詳細のフォームの id。ペインの外では無い */
@@ -72,6 +84,41 @@ const DetailSubmit = ({ form }: { form: string }) => (
   </SubmitButton>
 );
 
+/**
+ * ⌘S（macOS 以外は Ctrl+S）で詳細のフォームを保存する（HIG Keyboards の標準のショートカット
+ * 「Command-S: Save a new document or save a version of a document」）。保存のボタンは見た目の
+ * 並びのとおりフォームより前にあり、最後の欄から Tab で進んでも届かない。本文のように Enter で送れない
+ * 欄からも、戻らずに保存できるようにする。フォーカスが詳細のフォームの中にあるときだけ働き、
+ * 送っている間は何もしない
+ */
+const useSaveShortcut = (formId: string, active: boolean) => {
+  useEffect(() => {
+    if (!active) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 's' || event.shiftKey || event.altKey) return;
+      if (!(event.metaKey || event.ctrlKey) || event.isComposing) return;
+      const form = document.getElementById(formId);
+      if (!(form instanceof HTMLFormElement) || !form.contains(event.target as Node)) return;
+      event.preventDefault();
+      const button = document.querySelector<HTMLButtonElement>(
+        `button[form="${CSS.escape(formId)}"]`,
+      );
+      if (button?.disabled) return;
+      form.requestSubmit();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [formId, active]);
+};
+
+/**
+ * 狭い画面の上の行で、保存のボタンが出るときの形。ボタンと同じく、詳細のフォームがあるかを CSS の
+ * `:has()` で見る。フォームが無い（「この実績はありません」など）ときは、閉じるを末尾に置き、高さを取らない
+ */
+const SUBMIT_ROW_HEIGHT = 'group-has-[[data-detail-form]]/detail:min-h-12';
+const CLOSE_BESIDE_SUBMIT =
+  'right-3 group-has-[[data-detail-form]]/detail:right-auto group-has-[[data-detail-form]]/detail:left-3';
+
 /** `globals.css` の `--breakpoint-lg`（976px）より狭い画面 */
 const NARROW_QUERY = '(max-width: 975.98px)';
 
@@ -88,6 +135,12 @@ const useNarrow = () =>
     () => window.matchMedia(NARROW_QUERY).matches,
     () => false,
   );
+
+/**
+ * 広い画面のドロワーが出入りする時間。狭い画面のシート（`NarrowSheet`）と同じ時間と曲線にし、
+ * 画面の幅が変わっても動きの感じを揃える
+ */
+const PEEK_MS = 300;
 
 /** 止まる高さ。半分（HIG Sheets の medium detent）と全体（large detent） */
 const HALF = 0.55;
@@ -107,7 +160,9 @@ const useHydrating = () =>
 /**
  * 広い画面で、ペインの上端から画面の下端までの高さに収める。ペインより上に見出しやタブがある画面
  * （職務経歴書の中身）で、ペインの下端が画面の外に出て、末尾が隠れないようにする。上端の位置は
- * スクロールで変わる（一覧が長いとペインは留まる）ので、スクロールのたびに測り直す
+ * スクロールで変わる（一覧が長いとペインは留まる）ので、スクロールのたびに測り直す。列を隠すと
+ * 上に戻すボタンの行が足され、スクロールしなくても上端が下がるので、ページの大きさが変わったときも
+ * 測り直す
  */
 const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) => {
   useEffect(() => {
@@ -125,7 +180,12 @@ const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) =
     measure();
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule);
+    const resized = new ResizeObserver(schedule);
+    resized.observe(document.body);
+    const main = element.closest('main');
+    if (main) resized.observe(main);
     return () => {
+      resized.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
@@ -136,6 +196,26 @@ const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) =
 
 /** 閉じた後にフォーカスを戻す行。閉じると決めた時点で選んでいた行 */
 const selectedRow = () => document.querySelector<HTMLElement>('main a[aria-current="true"]');
+
+/**
+ * 広い画面のドロワーを Esc で閉じる。メニューやダイアログが Esc を受けたとき（既定の動作を止めた
+ * とき）と、変換の確定中は閉じない
+ */
+const useCloseOnEscape = (active: boolean, close: () => void) => {
+  const closeRef = useRef(close);
+  useEffect(() => {
+    closeRef.current = close;
+  });
+  useEffect(() => {
+    if (!active) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.defaultPrevented || event.isComposing) return;
+      closeRef.current();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [active]);
+};
 
 export const DetailSheet = ({
   open,
@@ -154,6 +234,10 @@ export const DetailSheet = ({
   const actions = open ? <DetailSubmit form={formId} /> : undefined;
   const narrow = useNarrow();
   const hydrating = useHydrating();
+  const router = useRouter();
+  // 広い画面で詳細の列を隠しているか。選んだ 1 件があるときだけ、ドロワーで出す
+  const hiddenPane = useDetailPeek();
+  const peek = hiddenPane && open && !narrow;
   const { setCovered } = useContext(CoverContext);
   const sectionRef = useRef<HTMLElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
@@ -182,7 +266,18 @@ export const DetailSheet = ({
     openerRef.current.focus();
     openerRef.current = null;
   }, [open]);
-  useFitToViewport(sectionRef, open && !narrow);
+  useFitToViewport(sectionRef, open && !narrow && !peek);
+  useSaveShortcut(formId, open);
+  // ドロワーを閉じ始めたか。右へ出ていく動きを見せてから、選んだ 1 件を外した一覧へ移る
+  const [leaving, setLeaving] = useState(false);
+  if (leaving && !open) setLeaving(false);
+  const closePeek = () => {
+    openerRef.current = selectedRow();
+    setLeaving(true);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.setTimeout(() => router.push(closeHref, { scroll: false }), reduced ? 0 : PEEK_MS);
+  };
+  useCloseOnEscape(peek && !leaving, closePeek);
   if (narrow && !direct)
     return (
       <NarrowSheet open={open} closeHref={closeHref} label={label} actions={actions}>
@@ -195,20 +290,32 @@ export const DetailSheet = ({
       aria-label={label}
       className={cn(
         // 留めたツールバーの下に、フォーカスを移した入力が隠れないようにする（WCAG 2.2 SC 2.4.11）
-        'group/detail min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-0 lg:shadow-none lg:backdrop-filter-none',
+        'group/detail min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:p-0',
+        peek ? 'glass' : 'lg:border-0 lg:bg-background lg:shadow-none lg:backdrop-filter-none',
         // 狭い画面でこの形が出るのは、URL を直接開いたときだけ。全体の高さで一覧を覆う。広い画面では
         // fixed を外して sticky に戻し、ページをスクロールしてもペインの上端のツールバーを見せる
         open
-          ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl bg-background lg:sticky lg:inset-x-auto lg:bottom-auto lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
+          ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl max-lg:bg-background lg:sticky lg:inset-x-auto lg:bottom-auto lg:h-auto lg:flex-none lg:overflow-y-auto'
           : 'hidden',
+        // 詳細の列を隠しているときは、選んだ 1 件が無ければ出さない
+        hiddenPane && !open && 'lg:hidden',
+        // 一覧の右に重なるドロワー。幅は詳細の列の上限と同じにし、画面からはみ出さない。上の行を
+        // 留め、本文だけをスクロールする（ガラスの上の行に本文が透けて重ならないようにする）
+        peek &&
+          'lg:fixed lg:top-4 lg:right-4 lg:bottom-4 lg:left-auto lg:z-30 lg:flex lg:h-auto lg:max-h-none lg:w-[600px] lg:max-w-[calc(100vw-2rem)] lg:flex-col lg:overflow-hidden',
+        // 右から入り、右へ出ていく。入りは表示になった瞬間の位置（@starting-style）から動かす
+        peek &&
+          'lg:transition-[translate] lg:duration-300 lg:ease-[cubic-bezier(0.32,0.72,0,1)] lg:starting:translate-x-[calc(100%+1rem)] motion-reduce:transition-none',
+        peek && leaving && 'lg:translate-x-[calc(100%+1rem)]',
       )}
     >
       {open && (
         <div
           className={cn(
             'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1 lg:hidden',
-            // 主な操作のボタンが、下の見出しに重ならない高さを取る
-            actions && 'min-h-12',
+            // 主な操作のボタンが、下の見出しに重ならない高さを取る。ボタンは詳細のフォームが
+            // あるときだけ出る（DetailSubmit）ので、高さも同じ条件で取る
+            actions && SUBMIT_ROW_HEIGHT,
           )}
         >
           <span aria-hidden className="h-6 w-16" />
@@ -222,7 +329,7 @@ export const DetailSheet = ({
             }}
             className={cn(
               'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
-              actions ? 'left-3' : 'right-3',
+              actions ? CLOSE_BESIDE_SUBMIT : 'right-3',
             )}
           >
             閉じる
@@ -232,12 +339,57 @@ export const DetailSheet = ({
       )}
       {/* 広い画面のペインの上の行。詳細の列を隠すボタンと、末尾に主な操作を置く。ガラスのバーに
           しない。一覧の列を隠すボタンは、一覧のツールバーが持つ */}
-      <div className="sticky top-0 z-10 hidden items-center justify-end gap-2 bg-background px-4 pt-3 pb-2 lg:flex">
-        <PaneToggle pane="detail" className="flex" />
+      <div
+        className={cn(
+          'z-10 hidden shrink-0 items-center justify-end gap-2 px-4 pt-3 pb-2 lg:flex',
+          peek ? 'relative' : 'sticky top-0 bg-background',
+        )}
+      >
+        {/* ドロワーでは、見せ方の操作を先頭にまとめ、末尾には主な操作だけを置く（HIG Toolbars の
+            「Elements that let people return to the previous document and show or hide a sidebar
+            appear at the far leading edge」「put it on the trailing side of the toolbar」） */}
+        {peek ? (
+          <div className="mr-auto flex items-center gap-1">
+            {/* 閉じるは文字でなく印にする（HIG Toolbars の「Prefer the standard symbols for each, and
+                don't use a text label that says Back or Close.」） */}
+            <Link
+              href={closeHref}
+              scroll={false}
+              onClick={(event) => {
+                event.preventDefault();
+                closePeek();
+              }}
+              aria-label="閉じる"
+              title="閉じる"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="size-[18px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              >
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </Link>
+            <ExpandDetailButton />
+            <PaneToggle pane="detail" className="flex" />
+          </div>
+        ) : (
+          <PaneToggle pane="detail" className="flex" />
+        )}
         {actions}
       </div>
       {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}
-      <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:px-6 lg:pt-2 lg:pb-6">
+      <div
+        className={cn(
+          'mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:px-6 lg:pt-2 lg:pb-6',
+          peek ? 'lg:scroll-pt-4 lg:overflow-y-auto' : 'lg:overflow-visible',
+        )}
+      >
         <DetailFormContext value={formId}>{children}</DetailFormContext>
       </div>
     </section>
@@ -328,7 +480,7 @@ const NarrowSheet = ({
             <div
               className={cn(
                 'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1',
-                actions && 'min-h-12',
+                actions && SUBMIT_ROW_HEIGHT,
               )}
             >
               {/* つまみ。引いて高さを変え、押すと高さを切り替える（HIG Sheets の grabber） */}
@@ -343,11 +495,11 @@ const NarrowSheet = ({
                   {expanded ? '半分の高さにする' : '全体の高さにする'}
                 </span>
               </button>
-              {/* 主な操作があるときは、閉じるを先頭に、主な操作を末尾に置く */}
+              {/* 主な操作が出るときは、閉じるを先頭に、主な操作を末尾に置く */}
               <Drawer.Close
                 className={cn(
                   'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
-                  actions ? 'left-3' : 'right-3',
+                  actions ? CLOSE_BESIDE_SUBMIT : 'right-3',
                 )}
               >
                 閉じる

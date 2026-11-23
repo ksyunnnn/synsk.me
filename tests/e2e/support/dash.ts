@@ -1,4 +1,5 @@
 import { expect, type Browser, type Locator, type Page } from '@playwright/test';
+import { waitForHydration } from './note';
 
 /**
  * E2E でオーナーが管理画面で行う操作と、訪問者として確かめる操作。
@@ -172,6 +173,21 @@ const checkByLabel = async (
   await expect(input).toBeChecked();
 };
 
+/**
+ * トークンの欄（src/shared/components/token-field.tsx）で、名前を打って出た候補を選ぶ。選んだ値は
+ * トークンになり、トークンには「{名前}を外す」ボタンが付く。選び済みなら触らない。欄の文字は
+ * 部品の状態が持つので、hydration の前に打った文字は hydration で空に戻る。hydration を待ってから打つ
+ */
+const chooseToken = async (page: Page, label: string, name: string) => {
+  const remove = page.getByRole('button', { name: `${name}を外す`, exact: true });
+  if ((await remove.count()) > 0) return;
+  const input = page.getByRole('combobox', { name: label, exact: true });
+  await waitForHydration(input);
+  await input.fill(name);
+  await page.getByRole('option', { name, exact: true }).click();
+  await expect(remove).toBeVisible();
+};
+
 /** 実績の登録の画面か編集の画面で、入力を埋める */
 export const fillProject = async (page: Page, input: Partial<ProjectInput>) => {
   await fillIfGiven(page, '組織名', input.organizationName);
@@ -186,7 +202,7 @@ export const fillProject = async (page: Page, input: Partial<ProjectInput>) => {
   await fillIfGiven(page, '本文', input.description);
   await fillIfGiven(page, '関連 URL', input.url);
   for (const skill of input.skills ?? []) {
-    await checkByLabel(page, page, 'checkbox', skill);
+    await chooseToken(page, '使ったスキル', skill);
   }
   await chooseSiteOptions(page, input);
 };
