@@ -58,11 +58,7 @@ export const CollectionToolbar = ({
   action?: { href: string; label: string };
 }) => (
   <div className="glass sticky top-4 z-10 m-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[28px] py-1.5 pr-1.5 pl-5">
-    {headingLevel === 1 ? (
-      <h1 className="font-semibold">{title}</h1>
-    ) : (
-      <h2 className="font-semibold">{title}</h2>
-    )}
+    {headingLevel === 1 ? <h1>{title}</h1> : <h2>{title}</h2>}
     <p aria-live="polite" className="text-small text-muted-foreground">
       {summary}
     </p>
@@ -243,7 +239,7 @@ export const DetailHeading = ({
 }) => (
   <header className="flex flex-col gap-2 pb-6">
     {draftKey && <DraftMark draftKey={draftKey} />}
-    <h2 className="text-heading-2 font-semibold tracking-heading">{title}</h2>
+    <h2 className="text-heading-2 tracking-heading">{title}</h2>
     {children}
   </header>
 );
