@@ -34,7 +34,7 @@ const Layout = async ({
           </ol>
         </nav>
         <div className="flex flex-wrap items-baseline gap-x-3">
-          <h1 className="text-heading-1">{resume.title}</h1>
+          <h1 className="text-heading-2 font-semibold">{resume.title}</h1>
           <p className="text-small text-muted-foreground">
             {resume.audience === 'limited' ? '限定公開用' : '公開用'}・
             {resume.status === 'draft' ? '非公開' : '公開中'}・写した実績 {resume.projects.length}{' '}
