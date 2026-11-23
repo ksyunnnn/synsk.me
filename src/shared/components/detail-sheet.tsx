@@ -345,21 +345,42 @@ export const DetailSheet = ({
           peek ? 'relative' : 'sticky top-0 bg-background',
         )}
       >
-        {peek && (
-          <Link
-            href={closeHref}
-            scroll={false}
-            onClick={(event) => {
-              event.preventDefault();
-              closePeek();
-            }}
-            className="mr-auto rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
-          >
-            閉じる
-          </Link>
+        {/* ドロワーでは、見せ方の操作を先頭にまとめ、末尾には主な操作だけを置く（HIG Toolbars の
+            「Elements that let people return to the previous document and show or hide a sidebar
+            appear at the far leading edge」「put it on the trailing side of the toolbar」） */}
+        {peek ? (
+          <div className="mr-auto flex items-center gap-1">
+            {/* 閉じるは文字でなく印にする（HIG Toolbars の「Prefer the standard symbols for each, and
+                don't use a text label that says Back or Close.」） */}
+            <Link
+              href={closeHref}
+              scroll={false}
+              onClick={(event) => {
+                event.preventDefault();
+                closePeek();
+              }}
+              aria-label="閉じる"
+              title="閉じる"
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <svg
+                aria-hidden
+                viewBox="0 0 24 24"
+                className="size-[18px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              >
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </Link>
+            <ExpandDetailButton />
+            <PaneToggle pane="detail" className="flex" />
+          </div>
+        ) : (
+          <PaneToggle pane="detail" className="flex" />
         )}
-        {peek && <ExpandDetailButton />}
-        <PaneToggle pane="detail" className="flex" />
         {actions}
       </div>
       {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}

@@ -420,3 +420,39 @@ test.describe('狭い画面のシート', () => {
     await expect(textbox(page, '題')).toHaveValue(typed);
   });
 });
+
+test.describe('詳細を隠した Split view', () => {
+  test('詳細を隠して 1 件を選ぶと、一覧の幅を保ったまま詳細がドロワーで重なり、Esc で閉じる', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const title = uniqueTitle('ドロワー');
+    await registerProject(page, {
+      organizationName: 'E2E ドロワーの組織',
+      organizationNameMasked: 'E2E ドロワーの秘匿化した組織名',
+      title,
+    });
+    await page.goto('/dash/projects');
+    const hide = page.getByRole('button', { name: '詳細を隠す' });
+    await waitForHydration(hide);
+    await hide.click();
+    const toolbar = page.getByRole('heading', { name: '実績', level: 1 }).locator('..');
+    const before = await toolbar.boundingBox();
+
+    await page.getByRole('link', { name: title }).click();
+    const drawer = page.getByRole('region', { name: '選んだ実績' });
+    await expect(drawer.getByRole('heading', { name: title })).toBeVisible();
+    // 一覧の列は狭まらない（src/shared/components/detail-sheet.tsx の peek）
+    expect((await toolbar.boundingBox())?.width).toBe(before?.width);
+
+    await page.keyboard.press('Escape');
+    await expect(page).not.toHaveURL(/selected=/);
+    await expect(drawer).toBeHidden();
+    await expect(page.getByRole('button', { name: '詳細を隠す' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
+});
