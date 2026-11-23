@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState, type ReactNode } from 'react';
+import { PaneToggle } from '@/shared/components/dash-panes';
 import { cn } from '@/lib/utils';
 
 /**
@@ -58,6 +59,10 @@ export const DetailSheet = ({
           </Link>
         </div>
       )}
+      {/* 広い画面では、詳細の列を隠せる（HIG Split views） */}
+      <div className="-mt-3 -mr-3 hidden justify-end lg:flex">
+        <PaneToggle pane="detail" className="flex" />
+      </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:p-0">
         {children}
       </div>

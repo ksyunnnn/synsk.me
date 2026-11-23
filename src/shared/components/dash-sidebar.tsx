@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { PaneToggle } from '@/shared/components/dash-panes';
 import { useDraftKeys } from '@/shared/components/drafts';
 import { cn } from '@/lib/utils';
 import { routes } from '@/shared/routes';
@@ -60,12 +61,16 @@ export const DashSidebar = () => {
       aria-label="管理する項目"
       className="glass flex gap-1 overflow-x-auto rounded-3xl p-2 text-small md:sticky md:top-4 md:max-h-[calc(100dvh-2rem)] md:flex-col md:gap-6 md:overflow-y-auto md:p-3"
     >
-      <Link
-        href={routes.dash.index}
-        className="shrink-0 rounded-xl px-3 py-1.5 font-semibold focus-visible:outline-2 focus-visible:outline-ring md:py-2"
-      >
-        管理画面
-      </Link>
+      <div className="flex shrink-0 items-center justify-between">
+        <Link
+          href={routes.dash.index}
+          className="shrink-0 rounded-xl px-3 py-1.5 font-semibold focus-visible:outline-2 focus-visible:outline-ring md:py-2"
+        >
+          管理画面
+        </Link>
+        {/* 広い画面では Sidebar を隠せる（HIG Sidebars） */}
+        <PaneToggle pane="sidebar" className="hidden md:flex" />
+      </div>
       {GROUPS.map((group) => (
         <div key={group.label} className="flex shrink-0 flex-col gap-1">
           {/* 狭い画面では、まとまりの名前を省いて横に並べる */}

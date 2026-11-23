@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { listCareers } from '@/features/career/server/queries';
 import { parseProjectListFilter, type ProjectSummary } from '@/features/project/domain/project';
 import { listProjects } from '@/features/project/server/queries';
 import { listSkills } from '@/features/skill/server/queries';
@@ -50,10 +49,9 @@ const Page = async ({ searchParams }: Props) => {
     selected: first(raw.selected),
   };
   // オーナーでなければ、読む前に 403 になる
-  const [{ projects, organizations, filter }, skills, careers] = await Promise.all([
+  const [{ projects, organizations, filter }, skills] = await Promise.all([
     listProjects(parseProjectListFilter(params)),
     listSkills(),
-    listCareers(),
   ]);
   const skill = skills.find((s) => s.uid === params.skill) ?? null;
   const view = params.view === 'timeline' ? 'timeline' : 'table';
@@ -182,15 +180,6 @@ const Page = async ({ searchParams }: Props) => {
             draftKey: `project:${project.uid}`,
             emphasized: hasSkill(project),
           }))}
-          bands={careers
-            .filter((career) =>
-              projects.some((p) => p.organizationName === career.organizationName),
-            )
-            .map((career) => ({
-              key: career.uid,
-              label: `${career.organizationName}・${career.role}`,
-              period: career.period,
-            }))}
         />
       ) : (
         <CollectionTable

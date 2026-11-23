@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { SplitPanes } from '@/shared/components/dash-panes';
 import { DetailSheet } from '@/shared/components/detail-sheet';
 import { DraftMark } from '@/shared/components/drafts';
 import { cn } from '@/lib/utils';
@@ -26,12 +27,14 @@ export const SplitView = ({
   closeHref: string;
   empty?: string;
 }) => (
-  <main className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(380px,560px)]">
-    <div className="relative min-w-0 rounded-3xl bg-background pb-4">{collection}</div>
-    <DetailSheet open={selected} closeHref={closeHref} label={detailLabel}>
-      {selected ? detail : <p className="py-12 text-center text-muted-foreground">{empty}</p>}
-    </DetailSheet>
-  </main>
+  <SplitPanes
+    collection={<div className="relative min-w-0 rounded-3xl bg-background pb-4">{collection}</div>}
+    detail={
+      <DetailSheet open={selected} closeHref={closeHref} label={detailLabel}>
+        {selected ? detail : <p className="py-12 text-center text-muted-foreground">{empty}</p>}
+      </DetailSheet>
+    }
+  />
 );
 
 /**

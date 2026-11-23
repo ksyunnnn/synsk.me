@@ -126,16 +126,6 @@ const Page = async ({ params, searchParams }: Props) => {
             periodText: periodText(row),
             draftKey: `resume-project:${row.uid}`,
           }))}
-          // 写した職歴を、組織名が同じものだけ帯にする（写しは元と切り離されているので、写しどうしで求める）
-          bands={resume.careers
-            .filter((career) =>
-              rows.some((row) => row.organizationName === career.organizationName),
-            )
-            .map((career) => ({
-              key: career.uid,
-              label: `${career.organizationName}・${career.role}`,
-              period: career.period,
-            }))}
         />
       ) : (
         <CollectionTable
