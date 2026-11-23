@@ -55,7 +55,7 @@ export const PeriodTimeline = ({
   return (
     <div className="px-4">
       {/* 年の目盛り */}
-      <div className="relative ml-14 h-5 text-caption text-muted-foreground" aria-hidden>
+      <div className="relative mr-2 ml-14 h-5 text-caption text-muted-foreground" aria-hidden>
         {Array.from({ length: lastYear - firstYear + 1 }, (_, i) => firstYear + i).map((year) => {
           const at = ((Date.UTC(year, 0, 1) - start) / span) * 100;
           return at < 0 ? null : (
@@ -73,7 +73,7 @@ export const PeriodTimeline = ({
           {bands.map((band) => (
             <li key={band.key} className="grid grid-cols-[3.5rem_minmax(0,1fr)] gap-0">
               <span className="pt-0.5 text-caption text-muted-foreground">職歴</span>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-1 pr-2">
                 <span className="truncate text-caption text-muted-foreground">{band.label}</span>
                 <div className="relative h-2 rounded-full bg-muted">
                   <span
