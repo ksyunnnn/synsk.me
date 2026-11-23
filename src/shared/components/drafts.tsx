@@ -166,9 +166,15 @@ export const useDraft = <V extends Record<string, string>>(
     // 部品（Switch など）が値を書き換えた後に読む
     setTimeout(() => {
       if (submitting.current) return;
-      const current = serialize(form);
+      const read = serialize(form);
       const kept = store.drafts.get(key);
-      const baseline = kept?.baseline ?? mounted.current ?? current;
+      const baseline = kept?.baseline ?? mounted.current ?? read;
+      // 値が無いと何も送らない入力（全部外したトークンの欄）は、FormData に名前が出ない。元の値に
+      // あった名前は空の値で残す。残さないと、開き直したときに保存された値が重なって戻る
+      const current: Draft = {
+        ...Object.fromEntries(Object.keys(baseline).map((name) => [name, ''])),
+        ...read,
+      };
       const changed = Object.keys({ ...baseline, ...current }).some(
         (name) => (baseline[name] ?? '') !== (current[name] ?? ''),
       );

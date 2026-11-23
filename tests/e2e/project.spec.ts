@@ -216,6 +216,45 @@ test('同じ実績を 2 つのタブで開くと、後から保存した側は�
   );
 });
 
+test('使ったスキルを全部外して保存せずに別の実績を選び、戻ると、外したままになっている', async ({
+  page,
+  context,
+}) => {
+  const id = crypto.randomUUID().slice(0, 8);
+  const skill = `E2E-Skill-Remove-${id}`;
+  const first = `E2E 実績の題 スキルを外す ${id}`;
+  const second = `E2E 実績の題 別の実績 ${id}`;
+  await actAsAuthor(context);
+  await registerSkill(page, skill);
+  const { editUrl } = await registerProject(page, {
+    organizationName: 'E2E 実績の組織 スキルを外す',
+    title: first,
+    skills: [skill],
+    isMasked: false,
+  });
+  await registerProject(page, {
+    organizationName: 'E2E 実績の組織 スキルを外す',
+    title: second,
+    isMasked: false,
+  });
+
+  await page.goto(editUrl);
+  const heading = page.getByRole('region', { name: '選んだ実績' }).getByRole('heading', {
+    level: 2,
+  });
+  await expect(heading).toHaveText(first);
+  const remove = page.getByRole('button', { name: `${skill}を外す`, exact: true });
+  await waitForHydration(remove);
+  await remove.click();
+  await expect(remove).toHaveCount(0);
+
+  await page.getByRole('link', { name: second, exact: true }).click();
+  await expect(heading).toHaveText(second);
+  await page.getByRole('link', { name: first, exact: true }).click();
+  await expect(heading).toHaveText(first);
+  await expect(remove).toHaveCount(0);
+});
+
 test('オーナーはキーボードだけで実績を登録・編集・削除できる（constitution V）', async ({
   page,
   context,
