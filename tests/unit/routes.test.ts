@@ -83,6 +83,33 @@ describe('管理画面の経路', () => {
     expect(r.entrySelected('u1', 'projects', 'r1')).toBe('/dash/resumes/u1/projects?selected=r1');
   });
 
+  it('保存の後に移る一覧は、送った時点の検索の値から一覧の見せ方の名前だけを引き継ぐ', () => {
+    const from = 'view=timeline&kind=talk&org=o1&org=o2&saved=9&deleted=1&next=https://example.com';
+    expect(routes.dash.projects.selected('u1', 'saved', '1', from)).toBe(
+      '/dash/projects?selected=u1&saved=1&kind=talk&org=o1&view=timeline',
+    );
+    expect(routes.dash.careers.selected('u1', 'saved', '1', from)).toBe(
+      '/dash/careers?selected=u1&saved=1&view=timeline',
+    );
+    // 見せ方の名前を持たない一覧は、何も引き継がない
+    expect(routes.dash.organizations.selected('u1', 'saved', '1', from)).toBe(
+      '/dash/organizations?selected=u1&saved=1',
+    );
+    // 送られた値が経路や選んだ行を書き換えようとしても、経路は一覧に固定し、選んだ行はサーバが決める
+    expect(
+      routes.dash.projects.selected('u1', 'saved', '1', 'selected=u2&saved=0&view=timeline'),
+    ).toBe('/dash/projects?selected=u1&saved=1&view=timeline');
+    expect(routes.dash.projects.selected('u1', 'saved', '1', '//example.com')).toBe(
+      '/dash/projects?selected=u1&saved=1',
+    );
+    expect(
+      routes.dash.resumes.entrySelected('u1', 'projects', 'r1', 'orgName=A&view=timeline&saved=1'),
+    ).toBe('/dash/resumes/u1/projects?selected=r1&orgName=A&view=timeline');
+    expect(routes.dash.resumes.entrySelected('u1', 'educations', 'r1', 'view=timeline')).toBe(
+      '/dash/resumes/u1/educations?selected=r1',
+    );
+  });
+
   it('印を足す。経路が検索の値を持てば、残して足す', () => {
     expect(withFlag('/dash/resumes/u1', 'saved')).toBe('/dash/resumes/u1?saved=1');
     expect(withFlag('/dash/careers?selected=u1', 'saved')).toBe(

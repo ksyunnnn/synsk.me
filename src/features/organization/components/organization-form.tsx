@@ -19,6 +19,7 @@ import {
 import { SubmitButton } from '@/shared/components/submit-button';
 import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { formStateOf } from '@/shared/domain/action-result';
+import { ReturnQueryField } from '@/shared/components/return-query-field';
 
 /**
  * 組織名と秘匿化した組織名を直すフォーム。Server Action は props で受け取り、`server/` を
@@ -73,6 +74,7 @@ export const OrganizationForm = ({
     >
       <DraftConflict conflict={draft.conflict} noun="組織" />
       <input type="hidden" name={ORGANIZATION_UID_FIELD} value={organizationUid} />
+      <ReturnQueryField />
       {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
       {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}
       <InputField

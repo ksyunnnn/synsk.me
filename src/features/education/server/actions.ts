@@ -17,6 +17,7 @@ import { createEducationRepository } from '@/features/education/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
+import { RETURN_QUERY_FIELD } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
 
 /**
@@ -68,6 +69,7 @@ export const editEducation = async (
         readString(formData, EDUCATION_UID_FIELD),
         'saved',
         String(Date.now()),
+        readString(formData, RETURN_QUERY_FIELD),
       ),
     );
   if (outcome.status === 'not-found') redirect(routes.dash.educations.list);

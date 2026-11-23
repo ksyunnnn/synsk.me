@@ -30,6 +30,7 @@ import { useDetailForm } from '@/shared/components/detail-sheet';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { TokenField } from '@/shared/components/token-field';
+import { ReturnQueryField } from '@/shared/components/return-query-field';
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
@@ -113,7 +114,10 @@ const Frame = ({
       {draft && <DraftConflict conflict={draft.conflict} noun="職務経歴書の行" />}
       <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
       {target.rowUid !== undefined && (
-        <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
+        <>
+          <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
+          <ReturnQueryField />
+        </>
       )}
       <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={target.updatedAt} />
       {message && <FormAlert>{message}</FormAlert>}

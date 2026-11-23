@@ -14,6 +14,7 @@ import {
 } from '@/shared/domain/organization';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString } from '@/shared/server/form-data';
+import { RETURN_QUERY_FIELD } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
 
 /**
@@ -37,7 +38,15 @@ export const editOrganization = async (
     name: readString(formData, 'name'),
     nameMasked: readString(formData, 'nameMasked'),
   });
-  if (outcome.status === 'saved') redirect(routes.dash.organizations.selected(uid, 'saved'));
+  if (outcome.status === 'saved')
+    redirect(
+      routes.dash.organizations.selected(
+        uid,
+        'saved',
+        '1',
+        readString(formData, RETURN_QUERY_FIELD),
+      ),
+    );
   if (outcome.status === 'not-found') redirect(routes.dash.organizations.list);
   return outcome;
 };

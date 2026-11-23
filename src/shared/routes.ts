@@ -10,8 +10,29 @@ import type { SiteStatus } from '@/shared/domain/site-status';
  * 取らない（https://nextjs.org/docs/app/api-reference/file-conventions/proxy#matcher）
  */
 
-/** uid で開く行を持つ管理画面のコレクションの経路 */
-const dashCollection = <const C extends string>(collection: C) => {
+/**
+ * 保存の後に移る経路に、`from`（送った時点の一覧の検索の値）のうち `keys` に挙げた名前だけを、
+ * 最初の値で足す。フォームから届く値は書き換えられうるため、知らせの印（`saved` など）や知らない
+ * 名前を持ち越さない。経路は呼び手が決め、`from` からは検索の値だけを取る
+ */
+const appendKept = (path: string, from: string, keys: readonly string[]) => {
+  const source = new URLSearchParams(from);
+  const kept = new URLSearchParams();
+  for (const key of keys) {
+    const value = source.get(key);
+    if (value) kept.set(key, value);
+  }
+  return kept.size === 0 ? path : `${path}&${kept}`;
+};
+
+/**
+ * uid で開く行を持つ管理画面のコレクションの経路。`viewKeys` は一覧の見せ方を決める検索の値の
+ * 名前で、保存の後も引き継ぐ
+ */
+const dashCollection = <const C extends string>(
+  collection: C,
+  viewKeys: readonly string[] = [],
+) => {
   const list = `/dash/${collection}` as const;
   return {
     list,
@@ -19,10 +40,11 @@ const dashCollection = <const C extends string>(collection: C) => {
     row: (uid: string) => `${list}/${uid}`,
     /**
      * その 1 件を選んだ一覧。シングルは一覧の右に出す（#366 の明文化）。`flag` は保存の知らせなど。
-     * 保存の後はここへ直接移り、1 件の経路を経ない。`value` は印の値で、既定は `1`
+     * 保存の後はここへ直接移り、1 件の経路を経ない。`value` は印の値で、既定は `1`。`from` は
+     * 送った時点の一覧の検索の値で、`viewKeys` に挙げた名前だけを引き継ぐ
      */
-    selected: (uid: string, flag?: string, value = '1') =>
-      `${list}?selected=${uid}${flag ? `&${flag}=${value}` : ''}`,
+    selected: (uid: string, flag?: string, value = '1', from = '') =>
+      appendKept(`${list}?selected=${uid}${flag ? `&${flag}=${value}` : ''}`, from, viewKeys),
     delete: (uid: string) => `${list}/${uid}/delete`,
     missing: (uid: string) => `${list}/${uid}/missing`,
   };
@@ -42,9 +64,16 @@ export const withFlag = (path: string, flag: string, value = '1') => {
 /** 職務経歴書に写した行の種類（specs/002-resume/contracts/dash.md） */
 type ResumeEntryKind = 'careers' | 'projects' | 'educations';
 
+/** 写した行の一覧の見せ方を決める検索の値の名前。保存の後も引き継ぐ */
+const RESUME_ENTRY_VIEW_KEYS: Record<ResumeEntryKind, readonly string[]> = {
+  careers: ['view'],
+  projects: ['orgName', 'kind', 'view'],
+  educations: [],
+};
+
 const resumes = dashCollection('resumes');
 const notes = dashCollection('notes');
-const projects = dashCollection('projects');
+const projects = dashCollection('projects', ['kind', 'org', 'status', 'masked', 'skill', 'view']);
 
 export const routes = {
   home: '/',
@@ -76,7 +105,7 @@ export const routes = {
     forbidden: '/dash/forbidden',
     /** `src/proxy.ts` が、コレクションの名前から行が無いときの画面を作る */
     rowMissing: (collection: string, uid: string) => `/dash/${collection}/${uid}/missing`,
-    careers: dashCollection('careers'),
+    careers: dashCollection('careers', ['view']),
     projects: {
       ...projects,
       /**
@@ -123,9 +152,16 @@ export const routes = {
       skills: (uid: string) => `${resumes.row(uid)}/skills`,
       /** 写した行の一覧。職務経歴書の中身を切り替えるタブの 1 つ（#366 の明文化） */
       entries: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}`,
-      /** 写した行を 1 件選んだ一覧。写した行のシングルは一覧の右に出す（#366 の明文化） */
-      entrySelected: (uid: string, kind: ResumeEntryKind, rowUid: string) =>
-        `${resumes.row(uid)}/${kind}?selected=${rowUid}`,
+      /**
+       * 写した行を 1 件選んだ一覧。写した行のシングルは一覧の右に出す（#366 の明文化）。`from` は
+       * 送った時点の一覧の検索の値で、見せ方の名前だけを引き継ぐ
+       */
+      entrySelected: (uid: string, kind: ResumeEntryKind, rowUid: string, from = '') =>
+        appendKept(
+          `${resumes.row(uid)}/${kind}?selected=${rowUid}`,
+          from,
+          RESUME_ENTRY_VIEW_KEYS[kind],
+        ),
       entryNew: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}/new`,
       entry: (uid: string, kind: ResumeEntryKind, rowUid: string) =>
         `${resumes.row(uid)}/${kind}/${rowUid}`,
