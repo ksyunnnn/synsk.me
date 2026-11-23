@@ -43,9 +43,9 @@ export const ProjectBodyPreview = ({
   const [view, setView] = useState<View>('project');
 
   return (
-    // 見え方の切り替えは枠の上辺の帯に置き、このプレビューの見え方だと位置で示す
-    <div className="overflow-hidden rounded-xl border border-border">
-      <div className="flex border-b border-border px-3 py-2">
+    // 見え方の切り替えは枠の外のすぐ上に置き、枠は本文だけを囲む
+    <div className="flex flex-col gap-2">
+      <div className="flex">
         <ToggleGroup
           aria-label="プレビューの見え方"
           value={[view]}
@@ -67,7 +67,7 @@ export const ProjectBodyPreview = ({
           ))}
         </ToggleGroup>
       </div>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-xl border border-border">
         {view === 'project' ? (
           // 入力欄の見出しが「本文」なので、訪問者のページの見出し「本文」は重ねない
           // 段落の間は、訪問者のページで本文を包む section と同じ gap-2
