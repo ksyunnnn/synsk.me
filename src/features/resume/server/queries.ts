@@ -12,6 +12,7 @@ import {
   isResumeRowKind,
   type Resume,
   type ResumeForEdit,
+  type ResumeListItem,
   type ResumeSources,
 } from '@/features/resume/domain/resume';
 import type { ResumeRepository } from '@/features/resume/domain/resume-repository';
@@ -38,10 +39,16 @@ export const createResumeRepository = async (): Promise<ResumeRepository> =>
 /** プロフィールは写さず、要求のたびに定数と環境変数から作る（FR-036、research.md の R10） */
 const readProfile = async () => toProfile((await readEnv()).RESUME_EMAIL);
 
-/** オーナーの一覧。オーナーでなければ 403 */
-export const listResumes = async (): Promise<Resume[]> => {
+/** オーナーの一覧と、写した実績・職歴の件数。オーナーでなければ 403 */
+export const listResumes = async (): Promise<ResumeListItem[]> => {
   await requireAuthor();
   return (await createResumeRepository()).list();
+};
+
+/** 実績（`project` の id）を写した職務経歴書。オーナーでなければ 403 */
+export const listResumesCopyingProject = async (projectId: number): Promise<Resume[]> => {
+  await requireAuthor();
+  return (await createResumeRepository()).listCopyingProject(projectId);
 };
 
 /** 作成の画面の選択肢。オーナーでなければ 403 */

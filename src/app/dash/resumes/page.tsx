@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { formatExpires, isExpired } from '@/features/resume/domain/resume';
-import { getResumeForEdit, listResumes } from '@/features/resume/server/queries';
+import { listResumes } from '@/features/resume/server/queries';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import {
   CollectionEmpty,
@@ -24,10 +24,8 @@ type Props = { searchParams: Promise<{ deleted?: string | string[] }> };
 const Page = async ({ searchParams }: Props) => {
   // オーナーでなければ、読む前に 403 になる
   const resumes = await listResumes();
-  const contents = await Promise.all(resumes.map((resume) => getResumeForEdit(resume.uid)));
   const { deleted } = await searchParams;
   const now = new Date();
-  const rows = resumes.map((resume, index) => ({ resume, content: contents[index] }));
 
   return (
     <main className="relative rounded-3xl bg-background pb-4">
@@ -45,15 +43,15 @@ const Page = async ({ searchParams }: Props) => {
         <CollectionEmpty>作った職務経歴書はありません</CollectionEmpty>
       ) : (
         <CollectionTable
-          rows={rows}
-          rowKey={({ resume }) => resume.uid}
-          rowHref={({ resume }) => routes.dash.resumes.entries(resume.uid, 'projects')}
+          rows={resumes}
+          rowKey={(resume) => resume.uid}
+          rowHref={(resume) => routes.dash.resumes.entries(resume.uid, 'projects')}
           selectedKey={null}
           columns={[
-            { header: '題', cell: ({ resume }) => resume.title },
+            { header: '題', cell: (resume) => resume.title },
             {
               header: '種類と状態',
-              cell: ({ resume }) =>
+              cell: (resume) =>
                 `${resume.audience === 'limited' ? '限定公開用' : '公開用'}・${resume.status === 'draft' ? '非公開' : '公開中'}${
                   resume.audience === 'limited'
                     ? `・${resume.limitedExpiresAt === null ? '' : '期限 '}${formatExpires(resume.limitedExpiresAt)}${isExpired(resume.limitedExpiresAt, now) ? '（過ぎています）' : ''}`
@@ -63,12 +61,12 @@ const Page = async ({ searchParams }: Props) => {
             },
             {
               header: '写した実績',
-              cell: ({ content }) => `${content?.projects.length ?? 0} 件`,
+              cell: (resume) => `${resume.projectCount} 件`,
               nowrap: true,
             },
             {
               header: '写した職歴',
-              cell: ({ content }) => `${content?.careers.length ?? 0} 件`,
+              cell: (resume) => `${resume.careerCount} 件`,
               nowrap: true,
             },
           ]}

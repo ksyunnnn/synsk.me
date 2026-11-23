@@ -13,7 +13,7 @@ import {
   editProject,
 } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
-import { getResumeForEdit, listResumes } from '@/features/resume/server/queries';
+import { listResumesCopyingProject } from '@/features/resume/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { SavedNotice } from '@/shared/components/saved-notice';
@@ -43,16 +43,13 @@ export const ProjectDetail = async ({
   const project = await getProjectForEdit(uid);
   if (!project)
     return <p className="py-12 text-center text-muted-foreground">この実績はありません</p>;
-  const [skillOptions, organizationNames, careers, resumes] = await Promise.all([
+  const [skillOptions, organizationNames, careers, copiedTo] = await Promise.all([
     listSkillOptions(),
     listOrganizationNames(),
     listCareers(),
-    listResumes(),
+    // 実績を写した職務経歴書。写しは元から切り離されているので、写したことだけを示す
+    listResumesCopyingProject(project.id),
   ]);
-  // 実績を写した職務経歴書。写しは元から切り離されているので、写したことだけを示す
-  const copiedTo = (
-    await Promise.all(resumes.map((resume) => getResumeForEdit(resume.uid)))
-  ).filter((resume) => resume?.projects.some((row) => row.projectId === project.id));
   const ownCareers = careers.filter(
     (career) =>
       career.organizationName === project.organization.name &&
@@ -77,7 +74,7 @@ export const ProjectDetail = async ({
             {
               label: '写した職務経歴書',
               value:
-                copiedTo.length === 0 ? 'なし' : copiedTo.map((resume) => resume?.title).join('、'),
+                copiedTo.length === 0 ? 'なし' : copiedTo.map((resume) => resume.title).join('、'),
             },
           ]}
         />

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { listCareers } from '@/features/career/server/queries';
 import { listProjects } from '@/features/project/server/queries';
-import { getResumeForEdit, listResumes } from '@/features/resume/server/queries';
+import { listResumes } from '@/features/resume/server/queries';
 import { DashGroup, DashTile } from '@/shared/components/dash-entry';
 import { requireAuthor } from '@/shared/server/author';
 import { routes } from '@/shared/routes';
@@ -26,19 +26,18 @@ const Page = async () => {
     listProjects(NO_FILTER),
     listCareers(),
   ]);
-  const contents = await Promise.all(resumes.map((resume) => getResumeForEdit(resume.uid)));
   const ongoing = projects.filter((project) => project.period.endedOn === null).length;
 
   return (
     <main className="flex flex-col gap-4">
       <h1 className="sr-only">管理画面</h1>
       <DashGroup title="職務経歴書">
-        {resumes.map((resume, index) => (
+        {resumes.map((resume) => (
           <DashTile
             key={resume.uid}
             href={routes.dash.resumes.entries(resume.uid, 'projects')}
             label={resume.title}
-            note={`写した実績 ${contents[index]?.projects.length ?? 0} 件・写した職歴 ${contents[index]?.careers.length ?? 0} 件`}
+            note={`写した実績 ${resume.projectCount} 件・写した職歴 ${resume.careerCount} 件`}
           />
         ))}
         <DashTile href={routes.dash.resumes.new} label="職務経歴書を作る" />

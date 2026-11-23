@@ -8,6 +8,7 @@ import type {
   ResumeEducationContent,
   ResumeForEdit,
   ResumeId,
+  ResumeListItem,
   ResumeProjectContent,
   ResumeRowKind,
   ResumeSelection,
@@ -36,8 +37,10 @@ export type ResumeRepository = {
    * 写した経験年数の上書きは、その職務経歴書に同じ名前の上書きが無いものだけを入れる（R14）
    */
   addRows: (id: ResumeId, content: NewResumeContent, times: EditTimes) => Promise<EditResult>;
-  /** オーナーの一覧。作った日時の新しい順 */
-  list: () => Promise<Resume[]>;
+  /** オーナーの一覧と、写した実績・職歴の件数。1 つの問い合わせで読む。作った日時の新しい順 */
+  list: () => Promise<ResumeListItem[]>;
+  /** 実績（`project` の id）を写した職務経歴書。1 つの問い合わせで読む。作った日時の新しい順 */
+  listCopyingProject: (projectId: number) => Promise<Resume[]>;
   findForEdit: (id: ResumeId) => Promise<ResumeForEdit | null>;
   /** 管理画面の URL とフォームの uid が指す職務経歴書の id。無ければ null */
   findIdByUid: (uid: Uid) => Promise<ResumeId | null>;

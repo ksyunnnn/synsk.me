@@ -502,7 +502,30 @@ export const createD1ResumeRepository = (db: D1Database): ResumeRepository => {
 
     list: async () => {
       const { results } = await db
-        .prepare(`SELECT ${RESUME_COLUMNS} FROM resume ORDER BY created_at DESC, id DESC`)
+        .prepare(
+          `SELECT ${RESUME_COLUMNS},
+             (SELECT COUNT(*) FROM resume_project WHERE resume_id = resume.id) AS project_count,
+             (SELECT COUNT(*) FROM resume_career WHERE resume_id = resume.id) AS career_count
+           FROM resume ORDER BY created_at DESC, id DESC`,
+        )
+        .all<ResumeRow & { project_count: number; career_count: number }>();
+      return results.map((row) => ({
+        ...toResume(row),
+        projectCount: row.project_count,
+        careerCount: row.career_count,
+      }));
+    },
+
+    listCopyingProject: async (projectId) => {
+      const { results } = await db
+        .prepare(
+          `SELECT ${RESUME_COLUMNS} FROM resume
+           WHERE EXISTS (
+             SELECT 1 FROM resume_project WHERE resume_id = resume.id AND project_id = ?
+           )
+           ORDER BY created_at DESC, id DESC`,
+        )
+        .bind(projectId)
         .all<ResumeRow>();
       return results.map(toResume);
     },

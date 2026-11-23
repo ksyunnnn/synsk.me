@@ -296,4 +296,31 @@ describe('作った後', () => {
     const b = await resumes.create(await newResume({ title: '後' }));
     expect((await resumes.list()).map((r) => r.id)).toEqual([b.id, a.id]);
   });
+
+  it('一覧は、写した実績と職歴の件数を持つ', async () => {
+    const all = await resumes.create(await newResume({ title: 'すべて' }));
+    const none = await resumes.create(
+      await newResume({
+        title: 'なし',
+        content: { careers: [], projects: [], educations: [], skillOverrides: [] },
+      }),
+    );
+    const counts = (await resumes.list()).map((r) => [r.id, r.projectCount, r.careerCount]);
+    expect(counts).toEqual([
+      [none.id, 0, 0],
+      [all.id, 2, 2],
+    ]);
+  });
+
+  it('実績を写した職務経歴書だけを返す', async () => {
+    const copying = await resumes.create(await newResume({ title: '写した' }));
+    await resumes.create(
+      await newResume({
+        title: '写していない',
+        content: { careers: [], projects: [], educations: [], skillOverrides: [] },
+      }),
+    );
+    const [projectId] = ids.projects;
+    expect((await resumes.listCopyingProject(projectId)).map((r) => r.id)).toEqual([copying.id]);
+  });
 });
