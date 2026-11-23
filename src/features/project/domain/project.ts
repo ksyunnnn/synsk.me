@@ -165,6 +165,15 @@ export type CardImageFormResult = ActionResult<
   typeof CARD_IMAGE_FIELD,
   'invalid' | 'media-not-owned'
 >;
+
+/** 消す画像を指す入力の名前。値はその実績の画像の置き場のキー */
+export const DELETE_MEDIA_FIELD = 'mediaStorageKey';
+
+/** 画像を消す Server Action の結果。`media-not-owned` はその実績の画像でないキー */
+export type DeleteMediaFormResult = ActionResult<
+  typeof DELETE_MEDIA_FIELD,
+  'invalid' | 'media-not-owned'
+>;
 export const OPENED_UPDATED_AT_FIELD = 'openedUpdatedAt';
 
 export type ProjectFieldError =

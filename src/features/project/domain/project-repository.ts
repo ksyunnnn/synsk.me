@@ -79,6 +79,14 @@ export type ProjectRepository = {
     id: ProjectId,
     storageKey: MediaStorageKey | null,
   ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
+  /**
+   * その実績の画像の行を消す。代表画像なら、同じトランザクションで代表画像を外す。置き場の実体は
+   * ユースケースが消す。ほかのキーなら `media-not-owned`。無い id なら `not-found`
+   */
+  deleteMedia: (
+    id: ProjectId,
+    storageKey: MediaStorageKey,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'not-found' | 'media-not-owned' }>;
   /** 識別子の実績があるか。`findVisitorBySlug` が null を返さない識別子と一致する */
   hasSlug: (slug: string) => Promise<boolean>;
   /** 実績の入力でつなげるスキルの選択肢。名前の順（FR-032） */

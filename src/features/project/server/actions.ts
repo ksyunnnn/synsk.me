@@ -8,16 +8,19 @@ import { editProject as editProjectUseCase } from '@/features/project/applicatio
 import {
   addProjectMedia as addProjectMediaUseCase,
   changeProjectCardImage as changeProjectCardImageUseCase,
+  deleteProjectMedia as deleteProjectMediaUseCase,
 } from '@/features/project/application/project-media';
 import { registerProject as registerProjectUseCase } from '@/features/project/application/register-project';
 import {
   AS_CARD_IMAGE_FIELD,
   CARD_IMAGE_FIELD,
+  DELETE_MEDIA_FIELD,
   NO_CARD_IMAGE,
   OPENED_UPDATED_AT_FIELD,
   PROJECT_FIELDS,
   PROJECT_UID_FIELD,
   type CardImageFormResult,
+  type DeleteMediaFormResult,
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
@@ -172,4 +175,24 @@ export const changeProjectCardImage = async (
   if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [CARD_IMAGE_FIELD]: outcome.error }, values: {} };
+};
+
+/** 画像を 1 枚消し、同じ画面へ移る。代表画像なら代表画像を外す */
+export const deleteProjectMedia = async (
+  _state: DeleteMediaFormResult | null,
+  formData: FormData,
+): Promise<DeleteMediaFormResult> => {
+  const author = await getCurrentAuthor();
+  if (!author) return { status: 'forbidden' };
+  const { deps, uid, id } = await resolveProject(formData);
+  if (id === null) redirect(routes.dash.projects.list);
+
+  const storageKey = parseMediaStorageKey(readString(formData, DELETE_MEDIA_FIELD));
+  if (storageKey === null)
+    return { status: 'invalid', errors: { [DELETE_MEDIA_FIELD]: 'invalid' }, values: {} };
+  const outcome = await deleteProjectMediaUseCase(deps, author, id, storageKey);
+  if (outcome.status === 'deleted') redirect(routes.dash.projects.selected(uid, 'mediaDeleted'));
+  if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
+  if (outcome.status === 'forbidden') return outcome;
+  return { status: 'invalid', errors: { [DELETE_MEDIA_FIELD]: outcome.error }, values: {} };
 };

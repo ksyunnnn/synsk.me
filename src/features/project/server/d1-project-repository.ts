@@ -496,6 +496,24 @@ export const createD1ProjectRepository = (db: D1Database): ProjectRepository => 
       return { ok: false, reason: exists === null ? 'not-found' : 'media-not-owned' };
     },
 
+    deleteMedia: async (id, storageKey) => {
+      // 代表画像の外部キーが指す行は消せないため、同じ batch() の中で先に代表画像を外す
+      const [, deleted] = await db.batch([
+        db
+          .prepare(
+            `UPDATE project SET card_media_id = NULL
+             WHERE id = ?1 AND card_media_id IN (SELECT id FROM media WHERE project_id = ?1 AND storage_key = ?2)`,
+          )
+          .bind(id, storageKey),
+        db
+          .prepare('DELETE FROM media WHERE project_id = ? AND storage_key = ?')
+          .bind(id, storageKey),
+      ]);
+      if ((deleted?.meta.changes ?? 0) > 0) return { ok: true };
+      const exists = await db.prepare('SELECT 1 FROM project WHERE id = ?').bind(id).first();
+      return { ok: false, reason: exists === null ? 'not-found' : 'media-not-owned' };
+    },
+
     hasSlug: async (slug) =>
       (await db
         .prepare(
