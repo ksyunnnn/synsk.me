@@ -455,4 +455,96 @@ test.describe('詳細を隠した Split view', () => {
       'true',
     );
   });
+
+  /** ドロワーが右へ出ていく時間（detail-sheet.tsx の PEEK_MS）より長く待つ */
+  const pastLeaving = (page: Page) => page.waitForTimeout(600);
+  /** 選んだ 1 件の URL に合う形 */
+  const selecting = (editUrl: string) =>
+    new RegExp(`[?&]selected=${new URL(editUrl).searchParams.get('selected')}(&|$)`);
+
+  test('閉じる動きの間に戻る・別の行を選ぶと、閉じずに移った先を出し、進む履歴も残る', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const organization = {
+      organizationName: 'E2E ドロワーの組織',
+      organizationNameMasked: 'E2E ドロワーの秘匿化した組織名',
+    };
+    const first = uniqueTitle('閉じる間の 1 件め');
+    const second = uniqueTitle('閉じる間の 2 件め');
+    const firstUrl = selecting(
+      (await registerProject(page, { ...organization, title: first })).editUrl,
+    );
+    const secondUrl = selecting(
+      (await registerProject(page, { ...organization, title: second })).editUrl,
+    );
+    await page.goto('/dash/projects');
+    const hide = page.getByRole('button', { name: '詳細を隠す' });
+    await waitForHydration(hide);
+    await hide.click();
+    const drawer = page.getByRole('region', { name: '選んだ実績' });
+    await page.getByRole('link', { name: first }).click();
+    await expect(drawer.getByRole('heading', { name: first })).toBeVisible();
+    await page.getByRole('link', { name: second }).click();
+    await expect(drawer.getByRole('heading', { name: second })).toBeVisible();
+
+    // 閉じるを押してすぐ戻る。同じ処理の中で続けて行い、閉じる動きの間に戻ったことを確かにする
+    await drawer.evaluate((element) => {
+      element.querySelector<HTMLElement>('a[aria-label="閉じる"]')?.click();
+      history.back();
+    });
+    await expect(page).toHaveURL(firstUrl);
+    await pastLeaving(page);
+    await expect(page).toHaveURL(firstUrl);
+    await expect(drawer.getByRole('heading', { name: first })).toBeVisible();
+    await page.goForward();
+    await expect(page).toHaveURL(secondUrl);
+
+    // 閉じるを押してすぐ別の行を選ぶ
+    await page.evaluate((title) => {
+      const links = [...document.querySelectorAll<HTMLElement>('main a')];
+      links.find((link) => link.getAttribute('aria-label') === '閉じる')?.click();
+      links.find((link) => link.textContent === title)?.click();
+    }, first);
+    await expect(page).toHaveURL(firstUrl);
+    await pastLeaving(page);
+    await expect(page).toHaveURL(firstUrl);
+    await expect(drawer.getByRole('heading', { name: first })).toBeVisible();
+  });
+
+  test('ドロワーを全体に広げてから戻ると、詳細を隠したまま選ぶ前に戻り、進むとドロワーで出る', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    const title = uniqueTitle('全体に広げる');
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E ドロワーの組織',
+      organizationNameMasked: 'E2E ドロワーの秘匿化した組織名',
+      title,
+    });
+    await page.goto('/dash/projects');
+    const hide = page.getByRole('button', { name: '詳細を隠す' });
+    await waitForHydration(hide);
+    await hide.click();
+    await page.getByRole('link', { name: title }).click();
+    const drawer = page.getByRole('region', { name: '選んだ実績' });
+    await drawer.getByRole('button', { name: '全体に広げる' }).click();
+    // 広げると一覧の列を隠す。広げたことは履歴に載せない
+    await expect(page.getByRole('link', { name: title })).toBeHidden();
+    await expect(page).toHaveURL(selecting(editUrl));
+
+    await page.goBack();
+    await expect(page).not.toHaveURL(/selected=/);
+    await expect(page.getByRole('link', { name: title })).toBeVisible();
+    await expect(hide).toHaveAttribute('aria-pressed', 'true');
+
+    await page.goForward();
+    await expect(page).toHaveURL(selecting(editUrl));
+    await expect(drawer.getByRole('button', { name: '全体に広げる' })).toBeVisible();
+    await expect(page.getByRole('link', { name: title })).toBeVisible();
+  });
 });

@@ -27,7 +27,16 @@ export const CoverContext = createContext<{
 const PanesContext = createContext<{
   hidden: Record<Pane, boolean>;
   setHidden: (pane: Pane, value: boolean) => void;
-}>({ hidden: { sidebar: false, collection: false, detail: false }, setHidden: () => {} });
+  /** ドロワーを全体の幅に広げる */
+  expand: () => void;
+  /** 選んだ 1 件が変わったときに呼ぶ。広げる前の見せ方に戻す */
+  settle: (selected: boolean) => void;
+}>({
+  hidden: { sidebar: false, collection: false, detail: false },
+  setHidden: () => {},
+  expand: () => {},
+  settle: () => {},
+});
 
 /** 押した状態が「隠している」にあたる。状態は押した状態（`aria-pressed`）で伝え、名前は変えない */
 const LABELS: Record<Pane, string> = {
@@ -87,14 +96,15 @@ export const useDetailPeek = () => useContext(PanesContext).hidden.detail;
 /**
  * ドロワーを全体の幅に広げるボタン。一覧を隠し、詳細を全体の幅の列で出す（Notion の「Click ⤡ at
  * the top left to view in full page mode.」https://www.notion.com/help/intro-to-databases ）。
- * 一覧に戻すのは、一覧の列を隠すボタン（`PaneToggle`）が持つ
+ * 一覧に戻すのは、一覧の列を隠すボタン（`PaneToggle`）が持つ。広げたことは履歴に載せず、選んだ 1 件が
+ * 変わったら（戻る・進むを含む）、広げる前のドロワーの見せ方に戻す
  */
 export const ExpandDetailButton = () => {
-  const { setHidden } = useContext(PanesContext);
+  const { expand } = useContext(PanesContext);
   return (
     <button
       type="button"
-      onClick={() => setHidden('collection', true)}
+      onClick={expand}
       aria-label="全体に広げる"
       title="全体に広げる"
       className="flex size-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
@@ -135,18 +145,34 @@ export const DashPanes = ({ sidebar, children }: { sidebar: ReactNode; children:
     collection: false,
     detail: false,
   });
+  // ドロワーを全体の幅に広げているか。広げる前は詳細を隠していた
+  const [expanded, setExpanded] = useState(false);
   // 一覧と詳細の両方は隠さない。片方を隠したら、もう片方を表示に戻す
-  const setHidden = (pane: Pane, value: boolean) =>
+  const setHidden = (pane: Pane, value: boolean) => {
+    setExpanded(false);
     setState((current) => ({
       ...current,
       [pane]: value,
       ...(value && pane === 'collection' && { detail: false }),
       ...(value && pane === 'detail' && { collection: false }),
     }));
+  };
+  const expand = () => {
+    setState((current) => ({ ...current, collection: true, detail: false }));
+    setExpanded(true);
+  };
+  // 広げていたら、広げる前（詳細を隠して一覧を出す）に戻す。広げていなければ、選んだ 1 件が無く
+  // なったときだけ一覧の列を表示に戻す
+  const settle = (selected: boolean) => {
+    if (expanded) {
+      setExpanded(false);
+      setState((current) => ({ ...current, collection: false, detail: true }));
+    } else if (!selected) setState((current) => ({ ...current, collection: false }));
+  };
   const [covered, setCovered] = useState(false);
   const cover = useMemo(() => ({ covered, setCovered }), [covered]);
   return (
-    <PanesContext value={{ hidden, setHidden }}>
+    <PanesContext value={{ hidden, setHidden, expand, settle }}>
       <CoverContext value={cover}>
         <div
           className={cn(
@@ -190,12 +216,12 @@ export const SplitPanes = ({
   collection: ReactNode;
   detail: ReactNode;
 }) => {
-  const { hidden, setHidden } = useContext(PanesContext);
+  const { hidden, settle } = useContext(PanesContext);
   const { covered } = useContext(CoverContext);
   const selected = useSearchParams().get('selected');
   useEffect(() => {
-    if (!selected) setHidden('collection', false);
-    // setHidden は描画のたびに作り直すので、選んだ 1 件が変わったときだけ動かす
+    settle(selected !== null && selected !== '');
+    // settle は描画のたびに作り直すので、選んだ 1 件が変わったときだけ動かす
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
   return (
