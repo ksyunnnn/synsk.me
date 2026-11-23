@@ -47,7 +47,7 @@ export const NoteStatusForm = ({ noteUid, status, publishAction, unpublishAction
 
   return (
     <section aria-labelledby="note-status-heading" className="flex flex-col gap-3">
-      <h2 id="note-status-heading" className="text-lg font-bold">
+      <h2 id="note-status-heading" className="text-heading-2">
         状態: {NOTE_STATUS_LABELS[status]}
       </h2>
       {message && <FormAlert>{message}</FormAlert>}

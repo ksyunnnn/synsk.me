@@ -28,6 +28,11 @@ type Props = {
   mediaStorageKeys: string[];
   /** フォームに足す入力（例: 代表画像にもするかのチェックボックス） */
   children?: ReactNode;
+  /**
+   * 外側の見出しの id。渡すと、中の見出し（h2「画像」）を置かず、その見出しで区画に名前を付ける。
+   * 外側に同じ名前の見出しがある画面（実績・職歴のシングル）で使う
+   */
+  labelledBy?: string;
 };
 
 const MAX_MB = MEDIA_MAX_BYTES / 1024 / 1024;
@@ -39,17 +44,25 @@ const ERROR_MESSAGES: Record<MediaRejection, string> = {
   'storage-full': MEDIA_STORAGE_FULL_MESSAGE,
 };
 
-export const MediaUploadForm = ({ action, owner, mediaStorageKeys, children }: Props) => {
+export const MediaUploadForm = ({
+  action,
+  owner,
+  mediaStorageKeys,
+  children,
+  labelledBy,
+}: Props) => {
   const [result, formAction] = useActionState(action, null);
   const reason = result?.status === 'invalid' ? result.errors[MEDIA_FILE_FIELD] : undefined;
   const message =
     result?.status === 'forbidden' ? FORBIDDEN_MESSAGE : reason && ERROR_MESSAGES[reason];
 
   return (
-    <section aria-labelledby="media-upload-heading" className="flex flex-col gap-3">
-      <h2 id="media-upload-heading" className="text-lg font-bold">
-        画像
-      </h2>
+    <section aria-labelledby={labelledBy ?? 'media-upload-heading'} className="flex flex-col gap-3">
+      {labelledBy === undefined && (
+        <h2 id="media-upload-heading" className="text-heading-2">
+          画像
+        </h2>
+      )}
       {mediaStorageKeys.length === 0 ? (
         <p>足した画像はありません</p>
       ) : (

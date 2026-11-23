@@ -90,8 +90,11 @@ export const CareerDetail = async ({
         career={{ uid: career.uid, updatedAt: career.updatedAt }}
       />
       <section className="flex flex-col gap-4 border-t border-border pt-6">
-        <h3 className="text-caption font-medium text-muted-foreground">画像</h3>
+        <h3 id="career-media-heading" className="text-caption text-muted-foreground">
+          画像
+        </h3>
         <MediaUploadForm
+          labelledBy="career-media-heading"
           action={addCareerMedia}
           owner={{ field: CAREER_UID_FIELD, uid: career.uid }}
           mediaStorageKeys={career.mediaStorageKeys}

@@ -50,7 +50,7 @@ export const LifeEventImageForm = ({ uid, cardImageUrl, register, remove }: Prop
 
   return (
     <section aria-labelledby="life-event-image-heading" className="flex flex-col gap-4">
-      <h2 id="life-event-image-heading" className="text-xl font-bold">
+      <h2 id="life-event-image-heading" className="text-heading-2">
         代表画像
       </h2>
       {message && <FormAlert>{message}</FormAlert>}

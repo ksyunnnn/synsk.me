@@ -777,7 +777,7 @@ describe('見た目の確認（REQUIREMENTS.md の FR-13、T049）', () => {
     });
     expect(res.status).toBe(200);
     const html = await res.text();
-    expect(html).toContain('<h1 class="text-3xl font-bold">見た目の確認の新しい題</h1>');
+    expect(html).toMatch(/<h1(?: [^>]*)?>見た目の確認の新しい題<\/h1>/);
     expect(html).toContain('<strong>新しい</strong>');
     expect(html).toContain('公開していません');
     expect(html).not.toContain('見た目の確認の古い題');

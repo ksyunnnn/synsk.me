@@ -6,7 +6,7 @@ import { BackToTopLink } from '@/shared/components/back-to-top-link';
 // 画面全体が消える。ページを直接開いたときは、ストリーミングの前に 403 が決まる
 const Forbidden = () => (
   <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-12">
-    <h1 className="text-2xl font-bold">このページを開く権限がありません</h1>
+    <h1 className="text-heading-1">このページを開く権限がありません</h1>
     <BackToTopLink />
   </main>
 );
