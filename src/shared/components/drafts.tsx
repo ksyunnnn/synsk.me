@@ -13,6 +13,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from 'react';
+import { RETURN_QUERY_FIELD } from '@/shared/domain/search-param';
 
 /**
  * 保存していない直しかけ（#366 の「直しかけの扱い」）。管理画面の中で別の 1 件を選んでも残し、
@@ -90,7 +91,8 @@ export const DraftProvider = ({ children }: { children: ReactNode }) => {
 const serialize = (form: HTMLFormElement): Draft => {
   const draft: Draft = {};
   for (const [name, value] of new FormData(form)) {
-    if (typeof value !== 'string') continue;
+    // 一覧の検索の値は入力ではない。見せ方を切り替えても直しかけにしない
+    if (typeof value !== 'string' || name === RETURN_QUERY_FIELD) continue;
     draft[name] = name in draft ? `${draft[name]},${value}` : value;
   }
   return draft;

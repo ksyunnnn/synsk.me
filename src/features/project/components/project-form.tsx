@@ -30,6 +30,7 @@ import { KindField } from '@/shared/components/kind-field';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { TokenField } from '@/shared/components/token-field';
+import { ReturnQueryField } from '@/shared/components/return-query-field';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -159,6 +160,7 @@ export const ProjectForm = ({
         <>
           <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />
           <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={project.updatedAt} />
+          <ReturnQueryField />
         </>
       )}
 

@@ -19,6 +19,7 @@ import {
 import { SubmitButton } from '@/shared/components/submit-button';
 import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { formStateOf } from '@/shared/domain/action-result';
+import { ReturnQueryField } from '@/shared/components/return-query-field';
 
 /**
  * スキルを登録する・編集するフォーム。上書きの経験年数は年と月で入れる（FR-034）。
@@ -69,7 +70,12 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
       {...draft.bind}
     >
       <DraftConflict conflict={draft.conflict} noun="スキル" />
-      {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
+      {skillUid !== undefined && (
+        <>
+          <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />
+          <ReturnQueryField />
+        </>
+      )}
       {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
       {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}
       <InputField

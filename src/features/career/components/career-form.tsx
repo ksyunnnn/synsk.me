@@ -25,6 +25,7 @@ import { FormActions } from '@/shared/components/form-actions';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { formStateOf } from '@/shared/domain/action-result';
+import { ReturnQueryField } from '@/shared/components/return-query-field';
 
 /**
  * 職歴を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -101,6 +102,7 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
         <>
           <input type="hidden" name={CAREER_UID_FIELD} value={career.uid} />
           <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={career.updatedAt} />
+          <ReturnQueryField />
         </>
       )}
       {result && result.status !== 'saved' && (

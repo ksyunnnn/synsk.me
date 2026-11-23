@@ -57,6 +57,7 @@ import {
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readStrings, readValues } from '@/shared/server/form-data';
+import { RETURN_QUERY_FIELD } from '@/shared/domain/search-param';
 import { routes, withFlag } from '@/shared/routes';
 
 /**
@@ -237,6 +238,7 @@ export const editResumeCareer = async (
     resume.uid,
     'careers',
     readString(formData, ROW_UID_FIELD),
+    readString(formData, RETURN_QUERY_FIELD),
   );
   return finish(
     resume,
@@ -262,6 +264,7 @@ export const editResumeProject = async (
     resume.uid,
     'projects',
     readString(formData, ROW_UID_FIELD),
+    readString(formData, RETURN_QUERY_FIELD),
   );
   return finish(
     resume,
@@ -287,6 +290,7 @@ export const editResumeEducation = async (
     resume.uid,
     'educations',
     readString(formData, ROW_UID_FIELD),
+    readString(formData, RETURN_QUERY_FIELD),
   );
   return finish(
     resume,

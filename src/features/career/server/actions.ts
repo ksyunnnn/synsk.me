@@ -18,6 +18,7 @@ import { MEDIA_FILE_FIELD, type MediaFormResult } from '@/shared/domain/media';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readValues } from '@/shared/server/form-data';
+import { RETURN_QUERY_FIELD } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
 
 /**
@@ -61,7 +62,10 @@ export const editCareer = async (
     openedUpdatedAt: readString(formData, OPENED_UPDATED_AT_FIELD),
     now: new Date().toISOString(),
   });
-  if (outcome.status === 'saved') redirect(routes.dash.careers.selected(uid, 'saved'));
+  if (outcome.status === 'saved')
+    redirect(
+      routes.dash.careers.selected(uid, 'saved', '1', readString(formData, RETURN_QUERY_FIELD)),
+    );
   if (outcome.status === 'not-found') redirect(routes.dash.careers.list);
   return outcome;
 };

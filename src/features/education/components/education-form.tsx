@@ -20,6 +20,7 @@ import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages
 import { SubmitButton } from '@/shared/components/submit-button';
 import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { formStateOf } from '@/shared/domain/action-result';
+import { ReturnQueryField } from '@/shared/components/return-query-field';
 
 /**
  * 学歴を登録する・編集するフォーム。Server Action は props で受け取り、`server/` を読み込まない
@@ -71,7 +72,10 @@ export const EducationForm = ({ action, initialValues, educationUid }: Props) =>
     >
       <DraftConflict conflict={draft.conflict} noun="学歴" />
       {educationUid !== undefined && (
-        <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
+        <>
+          <input type="hidden" name={EDUCATION_UID_FIELD} value={educationUid} />
+          <ReturnQueryField />
+        </>
       )}
       {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
       {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}
