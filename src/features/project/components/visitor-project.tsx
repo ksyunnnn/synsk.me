@@ -31,7 +31,7 @@ export const VisitorProjectView = ({ project }: { project: VisitorProject }) => 
         />
       )}
       <p className="text-sm text-muted-foreground">{PROJECT_KIND_LABELS[project.kind]}</p>
-      <h1 className="text-3xl font-bold">{project.title}</h1>
+      <h1 className="text-heading-1 tracking-heading">{project.title}</h1>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         {project.organizationName && (
           <>
@@ -53,7 +53,7 @@ export const VisitorProjectView = ({ project }: { project: VisitorProject }) => 
     </header>
     {project.isMasked && (
       <section aria-labelledby="project-body-heading" className="flex flex-col gap-2">
-        <h2 id="project-body-heading" className="text-sm text-muted-foreground">
+        <h2 id="project-body-heading" className="text-caption text-muted-foreground">
           本文
         </h2>
         <p>非公開</p>
@@ -61,7 +61,7 @@ export const VisitorProjectView = ({ project }: { project: VisitorProject }) => 
     )}
     {!project.isMasked && project.body && (
       <section aria-labelledby="project-body-heading" className="flex flex-col gap-2">
-        <h2 id="project-body-heading" className="text-sm text-muted-foreground">
+        <h2 id="project-body-heading" className="text-caption text-muted-foreground">
           本文
         </h2>
         <MarkdownBody

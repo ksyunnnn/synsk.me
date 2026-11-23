@@ -27,9 +27,9 @@ export const DashPage = ({
     )}
     {title !== undefined &&
       (headingLevel === 1 ? (
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="text-heading-1 tracking-heading">{title}</h1>
       ) : (
-        <h2 className="text-2xl font-bold">{title}</h2>
+        <h2 className="text-heading-2 tracking-heading">{title}</h2>
       ))}
     {children}
   </main>

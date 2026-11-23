@@ -72,7 +72,7 @@ export const NoteSyndicationForm = ({ noteUid, urls, addAction, removeAction }: 
 
   return (
     <section aria-labelledby="note-syndication-heading" className="flex flex-col gap-3">
-      <h2 id="note-syndication-heading" className="text-lg font-bold">
+      <h2 id="note-syndication-heading" className="text-heading-2 tracking-heading">
         転載先
       </h2>
       {urls.length === 0 ? (

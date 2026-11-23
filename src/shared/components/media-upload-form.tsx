@@ -47,7 +47,7 @@ export const MediaUploadForm = ({ action, owner, mediaStorageKeys, children }: P
 
   return (
     <section aria-labelledby="media-upload-heading" className="flex flex-col gap-3">
-      <h2 id="media-upload-heading" className="text-lg font-bold">
+      <h2 id="media-upload-heading" className="text-heading-2 tracking-heading">
         画像
       </h2>
       {mediaStorageKeys.length === 0 ? (
