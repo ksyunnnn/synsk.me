@@ -72,6 +72,14 @@ const DetailSubmit = ({ form }: { form: string }) => (
   </SubmitButton>
 );
 
+/**
+ * 狭い画面の上の行で、保存のボタンが出るときの形。ボタンと同じく、詳細のフォームがあるかを CSS の
+ * `:has()` で見る。フォームが無い（「この実績はありません」など）ときは、閉じるを末尾に置き、高さを取らない
+ */
+const SUBMIT_ROW_HEIGHT = 'group-has-[[data-detail-form]]/detail:min-h-12';
+const CLOSE_BESIDE_SUBMIT =
+  'right-3 group-has-[[data-detail-form]]/detail:right-auto group-has-[[data-detail-form]]/detail:left-3';
+
 /** `globals.css` の `--breakpoint-lg`（976px）より狭い画面 */
 const NARROW_QUERY = '(max-width: 975.98px)';
 
@@ -214,8 +222,9 @@ export const DetailSheet = ({
         <div
           className={cn(
             'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1 lg:hidden',
-            // 主な操作のボタンが、下の見出しに重ならない高さを取る
-            actions && 'min-h-12',
+            // 主な操作のボタンが、下の見出しに重ならない高さを取る。ボタンは詳細のフォームが
+            // あるときだけ出る（DetailSubmit）ので、高さも同じ条件で取る
+            actions && SUBMIT_ROW_HEIGHT,
           )}
         >
           <span aria-hidden className="h-6 w-16" />
@@ -229,7 +238,7 @@ export const DetailSheet = ({
             }}
             className={cn(
               'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
-              actions ? 'left-3' : 'right-3',
+              actions ? CLOSE_BESIDE_SUBMIT : 'right-3',
             )}
           >
             閉じる
@@ -335,7 +344,7 @@ const NarrowSheet = ({
             <div
               className={cn(
                 'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1',
-                actions && 'min-h-12',
+                actions && SUBMIT_ROW_HEIGHT,
               )}
             >
               {/* つまみ。引いて高さを変え、押すと高さを切り替える（HIG Sheets の grabber） */}
@@ -350,11 +359,11 @@ const NarrowSheet = ({
                   {expanded ? '半分の高さにする' : '全体の高さにする'}
                 </span>
               </button>
-              {/* 主な操作があるときは、閉じるを先頭に、主な操作を末尾に置く */}
+              {/* 主な操作が出るときは、閉じるを先頭に、主な操作を末尾に置く */}
               <Drawer.Close
                 className={cn(
                   'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
-                  actions ? 'left-3' : 'right-3',
+                  actions ? CLOSE_BESIDE_SUBMIT : 'right-3',
                 )}
               >
                 閉じる
