@@ -374,7 +374,9 @@ export const addResumeRow = async (
   await expect(page.getByRole('heading', { name: `${kind}を足す` })).toBeVisible();
   await page.getByRole('checkbox', { name: option }).check();
   await submitAndWait(page, '足す');
-  await expect(page).toHaveURL(new RegExp(`/dash/resumes/[0-9a-f]{32}/${path}\\?saved=1$`));
+  // 知らせを出した後に、知らせの印（`?saved=1`）は URL から外れる
+  await expect(page).toHaveURL(new RegExp(`/dash/resumes/[0-9a-f]{32}/${path}$`));
+  await expect(page.getByRole('status')).toHaveText('保存しました');
 };
 
 /**

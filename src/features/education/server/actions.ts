@@ -60,9 +60,16 @@ export const editEducation = async (
     id,
     readValues(formData, EDUCATION_FIELDS),
   );
-  // 保存した 1 件を選んだ一覧へ戻る（#366 の明文化）
+  // 保存した 1 件を選んだ一覧へ戻る（#366 の明文化）。更新日時を持たないので、印の値に保存した
+  // 時刻を入れ、画面が保存のたびに知らせとフォームを置き直せるようにする
   if (outcome.status === 'saved')
-    redirect(routes.dash.educations.selected(readString(formData, EDUCATION_UID_FIELD), 'saved'));
+    redirect(
+      routes.dash.educations.selected(
+        readString(formData, EDUCATION_UID_FIELD),
+        'saved',
+        String(Date.now()),
+      ),
+    );
   if (outcome.status === 'not-found') redirect(routes.dash.educations.list);
   return outcome;
 };

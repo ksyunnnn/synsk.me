@@ -19,7 +19,7 @@ import { MaskingField } from '@/shared/components/masking-field';
 import { OrganizationNameFields } from '@/shared/components/organization-name-fields';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
-import { useDraft } from '@/shared/components/drafts';
+import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -59,13 +59,26 @@ const RESULT_MESSAGES = {
   forbidden: FORBIDDEN_INPUT_MESSAGE,
   invalid: INVALID_INPUT_MESSAGE,
   conflict:
-    'この職歴は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
+    'この職歴は、開いた後に別の画面で保存されていました。保存していません。保存された内容を読み直します',
 } as const;
+
+/** 項目の名前。直しかけと、別の画面で保存された値の違いを知らせるのに使う */
+const LABELS = {
+  organizationName: '組織名',
+  organizationNameMasked: '秘匿化した組織名',
+  role: '肩書',
+  isMasked: '秘匿化する',
+  status: 'サイトに載せる',
+  startedOn: '始まりの日',
+  endedOn: '終わりの日',
+  description: '本文',
+  url: '関連 URL',
+};
 
 export const CareerForm = ({ action, initialValues, organizationNames, career }: Props) => {
   const [result, formAction] = useActionState(action, null);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
-  const draft = useDraft(`career:${career?.uid ?? 'new'}`, initialValues);
+  const draft = useDraft(`career:${career?.uid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: CareerField) => {
     const reason = errors[field];
@@ -73,7 +86,8 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+    <form key={draft.formKey} action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+      <DraftConflict conflict={draft.conflict} noun="職歴" />
       {career && (
         <>
           <input type="hidden" name={CAREER_UID_FIELD} value={career.uid} />

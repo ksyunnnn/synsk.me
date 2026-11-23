@@ -70,6 +70,7 @@ const Page = async ({ searchParams }: Props) => {
     </>
   );
 
+  const saved = first(raw.saved) || null;
   const detail = async (uid: string) => {
     const education = await getEducationForEdit(uid);
     if (!education)
@@ -80,9 +81,14 @@ const Page = async ({ searchParams }: Props) => {
           title={`${education.school}${education.department ? `・${education.department}` : ''}`}
           draftKey={`education:${education.uid}`}
         />
-        {first(raw.saved) === '1' && <SavedNotice flags={['saved']}>保存しました</SavedNotice>}
+        {/* 印の値は、登録では `1`、編集では保存した時刻。保存のたびに知らせとフォームを置き直す */}
+        {saved && (
+          <SavedNotice key={saved} flags={['saved']}>
+            保存しました
+          </SavedNotice>
+        )}
         <EducationForm
-          key={uid}
+          key={`${uid}:${saved ?? ''}`}
           action={editEducation}
           initialValues={toEducationFormValues(education)}
           educationUid={education.uid}

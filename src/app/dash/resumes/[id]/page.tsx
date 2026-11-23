@@ -39,12 +39,12 @@ const Page = async ({ params, searchParams }: Props) => {
     <main className="flex flex-col gap-8 rounded-3xl bg-background px-6 py-8 md:px-12">
       <h2 className="sr-only">設定</h2>
       {saved === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['saved']}>
+        <SavedNotice key={`saved-${resume.updatedAt}`} flags={['saved']}>
           保存しました
         </SavedNotice>
       )}
       {regenerated === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['regenerated']}>
+        <SavedNotice key={`regenerated-${resume.updatedAt}`} flags={['regenerated']}>
           URL を出し直しました
         </SavedNotice>
       )}

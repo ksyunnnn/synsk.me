@@ -85,6 +85,12 @@ const Page = async ({ params, searchParams }: Props) => {
           ]}
         />
       </CollectionToolbar>
+      {/* 足した後は、何も選ばない一覧へ戻る。知らせは一覧の側に出す */}
+      {selected === null && first(raw.saved) === '1' && (
+        <SavedNotice key={resume.updatedAt} flags={['saved']} className="px-5 pb-2">
+          保存しました
+        </SavedNotice>
+      )}
       <div className="flex flex-wrap gap-2 px-4 pb-3">
         <FilterMenu
           label="組織"

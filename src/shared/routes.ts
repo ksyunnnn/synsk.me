@@ -19,9 +19,10 @@ const dashCollection = <const C extends string>(collection: C) => {
     row: (uid: string) => `${list}/${uid}`,
     /**
      * その 1 件を選んだ一覧。シングルは一覧の右に出す（#366 の明文化）。`flag` は保存の知らせなど。
-     * 保存の後はここへ直接移り、1 件の経路を経ない
+     * 保存の後はここへ直接移り、1 件の経路を経ない。`value` は印の値で、既定は `1`
      */
-    selected: (uid: string, flag?: string) => `${list}?selected=${uid}${flag ? `&${flag}=1` : ''}`,
+    selected: (uid: string, flag?: string, value = '1') =>
+      `${list}?selected=${uid}${flag ? `&${flag}=${value}` : ''}`,
     delete: (uid: string) => `${list}/${uid}/delete`,
     missing: (uid: string) => `${list}/${uid}/missing`,
   };

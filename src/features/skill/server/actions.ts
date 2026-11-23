@@ -48,9 +48,16 @@ export const editSkill = async (
   const { skills, id } = await resolveSkill(formData);
   if (id === null) redirect(routes.dash.skills.list);
   const outcome = await editSkillUseCase(skills, author, id, readValues(formData, SKILL_FIELDS));
-  // 保存した 1 件を選んだ一覧へ戻る（#366 の明文化）
+  // 保存した 1 件を選んだ一覧へ戻る（#366 の明文化）。更新日時を持たないので、印の値に保存した
+  // 時刻を入れ、画面が保存のたびに知らせとフォームを置き直せるようにする
   if (outcome.status === 'saved')
-    redirect(routes.dash.skills.selected(readString(formData, SKILL_UID_FIELD), 'saved'));
+    redirect(
+      routes.dash.skills.selected(
+        readString(formData, SKILL_UID_FIELD),
+        'saved',
+        String(Date.now()),
+      ),
+    );
   if (outcome.status === 'not-found') redirect(routes.dash.skills.list);
   return outcome;
 };

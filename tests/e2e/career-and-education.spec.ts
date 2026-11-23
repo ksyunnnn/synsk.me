@@ -56,7 +56,7 @@ test('職歴を登録・編集・削除できる', async ({ page, context }) => 
   await expect(page.getByRole('row').filter({ hasText: editedRole })).toHaveCount(0);
 });
 
-test('同じ職歴を 2 つのタブで開くと、後から保存した側は止まり、入力が残る', async ({
+test('同じ職歴を 2 つのタブで開くと、後から保存した側は止まり、違う項目を知らせる。捨てると保存された値で開き直す', async ({
   page,
   context,
 }) => {
@@ -84,11 +84,14 @@ test('同じ職歴を 2 つのタブで開くと、後から保存した側は�
 
   await other.getByRole('textbox', { name: '肩書' }).fill('後から保存した肩書');
   await other.getByRole('button', { name: '保存する' }).click();
-  await expect(other.getByRole('alert')).toContainText('別の画面で書き換えられていました');
+  await expect(other.getByRole('alert').filter({ hasText: '違う項目' })).toContainText(
+    '違う項目: 肩書',
+  );
   await expect(other.getByRole('textbox', { name: '肩書' })).toHaveValue('後から保存した肩書');
 
-  await other.goto(editUrl);
+  await other.getByRole('button', { name: '直しかけを捨てる' }).click();
   await expect(other.getByRole('textbox', { name: '肩書' })).toHaveValue('先に保存した肩書');
+  await expect(other.getByRole('alert').filter({ hasText: '違う項目' })).toHaveCount(0);
 });
 
 test('学歴を登録・編集・削除できる', async ({ page, context }) => {

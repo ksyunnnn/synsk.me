@@ -17,7 +17,7 @@ import {
   type SkillOverrideFormRow,
 } from '@/features/resume/domain/resume-forms';
 import { InputField, TextareaField } from '@/shared/components/field';
-import { useDraft } from '@/shared/components/drafts';
+import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { FormGroup } from '@/shared/components/form-group';
 import { KindField } from '@/shared/components/kind-field';
 import {
@@ -39,7 +39,7 @@ const MESSAGES = {
   forbidden: FORBIDDEN_INPUT_MESSAGE,
   invalid: INVALID_INPUT_MESSAGE,
   conflict:
-    'この職務経歴書は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
+    'この職務経歴書は、開いた後に別の画面で保存されていました。保存していません。保存された内容を読み直します',
   'not-found': '直す行が見つかりませんでした',
 } as const;
 
@@ -65,32 +65,38 @@ type Action<V, E> = (
 const useRowForm = <V extends object, E>(
   action: Action<V, E>,
   initialValues: V,
-  /** 直しかけを残す鍵。無ければ残さない */
-  draftKey?: string,
+  /** 直しかけを残す鍵と、違う項目を知らせるための項目の名前。無ければ残さない */
+  drafting?: { key: string; labels: Record<string, string> },
 ) => {
   const [result, formAction] = useActionState(action, null);
   // 保存せずに別の 1 行を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
-  const draft = useDraft(draftKey ?? '', initialValues as Record<string, string>);
-  const initial = draftKey ? (draft.values as V) : initialValues;
+  const draft = useDraft(
+    drafting?.key ?? '',
+    initialValues as Record<string, string>,
+    result,
+    drafting?.labels ?? {},
+  );
+  const initial = drafting ? (draft.values as V) : initialValues;
   const values = result && 'values' in result ? result.values : initial;
   const message = result && result.status !== 'saved' ? MESSAGES[result.status] : null;
-  return { result, formAction, values, message, bind: draftKey ? draft.bind : undefined };
+  return { result, formAction, values, message, draft: drafting ? draft : undefined };
 };
 
 const Frame = ({
   formAction,
   target,
   message,
-  bind,
+  draft,
   children,
 }: {
   formAction: (formData: FormData) => void;
   target: Target;
   message: string | null;
-  bind?: ReturnType<typeof useDraft>['bind'];
+  draft?: ReturnType<typeof useDraft>;
   children: ReactNode;
 }) => (
-  <form action={formAction} className="flex flex-col gap-8" {...bind}>
+  <form key={draft?.formKey} action={formAction} className="flex flex-col gap-8" {...draft?.bind}>
+    {draft && <DraftConflict conflict={draft.conflict} noun="職務経歴書の行" />}
     <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
     {target.rowUid !== undefined && (
       <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
@@ -150,14 +156,20 @@ export const ResumeCareerForm = ({
   initialValues: ResumeCareerFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message, bind } = useRowForm(
-    action,
-    initialValues,
-    `resume-career:${target.rowUid ?? 'new'}`,
-  );
+  const { result, formAction, values, message, draft } = useRowForm(action, initialValues, {
+    key: `resume-career:${target.rowUid ?? 'new'}`,
+    labels: {
+      organizationName: '組織名',
+      role: '肩書',
+      startedOn: '始まりの日',
+      endedOn: '終わりの日',
+      description: '本文',
+      url: '関連 URL',
+    },
+  });
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message} bind={bind}>
+    <Frame formAction={formAction} target={target} message={message} draft={draft}>
       <FormGroup title="どこで">
         <InputField
           name="organizationName"
@@ -201,15 +213,23 @@ export const ResumeProjectForm = ({
   initialValues: ResumeProjectFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message, bind } = useRowForm(
-    action,
-    initialValues,
-    `resume-project:${target.rowUid ?? 'new'}`,
-  );
+  const { result, formAction, values, message, draft } = useRowForm(action, initialValues, {
+    key: `resume-project:${target.rowUid ?? 'new'}`,
+    labels: {
+      organizationName: '組織名',
+      kind: '種類',
+      title: '題',
+      startedOn: '始まりの日',
+      endedOn: '終わりの日',
+      description: '本文',
+      url: '関連 URL',
+      skills: '使ったスキル',
+    },
+  });
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   // 元の実績のフォームと、まとまりと部品をそろえる（#366 の明文化）
   return (
-    <Frame formAction={formAction} target={target} message={message} bind={bind}>
+    <Frame formAction={formAction} target={target} message={message} draft={draft}>
       <FormGroup title="何を">
         <KindField value={values.kind} error={errorText(errors, 'kind')} />
         <InputField
@@ -262,14 +282,19 @@ export const ResumeEducationForm = ({
   initialValues: ResumeEducationFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message, bind } = useRowForm(
-    action,
-    initialValues,
-    `resume-education:${target.rowUid ?? 'new'}`,
-  );
+  const { result, formAction, values, message, draft } = useRowForm(action, initialValues, {
+    key: `resume-education:${target.rowUid ?? 'new'}`,
+    labels: {
+      school: '学校',
+      department: '学部',
+      startedOn: '始まりの日',
+      endedOn: '終わりの日',
+      remarks: '備考',
+    },
+  });
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message} bind={bind}>
+    <Frame formAction={formAction} target={target} message={message} draft={draft}>
       <InputField
         name="school"
         label="学校"

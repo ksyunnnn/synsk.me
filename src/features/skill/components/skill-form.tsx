@@ -16,7 +16,7 @@ import {
   INVALID_INPUT_MESSAGE,
 } from '@/shared/components/form-alert';
 import { SubmitButton } from '@/shared/components/submit-button';
-import { useDraft } from '@/shared/components/drafts';
+import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { formStateOf } from '@/shared/domain/action-result';
 
 /**
@@ -40,10 +40,17 @@ const ERROR_MESSAGES: Record<SkillField, Partial<Record<SkillFieldError, string>
   overrideMonths: { invalid: '月は 0 から 11 の整数で入力してください' },
 };
 
+/** 項目の名前。直しかけと、別の画面で保存された値の違いを知らせるのに使う */
+const LABELS = {
+  name: '名前',
+  overrideYears: '経験年数の上書きの年',
+  overrideMonths: '経験年数の上書きのか月',
+};
+
 export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   const [result, formAction] = useActionState(action, null);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
-  const draft = useDraft(`skill:${skillUid ?? 'new'}`, initialValues);
+  const draft = useDraft(`skill:${skillUid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: SkillField) => {
     const reason = errors[field];
@@ -51,7 +58,8 @@ export const SkillForm = ({ action, initialValues, skillUid }: Props) => {
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6" {...draft.bind}>
+    <form key={draft.formKey} action={formAction} className="flex flex-col gap-6" {...draft.bind}>
+      <DraftConflict conflict={draft.conflict} noun="スキル" />
       {skillUid !== undefined && <input type="hidden" name={SKILL_UID_FIELD} value={skillUid} />}
       {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
       {result?.status === 'invalid' && <FormAlert>{INVALID_INPUT_MESSAGE}</FormAlert>}

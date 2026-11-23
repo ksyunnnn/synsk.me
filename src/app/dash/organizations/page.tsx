@@ -144,7 +144,7 @@ const Page = async ({ searchParams }: Props) => {
           />
         </DetailHeading>
         {first(raw.saved) === '1' && (
-          <SavedNotice key={organization.updatedAt} flags={['saved']}>
+          <SavedNotice key={`saved-${organization.updatedAt}`} flags={['saved']}>
             保存しました
           </SavedNotice>
         )}

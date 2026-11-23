@@ -86,7 +86,7 @@ export const ProjectDetail = async ({
         </p>
       </DetailHeading>
       {notice && (
-        <SavedNotice key={project.updatedAt} flags={[notice]}>
+        <SavedNotice key={`${notice}-${project.updatedAt}`} flags={[notice]}>
           {NOTICES[notice]}
         </SavedNotice>
       )}

@@ -20,7 +20,7 @@ import { OrganizationNameFields } from '@/shared/components/organization-name-fi
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
-import { useDraft } from '@/shared/components/drafts';
+import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
 import { KindField } from '@/shared/components/kind-field';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
@@ -82,8 +82,25 @@ const RESULT_MESSAGES = {
   forbidden: FORBIDDEN_INPUT_MESSAGE,
   invalid: INVALID_INPUT_MESSAGE,
   conflict:
-    'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
+    'この実績は、開いた後に別の画面で保存されていました。保存していません。保存された内容を読み直します',
 } as const;
+
+/** 項目の名前。直しかけと、別の画面で保存された値の違いを知らせるのに使う */
+const LABELS = {
+  organizationName: '組織名',
+  organizationNameMasked: '秘匿化した組織名',
+  kind: '種類',
+  title: '題',
+  titleMasked: '秘匿化した題',
+  isMasked: '秘匿化する',
+  status: 'サイトに載せる',
+  startedOn: '始まりの日',
+  endedOn: '終わりの日',
+  description: '本文',
+  url: '関連 URL',
+  slug: '識別子',
+  skillIds: '使ったスキル',
+};
 
 export const ProjectForm = ({
   action,
@@ -94,7 +111,7 @@ export const ProjectForm = ({
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
-  const draft = useDraft(`project:${project?.uid ?? 'new'}`, initialValues);
+  const draft = useDraft(`project:${project?.uid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: ProjectField) => {
     const reason = errors[field];
@@ -104,7 +121,8 @@ export const ProjectForm = ({
   const checkedSkillIds = new Set(values.skillIds.split(','));
 
   return (
-    <form action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+    <form key={draft.formKey} action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+      <DraftConflict conflict={draft.conflict} noun="実績" />
       {project && (
         <>
           <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />

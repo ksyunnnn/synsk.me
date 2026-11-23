@@ -70,12 +70,12 @@ export const CareerDetail = async ({
         />
       </DetailHeading>
       {flags.saved === '1' && (
-        <SavedNotice key={career.updatedAt} flags={['saved']}>
+        <SavedNotice key={`saved-${career.updatedAt}`} flags={['saved']}>
           保存しました
         </SavedNotice>
       )}
       {flags.mediaAdded === '1' && (
-        <SavedNotice key={career.updatedAt} flags={['mediaAdded']}>
+        <SavedNotice key={`mediaAdded-${career.updatedAt}`} flags={['mediaAdded']}>
           画像を足しました
         </SavedNotice>
       )}

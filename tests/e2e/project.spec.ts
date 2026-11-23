@@ -182,7 +182,7 @@ test('入力の誤りは項目ごとに示して保存せず、入力が残る',
   await expect(organizationInput(page)).toHaveValue('E2E 実績の組織 誤り');
 });
 
-test('同じ実績を 2 つのタブで開くと、後から保存した側は止まり、入力が残る', async ({
+test('同じ実績を 2 つのタブで開くと、後から保存した側は止まり、違う項目を知らせる。続けると直しかけで保存する', async ({
   page,
   context,
 }) => {
@@ -202,14 +202,17 @@ test('同じ実績を 2 つのタブで開くと、後から保存した側は�
 
   await other.getByRole('textbox', { name: '題', exact: true }).fill('後から保存した実績の題');
   await other.getByRole('button', { name: '保存する' }).click();
-  await expect(other.getByRole('alert')).toContainText('別の画面で書き換えられていました');
+  await expect(other.getByRole('alert').filter({ hasText: '違う項目' })).toContainText(
+    '違う項目: 題',
+  );
   await expect(other.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
     '後から保存した実績の題',
   );
 
-  await other.goto(editUrl);
+  await other.getByRole('button', { name: '直しかけを続ける' }).click();
+  await saveEdit(other);
   await expect(other.getByRole('textbox', { name: '題', exact: true })).toHaveValue(
-    '先に保存した実績の題',
+    '後から保存した実績の題',
   );
 });
 
