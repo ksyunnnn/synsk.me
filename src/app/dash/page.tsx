@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { listCareers } from '@/features/career/server/queries';
+import { NO_PROJECT_FILTER } from '@/features/project/domain/project';
 import { listProjects } from '@/features/project/server/queries';
 import { listResumes } from '@/features/resume/server/queries';
 import { DashGroup, DashTile } from '@/shared/components/dash-entry';
@@ -12,8 +13,6 @@ export const instant = false;
 
 export const metadata: Metadata = { title: '管理画面 | synsk.me' };
 
-const NO_FILTER = { kind: null, organizationUid: null, status: null, isMasked: null };
-
 /**
  * 管理画面の入口。オブジェクトを 3 つのまとまり（職務経歴書・経歴・サイトの発信）に分ける。
  * 更新の多い職務経歴書を先頭に置き、写した実績の中身へ 1 回で入れる（#366 の明文化の「入口」）
@@ -23,7 +22,7 @@ const Page = async () => {
   await requireAuthor();
   const [resumes, { projects }, careers] = await Promise.all([
     listResumes(),
-    listProjects(NO_FILTER),
+    listProjects(NO_PROJECT_FILTER),
     listCareers(),
   ]);
   const ongoing = projects.filter((project) => project.period.endedOn === null).length;

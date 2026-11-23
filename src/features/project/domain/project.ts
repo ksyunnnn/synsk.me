@@ -79,6 +79,14 @@ export type ProjectListFilter = {
   isMasked: boolean | null;
 };
 
+/** 絞らない条件。すべての実績を読む */
+export const NO_PROJECT_FILTER: ProjectListFilter = {
+  kind: null,
+  organizationUid: null,
+  status: null,
+  isMasked: null,
+};
+
 /** オーナーの一覧を組織で絞るときの選択肢。実績を持つ組織だけ（issue #330） */
 export type ProjectOrganizationOption = { uid: Uid; name: string };
 

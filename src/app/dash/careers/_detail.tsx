@@ -3,6 +3,7 @@ import { CAREER_UID_FIELD, toCareerFormValues } from '@/features/career/domain/c
 import { addCareerMedia, editCareer } from '@/features/career/server/actions';
 import { getCareerForEdit } from '@/features/career/server/queries';
 import { listOrganizationNames } from '@/features/organization/server/queries';
+import { NO_PROJECT_FILTER } from '@/features/project/domain/project';
 import { listProjects } from '@/features/project/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
 import { MediaUploadForm } from '@/shared/components/media-upload-form';
@@ -11,8 +12,6 @@ import { DetailHeading } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
 import { projectsOfCareer } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
-
-const NO_FILTER = { kind: null, organizationUid: null, status: null, isMasked: null };
 
 /**
  * 職歴のシングル。期間の重なりで入る実績は、計算で決まるので表示だけにする
@@ -30,7 +29,7 @@ export const CareerDetail = async ({
     return <p className="py-12 text-center text-muted-foreground">この職歴はありません</p>;
   const [organizationNames, { projects, organizations }] = await Promise.all([
     listOrganizationNames(),
-    listProjects(NO_FILTER),
+    listProjects(NO_PROJECT_FILTER),
   ]);
   const own = projectsOfCareer(
     { organizationId: career.organization.id, period: career.period },

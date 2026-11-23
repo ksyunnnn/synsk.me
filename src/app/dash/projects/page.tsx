@@ -14,9 +14,10 @@ import {
   ViewSwitch,
   withParam,
 } from '@/shared/components/split-view';
-import { formatPeriod, toYearsAndMonths } from '@/shared/domain/period';
+import { formatPeriodWithOngoing, toYearsAndMonths } from '@/shared/domain/period';
 import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
 import { SITE_STATUSES, SITE_STATUS_LABELS } from '@/shared/domain/site-status';
+import { firstParam } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
 import { ProjectDetail } from './_detail';
 
@@ -28,11 +29,6 @@ export const metadata: Metadata = { title: '実績 | synsk.me' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-
-const periodText = (project: ProjectSummary) =>
-  `${formatPeriod(project.period)}${project.period.endedOn === null ? '（継続中）' : ''}`;
-
 /**
  * 実績の Split view。左に実績のコレクション（表と縦の時系列）、右に選んだ 1 件のシングル
  * （#366 の明文化）
@@ -40,13 +36,13 @@ const periodText = (project: ProjectSummary) =>
 const Page = async ({ searchParams }: Props) => {
   const raw = await searchParams;
   const params = {
-    kind: first(raw.kind),
-    org: first(raw.org),
-    status: first(raw.status),
-    masked: first(raw.masked),
-    skill: first(raw.skill),
-    view: first(raw.view),
-    selected: first(raw.selected),
+    kind: firstParam(raw.kind),
+    org: firstParam(raw.org),
+    status: firstParam(raw.status),
+    masked: firstParam(raw.masked),
+    skill: firstParam(raw.skill),
+    view: firstParam(raw.view),
+    selected: firstParam(raw.selected),
   };
   // オーナーでなければ、読む前に 403 になる
   const [{ projects, organizations, filter }, skills] = await Promise.all([
@@ -157,7 +153,7 @@ const Page = async ({ searchParams }: Props) => {
           ]}
         />
       </div>
-      {first(raw.deleted) === '1' && (
+      {firstParam(raw.deleted) === '1' && (
         <SavedNotice flags={['deleted']} className="px-5 pb-2">
           実績を削除しました
         </SavedNotice>
@@ -176,7 +172,7 @@ const Page = async ({ searchParams }: Props) => {
             title: project.title,
             meta: `${project.organizationName}・${PROJECT_KIND_LABELS[project.kind]}`,
             period: project.period,
-            periodText: periodText(project),
+            periodText: formatPeriodWithOngoing(project.period),
             draftKey: `project:${project.uid}`,
             emphasized: hasSkill(project),
           }))}
@@ -192,7 +188,7 @@ const Page = async ({ searchParams }: Props) => {
           subtitle={(project) => (
             <>
               {project.organizationName}・{PROJECT_KIND_LABELS[project.kind]}
-              <span className="md:hidden">・{periodText(project)}</span>
+              <span className="md:hidden">・{formatPeriodWithOngoing(project.period)}</span>
             </>
           )}
           columns={[
@@ -235,9 +231,9 @@ const Page = async ({ searchParams }: Props) => {
           <ProjectDetail
             uid={selected}
             flags={{
-              saved: first(raw.saved),
-              mediaAdded: first(raw.mediaAdded),
-              cardImageChanged: first(raw.cardImageChanged),
+              saved: firstParam(raw.saved),
+              mediaAdded: firstParam(raw.mediaAdded),
+              cardImageChanged: firstParam(raw.cardImageChanged),
             }}
           />
         )

@@ -14,6 +14,7 @@ import {
   withParam,
 } from '@/shared/components/split-view';
 import { formatPeriod } from '@/shared/domain/period';
+import { firstParam } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -27,12 +28,10 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-
 /** 職務経歴書に写した学歴の Split view（#366 の明文化） */
 const Page = async ({ params, searchParams }: Props) => {
   const raw = await searchParams;
-  const query = { selected: first(raw.selected) };
+  const query = { selected: firstParam(raw.selected) };
   // オーナーでなければ、読む前に 403 になる
   const resume = await getResumeForEdit((await params).id);
   if (!resume) notFound();
@@ -52,7 +51,7 @@ const Page = async ({ params, searchParams }: Props) => {
         }}
       />
       {/* 足した後は、何も選ばない一覧へ戻る。知らせは一覧の側に出す */}
-      {selected === null && first(raw.saved) === '1' && (
+      {selected === null && firstParam(raw.saved) === '1' && (
         <SavedNotice key={resume.updatedAt} flags={['saved']} className="px-5 pb-2">
           保存しました
         </SavedNotice>
@@ -83,7 +82,7 @@ const Page = async ({ params, searchParams }: Props) => {
         title={`${row.school}${row.department ? `・${row.department}` : ''}`}
         draftKey={`resume-education:${row.uid}`}
       />
-      {first(raw.saved) === '1' && (
+      {firstParam(raw.saved) === '1' && (
         <SavedNotice key={resume.updatedAt} flags={['saved']}>
           保存しました
         </SavedNotice>

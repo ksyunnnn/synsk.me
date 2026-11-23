@@ -137,6 +137,10 @@ export const toYearsAndMonths = (months: number): { years: number; months: numbe
 export const formatPeriod = (period: Period): string =>
   `${period.startedOn} 〜 ${period.endedOn ?? ''}`;
 
+/** 管理画面の一覧に出す期間の文字列。続いている期間には「（継続中）」を添える */
+export const formatPeriodWithOngoing = (period: Period): string =>
+  `${formatPeriod(period)}${period.endedOn === null ? '（継続中）' : ''}`;
+
 /*
  * 職歴の実績とスキル（spec の FR-017・FR-035）。実績は職歴と直接つながらず、同じ組織で期間が
  * 重なる実績を職歴の実績とする。重なりは日を単位に比べ、終わりの日も期間に含める。端の日だけ

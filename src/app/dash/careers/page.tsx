@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import type { CareerSummary } from '@/features/career/domain/career';
 import { listCareers } from '@/features/career/server/queries';
 import { PeriodTimeline } from '@/shared/components/period-timeline';
 import { SavedNotice } from '@/shared/components/saved-notice';
@@ -11,8 +10,9 @@ import {
   ViewSwitch,
   withParam,
 } from '@/shared/components/split-view';
-import { formatPeriod } from '@/shared/domain/period';
+import { formatPeriodWithOngoing } from '@/shared/domain/period';
 import { SITE_STATUS_LABELS } from '@/shared/domain/site-status';
+import { firstParam } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
 import { CareerDetail } from './_detail';
 
@@ -24,15 +24,10 @@ export const metadata: Metadata = { title: '職歴 | synsk.me' };
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-
-const periodText = (career: CareerSummary) =>
-  `${formatPeriod(career.period)}${career.period.endedOn === null ? '（継続中）' : ''}`;
-
 /** 職歴の Split view。一覧は実績と同じ形（表と縦の時系列）にする（#366 の決定） */
 const Page = async ({ searchParams }: Props) => {
   const raw = await searchParams;
-  const params = { view: first(raw.view), selected: first(raw.selected) };
+  const params = { view: firstParam(raw.view), selected: firstParam(raw.selected) };
   // オーナーでなければ、読む前に 403 になる
   const careers = await listCareers();
   const view = params.view === 'timeline' ? 'timeline' : 'table';
@@ -54,7 +49,7 @@ const Page = async ({ searchParams }: Props) => {
           ]}
         />
       </CollectionToolbar>
-      {first(raw.deleted) === '1' && (
+      {firstParam(raw.deleted) === '1' && (
         <SavedNotice flags={['deleted']} className="px-5 pb-2">
           職歴を削除しました
         </SavedNotice>
@@ -71,7 +66,7 @@ const Page = async ({ searchParams }: Props) => {
             title: `${career.organizationName}・${career.role}`,
             meta: SITE_STATUS_LABELS[career.status],
             period: career.period,
-            periodText: periodText(career),
+            periodText: formatPeriodWithOngoing(career.period),
             draftKey: `career:${career.uid}`,
           }))}
         />
@@ -85,7 +80,12 @@ const Page = async ({ searchParams }: Props) => {
           columns={[
             { header: '組織', cell: (career) => career.organizationName },
             { header: '肩書', cell: (career) => career.role },
-            { header: '期間', cell: periodText, nowrap: true, muted: true },
+            {
+              header: '期間',
+              cell: (career) => formatPeriodWithOngoing(career.period),
+              nowrap: true,
+              muted: true,
+            },
             {
               header: 'サイト',
               cell: (career) => (career.status === 'published' ? '載せる' : '載せない'),
@@ -108,7 +108,7 @@ const Page = async ({ searchParams }: Props) => {
         selected && (
           <CareerDetail
             uid={selected}
-            flags={{ saved: first(raw.saved), mediaAdded: first(raw.mediaAdded) }}
+            flags={{ saved: firstParam(raw.saved), mediaAdded: firstParam(raw.mediaAdded) }}
           />
         )
       }

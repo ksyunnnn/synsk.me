@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ResumeCareerForm } from '@/features/resume/components/resume-row-forms';
-import type { ResumeCareer } from '@/features/resume/domain/resume';
 import { toResumeCareerFormValues } from '@/features/resume/domain/resume-forms';
 import { editResumeCareer } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';
@@ -17,7 +16,8 @@ import {
   ViewSwitch,
   withParam,
 } from '@/shared/components/split-view';
-import { formatPeriod } from '@/shared/domain/period';
+import { formatPeriodWithOngoing } from '@/shared/domain/period';
+import { firstParam } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
@@ -31,15 +31,10 @@ type Props = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-const first = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value);
-
-const periodText = (row: ResumeCareer) =>
-  `${formatPeriod(row.period)}${row.period.endedOn === null ? '（継続中）' : ''}`;
-
 /** 職務経歴書に写した職歴の Split view。一覧は実績と同じ形にする（#366 の決定） */
 const Page = async ({ params, searchParams }: Props) => {
   const raw = await searchParams;
-  const query = { view: first(raw.view), selected: first(raw.selected) };
+  const query = { view: firstParam(raw.view), selected: firstParam(raw.selected) };
   // オーナーでなければ、読む前に 403 になる
   const resume = await getResumeForEdit((await params).id);
   if (!resume) notFound();
@@ -67,7 +62,7 @@ const Page = async ({ params, searchParams }: Props) => {
         />
       </CollectionToolbar>
       {/* 足した後は、何も選ばない一覧へ戻る。知らせは一覧の側に出す */}
-      {selected === null && first(raw.saved) === '1' && (
+      {selected === null && firstParam(raw.saved) === '1' && (
         <SavedNotice key={resume.updatedAt} flags={['saved']} className="px-5 pb-2">
           保存しました
         </SavedNotice>
@@ -84,7 +79,7 @@ const Page = async ({ params, searchParams }: Props) => {
             title: `${row.organizationName}・${row.role}`,
             meta: row.isMasked ? '秘匿化' : '実際の値',
             period: row.period,
-            periodText: periodText(row),
+            periodText: formatPeriodWithOngoing(row.period),
             draftKey: `resume-career:${row.uid}`,
           }))}
         />
@@ -98,7 +93,12 @@ const Page = async ({ params, searchParams }: Props) => {
           columns={[
             { header: '組織', cell: (row) => row.organizationName },
             { header: '肩書', cell: (row) => row.role },
-            { header: '期間', cell: periodText, nowrap: true, muted: true },
+            {
+              header: '期間',
+              cell: (row) => formatPeriodWithOngoing(row.period),
+              nowrap: true,
+              muted: true,
+            },
           ]}
         />
       )}
@@ -121,7 +121,7 @@ const Page = async ({ params, searchParams }: Props) => {
           ]}
         />
       </DetailHeading>
-      {first(raw.saved) === '1' && (
+      {firstParam(raw.saved) === '1' && (
         <SavedNotice key={resume.updatedAt} flags={['saved']}>
           保存しました
         </SavedNotice>
