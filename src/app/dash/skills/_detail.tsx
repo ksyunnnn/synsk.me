@@ -4,7 +4,7 @@ import { editSkill } from '@/features/skill/server/actions';
 import { getSkillForEdit } from '@/features/skill/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
 import { SavedNotice } from '@/shared/components/saved-notice';
-import { DetailHeading } from '@/shared/components/split-view';
+import { DetailBody } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
 import { toYearsAndMonths } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
@@ -35,8 +35,26 @@ export const SkillDetail = async ({
     return <p className="py-12 text-center text-muted-foreground">このスキルはありません</p>;
   const saved = flags.saved || null;
   return (
-    <div className="flex flex-col gap-6">
-      <DetailHeading title={skill.name} draftKey={`skill:${uid}`}>
+    <DetailBody
+      title={skill.name}
+      draftKey={`skill:${uid}`}
+      notice={
+        // 印の値は、登録では `1`、編集では保存した時刻。保存のたびに知らせとフォームを置き直す
+        saved && (
+          <SavedNotice key={saved} flags={['saved']}>
+            保存しました
+          </SavedNotice>
+        )
+      }
+      form={
+        <SkillForm
+          key={`${uid}:${saved ?? ''}`}
+          action={editSkill}
+          initialValues={toSkillFormValues(skill)}
+          skillUid={uid}
+        />
+      }
+      relations={
         <DetailFacts
           facts={[
             { label: '経験年数', value: formatMonths(summary.experienceMonths) },
@@ -61,22 +79,8 @@ export const SkillDetail = async ({
             },
           ]}
         />
-      </DetailHeading>
-      {/* 印の値は、登録では `1`、編集では保存した時刻。保存のたびに知らせとフォームを置き直す */}
-      {saved && (
-        <SavedNotice key={saved} flags={['saved']}>
-          保存しました
-        </SavedNotice>
-      )}
-      <SkillForm
-        key={`${uid}:${saved ?? ''}`}
-        action={editSkill}
-        initialValues={toSkillFormValues(skill)}
-        skillUid={uid}
-      />
-      <p className="border-t border-border pt-6 text-small">
-        <TextLink href={routes.dash.skills.delete(uid)}>このスキルを削除する</TextLink>
-      </p>
-    </div>
+      }
+      deletion={{ href: routes.dash.skills.delete(uid), label: 'このスキルを削除する' }}
+    />
   );
 };

@@ -26,8 +26,10 @@ import {
   INVALID_INPUT_MESSAGE,
 } from '@/shared/components/form-alert';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
+import { useDetailForm } from '@/shared/components/detail-sheet';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { TokenField } from '@/shared/components/token-field';
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
@@ -68,7 +70,7 @@ const useRowForm = <V extends object, E>(
   /** 直しかけを残す鍵と、違う項目を知らせるための項目の名前。無ければ残さない */
   drafting?: { key: string; labels: Record<string, string> },
 ) => {
-  const [result, formAction] = useActionState(action, null);
+  const [result, formAction, isPending] = useActionState(action, null);
   // 保存せずに別の 1 行を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
   const draft = useDraft(
     drafting?.key ?? '',
@@ -79,7 +81,7 @@ const useRowForm = <V extends object, E>(
   const initial = drafting ? (draft.values as V) : initialValues;
   const values = result && 'values' in result ? result.values : initial;
   const message = result && result.status !== 'saved' ? MESSAGES[result.status] : null;
-  return { result, formAction, values, message, draft: drafting ? draft : undefined };
+  return { result, formAction, isPending, values, message, draft: drafting ? draft : undefined };
 };
 
 const Frame = ({
@@ -87,30 +89,45 @@ const Frame = ({
   target,
   message,
   draft,
+  isPending,
   children,
 }: {
   formAction: (formData: FormData) => void;
   target: Target;
   message: string | null;
   draft?: ReturnType<typeof useDraft>;
+  isPending: boolean;
   children: ReactNode;
-}) => (
-  <form key={draft?.formKey} action={formAction} className="flex flex-col gap-8" {...draft?.bind}>
-    {draft && <DraftConflict conflict={draft.conflict} noun="職務経歴書の行" />}
-    <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
-    {target.rowUid !== undefined && (
-      <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
-    )}
-    <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={target.updatedAt} />
-    {message && <FormAlert>{message}</FormAlert>}
-    {children}
-    <FormActions>
-      <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-        保存する
-      </SubmitButton>
-    </FormActions>
-  </form>
-);
+}) => {
+  // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる。元の行の詳細と形をそろえる
+  // （#366 の明文化）
+  const detailForm = useDetailForm(isPending);
+  return (
+    <form
+      key={draft?.formKey}
+      {...detailForm}
+      action={formAction}
+      className="flex flex-col gap-8"
+      {...draft?.bind}
+    >
+      {draft && <DraftConflict conflict={draft.conflict} noun="職務経歴書の行" />}
+      <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
+      {target.rowUid !== undefined && (
+        <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
+      )}
+      <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={target.updatedAt} />
+      {message && <FormAlert>{message}</FormAlert>}
+      {children}
+      {!detailForm && (
+        <FormActions>
+          <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            保存する
+          </SubmitButton>
+        </FormActions>
+      )}
+    </form>
+  );
+};
 
 const errorText = (errors: Record<string, FieldError | undefined>, field: string) => {
   const reason = errors[field];
@@ -156,20 +173,30 @@ export const ResumeCareerForm = ({
   initialValues: ResumeCareerFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message, draft } = useRowForm(action, initialValues, {
-    key: `resume-career:${target.rowUid ?? 'new'}`,
-    labels: {
-      organizationName: '組織名',
-      role: '肩書',
-      startedOn: '始まりの日',
-      endedOn: '終わりの日',
-      description: '本文',
-      url: '関連 URL',
+  const { result, formAction, isPending, values, message, draft } = useRowForm(
+    action,
+    initialValues,
+    {
+      key: `resume-career:${target.rowUid ?? 'new'}`,
+      labels: {
+        organizationName: '組織名',
+        role: '肩書',
+        startedOn: '始まりの日',
+        endedOn: '終わりの日',
+        description: '本文',
+        url: '関連 URL',
+      },
     },
-  });
+  );
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message} draft={draft}>
+    <Frame
+      formAction={formAction}
+      target={target}
+      message={message}
+      draft={draft}
+      isPending={isPending}
+    >
       <FormGroup title="どこで">
         <InputField
           name="organizationName"
@@ -208,28 +235,41 @@ export const ResumeProjectForm = ({
   action,
   initialValues,
   target,
+  skillNames,
 }: {
   action: Action<ResumeProjectFormValues, Errors>;
   initialValues: ResumeProjectFormValues;
   target: Target;
+  /** 候補に出す、登録したスキルの名前。写したスキルは名前で持つので、候補にない名前も足せる */
+  skillNames: string[];
 }) => {
-  const { result, formAction, values, message, draft } = useRowForm(action, initialValues, {
-    key: `resume-project:${target.rowUid ?? 'new'}`,
-    labels: {
-      organizationName: '組織名',
-      kind: '種類',
-      title: '題',
-      startedOn: '始まりの日',
-      endedOn: '終わりの日',
-      description: '本文',
-      url: '関連 URL',
-      skills: '使ったスキル',
+  const { result, formAction, isPending, values, message, draft } = useRowForm(
+    action,
+    initialValues,
+    {
+      key: `resume-project:${target.rowUid ?? 'new'}`,
+      labels: {
+        organizationName: '組織名',
+        kind: '種類',
+        title: '題',
+        startedOn: '始まりの日',
+        endedOn: '終わりの日',
+        description: '本文',
+        url: '関連 URL',
+        skills: '使ったスキル',
+      },
     },
-  });
+  );
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   // 元の実績のフォームと、まとまりと部品をそろえる（#366 の明文化）
   return (
-    <Frame formAction={formAction} target={target} message={message} draft={draft}>
+    <Frame
+      formAction={formAction}
+      target={target}
+      message={message}
+      draft={draft}
+      isPending={isPending}
+    >
       <FormGroup title="何を">
         <KindField value={values.kind} error={errorText(errors, 'kind')} />
         <InputField
@@ -260,12 +300,15 @@ export const ResumeProjectForm = ({
           autoComplete="off"
           error={errorText(errors, 'url')}
         />
-        <TextareaField
+        <TokenField
           name="skills"
           label="使ったスキル"
-          hint="1 行に 1 つ書きます。この職務経歴書にだけ効きます"
-          rows={4}
-          defaultValue={values.skills}
+          hint="この職務経歴書にだけ効きます。候補にない名前も足せます"
+          options={skillNames.map((skillName) => ({ value: skillName, label: skillName }))}
+          defaultValue={values.skills.split('\n').filter((skill) => skill.trim() !== '')}
+          serialize="lines"
+          allowCustom
+          empty="名前を打つと足せます"
           error={errorText(errors, 'skills')}
         />
       </FormGroup>
@@ -282,19 +325,29 @@ export const ResumeEducationForm = ({
   initialValues: ResumeEducationFormValues;
   target: Target;
 }) => {
-  const { result, formAction, values, message, draft } = useRowForm(action, initialValues, {
-    key: `resume-education:${target.rowUid ?? 'new'}`,
-    labels: {
-      school: '学校',
-      department: '学部',
-      startedOn: '始まりの日',
-      endedOn: '終わりの日',
-      remarks: '備考',
+  const { result, formAction, isPending, values, message, draft } = useRowForm(
+    action,
+    initialValues,
+    {
+      key: `resume-education:${target.rowUid ?? 'new'}`,
+      labels: {
+        school: '学校',
+        department: '学部',
+        startedOn: '始まりの日',
+        endedOn: '終わりの日',
+        remarks: '備考',
+      },
     },
-  });
+  );
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   return (
-    <Frame formAction={formAction} target={target} message={message} draft={draft}>
+    <Frame
+      formAction={formAction}
+      target={target}
+      message={message}
+      draft={draft}
+      isPending={isPending}
+    >
       <InputField
         name="school"
         label="学校"
@@ -323,10 +376,10 @@ export const ResumeSkillOverridesForm = ({
   initialRows: SkillOverrideFormRow[];
   target: Target;
 }) => {
-  const { result, formAction, values, message } = useRowForm(action, initialRows);
+  const { result, formAction, isPending, values, message } = useRowForm(action, initialRows);
   const invalid = new Set(result?.status === 'invalid' ? result.errors.invalidRows : []);
   return (
-    <Frame formAction={formAction} target={target} message={message}>
+    <Frame formAction={formAction} target={target} message={message} isPending={isPending}>
       {values.length === 0 ? (
         <p>写したスキルはありません</p>
       ) : (

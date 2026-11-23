@@ -11,7 +11,7 @@ import {
   CollectionEmpty,
   CollectionTable,
   CollectionToolbar,
-  DetailHeading,
+  DetailBody,
   SplitView,
   ViewSwitch,
   withParam,
@@ -109,11 +109,25 @@ const Page = async ({ params, searchParams }: Props) => {
 
   const row = selected === null ? undefined : rows.find((c) => c.uid === selected);
   const detail = row ? (
-    <div className="flex flex-col gap-6">
-      <DetailHeading
-        title={`${row.organizationName}・${row.role}`}
-        draftKey={`resume-career:${row.uid}`}
-      >
+    <DetailBody
+      title={`${row.organizationName}・${row.role}`}
+      draftKey={`resume-career:${row.uid}`}
+      notice={
+        firstParam(raw.saved) === '1' && (
+          <SavedNotice key={resume.updatedAt} flags={['saved']}>
+            保存しました
+          </SavedNotice>
+        )
+      }
+      form={
+        <ResumeCareerForm
+          key={`${row.uid}-${resume.updatedAt}`}
+          action={editResumeCareer}
+          initialValues={toResumeCareerFormValues(row)}
+          target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
+        />
+      }
+      relations={
         <DetailFacts
           facts={[
             {
@@ -122,19 +136,8 @@ const Page = async ({ params, searchParams }: Props) => {
             },
           ]}
         />
-      </DetailHeading>
-      {firstParam(raw.saved) === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['saved']}>
-          保存しました
-        </SavedNotice>
-      )}
-      <ResumeCareerForm
-        key={`${row.uid}-${resume.updatedAt}`}
-        action={editResumeCareer}
-        initialValues={toResumeCareerFormValues(row)}
-        target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
-      />
-    </div>
+      }
+    />
   ) : (
     <p className="py-12 text-center text-muted-foreground">この職歴はありません</p>
   );

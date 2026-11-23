@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { SplitPanes } from '@/shared/components/dash-panes';
+import { CollectionPaneToggle, SplitPanes } from '@/shared/components/dash-panes';
 import { DetailSheet } from '@/shared/components/detail-sheet';
 import { DraftMark } from '@/shared/components/drafts';
+import { TextLink } from '@/shared/components/text-link';
 import { cn } from '@/lib/utils';
 import type { Period } from '@/shared/domain/period';
 
@@ -20,6 +21,10 @@ export const SplitView = ({
   empty = '一覧から 1 件を選ぶと、ここに出ます',
 }: {
   collection: ReactNode;
+  /**
+   * 選んだ 1 件のシングル。編集のフォームは `useDetailForm` を使い、保存のボタンをペインの上の行に
+   * 任せる
+   */
   detail: ReactNode;
   detailLabel: string;
   /** 選んだ 1 件があるか */
@@ -61,6 +66,7 @@ export const CollectionToolbar = ({
   action?: { href: string; label: string };
 }) => (
   <div className="glass sticky top-4 z-10 m-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[28px] py-1.5 pr-1.5 pl-5">
+    <CollectionPaneToggle />
     {headingLevel === 1 ? (
       <h1 className={titleHidden ? 'sr-only' : 'font-semibold'}>{title}</h1>
     ) : (
@@ -233,22 +239,62 @@ export const CollectionEmpty = ({ children }: { children: ReactNode }) => (
   <p className="px-5 py-8 text-muted-foreground">{children}</p>
 );
 
-/** シングルの見出し。直しかけの印を添える */
-export const DetailHeading = ({
+/** シングルの中の、入力の後に置く区画。見出しの id は、区画の中の入力が名前に使う */
+export type DetailSection = { heading: string; headingId?: string; content: ReactNode };
+
+const DetailSectionBlock = ({ heading, headingId, content }: DetailSection) => (
+  <section className="flex flex-col gap-4 border-t border-border pt-6">
+    <h3 id={headingId} className="text-caption text-muted-foreground">
+      {heading}
+    </h3>
+    {content}
+  </section>
+);
+
+/**
+ * シングルの並び。題 → 知らせ → 入力 → つながり → 固有の区画 → 削除への導線の順に置き、どの
+ * 画面でも同じ順にする。題は本文の大きさの 2 行までにし、すぐ下の入力を押し下げない。計算で決まる
+ * 関係は入力の後に置く（HIG Layout の「Order content by relative importance」）
+ */
+export const DetailBody = ({
   title,
   draftKey,
-  children,
+  notice,
+  form,
+  relations,
+  sections = [],
+  deletion,
 }: {
   title: ReactNode;
+  /** 直しかけを見分ける鍵。題の上に印を出す */
   draftKey?: string;
-  /** 見出しの下に添える、計算で決まる関係など */
-  children?: ReactNode;
+  /** 保存の後の知らせ */
+  notice?: ReactNode;
+  form: ReactNode;
+  /** 計算で決まる関係。表示だけで、ここでは直さない。無ければ「つながり」の区画を出さない */
+  relations?: ReactNode;
+  /** 画像など、画面に固有の区画 */
+  sections?: DetailSection[];
+  /** 削除の画面への導線。消せないときは渡さない */
+  deletion?: { href: string; label: string };
 }) => (
-  <header className="flex flex-col gap-2 pb-6">
-    {draftKey && <DraftMark draftKey={draftKey} />}
-    <h2 className="text-heading-2">{title}</h2>
-    {children}
-  </header>
+  <div className="flex flex-col gap-6">
+    <header className="flex flex-col gap-2 pb-2">
+      {draftKey && <DraftMark draftKey={draftKey} />}
+      <h2 className="line-clamp-2 font-semibold">{title}</h2>
+    </header>
+    {notice}
+    {form}
+    {relations && <DetailSectionBlock heading="つながり" content={relations} />}
+    {sections.map((section) => (
+      <DetailSectionBlock key={section.heading} {...section} />
+    ))}
+    {deletion && (
+      <p className="border-t border-border pt-6 text-small">
+        <TextLink href={deletion.href}>{deletion.label}</TextLink>
+      </p>
+    )}
+  </div>
 );
 
 /** URL の検索の値に、1 つの値を足した（null なら外した）経路 */

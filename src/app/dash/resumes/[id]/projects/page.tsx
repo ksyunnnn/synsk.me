@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ResumeProjectForm } from '@/features/resume/components/resume-row-forms';
 import { toResumeProjectFormValues } from '@/features/resume/domain/resume-forms';
+import { listSkillOptions } from '@/features/project/server/queries';
 import { editResumeProject } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
@@ -12,7 +13,7 @@ import {
   CollectionEmpty,
   CollectionTable,
   CollectionToolbar,
-  DetailHeading,
+  DetailBody,
   PeriodLines,
   SplitView,
   ViewSwitch,
@@ -49,7 +50,10 @@ const Page = async ({ params, searchParams }: Props) => {
     selected: firstParam(raw.selected),
   };
   // オーナーでなければ、読む前に 403 になる
-  const resume = await getResumeForEdit((await params).id);
+  const [resume, skillOptions] = await Promise.all([
+    getResumeForEdit((await params).id),
+    listSkillOptions(),
+  ]);
   if (!resume) notFound();
   const base = routes.dash.resumes.entries(resume.uid, 'projects');
   const link = (changes: Record<string, string | null>) => withParam(base, query, changes);
@@ -160,8 +164,26 @@ const Page = async ({ params, searchParams }: Props) => {
 
   const row = selected === null ? undefined : resume.projects.find((p) => p.uid === selected);
   const detail = row ? (
-    <div className="flex flex-col gap-6">
-      <DetailHeading title={row.title} draftKey={`resume-project:${row.uid}`}>
+    <DetailBody
+      title={row.title}
+      draftKey={`resume-project:${row.uid}`}
+      notice={
+        firstParam(raw.saved) === '1' && (
+          <SavedNotice key={resume.updatedAt} flags={['saved']}>
+            保存しました
+          </SavedNotice>
+        )
+      }
+      form={
+        <ResumeProjectForm
+          key={`${row.uid}-${resume.updatedAt}`}
+          action={editResumeProject}
+          initialValues={toResumeProjectFormValues(row)}
+          target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
+          skillNames={skillOptions.map((skill) => skill.name)}
+        />
+      }
+      relations={
         <DetailFacts
           facts={[
             {
@@ -170,19 +192,8 @@ const Page = async ({ params, searchParams }: Props) => {
             },
           ]}
         />
-      </DetailHeading>
-      {firstParam(raw.saved) === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['saved']}>
-          保存しました
-        </SavedNotice>
-      )}
-      <ResumeProjectForm
-        key={`${row.uid}-${resume.updatedAt}`}
-        action={editResumeProject}
-        initialValues={toResumeProjectFormValues(row)}
-        target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
-      />
-    </div>
+      }
+    />
   ) : (
     <p className="py-12 text-center text-muted-foreground">この実績はありません</p>
   );

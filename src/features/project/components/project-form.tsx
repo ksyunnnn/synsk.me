@@ -21,10 +21,12 @@ import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
 import { DraftConflict, useDraft } from '@/shared/components/drafts';
+import { useDetailForm } from '@/shared/components/detail-sheet';
 import { FormActions } from '@/shared/components/form-actions';
 import { KindField } from '@/shared/components/kind-field';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
+import { TokenField } from '@/shared/components/token-field';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -109,7 +111,9 @@ export const ProjectForm = ({
   skillOptions,
   project,
 }: Props) => {
-  const [result, formAction] = useActionState(action, null);
+  const [result, formAction, isPending] = useActionState(action, null);
+  // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる
+  const detailForm = useDetailForm(isPending);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
   const draft = useDraft(`project:${project?.uid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
@@ -118,10 +122,14 @@ export const ProjectForm = ({
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
   };
 
-  const checkedSkillIds = new Set(values.skillIds.split(','));
-
   return (
-    <form key={draft.formKey} action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+    <form
+      key={draft.formKey}
+      {...detailForm}
+      action={formAction}
+      className="flex flex-col gap-8"
+      {...draft.bind}
+    >
       <DraftConflict conflict={draft.conflict} noun="実績" />
       {project && (
         <>
@@ -133,15 +141,6 @@ export const ProjectForm = ({
       {result && result.status !== 'saved' && (
         <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
-
-      {/* 公開の設定。オンとオフの 2 つを 1 つのまとまりに並べる */}
-      <SettingsGroup>
-        <SiteStatusField status={values.status} />
-        <MaskingField
-          isMasked={values.isMasked}
-          description="訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
-        />
-      </SettingsGroup>
 
       <FormGroup title="何を">
         <KindField value={values.kind} error={errorOf('kind')} />
@@ -205,33 +204,24 @@ export const ProjectForm = ({
           autoComplete="off"
           error={errorOf('url')}
         />
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-small font-medium">使ったスキル</legend>
-          {skillOptions.length === 0 ? (
+        {skillOptions.length === 0 ? (
+          <div className="flex flex-col gap-1">
+            <p className="text-small font-medium">使ったスキル</p>
             <p className="text-sm text-muted-foreground">
               スキルは、スキルの画面で登録するとここで選べます
             </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {skillOptions.map((skill) => (
-                <label key={skill.id}>
-                  <input
-                    type="checkbox"
-                    name="skillIds"
-                    value={skill.id}
-                    defaultChecked={checkedSkillIds.has(String(skill.id))}
-                    className="peer sr-only"
-                  />
-                  {/* 選んだスキルは塗り、選んでいないものは枠だけにし、色だけに頼らない（WCAG 2.2 SC 1.4.1） */}
-                  <span className="block cursor-pointer rounded-full border border-border px-3 py-1 text-small transition-colors peer-checked:border-tint peer-checked:bg-tint peer-checked:text-tint-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring motion-reduce:transition-none">
-                    {skill.name}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-          {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
-        </fieldset>
+          </div>
+        ) : (
+          <TokenField
+            name="skillIds"
+            label="使ったスキル"
+            options={skillOptions.map((skill) => ({ value: String(skill.id), label: skill.name }))}
+            defaultValue={values.skillIds.split(',').filter((id) => id !== '')}
+            serialize="each"
+            empty="登録したスキルに、合う名前はありません"
+            error={errorOf('skillIds')}
+          />
+        )}
         {project && (
           <InputField
             name="slug"
@@ -249,11 +239,25 @@ export const ProjectForm = ({
         )}
       </FormGroup>
 
-      <FormActions>
-        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-          {project ? '保存する' : '登録する'}
-        </SubmitButton>
-      </FormActions>
+      {/* 公開の設定は、何を・いつ・中身の入力の後に置く（HIG Layout の「Order content by relative
+          importance」）。状態を隠さないよう、たたまずに出す */}
+      <FormGroup title="公開">
+        <SettingsGroup>
+          <SiteStatusField status={values.status} />
+          <MaskingField
+            isMasked={values.isMasked}
+            description="訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
+          />
+        </SettingsGroup>
+      </FormGroup>
+
+      {!detailForm && (
+        <FormActions>
+          <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            {project ? '保存する' : '登録する'}
+          </SubmitButton>
+        </FormActions>
+      )}
     </form>
   );
 };

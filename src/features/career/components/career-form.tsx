@@ -20,6 +20,7 @@ import { OrganizationNameFields } from '@/shared/components/organization-name-fi
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { DraftConflict, useDraft } from '@/shared/components/drafts';
+import { useDetailForm } from '@/shared/components/detail-sheet';
 import { FormActions } from '@/shared/components/form-actions';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -76,7 +77,9 @@ const LABELS = {
 };
 
 export const CareerForm = ({ action, initialValues, organizationNames, career }: Props) => {
-  const [result, formAction] = useActionState(action, null);
+  const [result, formAction, isPending] = useActionState(action, null);
+  // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる
+  const detailForm = useDetailForm(isPending);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
   const draft = useDraft(`career:${career?.uid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
@@ -86,7 +89,13 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
   };
 
   return (
-    <form key={draft.formKey} action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+    <form
+      key={draft.formKey}
+      action={formAction}
+      {...detailForm}
+      className="flex flex-col gap-8"
+      {...draft.bind}
+    >
       <DraftConflict conflict={draft.conflict} noun="職歴" />
       {career && (
         <>
@@ -157,11 +166,13 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
           error={errorOf('url')}
         />
       </FormGroup>
-      <FormActions>
-        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-          {career ? '保存する' : '登録する'}
-        </SubmitButton>
-      </FormActions>
+      {!detailForm && (
+        <FormActions>
+          <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            {career ? '保存する' : '登録する'}
+          </SubmitButton>
+        </FormActions>
+      )}
     </form>
   );
 };
