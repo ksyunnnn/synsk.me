@@ -10,6 +10,9 @@ import {
   type ProjectFormValues,
 } from '@/features/project/domain/project';
 import { InputField, TextareaField } from '@/shared/components/field';
+import { MediaAttachTextareaField } from '@/shared/components/media-attach-textarea-field';
+import type { MediaFormResult } from '@/shared/domain/media';
+import { routes } from '@/shared/routes';
 import {
   FORBIDDEN_INPUT_MESSAGE,
   FormAlert,
@@ -54,7 +57,17 @@ type Props = {
   /** つなげるスキルの選択肢（FR-032） */
   skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
-  project?: { uid: string; updatedAt: string; isMasked: boolean };
+  project?: {
+    uid: string;
+    updatedAt: string;
+    isMasked: boolean;
+    /** この実績の画像の置き場のキー。本文のプレビューが出す画像 */
+    mediaStorageKeys?: string[];
+  };
+  /** 本文に落とした・貼った画像を足す Server Action。編集のフォームだけが持つ */
+  attachMedia?: (
+    formData: FormData,
+  ) => Promise<{ status: 'added'; storageKey: string } | MediaFormResult>;
 };
 
 const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, string>>> = {
@@ -110,6 +123,7 @@ export const ProjectForm = ({
   organizationNames,
   skillOptions,
   project,
+  attachMedia,
 }: Props) => {
   const [result, formAction, isPending] = useActionState(action, null);
   // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる
@@ -189,13 +203,29 @@ export const ProjectForm = ({
       </FormGroup>
 
       <FormGroup title="中身">
-        <TextareaField
-          name="description"
-          label="本文"
-          rows={8}
-          defaultValue={values.description}
-          error={errorOf('description')}
-        />
+        {project && attachMedia ? (
+          <MediaAttachTextareaField
+            name="description"
+            label="本文"
+            rows={8}
+            defaultValue={values.description}
+            error={errorOf('description')}
+            attach={{ action: attachMedia, owner: { field: PROJECT_UID_FIELD, uid: project.uid } }}
+            mediaSrc={(key) =>
+              project.mediaStorageKeys?.includes(key)
+                ? routes.dash.projects.media(project.uid, key)
+                : null
+            }
+          />
+        ) : (
+          <TextareaField
+            name="description"
+            label="本文"
+            rows={8}
+            defaultValue={values.description}
+            error={errorOf('description')}
+          />
+        )}
         <InputField
           inputMode="url"
           name="url"

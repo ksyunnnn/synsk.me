@@ -107,13 +107,10 @@ export const deleteProject = async (
   redirect(`${routes.dash.projects.list}?deleted=1`);
 };
 
-/** 画像を 1 枚足し、同じ画面へ移る（FR-027）。代表画像にもする指定があれば、代表画像にする（FR-028） */
-export const addProjectMedia = async (
-  _state: MediaFormResult | null,
-  formData: FormData,
-): Promise<MediaFormResult> => {
+/** 送られた画像を 1 枚、実績に足す。オーナーでなければ何も書かない */
+const runAddProjectMedia = async (formData: FormData, options: { asCardImage: boolean }) => {
   const author = await getCurrentAuthor();
-  if (!author) return { status: 'forbidden' };
+  if (!author) return { uid: '', outcome: { status: 'forbidden' } as const };
   const { deps, uid, id } = await resolveProject(formData);
   if (id === null) redirect(routes.dash.projects.list);
 
@@ -123,10 +120,34 @@ export const addProjectMedia = async (
     author,
     id,
     file instanceof Blob && file.size > 0 ? file : null,
-    { asCardImage: readString(formData, AS_CARD_IMAGE_FIELD) === '1' },
+    options,
   );
-  if (outcome.status === 'added') redirect(routes.dash.projects.selected(uid, 'mediaAdded'));
   if (outcome.status === 'not-found') redirect(routes.dash.projects.list);
+  return { uid, outcome };
+};
+
+/** 画像を 1 枚足し、同じ画面へ移る（FR-027）。代表画像にもする指定があれば、代表画像にする（FR-028） */
+export const addProjectMedia = async (
+  _state: MediaFormResult | null,
+  formData: FormData,
+): Promise<MediaFormResult> => {
+  const { uid, outcome } = await runAddProjectMedia(formData, {
+    asCardImage: readString(formData, AS_CARD_IMAGE_FIELD) === '1',
+  });
+  if (outcome.status === 'added') redirect(routes.dash.projects.selected(uid, 'mediaAdded'));
+  if (outcome.status === 'forbidden') return outcome;
+  return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
+};
+
+/**
+ * 本文の入力に落とした・貼った画像を 1 枚足し、置き場のキーを返す（FR-027）。画面を移らない。
+ * 本文に印を入れるのは入力の側で、本文は保存するまで書き換えない
+ */
+export const attachProjectMedia = async (
+  formData: FormData,
+): Promise<{ status: 'added'; storageKey: string } | MediaFormResult> => {
+  const { outcome } = await runAddProjectMedia(formData, { asCardImage: false });
+  if (outcome.status === 'added') return outcome;
   if (outcome.status === 'forbidden') return outcome;
   return { status: 'invalid', errors: { [MEDIA_FILE_FIELD]: outcome.error }, values: {} };
 };

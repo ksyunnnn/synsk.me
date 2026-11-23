@@ -1,24 +1,21 @@
 import { listCareers } from '@/features/career/server/queries';
 import { listOrganizationNames } from '@/features/organization/server/queries';
-import { ProjectCardImageForm } from '@/features/project/components/project-card-image-form';
 import { ProjectForm } from '@/features/project/components/project-form';
-import {
-  AS_CARD_IMAGE_FIELD,
-  PROJECT_UID_FIELD,
-  toProjectFormValues,
-} from '@/features/project/domain/project';
+import { ProjectMediaSection } from '@/features/project/components/project-media-section';
+import { toProjectFormValues } from '@/features/project/domain/project';
 import {
   addProjectMedia,
+  attachProjectMedia,
   changeProjectCardImage,
   editProject,
 } from '@/features/project/server/actions';
 import { getProjectForEdit, listSkillOptions } from '@/features/project/server/queries';
 import { listResumesCopyingProject } from '@/features/resume/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
-import { MediaUploadForm } from '@/shared/components/media-upload-form';
 import { SavedNotice } from '@/shared/components/saved-notice';
 import { DetailBody } from '@/shared/components/split-view';
 import { TextLink } from '@/shared/components/text-link';
+import { readMarkdown } from '@/shared/domain/markdown';
 import { careersOfProject, formatPeriod } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
 
@@ -77,7 +74,13 @@ export const ProjectDetail = async ({
           initialValues={toProjectFormValues(project)}
           organizationNames={organizationNames}
           skillOptions={skillOptions}
-          project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
+          project={{
+            uid: project.uid,
+            updatedAt: project.updatedAt,
+            isMasked: project.isMasked,
+            mediaStorageKeys: project.mediaStorageKeys,
+          }}
+          attachMedia={attachProjectMedia}
         />
       }
       relations={
@@ -110,31 +113,21 @@ export const ProjectDetail = async ({
           heading: '画像',
           headingId: 'project-media-heading',
           content: (
-            <>
-              <MediaUploadForm
-                labelledBy="project-media-heading"
-                action={addProjectMedia}
-                owner={{ field: PROJECT_UID_FIELD, uid: project.uid }}
-                mediaStorageKeys={project.mediaStorageKeys}
-              >
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    name={AS_CARD_IMAGE_FIELD}
-                    value="1"
-                    className="size-4 accent-tint focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                  />
-                  代表画像にする
-                </label>
-              </MediaUploadForm>
-              <ProjectCardImageForm
-                key={`card-${project.updatedAt}`}
-                action={changeProjectCardImage}
-                projectUid={project.uid}
-                current={project.cardMediaKey}
-                mediaStorageKeys={project.mediaStorageKeys}
-              />
-            </>
+            <ProjectMediaSection
+              key={`media-${project.updatedAt}-${project.cardMediaKey ?? ''}`}
+              projectUid={project.uid}
+              mediaStorageKeys={project.mediaStorageKeys}
+              cardMediaKey={project.cardMediaKey}
+              bodyMediaKeys={readMarkdown(project.description ?? '').mediaKeys}
+              mediaUrls={Object.fromEntries(
+                project.mediaStorageKeys.map((key) => [
+                  key,
+                  routes.dash.projects.media(project.uid, key),
+                ]),
+              )}
+              changeCardImage={changeProjectCardImage}
+              addMedia={addProjectMedia}
+            />
           ),
         },
       ]}

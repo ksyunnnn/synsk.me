@@ -11,10 +11,10 @@ import { TypedTextarea } from '@/shared/components/typed-textarea';
  */
 
 /** キーボードで操作しているときに、フォーカスの位置を目で確かめられる見た目（WCAG 2.2 SC 2.4.7） */
-const FOCUS_VISIBLE =
+export const FOCUS_VISIBLE =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
-const CONTROL =
+export const CONTROL =
   'w-full rounded-xl border border-transparent bg-muted px-3 py-2 text-foreground transition-colors focus:bg-background focus:border-input aria-invalid:border-destructive motion-reduce:transition-none';
 
 type ControlProps = {
