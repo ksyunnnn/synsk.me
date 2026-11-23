@@ -1788,6 +1788,102 @@
               }
             },
             {
+              "id": "UPogt",
+              "type": "ref",
+              "ref": "j68Vl",
+              "name": "instance: Pair",
+              "width": "fill_container",
+              "descendants": {
+                "NSsVE": {
+                  "content": "480px 以下"
+                },
+                "KdLDa": {
+                  "type": "frame",
+                  "id": "doZSM",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": "$space-xs",
+                  "padding": "$space-sm",
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "kkS8X",
+                      "name": "Text: Sample",
+                      "fill": "#0A0A0A",
+                      "content": "ページの題",
+                      "lineHeight": 1.3,
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 32,
+                      "fontWeight": "300"
+                    },
+                    {
+                      "type": "text",
+                      "id": "Q0dttW",
+                      "name": "Text: Sample",
+                      "fill": "#0A0A0A",
+                      "content": "節の見出し",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 24,
+                      "fontWeight": "300"
+                    }
+                  ]
+                },
+                "F9cTe": {
+                  "content": "976px 以上"
+                },
+                "tXlZL": {
+                  "type": "frame",
+                  "id": "wCYfn",
+                  "name": "Frame: Area",
+                  "clip": true,
+                  "width": "fill_container",
+                  "height": 140,
+                  "fill": "#FFFFFF",
+                  "stroke": "#E5E5E5",
+                  "strokeWidth": 1,
+                  "layout": "vertical",
+                  "gap": "$space-xs",
+                  "padding": "$space-sm",
+                  "justifyContent": "center",
+                  "children": [
+                    {
+                      "type": "text",
+                      "id": "JRoK2",
+                      "name": "Text: Sample",
+                      "fill": "#0A0A0A",
+                      "content": "ページの題",
+                      "lineHeight": 1.3,
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 36,
+                      "fontWeight": "300"
+                    },
+                    {
+                      "type": "text",
+                      "id": "bR2ad",
+                      "name": "Text: Sample",
+                      "fill": "#0A0A0A",
+                      "content": "節の見出し",
+                      "lineHeight": 1.4,
+                      "fontFamily": "Noto Sans JP",
+                      "fontSize": 28,
+                      "fontWeight": "300"
+                    }
+                  ]
+                },
+                "o4cpsY": {
+                  "content": "heading-1・heading-2 の幅は画面の幅で変わる。480px 以下で小さい端、976px 以上で大きい端にし、その間はなめらかに変える"
+                }
+              }
+            },
+            {
               "id": "r6FLU",
               "type": "ref",
               "ref": "NtFfY",
@@ -1816,7 +1912,7 @@
               "fill": "#888888",
               "textGrowth": "fixed-width",
               "width": "fill_container",
-              "content": "出典: ADR-0005",
+              "content": "出典: ADR-0005、MDN clamp()",
               "lineHeight": 1.6,
               "fontFamily": "Noto Sans JP",
               "fontSize": 12,
@@ -1832,7 +1928,7 @@
       "ref": "R4S4f4",
       "name": "instance: Layout",
       "x": 800,
-      "y": 3943,
+      "y": 4218,
       "descendants": {
         "FtVpy": {
           "content": "Layout"
@@ -2507,7 +2603,7 @@
       "ref": "R4S4f4",
       "name": "instance: Icons",
       "x": 800,
-      "y": 6236,
+      "y": 6511,
       "descendants": {
         "FtVpy": {
           "content": "Icons"
@@ -2587,7 +2683,7 @@
       "ref": "R4S4f4",
       "name": "instance: Images",
       "x": 800,
-      "y": 7167,
+      "y": 7442,
       "descendants": {
         "FtVpy": {
           "content": "Images"
@@ -2651,7 +2747,7 @@
       "ref": "R4S4f4",
       "name": "instance: Branding",
       "x": 800,
-      "y": 7811,
+      "y": 8086,
       "descendants": {
         "FtVpy": {
           "content": "Branding"
@@ -2882,7 +2978,7 @@
       "ref": "R4S4f4",
       "name": "instance: Materials",
       "x": 800,
-      "y": 8992,
+      "y": 9267,
       "descendants": {
         "FtVpy": {
           "content": "Materials"
@@ -5006,7 +5102,7 @@
       "ref": "R4S4f4",
       "name": "instance: Elevation",
       "x": 800,
-      "y": 9879,
+      "y": 10154,
       "descendants": {
         "FtVpy": {
           "content": "Elevation"
