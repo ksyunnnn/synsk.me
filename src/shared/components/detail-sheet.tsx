@@ -3,7 +3,7 @@
 import { Drawer } from '@base-ui/react/drawer';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { PaneToggle } from '@/shared/components/dash-panes';
 import { cn } from '@/lib/utils';
 
@@ -16,7 +16,8 @@ import { cn } from '@/lib/utils';
  * 分ける」、https://base-ui.com/react/components/drawer）。後ろの一覧で別の行を選び続けられるよう、
  * モーダルにしない（HIG Sheets の nonmodal view）。開いたらシートの見出しへ、閉じたら開いた行へ
  * フォーカスを移す（WCAG 2.2 SC 2.4.3）。直しかけは閉じても `DraftProvider` に残るため、閉じる前に
- * 確かめない。JavaScript が動く前は、半分の高さで止まる CSS だけのシートを出す
+ * 確かめない。`?selected=` の URL を直接開いたときは全体の高さで開き、一覧で行を選んだときは
+ * 半分の高さで開く。JavaScript が動く前は、全体の高さの CSS だけのシートを出す
  */
 
 /** `globals.css` の `--breakpoint-lg`（976px）より狭い画面 */
@@ -40,6 +41,17 @@ const useNarrow = () =>
 const HALF = 0.55;
 const FULL = 1;
 const SNAP_POINTS = [HALF, FULL];
+
+/**
+ * 文書を読み込んだ URL。`?selected=` の URL を直接開いたときは、シートを全体の高さで開く。
+ * 一覧で行を選んだとき（画面の中の移動）は、半分の高さで開く
+ */
+const documentUrl = () =>
+  (performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined)
+    ?.name ?? null;
+
+/** 文書を読み込んでから、狭い画面のシートを一度でも置いたか */
+let sheetMountedInDocument = false;
 
 export const DetailSheet = ({
   open,
@@ -66,17 +78,21 @@ export const DetailSheet = ({
       aria-label={label}
       className={cn(
         'min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-6 lg:shadow-none lg:backdrop-filter-none',
+        // 狭い画面でこの形が出るのは、URL を直接開いて JavaScript が動く前だけ。Drawer に替わった
+        // ときに動かないよう、Drawer を直接開いたときと同じ全体の高さで出す
         open
-          ? 'glass fixed inset-x-0 bottom-0 z-30 flex h-[55dvh] flex-col overflow-hidden rounded-t-3xl lg:static lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
+          ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl bg-background lg:static lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
           : 'hidden',
       )}
     >
       {open && (
-        <div className="flex justify-end px-4 pt-2 lg:hidden">
+        <div className="relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1 lg:hidden">
+          {/* つまみと同じ高さを空ける。つまみは JavaScript が動いてから出す */}
+          <span aria-hidden className="h-6 w-16" />
           <Link
             href={closeHref}
             scroll={false}
-            className="rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
+            className="absolute top-2 right-3 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
           >
             閉じる
           </Link>
@@ -111,7 +127,14 @@ const NarrowSheet = ({
   const openerRef = useRef<HTMLElement | null>(null);
   // URL が変わる前に閉じ始められるよう、開いているかを手元にも持つ
   const [shown, setShown] = useState(open);
-  const [snapPoint, setSnapPoint] = useState<Drawer.Root.SnapPoint | null>(HALF);
+  // URL を直接開いたときは全体の高さで、動きを付けずに出す。JavaScript が動く前の形と揃える
+  const [direct] = useState(
+    () => open && !sheetMountedInDocument && documentUrl() === window.location.href,
+  );
+  useEffect(() => {
+    sheetMountedInDocument = true;
+  }, []);
+  const [snapPoint, setSnapPoint] = useState<Drawer.Root.SnapPoint | null>(direct ? FULL : HALF);
   // URL の選んだ 1 件が変わったら、それに合わせる。開くときは半分の高さから始める
   // （https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes）
   const [previousOpen, setPreviousOpen] = useState(open);
@@ -157,7 +180,8 @@ const NarrowSheet = ({
               '[padding-bottom:max(0px,calc(var(--drawer-snap-point-offset)+var(--drawer-swipe-movement-y)))]',
               'data-starting-style:[padding-bottom:0] data-ending-style:[padding-bottom:0]',
               'transition-[transform,background-color] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] motion-reduce:transition-none data-swiping:select-none',
-              'data-ending-style:[transform:translateY(100%)] data-starting-style:[transform:translateY(100%)]',
+              'data-ending-style:[transform:translateY(100%)]',
+              !direct && 'data-starting-style:[transform:translateY(100%)]',
               // 広げると不透明にし、本文を読みやすくする（Adopting Liquid Glass）
               expanded ? 'bg-background' : 'glass',
             )}

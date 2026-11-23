@@ -322,7 +322,7 @@ test.describe('404 の画面', () => {
 });
 
 test.describe('狭い画面のシート', () => {
-  test('行を選ぶとシートの見出しへフォーカスが移り、つまみで高さを切り替え、閉じると選んだ行へ戻る', async ({
+  test('行を選ぶと半分の高さで開いて見出しへフォーカスが移り、つまみで高さを切り替え、閉じると選んだ行へ戻る', async ({
     page,
     context,
   }) => {
@@ -340,6 +340,11 @@ test.describe('狭い画面のシート', () => {
     await row.click();
     const sheet = page.getByRole('dialog', { name: '選んだ実績' });
     await expect(sheet.getByRole('heading', { level: 2, name: title })).toBeFocused();
+    // 一覧で行を選んだときは半分の高さで開く
+    await expect(sheet.getByRole('button', { name: '全体の高さにする' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
     await sheet.getByRole('button', { name: '全体の高さにする' }).click();
     await expect(sheet.getByRole('button', { name: '半分の高さにする' })).toHaveAttribute(
       'aria-expanded',
@@ -349,5 +354,21 @@ test.describe('狭い画面のシート', () => {
     await expect(sheet).toBeHidden();
     await expect(page).not.toHaveURL(/selected=/);
     await expect(row).toBeFocused();
+  });
+
+  test('選んだ 1 件の URL を直接開くと、全体の高さで開く', async ({ page, context }) => {
+    await actAsAuthor(context);
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E シートの組織',
+      organizationNameMasked: 'E2E シートの秘匿化した組織名',
+      title: uniqueTitle('シートを直接開く'),
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(editUrl);
+    const sheet = page.getByRole('dialog', { name: '選んだ実績' });
+    await expect(sheet.getByRole('button', { name: '半分の高さにする' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
   });
 });
