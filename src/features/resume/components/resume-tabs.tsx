@@ -34,7 +34,7 @@ export const ResumeTabs = ({ uid }: { uid: string }) => {
                 className={cn(
                   'block rounded-full px-3 py-1.5 text-small whitespace-nowrap focus-visible:outline-2 focus-visible:outline-ring',
                   current
-                    ? 'bg-foreground text-background font-medium'
+                    ? 'bg-foreground/8 font-medium'
                     : 'text-muted-foreground hover:bg-foreground/5',
                 )}
               >
