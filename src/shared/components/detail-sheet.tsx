@@ -2,7 +2,7 @@
 
 import { Drawer } from '@base-ui/react/drawer';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   createContext,
   useContext,
@@ -268,14 +268,35 @@ export const DetailSheet = ({
   }, [open]);
   useFitToViewport(sectionRef, open && !narrow && !peek);
   useSaveShortcut(formId, open);
-  // ドロワーを閉じ始めたか。右へ出ていく動きを見せてから、選んだ 1 件を外した一覧へ移る
-  const [leaving, setLeaving] = useState(false);
-  if (leaving && !open) setLeaving(false);
+  // ドロワーを閉じ始めた URL。右へ出ていく動きを見せてから、選んだ 1 件を外した一覧へ移る。動きの
+  // 間に、戻る・進む・リンクで別の所へ移り始めたら、閉じるのをやめ、移った先を保つ。移り終える前に
+  // 一覧へ移ると、移った先を上書きし、進む履歴も消すため。URL が変わったときもやめる
+  const location = `${usePathname()}?${useSearchParams()}`;
+  const [leavingAt, setLeavingAt] = useState<string | null>(null);
+  if (leavingAt !== null && leavingAt !== location) setLeavingAt(null);
+  const leaving = leavingAt === location;
+  useEffect(() => {
+    if (!leaving) return;
+    const stay = () => setLeavingAt(null);
+    const onClick = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest('a[href]')) stay();
+    };
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const timer = window.setTimeout(
+      () => router.push(closeHref, { scroll: false }),
+      reduced ? 0 : PEEK_MS,
+    );
+    window.addEventListener('popstate', stay);
+    document.addEventListener('click', onClick, true);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('popstate', stay);
+      document.removeEventListener('click', onClick, true);
+    };
+  }, [leaving, closeHref, router]);
   const closePeek = () => {
     openerRef.current = selectedRow();
-    setLeaving(true);
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    window.setTimeout(() => router.push(closeHref, { scroll: false }), reduced ? 0 : PEEK_MS);
+    setLeavingAt(location);
   };
   useCloseOnEscape(peek && !leaving, closePeek);
   if (narrow && !direct)
