@@ -182,13 +182,20 @@ const MediaGrid = ({ mediaStorageKeys, cardMediaKey, bodyMediaKeys, mediaUrls }:
           const inBody = bodyMediaKeys.includes(key);
           return (
             <li key={key} className="flex flex-col gap-1.5">
-              {/* eslint-disable-next-line @next/next/no-img-element -- オーナーにだけ返す経路 */}
-              <img
-                src={mediaUrls[key]}
-                alt={`画像 ${index + 1}`}
-                loading="lazy"
-                className="aspect-square w-full rounded-xl bg-muted object-cover"
-              />
+              <a
+                href={mediaUrls[key]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element -- オーナーにだけ返す経路 */}
+                <img
+                  src={mediaUrls[key]}
+                  alt={`画像 ${index + 1}`}
+                  loading="lazy"
+                  className="aspect-square w-full rounded-xl bg-muted object-cover"
+                />
+              </a>
               <div className="flex flex-wrap items-center gap-1 text-caption">
                 {key === cardMediaKey && (
                   <span className="rounded-full bg-tint/12 px-2 py-0.5 font-medium text-tint">
