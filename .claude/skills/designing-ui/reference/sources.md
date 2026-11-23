@@ -11,8 +11,8 @@ HIG の URL は `https://developer.apple.com/design/human-interface-guidelines/<
 | 絞り込み | 1 つ選ぶ軸は Pop-up button、検索は Search field と Token | — | pop-up-buttons、search-fields |
 | ツールバー | 区画は 3 つまで。主な操作は 1 つで末尾 | 背景や色付きの操作を増やす | toolbars |
 | オンとオフ | 強調したい設定は Switch、単独の設定は Checkbox | ツールバーに置く | toggles |
-| 編集と保存 | 値をその場で検証、何度も戻せる | 詳細の編集を Sheet で行う | entering-data、undo-and-redo、sheets |
-| 狭い画面の詳細 | 半分の高さで止まるシート（medium detent）。広げたら不透明 | 長い・頻繁な作業をシートに閉じ込める | sheets |
+| 編集と保存 | 値をその場で検証、何度も戻せる | 広い画面で、詳細の編集を Split view の列から Sheet に移す | entering-data、undo-and-redo、sheets |
+| 狭い画面の詳細 | 半分の高さで止まるシート（medium detent）。広げたら不透明。選んだ 1 件の URL を直接開いたときは全体の高さ | モーダルにして、後ろの一覧を操作できなくする | sheets |
 | 削除の確認 | 取り消せない削除だけ確かめる。ボタンは具体的な名前 | 戻せる操作への確認 | alerts、action-sheets |
 | パンくず | W3C APG Breadcrumb https://www.w3.org/WAI/ARIA/apg/patterns/breadcrumb/ | Path control | path-controls |
 
