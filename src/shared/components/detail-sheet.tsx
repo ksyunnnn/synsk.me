@@ -347,7 +347,7 @@ export const DetailSheet = ({
         // 一覧の右に重なるドロワー。幅は詳細の列の上限と同じにし、画面からはみ出さない。上の行を
         // 留め、本文だけをスクロールする（ガラスの上の行に本文が透けて重ならないようにする）
         peek &&
-          'lg:fixed lg:top-4 lg:right-4 lg:bottom-4 lg:left-auto lg:z-30 lg:flex lg:h-auto lg:max-h-none lg:w-[600px] lg:max-w-[calc(100vw-2rem)] lg:flex-col lg:overflow-hidden',
+          'lg:fixed lg:top-4 lg:right-4 lg:bottom-4 lg:left-auto lg:z-30 lg:flex lg:h-auto lg:max-h-none lg:w-[clamp(600px,50vw,960px)] lg:max-w-[calc(100vw-2rem)] lg:flex-col lg:overflow-hidden',
         // 右から入り、右へ出ていく。入りは表示になった瞬間の位置（@starting-style）から動かす
         peek &&
           'lg:transition-[translate] lg:duration-300 lg:ease-[cubic-bezier(0.32,0.72,0,1)] lg:starting:translate-x-[calc(100%+1rem)] motion-reduce:transition-none',
@@ -431,8 +431,8 @@ export const DetailSheet = ({
       {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}
       <div
         className={cn(
-          'mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:px-6 lg:pt-2 lg:pb-6',
-          peek ? 'lg:scroll-pt-4 lg:overflow-y-auto' : 'lg:overflow-visible',
+          'mx-auto min-h-0 w-full flex-1 overflow-y-auto px-4 pb-6 lg:px-6 lg:pt-2 lg:pb-6',
+          peek ? 'lg:scroll-pt-4 lg:overflow-y-auto' : 'max-w-3xl lg:overflow-visible',
         )}
       >
         <DetailFormContext value={formId}>{children}</DetailFormContext>
