@@ -71,7 +71,7 @@ const Body = ({ text, className = '' }: { text: string | null; className?: strin
   text ? <p className={`whitespace-pre-line ${className}`}>{text}</p> : null;
 
 /** 職歴・実績の本文。Markdown として描く */
-const MarkdownText = ({
+export const MarkdownText = ({
   text,
   mediaSrc,
 }: {

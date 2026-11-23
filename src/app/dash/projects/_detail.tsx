@@ -1,6 +1,6 @@
 import { listCareers } from '@/features/career/server/queries';
 import { listOrganizationNames } from '@/features/organization/server/queries';
-import { ProjectForm } from '@/features/project/components/project-form';
+import { EditProjectForm } from '@/app/dash/projects/_edit-project-form';
 import { ProjectMediaSection } from '@/features/project/components/project-media-section';
 import { toProjectFormValues } from '@/features/project/domain/project';
 import {
@@ -68,7 +68,7 @@ export const ProjectDetail = async ({
       }
       form={
         // 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す
-        <ProjectForm
+        <EditProjectForm
           key={project.updatedAt}
           action={editProject}
           initialValues={toProjectFormValues(project)}

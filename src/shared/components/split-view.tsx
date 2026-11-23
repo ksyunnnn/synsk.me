@@ -89,6 +89,14 @@ export const CollectionToolbar = ({
   </div>
 );
 
+/** 見せ方の切り替えの見た目。URL で切り替える `ViewSwitch` と、画面を移らずに切り替える部品が使う */
+export const VIEW_SWITCH = 'flex rounded-full bg-foreground/6 p-0.5 text-small';
+export const viewSwitchItem = (current: boolean) =>
+  cn(
+    'rounded-full px-3 py-1 focus-visible:outline-2 focus-visible:outline-ring',
+    current ? 'bg-background font-medium shadow-sm' : 'text-muted-foreground',
+  );
+
 /**
  * 見せ方の切り替え（HIG Segmented controls: ツールバーでは Segmented control で切り替える）。
  * 切り替えは URL で持ち、選んだ 1 件と条件を保ったまま移る
@@ -98,17 +106,14 @@ export const ViewSwitch = ({
 }: {
   options: { href: string; label: string; current: boolean }[];
 }) => (
-  <nav aria-label="見せ方" className="flex rounded-full bg-foreground/6 p-0.5 text-small">
+  <nav aria-label="見せ方" className={VIEW_SWITCH}>
     {options.map((option) => (
       <Link
         key={option.label}
         href={option.href}
         scroll={false}
         aria-current={option.current ? 'page' : undefined}
-        className={cn(
-          'rounded-full px-3 py-1 focus-visible:outline-2 focus-visible:outline-ring',
-          option.current ? 'bg-background font-medium shadow-sm' : 'text-muted-foreground',
-        )}
+        className={viewSwitchItem(option.current)}
       >
         {option.label}
       </Link>

@@ -2,7 +2,14 @@
 
 import { Tabs } from '@base-ui/react/tabs';
 import { useRouter } from 'next/navigation';
-import { useId, useRef, useState, type ClipboardEvent, type DragEvent } from 'react';
+import {
+  useId,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type DragEvent,
+  type ReactNode,
+} from 'react';
 import { cn } from '@/lib/utils';
 import { CONTROL, FOCUS_VISIBLE } from '@/shared/components/field';
 import { FORBIDDEN_MESSAGE } from '@/shared/components/form-alert';
@@ -49,6 +56,8 @@ type Props = {
   };
   /** プレビューの画像の `src`。出さない画像は null */
   mediaSrc: (storageKey: MediaStorageKey) => string | null;
+  /** プレビューの中身を描く。渡さなければ `MarkdownBody` だけで描く */
+  renderPreview?: (body: string) => ReactNode;
 };
 
 const isImage = (file: File) => (MEDIA_TYPES as readonly string[]).includes(file.type);
@@ -93,6 +102,7 @@ export const MediaAttachTextareaField = ({
   error,
   attach,
   mediaSrc,
+  renderPreview,
 }: Props) => {
   const router = useRouter();
   const id = `${useId()}-${name}`;
@@ -220,10 +230,16 @@ export const MediaAttachTextareaField = ({
       </Tabs.Panel>
       <Tabs.Panel
         value="preview"
-        className="flex min-h-40 flex-col gap-2 rounded-xl border border-border px-3 py-2"
+        className={
+          renderPreview
+            ? 'flex flex-col gap-3'
+            : 'flex min-h-40 flex-col gap-2 rounded-xl border border-border px-3 py-2'
+        }
       >
         {previewBody.trim() === '' ? (
           <p className="text-muted-foreground">本文はありません</p>
+        ) : renderPreview ? (
+          renderPreview(previewBody)
         ) : (
           <MarkdownBody body={previewBody} mediaSrc={mediaSrc} />
         )}

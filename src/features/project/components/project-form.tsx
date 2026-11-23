@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, type ReactNode } from 'react';
 import {
   OPENED_UPDATED_AT_FIELD,
   PROJECT_UID_FIELD,
@@ -11,7 +11,7 @@ import {
 } from '@/features/project/domain/project';
 import { InputField, TextareaField } from '@/shared/components/field';
 import { MediaAttachTextareaField } from '@/shared/components/media-attach-textarea-field';
-import type { MediaFormResult } from '@/shared/domain/media';
+import type { MediaFormResult, MediaStorageKey } from '@/shared/domain/media';
 import { routes } from '@/shared/routes';
 import {
   FORBIDDEN_INPUT_MESSAGE,
@@ -68,6 +68,11 @@ type Props = {
   attachMedia?: (
     formData: FormData,
   ) => Promise<{ status: 'added'; storageKey: string } | MediaFormResult>;
+  /** 本文のプレビューの中身。渡さなければ本文の Markdown だけを描く */
+  renderBodyPreview?: (
+    body: string,
+    mediaSrc: (storageKey: MediaStorageKey) => string | null,
+  ) => ReactNode;
 };
 
 const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, string>>> = {
@@ -117,6 +122,10 @@ const LABELS = {
   skillIds: '使ったスキル',
 };
 
+/** 本文のプレビューの画像。その実績の画像だけを、オーナーにだけ返す経路で出す */
+const bodyMediaSrc = (project: { uid: string; mediaStorageKeys?: string[] }, key: string) =>
+  project.mediaStorageKeys?.includes(key) ? routes.dash.projects.media(project.uid, key) : null;
+
 export const ProjectForm = ({
   action,
   initialValues,
@@ -124,6 +133,7 @@ export const ProjectForm = ({
   skillOptions,
   project,
   attachMedia,
+  renderBodyPreview,
 }: Props) => {
   const [result, formAction, isPending] = useActionState(action, null);
   // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる
@@ -211,10 +221,10 @@ export const ProjectForm = ({
             defaultValue={values.description}
             error={errorOf('description')}
             attach={{ action: attachMedia, owner: { field: PROJECT_UID_FIELD, uid: project.uid } }}
-            mediaSrc={(key) =>
-              project.mediaStorageKeys?.includes(key)
-                ? routes.dash.projects.media(project.uid, key)
-                : null
+            mediaSrc={(key) => bodyMediaSrc(project, key)}
+            renderPreview={
+              renderBodyPreview &&
+              ((body) => renderBodyPreview(body, (key) => bodyMediaSrc(project, key)))
             }
           />
         ) : (
