@@ -31,7 +31,7 @@ export const VisitorProjectView = ({ project }: { project: VisitorProject }) => 
         />
       )}
       <p className="text-sm text-muted-foreground">{PROJECT_KIND_LABELS[project.kind]}</p>
-      <h1 className="text-heading-1 tracking-heading">{project.title}</h1>
+      <h1 className="text-heading-1">{project.title}</h1>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
         {project.organizationName && (
           <>

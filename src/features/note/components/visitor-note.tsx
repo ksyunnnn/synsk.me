@@ -44,7 +44,7 @@ export const VisitorNoteView = ({
   return (
     <article className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">
-        <h1 className="text-heading-1 tracking-heading">{note.title}</h1>
+        <h1 className="text-heading-1">{note.title}</h1>
         {note.description && <p className="text-muted-foreground">{note.description}</p>}
         <p className="text-sm text-muted-foreground">
           {note.publishedAt === null ? (

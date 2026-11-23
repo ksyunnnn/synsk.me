@@ -8,7 +8,7 @@ import type { VisitorLifeEvent } from '@/features/activity/domain/life-event';
 export const VisitorLifeEventView = ({ lifeEvent }: { lifeEvent: VisitorLifeEvent }) => (
   <article className="flex flex-col gap-6">
     <header className="flex flex-col gap-2">
-      <h1 className="text-heading-1 tracking-heading">{lifeEvent.title}</h1>
+      <h1 className="text-heading-1">{lifeEvent.title}</h1>
       <p className="text-muted-foreground">
         <time dateTime={lifeEvent.happenedOn}>{lifeEvent.happenedOn}</time>
       </p>

@@ -20,7 +20,7 @@ export const FormSection = ({
     <div className={SEPARATED}>{children}</div>
   ) : (
     <section aria-labelledby={id} className={SEPARATED}>
-      <h2 id={id} className="text-heading-2 tracking-heading">
+      <h2 id={id} className="text-heading-2">
         {title}
       </h2>
       {children}
