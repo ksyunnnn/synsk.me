@@ -3,7 +3,6 @@ import type { ReactNode } from 'react';
 import { CollectionPaneToggle, SplitPanes } from '@/shared/components/dash-panes';
 import { DetailSheet } from '@/shared/components/detail-sheet';
 import { DraftMark } from '@/shared/components/drafts';
-import { SubmitButton } from '@/shared/components/submit-button';
 import { cn } from '@/lib/utils';
 import type { Period } from '@/shared/domain/period';
 
@@ -18,14 +17,15 @@ export const SplitView = ({
   detailLabel,
   selected,
   closeHref,
-  detailActions,
   empty = '一覧から 1 件を選ぶと、ここに出ます',
 }: {
   collection: ReactNode;
+  /**
+   * 選んだ 1 件のシングル。編集のフォームは `useDetailForm` を使い、保存のボタンをペインの上の行に
+   * 任せる
+   */
   detail: ReactNode;
   detailLabel: string;
-  /** 詳細のペインの上端の末尾に置く主な操作。`DetailSubmit` を渡す */
-  detailActions?: ReactNode;
   /** 選んだ 1 件があるか */
   selected: boolean;
   closeHref: string;
@@ -34,12 +34,7 @@ export const SplitView = ({
   <SplitPanes
     collection={<div className="relative min-w-0 rounded-3xl bg-background pb-4">{collection}</div>}
     detail={
-      <DetailSheet
-        open={selected}
-        closeHref={closeHref}
-        label={detailLabel}
-        actions={selected ? detailActions : undefined}
-      >
+      <DetailSheet open={selected} closeHref={closeHref} label={detailLabel}>
         {selected ? detail : <p className="py-12 text-center text-muted-foreground">{empty}</p>}
       </DetailSheet>
     }
@@ -91,19 +86,6 @@ export const CollectionToolbar = ({
       )}
     </div>
   </div>
-);
-
-/**
- * 詳細のペインのツールバーに置く、詳細のフォームの送信のボタン。フォームの外にあるので、`form`
- * 属性でフォームの id を指して送る。見た目は一覧のツールバーの主な操作と同じにする
- */
-export const DetailSubmit = ({ form, children }: { form: string; children: ReactNode }) => (
-  <SubmitButton
-    form={form}
-    className="rounded-full bg-tint px-4 py-1.5 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-  >
-    {children}
-  </SubmitButton>
 );
 
 /**

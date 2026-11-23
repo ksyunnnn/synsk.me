@@ -21,10 +21,11 @@ import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
 import { DraftConflict, useDraft } from '@/shared/components/drafts';
+import { useDetailForm } from '@/shared/components/detail-sheet';
 import { FormActions } from '@/shared/components/form-actions';
 import { KindField } from '@/shared/components/kind-field';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
-import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
+import { SubmitButton } from '@/shared/components/submit-button';
 import { TokenField } from '@/shared/components/token-field';
 
 /**
@@ -54,11 +55,6 @@ type Props = {
   skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
   project?: { uid: string; updatedAt: string; isMasked: boolean };
-  /**
-   * フォームの id。持てば送信のボタンをフォームに置かず、詳細のペインのツールバーに置いたボタンが
-   * `form` 属性で送る。JavaScript なしでも、ネイティブの `form` 属性で送れる
-   */
-  formId?: string;
 };
 
 const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, string>>> = {
@@ -114,10 +110,10 @@ export const ProjectForm = ({
   organizationNames,
   skillOptions,
   project,
-  formId,
 }: Props) => {
   const [result, formAction, isPending] = useActionState(action, null);
-  useReportPending(formId, isPending);
+  // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる
+  const detailForm = useDetailForm(isPending);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
   const draft = useDraft(`project:${project?.uid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
@@ -129,7 +125,7 @@ export const ProjectForm = ({
   return (
     <form
       key={draft.formKey}
-      id={formId}
+      {...detailForm}
       action={formAction}
       className="flex flex-col gap-8"
       {...draft.bind}
@@ -255,7 +251,7 @@ export const ProjectForm = ({
         </SettingsGroup>
       </FormGroup>
 
-      {!formId && (
+      {!detailForm && (
         <FormActions>
           <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
             {project ? '保存する' : '登録する'}

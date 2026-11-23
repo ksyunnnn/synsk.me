@@ -9,7 +9,6 @@ import {
   CollectionEmpty,
   CollectionTable,
   CollectionToolbar,
-  DetailSubmit,
   PeriodLines,
   SplitView,
   ViewSwitch,
@@ -20,7 +19,7 @@ import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind
 import { SITE_STATUSES, SITE_STATUS_LABELS } from '@/shared/domain/site-status';
 import { firstParam } from '@/shared/domain/search-param';
 import { routes } from '@/shared/routes';
-import { PROJECT_DETAIL_FORM_ID, ProjectDetail } from './_detail';
+import { ProjectDetail } from './_detail';
 
 // 要求時のデータ（オーナーの確認と D1）を `<Suspense>` の外で読み、描画を終えてから
 // 応答を返す（https://nextjs.org/docs/messages/blocking-prerender-dynamic）
@@ -227,7 +226,6 @@ const Page = async ({ searchParams }: Props) => {
       selected={selected !== null}
       closeHref={link({ selected: null })}
       detailLabel="選んだ実績"
-      detailActions={<DetailSubmit form={PROJECT_DETAIL_FORM_ID}>保存する</DetailSubmit>}
       detail={
         selected && (
           <ProjectDetail

@@ -9,6 +9,7 @@ import {
   type OrganizationFormValues,
 } from '@/shared/domain/organization';
 import { InputField } from '@/shared/components/field';
+import { useDetailForm } from '@/shared/components/detail-sheet';
 import { FormActions } from '@/shared/components/form-actions';
 import {
   FORBIDDEN_INPUT_MESSAGE,
@@ -51,7 +52,9 @@ export const OrganizationForm = ({
   initialValues,
   isReferencedByMasked,
 }: Props) => {
-  const [result, formAction] = useActionState(action, null);
+  const [result, formAction, isPending] = useActionState(action, null);
+  // 詳細のペインに置かれたら、保存のボタンをペインの上の行に任せる
+  const detailForm = useDetailForm(isPending);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
   const draft = useDraft(`organization:${organizationUid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
@@ -61,7 +64,13 @@ export const OrganizationForm = ({
   };
 
   return (
-    <form key={draft.formKey} action={formAction} className="flex flex-col gap-6" {...draft.bind}>
+    <form
+      key={draft.formKey}
+      action={formAction}
+      {...detailForm}
+      className="flex flex-col gap-6"
+      {...draft.bind}
+    >
       <DraftConflict conflict={draft.conflict} noun="組織" />
       <input type="hidden" name={ORGANIZATION_UID_FIELD} value={organizationUid} />
       {result?.status === 'forbidden' && <FormAlert>{FORBIDDEN_INPUT_MESSAGE}</FormAlert>}
@@ -86,11 +95,13 @@ export const OrganizationForm = ({
         autoComplete="off"
         error={errorOf('nameMasked')}
       />
-      <FormActions>
-        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-          保存する
-        </SubmitButton>
-      </FormActions>
+      {!detailForm && (
+        <FormActions>
+          <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            保存する
+          </SubmitButton>
+        </FormActions>
+      )}
     </form>
   );
 };

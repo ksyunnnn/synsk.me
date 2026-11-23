@@ -4,8 +4,10 @@ import { Drawer } from '@base-ui/react/drawer';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
+  createContext,
   useContext,
   useEffect,
+  useId,
   useRef,
   useState,
   useSyncExternalStore,
@@ -13,6 +15,7 @@ import {
   type RefObject,
 } from 'react';
 import { CoverContext, PaneToggle } from '@/shared/components/dash-panes';
+import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
 import { cn } from '@/lib/utils';
 
 /**
@@ -32,8 +35,42 @@ import { cn } from '@/lib/utils';
  *
  * 主な操作（保存する）は、ペインの上端の末尾に置き、スクロールしても見えるようにする（HIG Layout の
  * 「Avoid placing controls or critical information at the bottom of a window」、HIG Toolbars の
- * 主な操作は 1 つで末尾）。広い画面ではペインの上の行、狭い画面ではシートの上の行に置く
+ * 主な操作は 1 つで末尾）。広い画面ではペインの上の行、狭い画面ではシートの上の行に置く。
+ * ペインが詳細のフォームの id を決め、`useDetailForm` でフォームに渡す。画面ごとに id を配線しない
  */
+
+/** ペインが決めた、詳細のフォームの id。ペインの外では無い */
+const DetailFormContext = createContext<string | undefined>(undefined);
+
+/** 詳細のフォームに付ける印。ペインの上の行の保存のボタンは、この印のフォームがあるときだけ出る */
+const DETAIL_FORM_ATTRIBUTE = 'data-detail-form';
+
+/**
+ * 詳細のペインに置かれたフォームが、`<form>` に広げる属性。ペインの外では undefined を返し、
+ * フォームは自分の下端に保存のボタンを置く。ペインの中では、上の行のボタンが `form` 属性で
+ * この id を指して送る（JavaScript なしでも送れる）。送っているかは、引数の値で上の行のボタンに
+ * 知らせる。値は `useActionState` の 3 つめの値を渡す
+ */
+export const useDetailForm = (pending: boolean) => {
+  const id = useContext(DetailFormContext);
+  useReportPending(id, pending);
+  return id === undefined ? undefined : { id, [DETAIL_FORM_ATTRIBUTE]: '' };
+};
+
+/**
+ * ペインの上の行の保存のボタン。フォームの外にあるので、`form` 属性でフォームの id を指して送る。
+ * 詳細のフォームはどれも編集のフォームなので、文言は「保存する」に固定する。
+ * 見た目は一覧のツールバーの主な操作と同じにする。詳細が無い（「この実績はありません」など）ときは
+ * 出さない。判定は CSS の `:has()` で行い、JavaScript が動く前から合わせる
+ */
+const DetailSubmit = ({ form }: { form: string }) => (
+  <SubmitButton
+    form={form}
+    className="hidden rounded-full bg-tint px-4 py-1.5 text-small font-medium text-tint-foreground group-has-[[data-detail-form]]/detail:block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+  >
+    保存する
+  </SubmitButton>
+);
 
 /** `globals.css` の `--breakpoint-lg`（976px）より狭い画面 */
 const NARROW_QUERY = '(max-width: 975.98px)';
@@ -104,7 +141,6 @@ export const DetailSheet = ({
   open,
   closeHref,
   label,
-  actions,
   children,
 }: {
   /** 選んだ 1 件があるか */
@@ -112,10 +148,10 @@ export const DetailSheet = ({
   /** 閉じたときの行き先。選んだ 1 件を外した一覧 */
   closeHref: string;
   label: string;
-  /** ペインの上端の末尾に置く主な操作（保存する） */
-  actions?: ReactNode;
   children: ReactNode;
 }) => {
+  const formId = useId();
+  const actions = open ? <DetailSubmit form={formId} /> : undefined;
   const narrow = useNarrow();
   const hydrating = useHydrating();
   const { setCovered } = useContext(CoverContext);
@@ -150,7 +186,7 @@ export const DetailSheet = ({
   if (narrow && !direct)
     return (
       <NarrowSheet open={open} closeHref={closeHref} label={label} actions={actions}>
-        {children}
+        <DetailFormContext value={formId}>{children}</DetailFormContext>
       </NarrowSheet>
     );
   return (
@@ -159,7 +195,7 @@ export const DetailSheet = ({
       aria-label={label}
       className={cn(
         // 留めたツールバーの下に、フォーカスを移した入力が隠れないようにする（WCAG 2.2 SC 2.4.11）
-        'min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-0 lg:shadow-none lg:backdrop-filter-none',
+        'group/detail min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-0 lg:shadow-none lg:backdrop-filter-none',
         // 狭い画面でこの形が出るのは、URL を直接開いたときだけ。全体の高さで一覧を覆う。広い画面では
         // fixed を外して sticky に戻し、ページをスクロールしてもペインの上端のツールバーを見せる
         open
@@ -202,7 +238,7 @@ export const DetailSheet = ({
       </div>
       {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}
       <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:px-6 lg:pt-2 lg:pb-6">
-        {children}
+        <DetailFormContext value={formId}>{children}</DetailFormContext>
       </div>
     </section>
   );
@@ -278,7 +314,7 @@ const NarrowSheet = ({
             }}
             finalFocus={() => openerRef.current ?? true}
             className={cn(
-              'pointer-events-auto flex h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-t-3xl outline-none',
+              'group/detail pointer-events-auto flex h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-t-3xl outline-none',
               '[transform:translateY(calc(var(--drawer-snap-point-offset)+var(--drawer-swipe-movement-y)))]',
               // 半分の高さでも本文の下端までスクロールできるよう、画面の外に出た分を下に空ける
               '[padding-bottom:max(0px,calc(var(--drawer-snap-point-offset)+var(--drawer-swipe-movement-y)))]',
