@@ -37,8 +37,7 @@ const Layout = async ({
           <h1 className="text-heading-2 font-semibold">{resume.title}</h1>
           <p className="text-small text-muted-foreground">
             {resume.audience === 'limited' ? '限定公開用' : '公開用'}・
-            {resume.status === 'draft' ? '非公開' : '公開中'}・写した実績 {resume.projects.length}{' '}
-            件・写した職歴 {resume.careers.length} 件
+            {resume.status === 'draft' ? '非公開' : '公開中'}
           </p>
         </div>
         <ResumeTabs uid={resume.uid} />
