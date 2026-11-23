@@ -27,7 +27,7 @@ import {
 } from '@/shared/components/form-alert';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { FormActions } from '@/shared/components/form-actions';
-import { SubmitButton } from '@/shared/components/submit-button';
+import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
@@ -68,7 +68,7 @@ const useRowForm = <V extends object, E>(
   /** 直しかけを残す鍵と、違う項目を知らせるための項目の名前。無ければ残さない */
   drafting?: { key: string; labels: Record<string, string> },
 ) => {
-  const [result, formAction] = useActionState(action, null);
+  const [result, formAction, isPending] = useActionState(action, null);
   // 保存せずに別の 1 行を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
   const draft = useDraft(
     drafting?.key ?? '',
@@ -79,7 +79,7 @@ const useRowForm = <V extends object, E>(
   const initial = drafting ? (draft.values as V) : initialValues;
   const values = result && 'values' in result ? result.values : initial;
   const message = result && result.status !== 'saved' ? MESSAGES[result.status] : null;
-  return { result, formAction, values, message, draft: drafting ? draft : undefined };
+  return { result, formAction, isPending, values, message, draft: drafting ? draft : undefined };
 };
 
 const Frame = ({
@@ -87,30 +87,49 @@ const Frame = ({
   target,
   message,
   draft,
+  formId,
+  isPending = false,
   children,
 }: {
   formAction: (formData: FormData) => void;
   target: Target;
   message: string | null;
   draft?: ReturnType<typeof useDraft>;
+  /**
+   * フォームの id。持てば送信のボタンをフォームに置かず、詳細のペインのツールバーに置いたボタンが
+   * `form` 属性で送る。写した実績だけが使い、元の実績の詳細と形をそろえる（#366 の明文化）
+   */
+  formId?: string;
+  isPending?: boolean;
   children: ReactNode;
-}) => (
-  <form key={draft?.formKey} action={formAction} className="flex flex-col gap-8" {...draft?.bind}>
-    {draft && <DraftConflict conflict={draft.conflict} noun="職務経歴書の行" />}
-    <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
-    {target.rowUid !== undefined && (
-      <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
-    )}
-    <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={target.updatedAt} />
-    {message && <FormAlert>{message}</FormAlert>}
-    {children}
-    <FormActions>
-      <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-        保存する
-      </SubmitButton>
-    </FormActions>
-  </form>
-);
+}) => {
+  useReportPending(formId, isPending);
+  return (
+    <form
+      key={draft?.formKey}
+      id={formId}
+      action={formAction}
+      className="flex flex-col gap-8"
+      {...draft?.bind}
+    >
+      {draft && <DraftConflict conflict={draft.conflict} noun="職務経歴書の行" />}
+      <input type="hidden" name={RESUME_UID_FIELD} value={target.resumeUid} />
+      {target.rowUid !== undefined && (
+        <input type="hidden" name={ROW_UID_FIELD} value={target.rowUid} />
+      )}
+      <input type="hidden" name={OPENED_UPDATED_AT_FIELD} value={target.updatedAt} />
+      {message && <FormAlert>{message}</FormAlert>}
+      {children}
+      {!formId && (
+        <FormActions>
+          <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            保存する
+          </SubmitButton>
+        </FormActions>
+      )}
+    </form>
+  );
+};
 
 const errorText = (errors: Record<string, FieldError | undefined>, field: string) => {
   const reason = errors[field];
@@ -208,28 +227,42 @@ export const ResumeProjectForm = ({
   action,
   initialValues,
   target,
+  formId,
 }: {
   action: Action<ResumeProjectFormValues, Errors>;
   initialValues: ResumeProjectFormValues;
   target: Target;
+  /** 詳細のペインのツールバーのボタンが送るときの、フォームの id */
+  formId?: string;
 }) => {
-  const { result, formAction, values, message, draft } = useRowForm(action, initialValues, {
-    key: `resume-project:${target.rowUid ?? 'new'}`,
-    labels: {
-      organizationName: '組織名',
-      kind: '種類',
-      title: '題',
-      startedOn: '始まりの日',
-      endedOn: '終わりの日',
-      description: '本文',
-      url: '関連 URL',
-      skills: '使ったスキル',
+  const { result, formAction, isPending, values, message, draft } = useRowForm(
+    action,
+    initialValues,
+    {
+      key: `resume-project:${target.rowUid ?? 'new'}`,
+      labels: {
+        organizationName: '組織名',
+        kind: '種類',
+        title: '題',
+        startedOn: '始まりの日',
+        endedOn: '終わりの日',
+        description: '本文',
+        url: '関連 URL',
+        skills: '使ったスキル',
+      },
     },
-  });
+  );
   const errors: Errors = result?.status === 'invalid' ? result.errors : {};
   // 元の実績のフォームと、まとまりと部品をそろえる（#366 の明文化）
   return (
-    <Frame formAction={formAction} target={target} message={message} draft={draft}>
+    <Frame
+      formAction={formAction}
+      target={target}
+      message={message}
+      draft={draft}
+      formId={formId}
+      isPending={isPending}
+    >
       <FormGroup title="何を">
         <KindField value={values.kind} error={errorText(errors, 'kind')} />
         <InputField

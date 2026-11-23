@@ -1,10 +1,38 @@
 'use client';
 
-import { useEffect, useRef, type ComponentPropsWithoutRef } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type ComponentPropsWithoutRef } from 'react';
 import { useFormStatus } from 'react-dom';
 
 /** 送っている間に、ボタンの名前の代わりに出す文言 */
 const PENDING_LABEL = '送っています…';
+
+/**
+ * 送っているフォームの id。フォームの外に置いたボタン（`form` 属性で送る）は `useFormStatus` で
+ * 状態を読めないため、フォームが `useReportPending` で知らせる
+ */
+const pendingForms = new Set<string>();
+const listeners = new Set<() => void>();
+const notify = () => listeners.forEach((listener) => listener());
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+
+/** フォームの外のボタンに、送っているかを知らせる。値は `useActionState` の 3 つめの値を渡す */
+export const useReportPending = (formId: string | undefined, pending: boolean) => {
+  useEffect(() => {
+    if (!formId) return;
+    if (pending) pendingForms.add(formId);
+    else pendingForms.delete(formId);
+    notify();
+    return () => {
+      pendingForms.delete(formId);
+      notify();
+    };
+  }, [formId, pending]);
+};
 
 /**
  * 送った結果が失敗のときに、フォーカスを移す先。最初の誤りの項目を選び、項目ごとの誤りが
@@ -24,7 +52,8 @@ const findFailure = (form: HTMLFormElement) =>
  *   ボタンの位置に留まると、誤りが画面の外にあり、何も変わらないように見えるため（HIG の
  *   Feedback、WCAG 2.2 SC 3.3.1・SC 2.4.3）。理由の文言はフォーカスを受けられるようにする
  *
- * 送っているかは、囲むフォームの状態を `useFormStatus` で読む。送り終えたことは、送っている
+ * 送っているかは、囲むフォームの状態を `useFormStatus` で読む。`form` 属性でフォームの外に置いた
+ * ときは、そのフォームが `useReportPending` で知らせた状態を読む。送り終えたことは、送っている
  * 状態が終わったことで知る。保存に成功した画面は移るか描き直され、このボタンは残らない。
  * JavaScript なしでは、ふつうの送信のボタンとして動く。見た目は呼び手が `className` で渡す
  */
@@ -32,7 +61,13 @@ export const SubmitButton = ({
   children,
   ...props
 }: Omit<ComponentPropsWithoutRef<'button'>, 'type' | 'disabled'>) => {
-  const { pending } = useFormStatus();
+  const status = useFormStatus();
+  const outside = useSyncExternalStore(
+    subscribe,
+    () => (props.form ? pendingForms.has(props.form) : false),
+    () => false,
+  );
+  const pending = props.form ? outside : status.pending;
   const ref = useRef<HTMLButtonElement>(null);
   const wasPending = useRef(false);
 

@@ -24,7 +24,7 @@ import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
 import { KindField } from '@/shared/components/kind-field';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
-import { SubmitButton } from '@/shared/components/submit-button';
+import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -53,6 +53,11 @@ type Props = {
   skillOptions: { id: number; name: string }[];
   /** 編集する実績。持てば編集のフォームで、識別子の入力と、楽観ロックの値を送る */
   project?: { uid: string; updatedAt: string; isMasked: boolean };
+  /**
+   * フォームの id。持てば送信のボタンをフォームに置かず、詳細のペインのツールバーに置いたボタンが
+   * `form` 属性で送る。JavaScript なしでも、ネイティブの `form` 属性で送れる
+   */
+  formId?: string;
 };
 
 const ERROR_MESSAGES: Record<ProjectField, Partial<Record<ProjectFieldError, string>>> = {
@@ -108,8 +113,10 @@ export const ProjectForm = ({
   organizationNames,
   skillOptions,
   project,
+  formId,
 }: Props) => {
-  const [result, formAction] = useActionState(action, null);
+  const [result, formAction, isPending] = useActionState(action, null);
+  useReportPending(formId, isPending);
   // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
   const draft = useDraft(`project:${project?.uid ?? 'new'}`, initialValues, result, LABELS);
   const { values, errors } = formStateOf(result, draft.values);
@@ -121,7 +128,13 @@ export const ProjectForm = ({
   const checkedSkillIds = new Set(values.skillIds.split(','));
 
   return (
-    <form key={draft.formKey} action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+    <form
+      key={draft.formKey}
+      id={formId}
+      action={formAction}
+      className="flex flex-col gap-8"
+      {...draft.bind}
+    >
       <DraftConflict conflict={draft.conflict} noun="実績" />
       {project && (
         <>
@@ -252,11 +265,13 @@ export const ProjectForm = ({
         </SettingsGroup>
       </FormGroup>
 
-      <FormActions>
-        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-          {project ? '保存する' : '登録する'}
-        </SubmitButton>
-      </FormActions>
+      {!formId && (
+        <FormActions>
+          <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            {project ? '保存する' : '登録する'}
+          </SubmitButton>
+        </FormActions>
+      )}
     </form>
   );
 };

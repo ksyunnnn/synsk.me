@@ -22,6 +22,9 @@ import { TextLink } from '@/shared/components/text-link';
 import { careersOfProject, formatPeriod } from '@/shared/domain/period';
 import { routes } from '@/shared/routes';
 
+/** 詳細のフォームの id。詳細のペインのツールバーの保存のボタンが、`form` 属性で指す */
+export const PROJECT_DETAIL_FORM_ID = 'project-detail-form';
+
 /** 同じ画面へ戻ったときの知らせ。URL の値で選ぶ */
 const NOTICES = {
   saved: '保存しました',
@@ -74,6 +77,7 @@ export const ProjectDetail = async ({
         organizationNames={organizationNames}
         skillOptions={skillOptions}
         project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
+        formId={PROJECT_DETAIL_FORM_ID}
       />
       {/* 計算で決まる関係は、入力の後に置く（HIG Layout の「Order content by relative importance」） */}
       <section className="flex flex-col gap-4 border-t border-border pt-6">

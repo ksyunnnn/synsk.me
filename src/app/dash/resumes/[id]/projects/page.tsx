@@ -13,6 +13,7 @@ import {
   CollectionTable,
   CollectionToolbar,
   DetailHeading,
+  DetailSubmit,
   PeriodLines,
   SplitView,
   ViewSwitch,
@@ -28,6 +29,9 @@ import { routes } from '@/shared/routes';
 export const instant = false;
 
 export const metadata: Metadata = { title: '写した実績 | synsk.me' };
+
+/** 詳細のフォームの id。詳細のペインのツールバーの保存のボタンが、`form` 属性で指す */
+const DETAIL_FORM_ID = 'resume-project-detail-form';
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -172,6 +176,7 @@ const Page = async ({ params, searchParams }: Props) => {
         action={editResumeProject}
         initialValues={toResumeProjectFormValues(row)}
         target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
+        formId={DETAIL_FORM_ID}
       />
       {/* 元の実績の詳細と同じく、入力の後に置く（#366 の明文化: 元と写しで形をそろえる） */}
       <section className="flex flex-col gap-4 border-t border-border pt-6">
@@ -196,6 +201,7 @@ const Page = async ({ params, searchParams }: Props) => {
       selected={selected !== null}
       closeHref={link({ selected: null })}
       detailLabel="選んだ写した実績"
+      detailActions={row && <DetailSubmit form={DETAIL_FORM_ID}>保存する</DetailSubmit>}
       detail={detail}
     />
   );

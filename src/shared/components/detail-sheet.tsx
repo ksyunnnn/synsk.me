@@ -10,6 +10,7 @@ import {
   useState,
   useSyncExternalStore,
   type ReactNode,
+  type RefObject,
 } from 'react';
 import { CoverContext, PaneToggle } from '@/shared/components/dash-panes';
 import { cn } from '@/lib/utils';
@@ -27,7 +28,11 @@ import { cn } from '@/lib/utils';
  *
  * `?selected=` の URL を直接開いたときは、サーバーが描いた全体の高さの CSS だけのシートを、閉じる
  * まで使い続ける。Drawer に替えると詳細のフォームを描き直し、JavaScript が動く前に打った入力が
- * 消えるため。閉じた後に一覧で行を選ぶと、Drawer で半分の高さから開く
+ * 消えるため。閉じた後に一覧で行を選ぶと、Drawer で半分の高さから開く。
+ *
+ * 主な操作（保存する）は、ペインの上端の末尾に置き、スクロールしても見えるようにする（HIG Layout の
+ * 「Avoid placing controls or critical information at the bottom of a window」、HIG Toolbars の
+ * 主な操作は 1 つで末尾）。広い画面ではペインの上のツールバー、狭い画面ではシートの上の行に置く
  */
 
 /** `globals.css` の `--breakpoint-lg`（976px）より狭い画面 */
@@ -62,6 +67,36 @@ const useHydrating = () =>
     () => true,
   );
 
+/**
+ * 広い画面で、ペインの上端から画面の下端までの高さに収める。ペインより上に見出しやタブがある画面
+ * （職務経歴書の中身）で、ペインの下端が画面の外に出て、末尾が隠れないようにする。上端の位置は
+ * スクロールで変わる（一覧が長いとペインは留まる）ので、スクロールのたびに測り直す
+ */
+const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) => {
+  useEffect(() => {
+    const element = ref.current;
+    if (!active || !element) return;
+    let frame = 0;
+    const measure = () => {
+      frame = 0;
+      const top = Math.max(element.getBoundingClientRect().top, 0);
+      element.style.setProperty('--pane-top', `${top}px`);
+    };
+    const schedule = () => {
+      if (frame === 0) frame = requestAnimationFrame(measure);
+    };
+    measure();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      element.style.removeProperty('--pane-top');
+    };
+  }, [ref, active]);
+};
+
 /** 閉じた後にフォーカスを戻す行。閉じると決めた時点で選んでいた行 */
 const selectedRow = () => document.querySelector<HTMLElement>('main a[aria-current="true"]');
 
@@ -69,6 +104,7 @@ export const DetailSheet = ({
   open,
   closeHref,
   label,
+  actions,
   children,
 }: {
   /** 選んだ 1 件があるか */
@@ -76,6 +112,8 @@ export const DetailSheet = ({
   /** 閉じたときの行き先。選んだ 1 件を外した一覧 */
   closeHref: string;
   label: string;
+  /** ペインの上端の末尾に置く主な操作（保存する） */
+  actions?: ReactNode;
   children: ReactNode;
 }) => {
   const narrow = useNarrow();
@@ -108,9 +146,10 @@ export const DetailSheet = ({
     openerRef.current.focus();
     openerRef.current = null;
   }, [open]);
+  useFitToViewport(sectionRef, open && !narrow);
   if (narrow && !direct)
     return (
-      <NarrowSheet open={open} closeHref={closeHref} label={label}>
+      <NarrowSheet open={open} closeHref={closeHref} label={label} actions={actions}>
         {children}
       </NarrowSheet>
     );
@@ -119,7 +158,8 @@ export const DetailSheet = ({
       ref={sectionRef}
       aria-label={label}
       className={cn(
-        'min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-2rem)] lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-6 lg:shadow-none lg:backdrop-filter-none',
+        // 留めたツールバーの下に、フォーカスを移した入力が隠れないようにする（WCAG 2.2 SC 2.4.11）
+        'min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-0 lg:shadow-none lg:backdrop-filter-none',
         // 狭い画面でこの形が出るのは、URL を直接開いたときだけ。全体の高さで一覧を覆う
         open
           ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl bg-background lg:static lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
@@ -127,7 +167,13 @@ export const DetailSheet = ({
       )}
     >
       {open && (
-        <div className="relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1 lg:hidden">
+        <div
+          className={cn(
+            'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1 lg:hidden',
+            // 主な操作のボタンが、下の見出しに重ならない高さを取る
+            actions && 'min-h-12',
+          )}
+        >
           <span aria-hidden className="h-6 w-16" />
           <Link
             href={closeHref}
@@ -137,19 +183,25 @@ export const DetailSheet = ({
               // 戻す先の行にフォーカスを移せるよう、移る前に一覧の inert を外す
               setCovered(false);
             }}
-            className="absolute top-2 right-3 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
+            className={cn(
+              'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
+              actions ? 'left-3' : 'right-3',
+            )}
           >
             閉じる
           </Link>
+          {actions && <div className="absolute top-1.5 right-3 flex">{actions}</div>}
         </div>
       )}
-      {/* 広い画面では、一覧の列と詳細の列を隠せる（HIG Split views） */}
-      <div className="-mx-3 -mt-3 hidden justify-between lg:flex">
+      {/* 広い画面のペインのツールバー。一覧の列と詳細の列を隠せ（HIG Split views）、末尾に主な操作を
+          置く。一覧のツールバーと同じく、本文の上に留めたガラスにする */}
+      <div className="glass sticky top-2 z-10 m-2 hidden items-center gap-2 rounded-[28px] p-1.5 lg:flex">
         <PaneToggle pane="collection" className="flex" />
-        <PaneToggle pane="detail" className="flex" />
+        <PaneToggle pane="detail" className="ml-auto flex" />
+        {actions}
       </div>
       {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}
-      <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:p-0">
+      <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:px-6 lg:pt-2 lg:pb-6">
         {children}
       </div>
     </section>
@@ -161,11 +213,13 @@ const NarrowSheet = ({
   open,
   closeHref,
   label,
+  actions,
   children,
 }: {
   open: boolean;
   closeHref: string;
   label: string;
+  actions?: ReactNode;
   children: ReactNode;
 }) => {
   const router = useRouter();
@@ -235,7 +289,12 @@ const NarrowSheet = ({
               expanded ? 'bg-background' : 'glass',
             )}
           >
-            <div className="relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1">
+            <div
+              className={cn(
+                'relative flex shrink-0 items-center justify-center px-4 pt-2 pb-1',
+                actions && 'min-h-12',
+              )}
+            >
               {/* つまみ。引いて高さを変え、押すと高さを切り替える（HIG Sheets の grabber） */}
               <button
                 type="button"
@@ -248,9 +307,16 @@ const NarrowSheet = ({
                   {expanded ? '半分の高さにする' : '全体の高さにする'}
                 </span>
               </button>
-              <Drawer.Close className="absolute top-2 right-3 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring">
+              {/* 主な操作があるときは、閉じるを先頭に、主な操作を末尾に置く */}
+              <Drawer.Close
+                className={cn(
+                  'absolute top-2 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring',
+                  actions ? 'left-3' : 'right-3',
+                )}
+              >
                 閉じる
               </Drawer.Close>
+              {actions && <div className="absolute top-1.5 right-3 flex">{actions}</div>}
             </div>
             <Drawer.Content className="min-h-0 flex-1 touch-auto overflow-y-auto overscroll-contain px-4 pb-6">
               {children}
