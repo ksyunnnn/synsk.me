@@ -106,7 +106,14 @@ const Page = async ({ searchParams }: Props) => {
                   own.length === 0 ? (
                     'なし'
                   ) : (
-                    <TextLink href={`${routes.dash.projects.list}?skill=${uid}&view=timeline`}>
+                    <TextLink
+                      href={routes.dash.projects.listBy({
+                        kind: null,
+                        organizationUid: null,
+                        skillUid: uid,
+                        view: 'timeline',
+                      })}
+                    >
                       {own.length} 件を時系列で見る
                     </TextLink>
                   ),

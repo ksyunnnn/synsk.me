@@ -57,7 +57,7 @@ import {
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
 import { readString, readStrings, readValues } from '@/shared/server/form-data';
-import { routes } from '@/shared/routes';
+import { routes, withFlag } from '@/shared/routes';
 
 /**
  * 職務経歴書の管理画面のフォームが呼ぶ Server Action（specs/002-resume/contracts/dash.md）。
@@ -113,7 +113,7 @@ export const createResume = async (
 const finish = <V, E>({ uid }: ResumeTarget, outcome: EditOutcome<V, E>, next?: string) => {
   if (outcome.status === 'saved') {
     const to = next ?? routes.dash.resumes.row(uid);
-    redirect(`${to}${to.includes('?') ? '&' : '?'}saved=1`);
+    redirect(withFlag(to, 'saved'));
   }
   if (outcome.status === 'not-found') redirect(routes.dash.resumes.row(uid));
   return outcome;
@@ -233,7 +233,11 @@ export const editResumeCareer = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'careers');
-  const next = `${routes.dash.resumes.entries(resume.uid, 'careers')}?selected=${readString(formData, ROW_UID_FIELD)}`;
+  const next = routes.dash.resumes.entrySelected(
+    resume.uid,
+    'careers',
+    readString(formData, ROW_UID_FIELD),
+  );
   return finish(
     resume,
     await editResumeCareerUseCase(
@@ -254,7 +258,11 @@ export const editResumeProject = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'projects');
-  const next = `${routes.dash.resumes.entries(resume.uid, 'projects')}?selected=${readString(formData, ROW_UID_FIELD)}`;
+  const next = routes.dash.resumes.entrySelected(
+    resume.uid,
+    'projects',
+    readString(formData, ROW_UID_FIELD),
+  );
   return finish(
     resume,
     await editResumeProjectUseCase(
@@ -275,7 +283,11 @@ export const editResumeEducation = async (
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { resumes, resume, row } = await readTarget(formData, 'educations');
-  const next = `${routes.dash.resumes.entries(resume.uid, 'educations')}?selected=${readString(formData, ROW_UID_FIELD)}`;
+  const next = routes.dash.resumes.entrySelected(
+    resume.uid,
+    'educations',
+    readString(formData, ROW_UID_FIELD),
+  );
   return finish(
     resume,
     await editResumeEducationUseCase(

@@ -56,7 +56,11 @@ export const CareerDetail = async ({
                     {own.map((project) => (
                       <li key={project.uid}>
                         <TextLink
-                          href={`${routes.dash.projects.list}?selected=${project.uid}${organizationUid ? `&org=${organizationUid}` : ''}`}
+                          href={routes.dash.projects.listBy({
+                            kind: null,
+                            organizationUid: organizationUid ?? null,
+                            selected: project.uid,
+                          })}
                         >
                           {project.title}
                         </TextLink>

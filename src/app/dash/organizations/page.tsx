@@ -113,7 +113,7 @@ const Page = async ({ searchParams }: Props) => {
                     <ul className="flex flex-col">
                       {own.map((career) => (
                         <li key={career.uid}>
-                          <TextLink href={`${routes.dash.careers.list}?selected=${career.uid}`}>
+                          <TextLink href={routes.dash.careers.selected(career.uid)}>
                             {career.role}
                           </TextLink>
                           <span className="text-muted-foreground">
@@ -129,7 +129,9 @@ const Page = async ({ searchParams }: Props) => {
               {
                 label: '実績',
                 value: filterUid ? (
-                  <TextLink href={`${routes.dash.projects.list}?org=${filterUid}`}>
+                  <TextLink
+                    href={routes.dash.projects.listBy({ kind: null, organizationUid: filterUid })}
+                  >
                     この組織の実績 {ownProjects.length} 件を見る
                   </TextLink>
                 ) : (

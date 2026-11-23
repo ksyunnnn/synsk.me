@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { routes } from '@/shared/routes';
+import { routes, withFlag } from '@/shared/routes';
 
 /**
  * 画面の経路を作る関数（`src/shared/routes.ts`）が、渡した識別子と条件を埋めた経路を返すかを
@@ -60,6 +60,12 @@ describe('管理画面の経路', () => {
     expect(listBy({ kind: null, organizationUid: null, status: null, isMasked: true })).toBe(
       '/dash/projects?masked=true',
     );
+    expect(listBy({ kind: null, organizationUid: org, selected: 'u1' })).toBe(
+      `/dash/projects?selected=u1&org=${org}`,
+    );
+    expect(listBy({ kind: null, organizationUid: null, skillUid: 's1', view: 'timeline' })).toBe(
+      '/dash/projects?skill=s1&view=timeline',
+    );
     expect(routes.dash.projects.media('u1', 'k')).toBe('/dash/projects/u1/media/k');
   });
 
@@ -74,6 +80,14 @@ describe('管理画面の経路', () => {
     expect(r.entryNew('u1', 'careers')).toBe('/dash/resumes/u1/careers/new');
     expect(r.entry('u1', 'projects', 'r1')).toBe('/dash/resumes/u1/projects/r1');
     expect(r.entryMissing('u1', 'educations', 'r1')).toBe('/dash/resumes/u1/educations/r1/missing');
+    expect(r.entrySelected('u1', 'projects', 'r1')).toBe('/dash/resumes/u1/projects?selected=r1');
+  });
+
+  it('印を足す。経路が検索の値を持てば、残して足す', () => {
+    expect(withFlag('/dash/resumes/u1', 'saved')).toBe('/dash/resumes/u1?saved=1');
+    expect(withFlag('/dash/careers?selected=u1', 'saved')).toBe(
+      '/dash/careers?selected=u1&saved=1',
+    );
   });
 
   it('note の下の経路', () => {
