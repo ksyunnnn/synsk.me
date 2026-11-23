@@ -6,13 +6,14 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { cn } from '@/lib/utils';
 
 /**
- * 管理画面の Sidebar と、Split view の詳細の列を、利用者が隠せるようにする。既定は表示する
- * （HIG Sidebars の「Consider letting people hide the sidebar」「Avoid hiding the sidebar by
- * default」、HIG Split views の「Consider letting people hide a pane」）。時系列のように横の幅を
- * 使う見せ方で、一覧の列を広げるために使う。隠すのは広い画面だけで、狭い画面の並びは変えない
+ * 管理画面の Sidebar と、Split view の一覧の列と詳細の列を、利用者が隠せるようにする。既定は表示
+ * する（HIG Sidebars の「Consider letting people hide the sidebar」「Avoid hiding the sidebar by
+ * default」、HIG Split views の「Consider letting people hide a pane」）。詳細を隠すのは、時系列の
+ * ように横の幅を使う見せ方で一覧の列を広げるため。一覧を隠すのは、詳細の入力に幅を使うため。
+ * 隠すのは広い画面だけで、狭い画面の並びは変えない
  */
 
-type Pane = 'sidebar' | 'detail';
+type Pane = 'sidebar' | 'collection' | 'detail';
 
 /**
  * 狭い画面で、全体の高さのシートが Sidebar と一覧を覆っているか。覆っている間は、どちらも
@@ -26,11 +27,12 @@ export const CoverContext = createContext<{
 const PanesContext = createContext<{
   hidden: Record<Pane, boolean>;
   setHidden: (pane: Pane, value: boolean) => void;
-}>({ hidden: { sidebar: false, detail: false }, setHidden: () => {} });
+}>({ hidden: { sidebar: false, collection: false, detail: false }, setHidden: () => {} });
 
 /** 押した状態が「隠している」にあたる。状態は押した状態（`aria-pressed`）で伝え、名前は変えない */
 const LABELS: Record<Pane, string> = {
   sidebar: 'サイドバーを隠す',
+  collection: '一覧を隠す',
   detail: '詳細を隠す',
 };
 
@@ -60,11 +62,17 @@ export const PaneToggle = ({ pane, className }: { pane: Pane; className?: string
         strokeWidth="1.8"
       >
         <rect x="3" y="4" width="18" height="16" rx="3" />
-        {pane === 'sidebar' ? (
-          <line x1="9" y1="4" x2="9" y2="20" />
-        ) : (
-          <line x1="15" y1="4" x2="15" y2="20" />
+        {pane === 'sidebar' && <line x1="9" y1="4" x2="9" y2="20" />}
+        {/* 一覧の列は、左の区画に行の線を足し、Sidebar の印と見分ける */}
+        {pane === 'collection' && (
+          <>
+            <line x1="10" y1="4" x2="10" y2="20" />
+            <line x1="5.5" y1="9" x2="7.5" y2="9" />
+            <line x1="5.5" y1="12" x2="7.5" y2="12" />
+            <line x1="5.5" y1="15" x2="7.5" y2="15" />
+          </>
         )}
+        {pane === 'detail' && <line x1="15" y1="4" x2="15" y2="20" />}
       </svg>
     </Toggle>
   );
@@ -72,9 +80,19 @@ export const PaneToggle = ({ pane, className }: { pane: Pane; className?: string
 
 /** 管理画面の枠。Sidebar を隠しているときは、一覧の列が全体の幅を使う */
 export const DashPanes = ({ sidebar, children }: { sidebar: ReactNode; children: ReactNode }) => {
-  const [hidden, setState] = useState<Record<Pane, boolean>>({ sidebar: false, detail: false });
+  const [hidden, setState] = useState<Record<Pane, boolean>>({
+    sidebar: false,
+    collection: false,
+    detail: false,
+  });
+  // 一覧と詳細の両方は隠さない。片方を隠したら、もう片方を表示に戻す
   const setHidden = (pane: Pane, value: boolean) =>
-    setState((current) => ({ ...current, [pane]: value }));
+    setState((current) => ({
+      ...current,
+      [pane]: value,
+      ...(value && pane === 'collection' && { detail: false }),
+      ...(value && pane === 'detail' && { collection: false }),
+    }));
   const [covered, setCovered] = useState(false);
   const cover = useMemo(() => ({ covered, setCovered }), [covered]);
   return (
@@ -104,8 +122,13 @@ export const DashPanes = ({ sidebar, children }: { sidebar: ReactNode; children:
 };
 
 /**
- * Split view の並び。詳細の列を隠しているときは、一覧の列が全体の幅を使う。別の 1 件を選んだら、
- * 詳細の列を表示に戻す（選んだ結果が見えないままにしない）
+ * Split view の並び。片方の列を隠しているときは、もう片方が全体の幅を使う。別の 1 件を選んだら、
+ * 詳細の列を表示に戻す（選んだ結果が見えないままにしない）。選んだ 1 件を外したら（Sidebar や
+ * パンくずから一覧へ移ったときを含む）、一覧の列を表示に戻す。隠した列を戻す手段を、ボタンの
+ * ほかにも持たせる（HIG Split views の「Provide multiple ways to reveal hidden panes」）。
+ *
+ * 詳細の列は、入力が詰まらない幅を下限にする（HIG Split views の「Set reasonable defaults for
+ * minimum and maximum pane sizes」）
  */
 export const SplitPanes = ({
   collection,
@@ -119,6 +142,7 @@ export const SplitPanes = ({
   const selected = useSearchParams().get('selected');
   useEffect(() => {
     if (selected) setHidden('detail', false);
+    else setHidden('collection', false);
     // setHidden は描画のたびに作り直すので、選んだ 1 件が変わったときだけ動かす
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
@@ -126,7 +150,9 @@ export const SplitPanes = ({
     <main
       className={cn(
         'grid gap-4',
-        !hidden.detail && 'lg:grid-cols-[minmax(0,1fr)_minmax(380px,560px)]',
+        !hidden.detail &&
+          !hidden.collection &&
+          'lg:grid-cols-[minmax(0,1fr)_minmax(440px,600px)]',
       )}
     >
       {hidden.detail && (
@@ -134,7 +160,7 @@ export const SplitPanes = ({
           <PaneToggle pane="detail" className="flex bg-background" />
         </div>
       )}
-      <div className="contents" inert={covered}>
+      <div className={cn('contents', hidden.collection && 'lg:hidden')} inert={covered}>
         {collection}
       </div>
       <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>

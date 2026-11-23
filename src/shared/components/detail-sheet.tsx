@@ -143,11 +143,13 @@ export const DetailSheet = ({
           </Link>
         </div>
       )}
-      {/* 広い画面では、詳細の列を隠せる（HIG Split views） */}
-      <div className="-mt-3 -mr-3 hidden justify-end lg:flex">
+      {/* 広い画面では、一覧の列と詳細の列を隠せる（HIG Split views） */}
+      <div className="-mx-3 -mt-3 hidden justify-between lg:flex">
+        <PaneToggle pane="collection" className="flex" />
         <PaneToggle pane="detail" className="flex" />
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:p-0">
+      {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}
+      <div className="mx-auto min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 pb-6 lg:overflow-visible lg:p-0">
         {children}
       </div>
     </section>
