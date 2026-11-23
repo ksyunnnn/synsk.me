@@ -27,7 +27,9 @@ const Page = async ({ params }: Props) => {
       <p>組織名: {organization.name}</p>
       <DeleteOrganizationForm action={deleteOrganization} organizationUid={organization.uid} />
       <p>
-        <TextLink href={routes.dash.organizations.row(organization.uid)}>編集の画面へ戻る</TextLink>
+        <TextLink href={routes.dash.organizations.selected(organization.uid)}>
+          編集の画面へ戻る
+        </TextLink>
       </p>
     </DashPage>
   );

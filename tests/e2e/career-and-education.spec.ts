@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { fillCareer } from './support/dash';
+import { fillCareer, selectedUrl, siteSwitch } from './support/dash';
+import { waitForHydration } from './support/note';
 
 /**
  * 入力は `getByRole` で探す。画面を移った後も、前の画面が隠れて DOM に残ることがある
@@ -31,8 +32,8 @@ test('職歴を登録・編集・削除できる', async ({ page, context }) => 
   await fillNewCareer(page, 'E2E の作り物の組織 1', 'E2E の肩書');
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
-  await expect(page.getByRole('radio', { name: '秘匿化する', exact: true })).toBeChecked();
-  await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
+  await expect(siteSwitch(page, '秘匿化する')).toBeChecked();
+  await expect(siteSwitch(page, 'サイトに載せる')).not.toBeChecked();
 
   // 保存した後の画面が描き直されるまで待つ。画面に出る値は保存の前と変わらないため、
   // 保存のたびに変わる更新日時（楽観ロックの隠れた入力）で見分ける。描き直しの前にリンクを
@@ -41,20 +42,21 @@ test('職歴を登録・編集・削除できる', async ({ page, context }) => 
   const openedUpdatedAt = page.locator('input[name="openedUpdatedAt"]');
   const updatedAtBeforeSave = await openedUpdatedAt.inputValue();
   await page.getByRole('textbox', { name: '肩書' }).fill(editedRole);
-  await page.getByRole('radio', { name: 'サイトに載せる', exact: true }).check();
+  await siteSwitch(page, 'サイトに載せる').check();
   await page.getByRole('button', { name: '保存する' }).click();
   await expect(openedUpdatedAt).not.toHaveValue(updatedAtBeforeSave);
   await expect(page.getByRole('textbox', { name: '肩書' })).toHaveValue(editedRole);
   await expect(page.getByRole('status')).toHaveText('保存しました');
-  await expect(page.getByRole('radio', { name: 'サイトに載せる', exact: true })).toBeChecked();
+  await expect(siteSwitch(page, 'サイトに載せる')).toBeChecked();
 
   await page.getByRole('link', { name: 'この職歴を削除する' }).click();
   await page.getByRole('button', { name: '削除する' }).click();
   await expect(page.getByRole('status')).toHaveText('職歴を削除しました');
-  await expect(page.getByRole('link', { name: new RegExp(editedRole) })).toHaveCount(0);
+  // 一覧の行は組織・肩書・期間・サイトの列を持つ
+  await expect(page.getByRole('row').filter({ hasText: editedRole })).toHaveCount(0);
 });
 
-test('同じ職歴を 2 つのタブで開くと、後から保存した側は止まり、入力が残る', async ({
+test('同じ職歴を 2 つのタブで開くと、後から保存した側は止まり、違う項目を知らせる。捨てると保存された値で開き直す', async ({
   page,
   context,
 }) => {
@@ -63,10 +65,12 @@ test('同じ職歴を 2 つのタブで開くと、後から保存した側は�
   await fillNewCareer(page, 'E2E の作り物の組織 2', 'E2E の同時編集');
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
-  const editUrl = page.url().replace(/\?.*$/, '');
+  const editUrl = selectedUrl(page);
 
   const other = await context.newPage();
   await other.goto(editUrl);
+  // フォームが動いてから打つ（tests/e2e/dash-operation.spec.ts と同じ）
+  await waitForHydration(other.locator('main form').first());
 
   // 先の保存が D1 に書き終わるまで待つ。入力の値は保存の前から同じなので、保存のたびに変わる
   // 更新日時（楽観ロックの隠れた入力）で見分ける。待たずに後の保存を送ると、先の保存より前に
@@ -80,11 +84,14 @@ test('同じ職歴を 2 つのタブで開くと、後から保存した側は�
 
   await other.getByRole('textbox', { name: '肩書' }).fill('後から保存した肩書');
   await other.getByRole('button', { name: '保存する' }).click();
-  await expect(other.getByRole('alert')).toContainText('別の画面で書き換えられていました');
+  await expect(other.getByRole('alert').filter({ hasText: '違う項目' })).toContainText(
+    '違う項目: 肩書',
+  );
   await expect(other.getByRole('textbox', { name: '肩書' })).toHaveValue('後から保存した肩書');
 
-  await other.goto(editUrl);
+  await other.getByRole('button', { name: '直しかけを捨てる' }).click();
   await expect(other.getByRole('textbox', { name: '肩書' })).toHaveValue('先に保存した肩書');
+  await expect(other.getByRole('alert').filter({ hasText: '違う項目' })).toHaveCount(0);
 });
 
 test('学歴を登録・編集・削除できる', async ({ page, context }) => {
@@ -95,14 +102,16 @@ test('学歴を登録・編集・削除できる', async ({ page, context }) => 
   await page.getByRole('button', { name: '登録する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
 
-  await page.getByRole('link', { name: 'E2E の作り物大学' }).click();
+  // 一覧の行は学校・学部・期間の列を持つ
+  const row = page
+    .getByRole('row')
+    .filter({ has: page.getByRole('link', { name: 'E2E の作り物大学', exact: true }) });
+  await row.getByRole('link').click();
   await page.getByRole('textbox', { name: '学部' }).fill('E2E の作り物学部');
   await page.getByRole('button', { name: '保存する' }).click();
-  await expect(
-    page.getByRole('link', { name: 'E2E の作り物大学・E2E の作り物学部' }),
-  ).toBeVisible();
+  await expect(page.getByRole('status')).toHaveText('保存しました');
+  await expect(row.getByRole('cell').nth(1)).toHaveText('E2E の作り物学部');
 
-  await page.getByRole('link', { name: 'E2E の作り物大学・E2E の作り物学部' }).click();
   await page.getByRole('link', { name: 'この学歴を削除する' }).click();
   await page.getByRole('button', { name: '削除する' }).click();
   await expect(page.getByRole('status')).toHaveText('学歴を削除しました');

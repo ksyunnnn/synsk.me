@@ -6,13 +6,13 @@ import type { ReactNode } from 'react';
  * Getting started の「たどり着きたい情報 over 演出」、HIG の Toolbars）。
  *
  * 留めた行がフォーカスのある入力を隠さないよう、`src/app/globals.css` が、この行を持つ画面の
- * スクロールの下の余白を取る（WCAG 2.2 SC 2.4.11）。管理画面の `main` の左右の余白
- * （`px-4`）の分だけ横に広げ、境界の線を画面の端まで引く
+ * スクロールの下の余白を取る（WCAG 2.2 SC 2.4.11）。本文との境は、地の帯ではなく下端のぼかしで
+ * 示す（HIG Layout の scroll edge effect）。浮いた面にすると入力欄を隠すため
  */
 export const FormActions = ({ children }: { children: ReactNode }) => (
   <div
     data-form-actions=""
-    className="sticky bottom-0 -mx-4 flex flex-wrap items-center gap-4 border-t border-border bg-background px-4 py-3"
+    className="sticky bottom-0 z-10 -mx-1 flex flex-wrap items-center justify-end gap-4 bg-gradient-to-t from-background from-60% to-transparent px-1 pt-8 pb-3"
   >
     {children}
   </div>

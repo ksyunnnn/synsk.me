@@ -17,9 +17,26 @@ const dashCollection = <const C extends string>(collection: C) => {
     list,
     new: `${list}/new` as const,
     row: (uid: string) => `${list}/${uid}`,
+    /**
+     * その 1 件を選んだ一覧。シングルは一覧の右に出す（#366 の明文化）。`flag` は保存の知らせなど。
+     * 保存の後はここへ直接移り、1 件の経路を経ない。`value` は印の値で、既定は `1`
+     */
+    selected: (uid: string, flag?: string, value = '1') =>
+      `${list}?selected=${uid}${flag ? `&${flag}=${value}` : ''}`,
     delete: (uid: string) => `${list}/${uid}/delete`,
     missing: (uid: string) => `${list}/${uid}/missing`,
   };
+};
+
+/**
+ * 経路に印（保存の知らせなど）を足す。経路が既に検索の値を持てば、それを残して足す。`value` は
+ * 印の値で、既定は `1`
+ */
+export const withFlag = (path: string, flag: string, value = '1') => {
+  const [pathname = '', search = ''] = path.split('?');
+  const query = new URLSearchParams(search);
+  query.set(flag, value);
+  return `${pathname}?${query}`;
 };
 
 /** 職務経歴書に写した行の種類（specs/002-resume/contracts/dash.md） */
@@ -63,25 +80,35 @@ export const routes = {
     projects: {
       ...projects,
       /**
-       * 一覧を種類・組織・サイトに載せるか・秘匿化するかで絞った経路（issue #330）。null の条件は
-       * クエリに出さない。組織は uid で指し、数字の id を出さない（ADR-0051）
+       * 一覧を種類・組織・サイトに載せるか・秘匿化するか・スキルで絞った経路（issue #330）。null の
+       * 条件はクエリに出さない。組織とスキルは uid で指し、数字の id を出さない（ADR-0051）。
+       * `selected` は選んだ 1 件、`view` は一覧の見せ方
        */
       listBy: ({
         kind,
         organizationUid,
         status = null,
         isMasked = null,
+        skillUid = null,
+        view = null,
+        selected = null,
       }: {
         kind: ProjectKind | null;
         organizationUid: string | null;
         status?: SiteStatus | null;
         isMasked?: boolean | null;
+        skillUid?: string | null;
+        view?: 'timeline' | null;
+        selected?: string | null;
       }) => {
         const query = new URLSearchParams();
+        if (selected !== null) query.set('selected', selected);
         if (kind !== null) query.set('kind', kind);
         if (organizationUid !== null) query.set('org', organizationUid);
         if (status !== null) query.set('status', status);
         if (isMasked !== null) query.set('masked', String(isMasked));
+        if (skillUid !== null) query.set('skill', skillUid);
+        if (view !== null) query.set('view', view);
         return query.size === 0 ? projects.list : `${projects.list}?${query}`;
       },
       /** 一覧が描く画像を、オーナーにだけ返す経路（issue #330） */
@@ -94,6 +121,11 @@ export const routes = {
       ...resumes,
       preview: (uid: string) => `${resumes.row(uid)}/preview`,
       skills: (uid: string) => `${resumes.row(uid)}/skills`,
+      /** 写した行の一覧。職務経歴書の中身を切り替えるタブの 1 つ（#366 の明文化） */
+      entries: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}`,
+      /** 写した行を 1 件選んだ一覧。写した行のシングルは一覧の右に出す（#366 の明文化） */
+      entrySelected: (uid: string, kind: ResumeEntryKind, rowUid: string) =>
+        `${resumes.row(uid)}/${kind}?selected=${rowUid}`,
       entryNew: (uid: string, kind: ResumeEntryKind) => `${resumes.row(uid)}/${kind}/new`,
       entry: (uid: string, kind: ResumeEntryKind, rowUid: string) =>
         `${resumes.row(uid)}/${kind}/${rowUid}`,

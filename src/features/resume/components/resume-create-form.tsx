@@ -173,7 +173,7 @@ export const ResumeCreateForm = ({
         selected={values?.educationIds ?? null}
       />
       <FormActions>
-        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           作る
         </SubmitButton>
       </FormActions>

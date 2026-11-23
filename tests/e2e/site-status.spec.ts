@@ -7,6 +7,7 @@ import {
   registerCareer,
   registerProject,
   saveEdit,
+  siteSwitch,
   visit,
 } from './support/dash';
 
@@ -35,7 +36,7 @@ test('既定のまま登録した実績は、秘匿化するかに関わらず�
     titleMasked: 'E2E 載せない秘匿化した題 既定',
     description: 'E2E 載せない本文 既定',
   });
-  await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
+  await expect(siteSwitch(page, 'サイトに載せる')).not.toBeChecked();
   const unmasked = await registerProject(page, {
     organizationName: 'E2E 載せない組織 既定',
     title: 'E2E 載せない実名の題 既定',
@@ -98,7 +99,7 @@ test('サイトに載せない職歴の値は、同じ組織のサイトに載�
     url: 'https://example.com/e2e-draft-career',
     isMasked: false,
   });
-  await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
+  await expect(siteSwitch(page, 'サイトに載せる')).not.toBeChecked();
   const { path } = await registerProject(page, {
     organizationName: 'E2E 載せない職歴の組織',
     title: 'E2E 載せない職歴と同じ組織の実績',

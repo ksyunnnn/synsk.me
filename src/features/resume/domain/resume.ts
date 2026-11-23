@@ -113,6 +113,9 @@ export type ResumeContent = {
 /** オーナーが編集する職務経歴書 */
 export type ResumeForEdit = Resume & ResumeContent;
 
+/** オーナーの一覧の 1 件。写した行の件数を、中身を読まずに持つ */
+export type ResumeListItem = Resume & { projectCount: number; careerCount: number };
+
 /** 写した行の種類。管理画面の経路の名前と同じ */
 const RESUME_ROW_KINDS = ['careers', 'projects', 'educations'] as const;
 export type ResumeRowKind = (typeof RESUME_ROW_KINDS)[number];

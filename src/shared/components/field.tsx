@@ -15,7 +15,7 @@ const FOCUS_VISIBLE =
   'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
 const CONTROL =
-  'w-full rounded-md border border-input bg-background px-3 py-2 text-foreground aria-invalid:border-destructive';
+  'w-full rounded-xl border border-transparent bg-muted px-3 py-2 text-foreground transition-colors focus:bg-background focus:border-input aria-invalid:border-destructive motion-reduce:transition-none';
 
 type ControlProps = {
   /** 項目の名前。フォームの値の名前と、要素の id に使う */
@@ -49,7 +49,7 @@ const FieldFrame = ({
 }: Omit<ControlProps, 'name'> & { ids: ReturnType<typeof useFieldIds>; children: ReactNode }) => {
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={ids.control} className="font-bold">
+      <label htmlFor={ids.control} className="text-small font-medium">
         {label}
       </label>
       {hint && (
@@ -185,7 +185,7 @@ export const CheckboxField = ({
           name={name}
           aria-invalid={error ? true : undefined}
           aria-describedby={ids.describedBy}
-          className={cn('size-4 accent-primary', FOCUS_VISIBLE, className)}
+          className={cn('size-4 accent-tint', FOCUS_VISIBLE, className)}
         />
         <label htmlFor={ids.control}>{label}</label>
       </div>

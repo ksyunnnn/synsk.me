@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ResumeOverview } from '@/features/resume/components/resume-overview';
 import { ResumeSettingsForm } from '@/features/resume/components/resume-settings-form';
 import { ResumeStatusForm } from '@/features/resume/components/resume-status-form';
 import { ResumeUrlForm } from '@/features/resume/components/resume-url-form';
@@ -37,25 +36,22 @@ const Page = async ({ params, searchParams }: Props) => {
   const common = { resumeUid: resume.uid, updatedAt: resume.updatedAt };
 
   return (
-    <main className="mx-auto max-w-2xl px-4 py-12 flex flex-col gap-8">
-      <p>
-        <TextLink href={routes.dash.resumes.list}>職務経歴書の一覧へ戻る</TextLink>
-      </p>
-      <h1 className="text-2xl font-bold">{resume.title}</h1>
+    <main className="flex flex-col gap-8 rounded-3xl bg-background px-6 py-8 md:px-12">
+      <h2 className="sr-only">設定</h2>
       {saved === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['saved']}>
+        <SavedNotice key={`saved-${resume.updatedAt}`} flags={['saved']}>
           保存しました
         </SavedNotice>
       )}
       {regenerated === '1' && (
-        <SavedNotice key={resume.updatedAt} flags={['regenerated']}>
+        <SavedNotice key={`regenerated-${resume.updatedAt}`} flags={['regenerated']}>
           URL を出し直しました
         </SavedNotice>
       )}
       <p className="text-sm text-muted-foreground">
         {isLimited ? '限定公開用' : '公開用'}
         {isLimited &&
-          `・期限 ${formatExpires(resume.limitedExpiresAt)}${
+          `・${resume.limitedExpiresAt === null ? '' : '期限 '}${formatExpires(resume.limitedExpiresAt)}${
             isExpired(resume.limitedExpiresAt, now)
               ? '（過ぎています。訪問者には中身を返しません）'
               : ''
@@ -89,14 +85,6 @@ const Page = async ({ params, searchParams }: Props) => {
           isLimited={isLimited}
           {...common}
         />
-      </FormSection>
-      <FormSection>
-        <p>
-          <TextLink href={routes.dash.resumes.preview(resume.uid)}>
-            訪問者に見せたときの見た目を見る
-          </TextLink>
-        </p>
-        <ResumeOverview resume={resume} now={now} />
       </FormSection>
       <FormSection>
         <p>

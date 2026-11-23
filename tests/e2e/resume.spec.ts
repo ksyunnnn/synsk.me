@@ -4,6 +4,7 @@ import {
   createLimitedResume,
   registerCareer,
   registerEducation,
+  openResumeTab,
   setResumeVisible,
 } from './support/dash';
 
@@ -71,8 +72,12 @@ test('作成の画面は、すべての職歴・実績・学歴を選んだ状�
     /\/resume\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
   );
   await page.getByRole('link', { name: '設定の画面へ' }).click();
-  await expect(page.getByRole('link', { name: /E2E 職務経歴書の肩書 作成/ })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'E2E 職務経歴書の学校 作成' })).toHaveCount(0);
+  await openResumeTab(page, '写した職歴');
+  await expect(
+    page.getByRole('row').filter({ hasText: 'E2E 職務経歴書の肩書 作成' }),
+  ).toBeVisible();
+  await openResumeTab(page, '写した学歴');
+  await expect(page.getByText('写した学歴はありません', { exact: true })).toBeVisible();
 });
 
 test('写した行を直し、状態を切り替え、訪問者のページで読み、削除できる', async ({
@@ -84,18 +89,19 @@ test('写した行を直し、状態を切り替え、訪問者のページで�
   await registerSources(page, '編集');
   const { url } = await createResume(page, 'E2E の編集の検査', '編集');
 
-  // 写した職歴を直す（FR-031）
-  await page.getByRole('link', { name: /E2E 職務経歴書の肩書 編集/ }).click();
+  // 写した職歴を直す（FR-031）。表の 1 列めは組織名
+  await openResumeTab(page, '写した職歴');
+  await page.getByRole('link', { name: 'E2E 職務経歴書の組織 編集', exact: true }).click();
   await page.getByRole('textbox', { name: '組織名' }).fill('E2E で直した組織名');
   await page.getByRole('button', { name: '保存する' }).click();
   await expect(page.getByRole('status')).toHaveText('保存しました');
-  await expect(page.getByRole('link', { name: /E2E で直した組織名/ })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'E2E で直した組織名', exact: true })).toBeVisible();
 
   // 下書きでも、見た目の確認の画面は出る（REQUIREMENTS.md の FR-13）
-  await page.getByRole('link', { name: '訪問者に見せたときの見た目を見る' }).click();
+  await openResumeTab(page, 'プレビュー');
   await expect(page.getByRole('heading', { name: 'E2E で直した組織名' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'PDF で保存' })).toBeVisible();
-  await page.getByRole('link', { name: '設定の画面へ戻る' }).click();
+  await openResumeTab(page, '設定');
 
   // 訪問者は、下書きのうちは読めない。見せる状態にすると読める
   const visitor = await browser.newPage();

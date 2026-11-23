@@ -58,6 +58,7 @@ const fakeResumes = (sources: ResumeSources = SOURCES) => ({
   })),
   addRows: vi.fn<Repo['addRows']>(async () => OK),
   list: vi.fn<Repo['list']>(),
+  listCopyingProject: vi.fn<Repo['listCopyingProject']>(),
   findForEdit: vi.fn<Repo['findForEdit']>(),
   findIdByUid: vi.fn<Repo['findIdByUid']>(),
   findRowIdByUid: vi.fn<Repo['findRowIdByUid']>(),

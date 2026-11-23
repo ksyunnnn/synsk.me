@@ -37,7 +37,7 @@ export const editOrganization = async (
     name: readString(formData, 'name'),
     nameMasked: readString(formData, 'nameMasked'),
   });
-  if (outcome.status === 'saved') redirect(`${routes.dash.organizations.row(uid)}?saved=1`);
+  if (outcome.status === 'saved') redirect(routes.dash.organizations.selected(uid, 'saved'));
   if (outcome.status === 'not-found') redirect(routes.dash.organizations.list);
   return outcome;
 };

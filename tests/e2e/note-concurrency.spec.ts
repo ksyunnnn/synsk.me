@@ -54,5 +54,5 @@ test('1 つのタブで続けて 2 回保存すると、2 回とも保存され�
   await expect(page.getByRole('alert')).toHaveCount(0);
 
   await page.goto(`${editUrl}/revisions`);
-  await expect(page.getByRole('listitem')).toHaveCount(3);
+  await expect(page.getByRole('main').getByRole('listitem')).toHaveCount(3);
 });

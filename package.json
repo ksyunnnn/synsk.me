@@ -28,6 +28,7 @@
     "knip": "knip"
   },
   "dependencies": {
+    "@base-ui/react": "^1.9.0",
     "@phosphor-icons/react": "^2.1.10",
     "@vinext/cloudflare": "^1.1.1",
     "clsx": "^2.1.1",

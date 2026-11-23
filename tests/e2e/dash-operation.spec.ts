@@ -70,7 +70,11 @@ test.describe('フォームの区切り', () => {
       title: uniqueTitle('フォームの区切り'),
     });
     await page.goto(editUrl);
-    const content = page.getByRole('region', { name: '内容', exact: true });
+    // 実績は、選んだ 1 件の中で、保存のボタンを持つフォームが内容の区切り
+    const content = page
+      .getByRole('region', { name: '選んだ実績' })
+      .locator('form')
+      .filter({ has: page.getByRole('button', { name: '保存する', exact: true }) });
     await expect(content.getByRole('button', { name: '保存する', exact: true })).toBeVisible();
     await expect(content.getByRole('button', { name: '画像を足す' })).toHaveCount(0);
     await expect(content.getByRole('button', { name: '代表画像を選び直す' })).toHaveCount(0);
@@ -204,6 +208,8 @@ test.describe('保存の知らせ', () => {
     await expect(page.getByRole('alert')).toHaveText('入力を確かめてください');
     await expect(page.getByRole('status')).toHaveCount(0);
 
+    // 保存していない入力があるので、再読み込みの前の確かめを受け入れる
+    page.once('dialog', (dialog) => dialog.accept());
     await page.reload();
     await expect(page.getByRole('status')).toHaveCount(0);
   });
@@ -312,5 +318,102 @@ test.describe('404 の画面', () => {
     await visitor.getByRole('link', { name: 'トップへ戻る', exact: true }).click();
     await expect(visitor).toHaveURL(routes.top);
     await visitor.close();
+  });
+});
+
+test.describe('狭い画面のシート', () => {
+  /** inert の祖先を持つか。inert の中は読み上げの木から外れるため、role では探さない */
+  const inertCount = (page: Page, selector: string) =>
+    page.locator(selector).first().locator('xpath=ancestor-or-self::*[@inert]');
+  const NAV = 'nav[aria-label="管理する項目"]';
+  const ROW = 'main table a[aria-current="true"]';
+
+  test('行を選ぶと半分の高さで開いて見出しへフォーカスが移り、つまみで高さを切り替え、閉じると選んだ行へ戻る', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const title = uniqueTitle('シート');
+    await registerProject(page, {
+      organizationName: 'E2E シートの組織',
+      organizationNameMasked: 'E2E シートの秘匿化した組織名',
+      title,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(routes.dash.projects.list);
+    const row = page.getByRole('link', { name: title, exact: true });
+    await waitForHydration(row);
+    await row.click();
+    const sheet = page.getByRole('dialog', { name: '選んだ実績' });
+    await expect(sheet.getByRole('heading', { level: 2, name: title })).toBeFocused();
+    // 一覧で行を選んだときは半分の高さで開く。モーダルにしないため、後ろも操作できる
+    await expect(sheet.getByRole('button', { name: '全体の高さにする' })).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+    await expect(inertCount(page, ROW)).toHaveCount(0);
+    await sheet.getByRole('button', { name: '全体の高さにする' }).click();
+    await expect(sheet.getByRole('button', { name: '半分の高さにする' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    // 全体の高さの間は、覆われた一覧と Sidebar がフォーカスを受けない
+    await expect(inertCount(page, ROW)).toHaveCount(1);
+    await expect(inertCount(page, NAV)).toHaveCount(1);
+    await sheet.getByRole('button', { name: '閉じる' }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page).not.toHaveURL(/selected=/);
+    await expect(row).toBeFocused();
+  });
+
+  test('選んだ 1 件の URL を直接開くと、全体の高さの CSS のシートで開いて一覧を覆い、閉じると選んだ行へ戻る', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const title = uniqueTitle('シートを直接開く');
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E シートの組織',
+      organizationNameMasked: 'E2E シートの秘匿化した組織名',
+      title,
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(editUrl);
+    const sheet = page.getByRole('region', { name: '選んだ実績' });
+    await expect(sheet.getByRole('heading', { level: 2, name: title })).toBeFocused();
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    // 覆われた一覧の行と Sidebar は、フォーカスを受けない
+    const row = page.getByRole('link', { name: title, exact: true });
+    await expect(inertCount(page, ROW)).toHaveCount(1);
+    await expect(inertCount(page, NAV)).toHaveCount(1);
+    await sheet.getByRole('link', { name: '閉じる' }).click();
+    await expect(page).not.toHaveURL(/selected=/);
+    await expect(row).toBeFocused();
+    // 閉じた後に行を選ぶと、Drawer で半分の高さから開く
+    await row.click();
+    await expect(
+      page.getByRole('dialog', { name: '選んだ実績' }).getByRole('button', {
+        name: '全体の高さにする',
+      }),
+    ).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('選んだ 1 件の URL を直接開いて、動く前に打った入力は、動いた後も残る', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const { editUrl } = await registerProject(page, {
+      organizationName: 'E2E シートの組織',
+      organizationNameMasked: 'E2E シートの秘匿化した組織名',
+      title: uniqueTitle('動く前の入力'),
+    });
+    await page.setViewportSize({ width: 390, height: 844 });
+    const typed = 'E2E 動く前に打った題';
+    await typeBeforeHydration(page, editUrl, typed, '題');
+    // 狭い画面に合わせて描き直した後も残る
+    const sheet = page.getByRole('region', { name: '選んだ実績' });
+    await expect(sheet.getByRole('heading', { level: 2 }).first()).toBeFocused();
+    await expect(textbox(page, '題')).toHaveValue(typed);
   });
 });

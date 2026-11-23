@@ -61,6 +61,10 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
 
+  /* 主な操作と選んだ行の色 */
+  --color-tint: hsl(var(--tint));
+  --color-tint-foreground: hsl(var(--tint-foreground));
+
   --color-chart-1: hsl(var(--chart-1));
   --color-chart-2: hsl(var(--chart-2));
   --color-chart-3: hsl(var(--chart-3));
@@ -113,6 +117,9 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
+    /* HIG Color の Blue の Increased contrast (light) R-30,G-110,B-244。白い文字で 4.5:1 を超える */
+    --tint: 218 91% 54%;
+    --tint-foreground: 0 0% 100%;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -134,6 +141,9 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
+    /* HIG Color の Blue の Increased contrast (dark) R-92,G-184,B-255 */
+    --tint: 206 100% 68%;
+    --tint-foreground: 0 0% 3.9%;
     --chart-1: 220 70% 50%;
     --chart-2: 160 60% 45%;
     --chart-3: 30 80% 55%;
@@ -167,4 +177,35 @@
   @page {
     size: A4;
   }
+}
+
+/*
+  ガラスの面。ナビと操作の層（サイドバー・ツールバー・切り替え・シート）にだけ使う。表や詳細の本文には
+  使わず、ガラスの上にガラスを重ねない（HIG Materials、#366 の「見た目の指針を 4 点にする」）。
+  コントラストを上げる設定では、不透明の地と境界線に切り替える（WWDC25 Meet Liquid Glass）
+*/
+@utility glass {
+  background-color: hsl(var(--background) / 0.72);
+  backdrop-filter: blur(24px) saturate(1.8);
+  border: 1px solid hsl(var(--foreground) / 0.08);
+  box-shadow:
+    0 8px 32px hsl(0 0% 0% / 0.08),
+    inset 0 1px 0 hsl(0 0% 100% / 0.6);
+
+  @media (prefers-contrast: more) {
+    background-color: hsl(var(--background));
+    backdrop-filter: none;
+    border-color: hsl(var(--foreground));
+    box-shadow: none;
+  }
+}
+
+/*
+  ガラスの上に載ったガラスは、塗りにする（WWDC25 Meet Liquid Glass: "always avoid glass on glass"）。
+  例: 半分の高さのシートの上の、保存の行
+*/
+.glass .glass {
+  background-color: hsl(var(--background));
+  backdrop-filter: none;
+  box-shadow: 0 0 0 1px hsl(var(--border));
 }

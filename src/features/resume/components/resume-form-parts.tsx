@@ -14,7 +14,7 @@ export const messageOf = (result: { status: string } | null) => {
 };
 
 export const BUTTON =
-  'rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
+  'rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring';
 
 /** 書き換える職務経歴書と、開いたときの更新日時（楽観ロック。research.md の R8） */
 export type ResumeFormCommon = { resumeUid: string; updatedAt: string };

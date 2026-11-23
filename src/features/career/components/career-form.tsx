@@ -19,7 +19,9 @@ import { MaskingField } from '@/shared/components/masking-field';
 import { OrganizationNameFields } from '@/shared/components/organization-name-fields';
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
+import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
+import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
 import { formStateOf } from '@/shared/domain/action-result';
 
@@ -57,19 +59,35 @@ const RESULT_MESSAGES = {
   forbidden: FORBIDDEN_INPUT_MESSAGE,
   invalid: INVALID_INPUT_MESSAGE,
   conflict:
-    'この職歴は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
+    'この職歴は、開いた後に別の画面で保存されていました。保存していません。保存された内容を読み直します',
 } as const;
+
+/** 項目の名前。直しかけと、別の画面で保存された値の違いを知らせるのに使う */
+const LABELS = {
+  organizationName: '組織名',
+  organizationNameMasked: '秘匿化した組織名',
+  role: '肩書',
+  isMasked: '秘匿化する',
+  status: 'サイトに載せる',
+  startedOn: '始まりの日',
+  endedOn: '終わりの日',
+  description: '本文',
+  url: '関連 URL',
+};
 
 export const CareerForm = ({ action, initialValues, organizationNames, career }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const { values, errors } = formStateOf(result, initialValues);
+  // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
+  const draft = useDraft(`career:${career?.uid ?? 'new'}`, initialValues, result, LABELS);
+  const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: CareerField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
   };
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form key={draft.formKey} action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+      <DraftConflict conflict={draft.conflict} noun="職歴" />
       {career && (
         <>
           <input type="hidden" name={CAREER_UID_FIELD} value={career.uid} />
@@ -79,56 +97,68 @@ export const CareerForm = ({ action, initialValues, organizationNames, career }:
       {result && result.status !== 'saved' && (
         <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
-      <SiteStatusField status={values.status} />
-      <MaskingField
-        isMasked={values.isMasked}
-        description="秘匿化すると、訪問者には秘匿化した組織名で出し、本文と画像を出しません"
-      />
-      <OrganizationNameFields
-        organizationNames={organizationNames}
-        organizationName={values.organizationName}
-        organizationNameMasked={values.organizationNameMasked}
-        errorOf={errorOf}
-      />
-      <InputField
-        name="role"
-        label="肩書"
-        defaultValue={values.role}
-        autoComplete="off"
-        error={errorOf('role')}
-      />
-      <InputField
-        type="date"
-        name="startedOn"
-        label="始まりの日"
-        defaultValue={values.startedOn}
-        error={errorOf('startedOn')}
-      />
-      <InputField
-        type="date"
-        name="endedOn"
-        label="終わりの日"
-        hint="所属が続いている職歴は空にします"
-        defaultValue={values.endedOn}
-        error={errorOf('endedOn')}
-      />
-      <TextareaField
-        name="description"
-        label="本文"
-        rows={8}
-        defaultValue={values.description}
-        error={errorOf('description')}
-      />
-      <InputField
-        inputMode="url"
-        name="url"
-        label="関連 URL"
-        defaultValue={values.url}
-        autoComplete="off"
-        error={errorOf('url')}
-      />
+      <SettingsGroup>
+        <SiteStatusField status={values.status} />
+        <MaskingField
+          isMasked={values.isMasked}
+          description="訪問者には秘匿化した組織名で出し、本文と画像を出しません"
+        />
+      </SettingsGroup>
+      <FormGroup title="どこで">
+        <OrganizationNameFields
+          organizationNames={organizationNames}
+          organizationName={values.organizationName}
+          organizationNameMasked={values.organizationNameMasked}
+          errorOf={errorOf}
+        />
+        <InputField
+          name="role"
+          label="肩書"
+          defaultValue={values.role}
+          autoComplete="off"
+          error={errorOf('role')}
+        />
+      </FormGroup>
+      <FormGroup title="いつ">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <InputField
+            type="date"
+            name="startedOn"
+            label="始まりの日"
+            defaultValue={values.startedOn}
+            error={errorOf('startedOn')}
+          />
+          <InputField
+            type="date"
+            name="endedOn"
+            label="終わりの日"
+            defaultValue={values.endedOn}
+            error={errorOf('endedOn')}
+          />
+        </div>
+        <p className="-mt-2 text-caption text-muted-foreground">
+          終わりの日は、所属が続いているなら空にします
+        </p>
+      </FormGroup>
+      <FormGroup title="中身">
+        <TextareaField
+          name="description"
+          label="本文"
+          rows={8}
+          defaultValue={values.description}
+          error={errorOf('description')}
+        />
+        <InputField
+          inputMode="url"
+          name="url"
+          label="関連 URL"
+          defaultValue={values.url}
+          autoComplete="off"
+          error={errorOf('url')}
+        />
+      </FormGroup>
       <FormActions>
-        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {career ? '保存する' : '登録する'}
         </SubmitButton>
       </FormActions>

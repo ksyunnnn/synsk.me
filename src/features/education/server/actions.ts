@@ -41,7 +41,8 @@ export const registerEducation = async (
     await getCurrentAuthor(),
     readValues(formData, EDUCATION_FIELDS),
   );
-  if (outcome.status === 'registered') redirect(`${routes.dash.educations.list}?saved=1`);
+  if (outcome.status === 'registered')
+    redirect(routes.dash.educations.selected(outcome.uid, 'saved'));
   return outcome;
 };
 
@@ -59,7 +60,16 @@ export const editEducation = async (
     id,
     readValues(formData, EDUCATION_FIELDS),
   );
-  if (outcome.status === 'saved') redirect(`${routes.dash.educations.list}?saved=1`);
+  // 保存した 1 件を選んだ一覧へ戻る（#366 の明文化）。更新日時を持たないので、印の値に保存した
+  // 時刻を入れ、画面が保存のたびに知らせとフォームを置き直せるようにする
+  if (outcome.status === 'saved')
+    redirect(
+      routes.dash.educations.selected(
+        readString(formData, EDUCATION_UID_FIELD),
+        'saved',
+        String(Date.now()),
+      ),
+    );
   if (outcome.status === 'not-found') redirect(routes.dash.educations.list);
   return outcome;
 };

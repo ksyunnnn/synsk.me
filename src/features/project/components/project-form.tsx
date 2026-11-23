@@ -9,7 +9,7 @@ import {
   type ProjectFormResult,
   type ProjectFormValues,
 } from '@/features/project/domain/project';
-import { InputField, SelectField, TextareaField } from '@/shared/components/field';
+import { InputField, TextareaField } from '@/shared/components/field';
 import {
   FORBIDDEN_INPUT_MESSAGE,
   FormAlert,
@@ -20,8 +20,10 @@ import { OrganizationNameFields } from '@/shared/components/organization-name-fi
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { SiteStatusField } from '@/shared/components/site-status-field';
 import { formStateOf } from '@/shared/domain/action-result';
-import { PROJECT_KINDS, PROJECT_KIND_LABELS } from '@/shared/domain/project-kind';
+import { DraftConflict, useDraft } from '@/shared/components/drafts';
 import { FormActions } from '@/shared/components/form-actions';
+import { KindField } from '@/shared/components/kind-field';
+import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton } from '@/shared/components/submit-button';
 
 /**
@@ -80,8 +82,25 @@ const RESULT_MESSAGES = {
   forbidden: FORBIDDEN_INPUT_MESSAGE,
   invalid: INVALID_INPUT_MESSAGE,
   conflict:
-    'この実績は、開いた後に別の画面で書き換えられていました。保存していません。入力した内容は残っています。開き直してから入力し直してください',
+    'この実績は、開いた後に別の画面で保存されていました。保存していません。保存された内容を読み直します',
 } as const;
+
+/** 項目の名前。直しかけと、別の画面で保存された値の違いを知らせるのに使う */
+const LABELS = {
+  organizationName: '組織名',
+  organizationNameMasked: '秘匿化した組織名',
+  kind: '種類',
+  title: '題',
+  titleMasked: '秘匿化した題',
+  isMasked: '秘匿化する',
+  status: 'サイトに載せる',
+  startedOn: '始まりの日',
+  endedOn: '終わりの日',
+  description: '本文',
+  url: '関連 URL',
+  slug: '識別子',
+  skillIds: '使ったスキル',
+};
 
 export const ProjectForm = ({
   action,
@@ -91,7 +110,9 @@ export const ProjectForm = ({
   project,
 }: Props) => {
   const [result, formAction] = useActionState(action, null);
-  const { values, errors } = formStateOf(result, initialValues);
+  // 保存せずに別の 1 件を選んでも、直しかけを残す（#366 の「直しかけの扱い」）
+  const draft = useDraft(`project:${project?.uid ?? 'new'}`, initialValues, result, LABELS);
+  const { values, errors } = formStateOf(result, draft.values);
   const errorOf = (field: ProjectField) => {
     const reason = errors[field];
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
@@ -100,7 +121,8 @@ export const ProjectForm = ({
   const checkedSkillIds = new Set(values.skillIds.split(','));
 
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <form key={draft.formKey} action={formAction} className="flex flex-col gap-8" {...draft.bind}>
+      <DraftConflict conflict={draft.conflict} noun="実績" />
       {project && (
         <>
           <input type="hidden" name={PROJECT_UID_FIELD} value={project.uid} />
@@ -112,113 +134,123 @@ export const ProjectForm = ({
         <FormAlert>{RESULT_MESSAGES[result.status]}</FormAlert>
       )}
 
-      <SiteStatusField status={values.status} />
-
-      <MaskingField
-        isMasked={values.isMasked}
-        description="秘匿化すると、訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
-      />
-
-      <OrganizationNameFields
-        organizationNames={organizationNames}
-        organizationName={values.organizationName}
-        organizationNameMasked={values.organizationNameMasked}
-        errorOf={errorOf}
-      />
-      <SelectField name="kind" label="種類" defaultValue={values.kind} error={errorOf('kind')}>
-        {PROJECT_KINDS.map((kind) => (
-          <option key={kind} value={kind}>
-            {PROJECT_KIND_LABELS[kind]}
-          </option>
-        ))}
-      </SelectField>
-      <InputField
-        name="title"
-        label="題"
-        defaultValue={values.title}
-        autoComplete="off"
-        error={errorOf('title')}
-      />
-      <InputField
-        name="titleMasked"
-        label="秘匿化した題"
-        defaultValue={values.titleMasked}
-        autoComplete="off"
-        error={errorOf('titleMasked')}
-      />
-      {project && (
-        <InputField
-          name="slug"
-          label="識別子"
-          hint={
-            project.isMasked
-              ? '秘匿化した実績の識別子は変えられません。秘匿化を外して保存した後に変えられます'
-              : 'URL に出ます。英小文字・数字・ハイフンで、100 文字まで。秘匿化に切り替えると、新しい識別子になります'
-          }
-          defaultValue={values.slug}
-          readOnly={project.isMasked}
-          autoComplete="off"
-          error={errorOf('slug')}
+      {/* 公開の設定。オンとオフの 2 つを 1 つのまとまりに並べる */}
+      <SettingsGroup>
+        <SiteStatusField status={values.status} />
+        <MaskingField
+          isMasked={values.isMasked}
+          description="訪問者には秘匿化した題と秘匿化した組織名で出し、本文と関連 URL を出しません"
         />
-      )}
-      <InputField
-        type="date"
-        name="startedOn"
-        label="始まりの日"
-        defaultValue={values.startedOn}
-        error={errorOf('startedOn')}
-      />
-      <InputField
-        type="date"
-        name="endedOn"
-        label="終わりの日"
-        hint="続いている実績は空にします"
-        defaultValue={values.endedOn}
-        error={errorOf('endedOn')}
-      />
-      <TextareaField
-        name="description"
-        label="本文"
-        rows={8}
-        defaultValue={values.description}
-        error={errorOf('description')}
-      />
-      <InputField
-        inputMode="url"
-        name="url"
-        label="関連 URL"
-        defaultValue={values.url}
-        autoComplete="off"
-        error={errorOf('url')}
-      />
+      </SettingsGroup>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="font-bold">使ったスキル</legend>
-        {skillOptions.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            スキルは、スキルの画面で登録するとここで選べます
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            {skillOptions.map((skill) => (
-              <label key={skill.id} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  name="skillIds"
-                  value={skill.id}
-                  defaultChecked={checkedSkillIds.has(String(skill.id))}
-                  className="size-4 accent-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-                />
-                {skill.name}
-              </label>
-            ))}
-          </div>
+      <FormGroup title="何を">
+        <KindField value={values.kind} error={errorOf('kind')} />
+        <InputField
+          name="title"
+          label="題"
+          defaultValue={values.title}
+          autoComplete="off"
+          error={errorOf('title')}
+        />
+        <InputField
+          name="titleMasked"
+          label="秘匿化した題"
+          defaultValue={values.titleMasked}
+          autoComplete="off"
+          error={errorOf('titleMasked')}
+        />
+        <OrganizationNameFields
+          organizationNames={organizationNames}
+          organizationName={values.organizationName}
+          organizationNameMasked={values.organizationNameMasked}
+          errorOf={errorOf}
+        />
+      </FormGroup>
+
+      <FormGroup title="いつ">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <InputField
+            type="date"
+            name="startedOn"
+            label="始まりの日"
+            defaultValue={values.startedOn}
+            error={errorOf('startedOn')}
+          />
+          <InputField
+            type="date"
+            name="endedOn"
+            label="終わりの日"
+            defaultValue={values.endedOn}
+            error={errorOf('endedOn')}
+          />
+        </div>
+        <p className="-mt-2 text-caption text-muted-foreground">
+          終わりの日は、続いているなら空にします
+        </p>
+      </FormGroup>
+
+      <FormGroup title="中身">
+        <TextareaField
+          name="description"
+          label="本文"
+          rows={8}
+          defaultValue={values.description}
+          error={errorOf('description')}
+        />
+        <InputField
+          inputMode="url"
+          name="url"
+          label="関連 URL"
+          defaultValue={values.url}
+          autoComplete="off"
+          error={errorOf('url')}
+        />
+        <fieldset className="flex flex-col gap-2">
+          <legend className="text-small font-medium">使ったスキル</legend>
+          {skillOptions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              スキルは、スキルの画面で登録するとここで選べます
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {skillOptions.map((skill) => (
+                <label key={skill.id}>
+                  <input
+                    type="checkbox"
+                    name="skillIds"
+                    value={skill.id}
+                    defaultChecked={checkedSkillIds.has(String(skill.id))}
+                    className="peer sr-only"
+                  />
+                  {/* 選んだスキルは塗り、選んでいないものは枠だけにし、色だけに頼らない（WCAG 2.2 SC 1.4.1） */}
+                  <span className="block cursor-pointer rounded-full border border-border px-3 py-1 text-small transition-colors peer-checked:border-tint peer-checked:bg-tint peer-checked:text-tint-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring motion-reduce:transition-none">
+                    {skill.name}
+                  </span>
+                </label>
+              ))}
+            </div>
+          )}
+          {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
+        </fieldset>
+        {project && (
+          <InputField
+            name="slug"
+            label="識別子"
+            hint={
+              project.isMasked
+                ? '秘匿化した実績の識別子は変えられません。秘匿化を外して保存した後に変えられます'
+                : 'URL に出ます。英小文字・数字・ハイフンで、100 文字まで。秘匿化に切り替えると、新しい識別子になります'
+            }
+            defaultValue={values.slug}
+            readOnly={project.isMasked}
+            autoComplete="off"
+            error={errorOf('slug')}
+          />
         )}
-        {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
-      </fieldset>
+      </FormGroup>
 
       <FormActions>
-        <SubmitButton className="rounded-md bg-primary px-4 py-2 text-primary-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+        <SubmitButton className="rounded-full bg-tint px-5 py-2 text-small font-medium text-tint-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
           {project ? '保存する' : '登録する'}
         </SubmitButton>
       </FormActions>

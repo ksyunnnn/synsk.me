@@ -104,14 +104,21 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
       const { results } = await db
         .prepare(
           `SELECT c.id, c.uid, c.role, c.is_masked, c.status, c.started_on, c.ended_on,
-             o.name AS organization_name
+             c.organization_id, o.name AS organization_name
            FROM career c JOIN organization o ON o.id = c.organization_id
            ORDER BY c.started_on DESC, c.id DESC`,
         )
         .all<
           Pick<
             CareerRow,
-            'id' | 'uid' | 'role' | 'is_masked' | 'status' | 'started_on' | 'ended_on'
+            | 'id'
+            | 'uid'
+            | 'role'
+            | 'is_masked'
+            | 'status'
+            | 'started_on'
+            | 'ended_on'
+            | 'organization_id'
           > & {
             organization_name: string;
           }
@@ -123,6 +130,7 @@ export const createD1CareerRepository = (db: D1Database): CareerRepository => {
         isMasked: row.is_masked === 1,
         status: row.status,
         period: toPeriod(row),
+        organizationId: row.organization_id,
         organizationName: row.organization_name,
       }));
     },

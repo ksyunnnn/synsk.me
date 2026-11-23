@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { actAsAuthor } from './support/author';
-import { registerCareer, registerProject, textbox } from './support/dash';
+import { registerCareer, registerProject, siteSwitch, textbox } from './support/dash';
 import { waitForHydration } from './support/note';
 
 /**
@@ -19,6 +19,15 @@ const openForm = async (page: Page, url: string) => {
   await waitForHydration(page.locator('main form').first());
 };
 
+/**
+ * 保存していない入力があると、管理画面は再読み込みの前に確かめる（`beforeunload`）。確かめを
+ * 受け入れて再読み込みする
+ */
+const reloadDiscarding = async (page: Page) => {
+  page.once('dialog', (dialog) => dialog.accept());
+  await page.reload();
+};
+
 test('実績の編集の画面で、サイトに載せるかを選び直して保存せずに再読み込みすると、保存した値が出る', async ({
   page,
   context,
@@ -31,9 +40,9 @@ test('実績の編集の画面で、サイトに載せるかを選び直して�
     onSite: false,
   });
   await openForm(page, editUrl);
-  await page.getByRole('radio', { name: 'サイトに載せる', exact: true }).check();
-  await page.reload();
-  await expect(page.getByRole('radio', { name: 'サイトに載せない', exact: true })).toBeChecked();
+  await siteSwitch(page, 'サイトに載せる').check();
+  await reloadDiscarding(page);
+  await expect(siteSwitch(page, 'サイトに載せる')).not.toBeChecked();
   expect(
     await page.evaluate(() =>
       Object.keys(window.localStorage).filter((key) => key.startsWith('synsk:draft')),
@@ -54,7 +63,7 @@ test('実績の編集の画面で、本文を書き換えて保存せずに再�
   });
   await openForm(page, editUrl);
   await textbox(page, '本文').fill('E2E 保存していない本文');
-  await page.reload();
+  await reloadDiscarding(page);
   await waitForHydration(textbox(page, '本文'));
   await expect(textbox(page, '本文')).toHaveValue('E2E 保存した本文');
 });
@@ -72,7 +81,7 @@ test('職歴の編集の画面で、肩書を書き換えて保存せずに再�
   });
   await openForm(page, editUrl);
   await textbox(page, '肩書').fill('E2E 保存していない肩書');
-  await page.reload();
+  await reloadDiscarding(page);
   await expect(textbox(page, '肩書')).toHaveValue(role);
 });
 
@@ -89,10 +98,12 @@ test('組織の編集の画面で、秘匿化した組織名を書き換えて�
   });
   await page.goto('/dash/organizations');
   await page.getByRole('link', { name, exact: true }).click();
-  await expect(page.getByRole('heading', { level: 1 })).toHaveText('組織を編集する');
+  await expect(
+    page.getByRole('region', { name: '選んだ組織' }).getByRole('heading', { level: 2 }),
+  ).toHaveText(name);
   await waitForHydration(page.locator('main form').first());
   await textbox(page, '秘匿化した組織名').fill('E2E 保存していない秘匿化した組織名');
-  await page.reload();
+  await reloadDiscarding(page);
   await expect(textbox(page, '秘匿化した組織名')).toHaveValue('E2E 保存した秘匿化した組織名');
 });
 
@@ -109,7 +120,7 @@ for (const { screen, url, label } of [
     await actAsAuthor(context);
     await openForm(page, url);
     await textbox(page, label).fill(`E2E 保存していない${label}`);
-    await page.reload();
+    await reloadDiscarding(page);
     await expect(textbox(page, label)).toHaveValue('');
   });
 }
