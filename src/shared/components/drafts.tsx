@@ -88,15 +88,17 @@ export const DraftProvider = ({ children }: { children: ReactNode }) => {
 };
 
 /** フォームの値を、同じ名前の値は `,` でつないで 1 つの文字列にする */
-const serialize = (form: HTMLFormElement): Draft => {
+export const toDraft = (formData: FormData): Draft => {
   const draft: Draft = {};
-  for (const [name, value] of new FormData(form)) {
+  for (const [name, value] of formData) {
     // 一覧の検索の値は入力ではない。見せ方を切り替えても直しかけにしない
     if (typeof value !== 'string' || name === RETURN_QUERY_FIELD) continue;
     draft[name] = name in draft ? `${draft[name]},${value}` : value;
   }
   return draft;
 };
+
+const serialize = (form: HTMLFormElement): Draft => toDraft(new FormData(form));
 
 /**
  * 1 つのフォームの直しかけ。`initialValues` に直しかけを重ねた値を返す。フォームに `bind` を
