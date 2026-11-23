@@ -42,7 +42,7 @@ const Page = async ({ params, searchParams }: Props) => {
   const raw = await searchParams;
   const kind = firstParam(raw.kind);
   const query = {
-    org: firstParam(raw.org),
+    orgName: firstParam(raw.orgName),
     // 種類でない値では絞らない（実績の一覧の parseProjectListFilter と同じ）
     kind: kind !== undefined && isProjectKind(kind) ? kind : undefined,
     view: firstParam(raw.view),
@@ -56,12 +56,12 @@ const Page = async ({ params, searchParams }: Props) => {
   const organizations = [...new Set(resume.projects.map((row) => row.organizationName))].sort();
   const rows = resume.projects.filter(
     (row) =>
-      (!query.org || row.organizationName === query.org) &&
+      (!query.orgName || row.organizationName === query.orgName) &&
       (!query.kind || row.kind === query.kind),
   );
   const view = query.view === 'timeline' ? 'timeline' : 'table';
   const selected = query.selected ?? null;
-  const conditions = [query.org, query.kind && PROJECT_KIND_LABELS[query.kind]].filter(Boolean);
+  const conditions = [query.orgName, query.kind && PROJECT_KIND_LABELS[query.kind]].filter(Boolean);
 
   const collection = (
     <>
@@ -91,11 +91,11 @@ const Page = async ({ params, searchParams }: Props) => {
         <FilterMenu
           label="組織"
           options={[
-            { label: 'すべて', href: link({ org: null }), current: !query.org },
+            { label: 'すべて', href: link({ orgName: null }), current: !query.orgName },
             ...organizations.map((name) => ({
               label: name,
-              href: link({ org: name }),
-              current: query.org === name,
+              href: link({ orgName: name }),
+              current: query.orgName === name,
             })),
           ]}
         />
