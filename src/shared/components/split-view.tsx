@@ -44,6 +44,7 @@ export const SplitView = ({
 export const CollectionToolbar = ({
   title,
   headingLevel = 1,
+  titleHidden = false,
   summary,
   children,
   action,
@@ -51,6 +52,8 @@ export const CollectionToolbar = ({
   title: string;
   /** 題の見出しの段。ほかの画面の中の区画（職務経歴書の中身など）では 2 にする */
   headingLevel?: 1 | 2;
+  /** 題を画面に出さず、読み上げにだけ残す。タブなどで同じ名前がすでに見えている区画で使う */
+  titleHidden?: boolean;
   /** 件数と、選んでいる条件。変わったら読み上げる */
   summary: string;
   /** 見せ方の切り替えや絞り込み。中ほどに置く */
@@ -59,9 +62,9 @@ export const CollectionToolbar = ({
 }) => (
   <div className="glass sticky top-4 z-10 m-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[28px] py-1.5 pr-1.5 pl-5">
     {headingLevel === 1 ? (
-      <h1 className="font-semibold">{title}</h1>
+      <h1 className={titleHidden ? 'sr-only' : 'font-semibold'}>{title}</h1>
     ) : (
-      <h2 className="font-semibold">{title}</h2>
+      <h2 className={titleHidden ? 'sr-only' : 'font-semibold'}>{title}</h2>
     )}
     <p aria-live="polite" className="text-small text-muted-foreground">
       {summary}

@@ -48,6 +48,7 @@ const Page = async ({ params, searchParams }: Props) => {
     <>
       <CollectionToolbar
         headingLevel={2}
+        titleHidden
         title="写した職歴"
         summary={`${rows.length} 件`}
         action={{
