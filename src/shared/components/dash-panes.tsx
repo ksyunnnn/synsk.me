@@ -78,6 +78,19 @@ export const PaneToggle = ({ pane, className }: { pane: Pane; className?: string
   );
 };
 
+/** Split view の中か。一覧のツールバーは、一覧だけの画面でも使うため */
+const InSplitContext = createContext(false);
+
+/**
+ * 一覧の列を隠すボタン。隠すボタンは、隠す列の中に置く（Sidebar と詳細の列と同じ）。Split view の
+ * 中でだけ出す。一覧だけの画面では、隠すと何も残らないため
+ */
+export const CollectionPaneToggle = () => {
+  const inSplit = useContext(InSplitContext);
+  if (!inSplit) return null;
+  return <PaneToggle pane="collection" className="-ml-3 hidden lg:flex" />;
+};
+
 /** 管理画面の枠。Sidebar を隠しているときは、一覧の列が全体の幅を使う */
 export const DashPanes = ({ sidebar, children }: { sidebar: ReactNode; children: ReactNode }) => {
   const [hidden, setState] = useState<Record<Pane, boolean>>({
@@ -147,23 +160,31 @@ export const SplitPanes = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
   return (
-    <main
-      className={cn(
-        'grid gap-4',
-        !hidden.detail &&
-          !hidden.collection &&
-          'lg:grid-cols-[minmax(0,1fr)_minmax(440px,600px)]',
-      )}
-    >
-      {hidden.detail && (
-        <div className="hidden justify-end lg:flex">
-          <PaneToggle pane="detail" className="flex bg-background" />
+    <InSplitContext value={true}>
+      <main
+        className={cn(
+          'grid gap-4',
+          !hidden.detail &&
+            !hidden.collection &&
+            'lg:grid-cols-[minmax(0,1fr)_minmax(440px,600px)]',
+        )}
+      >
+        {/* 隠した列を戻すボタンは、隠した列があった側に置く */}
+        {hidden.detail && (
+          <div className="hidden justify-end lg:flex">
+            <PaneToggle pane="detail" className="flex bg-background" />
+          </div>
+        )}
+        {hidden.collection && (
+          <div className="hidden lg:flex">
+            <PaneToggle pane="collection" className="flex bg-background" />
+          </div>
+        )}
+        <div className={cn('contents', hidden.collection && 'lg:hidden')} inert={covered}>
+          {collection}
         </div>
-      )}
-      <div className={cn('contents', hidden.collection && 'lg:hidden')} inert={covered}>
-        {collection}
-      </div>
-      <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>
-    </main>
+        <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>
+      </main>
+    </InSplitContext>
   );
 };

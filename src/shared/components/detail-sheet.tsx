@@ -32,7 +32,7 @@ import { cn } from '@/lib/utils';
  *
  * 主な操作（保存する）は、ペインの上端の末尾に置き、スクロールしても見えるようにする（HIG Layout の
  * 「Avoid placing controls or critical information at the bottom of a window」、HIG Toolbars の
- * 主な操作は 1 つで末尾）。広い画面ではペインの上のツールバー、狭い画面ではシートの上の行に置く
+ * 主な操作は 1 つで末尾）。広い画面ではペインの上の行、狭い画面ではシートの上の行に置く
  */
 
 /** `globals.css` の `--breakpoint-lg`（976px）より狭い画面 */
@@ -194,11 +194,10 @@ export const DetailSheet = ({
           {actions && <div className="absolute top-1.5 right-3 flex">{actions}</div>}
         </div>
       )}
-      {/* 広い画面のペインのツールバー。一覧の列と詳細の列を隠せ（HIG Split views）、末尾に主な操作を
-          置く。一覧のツールバーと同じく、本文の上に留めたガラスにする */}
-      <div className="glass sticky top-2 z-10 m-2 hidden items-center gap-2 rounded-[28px] p-1.5 lg:flex">
-        <PaneToggle pane="collection" className="flex" />
-        <PaneToggle pane="detail" className="ml-auto flex" />
+      {/* 広い画面のペインの上の行。詳細の列を隠すボタンと、末尾に主な操作を置く。ガラスのバーに
+          しない。一覧の列を隠すボタンは、一覧のツールバーが持つ */}
+      <div className="sticky top-0 z-10 hidden items-center justify-end gap-2 bg-background px-4 pt-3 pb-2 lg:flex">
+        <PaneToggle pane="detail" className="flex" />
         {actions}
       </div>
       {/* 一覧を隠して幅が広がっても、入力の行を読める長さに留める */}

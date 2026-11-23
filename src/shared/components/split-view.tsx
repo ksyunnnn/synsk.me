@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { SplitPanes } from '@/shared/components/dash-panes';
+import { CollectionPaneToggle, SplitPanes } from '@/shared/components/dash-panes';
 import { DetailSheet } from '@/shared/components/detail-sheet';
 import { DraftMark } from '@/shared/components/drafts';
 import { SubmitButton } from '@/shared/components/submit-button';
@@ -70,6 +70,7 @@ export const CollectionToolbar = ({
   action?: { href: string; label: string };
 }) => (
   <div className="glass sticky top-4 z-10 m-2 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-[28px] py-1.5 pr-1.5 pl-5">
+    <CollectionPaneToggle />
     {headingLevel === 1 ? (
       <h1 className={titleHidden ? 'sr-only' : 'font-semibold'}>{title}</h1>
     ) : (
