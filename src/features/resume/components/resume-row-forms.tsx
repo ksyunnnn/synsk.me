@@ -28,6 +28,7 @@ import {
 import { PERIOD_FIELD_MESSAGES } from '@/shared/components/period-field-messages';
 import { FormActions } from '@/shared/components/form-actions';
 import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
+import { TokenField } from '@/shared/components/token-field';
 
 /**
  * 職務経歴書の中で写した値を直すフォーム（specs/002-resume/contracts/dash.md の写した行の画面と
@@ -228,10 +229,13 @@ export const ResumeProjectForm = ({
   initialValues,
   target,
   formId,
+  skillNames,
 }: {
   action: Action<ResumeProjectFormValues, Errors>;
   initialValues: ResumeProjectFormValues;
   target: Target;
+  /** 候補に出す、登録したスキルの名前。写したスキルは名前で持つので、候補にない名前も足せる */
+  skillNames: string[];
   /** 詳細のペインのツールバーのボタンが送るときの、フォームの id */
   formId?: string;
 }) => {
@@ -293,12 +297,15 @@ export const ResumeProjectForm = ({
           autoComplete="off"
           error={errorText(errors, 'url')}
         />
-        <TextareaField
+        <TokenField
           name="skills"
           label="使ったスキル"
-          hint="1 行に 1 つ書きます。この職務経歴書にだけ効きます"
-          rows={4}
-          defaultValue={values.skills}
+          hint="この職務経歴書にだけ効きます。候補にない名前も足せます"
+          options={skillNames.map((skillName) => ({ value: skillName, label: skillName }))}
+          defaultValue={values.skills.split('\n').filter((skill) => skill.trim() !== '')}
+          serialize="lines"
+          allowCustom
+          empty="名前を打つと足せます"
           error={errorText(errors, 'skills')}
         />
       </FormGroup>

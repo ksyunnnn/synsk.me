@@ -160,9 +160,10 @@ export const DetailSheet = ({
       className={cn(
         // 留めたツールバーの下に、フォーカスを移した入力が隠れないようにする（WCAG 2.2 SC 2.4.11）
         'min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:bg-background lg:p-0 lg:shadow-none lg:backdrop-filter-none',
-        // 狭い画面でこの形が出るのは、URL を直接開いたときだけ。全体の高さで一覧を覆う
+        // 狭い画面でこの形が出るのは、URL を直接開いたときだけ。全体の高さで一覧を覆う。広い画面では
+        // fixed を外して sticky に戻し、ページをスクロールしてもペインの上端のツールバーを見せる
         open
-          ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl bg-background lg:static lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
+          ? 'fixed inset-x-0 bottom-0 z-30 flex h-[calc(100dvh-1rem)] flex-col overflow-hidden rounded-t-3xl bg-background lg:sticky lg:inset-x-auto lg:bottom-auto lg:h-auto lg:flex-none lg:overflow-y-auto lg:border-0'
           : 'hidden',
       )}
     >

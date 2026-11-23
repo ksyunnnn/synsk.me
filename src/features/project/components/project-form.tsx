@@ -25,6 +25,7 @@ import { FormActions } from '@/shared/components/form-actions';
 import { KindField } from '@/shared/components/kind-field';
 import { FormGroup, SettingsGroup } from '@/shared/components/form-group';
 import { SubmitButton, useReportPending } from '@/shared/components/submit-button';
+import { TokenField } from '@/shared/components/token-field';
 
 /**
  * 実績を登録する・編集するフォーム（specs/001-career-and-project/contracts/dash.md）。
@@ -125,8 +126,6 @@ export const ProjectForm = ({
     return reason ? (ERROR_MESSAGES[field][reason] ?? RESULT_MESSAGES.invalid) : undefined;
   };
 
-  const checkedSkillIds = new Set(values.skillIds.split(','));
-
   return (
     <form
       key={draft.formKey}
@@ -209,33 +208,24 @@ export const ProjectForm = ({
           autoComplete="off"
           error={errorOf('url')}
         />
-        <fieldset className="flex flex-col gap-2">
-          <legend className="text-small font-medium">使ったスキル</legend>
-          {skillOptions.length === 0 ? (
+        {skillOptions.length === 0 ? (
+          <div className="flex flex-col gap-1">
+            <p className="text-small font-medium">使ったスキル</p>
             <p className="text-sm text-muted-foreground">
               スキルは、スキルの画面で登録するとここで選べます
             </p>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              {skillOptions.map((skill) => (
-                <label key={skill.id}>
-                  <input
-                    type="checkbox"
-                    name="skillIds"
-                    value={skill.id}
-                    defaultChecked={checkedSkillIds.has(String(skill.id))}
-                    className="peer sr-only"
-                  />
-                  {/* 選んだスキルは塗り、選んでいないものは枠だけにし、色だけに頼らない（WCAG 2.2 SC 1.4.1） */}
-                  <span className="block cursor-pointer rounded-full border border-border px-3 py-1 text-small transition-colors peer-checked:border-tint peer-checked:bg-tint peer-checked:text-tint-foreground peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ring motion-reduce:transition-none">
-                    {skill.name}
-                  </span>
-                </label>
-              ))}
-            </div>
-          )}
-          {errorOf('skillIds') && <p className="text-sm text-destructive">{errorOf('skillIds')}</p>}
-        </fieldset>
+          </div>
+        ) : (
+          <TokenField
+            name="skillIds"
+            label="使ったスキル"
+            options={skillOptions.map((skill) => ({ value: String(skill.id), label: skill.name }))}
+            defaultValue={values.skillIds.split(',').filter((id) => id !== '')}
+            serialize="each"
+            empty="登録したスキルに、合う名前はありません"
+            error={errorOf('skillIds')}
+          />
+        )}
         {project && (
           <InputField
             name="slug"

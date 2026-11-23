@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ResumeProjectForm } from '@/features/resume/components/resume-row-forms';
 import { toResumeProjectFormValues } from '@/features/resume/domain/resume-forms';
+import { listSkillOptions } from '@/features/project/server/queries';
 import { editResumeProject } from '@/features/resume/server/actions';
 import { getResumeForEdit } from '@/features/resume/server/queries';
 import { DetailFacts } from '@/shared/components/detail-facts';
@@ -53,7 +54,10 @@ const Page = async ({ params, searchParams }: Props) => {
     selected: firstParam(raw.selected),
   };
   // オーナーでなければ、読む前に 403 になる
-  const resume = await getResumeForEdit((await params).id);
+  const [resume, skillOptions] = await Promise.all([
+    getResumeForEdit((await params).id),
+    listSkillOptions(),
+  ]);
   if (!resume) notFound();
   const base = routes.dash.resumes.entries(resume.uid, 'projects');
   const link = (changes: Record<string, string | null>) => withParam(base, query, changes);
@@ -177,6 +181,7 @@ const Page = async ({ params, searchParams }: Props) => {
         initialValues={toResumeProjectFormValues(row)}
         target={{ resumeUid: resume.uid, rowUid: row.uid, updatedAt: resume.updatedAt }}
         formId={DETAIL_FORM_ID}
+        skillNames={skillOptions.map((skill) => skill.name)}
       />
       {/* 元の実績の詳細と同じく、入力の後に置く（#366 の明文化: 元と写しで形をそろえる） */}
       <section className="flex flex-col gap-4 border-t border-border pt-6">
