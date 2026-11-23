@@ -80,18 +80,18 @@ export const DetailSheet = ({
 }) => {
   const narrow = useNarrow();
   const hydrating = useHydrating();
-  const { setCollectionCovered } = useContext(CoverContext);
+  const { setCovered } = useContext(CoverContext);
   const sectionRef = useRef<HTMLElement>(null);
   const openerRef = useRef<HTMLElement | null>(null);
   // URL を直接開いて、選んだ 1 件があったか。閉じるまで CSS だけのシートを使い続ける
   const [direct, setDirect] = useState(open && hydrating);
   if (direct && !open) setDirect(false);
-  // 狭い画面で全体の高さのシートが一覧を覆う間は、覆われた行へフォーカスが移らないようにする
+  // 狭い画面で全体の高さのシートが Sidebar と一覧を覆う間は、覆われた行へフォーカスが移らないようにする
   // （WCAG 2.2 SC 2.4.11）
   const covering = narrow && direct;
   useEffect(() => {
-    setCollectionCovered(covering);
-  }, [covering, setCollectionCovered]);
+    setCovered(covering);
+  }, [covering, setCovered]);
   // 直接開いたときは、描画を引き継いだ後に見出しへフォーカスを移す（WCAG 2.2 SC 2.4.3）
   const focused = useRef(false);
   useEffect(() => {
@@ -135,7 +135,7 @@ export const DetailSheet = ({
             onClick={() => {
               openerRef.current = selectedRow();
               // 戻す先の行にフォーカスを移せるよう、移る前に一覧の inert を外す
-              setCollectionCovered(false);
+              setCovered(false);
             }}
             className="absolute top-2 right-3 rounded-full px-3 py-1 text-small text-muted-foreground hover:bg-foreground/5 focus-visible:outline-2 focus-visible:outline-ring"
           >
@@ -182,6 +182,14 @@ const NarrowSheet = ({
     if (open) setSnapPoint(HALF);
   }
   const expanded = snapPoint === FULL;
+  // 全体の高さの間は、覆われた Sidebar と一覧を inert にする（WCAG 2.2 SC 2.4.11）。半分の高さでは
+  // モーダルにしないため、後ろも操作できる
+  const { setCovered } = useContext(CoverContext);
+  const covering = shown && expanded;
+  useEffect(() => {
+    setCovered(covering);
+    return () => setCovered(false);
+  }, [covering, setCovered]);
 
   return (
     <Drawer.Root
@@ -189,6 +197,8 @@ const NarrowSheet = ({
       onOpenChange={(next) => {
         if (next) return;
         openerRef.current = selectedRow();
+        // 戻す先の行にフォーカスを移せるよう、閉じ始める前に inert を外す
+        setCovered(false);
         setShown(false);
         router.push(closeHref, { scroll: false });
       }}

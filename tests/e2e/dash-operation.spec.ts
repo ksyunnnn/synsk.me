@@ -322,6 +322,12 @@ test.describe('404 の画面', () => {
 });
 
 test.describe('狭い画面のシート', () => {
+  /** inert の祖先を持つか。inert の中は読み上げの木から外れるため、role では探さない */
+  const inertCount = (page: Page, selector: string) =>
+    page.locator(selector).first().locator('xpath=ancestor-or-self::*[@inert]');
+  const NAV = 'nav[aria-label="管理する項目"]';
+  const ROW = 'main table a[aria-current="true"]';
+
   test('行を選ぶと半分の高さで開いて見出しへフォーカスが移り、つまみで高さを切り替え、閉じると選んだ行へ戻る', async ({
     page,
     context,
@@ -340,16 +346,20 @@ test.describe('狭い画面のシート', () => {
     await row.click();
     const sheet = page.getByRole('dialog', { name: '選んだ実績' });
     await expect(sheet.getByRole('heading', { level: 2, name: title })).toBeFocused();
-    // 一覧で行を選んだときは半分の高さで開く
+    // 一覧で行を選んだときは半分の高さで開く。モーダルにしないため、後ろも操作できる
     await expect(sheet.getByRole('button', { name: '全体の高さにする' })).toHaveAttribute(
       'aria-expanded',
       'false',
     );
+    await expect(inertCount(page, ROW)).toHaveCount(0);
     await sheet.getByRole('button', { name: '全体の高さにする' }).click();
     await expect(sheet.getByRole('button', { name: '半分の高さにする' })).toHaveAttribute(
       'aria-expanded',
       'true',
     );
+    // 全体の高さの間は、覆われた一覧と Sidebar がフォーカスを受けない
+    await expect(inertCount(page, ROW)).toHaveCount(1);
+    await expect(inertCount(page, NAV)).toHaveCount(1);
     await sheet.getByRole('button', { name: '閉じる' }).click();
     await expect(sheet).toBeHidden();
     await expect(page).not.toHaveURL(/selected=/);
@@ -372,9 +382,10 @@ test.describe('狭い画面のシート', () => {
     const sheet = page.getByRole('region', { name: '選んだ実績' });
     await expect(sheet.getByRole('heading', { level: 2, name: title })).toBeFocused();
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    // 覆われた一覧の行は、フォーカスを受けない
+    // 覆われた一覧の行と Sidebar は、フォーカスを受けない
     const row = page.getByRole('link', { name: title, exact: true });
-    await expect(row.locator('xpath=ancestor::*[@inert]')).toHaveCount(1);
+    await expect(inertCount(page, ROW)).toHaveCount(1);
+    await expect(inertCount(page, NAV)).toHaveCount(1);
     await sheet.getByRole('link', { name: '閉じる' }).click();
     await expect(page).not.toHaveURL(/selected=/);
     await expect(row).toBeFocused();

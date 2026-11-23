@@ -15,12 +15,13 @@ import { cn } from '@/lib/utils';
 type Pane = 'sidebar' | 'detail';
 
 /**
- * 狭い画面で、全体の高さのシートが一覧を覆っているか。覆っている間は、一覧を `inert` にする
- * （WCAG 2.2 SC 2.4.11）。シート（`DetailSheet`）が知らせる
+ * 狭い画面で、全体の高さのシートが Sidebar と一覧を覆っているか。覆っている間は、どちらも
+ * `inert` にする（WCAG 2.2 SC 2.4.11）。シート（`DetailSheet`）が知らせる
  */
-export const CoverContext = createContext<{ setCollectionCovered: (covered: boolean) => void }>({
-  setCollectionCovered: () => {},
-});
+export const CoverContext = createContext<{
+  covered: boolean;
+  setCovered: (covered: boolean) => void;
+}>({ covered: false, setCovered: () => {} });
 
 const PanesContext = createContext<{
   hidden: Record<Pane, boolean>;
@@ -74,24 +75,30 @@ export const DashPanes = ({ sidebar, children }: { sidebar: ReactNode; children:
   const [hidden, setState] = useState<Record<Pane, boolean>>({ sidebar: false, detail: false });
   const setHidden = (pane: Pane, value: boolean) =>
     setState((current) => ({ ...current, [pane]: value }));
+  const [covered, setCovered] = useState(false);
+  const cover = useMemo(() => ({ covered, setCovered }), [covered]);
   return (
     <PanesContext value={{ hidden, setHidden }}>
-      <div
-        className={cn(
-          'mx-auto grid max-w-[1440px] gap-4 p-4',
-          !hidden.sidebar && 'md:grid-cols-[220px_minmax(0,1fr)]',
-        )}
-      >
-        <div className={cn('contents', hidden.sidebar && 'md:hidden')}>{sidebar}</div>
-        <div className="min-w-0">
-          {hidden.sidebar && (
-            <div className="mb-2 hidden md:flex">
-              <PaneToggle pane="sidebar" className="flex bg-background" />
-            </div>
+      <CoverContext value={cover}>
+        <div
+          className={cn(
+            'mx-auto grid max-w-[1440px] gap-4 p-4',
+            !hidden.sidebar && 'md:grid-cols-[220px_minmax(0,1fr)]',
           )}
-          {children}
+        >
+          <div className={cn('contents', hidden.sidebar && 'md:hidden')} inert={covered}>
+            {sidebar}
+          </div>
+          <div className="min-w-0">
+            {hidden.sidebar && (
+              <div className="mb-2 hidden md:flex">
+                <PaneToggle pane="sidebar" className="flex bg-background" />
+              </div>
+            )}
+            {children}
+          </div>
         </div>
-      </div>
+      </CoverContext>
     </PanesContext>
   );
 };
@@ -108,8 +115,7 @@ export const SplitPanes = ({
   detail: ReactNode;
 }) => {
   const { hidden, setHidden } = useContext(PanesContext);
-  const [covered, setCollectionCovered] = useState(false);
-  const cover = useMemo(() => ({ setCollectionCovered }), []);
+  const { covered } = useContext(CoverContext);
   const selected = useSearchParams().get('selected');
   useEffect(() => {
     if (selected) setHidden('detail', false);
@@ -131,9 +137,7 @@ export const SplitPanes = ({
       <div className="contents" inert={covered}>
         {collection}
       </div>
-      <CoverContext value={cover}>
-        <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>
-      </CoverContext>
+      <div className={cn('contents', hidden.detail && 'lg:hidden')}>{detail}</div>
     </main>
   );
 };
