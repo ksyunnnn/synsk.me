@@ -96,8 +96,11 @@ export const ProjectDetail = async ({
         project={{ uid: project.uid, updatedAt: project.updatedAt, isMasked: project.isMasked }}
       />
       <section className="flex flex-col gap-4 border-t border-border pt-6">
-        <h3 className="text-caption font-medium text-muted-foreground">画像</h3>
+        <h3 id="project-media-heading" className="text-caption text-muted-foreground">
+          画像
+        </h3>
         <MediaUploadForm
+          labelledBy="project-media-heading"
           action={addProjectMedia}
           owner={{ field: PROJECT_UID_FIELD, uid: project.uid }}
           mediaStorageKeys={project.mediaStorageKeys}
