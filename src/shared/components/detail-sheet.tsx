@@ -194,6 +194,24 @@ const useFitToViewport = (ref: RefObject<HTMLElement | null>, active: boolean) =
   }, [ref, active]);
 };
 
+/**
+ * このタブのまま、この画面の別の URL へ移るクリックか。別のタブで開く（修飾キー・`target`・
+ * `download`）、別のオリジン、同じ URL の中の移動（ハッシュだけ）は、移らないものとして扱う
+ */
+const navigatesHere = (event: MouseEvent) => {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+    return false;
+  const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+  if (!(link instanceof HTMLAnchorElement)) return false;
+  if ((link.target !== '' && link.target !== '_self') || link.hasAttribute('download'))
+    return false;
+  const to = new URL(link.href);
+  return (
+    to.origin === window.location.origin &&
+    to.pathname + to.search !== window.location.pathname + window.location.search
+  );
+};
+
 /** 閉じた後にフォーカスを戻す行。閉じると決めた時点で選んでいた行 */
 const selectedRow = () => document.querySelector<HTMLElement>('main a[aria-current="true"]');
 
@@ -269,9 +287,11 @@ export const DetailSheet = ({
   useFitToViewport(sectionRef, open && !narrow && !peek);
   useSaveShortcut(formId, open);
   // ドロワーを閉じ始めた URL。右へ出ていく動きを見せてから、選んだ 1 件を外した一覧へ移る。動きの
-  // 間に、戻る・進む・リンクで別の所へ移り始めたら、閉じるのをやめ、移った先を保つ。移り終える前に
-  // 一覧へ移ると、移った先を上書きし、進む履歴も消すため。URL が変わったときもやめる
-  const location = `${usePathname()}?${useSearchParams()}`;
+  // 間に、戻る・進む・リンクでこの画面の別の所へ移り始めたら、閉じるのをやめ、移った先を保つ。
+  // 移り終える前に一覧へ移ると、移った先を上書きし、進む履歴も消すため。URL が変わったときもやめる
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const location = `${pathname}?${searchParams}`;
   const [leavingAt, setLeavingAt] = useState<string | null>(null);
   if (leavingAt !== null && leavingAt !== location) setLeavingAt(null);
   const leaving = leavingAt === location;
@@ -279,11 +299,15 @@ export const DetailSheet = ({
     if (!leaving) return;
     const stay = () => setLeavingAt(null);
     const onClick = (event: MouseEvent) => {
-      if (event.target instanceof Element && event.target.closest('a[href]')) stay();
+      if (navigatesHere(event)) stay();
     };
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // フォーカスを戻す行は、一覧へ移ると決まったここで持つ。やめたときに古い行を持ち越さない
     const timer = window.setTimeout(
-      () => router.push(closeHref, { scroll: false }),
+      () => {
+        openerRef.current = selectedRow();
+        router.push(closeHref, { scroll: false });
+      },
       reduced ? 0 : PEEK_MS,
     );
     window.addEventListener('popstate', stay);
@@ -294,10 +318,7 @@ export const DetailSheet = ({
       document.removeEventListener('click', onClick, true);
     };
   }, [leaving, closeHref, router]);
-  const closePeek = () => {
-    openerRef.current = selectedRow();
-    setLeavingAt(location);
-  };
+  const closePeek = () => setLeavingAt(location);
   useCloseOnEscape(peek && !leaving, closePeek);
   if (narrow && !direct)
     return (
@@ -309,6 +330,9 @@ export const DetailSheet = ({
     <section
       ref={sectionRef}
       aria-label={label}
+      // 出ていく間のドロワーは操作を受けない。閉じると決めた後に、中の「全体に広げる」や
+      // 「詳細を隠す」で見せ方を変えても、予約した移動で一覧へ移ってしまうため
+      inert={peek && leaving}
       className={cn(
         // 留めたツールバーの下に、フォーカスを移した入力が隠れないようにする（WCAG 2.2 SC 2.4.11）
         'group/detail min-w-0 lg:sticky lg:top-4 lg:block lg:max-h-[calc(100dvh-var(--pane-top,1rem)-1rem)] lg:scroll-pt-20 lg:overflow-y-auto lg:rounded-3xl lg:p-0',
