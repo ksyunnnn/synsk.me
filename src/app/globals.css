@@ -16,9 +16,13 @@
   --spacing-space-lg: 48px;
   --spacing-space-xl: 96px;
 
-  --text-heading-1: 32px;
+  /*
+   * heading-1・heading-2 は画面の幅 480px（bp-sm）で小さい端、976px（bp-lg）で大きい端にし、
+   * その間を直線で変える。傾きは 4px / 496px = 0.8065vw、切片は小さい端 - 0.8065vw × 480px
+   */
+  --text-heading-1: clamp(32px, calc(28.129px + 0.8065vw), 36px);
   --text-heading-1--line-height: 1.3;
-  --text-heading-2: 24px;
+  --text-heading-2: clamp(24px, calc(20.129px + 0.8065vw), 28px);
   --text-heading-2--line-height: 1.4;
   --text-body: 18px;
   --text-body--line-height: 1.8;
