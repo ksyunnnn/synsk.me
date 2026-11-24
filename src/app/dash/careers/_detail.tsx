@@ -56,9 +56,11 @@ export const CareerDetail = async ({
         </>
       }
       form={
-        // 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す
+        // 選んだ 1 件と、保存のたびに変わる更新日時で見分ける。別の 1 件を選んだときと保存したときに、
+        // 入力の初めの値で描き直す。更新日時だけでは、同じ更新日時の 1 件を選び直しても前の 1 件の
+        // 入力が残る（issue #395）
         <CareerForm
-          key={career.updatedAt}
+          key={`${career.uid}:${career.updatedAt}`}
           action={editCareer}
           initialValues={toCareerFormValues(career)}
           organizationNames={organizationNames}

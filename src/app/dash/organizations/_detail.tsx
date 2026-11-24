@@ -48,8 +48,10 @@ export const OrganizationDetail = async ({
         )
       }
       form={
+        // 選んだ 1 件と、保存のたびに変わる更新日時で見分ける。更新日時だけでは、同じ更新日時の
+        // 1 件を選び直しても前の 1 件の入力が残る（issue #395）
         <OrganizationForm
-          key={organization.updatedAt}
+          key={`${organization.uid}:${organization.updatedAt}`}
           action={editOrganization}
           organizationUid={organization.uid}
           initialValues={{ name: organization.name, nameMasked: organization.nameMasked ?? '' }}
