@@ -47,24 +47,30 @@ const setUpdatedAt = (
 const uidOf = (url: string) => new URL(url).searchParams.get('selected') as string;
 
 /**
- * 詳細のすべての欄の値。Server Action の隠し入力（`$ACTION_`）と画像の選択の入力は除く。
- * スキルは「{名前}を外す」ボタンの名前で読む
+ * 詳細のすべての欄の値と、知らせ（role=status・role=alert）の文言。Server Action の隠し入力
+ * （`$ACTION_`）は除く。画像の選択の入力は、選んだファイルの数で読む。スキルは「{名前}を外す」
+ * ボタンの名前で読む
  */
 const readDetail = (page: Page, region: string) =>
   page.getByRole('region', { name: region }).evaluate((element) => {
     const heading = element.querySelector('h2')?.textContent?.trim() ?? null;
     const fields = [...element.querySelectorAll('input, textarea, select')]
       .map((field) => field as HTMLInputElement)
-      .filter((input) => !input.name.startsWith('$ACTION_') && input.type !== 'file')
+      .filter((input) => !input.name.startsWith('$ACTION_'))
       .map((input) =>
-        input.type === 'checkbox' || input.type === 'radio'
-          ? `${input.name}=${input.value}:${input.checked}`
-          : `${input.name}=${input.value}`,
+        input.type === 'file'
+          ? `${input.name}=files:${input.files?.length ?? 0}`
+          : input.type === 'checkbox' || input.type === 'radio'
+            ? `${input.name}=${input.value}:${input.checked}`
+            : `${input.name}=${input.value}`,
       );
     const skills = [...element.querySelectorAll('button')]
       .map((button) => button.getAttribute('aria-label') ?? '')
       .filter((label) => label.endsWith('を外す'));
-    return { heading, fields, skills };
+    const notices = [...element.querySelectorAll('[role="status"], [role="alert"]')].map(
+      (notice) => `${notice.getAttribute('role')}:${notice.textContent?.trim() ?? ''}`,
+    );
+    return { heading, fields, skills, notices };
   });
 
 type Detail = Awaited<ReturnType<typeof readDetail>>;
@@ -103,11 +109,37 @@ const readOpened = async (page: Page, list: List, row: Row, updatedAt?: string) 
   return opened;
 };
 
-/** 一覧を開き、A、B の順に一覧の行を押して選ぶ */
-const reselect = async (page: Page, list: List, a: Row, b: Row) => {
+/** 一覧を開き、A、B の順に一覧の行を押して選ぶ。`onA` は A を選んだ後、B を選ぶ前に行う */
+const reselect = async (
+  page: Page,
+  list: List,
+  a: Row,
+  b: Row,
+  onA: () => Promise<void> = async () => {},
+) => {
   await page.goto(list.path);
   await selectInList(page, list, a);
+  await onA();
   await selectInList(page, list, b);
+};
+
+/** 1 画素の PNG。画像の選択の入力に入れる作り物 */
+const PIXEL_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/**
+ * 選んだ 1 件の「画像を足す」を、ファイルを選ばずに押し、画像を足せなかった知らせを出す。その後に
+ * ファイルを選び、送らずに残す
+ */
+const leaveMediaResult = async (page: Page, list: List) => {
+  const detail = page.getByRole('region', { name: list.region });
+  await detail.getByRole('button', { name: '画像を足す', exact: true }).click();
+  await expect(detail.getByRole('alert')).toHaveText('画像のファイルを選んでください');
+  await detail
+    .locator('input[type="file"][name="mediaFile"]')
+    .setInputFiles({ name: 'e2e-pixel.png', mimeType: 'image/png', buffer: PIXEL_PNG });
 };
 
 /** 保存の後に変わる値（楽観ロックの更新日時）を除く */
@@ -228,6 +260,18 @@ test.describe('実績', () => {
     const saved = await readOpened(page, PROJECTS, b);
     expect(withoutSaveStamp(saved)).toEqual(withoutSaveStamp(expected));
   });
+
+  test('更新日時が同じ 2 件で、画像を足せなかった知らせと選んだファイルを残して別の 1 件を選ぶと、後に選んだ実績には残らない', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const { a, b } = await registerProjectPair(page, '画像');
+    setUpdatedAt('project', [a.uid, b.uid], SAME);
+    const expected = await readOpened(page, PROJECTS, b, SAME);
+    await reselect(page, PROJECTS, a, b, () => leaveMediaResult(page, PROJECTS));
+    await expect.poll(() => readDetail(page, PROJECTS.region)).toEqual(expected);
+  });
 });
 
 test.describe('職歴', () => {
@@ -255,6 +299,17 @@ test.describe('職歴', () => {
     await saveEdit(page);
     const saved = await readOpened(page, CAREERS, b);
     expect(withoutSaveStamp(saved)).toEqual(withoutSaveStamp(expected));
+  });
+
+  test('画像を足せなかった知らせと選んだファイルを残して別の 1 件を選ぶと、後に選んだ職歴には残らない', async ({
+    page,
+    context,
+  }) => {
+    await actAsAuthor(context);
+    const { a, b } = await registerCareerPair(page);
+    const expected = await readOpened(page, CAREERS, b);
+    await reselect(page, CAREERS, a, b, () => leaveMediaResult(page, CAREERS));
+    await expect.poll(() => readDetail(page, CAREERS.region)).toEqual(expected);
   });
 });
 

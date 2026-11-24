@@ -69,7 +69,7 @@ export const ProjectDetail = async ({
       draftKey={`project:${project.uid}`}
       notice={
         notice && (
-          <SavedNotice key={`${notice}-${project.updatedAt}`} flags={[notice]}>
+          <SavedNotice key={`${notice}-${project.uid}:${project.updatedAt}`} flags={[notice]}>
             {NOTICES[notice]}
           </SavedNotice>
         )

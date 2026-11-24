@@ -42,7 +42,10 @@ export const OrganizationDetail = async ({
       draftKey={`organization:${organization.uid}`}
       notice={
         flags.saved === '1' && (
-          <SavedNotice key={`saved-${organization.updatedAt}`} flags={['saved']}>
+          <SavedNotice
+            key={`saved-${organization.uid}:${organization.updatedAt}`}
+            flags={['saved']}
+          >
             保存しました
           </SavedNotice>
         )
