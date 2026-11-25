@@ -44,21 +44,26 @@ export const CareerDetail = async ({
       notice={
         <>
           {flags.saved === '1' && (
-            <SavedNotice key={`saved-${career.updatedAt}`} flags={['saved']}>
+            <SavedNotice key={`saved-${career.uid}:${career.updatedAt}`} flags={['saved']}>
               保存しました
             </SavedNotice>
           )}
           {flags.mediaAdded === '1' && (
-            <SavedNotice key={`mediaAdded-${career.updatedAt}`} flags={['mediaAdded']}>
+            <SavedNotice
+              key={`mediaAdded-${career.uid}:${career.updatedAt}`}
+              flags={['mediaAdded']}
+            >
               画像を足しました
             </SavedNotice>
           )}
         </>
       }
       form={
-        // 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す
+        // 選んだ 1 件と、保存のたびに変わる更新日時で見分ける。別の 1 件を選んだときと保存したときに、
+        // 入力の初めの値で描き直す。更新日時だけでは、同じ更新日時の 1 件を選び直しても前の 1 件の
+        // 入力が残る（issue #395）
         <CareerForm
-          key={career.updatedAt}
+          key={`${career.uid}:${career.updatedAt}`}
           action={editCareer}
           initialValues={toCareerFormValues(career)}
           organizationNames={organizationNames}
@@ -99,7 +104,10 @@ export const CareerDetail = async ({
           heading: '画像',
           headingId: 'career-media-heading',
           content: (
+            // 選んだ 1 件と更新日時で見分ける。別の 1 件を選んだら、前の 1 件の選んだファイルと
+            // 結果の知らせを残さない（issue #395）
             <MediaUploadForm
+              key={`media-${career.uid}:${career.updatedAt}`}
               labelledBy="career-media-heading"
               action={addCareerMedia}
               owner={{ field: CAREER_UID_FIELD, uid: career.uid }}

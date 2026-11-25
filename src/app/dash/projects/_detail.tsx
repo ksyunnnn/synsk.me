@@ -69,15 +69,17 @@ export const ProjectDetail = async ({
       draftKey={`project:${project.uid}`}
       notice={
         notice && (
-          <SavedNotice key={`${notice}-${project.updatedAt}`} flags={[notice]}>
+          <SavedNotice key={`${notice}-${project.uid}:${project.updatedAt}`} flags={[notice]}>
             {NOTICES[notice]}
           </SavedNotice>
         )
       }
       form={
-        // 保存のたびに更新日時が変わる。入力の初めの値を、保存した値で描き直す
+        // 選んだ 1 件と、保存のたびに変わる更新日時で見分ける。別の 1 件を選んだときと保存したときに、
+        // 入力の初めの値で描き直す。更新日時だけでは、同じ更新日時の 1 件を選び直しても前の 1 件の
+        // 入力が残る（issue #395）
         <EditProjectForm
-          key={project.updatedAt}
+          key={`${project.uid}:${project.updatedAt}`}
           action={editProject}
           initialValues={toProjectFormValues(project)}
           organizationNames={organizationNames}
@@ -122,7 +124,7 @@ export const ProjectDetail = async ({
           headingId: 'project-media-heading',
           content: (
             <ProjectMediaSection
-              key={`media-${project.updatedAt}-${project.cardMediaKey ?? ''}`}
+              key={`media-${project.uid}:${project.updatedAt}-${project.cardMediaKey ?? ''}`}
               projectUid={project.uid}
               mediaStorageKeys={project.mediaStorageKeys}
               cardMediaKey={project.cardMediaKey}
