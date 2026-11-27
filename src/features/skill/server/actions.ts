@@ -6,7 +6,12 @@ import { redirect } from 'next/navigation';
 import { deleteSkill as deleteSkillUseCase } from '@/features/skill/application/delete-skill';
 import { editSkill as editSkillUseCase } from '@/features/skill/application/edit-skill';
 import { registerSkill as registerSkillUseCase } from '@/features/skill/application/register-skill';
-import { SKILL_FIELDS, SKILL_UID_FIELD, type SkillFormResult } from '@/features/skill/domain/skill';
+import {
+  SKILL_FIELDS,
+  SKILL_UID_FIELD,
+  type DeleteSkillResult,
+  type SkillFormResult,
+} from '@/features/skill/domain/skill';
 import { createSkillRepository } from '@/features/skill/server/queries';
 import { findIdByUid } from '@/shared/domain/uid';
 import { getCurrentAuthor } from '@/shared/server/author';
@@ -64,15 +69,16 @@ export const editSkill = async (
   return outcome;
 };
 
+/** スキルを消し、一覧の画面へ移る。消せなければ、確認の画面に理由を返す */
 export const deleteSkill = async (
-  _state: { status: 'forbidden' } | null,
+  _state: DeleteSkillResult | null,
   formData: FormData,
-): Promise<{ status: 'forbidden' }> => {
+): Promise<DeleteSkillResult> => {
   const author = await getCurrentAuthor();
   if (!author) return { status: 'forbidden' };
   const { skills, id } = await resolveSkill(formData);
   if (id === null) redirect(routes.dash.skills.list);
   const outcome = await deleteSkillUseCase(skills, author, id);
-  if (outcome.status === 'forbidden') return { status: 'forbidden' };
+  if (outcome.status === 'forbidden' || outcome.status === 'has-children') return outcome;
   redirect(`${routes.dash.skills.list}?deleted=1`);
 };

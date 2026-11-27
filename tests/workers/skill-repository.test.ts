@@ -14,7 +14,7 @@ import {
 
 /**
  * スキルの D1 の実装と、実績へのスキルのつなぎ（specs/001-career-and-project/spec.md の
- * FR-031・FR-032・FR-034、research.md の R7・R8）。
+ * FR-031〜FR-034、research.md の R7・R8）。
  */
 
 const skills = createD1SkillRepository(env.DB);
@@ -65,6 +65,8 @@ describe('register と edit', () => {
       uid: result.uid,
       name: 'TypeScript',
       monthsOverride: 71,
+      parentId: null,
+      role: null,
     });
   });
 
@@ -99,6 +101,13 @@ describe('register と edit', () => {
     });
     expect((await skills.findById(id))?.monthsOverride).toBeNull();
   });
+
+  it('編集しても親と役割は変わらない（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'Cloudflare' });
+    const id = await insertSkill(env.DB, { name: 'D1', parentId: parent, role: 'data' });
+    expect(await skills.edit(id, { name: 'D1', monthsOverride: 6 })).toEqual({ ok: true });
+    expect(await skills.findById(id)).toMatchObject({ parentId: parent, role: 'data' });
+  });
 });
 
 describe('delete', () => {
@@ -111,6 +120,37 @@ describe('delete', () => {
     expect(await skills.delete(id)).toEqual({ ok: true });
     expect(await skills.findById(id)).toBeNull();
     expect(await linkedSkillIds(projectId)).toEqual([]);
+  });
+
+  it('子のスキルを持つ親のスキルは、実績とのつながりも含めて消さない（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'AWS' });
+    const child = await insertSkill(env.DB, { name: 'Lambda', parentId: parent });
+    const projectId = await insertProject(env.DB, {
+      organizationId: await insertOrganization(env.DB),
+    });
+    await linkProjectSkill(env.DB, projectId, parent);
+    expect(await skills.delete(parent)).toEqual({ ok: false, reason: 'has-children' });
+    expect(await skills.findById(parent)).not.toBeNull();
+    expect(await linkedSkillIds(projectId)).toEqual([parent]);
+    expect(await skills.findById(child)).toMatchObject({ parentId: parent });
+  });
+
+  it('子の親を外せば、親のスキルを消せる（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'AWS' });
+    const child = await insertSkill(env.DB, { name: 'Lambda', parentId: parent });
+    await env.DB.prepare('UPDATE skill SET parent_id = NULL WHERE id = ?').bind(child).run();
+    expect(await skills.delete(parent)).toEqual({ ok: true });
+  });
+
+  it('子のスキルは消せる（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'AWS' });
+    const child = await insertSkill(env.DB, { name: 'Lambda', parentId: parent });
+    expect(await skills.delete(child)).toEqual({ ok: true });
+    expect(await skills.findById(child)).toBeNull();
+  });
+
+  it('無いスキルは not-found を返す', async () => {
+    expect(await skills.delete(999)).toEqual({ ok: false, reason: 'not-found' });
   });
 });
 
@@ -131,6 +171,8 @@ describe('listWithPeriods', () => {
         uid: expect.stringMatching(/^[0-9a-f]{32}$/),
         name: 'Go',
         monthsOverride: null,
+        parentId: null,
+        role: null,
         periods: [],
       },
       {
@@ -138,6 +180,8 @@ describe('listWithPeriods', () => {
         uid: expect.stringMatching(/^[0-9a-f]{32}$/),
         name: 'TypeScript',
         monthsOverride: null,
+        parentId: null,
+        role: null,
         periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],
       },
     ]);
@@ -171,6 +215,31 @@ describe('listWithPeriods', () => {
         { startedOn: '2022-04-01', endedOn: '2023-03-31' },
       ]),
     );
+  });
+});
+
+describe('listWithPeriods の親子（FR-031・FR-033）', () => {
+  it('親の id を返し、期間はそのスキルをつないだ実績のものだけを返す', async () => {
+    const organizationId = await insertOrganization(env.DB);
+    const parent = await insertSkill(env.DB, { name: 'Cloudflare' });
+    const child = await insertSkill(env.DB, { name: 'D1', parentId: parent });
+    const project = await insertProject(env.DB, {
+      organizationId,
+      startedOn: '2020-04-01',
+      endedOn: '2021-03-31',
+    });
+    await linkProjectSkill(env.DB, project, child);
+
+    const rows = await skills.listWithPeriods('all');
+    expect(rows.find((skill) => skill.id === parent)).toMatchObject({
+      parentId: null,
+      periods: [],
+    });
+    expect(rows.find((skill) => skill.id === child)).toMatchObject({
+      parentId: parent,
+      role: null,
+      periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],
+    });
   });
 });
 

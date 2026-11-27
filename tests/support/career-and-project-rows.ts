@@ -164,12 +164,23 @@ export const insertEducation = (
     remarks,
   });
 
-export type SkillRowInput = { name?: string; monthsOverride?: number | null };
+export type SkillRowInput = {
+  name?: string;
+  monthsOverride?: number | null;
+  parentId?: number | null;
+  role?: string | null;
+};
 
 export const insertSkill = (
   db: D1Database,
-  { name = 'TypeScript', monthsOverride = null }: SkillRowInput = {},
-) => insertReturningId(db, 'skill', { name, months_override: monthsOverride });
+  { name = 'TypeScript', monthsOverride = null, parentId = null, role = null }: SkillRowInput = {},
+) =>
+  insertReturningId(db, 'skill', {
+    name,
+    months_override: monthsOverride,
+    parent_id: parentId,
+    role,
+  });
 
 /** 実績にスキルをつなぐ */
 export const linkProjectSkill = async (db: D1Database, projectId: number, skillId: number) => {

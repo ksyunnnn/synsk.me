@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { SkillRole } from '@/features/skill/domain/skill';
 import type { SkillRepository } from '@/features/skill/domain/skill-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
 
@@ -7,8 +8,29 @@ import type { CalendarDate, Period } from '@/shared/domain/period';
  * `SkillRepository` の D1 の実装。行の型はこのファイルの中だけに置く（research.md の R3）
  */
 
-type SkillRow = { id: number; uid: string; name: string; months_override: number | null };
+type SkillRow = {
+  id: number;
+  uid: string;
+  name: string;
+  months_override: number | null;
+  parent_id: number | null;
+  role: SkillRole | null;
+};
 type PeriodRow = { skill_id: number; started_on: string; ended_on: string | null };
+
+const SKILL_COLUMNS = 'id, uid, name, months_override, parent_id, role';
+
+const toSkill = (row: SkillRow) => ({
+  id: row.id,
+  uid: row.uid,
+  name: row.name,
+  monthsOverride: row.months_override,
+  parentId: row.parent_id,
+  role: row.role,
+});
+
+/** `?1` が指すスキルが子を持つか（FR-031） */
+const HAS_CHILDREN = 'EXISTS (SELECT 1 FROM skill AS child WHERE child.parent_id = ?1)';
 
 const isNameTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: skill.name');
@@ -16,7 +38,7 @@ const isNameTaken = (error: unknown) =>
 export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
   listWithPeriods: async (projects) => {
     const [skills, periods] = await db.batch<SkillRow | PeriodRow>([
-      db.prepare('SELECT id, uid, name, months_override FROM skill ORDER BY name'),
+      db.prepare(`SELECT ${SKILL_COLUMNS} FROM skill ORDER BY name`),
       db
         .prepare(
           `SELECT ps.skill_id, p.started_on, p.ended_on
@@ -35,22 +57,17 @@ export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
       periodsBySkill.set(period.skill_id, list);
     }
     return (skills.results as SkillRow[]).map((row) => ({
-      id: row.id,
-      uid: row.uid,
-      name: row.name,
-      monthsOverride: row.months_override,
+      ...toSkill(row),
       periods: periodsBySkill.get(row.id) ?? [],
     }));
   },
 
   findById: async (id) => {
     const row = await db
-      .prepare('SELECT id, uid, name, months_override FROM skill WHERE id = ?')
+      .prepare(`SELECT ${SKILL_COLUMNS} FROM skill WHERE id = ?`)
       .bind(id)
       .first<SkillRow>();
-    return row
-      ? { id: row.id, uid: row.uid, name: row.name, monthsOverride: row.months_override }
-      : null;
+    return row ? toSkill(row) : null;
   },
 
   findIdByUid: async (uid) =>
@@ -86,11 +103,13 @@ export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
 
   delete: async (id) => {
     // 写した職務経歴書の resume_project_skill と resume_skill_override は名前を写して
-    // 持つため触らない（research.md の R8）
+    // 持つため触らない（research.md の R8）。子を持つ親は、実績とのつながりも残す（FR-031）
     const results = await db.batch([
-      db.prepare('DELETE FROM project_skill WHERE skill_id = ?').bind(id),
-      db.prepare('DELETE FROM skill WHERE id = ?').bind(id),
+      db.prepare(`DELETE FROM project_skill WHERE skill_id = ?1 AND NOT ${HAS_CHILDREN}`).bind(id),
+      db.prepare(`DELETE FROM skill WHERE id = ?1 AND NOT ${HAS_CHILDREN}`).bind(id),
     ]);
-    return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
+    if ((results.at(-1)?.meta.changes ?? 0) > 0) return { ok: true };
+    const exists = await db.prepare('SELECT 1 FROM skill WHERE id = ?').bind(id).first();
+    return { ok: false, reason: exists ? 'has-children' : 'not-found' };
   },
 });

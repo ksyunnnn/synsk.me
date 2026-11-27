@@ -82,8 +82,10 @@
 | FR-024・FR-029 | 列が無い | スキーマが持つ |
 | FR-027・FR-028 | 本文の画像と代表画像 | 単（tests/unit/project-usecases.test.ts・career-usecases.test.ts）・W・結（tests/integration/project-masking.test.ts） |
 | FR-031 | 大文字と小文字だけ違う名前を拒む | W |
+| FR-031 の削除 | 子のスキルを持つ親のスキルを消せない | W（tests/workers/skill-repository.test.ts） |
+| FR-031 の親子と役割 | 親子が 1 段で、自分を親にしない。役割は 13 個の値のどれかで、子を持つスキルは役割を持たない | W（tests/migrations/migration-0029-rows.test.ts） |
 | FR-032 | 実績にスキルを 0 個以上つなぐ | W |
-| FR-033・FR-034・SC-004 | 経験年数の計算と上書き | 単 |
+| FR-033・FR-034・SC-004 | 経験年数の計算と上書き。親は親か子のどれかをつないだ実績の期間から求める | 単 |
 | FR-033 のサイトと管理画面の分け方 | サイトは載せる実績の期間だけ、管理画面はすべての実績の期間を読む | W（`listWithPeriods`）・単（管理画面が `all`） |
 | FR-037・SC-005 | 学歴が実績のページの応答に含まれない | 結 |
 | FR-040 | オーナーでない呼び出しが何も書かない | 結 |
