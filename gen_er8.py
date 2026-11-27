@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 2030
-H = 1800
+H = 1820
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -95,6 +95,7 @@ def rules_note(x, y):
         "life event の行は published_at・url・external_id・image_url を持たない（CHECK）",
         "life event の行は、空白だけでない title を持つ（CHECK）",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
+        "skill.parent_id は同じ skill の親の行を指し、自分を指さない（CHECK）。親子は 1 段で、親は親を持たない（トリガ）",
         "id はすべて AUTOINCREMENT（削除した id を使い回さない）",
         "管理画面の URL とフォームは uid で行を指し、id を出さない。uid は DB が乱数で入れ、書き換えをトリガで拒む",
         "訪問者の URL は slug、R2 は storage_key で指す。R2 のバケットは公開せず、Worker を通して配る",
@@ -146,7 +147,7 @@ education = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("school", "text"), ("department", "text · 空可"),
     ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"), ("remarks", "text · 空可"),
 ] + TS
-skill = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可")] + TS
+skill = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可"), ("→ parent_id", "integer · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ source", "text"), ("slug", "text · unique · life event だけ"),
