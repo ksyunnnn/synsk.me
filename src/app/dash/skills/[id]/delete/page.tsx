@@ -24,7 +24,9 @@ const Page = async ({ params }: Props) => {
 
   return (
     <DashPage title="スキルを削除する">
-      <p>次のスキルを削除します。実績とのつながりも消えます。作った職務経歴書の中身は残ります。</p>
+      <p>
+        次のスキルを削除します。子のスキルを持つ親のスキルは消せません。実績とのつながりも消えます。作った職務経歴書の中身は残ります。
+      </p>
       <p>名前: {skill.name}</p>
       <DeleteForm
         action={deleteSkill}

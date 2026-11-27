@@ -30,7 +30,7 @@
 | `deleteProject` | uid | 一覧へ 303 | オーナーでない／無い |
 | `registerCareer`・`editCareer`・`deleteCareer` | 組織名・肩書・期間・本文・関連 URL・秘匿化するか・サイトに載せるか（編集は uid と開いたときの更新日時） | 同上 | 同上（識別子を除く） |
 | `registerEducation`・`editEducation`・`deleteEducation` | 学校・学部・期間・備考 | 同上 | オーナーでない／項目の不備 |
-| `registerSkill`・`editSkill`・`deleteSkill` | 名前・上書きの年と月 | 同上 | オーナーでない／大文字と小文字だけ違う名前の重複 |
+| `registerSkill`・`editSkill`・`deleteSkill` | 名前・上書きの年と月 | 同上 | オーナーでない／大文字と小文字だけ違う名前の重複／子のスキルを持つ親のスキルの削除 |
 | `editOrganization`・`deleteOrganization` | 組織名・秘匿化した組織名 | 同上 | オーナーでない／名前の重複／秘匿化した職歴・実績が指すのに秘匿化した組織名を空にした／職歴・実績が指している／個人の組織の削除 |
 
 画像の追加と代表画像の選択の操作は、tasks.md の T075 で足す。
