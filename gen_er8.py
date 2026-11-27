@@ -3,7 +3,7 @@ import sys
 from er_helpers import INK, MUTED, PAPER, MONO, SANS, label, path
 
 W = 2030
-H = 1820
+H = 1840
 
 
 def entity(x, y, w, name, purpose, fields, kind="TABLE"):
@@ -96,6 +96,7 @@ def rules_note(x, y):
         "life event の行は、空白だけでない title を持つ（CHECK）",
         "skill.name は COLLATE NOCASE（大文字と小文字を区別しない）。*.months_override は経験年数の月数で、0 以上（CHECK）",
         "skill.parent_id は同じ skill の親の行を指し、自分を指さない（CHECK）。親子は 1 段で、親は親を持たない（トリガ）",
+        "skill.role は 13 個の値か空（CHECK）。子を持つ行は role を持たない（トリガ）",
         "id はすべて AUTOINCREMENT（削除した id を使い回さない）",
         "管理画面の URL とフォームは uid で行を指し、id を出さない。uid は DB が乱数で入れ、書き換えをトリガで拒む",
         "訪問者の URL は slug、R2 は storage_key で指す。R2 のバケットは公開せず、Worker を通して配る",
@@ -147,7 +148,7 @@ education = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("school", "text"), ("department", "text · 空可"),
     ("started_on", "text（年月日）"), ("ended_on", "text（年月日）· 空可"), ("remarks", "text · 空可"),
 ] + TS
-skill = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可"), ("→ parent_id", "integer · 空可")] + TS
+skill = [("# id", "integer"), ("uid", "text · unique · 変更不可"), ("name", "text · unique · NOCASE"), ("months_override", "integer · 空可"), ("→ parent_id", "integer · 空可"), ("role", "text · CHECK · 空可")] + TS
 project_skill = [("# → project_id", "integer"), ("# → skill_id", "integer")]
 activity = [
     ("# id", "integer"), ("uid", "text · unique · 変更不可"), ("→ source", "text"), ("slug", "text · unique · life event だけ"),
@@ -212,10 +213,10 @@ el += path("M 820,110 H 880")
 el += label(832, 92, "0..N") + label(868, 92, "1")
 el += path("M 760,416 V 396 H 850 V 200 H 880")
 el += label(776, 398, "0..N") + label(868, 182, "1")
-el += path("M 820,720 H 880")
-el += label(832, 702, "1") + label(860, 702, "0..N")
-el += path("M 980,700 V 656")
-el += label(994, 662, "1") + label(1002, 686, "0..N")
+el += path("M 820,760 H 880")
+el += label(832, 742, "1") + label(860, 742, "0..N")
+el += path("M 980,740 V 696")
+el += label(994, 708, "1") + label(1002, 730, "0..N")
 # timeline の中
 el += path("M 1460,340 H 1500")
 el += label(1472, 322, "0..N") + label(1492, 358, "1")
@@ -247,7 +248,7 @@ el += entity(580, 60, 240, "career", "職歴。組織にオーナーが所属し
 el += entity(580, 416, 240, "project", "実績。kind: develop・host・talk・other", project)
 el += entity(580, 832, 240, "education", "学歴", education)
 el += entity(880, 460, 210, "skill", "スキル。経験年数は実績から計算", skill)
-el += entity(880, 700, 200, "project_skill", "実績で使ったスキル", project_skill)
+el += entity(880, 740, 200, "project_skill", "実績で使ったスキル", project_skill)
 el += entity(1160, 60, 300, "activity", "1 件の activity（外部・life event）", activity)
 el += entity(1500, 60, 200, "fetch_result", "外部の source ごとの最新の取得の成否", fetch)
 el += entity(1500, 300, 200, "activity_source", "activity の出どころ。kind を 1 つ持つ", [("# source", "text"), ("kind", "text · CHECK")])
