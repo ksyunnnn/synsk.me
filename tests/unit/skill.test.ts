@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { deleteSkill } from '@/features/skill/application/delete-skill';
 import { listSkills } from '@/features/skill/application/list-skills';
 import { registerSkill } from '@/features/skill/application/register-skill';
 import {
@@ -232,5 +233,23 @@ describe('registerSkill', () => {
       await registerSkill(skills, null, { name: 'Go', overrideYears: '', overrideMonths: '' }),
     ).toEqual({ status: 'forbidden' });
     expect(skills.register).not.toHaveBeenCalled();
+  });
+});
+
+describe('deleteSkill', () => {
+  /** 作り物のオーナー */
+  const AUTHOR = { email: 'owner@example.com' };
+
+  it('子のスキルを持つ親のスキルは消さず、理由を返す（FR-031）', async () => {
+    const skills = fakeSkills({
+      delete: vi.fn(async () => ({ ok: false as const, reason: 'has-children' as const })),
+    });
+    expect(await deleteSkill(skills, AUTHOR, 1)).toEqual({ status: 'has-children' });
+  });
+
+  it('オーナーでなければ消さない（FR-040）', async () => {
+    const skills = fakeSkills();
+    expect(await deleteSkill(skills, null, 1)).toEqual({ status: 'forbidden' });
+    expect(skills.delete).not.toHaveBeenCalled();
   });
 });

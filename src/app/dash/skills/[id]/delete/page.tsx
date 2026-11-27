@@ -32,6 +32,7 @@ const Page = async ({ params }: Props) => {
         uid={skill.uid}
         messages={{
           forbidden: FORBIDDEN_MESSAGE,
+          'has-children': '子のスキルがあるため、消せません',
         }}
       />
       <p>

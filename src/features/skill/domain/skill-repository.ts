@@ -7,8 +7,9 @@ import type { Uid } from '@/shared/domain/uid';
  */
 export type SkillRepository = {
   /**
-   * スキルと、そのスキルをつないだ実績の期間。名前の順。子をつないだ実績の期間は親に含めない。`published` はサイトに載せる実績の期間だけを読み、
-   * サイトで訪問者に出す経験年数に使う。`all` はすべての実績の期間を読み、管理画面に使う
+   * スキルと、そのスキルをつないだ実績の期間。名前の順。子をつないだ実績の期間は親に含めない。
+   * `published` はサイトに載せる実績の期間だけを読み、サイトで訪問者に出す経験年数に使う。
+   * `all` はすべての実績の期間を読み、管理画面に使う
    * （specs/001-career-and-project/spec.md の FR-033）
    */
   listWithPeriods: (projects: 'all' | 'published') => Promise<SkillWithPeriods[]>;
@@ -23,6 +24,11 @@ export type SkillRepository = {
     id: SkillId,
     content: SkillContent,
   ) => Promise<{ ok: true } | { ok: false; reason: 'name-taken' | 'not-found' }>;
-  /** 実績とのつながりを先に消してから消す（research.md の R8） */
-  delete: (id: SkillId) => Promise<{ ok: boolean }>;
+  /**
+   * 実績とのつながりを先に消してから消す（research.md の R8）。子のスキルを持つ親のスキルは
+   * 消さない（FR-031）。子を持つかは SQL で確かめる
+   */
+  delete: (
+    id: SkillId,
+  ) => Promise<{ ok: true } | { ok: false; reason: 'has-children' | 'not-found' }>;
 };

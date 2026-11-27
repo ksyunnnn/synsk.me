@@ -29,6 +29,9 @@ const toSkill = (row: SkillRow) => ({
   role: row.role,
 });
 
+/** `?1` が指すスキルが子を持つか（FR-031） */
+const HAS_CHILDREN = 'EXISTS (SELECT 1 FROM skill AS child WHERE child.parent_id = ?1)';
+
 const isNameTaken = (error: unknown) =>
   error instanceof Error && error.message.includes('UNIQUE constraint failed: skill.name');
 
@@ -100,11 +103,13 @@ export const createD1SkillRepository = (db: D1Database): SkillRepository => ({
 
   delete: async (id) => {
     // 写した職務経歴書の resume_project_skill と resume_skill_override は名前を写して
-    // 持つため触らない（research.md の R8）
+    // 持つため触らない（research.md の R8）。子を持つ親は、実績とのつながりも残す（FR-031）
     const results = await db.batch([
-      db.prepare('DELETE FROM project_skill WHERE skill_id = ?').bind(id),
-      db.prepare('DELETE FROM skill WHERE id = ?').bind(id),
+      db.prepare(`DELETE FROM project_skill WHERE skill_id = ?1 AND NOT ${HAS_CHILDREN}`).bind(id),
+      db.prepare(`DELETE FROM skill WHERE id = ?1 AND NOT ${HAS_CHILDREN}`).bind(id),
     ]);
-    return { ok: (results.at(-1)?.meta.changes ?? 0) > 0 };
+    if ((results.at(-1)?.meta.changes ?? 0) > 0) return { ok: true };
+    const exists = await db.prepare('SELECT 1 FROM skill WHERE id = ?').bind(id).first();
+    return { ok: false, reason: exists ? 'has-children' : 'not-found' };
   },
 });

@@ -101,6 +101,9 @@ export type SkillFormResult = ActionResult<SkillField, SkillFieldError>;
 /** 保存する内容。id と uid は DB が決める。親と役割は入力の項目に無く、保存で変えない */
 export type SkillContent = Omit<Skill, 'id' | 'uid' | 'parentId' | 'role'>;
 
+/** スキルを消す確認のフォームの Server Action が返す結果。消せたときは別の画面へ移る */
+export type DeleteSkillResult = { status: 'forbidden' | 'has-children' };
+
 /** 編集・削除のフォームが、入力の項目とは別に送る値 */
 export const SKILL_UID_FIELD = 'skillUid';
 

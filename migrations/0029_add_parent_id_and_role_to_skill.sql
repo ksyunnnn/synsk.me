@@ -13,7 +13,8 @@
 -- 親も 1 つのスキルの行で、親の経験年数は、親か子のどれかをつないだ実績の期間から求める
 -- （FR-033）。求めた値は保存しない。NULL は親を持たないこと。
 -- 自分自身を指さないことは列の CHECK が、親が親を持たないことはトリガが拒む。外部キーは 0003 の
--- 決まりのとおり NO ACTION で、子を持つ親の行を消すと削除はエラーで止まる
+-- 決まりのとおり NO ACTION で、子を持つ親の行を消すと削除はエラーで止まる。アプリケーションは
+-- 子を持つ親を消さずに知らせる（FR-031、research.md の R8）
 ALTER TABLE skill ADD COLUMN parent_id INTEGER REFERENCES skill (id) CHECK (
   parent_id IS NULL OR parent_id <> id
 );

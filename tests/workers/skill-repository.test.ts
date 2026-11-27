@@ -121,6 +121,37 @@ describe('delete', () => {
     expect(await skills.findById(id)).toBeNull();
     expect(await linkedSkillIds(projectId)).toEqual([]);
   });
+
+  it('子のスキルを持つ親のスキルは、実績とのつながりも含めて消さない（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'AWS' });
+    const child = await insertSkill(env.DB, { name: 'Lambda', parentId: parent });
+    const projectId = await insertProject(env.DB, {
+      organizationId: await insertOrganization(env.DB),
+    });
+    await linkProjectSkill(env.DB, projectId, parent);
+    expect(await skills.delete(parent)).toEqual({ ok: false, reason: 'has-children' });
+    expect(await skills.findById(parent)).not.toBeNull();
+    expect(await linkedSkillIds(projectId)).toEqual([parent]);
+    expect(await skills.findById(child)).toMatchObject({ parentId: parent });
+  });
+
+  it('子の親を外せば、親のスキルを消せる（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'AWS' });
+    const child = await insertSkill(env.DB, { name: 'Lambda', parentId: parent });
+    await env.DB.prepare('UPDATE skill SET parent_id = NULL WHERE id = ?').bind(child).run();
+    expect(await skills.delete(parent)).toEqual({ ok: true });
+  });
+
+  it('子のスキルは消せる（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'AWS' });
+    const child = await insertSkill(env.DB, { name: 'Lambda', parentId: parent });
+    expect(await skills.delete(child)).toEqual({ ok: true });
+    expect(await skills.findById(child)).toBeNull();
+  });
+
+  it('無いスキルは not-found を返す', async () => {
+    expect(await skills.delete(999)).toEqual({ ok: false, reason: 'not-found' });
+  });
 });
 
 describe('listWithPeriods', () => {
