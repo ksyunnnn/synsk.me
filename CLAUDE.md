@@ -19,10 +19,10 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 ### Git
 - main への Push は必ず許可を得てから行う
 - コミットは自由に行ってよい
-- Push 前にセンシティブな情報が含まれていないか確認する
 
 ### 公開の記録
-- synsk.me のリポジトリは公開されている。issue・PR・コミットに実績や職歴を書く前に、本番 D1 の `is_masked` を確かめる。1 なら `title_masked`・`name_masked` で書き、会社のコードの場所（リポジトリ名・パス）も書かない
+- synsk.me のリポジトリは公開されている。Push の前に、センシティブな情報が含まれていないか確認する
+- issue・PR・コミットに実績や職歴を書く前に、本番 D1 の `is_masked` を確かめる。1 なら `title_masked`・`name_masked` で書き、会社のコードの場所（リポジトリ名・パス）も書かない
 - GitHub のコメントは書き直しても、編集の履歴に前の文面が残る。秘匿化すべき内容を書いたら、承認を得てコメントを消す
 - サブエージェントの報告は、秘匿化してから issue に載せる。サブエージェントには GitHub へ投稿させない
 
@@ -61,14 +61,7 @@ synsk.me プロジェクトで Claude Code が従うルール。プロジェク�
 
 ### ドキュメント規約の監査
 
-**機械的検査** — 文書を変更したら `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する。出力された行はすべて違反である。
-
-- 規約そのもの（`docs/README.md`、`.claude/rules/`、`docs/decisions/README.md`）を変更したとき
-- 入れ物を追加・廃止・改名したとき
-
-範囲は差分を既定とし、変更したファイルだけを対象にする。全体は `/auditing-docs-convention 全体` のようにユーザーが指定したときに限る。差分では観点 D（矛盾）・E（重複）・G（GitHub の整合）を実施しないため、決定の記録との矛盾は検出されない。
-
-監査人が逸脱を指摘する。修正は許可を得てから行う。
+文書を変更したら `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する。出力された行はすべて違反である。
 
 ## デザイン作業
 
