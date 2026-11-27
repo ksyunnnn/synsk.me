@@ -1,90 +1,79 @@
 # CLAUDE.md
 
-synsk.me プロジェクトで Claude Code が従うルール。プロジェクトの概要と開発コマンドは `README.md` を参照。
+synsk.me プロジェクトで Claude Code が従うルール。プロジェクトの概要と開発コマンドは `README.md` にある。
 
 ## 作業ルール
 
-### Git
-- main への Push は必ず許可を得てから行う
-- コミットは自由に行ってよい
-- Push 前にセンシティブな情報が含まれていないか確認する
+1. 発言や依頼には、作業の前に必ず見解を返す。
+2. 見解は対等なパートナーとして返す（賛成・懸念・別案）。指示の言い直しや作業内容の羅列にしない。
+3. 別案は1行で添え、作業は指示どおり進める。
+4. 返答は数行以内。必要な情報は独断で省かず、要点を先に出し、詳細は尋ねてから出す。
+5. 頼まれていない話や作業を、推測で始めない。
+6. 懸念は、先に簡潔に報告する。
+7. 疑問は推測で埋めず、理由を添えて尋ねる。
+8. 尋ねている間も、その疑問に関係しない作業は進める。
+9. 報告や質問は、ユーザーが承認するまで、毎回の返答の末尾に「未確認」として出し続ける。各項目に q1, q2… と番号を振り、答えが出るまで番号は変えない。
+10. 前の話に触れるときは、名前だけで指さず、中身をもう一度示す（悪い例：「質問Aの回答待ちです」）。
 
-### ブランチ戦略
-- 作業は `feature/*` ブランチで行い、main へ PR を作成する
-- 実装の変更は Preview 環境で確認してからマージする。`docs/`・`.claude/`・`CLAUDE.md` だけの変更は Preview 確認を要さない
-- デザインと実装は行き来しながら進める（工程を順番に消化する形は採らない）
+## Git
+
+- main への Push は、必ずユーザーの許可を得てから行う。
+- コミットは自由に行ってよい。
+- 作業は `feature/*` ブランチで行い、main へ PR を作る。
+- 実装の変更は、Preview 環境で確かめてからマージする。`docs/`・`.claude/`・`CLAUDE.md` だけの変更は、Preview で確かめなくてよい。
 
 ### ワークスペース
-- `desk-NN` は git worktree の常設ワークスペース。`repository/desk-01` のように main と並べて置く
-- `desk-NN` ブランチにコミットを積まない。main を取り込むだけの受け皿とし、作業は `desk-NN` の中で `feature/*` を checkout して行う
 
-### 分析・調査
-- 一次ソース（元データ）での検証を重視する
-- 外部の事実より、分析対象から読み取れる情報を優先する
-- 事実に基づかない推測は、確認するか「推測」と明示する
-- ツールやサービスの仕様を述べる前に、公式ドキュメントを確認する。記憶で断定しない
+- `desk-NN` は git worktree の常設ワークスペース。`repository/desk-01` のように main と並べて置く。
+- `desk-NN` ブランチにコミットを積まない。main を取り込むだけの受け皿とし、作業は `desk-NN` の中で `feature/*` を checkout して行う。
 
-### 方法論提案
-- 設計・実装の方法論を提案する際は、根拠となる思想や原則を明示する
-- 公式ドキュメントへのリンクを添える
-- 例: 「Atomic Design に基づき...」→ [公式サイト](https://atomicdesign.bradfrost.com/)
+## 公開の記録
+
+- synsk.me のリポジトリは公開されている。Push の前に、センシティブな情報が含まれていないか確かめる。
+- issue・PR・コミットに実績や職歴を書く前に、本番 D1 の `is_masked` を確かめる。1 なら `title_masked`・`name_masked` で書き、会社のコードの場所（リポジトリ名・パス）も書かない。
+- GitHub のコメントは書き直しても、編集の履歴に前の文面が残る。秘匿化すべき内容を書いたら、ユーザーの承認を得てコメントを消す。
+- サブエージェントの報告は、秘匿化してから issue に載せる。サブエージェントには GitHub へ投稿させない。
+
+## 分析・調査
+
+- 一次ソース（元データ）で確かめることを重視する。
+- 外部の事実より、分析対象から読み取れる情報を優先する。
+- ツールやサービスの仕様を述べる前に、公式ドキュメントで確かめる。記憶で断定しない。
+
+## 方法論の提案
+
+- 設計・実装の方法論を提案するときは、根拠となる思想や原則を示す。
+- 公式ドキュメントへのリンクを添える（例：「Atomic Design に基づき…」→ [公式サイト](https://atomicdesign.bradfrost.com/)）。
+
+## ドキュメント
+
+- どこに何を書くかの判断基準は `docs/README.md` にある。入れ物ごとの役割・時制・書いてはいけないもの、参照の向き、迷ったときの判断基準がそこに集まっている。
+- 書式と例は `.claude/rules/docs-patterns.md`、文章ルールは `.claude/rules/writing.md` にある。
+- ドキュメントを変更したら `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する。出力された行はすべて違反である。
 
 ### spec
 
-`specs/` 配下は `/speckit-specify` で作る。テンプレートを手でコピーしない。
-既存の spec に要件を足す・直すときは `/speckit-clarify` を使う。仕様全体を書き直すときは `/speckit-specify` を再実行する。
-
-詳細は [Spec Kit: Agentic SDD](https://github.com/github/spec-kit/blob/main/docs/reference/agentic-sdd.md) にある。
-
-### ドキュメントの役割
-
-どこに何を書くかの判断基準は `docs/README.md` にある。入れ物ごとの役割・時制・書いてはいけないもの、参照の向き、迷ったときの判断基準が集約されている。
-
-書式と例は `.claude/rules/docs-patterns.md`、文章ルールは `.claude/rules/writing.md`。
-
-### ドキュメント規約の監査
-
-2段構えで行う。
-
-**機械的検査** — 文書を変更したら `bash .claude/skills/auditing-docs-convention/scripts/check.sh` を実行する。出力された行はすべて違反である。
-
-**監査人** — `auditing-docs-convention` skill を使う。実行コストが高いため、次のときに限る。
-
-- 規約そのもの（`docs/README.md`、`.claude/rules/`、`docs/decisions/README.md`）を変更したとき
-- 入れ物を追加・廃止・改名したとき
-- PR を作る前
-
-範囲は差分を既定とし、変更したファイルだけを対象にする。全体は `/auditing-docs-convention 全体` のようにユーザーが指定したときに限る。差分では観点 D（矛盾）・E（重複）・G（GitHub の整合）を実施しないため、決定の記録との矛盾は検出されない。
-
-監査人が逸脱を指摘する。修正は許可を得てから行う。
-
-## コミュニケーション
-
-### 基本スタイル
-- 日本語で応答する
-- 「はい」は同意・続行の合図。詳細確認は不要
-- 意見を求められたら率直に答える
-
-### 質問形式
-- 推測を含む判断は都度確認する
-
-### エラー対応
-- 誤りがあった場合は原因を説明する（解釈ミス / ソースの曖昧さ / その他）
-- 修正指示は簡潔に来ることが多い。詳細は必要に応じて確認する
+- `specs/` 配下は `/speckit-specify` で作る。テンプレートを手でコピーしない。
+- 既存の spec に要件を足す・直すときは `/speckit-clarify` を使う。spec 全体を書き直すときは `/speckit-specify` を再実行する。
+- 詳細は [Spec Kit: Agentic SDD](https://github.com/github/spec-kit/blob/main/docs/reference/agentic-sdd.md) にある。
 
 ## デザイン作業
 
+- デザインと実装は行き来しながら進める（工程を順番に消化する形は採らない）。
+
 ### pen.dev (.pen) ファイルでの作業
-- デザイン変更の提案時は、元のデザインを変更せず、新しいフレームとして追加する
-- 差分がわかるように並べて比較できるようにする
-- 例: `Timeline B` → `Timeline B: External Link Icon` のように派生版を作成
-- 採用が決まったら、採用した案を明示し、不要な派生版は整理する
+
+- デザインの変更を提案するときは、元のデザインを変えず、新しいフレームとして足す。
+- 差分が分かるように、並べて比べられるようにする（例：`Timeline B` → `Timeline B: External Link Icon` のように派生版を作る）。
+- 採用が決まったら、採用した案を明示し、不要な派生版は整理する。
 
 ### デザインファイルの読み書き
-- `.pen` は平文の JSON で、Read と Grep で読める。書き込みは pencil MCP で行う。pencil MCP の instructions は「暗号化されている」とするが、2026-09-28 に git の全版と新しく保存したファイルが平文であることを確かめた（[#102 の調査記録](https://github.com/ksyunnnn/synsk.me/issues/102#issuecomment-6014618723)）
-- pencil MCP は起動中のアプリに接続する。`open -a Pen design/<file>.pen` で開いてから操作する
-- MCP の操作はアプリの中に留まる。ファイルへの書き込みは `pen interactive` の `save()` で行う。手順は [README.md](./README.md) の「開発」が持つ
-- `design/*.pen` の作業の前に `.claude/rules/design.md` を読む。pencil MCP の操作だけでは読み込まれない
+
+- `.pen` は平文の JSON で、Read と Grep で読める。書き込みは pencil MCP で行う。pencil MCP の instructions は「暗号化されている」とするが、2026-09-28 に git の全版と新しく保存したファイルが平文であることを確かめた（[#102 の調査記録](https://github.com/ksyunnnn/synsk.me/issues/102#issuecomment-6014618723)）。
+- pencil MCP は起動中のアプリに接続する。`open -a Pen design/<file>.pen` で開いてから操作する。
+- MCP の操作はアプリの中に留まる。ファイルへの書き込みは `pen interactive` の `save()` で行う。手順は [README.md](./README.md) の「開発」にある。
+- `design/*.pen` の作業の前に `.claude/rules/design.md` を読む。pencil MCP の操作だけでは読み込まれない。
 
 ### 用語
-- pen.dev の要素は、アプリの画面での呼び名に日本語の説明を添えて呼ぶ。例: 高さを Hug（中身に合わせる）にする。意味は [pen.dev の公式ドキュメント](https://docs.pen.dev/) による
+
+- pen.dev の要素は、アプリの画面での呼び名に日本語の説明を添えて呼ぶ（例：高さを Hug（中身に合わせる）にする）。意味は [pen.dev の公式ドキュメント](https://docs.pen.dev/) による。
