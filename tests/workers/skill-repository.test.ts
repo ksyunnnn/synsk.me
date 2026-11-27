@@ -14,7 +14,7 @@ import {
 
 /**
  * スキルの D1 の実装と、実績へのスキルのつなぎ（specs/001-career-and-project/spec.md の
- * FR-031・FR-032・FR-034、research.md の R7・R8）。
+ * FR-031〜FR-034、research.md の R7・R8）。
  */
 
 const skills = createD1SkillRepository(env.DB);
@@ -65,6 +65,7 @@ describe('register と edit', () => {
       uid: result.uid,
       name: 'TypeScript',
       monthsOverride: 71,
+      parentId: null,
     });
   });
 
@@ -99,6 +100,13 @@ describe('register と edit', () => {
     });
     expect((await skills.findById(id))?.monthsOverride).toBeNull();
   });
+
+  it('編集しても親は変わらない（FR-031）', async () => {
+    const parent = await insertSkill(env.DB, { name: 'Cloudflare' });
+    const id = await insertSkill(env.DB, { name: 'D1', parentId: parent });
+    expect(await skills.edit(id, { name: 'D1', monthsOverride: 6 })).toEqual({ ok: true });
+    expect((await skills.findById(id))?.parentId).toBe(parent);
+  });
 });
 
 describe('delete', () => {
@@ -131,6 +139,7 @@ describe('listWithPeriods', () => {
         uid: expect.stringMatching(/^[0-9a-f]{32}$/),
         name: 'Go',
         monthsOverride: null,
+        parentId: null,
         periods: [],
       },
       {
@@ -138,6 +147,7 @@ describe('listWithPeriods', () => {
         uid: expect.stringMatching(/^[0-9a-f]{32}$/),
         name: 'TypeScript',
         monthsOverride: null,
+        parentId: null,
         periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],
       },
     ]);
@@ -171,6 +181,30 @@ describe('listWithPeriods', () => {
         { startedOn: '2022-04-01', endedOn: '2023-03-31' },
       ]),
     );
+  });
+});
+
+describe('listWithPeriods の親子（FR-031・FR-033）', () => {
+  it('親の id を返し、期間はそのスキルをつないだ実績のものだけを返す', async () => {
+    const organizationId = await insertOrganization(env.DB);
+    const parent = await insertSkill(env.DB, { name: 'Cloudflare' });
+    const child = await insertSkill(env.DB, { name: 'D1', parentId: parent });
+    const project = await insertProject(env.DB, {
+      organizationId,
+      startedOn: '2020-04-01',
+      endedOn: '2021-03-31',
+    });
+    await linkProjectSkill(env.DB, project, child);
+
+    const rows = await skills.listWithPeriods('all');
+    expect(rows.find((skill) => skill.id === parent)).toMatchObject({
+      parentId: null,
+      periods: [],
+    });
+    expect(rows.find((skill) => skill.id === child)).toMatchObject({
+      parentId: parent,
+      periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],
+    });
   });
 });
 

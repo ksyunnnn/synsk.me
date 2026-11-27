@@ -4,7 +4,8 @@ import type { Uid } from '@/shared/domain/uid';
 
 /**
  * スキルの型と決まり（specs/001-career-and-project/spec.md の FR-031〜FR-034）。
- * 大文字と小文字だけ違う名前の重複は、`skill.name` の `COLLATE NOCASE` の UNIQUE が止める
+ * 大文字と小文字だけ違う名前の重複は、`skill.name` の `COLLATE NOCASE` の UNIQUE が止める。
+ * 親子が 1 段で自分を親にしないことは、`skill.parent_id` の CHECK とトリガが止める（migrations/0029）
  */
 
 export type SkillId = number;
@@ -16,10 +17,30 @@ export type Skill = {
   name: string;
   /** 経験年数を手で上書きした月数。null なら実績の期間から求める（FR-034） */
   monthsOverride: number | null;
+  /** 親のスキル（Cloudflare に対する D1 など）の id。null なら親を持たない（FR-031） */
+  parentId: SkillId | null;
 };
 
-/** スキルの一覧の 1 行。つないだ実績の期間を持ち、経験年数をユースケースが求める */
+/**
+ * スキルの一覧の 1 行。そのスキルをつないだ実績の期間を持ち、経験年数をユースケースが求める。
+ * 子をつないだ実績の期間は含めない。親の経験年数に使う期間は `experiencePeriodsBySkill` が求める
+ */
 export type SkillWithPeriods = Skill & { periods: Period[] };
+
+/**
+ * 経験年数を求める期間（FR-033）。スキルの id ごとに返す。親は、親か子のどれかをつないだ
+ * 実績の期間。子と親を持たないスキルは、そのスキルをつないだ実績の期間。同じ実績が親と子の
+ * 両方をつないでいても、重なる月は `countExperienceMonths` が 1 回だけ数える
+ */
+export const experiencePeriodsBySkill = (
+  skills: readonly SkillWithPeriods[],
+): Map<SkillId, Period[]> => {
+  const bySkill = new Map(skills.map((skill) => [skill.id, [...skill.periods]]));
+  for (const skill of skills) {
+    if (skill.parentId !== null) bySkill.get(skill.parentId)?.push(...skill.periods);
+  }
+  return bySkill;
+};
 
 /** 一覧に出す、経験年数を求めたスキル */
 export type SkillSummary = Skill & {
@@ -35,8 +56,8 @@ export type SkillFieldError = 'missing' | 'invalid' | 'name-taken';
 export type SkillFormValues = Record<SkillField, string>;
 export type SkillFormResult = ActionResult<SkillField, SkillFieldError>;
 
-/** 保存する内容。id と uid は DB が決める */
-export type SkillContent = Omit<Skill, 'id' | 'uid'>;
+/** 保存する内容。id と uid は DB が決める。親は入力の項目に無く、保存で変えない */
+export type SkillContent = Omit<Skill, 'id' | 'uid' | 'parentId'>;
 
 /** 編集・削除のフォームが、入力の項目とは別に送る値 */
 export const SKILL_UID_FIELD = 'skillUid';

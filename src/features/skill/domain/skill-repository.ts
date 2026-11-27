@@ -7,7 +7,7 @@ import type { Uid } from '@/shared/domain/uid';
  */
 export type SkillRepository = {
   /**
-   * スキルと、つないだ実績の期間。名前の順。`published` はサイトに載せる実績の期間だけを読み、
+   * スキルと、そのスキルをつないだ実績の期間。名前の順。子をつないだ実績の期間は親に含めない。`published` はサイトに載せる実績の期間だけを読み、
    * サイトで訪問者に出す経験年数に使う。`all` はすべての実績の期間を読み、管理画面に使う
    * （specs/001-career-and-project/spec.md の FR-033）
    */
