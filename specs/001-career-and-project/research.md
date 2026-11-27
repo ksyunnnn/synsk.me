@@ -79,11 +79,11 @@ plan.md の Technical Context の不明点と、使う道具の決め方を置�
   - 実績: `resume_project.project_id` を NULL にする → `project.card_media_id` を NULL にする → `project_skill` を消す → `media`（持ち主が実績）を消す → `project` を消す。R2 の画像は D1 の削除が成功した後に消す
   - 職歴: `resume_career.career_id` を NULL にする → `media`（持ち主が職歴）を消す → `career` を消す
   - 学歴: `resume_education.education_id` を NULL にする → `education` を消す
-  - スキル: `project_skill` を消す → `skill` を消す。`resume_project_skill` と `resume_skill_override` は名前を写して持つため触らない
+  - スキル: `project_skill` を消す → `skill` を消す。`resume_project_skill` と `resume_skill_override` は名前を写して持つため触らない。子のスキルを持つ親のスキルは消さずに知らせる（FR-031）。子の `parent_id` を空にして消すと、子が親を黙って失い、親の経験年数を求められなくなるため
   - 組織: 職歴・実績が指していれば消さずに知らせる（FR-006）
 - 理由: 外部キーはすべて NO ACTION で、子の行が残ると削除がエラーで止まる（migration 0003 の冒頭）。職務経歴書の行は残し、写した行の *_id を先に空にする（spec の Edge Cases）
 - R2 と D1 のずれ: D1 を先に消し、R2 の削除に失敗しても画像は訪問者に出ない（持ち主の行が無いため配らない）。ずれの扱いは未決のまま
-- 退けた案: CASCADE（表を作り直す migration で、子の行が黙って消える。migration 0003 の冒頭）
+- 退けた案: CASCADE（表を作り直す migration で、子の行が黙って消える。migration 0003 の冒頭）。子を持つ親のスキルを消すとき、子の `parent_id` を先に空にする（[issue #399 の決定](https://github.com/ksyunnnn/synsk.me/issues/399#issuecomment-7212709204)）
 
 ## R9 個人の組織
 

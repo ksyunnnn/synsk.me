@@ -25,7 +25,7 @@
 | `media` | 画像（持ち主が職歴か実績の行） | 書く（tasks.md の T075） | FR-027〜FR-030 |
 | `resume_career`・`resume_project`・`resume_education` | 職務経歴書の写し | 削除のときに `*_id` を NULL にするだけ | spec の Edge Cases |
 
-スキーマが守る決まり（001 のコードで重ねて書かない）: 組織名の重複（`organization.name` の UNIQUE、FR-003）、スキル名の大文字と小文字だけの重複（`skill.name` の `COLLATE NOCASE` の UNIQUE、FR-031）、識別子の形と重複（`project.slug` の CHECK と UNIQUE、FR-013）、種類（`project.kind` の CHECK、FR-012）、日付の形と前後（`*_on` の CHECK、FR-038・FR-039）、既定で秘匿化（`is_masked` の DEFAULT 1、FR-010・FR-015）、既定でサイトに載せないことと値の 2 つ（`career.status`・`project.status` の DEFAULT `draft` と CHECK、FR-044）、代表画像がその実績の画像であること（複合の外部キー、FR-028）、画像の持ち主が 1 つ（`media` の CHECK）、指されている組織の削除（NO ACTION の外部キー、FR-006）、上書きの月数が 0 以上（`skill.months_override` の CHECK、FR-034）、スキルの親子が 1 段で、自分を親にしないこと（`skill.parent_id` の CHECK とトリガ、FR-031）、スキルの役割の 13 個の値（`skill.role` の CHECK、FR-031）、子を持つスキルが役割を持たないこと（トリガ、FR-031）、管理画面の URL の識別子の形・重複・書き換えの拒否（`*.uid` の CHECK・UNIQUE・トリガ、research.md の R17）。
+スキーマが守る決まり（001 のコードで重ねて書かない）: 組織名の重複（`organization.name` の UNIQUE、FR-003）、スキル名の大文字と小文字だけの重複（`skill.name` の `COLLATE NOCASE` の UNIQUE、FR-031）、識別子の形と重複（`project.slug` の CHECK と UNIQUE、FR-013）、種類（`project.kind` の CHECK、FR-012）、日付の形と前後（`*_on` の CHECK、FR-038・FR-039）、既定で秘匿化（`is_masked` の DEFAULT 1、FR-010・FR-015）、既定でサイトに載せないことと値の 2 つ（`career.status`・`project.status` の DEFAULT `draft` と CHECK、FR-044）、代表画像がその実績の画像であること（複合の外部キー、FR-028）、画像の持ち主が 1 つ（`media` の CHECK）、指されている組織の削除（NO ACTION の外部キー、FR-006）、子を持つスキルの削除（NO ACTION の外部キー、FR-031）、上書きの月数が 0 以上（`skill.months_override` の CHECK、FR-034）、スキルの親子が 1 段で、自分を親にしないこと（`skill.parent_id` の CHECK とトリガ、FR-031）、スキルの役割の 13 個の値（`skill.role` の CHECK、FR-031）、子を持つスキルが役割を持たないこと（トリガ、FR-031）、管理画面の URL の識別子の形・重複・書き換えの拒否（`*.uid` の CHECK・UNIQUE・トリガ、research.md の R17）。
 
 アプリケーションは、スキーマが拒む入力を保存の前にも確かめ、画面で項目ごとに知らせる。スキーマの制約は最後の守りとして残す。
 
@@ -45,6 +45,7 @@
 | 子をまだ持たない親のスキルは役割を持たない。表の上では、親を持たないほかのスキルと見分けられない | FR-031 | コードに置き場は無い。管理画面に役割の入力は無く、スキルの行を入れる人が守る |
 | 個人の組織は削除できない | FR-041 | `src/shared/domain/organization.ts` の定数 |
 | 削除の前に子の行を消すか空にする | FR-006、Edge Cases | Repository の実装（research.md の R8） |
+| 子のスキルを持つ親のスキルは消さずに知らせる | FR-031 | `SkillRepository.delete` の SQL（research.md の R8） |
 | 実績の関連 URL は 1 つ | FR-018 | 列が 1 つ（`project.url`） |
 | 職歴の実績は、同じ組織で期間が重なる実績。職歴のスキルはそれらのスキルを合わせたもの | FR-017・FR-035 | `src/shared/domain/period.ts` の重なりの判定。端の扱いは未決（plan.md の U6 の残り） |
 | 経験年数は、スキルをつないだ実績の期間をつなぎ、重なりを除いた長さ。上書きの月数があればそれを使う | FR-033・FR-034 | 同上。月を単位に数える（spec の FR-033） |
