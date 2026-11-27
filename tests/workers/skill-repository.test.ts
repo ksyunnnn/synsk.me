@@ -66,6 +66,7 @@ describe('register と edit', () => {
       name: 'TypeScript',
       monthsOverride: 71,
       parentId: null,
+      role: null,
     });
   });
 
@@ -101,11 +102,11 @@ describe('register と edit', () => {
     expect((await skills.findById(id))?.monthsOverride).toBeNull();
   });
 
-  it('編集しても親は変わらない（FR-031）', async () => {
+  it('編集しても親と役割は変わらない（FR-031）', async () => {
     const parent = await insertSkill(env.DB, { name: 'Cloudflare' });
-    const id = await insertSkill(env.DB, { name: 'D1', parentId: parent });
+    const id = await insertSkill(env.DB, { name: 'D1', parentId: parent, role: 'data' });
     expect(await skills.edit(id, { name: 'D1', monthsOverride: 6 })).toEqual({ ok: true });
-    expect((await skills.findById(id))?.parentId).toBe(parent);
+    expect(await skills.findById(id)).toMatchObject({ parentId: parent, role: 'data' });
   });
 });
 
@@ -140,6 +141,7 @@ describe('listWithPeriods', () => {
         name: 'Go',
         monthsOverride: null,
         parentId: null,
+        role: null,
         periods: [],
       },
       {
@@ -148,6 +150,7 @@ describe('listWithPeriods', () => {
         name: 'TypeScript',
         monthsOverride: null,
         parentId: null,
+        role: null,
         periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],
       },
     ]);
@@ -203,6 +206,7 @@ describe('listWithPeriods の親子（FR-031・FR-033）', () => {
     });
     expect(rows.find((skill) => skill.id === child)).toMatchObject({
       parentId: parent,
+      role: null,
       periods: [{ startedOn: '2020-04-01', endedOn: '2021-03-31' }],
     });
   });

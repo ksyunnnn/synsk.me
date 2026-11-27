@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { SkillRole } from '@/features/skill/domain/skill';
 import type { SkillRepository } from '@/features/skill/domain/skill-repository';
 import type { CalendarDate, Period } from '@/shared/domain/period';
 
@@ -13,10 +14,11 @@ type SkillRow = {
   name: string;
   months_override: number | null;
   parent_id: number | null;
+  role: SkillRole | null;
 };
 type PeriodRow = { skill_id: number; started_on: string; ended_on: string | null };
 
-const SKILL_COLUMNS = 'id, uid, name, months_override, parent_id';
+const SKILL_COLUMNS = 'id, uid, name, months_override, parent_id, role';
 
 const toSkill = (row: SkillRow) => ({
   id: row.id,
@@ -24,6 +26,7 @@ const toSkill = (row: SkillRow) => ({
   name: row.name,
   monthsOverride: row.months_override,
   parentId: row.parent_id,
+  role: row.role,
 });
 
 const isNameTaken = (error: unknown) =>

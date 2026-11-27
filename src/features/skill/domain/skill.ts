@@ -5,8 +5,48 @@ import type { Uid } from '@/shared/domain/uid';
 /**
  * スキルの型と決まり（specs/001-career-and-project/spec.md の FR-031〜FR-034）。
  * 大文字と小文字だけ違う名前の重複は、`skill.name` の `COLLATE NOCASE` の UNIQUE が止める。
- * 親子が 1 段で自分を親にしないことは、`skill.parent_id` の CHECK とトリガが止める（migrations/0029）
+ * 親子が 1 段で自分を親にしないこと、役割の値、子を持つ行が役割を持たないことは、`skill.parent_id`・
+ * `skill.role` の CHECK とトリガが止める（migrations/0029）
  */
+
+/**
+ * スキルの役割と表示名（FR-031）。`skill.role` の CHECK と同じ値を、ここ 1 か所に置く。値を英字の
+ * 識別子で持つのは `project.kind` と同じ（ADR-0055）
+ */
+export const SKILL_ROLES = [
+  'language',
+  'framework',
+  'ui',
+  'state_management',
+  'data',
+  'auth',
+  'hosting',
+  'testing',
+  'ci_quality',
+  'design',
+  'dev_tool',
+  'domain_specific',
+  'other',
+] as const;
+export type SkillRole = (typeof SKILL_ROLES)[number];
+
+export const SKILL_ROLE_LABELS: Record<SkillRole, string> = {
+  language: '言語',
+  framework: 'フレームワーク',
+  ui: 'UI',
+  state_management: '状態管理',
+  data: 'データ',
+  auth: '認証',
+  hosting: 'ホスティング',
+  testing: 'テスト',
+  ci_quality: 'CI・品質',
+  design: 'デザイン',
+  dev_tool: '開発の道具',
+  /** 特定の領域の依頼で効くもの（marked、MapLibre GL など） */
+  domain_specific: '領域特化',
+  /** どこにも入らないもの（axios など） */
+  other: 'その他',
+};
 
 export type SkillId = number;
 
@@ -19,6 +59,8 @@ export type Skill = {
   monthsOverride: number | null;
   /** 親のスキル（Cloudflare に対する D1 など）の id。null なら親を持たない（FR-031） */
   parentId: SkillId | null;
+  /** 役割。親のスキルは持たない。null なら役割を付けていない（FR-031） */
+  role: SkillRole | null;
 };
 
 /**
@@ -56,8 +98,8 @@ export type SkillFieldError = 'missing' | 'invalid' | 'name-taken';
 export type SkillFormValues = Record<SkillField, string>;
 export type SkillFormResult = ActionResult<SkillField, SkillFieldError>;
 
-/** 保存する内容。id と uid は DB が決める。親は入力の項目に無く、保存で変えない */
-export type SkillContent = Omit<Skill, 'id' | 'uid' | 'parentId'>;
+/** 保存する内容。id と uid は DB が決める。親と役割は入力の項目に無く、保存で変えない */
+export type SkillContent = Omit<Skill, 'id' | 'uid' | 'parentId' | 'role'>;
 
 /** 編集・削除のフォームが、入力の項目とは別に送る値 */
 export const SKILL_UID_FIELD = 'skillUid';

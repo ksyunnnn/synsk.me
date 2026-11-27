@@ -81,7 +81,7 @@ describe('listSkills', () => {
   it('実績の期間から求めた月数を使う（FR-033）', async () => {
     const skills = fakeSkills({
       listWithPeriods: vi.fn(async () => [
-        { id: 1, uid: UID, name: 'Go', monthsOverride: null, parentId: null, periods },
+        { id: 1, uid: UID, name: 'Go', monthsOverride: null, parentId: null, role: null, periods },
       ]),
     });
     expect(await listSkills(skills, NOW)).toEqual([
@@ -91,6 +91,7 @@ describe('listSkills', () => {
         name: 'Go',
         monthsOverride: null,
         parentId: null,
+        role: null,
         computedMonths: 24,
         experienceMonths: 24,
       },
@@ -106,7 +107,7 @@ describe('listSkills', () => {
   it('上書きの月数があれば、求めた月数の代わりに使う（FR-034）', async () => {
     const skills = fakeSkills({
       listWithPeriods: vi.fn(async () => [
-        { id: 1, uid: UID, name: 'Go', monthsOverride: 71, parentId: null, periods },
+        { id: 1, uid: UID, name: 'Go', monthsOverride: 71, parentId: null, role: null, periods },
       ]),
     });
     expect(await listSkills(skills, NOW)).toEqual([
@@ -116,6 +117,7 @@ describe('listSkills', () => {
         name: 'Go',
         monthsOverride: 71,
         parentId: null,
+        role: null,
         computedMonths: 24,
         experienceMonths: 71,
       },
@@ -138,6 +140,7 @@ describe('listSkills', () => {
           name: 'Cloudflare',
           monthsOverride: null,
           parentId: null,
+          role: null,
           periods: [at('2020-04-01', '2021-03-31')],
         },
         {
@@ -146,6 +149,7 @@ describe('listSkills', () => {
           name: 'D1',
           monthsOverride: null,
           parentId: 1,
+          role: null,
           periods: [at('2020-10-01', '2022-03-31')],
         },
         {
@@ -154,6 +158,7 @@ describe('listSkills', () => {
           name: 'Workers',
           monthsOverride: null,
           parentId: 1,
+          role: null,
           periods: [at('2024-04-01', '2024-09-30')],
         },
       ]),
@@ -168,8 +173,24 @@ describe('listSkills', () => {
     const both = at('2020-04-01', '2022-03-31');
     const skills = fakeSkills({
       listWithPeriods: vi.fn(async () => [
-        { id: 1, uid: UID, name: 'AWS', monthsOverride: null, parentId: null, periods: [both] },
-        { id: 2, uid: UID, name: 'Lambda', monthsOverride: null, parentId: 1, periods: [both] },
+        {
+          id: 1,
+          uid: UID,
+          name: 'AWS',
+          monthsOverride: null,
+          parentId: null,
+          role: null,
+          periods: [both],
+        },
+        {
+          id: 2,
+          uid: UID,
+          name: 'Lambda',
+          monthsOverride: null,
+          parentId: 1,
+          role: null,
+          periods: [both],
+        },
       ]),
     });
     expect(experienceOf(await listSkills(skills, NOW), 'AWS')).toBe(24);
@@ -178,13 +199,22 @@ describe('listSkills', () => {
   it('親に上書きの月数があれば、子の期間を足した月数の代わりに使う（FR-034）', async () => {
     const skills = fakeSkills({
       listWithPeriods: vi.fn(async () => [
-        { id: 1, uid: UID, name: 'Firebase', monthsOverride: 5, parentId: null, periods: [] },
+        {
+          id: 1,
+          uid: UID,
+          name: 'Firebase',
+          monthsOverride: 5,
+          parentId: null,
+          role: null,
+          periods: [],
+        },
         {
           id: 2,
           uid: UID,
           name: 'Firestore',
           monthsOverride: null,
           parentId: 1,
+          role: null,
           periods: [at('2020-04-01', '2022-03-31')],
         },
       ]),

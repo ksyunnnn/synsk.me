@@ -11,7 +11,7 @@ import { countExperienceMonths } from '@/shared/domain/period';
 export const listSkills = async (skills: SkillRepository, now: Date): Promise<SkillSummary[]> => {
   const rows = await skills.listWithPeriods('all');
   const periodsBySkill = experiencePeriodsBySkill(rows);
-  return rows.map(({ id, uid, name, monthsOverride, parentId }) => {
+  return rows.map(({ id, uid, name, monthsOverride, parentId, role }) => {
     const computedMonths = countExperienceMonths(periodsBySkill.get(id) ?? [], now);
     return {
       id,
@@ -19,6 +19,7 @@ export const listSkills = async (skills: SkillRepository, now: Date): Promise<Sk
       name,
       monthsOverride,
       parentId,
+      role,
       computedMonths,
       experienceMonths: monthsOverride ?? computedMonths,
     };
